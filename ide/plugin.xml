@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>      
+   <extension
+         point="org.eclipse.ui.themes">
+      <themeElementCategory
+            id="org.zaluum.ide.themeElementCategory1"
+            label="Boxes">
+         <description>
+            Boxes color preferences
+         </description>
+      </themeElementCategory>
+      <colorDefinition
+            categoryId="org.zaluum.ide.themeElementCategory1"
+            id="org.zaluum.ide.standardBackground"
+            label="BoxStandard background color"
+            value="250,250,250">
+         <description>
+            FSM background color
+         </description>
+      </colorDefinition>
+      <colorDefinition
+            categoryId="org.zaluum.ide.themeElementCategory1"
+            id="org.zaluum.ide.composedBackground"
+            label="Composed background color"
+            value="210,240,240">
+         <description>
+            Composed box background color
+         </description>
+      </colorDefinition>
+      <colorDefinition
+            categoryId="org.zaluum.ide.themeElementCategory1"
+            id="org.zaluum.ide.fsmBackground"
+            label="FSM background color"
+            value="210,240,210">
+         <description>
+            FSM background color
+         </description>
+      </colorDefinition>
+      <colorDefinition
+            categoryId="org.zaluum.ide.themeElementCategory1"
+            id="org.zaluum.ide.MathBoxBackground"
+            label="MathBox background color"
+            value="200,200,10">
+         <description>
+            MathBox background color
+         </description>
+      </colorDefinition>
+      <fontDefinition
+            categoryId="org.zaluum.ide.themeElementCategory1"
+            id="org.zaluum.ide.fontDefinition"
+            label="Box font"
+            value="Monospace-regular-8">
+        <description>
+            Box font title
+        </description>
+      </fontDefinition>
+      <colorDefinition
+            categoryId="org.zaluum.ide.themeElementCategory1"
+            id="org.zaluum.ide.stateBackground"
+            label="State background color"
+            value="220,230,240">
+         <description>
+            State background color
+         </description>
+      </colorDefinition>
+      <colorDefinition
+            categoryId="org.zaluum.ide.themeElementCategory1"
+            id="org.zaluum.ide.gridColor"
+            label="Grid color"
+            value="240,240,240">
+         <description>
+            Composed box background color
+         </description>
+      </colorDefinition>
+      <fontDefinition
+            categoryId="org.zaluum.ide.themeElementCategory1"
+            id="org.zaluum.ide.debugFont"
+            label="Box debug font">
+         <description>
+            Debug font
+         </description>
+      </fontDefinition>
+      <fontDefinition
+            categoryId="org.zaluum.ide.themeElementCategory1"
+            id="org.zaluum.ide.fontConstant"
+            label="Constant Box font"
+            value="Monospace-regular-12">
+         <description>
+            Box font title
+         </description>
+      </fontDefinition>
+   </extension>
+   <extension
+         id="zaluum"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="org.eclipse.ui.ide.workbench"
+            name="Zaluum Editor">
+         <property
+               name="appName"
+               value="Zaluum Editor">
+         </property>
+         <property
+               name="preferenceCustomization"
+               value="plugin_customization.ini">
+         </property>
+         <property
+               name="startupForegroundColor"
+               value="000000">
+         </property>
+         <property
+               name="startupMessageRect"
+               value="7,252,445,20">
+         </property>
+         <property
+               name="startupProgressRect"
+               value="5,275,445,15">
+         </property>
+         <property
+               name="aboutText"
+               value="Visit http://www.zaluum.com">
+         </property>
+         <property
+               name="aboutImage"
+               value="icons/about.gif">
+         </property>
+         <property
+               name="windowImages"
+               value="icons/16.gif,icons/32.gif,icons/48.gif,icons/64.gif,icons/128x128.gif">
+         </property>
+      </product>
+   </extension>   
+   <extension
+         point="org.eclipse.help.toc">
+      <toc
+            file="help/toc.xml"
+            primary="true">
+      </toc>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="help/context.xml"
+            plugin="org.zaluum.ide.editor">
+      </contexts>
+   </extension>
+   
+</plugin>

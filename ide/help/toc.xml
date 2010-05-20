@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?NLS TYPE="org.eclipse.help.toc"?>
+
+<toc label="Boxes Editor User&apos;s Manual" link_to="content_main" topic="html/toc.html">
+   <topic href="html/files/files.html" label="Files">
+      <topic href="html/files/boxfile.html" label="Box File">
+      </topic>
+      <topic href="html/files/modelfile.html" label="Model File">
+      </topic>
+      <topic href="html/files/cmodelfile.html" label="CModel File">
+      </topic>
+      <anchor id="content_files"/>
+   </topic>
+   <topic href="html/elements/elements.html" label="Elements">
+      <topic href="html/elements/types.html" label="Boxes">
+         <topic href="html/elements/box_composed.html" label="Composed Box">
+         </topic>
+         <topic href="html/elements/box_instance.html" label="Instance Box">
+         </topic>
+         <topic href="html/elements/box_const.html" label="Constant Box">
+         </topic>
+         <topic href="html/elements/box_highlow.html" label="HighLow Box">
+         </topic>
+         <topic href="html/elements/box_timeout.html" label="Timeout Box">
+         </topic>
+         <topic href="html/elements/box_remote.html" label="Remote Box">
+         </topic>
+         <topic href="html/elements/box_cast.html" label="Cast Box">
+         </topic>
+         <topic href="html/elements/box_count.html" label="Count Box">
+         </topic>
+      </topic>
+      <topic href="html/elements/ports.html" label="Ports">
+      </topic>
+      <anchor id="content_elements"/>
+   </topic>
+   <topic href="html/types/types.html" label="Types">
+      <anchor id="content_types"/>
+   </topic>
+   <topic href="html/script/script.html" label="Script">
+      <anchor id="content_script"/>
+   </topic>
+</toc>
