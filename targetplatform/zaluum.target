@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.5"?>
+
+<target name="Base RCP with Source">
+<locations>
+<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<unit id="org.eclipse.platform.ide" version="3.5.2.M20100211-1343"/>
+<unit id="org.eclipse.platform.sdk" version="3.5.2.M20100211-1343"/>
+<unit id="org.eclipse.sdk.ide" version="3.5.2.M20100211-1343"/>
+<unit id="org.eclipse.pde.api.tools.ee.cdcfoundation10" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.cdcfoundation11" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.j2se12" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.j2se13" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.j2se14" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.j2se15" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.javase16" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.jre11" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.osgiminimum10" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.osgiminimum11" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.osgiminimum12" version="1.0.1.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.fragments.feature.jar" version="1.0.0.v20090512-7C-0F9JgLMsM0MXAWLrL"/>
+<unit id="org.eclipse.releng.tools.feature.group" version="3.3.0.v20090520-4407S46yaw311A1923"/>
+<repository location="http://download.eclipse.org/eclipse/updates/3.5"/>
+</location>
+<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<unit id="org.eclipse.draw2d.feature.group" version="3.5.2.v20100111-1352-4417w311A223702A19"/>
+<unit id="org.eclipse.draw2d.sdk.feature.group" version="3.5.2.v20100111-1352-7A7E38yD6E88B9I5AELD4H8D8x42"/>
+<unit id="org.eclipse.draw2d.source.feature.group" version="3.5.2.v20100111-1352-4417w311A223702A19"/>
+<unit id="org.eclipse.gef.feature.group" version="3.5.2.v20100111-1352-777928194B66D5D476C33B2A"/>
+<unit id="org.eclipse.gef.all.feature.group" version="3.5.2.v20100111-1352-787A47PpPBNpsWlH3EdWS1fY14Gn"/>
+<unit id="org.eclipse.gef.examples.feature.group" version="3.5.1.v20090813-1341-7P7c1EVVFGMFsTX7Tcko"/>
+<unit id="org.eclipse.gef.sdk.feature.group" version="3.5.2.v20100111-1352-7G7O5A5WNXWQF_OVSWjaZLTWkNKY"/>
+<unit id="org.eclipse.gef.source.feature.group" version="3.5.2.v20100111-1352-777928194B66D5D476C33B2A"/>
+<unit id="org.eclipse.zest.feature.group" version="1.1.2.v20100111-1352-6618yD6DH8G6N59OM53B2A"/>
+<unit id="org.eclipse.zest.sdk.feature.group" version="1.1.2.v20100111-1352-6658CNDT4R8WTQUMhLVdgPbPObOX"/>
+<unit id="org.eclipse.zest.source.feature.group" version="1.1.2.v20100111-1352-6618yD6DH8G6N59OM53B2A"/>
+<repository location="http://download.eclipse.org/tools/gef/updates/releases/"/>
+</location>
+<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<unit id="org.eclipse.contribution.weaving.feature.group" version="1.6.4.20090313172428"/>
+<unit id="ch.epfl.lamp.sdt.feature.group" version="2.8.0.r21985-b20100520025543"/>
+<repository location="http://www.scala-lang.org/scala-eclipse-plugin-nightly"/>
+</location>
+<location path="${project_loc:targetplatform}/third" type="Directory"/>
+</locations>
+</target>

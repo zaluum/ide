@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Java
+Bundle-SymbolicName: org.zaluum.runtime;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Require-Bundle: 
+ scala.library,
+ com.google.common;bundle-version="1.0.0";visibility:=reexport
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: org.zaluum.runtime
+Import-Package: org.osgi.framework;version="1.5.0"
