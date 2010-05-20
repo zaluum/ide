@@ -3,26 +3,7 @@
 
 <target name="Base RCP with Source">
 <locations>
-<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
-<unit id="org.eclipse.platform.ide" version="3.5.2.M20100211-1343"/>
-<unit id="org.eclipse.platform.sdk" version="3.5.2.M20100211-1343"/>
-<unit id="org.eclipse.sdk.ide" version="3.5.2.M20100211-1343"/>
-<unit id="org.eclipse.pde.api.tools.ee.cdcfoundation10" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.cdcfoundation11" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.j2se12" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.j2se13" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.j2se14" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.j2se15" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.javase16" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.jre11" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.osgiminimum10" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.osgiminimum11" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.osgiminimum12" version="1.0.1.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.fragments.feature.jar" version="1.0.0.v20090512-7C-0F9JgLMsM0MXAWLrL"/>
-<unit id="org.eclipse.releng.tools.feature.group" version="3.3.0.v20090520-4407S46yaw311A1923"/>
-<repository location="http://download.eclipse.org/eclipse/updates/3.5"/>
-</location>
-<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
 <unit id="org.eclipse.draw2d.feature.group" version="3.5.2.v20100111-1352-4417w311A223702A19"/>
 <unit id="org.eclipse.draw2d.sdk.feature.group" version="3.5.2.v20100111-1352-7A7E38yD6E88B9I5AELD4H8D8x42"/>
 <unit id="org.eclipse.draw2d.source.feature.group" version="3.5.2.v20100111-1352-4417w311A223702A19"/>
@@ -37,10 +18,34 @@
 <repository location="http://download.eclipse.org/tools/gef/updates/releases/"/>
 </location>
 <location path="${project_loc:targetplatform}/third" type="Directory"/>
-<location includeAllPlatforms="false" includeMode="planner" type="InstallableUnit">
+<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
 <unit id="org.eclipse.contribution.weaving.feature.group" version="1.6.4.20090313172428"/>
 <unit id="ch.epfl.lamp.sdt.feature.group" version="2.8.0.r21985-b20100520025543"/>
 <repository location="http://www.scala-lang.org/scala-eclipse-plugin-nightly"/>
+</location>
+<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
+<unit id="org.eclipse.platform.ide" version="3.5.2.M20100211-1343"/>
+<unit id="org.eclipse.platform.sdk" version="3.5.2.M20100211-1343"/>
+<unit id="org.eclipse.sdk.ide" version="3.5.2.M20100211-1343"/>
+<unit id="org.eclipse.pde.api.tools.ee.javase16" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.osgiminimum12" version="1.0.1.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.cdcfoundation10" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.j2se12" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.fragments.feature.jar" version="1.0.0.v20090512-7C-0F9JgLMsM0MXAWLrL"/>
+<unit id="org.eclipse.pde.api.tools.ee.j2se15" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.cdcfoundation11" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.osgiminimum11" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.j2se14" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.osgiminimum10" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.jre11" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.pde.api.tools.ee.j2se13" version="1.0.0.v20090407-1030"/>
+<unit id="org.eclipse.releng.tools.feature.group" version="3.3.0.v20090520-4407S46yaw311A1923"/>
+<repository location="http://download.eclipse.org/eclipse/updates/3.5"/>
+</location>
+<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
+<unit id="org.eclipse.ajdt.feature.group" version="2.0.2.e35x-20100105-0900"/>
+<unit id="org.eclipse.equinox.weaving.feature.group" version="1.0.0.200906171200"/>
+<repository location="http://download.eclipse.org/tools/ajdt/35/update"/>
 </location>
 </locations>
 </target>

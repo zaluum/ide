@@ -1,1 +1,7 @@
 bin**
+updatesite/features
+updatesite/plugins
+updatesite/web
+updatesite/artifacts.jar
+updatesite/content.jar
+updatesite/index.html

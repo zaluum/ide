@@ -12,3 +12,4 @@ Require-Bundle: org.eclipse.ui,
  scala.library
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-Activator: org.zaluum.ide.Activator
