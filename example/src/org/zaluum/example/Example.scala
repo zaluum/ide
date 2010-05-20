@@ -28,7 +28,7 @@ class UBox(name:String, parent:ComposedBox) extends ComposedBox(name,parent){
   val o = OutPort("o",0)
   s.o connect o
 }
-class EModel extends Model{
+class Example extends Model{
   override def create(main:MainBox) : Unit = {
     new UBox("Top",main)
   }
