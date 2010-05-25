@@ -1,7 +1,8 @@
 package org.zaluum.runtime
 import scala.collection.immutable._
 import scala.collection.mutable.{Map,MultiMap,HashMap,Set}
-
+import java.util.concurrent._
+import se.scalablesolutions.akka.actor._
 trait Named {
 	val name:String
 }
@@ -41,10 +42,8 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	val ports:Map[String,Port[_]] = Map()
 	val inPorts:Set[Port[_]] = Set()
 	val outPorts:Set[Port[_]] = Set()
-	
 	if (parent!=null) 
 		parent.add(this)
-	
 	def InPort[T](name:String, value:T) = new InPort(name,value,this)
   def OutPort[T](name:String, value:T)  = new OutPort(name,value,this)
 
@@ -56,7 +55,7 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	  }
 	}
 	override def toString = name + " (" + (ports.values map { _.toString} mkString(",")) +")"  
-	def act():Unit
+	def act(process:Process):Unit
 	def recursiveQueue():Unit = {
 	  assert(parent!=null,this)
 	  parent.director.queue(this); parent.recursiveQueue()}
@@ -67,5 +66,5 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
   val director : Director
 	val children : Map[String,Box] = Map()
 	private[runtime] def add(box:Box) = addTemplate(children,box)
-	final def act():Unit = {director.run()}
+	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
 }

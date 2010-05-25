@@ -9,7 +9,9 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.core.resources,
  org.eclipse.ui.editors,
  org.eclipse.ui.ide,
- scala.library
+ scala.library,
+ org.zaluum.runtime;bundle-version="1.0.0",
+ akka;bundle-version="0.9.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-Activator: org.zaluum.ide.Activator
