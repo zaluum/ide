@@ -201,5 +201,15 @@
          </toolbar>
       </menuContribution>
    </extension>
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            class="org.zaluum.ide.Editor"
+            default="false"
+            extensions="zaluum"
+            id="org.zaluum.ide.editor"
+            name="Zaluum">
+      </editor>
+   </extension>
    
 </plugin>

@@ -28,10 +28,11 @@ trait Process extends Actor {
   var root : MainBox = null
   override def receive = {
     case PushInputEvent(s,v) => s
-    case msg : LoadEvent => {
+    case msg @ LoadEvent(model) => {
       val a = self.spawn({
           Thread.sleep(4000)
-          println(msg)
+          println(model)
+          assert(model!=null)
           self.reply("ok");
           exit
         })
@@ -48,22 +49,32 @@ class Time(val p:Process) extends Actor {
     case _ =>
   }
   override def init = {
-    println("time")
+    println("starting time")
+  }
+  override def shutdown = {
+    println("stopping time")    
   }
 }
 class Remote(val p:Process) extends Actor{
   override def receive = { 
     case _ =>
   }
+  override def init = {
+    println("starting remote")
+  }
+  override def shutdown = {
+    println("stopping remote")    
+  }
 }
 class ProductionServer extends Process{
-  self.trapExit = List(classOf[Throwable])
-  self.faultHandler = 
-    Some(OneForOneStrategy(5, 5000))
   lazy val remote = actorOf(new Remote(this));
   lazy val time = actorOf(new Time(this));
   override def init = {
-    self.startLink(remote)
-    self.startLink(time)
+    remote.start
+    time.start
+  }
+  override def shutdown = {
+    remote.stop
+    time.stop
   }
 }

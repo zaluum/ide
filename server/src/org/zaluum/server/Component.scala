@@ -10,7 +10,7 @@ class Component {
   
   val server = actorOf[ProductionServer]
   val c =  Supervisor(SupervisorConfig(
-       RestartStrategy(OneForOne, 3, 10, List(classOf[Exception])),
+       RestartStrategy(OneForOne, 3, 10, List(classOf[Throwable])),
        Supervise(
          server,
          LifeCycle(Permanent)) ::
@@ -22,7 +22,7 @@ class Component {
 	def bindModel(m: Model):Unit = {
     println ("loading model")
     spawn({
-      val r = server !! LoadEvent(m)
+      val r = server !! LoadEvent(null)
       println(r)
     });
     println ("model loading in background")
