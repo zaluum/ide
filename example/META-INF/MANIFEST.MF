@@ -10,3 +10,4 @@ Require-Bundle: scala.library,
  org.zaluum.runtime;bundle-version="1.0.0",
  akka;bundle-version="0.9.0"
 Service-Component: META-INF/component.xml
+Export-Package: org.zaluum.example

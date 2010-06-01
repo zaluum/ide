@@ -1,4 +1,5 @@
 package org.zaluum.ide
+import org.zaluum.runtime._
 import org.eclipse.swt.SWT
 import org.eclipse.draw2d._
 import org.eclipse.core.runtime._
@@ -18,14 +19,70 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable._
 import java.util.ArrayList
 import org.eclipse.draw2d.geometry.Rectangle
-case class LightBox(name:String)
-class Model {
-  val boxes = List(LightBox("box1"),LightBox("box2"))
+import org.zaluum.example.Example
+
+class Editor extends GraphicalEditorWithFlyoutPalette {
+  val mainbox = new MainBox()
+  new Example().create(mainbox)
+  val vmodel : VModel = VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox]) 
+  var gridColor : Color = null
+  setEditDomain(new DefaultEditDomain(this));
+  override def doSave(monitor: IProgressMonitor) = {
+    
+  }
+  override def getPaletteRoot : PaletteRoot = Palette()
+  override def initializeGraphicalViewer():Unit  = {
+    super.initializeGraphicalViewer()
+    if (!getEditorInput().exists()) return
+    val viewer = getGraphicalViewer();
+    val rootEditPart = viewer.getRootEditPart().asInstanceOf[ScalableFreeformRootEditPart];
+    rootEditPart.getLayer(LayerConstants.GRID_LAYER).setForegroundColor(gridColor);
+    
+    var zoomLevels : java.util.List[String] = ArrayBuffer[String](ZoomManager.FIT_ALL, ZoomManager.FIT_WIDTH, ZoomManager.FIT_HEIGHT)
+    rootEditPart.getZoomManager().setZoomLevelContributions(zoomLevels);
+
+    val zoomIn = new ZoomInAction(rootEditPart.getZoomManager());
+    val zoomOut = new ZoomOutAction(rootEditPart.getZoomManager());
+    getActionRegistry().registerAction(zoomIn);
+    getActionRegistry().registerAction(zoomOut);
+    getGraphicalViewer().setProperty(MouseWheelHandler.KeyGenerator.getKey(SWT.MOD1), 
+        MouseWheelZoomHandler.SINGLETON);
+    
+    // Actions
+    val snapAction = new ToggleSnapToGeometryAction(getGraphicalViewer());
+    getActionRegistry().registerAction(snapAction);
+
+    val showGrid = new ToggleGridAction(getGraphicalViewer());
+    getActionRegistry().registerAction(showGrid);
+    
+    val connectionLayer = rootEditPart
+        .getLayer(LayerConstants.CONNECTION_LAYER).asInstanceOf[ConnectionLayer];
+    connectionLayer.setConnectionRouter(new BendpointConnectionRouter());
+    getGraphicalViewer().setContents(vmodel);
+  }
+
+  override def configureGraphicalViewer() = {
+    super.configureGraphicalViewer();
+    val viewer = getGraphicalViewer();
+    viewer.setEditPartFactory(new ZaluumFactory());
+    viewer.setRootEditPart(new ScalableFreeformRootEditPart());
+    viewer.setKeyHandler(new GraphicalViewerKeyHandler(viewer));
+    val gridColorDesc = PlatformUI.getWorkbench().getThemeManager()
+      .getCurrentTheme().getColorRegistry()
+      .getColorDescriptor("org.zaluum.ide.gridColor");
+    gridColor = gridColorDesc.createColor(viewer.getControl().getDisplay());
+    
+    // configure the context menu provider
+    /*ContextMenuProvider cmProvider = new ModelEditorContextMenuProvider(
+        viewer, getActionRegistry());
+    viewer.setContextMenu(cmProvider);*/
+  }
+
 }
 
-class ModelEditPart(val model : Model) extends AbstractGraphicalEditPart{
+class ModelEditPart(val vmodel : VModel) extends AbstractGraphicalEditPart{
   var currentBox : Int = 0
-  setModel(model)
+  setModel(vmodel)
 
   override def activate() = {
     getViewer().setProperty(SnapToGrid.PROPERTY_GRID_ENABLED, true)
@@ -46,13 +103,19 @@ class ModelEditPart(val model : Model) extends AbstractGraphicalEditPart{
     installEditPolicy("Snap Feedback", new SnapFeedbackPolicy());
   }
 
-  override def getModelChildren():java.util.List[AnyRef] = model.boxes 
+  override def getModelChildren():java.util.List[AnyRef] = new ArrayList(vmodel.root.boxes)
 
   def up() = {}
 
   private def installLayoutPolicies() = {
     installEditPolicy(EditPolicy.LAYOUT_ROLE, new XYLayoutEditPolicy(){
-      override def createChangeConstraintCommand(child: EditPart, constraint : AnyRef):Command = UnexecutableCommand.INSTANCE
+      override def createChangeConstraintCommand(child: EditPart, constraint : AnyRef):Command = (child.getModel,constraint) match {
+        case (r:Resizable, rect:Rectangle) =>  new Command() {
+          override def execute() {r.pos = (rect.x,rect.y); r.size=(rect.width,rect.height)}
+        }
+        case _ => UnexecutableCommand.INSTANCE
+      }
+      
       override def getCreateCommand(req:CreateRequest):Command = UnexecutableCommand.INSTANCE
     })
   }
@@ -86,80 +149,4 @@ class ModelEditPart(val model : Model) extends AbstractGraphicalEditPart{
       super.getAdapter(adapter);
     }
   }
-}
-class BoxEditPart(val box : LightBox) extends AbstractGraphicalEditPart{
-  override def createFigure():IFigure = {
-    new RectangleFigure();
-  }
-  private def parentGEP : GraphicalEditPart = getParent.asInstanceOf[GraphicalEditPart]
-  override def refreshVisuals() = {
-    parentGEP.setLayoutConstraint(this, getFigure, new Rectangle(50,50,100,100))
-  }
-  override def createEditPolicies : Unit ={
-  }
-}
-
-class ZaluumFactory extends EditPartFactory {
-  def createEditPart(context: EditPart, model: Object): EditPart = model match { 
-    case model : Model => new ModelEditPart(model)
-    case box : LightBox => new BoxEditPart(box)
-  }
-}
-class Editor extends GraphicalEditorWithFlyoutPalette {
-  val model  = new Model()
-  var gridColor : Color = null
-  setEditDomain(new DefaultEditDomain(this));
-  override def doSave(monitor: IProgressMonitor) = {
-    
-  }
-  override def getPaletteRoot : PaletteRoot = {
-    null
-  }
-  override def initializeGraphicalViewer():Unit  = {
-    super.initializeGraphicalViewer()
-    if (!getEditorInput().exists()) return
-    val viewer = getGraphicalViewer();
-    val rootEditPart = viewer.getRootEditPart().asInstanceOf[ScalableFreeformRootEditPart];
-    rootEditPart.getLayer(LayerConstants.GRID_LAYER).setForegroundColor(gridColor);
-    
-    var zoomLevels : java.util.List[String] = ArrayBuffer[String](ZoomManager.FIT_ALL, ZoomManager.FIT_WIDTH, ZoomManager.FIT_HEIGHT)
-    rootEditPart.getZoomManager().setZoomLevelContributions(zoomLevels);
-
-    val zoomIn = new ZoomInAction(rootEditPart.getZoomManager());
-    val zoomOut = new ZoomOutAction(rootEditPart.getZoomManager());
-    getActionRegistry().registerAction(zoomIn);
-    getActionRegistry().registerAction(zoomOut);
-    getGraphicalViewer().setProperty(MouseWheelHandler.KeyGenerator.getKey(SWT.MOD1), 
-        MouseWheelZoomHandler.SINGLETON);
-    
-    // Actions
-    val snapAction = new ToggleSnapToGeometryAction(getGraphicalViewer());
-    getActionRegistry().registerAction(snapAction);
-
-    val showGrid = new ToggleGridAction(getGraphicalViewer());
-    getActionRegistry().registerAction(showGrid);
-    
-    val connectionLayer = rootEditPart
-        .getLayer(LayerConstants.CONNECTION_LAYER).asInstanceOf[ConnectionLayer];
-    connectionLayer.setConnectionRouter(new BendpointConnectionRouter());
-    getGraphicalViewer().setContents(model);
-  }
-
-  override def configureGraphicalViewer() = {
-    super.configureGraphicalViewer();
-    val viewer = getGraphicalViewer();
-    viewer.setEditPartFactory(new ZaluumFactory());
-    viewer.setRootEditPart(new ScalableFreeformRootEditPart());
-    viewer.setKeyHandler(new GraphicalViewerKeyHandler(viewer));
-    val gridColorDesc = PlatformUI.getWorkbench().getThemeManager()
-      .getCurrentTheme().getColorRegistry()
-      .getColorDescriptor("org.zaluum.ide.gridColor");
-    gridColor = gridColorDesc.createColor(viewer.getControl().getDisplay());
-    
-    // configure the context menu provider
-    /*ContextMenuProvider cmProvider = new ModelEditorContextMenuProvider(
-        viewer, getActionRegistry());
-    viewer.setContextMenu(cmProvider);*/
-  }
-
 }

@@ -220,25 +220,46 @@ Library.
          id="com.google.common"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="1.0.0.201004262004"
          unpack="false"/>
 
    <plugin
          id="org.zaluum.ide"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="1.0.0.qualifier"
          unpack="false"/>
 
    <plugin
          id="akka"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="0.9.0"
          unpack="false"/>
 
    <plugin
          id="org.zaluum.runtime"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="org.zaluum.example"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.gef"
+         download-size="0"
+         install-size="0"
+         version="3.6.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.draw2d"
          download-size="0"
          install-size="0"
          version="0.0.0"

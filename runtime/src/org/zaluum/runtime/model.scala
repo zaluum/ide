@@ -5,6 +5,7 @@ import java.util.concurrent._
 import se.scalablesolutions.akka.actor._
 trait Named {
 	val name:String
+	val fqName : String
 }
 
 trait UniqueNamed {
@@ -30,18 +31,28 @@ class OutPort[A](name:String, value:A, box:Box) extends Port[A](name,value,box){
     connections += dst
   }
 }
-abstract class Port[A](val name:String, var v:A, val box:Box) extends Named{
+abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with Subject{
 	box.add(this)
 	
 	var connections : Set[Port[A]] = Set()
   def connect(dst : Port[A]):Unit 
 	override def toString():String = name + "=" + v
+	val fqName = box.fqName + "$" + name
+
+	lazy val vport = new VPort(Slot(0,true)) {
+	  override def vbox = Port.this.box.vbox 
+	  override def name = Port.this.name
+	  override def fqName = Port.this.fqName
+	  override def ttype :String = v.asInstanceOf[AnyRef].getClass().toString
+	  lazy val connections = box.vbox 
+	}
 }
 
-abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed{
+abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed with Subject{
 	val ports:Map[String,Port[_]] = Map()
 	val inPorts:Set[Port[_]] = Set()
 	val outPorts:Set[Port[_]] = Set()
+	lazy val fqName:String = parent.fqName + "/" + name
 	if (parent!=null) 
 		parent.add(this)
 	def InPort[T](name:String, value:T) = new InPort(name,value,this)
@@ -59,12 +70,40 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	def recursiveQueue():Unit = {
 	  assert(parent!=null,this)
 	  parent.director.queue(this); parent.recursiveQueue()}
+	trait DefaultVBox extends VBox{
+	  override def name = Box.this.name
+	  override def fqName = Box.this.fqName
+	  override def parent = Box.this.parent.vbox 
+    override lazy val ports = (inPorts map {_.vport}) ++ (outPorts map {_.vport}) 
+	  Box.this match {
+	    case r:Resizable => {pos = r.pos; size = r.size;}
+	    case p:Positional => {pos = p.pos; size = (50,50)}
+	    case _ =>
+	  }
+	}
+	lazy val vbox =  new DefaultVBox(){}
 }
-
 abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,parent){
 
   val director : Director
 	val children : Map[String,Box] = Map()
 	private[runtime] def add(box:Box) = addTemplate(children,box)
 	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
+  case class DefaultVWire(from : VPort, to:VPort) extends VWire {
+    def bendpoints = List(Bendpoint(Point(30,30), Point(20,20)))
+  }
+
+  class DefaultComposedVBox extends ComposedVBox with DefaultVBox {
+    override lazy val boxes = children.values map {_.vbox}
+    override lazy val connections = {
+      val s = Set[VWire]()
+      for {
+        b<-children.values
+        from<- b.ports.values
+        to<- from.connections
+      } s+=DefaultVWire(from.vport ,to.vport)
+      s
+    }
+  }
+  override lazy val vbox = new DefaultComposedVBox
 }

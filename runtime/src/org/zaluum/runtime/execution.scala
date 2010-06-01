@@ -17,6 +17,7 @@ case class TimeEvent(dst:Box) extends Event
 
 class MainBox extends ComposedBox(name="main",parent=null) {
   val director = new EventDirector(this)
+  override lazy val fqName:String = ""
   override private[runtime] def add(port:Port[_]) = error ("Port cannot be added")
   override def recursiveQueue():Unit = {}
 }
