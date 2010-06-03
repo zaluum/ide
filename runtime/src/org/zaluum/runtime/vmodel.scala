@@ -28,6 +28,7 @@ trait Resizable extends Positional {
 }
 trait FQNamable {
   def name : String
+  def name_= (s:String) { error("VO")}
   def fqName : String
 }
 trait Context {
@@ -42,25 +43,28 @@ trait Evaluable {
 
 case class Slot(pos:Int, left:Boolean)
 
-abstract class VPort(var slot:Slot) extends Evaluable with FQNamable with Interactive with Subject {
-  def ttype : String
+trait VPort extends Evaluable with FQNamable with Interactive with Subject {
+  def slot:Slot
+  def slot_=(s:Slot) { error("RO")}
+  def ttype : String 
+  def ttype_=(s:String) { error("RO")}
   def vbox : VBox
+  def vbox_=(v:VBox) { error("RO")}
 }
-abstract class VBox extends Interactive 
-                                    with Resizable with Subject with FQNamable{
-  def ports : Iterable[VPort] 
+trait VBox extends Interactive with Resizable with Subject with FQNamable{
+  def ports : Set[VPort]
   def parent : ComposedVBox
   def slotUsed(s : Slot) = ports exists(_.slot == s) 
 }
 case class Point(x:Int, y:Int)
 case class Bendpoint(a: Point, b: Point)
-abstract class VWire extends Subject{
+trait VWire extends Subject{
   def from : VPort
   def to : VPort
   def bendpoints : List[Bendpoint]
 }
-abstract class ComposedVBox extends VBox {
-  def boxes : Iterable[VBox]
+trait ComposedVBox extends VBox {
+  def boxes : Set[VBox]
   def connections : Set[VWire]
 }
-case class VModel(root:ComposedVBox)
+case class VModel(root:ComposedVBox) extends Subject

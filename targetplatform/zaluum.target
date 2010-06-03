@@ -18,11 +18,6 @@
 <repository location="http://download.eclipse.org/tools/gef/updates/releases/"/>
 </location>
 <location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
-<unit id="org.eclipse.contribution.weaving.feature.group" version="1.6.4.20090313172428"/>
-<unit id="ch.epfl.lamp.sdt.feature.group" version="2.8.0.r21985-b20100520025543"/>
-<repository location="http://www.scala-lang.org/scala-eclipse-plugin-nightly"/>
-</location>
-<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
 <unit id="org.eclipse.platform.ide" version="3.5.2.M20100211-1343"/>
 <unit id="org.eclipse.platform.sdk" version="3.5.2.M20100211-1343"/>
 <unit id="org.eclipse.sdk.ide" version="3.5.2.M20100211-1343"/>
@@ -47,5 +42,11 @@
 <repository location="http://download.eclipse.org/tools/ajdt/35/update"/>
 </location>
 <location path="${project_loc:targetplatform}/third" type="Directory"/>
+<location path="/home/frede/devel/akka" type="Directory"/>
+<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
+<unit id="org.eclipse.contribution.weaving.feature.group" version="1.6.4.20090313172428"/>
+<unit id="ch.epfl.lamp.sdt.feature.group" version="2.8.0.RC3-t20100603034148-gab29e7f041a22bcdad770cfe86c504ffc837f50a"/>
+<repository location="http://download.scala-ide.org/nightly-update-master-2.8.0.RC3"/>
+</location>
 </locations>
 </target>

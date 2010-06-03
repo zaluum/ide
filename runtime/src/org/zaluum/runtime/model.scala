@@ -1,11 +1,10 @@
 package org.zaluum.runtime
-import scala.collection.immutable._
 import scala.collection.mutable.{Map,MultiMap,HashMap,Set}
 import java.util.concurrent._
 import se.scalablesolutions.akka.actor._
 trait Named {
-	val name:String
-	val fqName : String
+	def name:String
+	def fqName : String
 }
 
 trait UniqueNamed {
@@ -39,15 +38,15 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
 	override def toString():String = name + "=" + v
 	val fqName = box.fqName + "$" + name
 
-	lazy val vport = new VPort(Slot(0,true)) {
-	  override def vbox = Port.this.box.vbox 
-	  override def name = Port.this.name
-	  override def fqName = Port.this.fqName
-	  override def ttype :String = v.asInstanceOf[AnyRef].getClass().toString
+	lazy val vport = new VPort {
+	  def vbox = Port.this.box.vbox 
+	  def name = Port.this.name
+	  def slot = Slot(0,true)
+	  def fqName = Port.this.fqName
+	  def ttype :String = v.asInstanceOf[AnyRef].getClass().toString
 	  lazy val connections = box.vbox 
 	}
 }
-
 abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed with Subject{
 	val ports:Map[String,Port[_]] = Map()
 	val inPorts:Set[Port[_]] = Set()
@@ -74,7 +73,7 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	  override def name = Box.this.name
 	  override def fqName = Box.this.fqName
 	  override def parent = Box.this.parent.vbox 
-    override lazy val ports = (inPorts map {_.vport}) ++ (outPorts map {_.vport}) 
+    override lazy val ports = Set[VPort]() ++ (inPorts map {_.vport}) ++ (outPorts map {_.vport}) 
 	  Box.this match {
 	    case r:Resizable => {pos = r.pos; size = r.size;}
 	    case p:Positional => {pos = p.pos; size = (50,50)}
@@ -94,7 +93,7 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
   }
 
   class DefaultComposedVBox extends ComposedVBox with DefaultVBox {
-    override lazy val boxes = children.values map {_.vbox}
+    override lazy val boxes = Set[VBox]() ++ (children.values map {_.vbox})
     override lazy val connections = {
       val s = Set[VWire]()
       for {

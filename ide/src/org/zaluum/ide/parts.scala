@@ -23,6 +23,22 @@ import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.{Rectangle,Dimension}
 
+class ModelEditPart(val vmodel : VModel) extends MainPart[ComposedVBox]{
+  setModel(vmodel)
+  currentSubject = vmodel.root
+  def model = vmodel
+  override def getModelChildren = new ArrayList(currentSubject.boxes)
+
+  override def createCommand(req:CreateRequest) = null
+
+  def up() = {
+    Option(currentSubject.parent) match {
+      case Some(p) => currentSubject = p
+      case None => 
+    }
+  }
+
+}
 /**
  * Box Edit Part
  * @author frede
@@ -30,7 +46,7 @@ import org.eclipse.draw2d.geometry.{Rectangle,Dimension}
  */
 class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox,BoxFigure] 
                                 with Updater with HelpContext with HighlightPart
-                                with XYLayoutPart[PortEditPart]{
+                                with XYLayoutPart{
   def helpKey = "org.zaluum.box"
   override protected def getModelChildren = new ArrayList(model.ports)
   override def createFigure = new BoxFigure() 
@@ -44,17 +60,26 @@ class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox,Bo
     fig.name = model.name
     fig.revalidate()
   }
-
 }
+class ComposedEditPart(parent:EditPart, model:ComposedVBox) extends BoxEditPart(parent,model) with OpenPart{
+  def doOpen = {
+      parentPart.currentSubject = model
+  }
+}
+
 class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,model)
     with DeletablePart {
-  def delete = null
-  override def resizeCommand(p:PortEditPart, rect:Rectangle)={
-    val slot = fig.slotFromPosition(rect.getTopLeft)
-    if (!model.slotUsed(slot))
-      new Command(){override def execute {println("exec")}}
-    else null
-      //return new CommandWrap(new ChangeSlotPortCommand(((BoxPortEditPart)child).getPort(),slot));
+  def delete = new Command() {
+	  override def execute = model.parent.boxes -= model
+  }
+  
+  override def resizeCommand(r:Resizable, rect:Rectangle)={
+    r match { case p:VPort => 
+      val slot = fig.slotFromPosition(rect.getTopLeft)
+      if (!model.slotUsed(slot))
+        new SCommand(p.slot,p.slot_=,slot)
+      else null
+    } 
   }
   
 }
@@ -67,6 +92,7 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
         with BasePart[VWire,PolylineConnection] with Updater with ConnectionPart{
   override def createFigure = WireFigure()
   override def delete = null
+  
   override def refreshVisuals {
     val figureConstraint = new ArrayList[RelativeBendpoint]();
     for (wbp <- model.bendpoints)
@@ -105,6 +131,7 @@ class PortEditPart(val model : VPort)extends BasePart[VPort,PortFigure]
   override def getModelTargetConnections():JList[_] = filterWires(_.to==model)
   override def createFigure = new PortFigure
   def highlightFigure = fig.triangle 
+  
   override def refreshVisuals {
     fig.arrange(true,model.slot.left, model.slot.pos, model.name, "link")
   }

@@ -30,7 +30,7 @@ class CyclicDirector(c: ComposedBox) extends Director(c){
   }
 }
 class EventDirector(c:ComposedBox) extends Director(c){
-  private var queued = TreeSet[Box]()(Ordering.by(_.name)) //++ c.children.values
+  private var queued : TreeSet[Box]= null//TreeSet[Box]()(Ordering..by(_.name)) //++ c.children.values
   // PRE port values are in equillibrium
   override def run(process:Process) {
     println("+" + c + " running");
