@@ -204,7 +204,7 @@
    <extension
          point="org.eclipse.ui.editors">
       <editor
-            class="org.zaluum.ide.Editor"
+            class="org.zaluum.ide.ZFileEditor"
             default="false"
             extensions="zaluum"
             id="org.zaluum.ide.editor"
