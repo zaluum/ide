@@ -194,7 +194,7 @@
                id="org.zaluum.ide.toolbars.sampleToolbar">
             <command
                   commandId="org.zaluum.ide.commands.sampleCommand"
-                  icon="icons/sample.gif"
+                  icon="icons/16.gif"
                   id="org.zaluum.ide.toolbars.sampleCommand"
                   tooltip="Say hello world">
             </command>
@@ -207,12 +207,13 @@
             class="org.zaluum.ide.ZFileEditor"
             default="false"
             extensions="zaluum"
+            icon="icons/composed_16.png"
             id="org.zaluum.ide.editor"
             name="Zaluum">
       </editor>
    </extension>
-   <extension
-         point="org.eclipse.ui.newWizards">
+   
+   <extension point="org.eclipse.ui.newWizards">
       <category
             id="org.zaluum.ide"
             name="Zaluum">
@@ -223,6 +224,31 @@
             id="org.zaluum.ide.BoxWizard"
             name="Box file">
       </wizard>
+   </extension>
+   <extension point="org.eclipse.ui.perspectives">
+      <perspective
+            class="org.zaluum.ide.perspectives.BoxPerspective"
+            icon="icons/composed_16.png"
+            id="zaluum.BoxPerspective"
+            name="Box Perspective">
+      </perspective>
+   </extension>
+   <extension
+         point="org.eclipse.ui.decorators">
+      <decorator
+            adaptable="true"
+            icon="icons/projectDecorator.png"
+            id="zaluum.projectDecorator"
+            label="Project Decorator"
+            lightweight="true"
+            location="TOP_RIGHT"
+            state="true">
+         <enablement>
+            <objectClass
+                  name="org.eclipse.core.resources.IProject">
+            </objectClass>
+         </enablement>
+      </decorator>
    </extension>
    
 </plugin>
