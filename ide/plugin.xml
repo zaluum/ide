@@ -211,5 +211,18 @@
             name="Zaluum">
       </editor>
    </extension>
+   <extension
+         point="org.eclipse.ui.newWizards">
+      <category
+            id="org.zaluum.ide"
+            name="Zaluum">
+      </category>
+      <wizard
+            category="org.zaluum.ide"
+            class="org.zaluum.ide.BoxWizard"
+            id="org.zaluum.ide.BoxWizard"
+            name="Box file">
+      </wizard>
+   </extension>
    
 </plugin>

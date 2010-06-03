@@ -15,7 +15,8 @@ Require-Bundle: org.eclipse.ui,
  com.ibm.icu;bundle-version="4.0.1",
  org.eclipse.help;bundle-version="3.4.1",
  org.zaluum.example;bundle-version="1.0.0",
- scala.library
+ scala.library,
+ org.eclipse.core.filesystem;bundle-version="1.2.1"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-Activator: org.zaluum.ide.Activator

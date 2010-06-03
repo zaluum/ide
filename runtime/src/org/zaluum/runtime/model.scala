@@ -22,6 +22,7 @@ class InPort[A](name:String, value:A, box:Box) extends Port[A](name,value,box){
     // TODO in to out connection
     connections += dst
   }
+  def in = true
 }
 class OutPort[A](name:String, value:A, box:Box) extends Port[A](name,value,box){
   override def connect(dst : Port[A]):Unit = {
@@ -29,6 +30,7 @@ class OutPort[A](name:String, value:A, box:Box) extends Port[A](name,value,box){
         (dst.box == box.parent && dst.isInstanceOf[OutPort[_]] && dst!=this))) {error("invalid connection")}
     connections += dst
   }
+  def in = false
 }
 abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with Subject{
 	box.add(this)
@@ -37,13 +39,15 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
   def connect(dst : Port[A]):Unit 
 	override def toString():String = name + "=" + v
 	val fqName = box.fqName + "$" + name
-
+	def in:Boolean
 	lazy val vport = new VPort {
 	  def vbox = Port.this.box.vbox 
 	  def name = Port.this.name
 	  def slot = Slot(0,true)
 	  def fqName = Port.this.fqName
 	  def ttype :String = v.asInstanceOf[AnyRef].getClass().toString
+	  def link = ""
+	  def in = Port.this.in
 	  lazy val connections = box.vbox 
 	}
 }
@@ -89,7 +93,7 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
 	private[runtime] def add(box:Box) = addTemplate(children,box)
 	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
   case class DefaultVWire(from : VPort, to:VPort) extends VWire {
-    def bendpoints = List(Bendpoint(Point(30,30), Point(20,20)))
+    def bendpoints = List(Bendpoint((30,30), (20,20)))
   }
 
   class DefaultComposedVBox extends ComposedVBox with DefaultVBox {

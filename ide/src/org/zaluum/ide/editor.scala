@@ -21,14 +21,12 @@ class Editor extends BaseEditor{
   override def doSave(p : IProgressMonitor) {}
 }
 class ZFileEditor extends BaseEditor with FileEditor{
-  val mainbox = new MainBox()
-  new Example().create(mainbox)
   var model : VModel = _
   def factory = ZaluumFactory
   def getPaletteRoot = Palette()
-  def serialize = null
+  def serialize = Serialize.serializeTextStream(model)
   def deserialize (i:java.io.InputStream) {
-    model = VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox])
+    model = Deserialize.deserialize(i)
   }
   
   override def setInput(input : IEditorInput){

@@ -99,8 +99,8 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
     {
       val rbp = new RelativeBendpoint(fig);
       rbp.setRelativeDimensions(
-          new Dimension(wbp.a.x, wbp.a.y), 
-          new Dimension(wbp.b.x, wbp.b.y))
+          new Dimension(wbp.a._1, wbp.a._2), 
+          new Dimension(wbp.b._1, wbp.b._2))
       rbp.setWeight(0);
       figureConstraint.add(rbp);
     }
