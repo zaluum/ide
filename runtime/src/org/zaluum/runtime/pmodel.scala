@@ -2,11 +2,32 @@ package org.zaluum.runtime
 import serial.ModelProtos._
 import scala.collection.mutable.Set
 
+object ProtoConversions {
+  implicit def toPoint(point:(Int,Int)) = {
+    serial.ModelProtos.Point.newBuilder.setX(point._1).setY(point._2)
+  }
+  implicit def toRectangle(p:((Int,Int),(Int,Int))) = {
+    val b =Rectangle.newBuilder;
+    b.setLeftUp(p._1)
+    b.setRightDown((p._1._1+p._2._1, p._1._2+p._1._2))
+  }
+}
+import ProtoConversions._
 class PBox extends VBox {
   override var parent : ComposedVBox = _
   var ports = Set[VPort]()
   override var name = ""
-  def fqName = ""
+  def fqName = ""  
+  def toProto = {
+     val b = Box.newBuilder
+    b.setType(BoxType.SCRIPT)
+    b.setBounds((pos,size))
+    b.setId(name)
+    implicit val o = Ordering.by((_:VPort).name)
+    val oports = (List() ++ ports).sorted
+    oports foreach {p=> b.addPort(p.asInstanceOf[PPort].toProto) }
+    b
+  }
 }
 class PPort extends VPort {
   override var vbox : VBox = _
@@ -16,16 +37,46 @@ class PPort extends VPort {
   override var link = ""
   def fqName = ""
   override var name = ""
+  def toProto = {
+     Port.newBuilder()
+      .setName(name)
+      .setIn(in)
+      .setDirect(false)
+      .setLeft(slot.left)
+      .setSlot(slot.pos)
+      .setType(ttype)
+      .setLabel(link)
+  }
 }
-class ComposedPBox extends PBox with ComposedVBox {
+class ComposedPBox extends PBox with ComposedVBox{
   var connections = Set[VWire]()
   var boxes = Set[VBox]()
+  override def toProto = {
+    val box = super.toProto
+    box.setType(BoxType.COMPOSED);
+    val sorted = (List()++boxes).sorted(Ordering.by((_:VBox).name));
+    sorted foreach {c => box.addChild(c.asInstanceOf[PBox].toProto)}
+    val wsorted = (List()++connections).sorted(Ordering.by((_:VWire).from.name));
+    wsorted foreach {w => box.addWire(w.asInstanceOf[PWire].toProto(this))}
+    box
+  }
 }
 import scala.collection.mutable.ArrayBuffer
-class PWire extends VWire {
+class PWire extends VWire  {
   var bendpoints = List[Bendpoint]()
   var from :VPort= _
   var to : VPort= _ 
+  def toProto(comp:ComposedPBox) = {
+    val line = Line.newBuilder()
+    for (bend <- bendpoints) {
+      line.addBendpoint(serial.ModelProtos.Bendpoint.newBuilder.setP1(
+          bend.a).setP2(bend.b).setWeight(1.0f))
+    }
+    def pname(p:VPort) =  (if (p.vbox == comp) "#" + p.vbox.name else p.vbox.name) + "#" + p.name
+    line.setFrom( pname(from)).setTo(pname(to))
+    Line.newBuilder
+    
+  }
 }
 import com.google.protobuf.TextFormat
 import java.io.InputStreamReader
@@ -126,76 +177,3 @@ object Deserialize {
     b
   }
 }
-import com.google.common.base.Charsets
-object Serialize {
-  def serializeTextStream(v:VModel)= {
-    new java.io.ByteArrayInputStream(serializeText(v).getBytes(Charsets.UTF_8))
-  }
-  def serializeText(v : VModel) = {
-    serialize(v.root).build.toString
-  }
-    
-  private def serializePoint(point : (Int,Int))  = {
-    val p = serial.ModelProtos.Point.newBuilder
-    p.setX(point._1).setY(point._2)
-  }
-    
-  private def serialize(pos :(Int,Int), size:(Int,Int) )  = {
-    val b =Rectangle.newBuilder;
-    b.setLeftUp(serializePoint(pos))
-    b.setRightDown(serializePoint((pos._1+size._1, pos._2+size._2)))
-    b
-  }
-  private def serialize(b:VBox) : Box.Builder = b match {
-    case c:ComposedVBox => serializeComposed(c)
-    case b:VBox => serializeBox(b)
-  }
-  private def serializeComposed(b : ComposedVBox) : Box.Builder={
-    val box = serializeBox(b);
-    box.setType(BoxType.COMPOSED);
-    val sorted = (List()++b.boxes).sorted(Ordering.by((_:VBox).name));
-    sorted foreach {c => box.addChild(serialize(c))}
-    val wsorted = (List()++b.connections).sorted(Ordering.by((_:VWire).from.name));
-    for (w <- wsorted)
-      box.addWire(serializeWire(w,b));
-    box
-  }
-  private def serializeBox(p:VBox) : Box.Builder= {
-    val b = Box.newBuilder
-    b.setType(BoxType.SCRIPT)
-    b.setBounds(serialize(p.pos,p.size))
-    b.setId(p.name)
-    implicit val o = Ordering.by((_:VPort).name)
-    val ports = (List() ++ p.ports).sorted
-    for (p <- ports)
-      b.addPort(serializePort(p))
-    b
-  }
-  private def serializePort(p:VPort): Port.Builder={
-    Port.newBuilder()
-      .setName(p.name)
-      .setIn(p.in)
-      .setDirect(false)
-      .setLeft(p.slot.left)
-      .setSlot(p.slot.pos)
-      .setType(p.ttype)
-      .setLabel(p.link)
-  }
-  private def serializeWire(w:VWire, comp:ComposedVBox) : Line.Builder = {
-    val line = Line.newBuilder()
-    for (bend <- w.bendpoints) {
-      line.addBendpoint(serial.ModelProtos.Bendpoint.newBuilder.setP1(
-          serializePoint(bend.a)).setP2(serializePoint(bend.b)).setWeight(1.0f))
-    }
-    def pname(p:VPort) =  (if (p.vbox == comp) "#" + p.vbox.name else p.vbox.name) + "#" + p.name
-    line.setFrom( pname(w.from)).setTo(pname(w.to))
-  }
-}
-/*trait Command {
-  def execute()
-  def undo()
-  def redo()
-}*/
-/*class CreateBoxCommand extends Command{
- def execute() 
-}*/

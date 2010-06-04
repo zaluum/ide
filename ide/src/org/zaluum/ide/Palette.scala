@@ -19,7 +19,7 @@ object Palette {
       toolbar.add(tool)
       palette.setDefaultEntry(tool)
       toolbar
-    });
+    })
     palette
   }
 }

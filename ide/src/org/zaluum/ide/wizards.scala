@@ -76,11 +76,11 @@ class BoxWizardPage(
     new Label(composite, SWT.NONE);
     setPageComplete(validatePage());
   }
-
+  import com.google.common.base.Charsets
   override protected def getInitialContents = {
     val box = new ComposedPBox()
     val model = VModel(box)
-    Serialize.serializeTextStream(model)
+    new java.io.ByteArrayInputStream(box.toProto.toString.getBytes(Charsets.UTF_8))
   }
 
   def setDescription() {

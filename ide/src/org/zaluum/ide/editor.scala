@@ -22,9 +22,13 @@ class Editor extends BaseEditor{
 }
 class ZFileEditor extends BaseEditor with FileEditor{
   var model : VModel = _
-  def factory = ZaluumFactory
+  def factory = ZaluumWriteFactory
   def getPaletteRoot = Palette()
-  def serialize = Serialize.serializeTextStream(model)
+  import com.google.common.base.Charsets
+  def serialize = new java.io.ByteArrayInputStream(
+      model.root.asInstanceOf[ComposedPBox].toProto
+        .build.toString.getBytes(Charsets.UTF_8)
+        )
   def deserialize (i:java.io.InputStream) {
     model = Deserialize.deserialize(i)
   }

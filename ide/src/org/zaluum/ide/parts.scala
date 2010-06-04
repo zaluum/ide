@@ -61,6 +61,7 @@ class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox,Bo
     fig.revalidate()
   }
 }
+
 class ComposedEditPart(parent:EditPart, model:ComposedVBox) extends BoxEditPart(parent,model) with OpenPart{
   def doOpen = {
       parentPart.currentSubject = model

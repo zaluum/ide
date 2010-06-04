@@ -10,3 +10,12 @@ object ZaluumFactory extends EditPartFactory {
     case wire : VWire => new WireEditPart(wire)
   }
 }
+object ZaluumWriteFactory extends EditPartFactory {
+  def createEditPart(context: EditPart, model: Object): EditPart = model match { 
+    case model : VModel => new ModelEditPart(model)
+    case cbox : ComposedVBox => new ComposedEditPart(context,cbox)
+    case box : VBox => new BoxEditPartWrite(context,box)
+    case port : VPort => new PortEditPart(port)
+    case wire : VWire => new WireEditPart(wire)
+  }
+}
