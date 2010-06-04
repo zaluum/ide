@@ -1,4 +1,4 @@
-package org.zaluum.ide.perspectives
+package org.zaluum.ide
 
 import org.eclipse.ui.IFolderLayout;
 import org.eclipse.ui.IPageLayout;
