@@ -1,5 +1,5 @@
 package org.zaluum.ide
-import org.zaluum.runtime._
+import org.zaluum.runtime.{Command=>C,_}
 import org.eclipse.swt.SWT
 import org.eclipse.draw2d._
 import org.eclipse.core.runtime._

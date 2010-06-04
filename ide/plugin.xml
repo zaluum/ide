@@ -227,7 +227,7 @@
    </extension>
    <extension point="org.eclipse.ui.perspectives">
       <perspective
-            class="org.zaluum.ide.perspectives.BoxPerspective"
+            class="org.zaluum.ide.BoxPerspective"
             icon="icons/composed_16.png"
             id="zaluum.BoxPerspective"
             name="Box Perspective">
