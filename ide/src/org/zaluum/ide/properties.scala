@@ -7,10 +7,10 @@ import org.eclipse.ui.views.properties.PropertyDescriptor;
 import org.zaluum.runtime._;
 
 class BoxProperty(box : VBox) extends IPropertySource {
-  val NAME : String = "name";
-  val IMAGE : String = "image";
-  val model : VBox = box;
-  val desc : Array[IPropertyDescriptor] = { Array(
+  val NAME = "name";
+  val IMAGE = "image";
+  val model = box;
+  val desc = { Array[IPropertyDescriptor](
       new TextPropertyDescriptor(NAME, "Name"),
       new TextPropertyDescriptor(IMAGE, "Image"))
   }
@@ -33,13 +33,13 @@ class BoxProperty(box : VBox) extends IPropertySource {
 }
 
 class PortProperty(port : VPort) extends IPropertySource {
-  val INPUT : String = "input";
-  val TYPE : String = "type";
-  val NAME : String = "name";
-  val DIRECT : String = "direct";
-  val LABEL : String = "label";
-  val model : VPort = port;
-  val desc : Array[IPropertyDescriptor] = { Array(
+  val INPUT = "input";
+  val TYPE = "type";
+  val NAME = "name";
+  val DIRECT = "direct";
+  val LABEL = "label";
+  val model = port;
+  val desc = { Array[IPropertyDescriptor](
       new CheckboxPropertyDescriptor(INPUT, "Is input?"),
       new CheckboxPropertyDescriptor(DIRECT, "Is direct input?"),
       new TextPropertyDescriptor(TYPE, "Type"),
@@ -68,7 +68,6 @@ class PortProperty(port : VPort) extends IPropertySource {
       case LABEL => 
     }
   }
-
 } 
   
 class CheckboxPropertyDescriptor(id:Object,name:String) extends PropertyDescriptor(id,name) {
@@ -76,7 +75,7 @@ class CheckboxPropertyDescriptor(id:Object,name:String) extends PropertyDescript
   import org.eclipse.jface.viewers.CheckboxCellEditor;
   import org.eclipse.swt.widgets.Composite;
   override def createPropertyEditor(parent : Composite) : CellEditor = {
-    val editor : CellEditor = new CheckboxCellEditor(parent);
+    val editor = new CheckboxCellEditor(parent);
     if (getValidator() != null)
       editor.setValidator(getValidator());
     editor;

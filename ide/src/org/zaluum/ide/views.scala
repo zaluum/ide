@@ -19,8 +19,10 @@ import org.eclipse.draw2d.ColorConstants
 /**
  * @author matias
  */
+object BoxFaceView {
+    val ID = "zaluum.boxFaceView"
+}
 class BoxFaceView extends PaletteView {
-  val ID = "org.zaluum.ide.editor.boxface"
   override def isImportant(part : IWorkbenchPart ) = { part.isInstanceOf[Editor] }
   override def createDefaultPage(book : PageBook) = {
     val messagePage = new MessagePage
@@ -35,10 +37,6 @@ class BoxFaceView extends PaletteView {
     page.createControl(getPageBook)
     //new PageRec(part, page)
     null
-  }
-  override def doDestroyPage(part : IWorkbenchPart, pageRecord : PageRec) {
-    pageRecord.page.dispose
-    pageRecord.dispose
   }
   override def getBootstrapPart() : IWorkbenchPart = {
     val page = getSite.getPage
