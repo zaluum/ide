@@ -6,6 +6,7 @@ import org.eclipse.ui._
 import org.zaluum.runtime._
 import org.zaluum.example._
 import org.eclipse.core.runtime._;
+
 class Editor extends BaseEditor{
   val mainbox = new MainBox()
   new Example().create(mainbox)
@@ -16,10 +17,34 @@ class Editor extends BaseEditor{
     addAction(new UpAction(this))
   }
   def modelEditPart =  getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[ModelEditPart]
-  def factory = new ZaluumFactory  
+  def factory = ZaluumFactory  
   override def doSave(p : IProgressMonitor) {}
 }
+class ZFileEditor extends BaseEditor with FileEditor{
+  var model : VModel = _
+  def factory = ZaluumWriteFactory
+  def getPaletteRoot = Palette()
+  import com.google.common.base.Charsets
+  def serialize = new java.io.ByteArrayInputStream(
+      model.root.asInstanceOf[ComposedPBox].toProto
+        .build.toString.getBytes(Charsets.UTF_8)
+        )
+  def deserialize (i:java.io.InputStream) {
+    model = Deserialize.deserialize(i)
+  }
+  
+  override def setInput(input : IEditorInput){
+    super.setInput(input)
+    /*   TODO val page = getSite.getWorkbenchWindow.getActivePage
+    if(page!=null) {
+      val reg = getSite.getWorkbenchWindow.getWorkbench.getPerspectiveRegistry;
+      if(PerspectiveUtil.confirmPerspectiveSwitch(getSite().getWorkbenchWindow(), reg.findPerspectiveWithId(BoxPerspective.ID)))
+          page.setPerspective(reg.findPerspectiveWithId(BoxPerspective.ID));
+    } */
+  }
 
+ 
+}
 object UpAction{
   val ID = "org.zaluum.ide.editor.up"
 }

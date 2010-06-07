@@ -89,6 +89,11 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     val cmProvider = new BaseContextMenuProvider(viewer, getActionRegistry())
     viewer.setContextMenu(cmProvider);
   }
+  override def dispose {
+    super.dispose
+    if (gridColor!=null)
+      gridColor.dispose();
+  }
 }
 
 
@@ -223,4 +228,95 @@ override def contributeToMenu(menubar : IMenuManager) {
   menubar.insertAfter(IWorkbenchActionConstants.M_EDIT, viewMenu);
 }
 
+}
+import org.eclipse.core.resources._
+import org.eclipse.ui.part.{EditorPart, FileEditorInput}
+
+trait FileEditor extends GraphicalEditor {
+  self : EditorPart =>
+  private class RTracker extends IResourceChangeListener with IResourceDeltaVisitor {
+    def resourceChanged(event: IResourceChangeEvent) {
+      val delta = event.getDelta
+      if (delta != null)
+        delta.accept(this);
+    }
+    protected def closeEditor(save:Boolean) {
+      getSite().getPage().closeEditor(FileEditor.this, save);
+    }
+    
+    def visit(delta : IResourceDelta) : Boolean = {
+      if (delta == null
+          || delta.getResource != getEditorInput.asInstanceOf[IFileEditorInput].getFile)
+        return true
+  
+      if (delta.getKind == IResourceDelta.REMOVED) {
+        val display = getSite.getShell.getDisplay;
+        if ((IResourceDelta.MOVED_TO & delta.getFlags()) == 0) { 
+          display.asyncExec(new Runnable() {
+              def run = if (!isDirty) closeEditor(false)
+            })
+          } else { 
+            val newFile = ResourcesPlugin.getWorkspace()
+                .getRoot().getFile(delta.getMovedToPath());
+            display.asyncExec(new Runnable() {
+              def run = setInput(new FileEditorInput(newFile))
+            });
+          }
+        }
+        return false;
+      }
+    }
+  val resourceTracker:IResourceChangeListener = new RTracker()
+  def deserialize(i : java.io.InputStream)
+  override protected def setInput(input : IEditorInput) {
+    getEditorInput match {
+      case i : IFileEditorInput => 
+        i.getFile.getWorkspace.removeResourceChangeListener(resourceTracker)
+      case _ =>
+    }
+    super.setInput(input);
+    val file = input.asInstanceOf[IFileEditorInput].getFile
+    try {
+      val contents = file.getContents(false);
+      try {
+        deserialize(contents)
+         //  TODO new ProtoDeserial().deserialize(contents);
+      } finally {
+        contents.close();
+      }
+    } catch {
+      case e => 
+        Activator.logError(e.getMessage(), e);
+        return;
+    }
+    super.setPartName(file.getName());
+    getEditorInput match {
+      case i : IFileEditorInput => 
+        i.getFile.getWorkspace.addResourceChangeListener(resourceTracker)
+      case _ =>
+    }
+  }
+  override def dispose() {
+    super.dispose();
+    getEditorInput match {
+      case i:IFileEditorInput => i.getFile.getWorkspace.removeResourceChangeListener(resourceTracker)
+      case _ => 
+    }
+  }
+  def serialize : java.io.InputStream
+  def doSave(monitor : IProgressMonitor) {
+    val file = getEditorInput.asInstanceOf[IFileEditorInput].getFile
+    try {
+      val stream = serialize
+      //val stream = ProtoSerial.serializeTextStream(model) ;
+      file.setContents(stream, true,// keep saving, even if IFile is out
+          // of sync with the Workspace
+          false, // dont keep history
+          monitor);
+      
+      getCommandStack().markSaveLocation();
+    } catch {
+      case e => Activator.logError("Error saving", e);
+    }
+  }
 }

@@ -1,5 +1,5 @@
 package org.zaluum.ide
-import org.zaluum.runtime._
+import org.zaluum.runtime.{Command=>C,_}
 import org.eclipse.swt.SWT
 import org.eclipse.draw2d._
 import org.eclipse.core.runtime._
@@ -62,6 +62,7 @@ class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox,Bo
     fig.revalidate()
   }
 }
+
 class ComposedEditPart(parent:EditPart, model:ComposedVBox) extends BoxEditPart(parent,model) with OpenPart{
   def doOpen = {
       parentPart.currentSubject = model
@@ -100,8 +101,8 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
     {
       val rbp = new RelativeBendpoint(fig);
       rbp.setRelativeDimensions(
-          new Dimension(wbp.a.x, wbp.a.y), 
-          new Dimension(wbp.b.x, wbp.b.y))
+          new Dimension(wbp.a._1, wbp.a._2), 
+          new Dimension(wbp.b._1, wbp.b._2))
       rbp.setWeight(0);
       figureConstraint.add(rbp);
     }

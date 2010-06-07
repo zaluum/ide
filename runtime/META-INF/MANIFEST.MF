@@ -5,6 +5,7 @@ Bundle-SymbolicName: org.zaluum.runtime;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: 
  com.google.protobuf;bundle-version="2.3.0",
+ com.google.common;bundle-version="1.0.0",
  akka;bundle-version="0.9.0",
  scala.library
 Bundle-ActivationPolicy: lazy

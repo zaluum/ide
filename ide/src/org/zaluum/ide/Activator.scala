@@ -5,28 +5,30 @@ import org.eclipse.jface.resource.ImageRegistry
 import org.osgi.framework.BundleContext
 import org.zaluum.ide.icons.Icons
 
-object Activator extends AbstractUIPlugin {
-
+object Activator {
   val PLUGIN_ID : String = "org.zaluum.ide.editor"
   var plugin : Activator = _
-  
+  def logError(s:String, a:AnyRef){}
+   def getDefault() : Activator = {
+    return plugin;
+  }
+}
+
+class Activator extends AbstractUIPlugin {
+
   override def start(context : BundleContext) = {
     super.start(context);
-    plugin = this;
+    Activator.plugin = this;
   }
   
   override def initializeImageRegistry(reg : ImageRegistry) = {
     super.initializeImageRegistry(reg);
-    //Utils.loadIcons(reg,Icons.getClass,"zaluum","stickynote", "composed", "const", "value", "instance", "portin", "portout", "wire");
-    //Utils.loadImage(reg,"portInD", Icons.getClass);
-    //Utils.loadImage(reg,"portInND", Icons.getClass);
-    //Utils.loadImage(reg,"portOutND", Icons.getClass);
+    Utils.loadIcons(reg,classOf[Icons],"zaluum","stickynote", "composed", "const", "value", "instance", "portin", "portout", "wire");
+    Utils.loadImage(reg,"portInD", classOf[Icons]);
+    Utils.loadImage(reg,"portInND", classOf[Icons]);
+    Utils.loadImage(reg,"portOutND", classOf[Icons]);
   }
 
-  def getDefault() : Activator = {
-    return plugin;
-  }
-  
   override def getImageRegistry() : ImageRegistry = {
     return super.getImageRegistry();
   }

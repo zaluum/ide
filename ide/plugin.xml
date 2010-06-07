@@ -204,7 +204,7 @@
    <extension
          point="org.eclipse.ui.editors">
       <editor
-            class="org.zaluum.ide.Editor"
+            class="org.zaluum.ide.ZFileEditor"
             default="false"
             extensions="zaluum"
             icon="icons/composed_16.png"
@@ -212,8 +212,20 @@
             name="Zaluum">
       </editor>
    </extension>
-   <extension
-         point="org.eclipse.ui.perspectives">
+   
+   <extension point="org.eclipse.ui.newWizards">
+      <category
+            id="org.zaluum.ide"
+            name="Zaluum">
+      </category>
+      <wizard
+            category="org.zaluum.ide"
+            class="org.zaluum.ide.BoxWizard"
+            id="org.zaluum.ide.BoxWizard"
+            name="Box file">
+      </wizard>
+   </extension>
+   <extension point="org.eclipse.ui.perspectives">
       <perspective
             class="org.zaluum.ide.BoxPerspective"
             icon="icons/composed_16.png"

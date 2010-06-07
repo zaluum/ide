@@ -48,16 +48,20 @@ trait VPort extends Evaluable with FQNamable with Interactive with Subject {
   def slot_=(s:Slot) { error("RO")}
   def ttype : String 
   def ttype_=(s:String) { error("RO")}
+  def link:String
+  def link_=(s:String) {error("RO")}
   def vbox : VBox
   def vbox_=(v:VBox) { error("RO")}
+  def in:Boolean
+  def in_=(b:Boolean) {error("RO")}
 }
 trait VBox extends Interactive with Resizable with Subject with FQNamable{
   def ports : Set[VPort]
   def parent : ComposedVBox
+  def parent_= (p:ComposedVBox) { error("RO") }
   def slotUsed(s : Slot) = ports exists(_.slot == s) 
 }
-case class Point(x:Int, y:Int)
-case class Bendpoint(a: Point, b: Point)
+case class Bendpoint(a: (Int,Int), b: (Int,Int))
 trait VWire extends Subject{
   def from : VPort
   def to : VPort
