@@ -3,7 +3,6 @@ package org.zaluum.ide
 import org.eclipse.ui.IFolderLayout;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IPerspectiveFactory;
-//import org.zaluum.ide.views
 
 class BoxPerspective extends IPerspectiveFactory {
 
@@ -32,7 +31,7 @@ class BoxPerspective extends IPerspectiveFactory {
 		
 		val topLeftDown = factory.createFolder("topLeftDown", IPageLayout.BOTTOM, 0.6f, "topLeft");
 		topLeftDown.addView(IPageLayout.ID_OUTLINE);
-		//topLeftDown.addView(BoxFaceView.ID);
+		factory.addFastView(BoxFaceView.ID)
 	}
 	
 	def addActionSets() = {
@@ -51,9 +50,10 @@ class BoxPerspective extends IPerspectiveFactory {
 		factory.addShowViewShortcut("org.zaluum.ide.editor.runtime.server");
 		factory.addShowViewShortcut("org.zaluum.ide.editor.ports");
 		factory.addShowViewShortcut("org.zaluum.ide.editor.boxface");
-		factory.addShowViewShortcut(IPageLayout.ID_PROJECT_EXPLORER);
+		factory.addShowViewShortcut(IPageLayout.ID_RES_NAV);
 		factory.addShowViewShortcut(IPageLayout.ID_PROBLEM_VIEW);
 		factory.addShowViewShortcut(IPageLayout.ID_OUTLINE);
+		factory.addShowViewShortcut(IPageLayout.ID_PROP_SHEET);
 	}
 	
 }

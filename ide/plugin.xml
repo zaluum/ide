@@ -251,5 +251,16 @@
          </enablement>
       </decorator>
    </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            allowMultiple="false"
+            class="org.zaluum.ide.BoxFaceView"
+            icon="icons/boxfaceview.png"
+            id="zaluum.boxFaceView"
+            name="BoxFace View"
+            restorable="true">
+      </view>
+   </extension>
    
 </plugin>
