@@ -45,9 +45,10 @@ class ModelEditPart(val vmodel : VModel) extends MainPart[ComposedVBox]{
  *
  */
 class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox,BoxFigure] 
-                                with Updater with HelpContext with HighlightPart
+                                with Updater with HelpContext with PropertySource with HighlightPart
                                 with XYLayoutPart{
   def helpKey = "org.zaluum.box"
+  def propertySource = null
   override protected def getModelChildren = new ArrayList(model.ports)
   override def createFigure = new BoxFigure() 
   def highlightFigure = fig.rectangle 
@@ -114,10 +115,10 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
  *
  */
 class PortEditPart(val model : VPort)extends BasePart[VPort,PortFigure] 
-               with SimpleNodePart with Updater with HelpContext with HighlightPart{
+               with SimpleNodePart with Updater with HelpContext with PropertySource with HighlightPart{
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
-
+  def propertySource = null
   private def filterWires (f : (VWire => Boolean)) = {
     val s = Set[VWire]()
     for {
