@@ -11,6 +11,7 @@ import org.eclipse.ui.IWorkbenchPage
 import org.eclipse.ui.IWorkbenchPart
 import org.eclipse.ui.part.IPage
 import org.eclipse.ui.part.MessagePage
+import org.eclipse.ui.part.PageBookView
 import org.eclipse.ui.part.PageBook
 import org.eclipse.swt.widgets.Composite
 import org.eclipse.draw2d.ColorConstants
@@ -45,33 +46,32 @@ class BoxFaceView extends PaletteView {
         return page.getActiveEditor
     null
   }
-}
-
-class BoxFacePage(e : Editor) extends PaletteViewerPage(new PaletteViewerProvider(e.editDomain)) {
-  val editor = e 
-  val graphicalViewer = new ScrollingGraphicalViewer()     
-  
-  override def setFocus() = { graphicalViewer.getControl.setFocus }
-  override def getControl() = { graphicalViewer.getControl }
-  override def createControl(parent : Composite) = {
-    val rootBox = editor.modelEditPart
-    graphicalViewer.createControl(parent)
-    graphicalViewer.setEditDomain(editor.editDomain)
-    graphicalViewer.getControl().setBackground(ColorConstants.listBackground);
-    graphicalViewer.getControl().setForeground(ColorConstants.lightGray);
-    //editor.getModelEditPart().addObserver(this);
-    //graphicalViewer.setEditPartFactory(new BoxFaceEditPartFactory());
-    //ScalableFreeformRootEditPart rootEditPart = new ScalableFreeformRootEditPart();
-    //graphicalViewer.setRootEditPart(rootEditPart);
-    //graphicalViewer.setContents(new FaceModel(rootBox));
-    getSite().setSelectionProvider(graphicalViewer);
-    val mgr = getSite.getActionBars.getToolBarManager
-    mgr.add(new Action() { 
-      override def run() { }
-    }.setImageDescriptor(Activator.getDefault().getImageRegistry().getDescriptor("portin_16")).asInstanceOf[IAction])
-    mgr.add(new Action() { 
-      override def run() { }
-    }.setImageDescriptor(Activator.getDefault().getImageRegistry().getDescriptor("portin_32")).asInstanceOf[IAction])
-    getSite().getActionBars().updateActionBars();    
+  class BoxFacePage(e : Editor) extends PaletteViewerPage(new PaletteViewerProvider(e.editDomain)) {
+    val editor = e 
+    val graphicalViewer = new ScrollingGraphicalViewer()     
+    
+    override def setFocus() = { graphicalViewer.getControl.setFocus }
+    override def getControl() = { graphicalViewer.getControl }
+    override def createControl(parent : Composite) = {
+      val rootBox = editor.modelEditPart
+      graphicalViewer.createControl(parent)
+      graphicalViewer.setEditDomain(editor.editDomain)
+      graphicalViewer.getControl().setBackground(ColorConstants.listBackground);
+      graphicalViewer.getControl().setForeground(ColorConstants.lightGray);
+      //editor.getModelEditPart().addObserver(this);
+      //graphicalViewer.setEditPartFactory(new BoxFaceEditPartFactory());
+      //ScalableFreeformRootEditPart rootEditPart = new ScalableFreeformRootEditPart();
+      //graphicalViewer.setRootEditPart(rootEditPart);
+      //graphicalViewer.setContents(new FaceModel(rootBox));
+      getSite().setSelectionProvider(graphicalViewer);
+      val mgr = getSite.getActionBars.getToolBarManager
+      mgr.add(new Action() { 
+        override def run() { }
+      }.setImageDescriptor(Activator.getDefault().getImageRegistry().getDescriptor("portin_16")).asInstanceOf[IAction])
+      mgr.add(new Action() { 
+        override def run() { }
+      }.setImageDescriptor(Activator.getDefault().getImageRegistry().getDescriptor("portin_32")).asInstanceOf[IAction])
+      getSite().getActionBars().updateActionBars();    
+    }
   }
 }
