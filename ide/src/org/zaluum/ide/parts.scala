@@ -22,14 +22,30 @@ import scala.collection.mutable._
 import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.{Rectangle,Dimension}
-
+import Commands._
+/**
+ * 
+ * @author frede
+ *
+ */
 class ModelEditPart(val vmodel : VModel) extends MainPart[ComposedVBox]{
   setModel(vmodel)
   currentSubject = vmodel.root
   def model = vmodel
   override def getModelChildren = new ArrayList(currentSubject.boxes)
 
-  override def createCommand(req:CreateRequest) = null
+  override def createCommand(t : AnyRef, r:Rectangle) = {
+    if (t == classOf[ComposedVBox]) {
+      val b = new PBox
+      b.pos =(r.x,r.y)
+      b.size =(r.width,r.height)
+      var name = "box"
+      var i = 0
+      while (currentSubject.boxes exists {_.name == "box"+ i}) {i+=1}
+      b.name = "box"+i
+      new CreateBoxCommand(currentSubject,b)
+    }else null
+  }
 
   def up() = {
     Option(currentSubject.parent) match {
@@ -63,17 +79,12 @@ class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox,Bo
 }
 
 class ComposedEditPart(parent:EditPart, model:ComposedVBox) extends BoxEditPart(parent,model) with OpenPart{
-  def doOpen = {
-      parentPart.currentSubject = model
-  }
+  def doOpen = parentPart.currentSubject = model
 }
 
 class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,model)
     with DeletablePart {
-  def delete = new Command() {
-	  override def execute = model.parent.boxes -= model
-  }
-  
+  def delete = DeleteBoxCommand(model)  
   override def resizeCommand(r:Resizable, rect:Rectangle)={
     r match { case p:VPort => 
       val slot = fig.slotFromPosition(rect.getTopLeft)
@@ -82,7 +93,6 @@ class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,m
       else null
     } 
   }
-  
 }
 /**
  * Wire Edit Part

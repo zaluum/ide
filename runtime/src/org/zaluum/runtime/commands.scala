@@ -1,22 +1,33 @@
 package org.zaluum.runtime
 
 trait Command {
-  def execute = redo
   def undo
   def redo
 }
-case class CreateBoxCommand(val parent:ComposedVBox, val box:VBox){
+case class ResizeCommand(val r: Resizable, val pos: (Int,Int), val size:(Int,Int)) extends Command{
+  val oldPos = r.pos
+  val oldSize = r.size
+  def redo = {r.pos = pos ; r.size= size}
+  def undo = {r.pos = oldPos; r.size = oldSize}
+}
+case class PositionCommand(val p: Positional, val pos: (Int,Int)) extends Command{
+  val oldPos = p.pos
+  def redo = {p.pos = pos}
+  def undo = {p.pos = oldPos}
+}
+case class CreateBoxCommand(val parent:ComposedVBox, val box:VBox) extends Command{
   def undo = {
     box.parent = null
     parent.boxes -= box
+    parent.notifyObservers
   }
   def redo = {
     box.parent = parent
     parent.boxes += box
+    parent.notifyObservers
   }
 }
 class ComposedCommand(val commands : List[Command]) extends Command{
-  override def execute = commands foreach { _.execute }
   def redo = commands foreach {_.redo }
   def undo = commands.reverse foreach { _.undo }
 }
@@ -35,21 +46,17 @@ case class DeleteBoxCommand(val box:VBox) extends Command{
     }else 
       new ComposedCommand(List())
   }
-  override def execute {
-    c.execute
-    parent.boxes -= box
-    box.parent = null
-    
-  }
   def redo {
     c.redo
     parent.boxes -= box
     box.parent = null
+    parent.notifyObservers
   }
 
   def undo {
     box.parent=parent
     parent.boxes += box
     c.undo
+    parent.notifyObservers
   }
 }

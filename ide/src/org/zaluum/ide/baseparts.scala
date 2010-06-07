@@ -22,7 +22,7 @@ import scala.collection.mutable._
 import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.Rectangle
-
+import Commands._
 trait BasePart[T<:Subject,F<:Figure] extends AbstractGraphicalEditPart with Observer{
   def model : T
   def fig = getFigure.asInstanceOf[F];
@@ -106,23 +106,21 @@ trait HighlightPart extends AbstractGraphicalEditPart {
 }
 
 trait XYLayoutPart extends AbstractGraphicalEditPart{
-  def resizeCommand(res:Resizable, r:Rectangle) = new Command() {
-      override def execute() = res.pos = (r.x,r.y); res.size=(r.width,r.height)
-    }
-  def positionCommand(pos:Positional, p : org.eclipse.draw2d.geometry.Point):Command =new Command() {
-      override def execute() = pos.pos = (p.x,p.y)
-    }
-  def createCommand(req:CreateRequest):Command = null
+  def resizeCommand(res:Resizable, r:Rectangle):Command = ResizeCommand(res, (r.x,r.y), (r.width,r.height))
+  def positionCommand(pos:Positional, p : org.eclipse.draw2d.geometry.Point):Command =PositionCommand(pos,(p.x,p.y))
+  def createCommand(newObject : AnyRef, r:Rectangle):Command = null
   def resizableChild = false
 
   override abstract protected def createEditPolicies {
     installEditPolicy(EditPolicy.LAYOUT_ROLE, new XYLayoutEditPolicy(){
         override protected def 
           createChangeConstraintCommand(child: EditPart, constraint : Object) :Command = 
-            (child.getModel,constraint) match 
-            {case (c:Resizable, rect:Rectangle) => resizeCommand(c,rect)
-            case (p:Positional, rect:Rectangle) => positionCommand(p,rect.getTopLeft)}
-        override protected def getCreateCommand(request : CreateRequest) = null
+            (child.getModel,constraint) match {
+              case (c:Resizable, rect:Rectangle) => resizeCommand(c,rect)
+              case (p:Positional, rect:Rectangle) => positionCommand(p,rect.getTopLeft)
+          }
+        override protected def getCreateCommand(request : CreateRequest) = 
+          createCommand(request.getNewObject,getConstraintFor(request).asInstanceOf[Rectangle])
         override protected def createChildEditPolicy(child : EditPart) = 
           if (resizableChild) new NonResizableEditPolicy()
           else super.createChildEditPolicy(child)
