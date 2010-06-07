@@ -5,7 +5,7 @@ import org.eclipse.jface.resource.ImageRegistry
 import org.osgi.framework.BundleContext
 import org.zaluum.ide.icons.Icons
 
-class Activator extends AbstractUIPlugin {
+object Activator extends AbstractUIPlugin {
 
   val PLUGIN_ID : String = "org.zaluum.ide.editor"
   var plugin : Activator = _

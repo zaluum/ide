@@ -23,6 +23,7 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
   setEditDomain(new DefaultEditDomain(this));
   def model:AnyRef
   
+  def editDomain : EditDomain = { getEditDomain }
   override def initializeGraphicalViewer():Unit  = {
     super.initializeGraphicalViewer()
     if (!getEditorInput().exists()) return

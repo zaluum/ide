@@ -40,8 +40,8 @@ class PortProperty(port : VPort) extends IPropertySource {
   val LABEL : String = "label";
   val model : VPort = port;
   val desc : Array[IPropertyDescriptor] = { Array(
-      new TextPropertyDescriptor(INPUT, "Is input?"),
-      new TextPropertyDescriptor(DIRECT, "Is direct input?"),
+      new CheckboxPropertyDescriptor(INPUT, "Is input?"),
+      new CheckboxPropertyDescriptor(DIRECT, "Is direct input?"),
       new TextPropertyDescriptor(TYPE, "Type"),
       new TextPropertyDescriptor(LABEL, "Label"),
       new TextPropertyDescriptor(NAME, "Name"))
@@ -71,16 +71,16 @@ class PortProperty(port : VPort) extends IPropertySource {
 
 } 
   
-//class CheckboxPropertyDescriptor(id:Object,name:String) extends PropertyDescriptor {
-//  import org.eclipse.jface.viewers.CellEditor;
-//  import org.eclipse.jface.viewers.CheckboxCellEditor;
-//  import org.eclipse.swt.widgets.Composite;
-//  override def createPropertyEditor(parent : Composite) : CellEditor = {
-//    val editor : CellEditor = new CheckboxCellEditor(parent);
-//    if (getValidator() != null)
-//      editor.setValidator(getValidator());
-//    editor;
-//  }
-//}
+class CheckboxPropertyDescriptor(id:Object,name:String) extends PropertyDescriptor(id,name) {
+  import org.eclipse.jface.viewers.CellEditor;
+  import org.eclipse.jface.viewers.CheckboxCellEditor;
+  import org.eclipse.swt.widgets.Composite;
+  override def createPropertyEditor(parent : Composite) : CellEditor = {
+    val editor : CellEditor = new CheckboxCellEditor(parent);
+    if (getValidator() != null)
+      editor.setValidator(getValidator());
+    editor;
+  }
+}
   
  
