@@ -7,13 +7,29 @@ import org.eclipse.ui.views.properties.PropertyDescriptor;
 import org.zaluum.runtime._;
 
 class BoxProperty(box : VBox) extends IPropertySource {
+  val NAME : String = "name";
+  val IMAGE : String = "image";
   val model : VBox = box;
+  val desc : Array[IPropertyDescriptor] = { Array(
+      new TextPropertyDescriptor(NAME, "Name"),
+      new TextPropertyDescriptor(IMAGE, "Image"))
+  }
   override def getEditableValue() = { this.model }
-  override def getPropertyDescriptors() : Array[IPropertyDescriptor] = { null }
+  override def getPropertyDescriptors() : Array[IPropertyDescriptor] = { desc }
   override def isPropertySet(id : Object) : Boolean = { false }
   override def resetPropertyValue(id : Object) = { }
-  override def getPropertyValue(id : Object) : Object = { null }
-  override def setPropertyValue(id:Object, value:Object) = { }
+  override def getPropertyValue(id : Object) : Object = {
+    id match {
+      case NAME => return model.name
+      case IMAGE => return null
+    }
+  }
+  override def setPropertyValue(id:Object, value:Object) = {
+    id match {
+      case NAME => model.name_=(value.asInstanceOf[String])
+      case IMAGE => 
+    }
+  }
 }
 
 class PortProperty(port : VPort) extends IPropertySource {
@@ -36,7 +52,7 @@ class PortProperty(port : VPort) extends IPropertySource {
   override def resetPropertyValue(id : Object) = { }
   override def getPropertyValue(id : Object) : Object = {
     id match {
-      case INPUT => return model.asInstanceOf[InPort[_]]
+      case INPUT => return null
       case NAME => return model.name
       case TYPE => return model.ttype
       case DIRECT => return null
