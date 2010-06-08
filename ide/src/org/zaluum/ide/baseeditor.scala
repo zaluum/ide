@@ -89,6 +89,10 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     val cmProvider = new BaseContextMenuProvider(viewer, getActionRegistry())
     viewer.setContextMenu(cmProvider);
   }
+  override def commandStackChanged(e :java.util.EventObject) {
+    firePropertyChange(IEditorPart.PROP_DIRTY);
+    super.commandStackChanged(e);
+  }
   override def dispose {
     super.dispose
     if (gridColor!=null)

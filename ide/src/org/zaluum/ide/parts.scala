@@ -22,21 +22,49 @@ import scala.collection.mutable._
 import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.{Rectangle,Dimension}
+import Commands._
+/**
+ * 
+ * @author frede
+ *
+ */
+object ModelEditPart{
+  val ComposedVBoxClass = classOf[ComposedVBox]
+}
+class ModelEditPart(val model : VModel) extends MainPart[Subject]{
+  currentSubject = model
+  override def getModelChildren = currentSubject match  {
+    case c:ComposedVBox => new ArrayList(c.boxes)
+    case v:VModel => Buffer(v.root)
+  }
 
-class ModelEditPart(val vmodel : VModel) extends MainPart[ComposedVBox]{
-  setModel(vmodel)
-  currentSubject = vmodel.root
-  def model = vmodel
-  override def getModelChildren = new ArrayList(currentSubject.boxes)
-
-  override def createCommand(req:CreateRequest) = null
+  override def createCommand(t : AnyRef, r:Rectangle) = (t,currentSubject) match {
+    case (ModelEditPart.ComposedVBoxClass, c:ComposedVBox) =>
+      val b = new PBox
+      b.pos =(r.x,r.y)
+      b.size =(r.width,r.height)
+      var name = "box"
+      var i = 0
+      while (c.boxes exists {_.name == "box"+ i}) {i+=1}
+      b.name = "box"+i
+      new CreateBoxCommand(c,b)
+    case _ => null
+  }
 
   def up() = {
-    Option(currentSubject.parent) match {
-      case Some(p) => currentSubject = p
-      case None => 
+    currentSubject match {
+      case c: ComposedVBox => currentSubject = c.parent match { 
+        case null => model
+        case p => p
+      }
+      case c: VModel => 
     }
   }
+  override def refreshVisuals  {
+    fig.setBackgroundColor(ColorConstants.lightGray)
+    fig.setOpaque(currentSubject.isInstanceOf[VModel])
+  }
+  
 
 }
 /**
@@ -44,9 +72,10 @@ class ModelEditPart(val vmodel : VModel) extends MainPart[ComposedVBox]{
  * @author frede
  *
  */
-class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox,BoxFigure] 
+class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox] 
                                 with Updater with HelpContext with PropertySource with HighlightPart
                                 with XYLayoutPart{
+  type F = BoxFigure
   def helpKey = "org.zaluum.box"
   def propertySource = new BoxProperty(model)
   override protected def getModelChildren = new ArrayList(model.ports)
@@ -63,27 +92,32 @@ class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox,Bo
   }
 }
 
-class ComposedEditPart(parent:EditPart, model:ComposedVBox) extends BoxEditPart(parent,model) with OpenPart{
-  def doOpen = {
-      parentPart.currentSubject = model
-  }
+trait ComposedEditPartT extends OpenPart{
+  self : BoxEditPart =>
+  def doOpen = parentPart.currentSubject = model
 }
-
+object classes{
+  val vport = classOf[VPort]
+}
 class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,model)
     with DeletablePart {
-  def delete = new Command() {
-	  override def execute = model.parent.boxes -= model
+  def delete = DeleteBoxCommand(model)  
+  def freeSlot(r:Rectangle) : Option[Slot] = {
+    val slot = fig.slotFromPosition(r.getTopLeft)
+    if (model.slotUsed(slot)) None else Some(slot)
   }
-  
   override def resizeCommand(r:Resizable, rect:Rectangle)={
-    r match { case p:VPort => 
-      val slot = fig.slotFromPosition(rect.getTopLeft)
-      if (!model.slotUsed(slot))
-        new SCommand(p.slot,p.slot_=,slot)
-      else null
+    (r,freeSlot(rect)) match { 
+      case (p:VPort,Some(slot:Slot)) => new SCommand(p.slot,p.slot_=,slot)
+      case _ => null
     } 
   }
-  
+  override def createCommand(clazz:Object, r:Rectangle) =  {
+    (clazz, freeSlot(r)) match {
+      case (classes.vport, Some(s:Slot)) => CreatePortCommand(model,s)  
+      case _ => null
+    }
+  }
 }
 /**
  * Wire Edit Part
@@ -91,9 +125,10 @@ class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,m
  *
  */
 class WireEditPart(val model : VWire) extends AbstractConnectionEditPart 
-        with BasePart[VWire,PolylineConnection] with Updater with ConnectionPart{
+        with BasePart[VWire] with Updater with ConnectionPart{
+  type F = PolylineConnection
   override def createFigure = WireFigure()
-  override def delete = null
+  override def delete:Command  = null
   
   override def refreshVisuals {
     val figureConstraint = new ArrayList[RelativeBendpoint]();
@@ -109,14 +144,17 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
     getConnectionFigure().setRoutingConstraint(figureConstraint);
   }
 }
-        
+class WireEditPartWrite(model:VWire) extends WireEditPart(model) {
+  override def delete = DeleteWireCommand(model)
+}
 /**
  * Port Edit Part
  * @author frede
  *
  */
-class PortEditPart(val model : VPort)extends BasePart[VPort,PortFigure] 
-               with SimpleNodePart with Updater with HelpContext with PropertySource with HighlightPart with DirectEditPart {
+class PortEditPart(val model : VPort)extends BasePart[VPort] 
+               with SimpleNodePart[VPort] with Updater with HelpContext with PropertySource with HighlightPart with DirectEditPart {
+  type F = PortFigure
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
   def propertySource = new PortProperty(model)
@@ -140,4 +178,8 @@ class PortEditPart(val model : VPort)extends BasePart[VPort,PortFigure]
   override def refreshVisuals {
     fig.arrange(true,model.slot.left, model.slot.pos, model.name, "link")
   }
+}
+class PortEditPartWrite(model:VPort) extends PortEditPart(model){
+  override def connect(source:VPort) = new CreateWireCommand(model.vbox.parent,source,model)
+  override def reconnect(req:ReconnectRequest) = null
 }

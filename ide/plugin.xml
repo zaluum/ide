@@ -205,6 +205,7 @@
          point="org.eclipse.ui.editors">
       <editor
             class="org.zaluum.ide.ZFileEditor"
+            contributorClass="org.zaluum.ide.BaseActionBarContributor"
             default="false"
             extensions="zaluum"
             icon="icons/composed_16.png"

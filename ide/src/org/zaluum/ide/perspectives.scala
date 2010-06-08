@@ -5,10 +5,8 @@ import org.eclipse.ui.IPageLayout
 import org.eclipse.ui.IPerspectiveFactory
 
 class BoxPerspective extends IPerspectiveFactory {
-
   var factory : IPageLayout = _
   val ID = "zaluum.BoxPerspective";
-
   def createInitialLayout(factory : IPageLayout) = {
     this.factory = factory;
     addViews()
@@ -16,7 +14,6 @@ class BoxPerspective extends IPerspectiveFactory {
     addNewWizardShortcuts()
     addViewShortcuts()
   }
-  
   def addViews() = {
     factory.createFolder("bottomLeft", IPageLayout.BOTTOM, 0.5f, factory.getEditorArea()).addView(IPageLayout.ID_PROBLEM_VIEW)
     factory.createFolder("bottomRight", IPageLayout.RIGHT, 0.5F, "bottomLeft").addView(IPageLayout.ID_PROP_SHEET)

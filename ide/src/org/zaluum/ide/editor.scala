@@ -7,20 +7,22 @@ import org.zaluum.runtime._
 import org.zaluum.example._
 import org.eclipse.core.runtime._;
 
-class Editor extends BaseEditor{
+trait UpEditor extends BaseEditor{
+ override def createActions(){
+    super.createActions()
+    addAction(new UpAction(this))
+  }
+  def modelEditPart =  super.getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[ModelEditPart] 
+}
+class Editor extends UpEditor{
   val mainbox = new MainBox()
   new Example().create(mainbox)
   val model : VModel = VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox])
   override def getPaletteRoot = Palette()
-  override def createActions(){
-    super.createActions()
-    addAction(new UpAction(this))
-  }
-  def modelEditPart =  getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[ModelEditPart]
   def factory = ZaluumFactory  
   override def doSave(p : IProgressMonitor) {}
 }
-class ZFileEditor extends BaseEditor with FileEditor{
+class ZFileEditor extends UpEditor with FileEditor{
   var model : VModel = _
   def factory = ZaluumWriteFactory
   def getPaletteRoot = Palette()
@@ -48,7 +50,7 @@ class ZFileEditor extends BaseEditor with FileEditor{
 object UpAction{
   val ID = "org.zaluum.ide.editor.up"
 }
-class UpAction(e:Editor) extends EditorPartAction(e){
+class UpAction(e:UpEditor) extends EditorPartAction(e){
   override protected def  init {
     setId(UpAction.ID);
     setText("Up");
@@ -57,7 +59,7 @@ class UpAction(e:Editor) extends EditorPartAction(e){
     setDisabledImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_TOOL_UP_DISABLED));
   }
   override protected def calculateEnabled = true
-  def editor = getEditorPart.asInstanceOf[Editor]
+  def editor = getEditorPart.asInstanceOf[UpEditor]
   override def run {
     editor.modelEditPart.up();
   }

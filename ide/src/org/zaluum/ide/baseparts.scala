@@ -22,8 +22,9 @@ import scala.collection.mutable._
 import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.Rectangle
-
-trait BasePart[T<:Subject,F<:Figure] extends AbstractGraphicalEditPart with Observer{
+import Commands._
+trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
+  type F<:Figure
   def model : T
   def fig = getFigure.asInstanceOf[F];
   setModel(model)
@@ -60,7 +61,8 @@ trait OpenPart extends AbstractGraphicalEditPart {
   }
 }
 
-trait MainPart[M <: Subject] extends AbstractGraphicalEditPart with BasePart[VModel,FreeformLayer] with XYLayoutPart with SnapPart with Subject with Updater{
+trait MainPart[M <: Subject] extends AbstractGraphicalEditPart with BasePart[VModel] with XYLayoutPart with SnapPart with Subject with Updater{
+  type F =FreeformLayer
   private var currentSubject_ : M = _
   def currentSubject = currentSubject_
   def currentSubject_= (s:M) {
@@ -120,23 +122,21 @@ trait HighlightPart extends AbstractGraphicalEditPart {
 }
 
 trait XYLayoutPart extends AbstractGraphicalEditPart{
-  def resizeCommand(res:Resizable, r:Rectangle) = new Command() {
-      override def execute() = res.pos = (r.x,r.y); res.size=(r.width,r.height)
-    }
-  def positionCommand(pos:Positional, p : org.eclipse.draw2d.geometry.Point):Command =new Command() {
-      override def execute() = pos.pos = (p.x,p.y)
-    }
-  def createCommand(req:CreateRequest):Command = null
+  def resizeCommand(res:Resizable, r:Rectangle):Command = ResizeCommand(res, (r.x,r.y), (r.width,r.height))
+  def positionCommand(pos:Positional, p : org.eclipse.draw2d.geometry.Point):Command =PositionCommand(pos,(p.x,p.y))
+  def createCommand(newObject : AnyRef, r:Rectangle):Command = null
   def resizableChild = false
 
   override abstract protected def createEditPolicies {
     installEditPolicy(EditPolicy.LAYOUT_ROLE, new XYLayoutEditPolicy(){
         override protected def 
           createChangeConstraintCommand(child: EditPart, constraint : Object) :Command = 
-            (child.getModel,constraint) match 
-            {case (c:Resizable, rect:Rectangle) => resizeCommand(c,rect)
-            case (p:Positional, rect:Rectangle) => positionCommand(p,rect.getTopLeft)}
-        override protected def getCreateCommand(request : CreateRequest) = null
+            (child.getModel,constraint) match {
+              case (c:Resizable, rect:Rectangle) => resizeCommand(c,rect)
+              case (p:Positional, rect:Rectangle) => positionCommand(p,rect.getTopLeft)
+          }
+        override protected def getCreateCommand(request : CreateRequest) = 
+          createCommand(request.getNewObject,getConstraintFor(request).asInstanceOf[Rectangle])
         override protected def createChildEditPolicy(child : EditPart) = 
           if (resizableChild) new NonResizableEditPolicy()
           else super.createChildEditPolicy(child)
@@ -153,19 +153,28 @@ trait DeletablePart extends AbstractGraphicalEditPart{
     super.createEditPolicies
   }
 }
-trait SimpleNodePart extends AbstractGraphicalEditPart with NodeEditPart{
+case class Start[T](val p:T) extends Command
+trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
   def anchor : ConnectionAnchor
-  override def getSourceConnectionAnchor(connection:ConnectionEditPart)= anchor
-  override def getSourceConnectionAnchor(connection:Request)           = anchor
-  override def getTargetConnectionAnchor(connection:ConnectionEditPart)= anchor
-  override def getTargetConnectionAnchor(connection:Request)           = anchor  
+  override  def getSourceConnectionAnchor(connection:ConnectionEditPart)= anchor
+  override  def getSourceConnectionAnchor(connection:Request)           = anchor
+  override  def getTargetConnectionAnchor(connection:ConnectionEditPart)= anchor
+  override  def getTargetConnectionAnchor(connection:Request)           = anchor  
+  protected def connect(source:T) : Command = null
+  protected def reconnect(req: ReconnectRequest):Command = null  
   override abstract protected def createEditPolicies{
     installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new GraphicalNodeEditPolicy(){
-      private def  reconnect(req: ReconnectRequest) = null
       protected def getReconnectTargetCommand(req :ReconnectRequest) = reconnect(req)
       protected def getReconnectSourceCommand(req : ReconnectRequest) = reconnect(req)
-      protected def getConnectionCreateCommand(req : CreateConnectionRequest) = null
-      protected def getConnectionCompleteCommand(req : CreateConnectionRequest) = null
+      protected def getConnectionCreateCommand(req : CreateConnectionRequest) = {
+        val c = Start(model)
+        req.setStartCommand(c)
+        c
+      }
+      protected def getConnectionCompleteCommand(req : CreateConnectionRequest) = req.getStartCommand match{
+        case Start(source: AnyRef) if (source!=model) => connect(source.asInstanceOf[T])
+        case p => null 
+      }
     });
     super.createEditPolicies
   }

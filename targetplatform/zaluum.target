@@ -42,10 +42,10 @@
 <repository location="http://download.eclipse.org/tools/ajdt/35/update"/>
 </location>
 <location path="${project_loc:targetplatform}/third" type="Directory"/>
-<location path="/home/frede/devel/akka" type="Directory"/>
+<location path="${project_loc:targetplatform}/ignored" type="Directory"/>
 <location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
 <unit id="org.eclipse.contribution.weaving.feature.group" version="1.6.4.20090313172428"/>
-<unit id="ch.epfl.lamp.sdt.feature.group" version="2.8.0.RC3-t20100603034148-gab29e7f041a22bcdad770cfe86c504ffc837f50a"/>
+<unit id="ch.epfl.lamp.sdt.feature.group" version="2.8.0.RC3-t20100607034243-g4ab0c930fd1de3e88d7123a1b6faab52c2f33d75"/>
 <repository location="http://download.scala-ide.org/nightly-update-master-2.8.0.RC3"/>
 </location>
 </locations>
