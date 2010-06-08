@@ -31,7 +31,6 @@ class BoxPerspective extends IPerspectiveFactory {
 		
 		val topLeftDown = factory.createFolder("topLeftDown", IPageLayout.BOTTOM, 0.6f, "topLeft");
 		topLeftDown.addView(IPageLayout.ID_OUTLINE);
-		factory.addFastView(BoxFaceView.ID)
 	}
 	
 	def addActionSets() = {

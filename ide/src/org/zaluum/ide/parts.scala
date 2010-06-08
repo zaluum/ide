@@ -116,10 +116,12 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
  *
  */
 class PortEditPart(val model : VPort)extends BasePart[VPort,PortFigure] 
-               with SimpleNodePart with Updater with HelpContext with PropertySource with HighlightPart{
+               with SimpleNodePart with Updater with HelpContext with PropertySource with HighlightPart with DirectEditPart {
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
   def propertySource = new PortProperty(model)
+  def doEdit = { new PortDirectEditManager(this, new TextEditorLocator(fig.link)).show }
+  def policyEdit = installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, new LabelDirectEditPolicy)
   private def filterWires (f : (VWire => Boolean)) = {
     val s = Set[VWire]()
     for {

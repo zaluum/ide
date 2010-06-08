@@ -37,3 +37,20 @@ abstract class HighlightEditPolicy[T] extends org.eclipse.gef.editpolicies.Graph
       showHighlight()
   }
 }
+
+class LabelDirectEditPolicy extends org.eclipse.gef.editpolicies.DirectEditPolicy {
+import org.eclipse.gef.requests.DirectEditRequest
+  def getDirectEditCommand(edit : DirectEditRequest) = {
+    null
+//  new CommandWrap(new ChangePortLinkCommand(getHost.getModel,edit.getCellEditor.getValue.asInstanceOf[String].replaceAll("\n", "")))
+  }
+
+  def showCurrentEditValue(req : DirectEditRequest) = {
+    val value = req.getCellEditor.getValue.asInstanceOf[String]
+    //TODO: Comanda per canviar el link getHostFigure.asInstanceOf[PortFigure].link_=value
+    getHostFigure.getUpdateManager.performUpdate
+  }
+
+}
+
+
