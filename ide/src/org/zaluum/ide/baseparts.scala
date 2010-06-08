@@ -40,14 +40,28 @@ trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
   override protected def createEditPolicies (){}
 }
 
+trait DirectEditPart extends AbstractGraphicalEditPart {
+  def editFigure : BoxLabel
+  def doEdit
+  override def performRequest(req : Request) = req.getType match {
+    case RequestConstants.REQ_DIRECT_EDIT => doEdit
+    case _ => super.performRequest(req)
+  }
+  def policyEdit
+  override abstract protected def createEditPolicies {
+    policyEdit
+    super.createEditPolicies
+  }
+}
+
 trait OpenPart extends AbstractGraphicalEditPart {
   def doOpen
-  override def  performRequest(req : Request) =  req.getType match {
+  override def performRequest(req : Request) =  req.getType match {
     case RequestConstants.REQ_OPEN => doOpen
-    case _ =>  super.performRequest(req);
+    case _ =>  super.performRequest(req)
   }
-
 }
+
 trait MainPart[M <: Subject] extends AbstractGraphicalEditPart with BasePart[VModel] with XYLayoutPart with SnapPart with Subject with Updater{
   type F =FreeformLayer
   private var currentSubject_ : M = _

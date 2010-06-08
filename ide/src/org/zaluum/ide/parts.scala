@@ -160,7 +160,8 @@ class WireEditPartWrite(model:VWire) extends WireEditPart(model) {
 class PortEditPart(val model : VPort)extends BasePart[VPort] 
                with SimpleNodePart[VPort] with Updater 
                with HelpContext with HighlightPart
-               with RefPropertySource[VPort]{
+               with RefPropertySource[VPort]
+               with DirectEditPart {
   type F = PortFigure
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
@@ -170,6 +171,9 @@ class PortEditPart(val model : VPort)extends BasePart[VPort]
        StringProperty("Name", model.name _, model.name_= _),
        StringProperty("Label", model.link _, model.link_= _)
        )
+  def editFigure : BoxLabel = fig.link
+  def doEdit = { new PortDirectEditManager(this, new TextEditorLocator(fig.link)).show }
+  def policyEdit = installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, new LabelDirectEditPolicy)
   private def filterWires (f : (VWire => Boolean)) = {
     val s = Set[VWire]()
     for {
