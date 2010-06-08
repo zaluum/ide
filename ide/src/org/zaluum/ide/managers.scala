@@ -10,10 +10,12 @@ import org.eclipse.gef.tools.CellEditorLocator
 
 class PortDirectEditManager(source : GraphicalEditPart, locator : CellEditorLocator ) extends DirectEditManager(source, null, locator) {
   def initCellEditor = {
-    getCellEditor.setValue("hola");
-    getCellEditor.getControl.setFont(getEditPart.getFigure.getFont());
-    new ContentProposalAdapter(getCellEditor.getControl, new TextContentAdapter, 
-      new SimpleContentProposalProvider(Array("P1","P2","P3")), KeyStroke.getInstance("Ctrl+Space"), null)
+    if(source.isInstanceOf[DirectEditPart]) {
+      getCellEditor.setValue(source.asInstanceOf[DirectEditPart].editFigure.getText)
+      getCellEditor.getControl.setFont(getEditPart.getFigure.getFont)
+      new ContentProposalAdapter(getCellEditor.getControl, new TextContentAdapter, 
+        new SimpleContentProposalProvider(Array("P1","P2","P3")), KeyStroke.getInstance("Ctrl+Space"), null)
+    }
   }
 }
 

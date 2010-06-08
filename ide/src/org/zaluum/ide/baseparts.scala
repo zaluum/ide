@@ -39,6 +39,7 @@ trait BasePart[T<:Subject,F<:Figure] extends AbstractGraphicalEditPart with Obse
 }
 
 trait DirectEditPart extends AbstractGraphicalEditPart {
+  def editFigure : BoxLabel
   def doEdit
   override def performRequest(req : Request) = req.getType match {
     case RequestConstants.REQ_DIRECT_EDIT => doEdit

@@ -120,6 +120,7 @@ class PortEditPart(val model : VPort)extends BasePart[VPort,PortFigure]
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
   def propertySource = new PortProperty(model)
+  def editFigure : BoxLabel = fig.link
   def doEdit = { new PortDirectEditManager(this, new TextEditorLocator(fig.link)).show }
   def policyEdit = installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, new LabelDirectEditPolicy)
   private def filterWires (f : (VWire => Boolean)) = {
