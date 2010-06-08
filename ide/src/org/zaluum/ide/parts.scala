@@ -128,8 +128,6 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
         with BasePart[VWire] with Updater with ConnectionPart{
   type F = PolylineConnection
   override def createFigure = WireFigure()
-  override def delete:Command  = null
-  
   override def refreshVisuals {
     val figureConstraint = new ArrayList[RelativeBendpoint]();
     for (wbp <- model.bendpoints)
@@ -144,8 +142,15 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
     getConnectionFigure().setRoutingConstraint(figureConstraint);
   }
 }
+
 class WireEditPartWrite(model:VWire) extends WireEditPart(model) {
-  override def delete = DeleteWireCommand(model)
+  def modelEditPart = this.getRoot.
+    asInstanceOf[RootEditPart].
+    getChildren.get(0).
+    asInstanceOf[ModelEditPart] // TODO improve
+  override def delete = DeleteWireCommand(
+                          model,
+                          modelEditPart.currentSubject.asInstanceOf[ComposedVBox])
 }
 /**
  * Port Edit Part

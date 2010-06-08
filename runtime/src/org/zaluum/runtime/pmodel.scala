@@ -9,7 +9,7 @@ object ProtoConversions {
   implicit def toRectangle(p:((Int,Int),(Int,Int))) = {
     val b =Rectangle.newBuilder;
     b.setLeftUp(p._1)
-    b.setRightDown((p._1._1+p._2._1, p._1._2+p._1._2))
+    b.setRightDown((p._1._1+p._2._1, p._1._2+p._2._2))
   }
 }
 import ProtoConversions._
@@ -46,6 +46,7 @@ class PPort extends VPort {
       .setSlot(slot.pos)
       .setType(ttype)
       .setLabel(link)
+      .setPosition((0,0))
   }
 }
 class ComposedPBox extends PBox with ComposedVBox{
@@ -73,9 +74,7 @@ class PWire extends VWire  {
           bend.a).setP2(bend.b).setWeight(1.0f))
     }
     def pname(p:VPort) =  (if (p.vbox == comp) "#" + p.vbox.name else p.vbox.name) + "#" + p.name
-    line.setFrom( pname(from)).setTo(pname(to))
-    Line.newBuilder
-    
+    line.setFrom( pname(from)).setTo(pname(to))    
   }
 }
 import com.google.protobuf.TextFormat
@@ -149,8 +148,11 @@ object Deserialize {
       pfrom = getExternal(from);
       pto = getExternal(to);
     }
+    assert(pto != null)
+    assert(pfrom!=null)
     val res = new PWire()
-    res.to = pto;
+    res.to = pto
+    res.from = pfrom
     res.bendpoints = List() ++ deserialBendpoints(w);
     res
   }

@@ -23,6 +23,7 @@ import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.Rectangle
 import Commands._
+
 trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
   type F<:Figure
   def model : T
@@ -139,7 +140,9 @@ trait DeletablePart extends AbstractGraphicalEditPart{
     super.createEditPolicies
   }
 }
+
 case class Start[T](val p:T) extends Command
+
 trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
   def anchor : ConnectionAnchor
   override  def getSourceConnectionAnchor(connection:ConnectionEditPart)= anchor
@@ -167,7 +170,7 @@ trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
 }
 
 trait ConnectionPart extends AbstractConnectionEditPart{
-  def delete : Command
+  def delete : Command = null
   override abstract protected def createEditPolicies{
     installEditPolicy(EditPolicy.CONNECTION_BENDPOINTS_ROLE,
         new BendpointEditPolicy(){

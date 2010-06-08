@@ -31,9 +31,20 @@ class ComposedCommand(val commands : List[Command]) extends Command{
   def redo = commands foreach {_.redo }
   def undo = commands.reverse foreach { _.undo }
 }
-case class DeleteWireCommand(val w : VWire) extends Command{
-  def redo {}
-  def undo {}
+case class DeleteWireCommand(val w : VWire, val p : ComposedVBox) extends Command{
+  def notifyObservers(){
+    p.notifyObservers
+    w.from .notifyObservers
+    w.to .notifyObservers    
+  }
+  def redo {
+    p.connections -= w
+    notifyObservers()
+  }
+  def undo {
+    p.connections += w
+    notifyObservers()
+  }
 }
 case class DeleteBoxCommand(val box:VBox) extends Command{
   lazy val parent = box.parent
@@ -41,7 +52,7 @@ case class DeleteBoxCommand(val box:VBox) extends Command{
     if (parent!=null){
       val s = for (w <- parent.connections;
           if ((box.ports contains w.from) || (box.ports contains w.to)))
-            yield new DeleteWireCommand(w)
+            yield new DeleteWireCommand(w,parent)
       new ComposedCommand(List() ++ s)
     }else 
       new ComposedCommand(List())
