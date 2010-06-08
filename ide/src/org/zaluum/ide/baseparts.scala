@@ -89,15 +89,6 @@ trait HelpContext extends IAdaptable{
   }
 }
 
-trait PropertySource extends IAdaptable{
-  def propertySource : IPropertySource
-  abstract override def getAdapter(key: Class[_]) = {
-    if (key == classOf[IPropertySource]) 
-      propertySource
-    else super.getAdapter(key)
-  }
-}
-
 trait HighlightPart extends AbstractGraphicalEditPart {
   def highlightFigure : Shape
   override abstract protected def createEditPolicies {

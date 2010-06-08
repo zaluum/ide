@@ -28,9 +28,11 @@ import Commands._
  * @author frede
  *
  */
-object ModelEditPart{
+object classes{
+  val vport = classOf[VPort]
   val ComposedVBoxClass = classOf[ComposedVBox]
 }
+
 class ModelEditPart(val model : VModel) extends MainPart[Subject]{
   currentSubject = model
   override def getModelChildren = currentSubject match  {
@@ -39,7 +41,7 @@ class ModelEditPart(val model : VModel) extends MainPart[Subject]{
   }
 
   override def createCommand(t : AnyRef, r:Rectangle) = (t,currentSubject) match {
-    case (ModelEditPart.ComposedVBoxClass, c:ComposedVBox) =>
+    case (classes.ComposedVBoxClass, c:ComposedVBox) =>
       val b = new PBox
       b.pos =(r.x,r.y)
       b.size =(r.width,r.height)
@@ -73,11 +75,11 @@ class ModelEditPart(val model : VModel) extends MainPart[Subject]{
  *
  */
 class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox] 
-                                with Updater with HelpContext with PropertySource with HighlightPart
-                                with XYLayoutPart{
+                                with Updater with HelpContext with HighlightPart
+                                with XYLayoutPart with RefPropertySource[VBox]{
   type F = BoxFigure
   def helpKey = "org.zaluum.box"
-  def propertySource = new BoxProperty(model)
+  val properties = List(StringProperty("Name",model.name _,model.name_= _))
   override protected def getModelChildren = new ArrayList(model.ports)
   override def createFigure = new BoxFigure() 
   def highlightFigure = fig.rectangle 
@@ -96,9 +98,7 @@ trait ComposedEditPartT extends OpenPart{
   self : BoxEditPart =>
   def doOpen = parentPart.currentSubject = model
 }
-object classes{
-  val vport = classOf[VPort]
-}
+
 class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,model)
     with DeletablePart {
   def delete = DeleteBoxCommand(model)  
@@ -125,7 +125,7 @@ class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,m
  *
  */
 class WireEditPart(val model : VWire) extends AbstractConnectionEditPart 
-        with BasePart[VWire] with Updater with ConnectionPart{
+        with BasePart[VWire] with Updater with ConnectionPart {
   type F = PolylineConnection
   override def createFigure = WireFigure()
   override def refreshVisuals {
@@ -158,11 +158,18 @@ class WireEditPartWrite(model:VWire) extends WireEditPart(model) {
  *
  */
 class PortEditPart(val model : VPort)extends BasePart[VPort] 
-               with SimpleNodePart[VPort] with Updater with HelpContext with PropertySource with HighlightPart{
+               with SimpleNodePart[VPort] with Updater 
+               with HelpContext with HighlightPart
+               with RefPropertySource[VPort]{
   type F = PortFigure
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
-  def propertySource = new PortProperty(model)
+  val properties = List(
+       BooleanProperty("Is input",model.in _, model.in_= _),
+       StringProperty("Type", model.ttype _, model.ttype_= _),
+       StringProperty("Name", model.name _, model.name_= _),
+       StringProperty("Label", model.link _, model.link_= _)
+       )
   private def filterWires (f : (VWire => Boolean)) = {
     val s = Set[VWire]()
     for {
