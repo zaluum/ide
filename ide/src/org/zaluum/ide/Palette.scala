@@ -10,17 +10,17 @@ import org.eclipse.gef.palette.ToolEntry
 import org.eclipse.gef.requests.CreationFactory
 import org.eclipse.gef.tools.AbstractTool
 import org.zaluum.ide.icons.Icons
-import org.eclipse.jface.resource.ImageRegistry
+import org.eclipse.jface.resource.{ImageDescriptor,ImageRegistry}
 import org.zaluum.runtime._
 object Palette {
   def apply() = {
 		val palette = new PaletteRoot()
 		val ir : ImageRegistry = Activator.getDefault().getImageRegistry();		
 		def newTool(name:String, desc:String, resourceKey:String, modelClass:Class[_], baseResources:Class[_]):CreationToolEntry = {
-		new CreationToolEntry(name, desc, new CreationFactory() {
-		  def getObjectType():Class[_] = { modelClass }
-		  def getNewObject():Class[_] = { modelClass }
-		}, ir.getDescriptor(resourceKey + "_16"), ir.getDescriptor(resourceKey + "_32"));
+		  new CreationToolEntry(name, desc, new CreationFactory() {
+		    def getObjectType():Class[_] = { modelClass }
+		    def getNewObject():Class[_] = { modelClass }
+		  }, ir.getDescriptor(resourceKey + "_16"), ir.getDescriptor(resourceKey + "_32"));
 		}
 		palette.add({
 			val toolbar = new PaletteToolbar("Basic Tools")
@@ -43,8 +43,10 @@ object Palette {
         "Creates a new Wire", new CreationFactory() {
           def getObjectType() = classOf[VWire]
           def getNewObject() = classOf[VWire]
-        }, ir.getDescriptor("wire_16.png"),
-        ir.getDescriptor("wire_32.png")));
+        }, ir.getDescriptor("wire_16"),
+        ir.getDescriptor("wire_32")
+        )
+      );
    
     palette.add(boxToolbar)
 		palette

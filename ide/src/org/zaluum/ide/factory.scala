@@ -16,6 +16,6 @@ object ZaluumWriteFactory extends EditPartFactory {
     case cbox : ComposedVBox => new BoxEditPartWrite(context,cbox) with ComposedEditPartT
     case box : VBox => new BoxEditPartWrite(context,box)
     case port : VPort => new PortEditPartWrite(port)
-    case wire : VWire => new WireEditPart(wire)
+    case wire : VWire => new WireEditPartWrite(wire)
   }
 }

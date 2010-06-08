@@ -139,6 +139,7 @@ trait DeletablePart extends AbstractGraphicalEditPart{
     super.createEditPolicies
   }
 }
+case class Start[T](val p:T) extends Command
 trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
   def anchor : ConnectionAnchor
   override  def getSourceConnectionAnchor(connection:ConnectionEditPart)= anchor
@@ -151,15 +152,14 @@ trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
     installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new GraphicalNodeEditPolicy(){
       protected def getReconnectTargetCommand(req :ReconnectRequest) = reconnect(req)
       protected def getReconnectSourceCommand(req : ReconnectRequest) = reconnect(req)
-      case class Start(p:T) extends Command
       protected def getConnectionCreateCommand(req : CreateConnectionRequest) = {
         val c = Start(model)
         req.setStartCommand(c)
         c
       }
       protected def getConnectionCompleteCommand(req : CreateConnectionRequest) = req.getStartCommand match{
-        case Start(source) if (source!=model) => connect(source) 
-        case _ => null
+        case Start(source: AnyRef) if (source!=model) => connect(source.asInstanceOf[T])
+        case p => null 
       }
     });
     super.createEditPolicies

@@ -78,13 +78,17 @@ case class CreateWireCommand(parent: ComposedVBox, source:VPort, target:VPort) e
   val w = new PWire()
   w.from = source
   w.to = target
-  
+  def notifyObservers{
+    parent.notifyObservers
+    w.from .notifyObservers
+    w.to .notifyObservers    
+  }
   def redo {
     parent.asInstanceOf[ComposedPBox].connections.add(w)
-    parent.notifyObservers
+    notifyObservers
   }
   def undo {
     parent.asInstanceOf[ComposedPBox].connections.remove(w)
-    parent.notifyObservers
+    notifyObservers
   }
 }
