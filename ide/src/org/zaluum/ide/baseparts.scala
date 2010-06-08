@@ -23,7 +23,8 @@ import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.Rectangle
 import Commands._
-trait BasePart[T<:Subject,F<:Figure] extends AbstractGraphicalEditPart with Observer{
+trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
+  type F<:Figure
   def model : T
   def fig = getFigure.asInstanceOf[F];
   setModel(model)
@@ -46,7 +47,8 @@ trait OpenPart extends AbstractGraphicalEditPart {
   }
 
 }
-trait MainPart[M <: Subject] extends AbstractGraphicalEditPart with BasePart[VModel,FreeformLayer] with XYLayoutPart with SnapPart with Subject with Updater{
+trait MainPart[M <: Subject] extends AbstractGraphicalEditPart with BasePart[VModel] with XYLayoutPart with SnapPart with Subject with Updater{
+  type F =FreeformLayer
   private var currentSubject_ : M = _
   def currentSubject = currentSubject_
   def currentSubject_= (s:M) {
@@ -137,19 +139,28 @@ trait DeletablePart extends AbstractGraphicalEditPart{
     super.createEditPolicies
   }
 }
-trait SimpleNodePart extends AbstractGraphicalEditPart with NodeEditPart{
+trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
   def anchor : ConnectionAnchor
-  override def getSourceConnectionAnchor(connection:ConnectionEditPart)= anchor
-  override def getSourceConnectionAnchor(connection:Request)           = anchor
-  override def getTargetConnectionAnchor(connection:ConnectionEditPart)= anchor
-  override def getTargetConnectionAnchor(connection:Request)           = anchor  
+  override  def getSourceConnectionAnchor(connection:ConnectionEditPart)= anchor
+  override  def getSourceConnectionAnchor(connection:Request)           = anchor
+  override  def getTargetConnectionAnchor(connection:ConnectionEditPart)= anchor
+  override  def getTargetConnectionAnchor(connection:Request)           = anchor  
+  protected def connect(source:T) : Command = null
+  protected def reconnect(req: ReconnectRequest):Command = null  
   override abstract protected def createEditPolicies{
     installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new GraphicalNodeEditPolicy(){
-      private def  reconnect(req: ReconnectRequest) = null
       protected def getReconnectTargetCommand(req :ReconnectRequest) = reconnect(req)
       protected def getReconnectSourceCommand(req : ReconnectRequest) = reconnect(req)
-      protected def getConnectionCreateCommand(req : CreateConnectionRequest) = null
-      protected def getConnectionCompleteCommand(req : CreateConnectionRequest) = null
+      case class Start(p:T) extends Command
+      protected def getConnectionCreateCommand(req : CreateConnectionRequest) = {
+        val c = Start(model)
+        req.setStartCommand(c)
+        c
+      }
+      protected def getConnectionCompleteCommand(req : CreateConnectionRequest) = req.getStartCommand match{
+        case Start(source) if (source!=model) => connect(source) 
+        case _ => null
+      }
     });
     super.createEditPolicies
   }

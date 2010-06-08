@@ -60,3 +60,31 @@ case class DeleteBoxCommand(val box:VBox) extends Command{
     parent.notifyObservers
   }
 }
+case class CreatePortCommand(box : VBox, slot: Slot) extends Command{
+  val p = new PPort()
+  p.slot = slot
+  def redo {
+    box.asInstanceOf[PBox].ports += p
+    p.vbox = box
+    box.notifyObservers
+  }
+  def undo {
+    box.asInstanceOf[PBox].ports -= p
+    p.vbox = null
+    box.notifyObservers
+  }
+}
+case class CreateWireCommand(parent: ComposedVBox, source:VPort, target:VPort) extends Command{
+  val w = new PWire()
+  w.from = source
+  w.to = target
+  
+  def redo {
+    parent.asInstanceOf[ComposedPBox].connections.add(w)
+    parent.notifyObservers
+  }
+  def undo {
+    parent.asInstanceOf[ComposedPBox].connections.remove(w)
+    parent.notifyObservers
+  }
+}

@@ -15,8 +15,8 @@ import org.zaluum.runtime._
 object Palette {
   def apply() = {
 		val palette = new PaletteRoot()
+		val ir : ImageRegistry = Activator.getDefault().getImageRegistry();		
 		def newTool(name:String, desc:String, resourceKey:String, modelClass:Class[_], baseResources:Class[_]):CreationToolEntry = {
-		  val ir : ImageRegistry = Activator.getDefault().getImageRegistry();		
 		new CreationToolEntry(name, desc, new CreationFactory() {
 		  def getObjectType():Class[_] = { modelClass }
 		  def getNewObject():Class[_] = { modelClass }
@@ -32,9 +32,20 @@ object Palette {
 		});
     val boxToolbar = new PaletteToolbar("Box Tools")
      boxToolbar.add(newTool("Composed Box","A Box Composed of other boxes", "composed", classOf[ComposedVBox],classOf[Icons]));
+     boxToolbar.add(newTool("Input port","Input port", "portin", classOf[VPort],classOf[Icons]));
+     boxToolbar.add(newTool("Output port","Ouput port", "portout", classOf[VPort],classOf[Icons]));
+     //boxToolbar.add(newTool("Composed Box","A Box Composed of other boxes", "composed", classOf[ComposedVBox],classOf[Icons]));
+
       //boxToolbar.add(newTool("Instance Box","An instance of another user model", "instance", InstanceVBox.getClass, Icons.getClass));
       //boxToolbar.add(newTool("Constant Box", "A constant output box", "const", ConstVBox.getClass, Icons.getClass));
       //boxToolbar.add(newTool("Value Box", "Reads or writes values from external device", "value", ValueVBox.getClass, Icons.getClass));
+      boxToolbar.add(new ConnectionCreationToolEntry("Wire",
+        "Creates a new Wire", new CreationFactory() {
+          def getObjectType() = classOf[VWire]
+          def getNewObject() = classOf[VWire]
+        }, ir.getDescriptor("wire_16.png"),
+        ir.getDescriptor("wire_32.png")));
+   
     palette.add(boxToolbar)
 		palette
 	}
