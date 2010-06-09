@@ -22,7 +22,17 @@ import scala.collection.mutable._
 import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.Rectangle
+import org.eclipse.gef.tools.DirectEditManager
+import org.eclipse.gef.requests.DirectEditRequest
+import org.eclipse.jface.fieldassist.ContentProposalAdapter
+import org.eclipse.jface.fieldassist.SimpleContentProposalProvider
+import org.eclipse.jface.fieldassist.TextContentAdapter
+import org.eclipse.jface.bindings.keys.KeyStroke
+import org.eclipse.jface.viewers.TextCellEditor
+import org.eclipse.jface.viewers.CellEditor
+import org.eclipse.swt.widgets.Composite
 import Commands._
+
 
 trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
   type F<:Figure
@@ -42,14 +52,29 @@ trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
 
 trait DirectEditPart extends AbstractGraphicalEditPart {
   def editFigure : BoxLabel
-  def doEdit
+  def contents : Array[String]
+  def editCommand(v:String) : Command
+  private val directManager = new DirectEditManager(this, null, new TextEditorLocator(editFigure)) {
+	  def initCellEditor = {
+	      getCellEditor.setValue(editFigure.getText)
+	      getCellEditor.getControl.setFont(editFigure.getFont)
+	      new ContentProposalAdapter(getCellEditor.getControl, new TextContentAdapter, 
+	        new SimpleContentProposalProvider(contents), KeyStroke.getInstance("Ctrl+Space"), null)
+	  }
+	  override def createCellEditorOn(composite : Composite) = new TextCellEditor(composite)	  
+  }
   override def performRequest(req : Request) = req.getType match {
-    case RequestConstants.REQ_DIRECT_EDIT => doEdit
+    case RequestConstants.REQ_DIRECT_EDIT => directManager.show
     case _ => super.performRequest(req)
   }
-  def policyEdit
   override abstract protected def createEditPolicies {
-    policyEdit
+    installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, new org.eclipse.gef.editpolicies.DirectEditPolicy {
+	    def getDirectEditCommand(edit:DirectEditRequest) = editCommand(edit.getCellEditor.getValue.asInstanceOf[String].replaceAll("\n", ""))
+	    def showCurrentEditValue(req : DirectEditRequest) = {
+	      editFigure.setText(req.getCellEditor.getValue.asInstanceOf[String])
+	      getHostFigure.getUpdateManager.performUpdate
+	    }
+    })
     super.createEditPolicies
   }
 }
@@ -86,6 +111,7 @@ trait MainPart[M <: Subject] extends AbstractGraphicalEditPart with BasePart[VMo
     freeformLayer
   }
 }
+
 trait Updater {
   self : Observer with AbstractGraphicalEditPart =>
   override def receiveUpdate(s: Subject) {
@@ -177,8 +203,8 @@ trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
 }
 trait ConnectionPart extends AbstractConnectionEditPart{
   def delete : Command = null
-  def createBendpoint(p:geometry.Point, i:Int):Command
-  def deleteBendpoint(i:Int):Command
+  def createBendpoint(p:geometry.Point, i:Int):Command = null
+  def deleteBendpoint(i:Int):Command = null
   override abstract protected def createEditPolicies{
     installEditPolicy(EditPolicy.CONNECTION_BENDPOINTS_ROLE,
         new BendpointEditPolicy(){
@@ -252,4 +278,32 @@ trait SnapPart extends AbstractGraphicalEditPart {
       return super.getAdapter(adapter);
   }
 
+}
+
+trait RefPropertySource[T<:Subject] extends BasePart[T] with IPropertySource{
+  def getEditableValue = model  
+  def properties : List[Property[_]]
+  def toDescriptor : PartialFunction[Property[_],IPropertyDescriptor]= {
+      case p: Property[_] => new PropertyDescriptor(p, p.desc)
+  }
+  lazy val getPropertyDescriptors : Array[IPropertyDescriptor] = (properties map toDescriptor).toArray  
+  def isPropertySet(id : Object) = false 
+  def resetPropertyValue(id : Object) { }
+  override def getPropertyValue(id : Object) : Object =  id.asInstanceOf[Property[AnyRef]].get()
+  override def setPropertyValue(id:Object, value:Object)  {}
+  abstract override def getAdapter(key: Class[_]) = {
+    if (key == classOf[IPropertySource]) 
+      this
+    else super.getAdapter(key)
+  }
+}
+trait RefPropertySourceWrite[T<:Subject] extends RefPropertySource[T]{
+  override def toDescriptor : PartialFunction[Property[_],IPropertyDescriptor]= {
+      case str: StringProperty => new TextPropertyDescriptor(str, str.desc)
+      case b : BooleanProperty => new CheckboxPropertyDescriptor(b, b.desc)
+  }
+  override def setPropertyValue(id:Object, value:Object)  {
+    id.asInstanceOf[Property[AnyRef]].set(value)
+    model.notifyObservers
+  }
 }

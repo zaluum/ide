@@ -39,7 +39,6 @@ class ModelEditPart(val model : VModel) extends MainPart[Subject]{
     case c:ComposedVBox => new ArrayList(c.boxes)
     case v:VModel => Buffer(v.root)
   }
-
   override def createCommand(t : AnyRef, r:Rectangle) = (t,currentSubject) match {
     case (classes.ComposedVBoxClass, c:ComposedVBox) =>
       val b = new PBox
@@ -56,10 +55,10 @@ class ModelEditPart(val model : VModel) extends MainPart[Subject]{
   def up() = {
     currentSubject match {
       case c: ComposedVBox => currentSubject = c.parent match { 
-        case null => model
-        case p => p
+        case null =>   model
+        case p =>  p
       }
-      case c: VModel => 
+      case _ => // do not move 
     }
   }
   override def refreshVisuals  {
@@ -79,7 +78,7 @@ class BoxEditPart(val parent:EditPart, val model: VBox) extends BasePart[VBox]
                                 with XYLayoutPart with RefPropertySource[VBox]{
   type F = BoxFigure
   def helpKey = "org.zaluum.box"
-  val properties = List(StringProperty("Name",model.name _,model.name_= _))
+  def properties = List(StringProperty("Name",model.name _,model.uniqueName _))
   override protected def getModelChildren = new ArrayList(model.ports)
   override def createFigure = new BoxFigure() 
   def highlightFigure = fig.rectangle 
@@ -100,7 +99,7 @@ trait ComposedEditPartT extends OpenPart{
 }
 
 class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,model)
-    with DeletablePart {
+    with DeletablePart with RefPropertySourceWrite[VBox]{
   def delete = DeleteBoxCommand(model)  
   def freeSlot(r:Rectangle) : Option[Slot] = {
     val slot = fig.slotFromPosition(r.getTopLeft)
@@ -128,17 +127,6 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
         with BasePart[VWire] with Updater with ConnectionPart {
   type F = PolylineConnection
   override def createFigure = WireFigure()
-  implicit def dimToTuple (d:Dimension) = (d.width,d.height)
-  implicit def toBendpoint(p : geometry.Point) = {
-    fig.translateToRelative(p);
-    val ref1 = fig.getSourceAnchor.getReferencePoint
-    val ref2 = fig.getTargetAnchor.getReferencePoint
-    fig.translateToRelative(ref1);
-    fig.translateToRelative(ref2);
-    BP(p.getDifference(ref1),p.getDifference(ref2))
-  }
-  def createBendpoint(l:geometry.Point, i: Int) = CreateBendpointCommand(model, l, i)
-  def deleteBendpoint(i: Int) = DeleteBendpointCommand(model, i)
   
   override def refreshVisuals  = {
     val s = (model.bendpoints map { wbp=>      
@@ -162,6 +150,17 @@ class WireEditPartWrite(model:VWire) extends WireEditPart(model) {
   override def delete = DeleteWireCommand(
                           model,
                           modelEditPart.currentSubject.asInstanceOf[ComposedVBox])
+  implicit def dimToTuple (d:Dimension) = (d.width,d.height)
+  implicit def toBendpoint(p : geometry.Point) = {
+    fig.translateToRelative(p);
+    val ref1 = fig.getSourceAnchor.getReferencePoint
+    val ref2 = fig.getTargetAnchor.getReferencePoint
+    fig.translateToRelative(ref1);
+    fig.translateToRelative(ref2);
+    BP(p.getDifference(ref1),p.getDifference(ref2))
+  }
+  override def createBendpoint(l:geometry.Point, i: Int) = CreateBendpointCommand(model, l, i)
+  override def deleteBendpoint(i: Int) = DeleteBendpointCommand(model, i)
 }
 /**
  * Port Edit Part
@@ -172,19 +171,16 @@ class PortEditPart(val model : VPort)extends BasePart[VPort]
                with SimpleNodePart[VPort] with Updater 
                with HelpContext with HighlightPart
                with RefPropertySource[VPort]
-               with DirectEditPart {
+               {
   type F = PortFigure
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
-  val properties = List(
+  def properties = List(
        BooleanProperty("Is input",model.in _, model.in_= _),
        StringProperty("Type", model.ttype _, model.ttype_= _),
-       StringProperty("Name", model.name _, model.name_= _),
+       StringProperty("Name", model.name _, model.uniqueName _),
        StringProperty("Label", model.link _, model.link_= _)
        )
-  def editFigure : BoxLabel = fig.link
-  def doEdit = { new PortDirectEditManager(this, new TextEditorLocator(fig.link)).show }
-  def policyEdit = installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, new LabelDirectEditPolicy)
   private def filterWires (f : (VWire => Boolean)) = {
     val s = Set[VWire]()
     for {
@@ -203,7 +199,11 @@ class PortEditPart(val model : VPort)extends BasePart[VPort]
     fig.arrange(true,model.slot.left, model.slot.pos, model.name, model.link)
   }
 }
-class PortEditPartWrite(model:VPort) extends PortEditPart(model){
+class PortEditPartWrite(model:VPort) extends PortEditPart(model) 
+            with DirectEditPart with RefPropertySourceWrite[VPort]{
+  def editFigure = fig.link
+  def editCommand(v:String) = new SCommand(model.link,model.link_=,v,model)
+  def contents = Array("Hola","Adeu")
   override def connect(source:VPort) = new CreateWireCommand(model.vbox.parent,source,model)
   override def reconnect(req:ReconnectRequest) = null
 }

@@ -1,6 +1,9 @@
 package org.zaluum.ide
-
+import org.eclipse.jface.viewers.CellEditor
+import org.eclipse.swt.widgets.Text
 import org.eclipse.jface.resource.ImageRegistry
+import org.eclipse.gef.tools.CellEditorLocator
+import org.eclipse.draw2d.Figure
 
 object Utils {
 
@@ -15,4 +18,15 @@ object Utils {
     }
   }
   
+}
+
+class TextEditorLocator(label:Figure) extends CellEditorLocator {
+  override def relocate(celleditor : CellEditor) = {
+    val text : Text = celleditor.getControl.asInstanceOf[Text]
+    val rect = label.getClientArea
+    val trim = text.computeTrim(0, 0, 0, 0);
+    label.translateToAbsolute(rect);
+    rect.translate(trim.x, trim.y); rect.width += trim.width; rect.height += trim.height;
+    text.setBounds(rect.x, rect.y, rect.width, rect.height);    
+  } 
 }

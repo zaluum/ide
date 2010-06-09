@@ -19,7 +19,7 @@ class Editor extends UpEditor{
   new Example().create(mainbox)
   val model : VModel = VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox])
   override def getPaletteRoot = Palette()
-  def factory = ZaluumFactory  
+  def factory = ZaluumReadOnlyFactory  
   override def doSave(p : IProgressMonitor) {}
 }
 class ZFileEditor extends UpEditor with FileEditor{

@@ -26,28 +26,21 @@ object Palette {
 			val toolbar = new PaletteToolbar("Basic Tools")
 			val tool = new PanningSelectionToolEntry()
 			toolbar.add(tool)
-			//toolbar.add(newTool("Sticky Note", "Note to write things...", "stickynote", StickyNote.class, Icons.class))
 			palette.setDefaultEntry(tool)
 			toolbar
 		});
     val boxToolbar = new PaletteToolbar("Box Tools")
-     boxToolbar.add(newTool("Composed Box","A Box Composed of other boxes", "composed", classOf[ComposedVBox],classOf[Icons]));
-     boxToolbar.add(newTool("Input port","Input port", "portin", classOf[VPort],classOf[Icons]));
-     boxToolbar.add(newTool("Output port","Ouput port", "portout", classOf[VPort],classOf[Icons]));
-     //boxToolbar.add(newTool("Composed Box","A Box Composed of other boxes", "composed", classOf[ComposedVBox],classOf[Icons]));
-
-      //boxToolbar.add(newTool("Instance Box","An instance of another user model", "instance", InstanceVBox.getClass, Icons.getClass));
-      //boxToolbar.add(newTool("Constant Box", "A constant output box", "const", ConstVBox.getClass, Icons.getClass));
-      //boxToolbar.add(newTool("Value Box", "Reads or writes values from external device", "value", ValueVBox.getClass, Icons.getClass));
-      boxToolbar.add(new ConnectionCreationToolEntry("Wire",
-        "Creates a new Wire", new CreationFactory() {
-          def getObjectType() = classOf[VWire]
-          def getNewObject() = classOf[VWire]
-        }, ir.getDescriptor("wire_16"),
-        ir.getDescriptor("wire_32")
-        )
-      );
-   
+    boxToolbar.add(newTool("Composed Box","A Box Composed of other boxes", "composed", classOf[ComposedVBox],classOf[Icons]));
+    boxToolbar.add(newTool("Input port","Input port", "portin", classOf[VPort],classOf[Icons]));
+    boxToolbar.add(newTool("Output port","Ouput port", "portout", classOf[VPort],classOf[Icons]));
+    boxToolbar.add(new ConnectionCreationToolEntry("Wire",
+      "Creates a new Wire", new CreationFactory() {
+        def getObjectType() = classOf[VWire]
+        def getNewObject() = classOf[VWire]
+      }, ir.getDescriptor("wire_16"),
+      ir.getDescriptor("wire_32")
+      )
+    );
     palette.add(boxToolbar)
 		palette
 	}
