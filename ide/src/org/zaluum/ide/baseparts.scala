@@ -144,7 +144,6 @@ trait XYLayoutPart extends AbstractGraphicalEditPart{
   def positionCommand(pos:Positional, p : geometry.Point):Command =PositionCommand(pos,(p.x,p.y))
   def specialPlaceCommand(p:AnyRef, rect:Rectangle) :Command= null
   def createCommand(newObject : AnyRef, r:Rectangle):Command = null
-  def resizableChild = false
 
   override abstract protected def createEditPolicies {
     installEditPolicy(EditPolicy.LAYOUT_ROLE, new XYLayoutEditPolicy(){
@@ -157,9 +156,10 @@ trait XYLayoutPart extends AbstractGraphicalEditPart{
           }
         override protected def getCreateCommand(request : CreateRequest) = 
           createCommand(request.getNewObject,getConstraintFor(request).asInstanceOf[Rectangle])
-        override protected def createChildEditPolicy(child : EditPart) = 
-          if (resizableChild) new NonResizableEditPolicy()
-          else super.createChildEditPolicy(child)
+        override protected def createChildEditPolicy(child : EditPart) = child.getModel match{
+          case r:Resizable => super.createChildEditPolicy(child)
+          case _ =>new NonResizableEditPolicy()
+        }
       });
     super.createEditPolicies
   }
