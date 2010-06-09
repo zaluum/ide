@@ -115,7 +115,8 @@ trait HighlightPart extends AbstractGraphicalEditPart {
 
 trait XYLayoutPart extends AbstractGraphicalEditPart{
   def resizeCommand(res:Resizable, r:Rectangle):Command = ResizeCommand(res, (r.x,r.y), (r.width,r.height))
-  def positionCommand(pos:Positional, p : org.eclipse.draw2d.geometry.Point):Command =PositionCommand(pos,(p.x,p.y))
+  def positionCommand(pos:Positional, p : geometry.Point):Command =PositionCommand(pos,(p.x,p.y))
+  def specialPlaceCommand(p:AnyRef, rect:Rectangle) :Command= null
   def createCommand(newObject : AnyRef, r:Rectangle):Command = null
   def resizableChild = false
 
@@ -126,6 +127,7 @@ trait XYLayoutPart extends AbstractGraphicalEditPart{
             (child.getModel,constraint) match {
               case (c:Resizable, rect:Rectangle) => resizeCommand(c,rect)
               case (p:Positional, rect:Rectangle) => positionCommand(p,rect.getTopLeft)
+              case (p, rect:Rectangle) => specialPlaceCommand(p,rect)
           }
         override protected def getCreateCommand(request : CreateRequest) = 
           createCommand(request.getNewObject,getConstraintFor(request).asInstanceOf[Rectangle])
@@ -173,15 +175,36 @@ trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
     super.createEditPolicies
   }
 }
-
 trait ConnectionPart extends AbstractConnectionEditPart{
   def delete : Command = null
+  def createBendpoint(p:geometry.Point, i:Int):Command
+  def deleteBendpoint(i:Int):Command
   override abstract protected def createEditPolicies{
     installEditPolicy(EditPolicy.CONNECTION_BENDPOINTS_ROLE,
         new BendpointEditPolicy(){
-      def getCreateBendpointCommand(req : BendpointRequest):Command=null;
-      def getDeleteBendpointCommand(req : BendpointRequest):Command=null;
-      def getMoveBendpointCommand(req : BendpointRequest):Command=null;
+         private def toBendpoint(request : BendpointRequest)={
+            val p = request.getLocation();
+            val conn = getConnection();
+            conn.translateToRelative(p);
+            
+            val ref1 = getConnection().getSourceAnchor().getReferencePoint();
+            val ref2 = getConnection().getTargetAnchor().getReferencePoint();
+            
+            conn.translateToRelative(ref1);
+            conn.translateToRelative(ref2);
+            
+            val p1 = p.getDifference(ref1)
+            val p2 = p.getDifference(ref2)
+            ((p1.width,p1.height),(p2.width,p2.height))
+         }
+      def getCreateBendpointCommand(req : BendpointRequest):Command=createBendpoint(req.getLocation,req.getIndex)
+      def getDeleteBendpointCommand(req : BendpointRequest):Command=deleteBendpoint(req.getIndex);
+      def getMoveBendpointCommand(req : BendpointRequest):Command= { 
+        val c= new CompoundCommand()
+        c.add(deleteBendpoint(req.getIndex))
+        c.add(createBendpoint(req.getLocation,req.getIndex))
+        c
+      }
     });
     installEditPolicy(EditPolicy.CONNECTION_ENDPOINTS_ROLE,
         new ConnectionEndpointEditPolicy());
@@ -190,6 +213,7 @@ trait ConnectionPart extends AbstractConnectionEditPart{
     });
     super.createEditPolicies
   }
+ 
 }
 
 trait SnapPart extends AbstractGraphicalEditPart {

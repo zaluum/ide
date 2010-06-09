@@ -1,5 +1,5 @@
 package org.zaluum.ide
-import org.zaluum.runtime.{Command=>C,_}
+import org.zaluum.runtime.{Command=>C,Bendpoint=>BP,_}
 import org.eclipse.swt.SWT
 import org.eclipse.draw2d._
 import org.eclipse.core.runtime._
@@ -106,10 +106,10 @@ class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,m
     val slot = fig.slotFromPosition(r.getTopLeft)
     if (model.slotUsed(slot)) None else Some(slot)
   }
-  override def resizeCommand(r:Resizable, rect:Rectangle)={
-    (r,freeSlot(rect)) match { 
-      case (p:VPort,Some(slot:Slot)) => new SCommand(p.slot,p.slot_=,slot)
-      case _ => null
+  override def specialPlaceCommand(port:AnyRef, r:Rectangle)={
+    (port,freeSlot(r)) match { 
+      case (p:VPort,Some(slot)) =>  new SCommand(p.slot,p.slot_=,slot,p)
+      case (p,v) => null
     } 
   }
   override def createCommand(clazz:Object, r:Rectangle) =  {
@@ -128,6 +128,18 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
         with BasePart[VWire] with Updater with ConnectionPart {
   type F = PolylineConnection
   override def createFigure = WireFigure()
+  implicit def dimToTuple (d:Dimension) = (d.width,d.height)
+  implicit def toBendpoint(p : geometry.Point) = {
+    fig.translateToRelative(p);
+    val ref1 = fig.getSourceAnchor.getReferencePoint
+    val ref2 = fig.getTargetAnchor.getReferencePoint
+    fig.translateToRelative(ref1);
+    fig.translateToRelative(ref2);
+    BP(p.getDifference(ref1),p.getDifference(ref2))
+  }
+  def createBendpoint(l:geometry.Point, i: Int) = CreateBendpointCommand(model, l, i)
+  def deleteBendpoint(i: Int) = DeleteBendpointCommand(model, i)
+  
   override def refreshVisuals  = {
     val s = (model.bendpoints map { wbp=>      
           val rbp = new RelativeBendpoint(fig);

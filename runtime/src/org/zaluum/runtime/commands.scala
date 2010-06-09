@@ -103,3 +103,31 @@ case class CreateWireCommand(parent: ComposedVBox, source:VPort, target:VPort) e
     notifyObservers
   }
 }
+case class CreateBendpointCommand(wire : VWire, pos: Bendpoint, i : Int) extends Command{
+  val old = wire.bendpoints
+  def redo {
+    val s = wire.bendpoints.splitAt(i) match {
+      case (p1,p2) => p1 ::: pos :: p2
+    }
+    wire.asInstanceOf[PWire].bendpoints = s
+    wire.notifyObservers
+  }
+  def undo {
+    wire.asInstanceOf[PWire].bendpoints = old
+    wire.notifyObservers
+  }
+}
+case class DeleteBendpointCommand(wire : VWire, i:Int) extends Command{
+  val old = wire.bendpoints
+  def redo {
+    wire.asInstanceOf[PWire].bendpoints =  wire.bendpoints.splitAt(i) match { 
+      case (pre, e :: post)  => pre ::: post
+      case _ => error("out of range")
+    }
+    wire.notifyObservers
+  }
+  def undo {
+    wire.asInstanceOf[PWire].bendpoints = old
+    wire.notifyObservers
+  }
+}

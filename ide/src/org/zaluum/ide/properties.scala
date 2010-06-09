@@ -25,7 +25,7 @@ trait RefPropertySource[T<:Subject] extends BasePart[T] with IPropertySource{
   
   def isPropertySet(id : Object) = false 
   def resetPropertyValue(id : Object) { }
-  override def getPropertyValue(id : Object) : Object =  id.asInstanceOf[Property[String]].get() 
+  override def getPropertyValue(id : Object) : Object =  id.asInstanceOf[Property[AnyRef]].get() 
   override def setPropertyValue(id:Object, value:Object)  {
     id.asInstanceOf[Property[AnyRef]].set(value)
     model.notifyObservers
