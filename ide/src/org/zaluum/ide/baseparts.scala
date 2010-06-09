@@ -47,9 +47,9 @@ trait DirectEditPart extends AbstractGraphicalEditPart {
     case RequestConstants.REQ_DIRECT_EDIT => doEdit
     case _ => super.performRequest(req)
   }
-  def policyEdit
+  def policyEdit : DirectEditPolicy
   override abstract protected def createEditPolicies {
-    policyEdit
+    installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, policyEdit)
     super.createEditPolicies
   }
 }

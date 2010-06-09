@@ -108,7 +108,7 @@ class BoxEditPartWrite(parent:EditPart, model:VBox) extends BoxEditPart(parent,m
   }
   override def resizeCommand(r:Resizable, rect:Rectangle)={
     (r,freeSlot(rect)) match { 
-      case (p:VPort,Some(slot:Slot)) => new SCommand(p.slot,p.slot_=,slot)
+      case (p:VPort,Some(slot:Slot)) => new SCommand(p.slot,p.slot_=,slot,p)
       case _ => null
     } 
   }
@@ -171,8 +171,52 @@ class PortEditPart(val model : VPort)extends BasePart[VPort]
        StringProperty("Label", model.link _, model.link_= _)
        )
   def editFigure : BoxLabel = fig.link
-  def doEdit = { new PortDirectEditManager(this, new TextEditorLocator(fig.link)).show }
-  def policyEdit = installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, new LabelDirectEditPolicy)
+  def doEdit = new PortDirectEditManager(this, new TextEditorLocator(fig.link)).show
+	import org.eclipse.gef.tools.DirectEditManager
+	import org.eclipse.gef.tools.CellEditorLocator
+	import org.eclipse.jface.fieldassist.ContentProposalAdapter
+	import org.eclipse.jface.fieldassist.SimpleContentProposalProvider
+	import org.eclipse.jface.bindings.keys.KeyStroke
+	import org.eclipse.jface.fieldassist.TextContentAdapter
+	class PortDirectEditManager(source : GraphicalEditPart, locator : CellEditorLocator ) extends DirectEditManager(source, null, locator) {
+	  def initCellEditor = {
+	    if(source.isInstanceOf[DirectEditPart]) {
+	      getCellEditor.setValue(source.asInstanceOf[DirectEditPart].editFigure.getText)
+	      getCellEditor.getControl.setFont(getEditPart.getFigure.getFont)
+	      new ContentProposalAdapter(getCellEditor.getControl, new TextContentAdapter, 
+	        new SimpleContentProposalProvider(Array("P1","P2","P3")), KeyStroke.getInstance("Ctrl+Space"), null)
+	    }
+	  }
+	  import org.eclipse.swt.widgets.Composite
+	  import org.eclipse.jface.viewers.TextCellEditor
+	  import org.eclipse.jface.viewers.CellEditor
+	  override def createCellEditorOn(composite : Composite) : CellEditor = {
+		new TextCellEditor(composite)
+	  }
+	}
+	import org.eclipse.jface.viewers.CellEditor
+	import org.eclipse.swt.widgets.Text
+	class TextEditorLocator(label:Figure) extends CellEditorLocator {
+	  override def relocate(celleditor : CellEditor) = {
+	    val text : Text = celleditor.getControl.asInstanceOf[Text]
+	    val rect = label.getClientArea
+	    val trim = text.computeTrim(0, 0, 0, 0);
+	    label.translateToAbsolute(rect);
+	    rect.translate(trim.x, trim.y); rect.width += trim.width; rect.height += trim.height;
+	    text.setBounds(rect.x, rect.y, rect.width, rect.height);    
+	  } 
+	}
+  def policyEdit = new org.eclipse.gef.editpolicies.DirectEditPolicy {
+    import org.eclipse.gef.requests.DirectEditRequest
+    def getDirectEditCommand(edit : DirectEditRequest) = {
+	  val value = edit.getCellEditor.getValue.asInstanceOf[String].replaceAll("\n", "")
+	  new SCommand(model.link,model.link_=,value,model)
+    }
+    def showCurrentEditValue(req : DirectEditRequest) = {
+      fig.link.setText(req.getCellEditor.getValue.asInstanceOf[String])
+      getHostFigure.getUpdateManager.performUpdate
+    }
+  }
   private def filterWires (f : (VWire => Boolean)) = {
     val s = Set[VWire]()
     for {
