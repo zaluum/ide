@@ -128,18 +128,17 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
         with BasePart[VWire] with Updater with ConnectionPart {
   type F = PolylineConnection
   override def createFigure = WireFigure()
-  override def refreshVisuals {
-    val figureConstraint = new ArrayList[RelativeBendpoint]();
-    for (wbp <- model.bendpoints)
-    {
-      val rbp = new RelativeBendpoint(fig);
-      rbp.setRelativeDimensions(
-          new Dimension(wbp.a._1, wbp.a._2), 
-          new Dimension(wbp.b._1, wbp.b._2))
-      rbp.setWeight(0);
-      figureConstraint.add(rbp);
-    }
-    getConnectionFigure().setRoutingConstraint(figureConstraint);
+  override def refreshVisuals  = {
+    val s = (model.bendpoints map { wbp=>      
+          val rbp = new RelativeBendpoint(fig);
+          rbp.setRelativeDimensions(
+            new Dimension(wbp.a._1, wbp.a._2), 
+            new Dimension(wbp.b._1, wbp.b._2))
+          rbp.setWeight(0);
+          rbp
+        }).toBuffer 
+    val l = asList(s)
+    getConnectionFigure.setRoutingConstraint(l)
   }
 }
 
@@ -189,7 +188,7 @@ class PortEditPart(val model : VPort)extends BasePart[VPort]
   def highlightFigure = fig.triangle 
   
   override def refreshVisuals {
-    fig.arrange(true,model.slot.left, model.slot.pos, model.name, "link")
+    fig.arrange(true,model.slot.left, model.slot.pos, model.name, model.link)
   }
 }
 class PortEditPartWrite(model:VPort) extends PortEditPart(model){

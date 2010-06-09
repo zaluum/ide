@@ -80,7 +80,7 @@ class BoxWizardPage(
   override protected def getInitialContents = {
     val box = new ComposedPBox()
     val model = VModel(box)
-    new java.io.ByteArrayInputStream(box.toProto.toString.getBytes(Charsets.UTF_8))
+    new java.io.ByteArrayInputStream(box.toProto.build.toString.getBytes(Charsets.UTF_8))
   }
 
   def setDescription() {
