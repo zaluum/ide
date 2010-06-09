@@ -5,70 +5,37 @@ import org.eclipse.ui.views.properties.IPropertyDescriptor;
 import org.eclipse.ui.views.properties.TextPropertyDescriptor;
 import org.eclipse.ui.views.properties.PropertyDescriptor;
 import org.zaluum.runtime._;
+abstract class Property[T]{
+  val desc:String 
+  val get : ()=>T 
+  val set: T=>_
+}
+case class StringProperty(desc:String, get : ()=>String, set : String=>_) extends Property[String]
+case class BooleanProperty(desc:String, get : ()=>Boolean, set : Boolean=>_) extends Property[Boolean]
 
-class BoxProperty(box : VBox) extends IPropertySource {
-  val NAME = "name";
-  val IMAGE = "image";
-  val model = box;
-  val desc = { Array[IPropertyDescriptor](
-      new TextPropertyDescriptor(NAME, "Name"),
-      new TextPropertyDescriptor(IMAGE, "Image"))
-  }
-  override def getEditableValue() = { this.model }
-  override def getPropertyDescriptors() : Array[IPropertyDescriptor] = { desc }
-  override def isPropertySet(id : Object) : Boolean = { false }
-  override def resetPropertyValue(id : Object) = { }
-  override def getPropertyValue(id : Object) : Object = {
-    id match {
-      case NAME => return model.name
-      case IMAGE => return null
+trait RefPropertySource[T<:Subject] extends BasePart[T] with IPropertySource{
+  def getEditableValue = model  
+  val properties : List[Property[_]] 
+  lazy val getPropertyDescriptors : Array[IPropertyDescriptor] = (properties map { 
+    _ match {
+      case str: StringProperty => new TextPropertyDescriptor(str, str.desc)
+      case b : BooleanProperty => new CheckboxPropertyDescriptor(b, b.desc)
     }
+    }).toArray
+  
+  def isPropertySet(id : Object) = false 
+  def resetPropertyValue(id : Object) { }
+  override def getPropertyValue(id : Object) : Object =  id.asInstanceOf[Property[String]].get() 
+  override def setPropertyValue(id:Object, value:Object)  {
+    id.asInstanceOf[Property[AnyRef]].set(value)
+    model.notifyObservers
   }
-  override def setPropertyValue(id:Object, value:Object) = {
-    id match {
-      case NAME => model.name_=(value.asInstanceOf[String])
-      case IMAGE => 
-    }
+  abstract override def getAdapter(key: Class[_]) = {
+    if (key == classOf[IPropertySource]) 
+      this
+    else super.getAdapter(key)
   }
 }
-
-class PortProperty(port : VPort) extends IPropertySource {
-  val INPUT = "input";
-  val TYPE = "type";
-  val NAME = "name";
-  val DIRECT = "direct";
-  val LABEL = "label";
-  val model = port;
-  val desc = { Array[IPropertyDescriptor](
-      new CheckboxPropertyDescriptor(INPUT, "Is input?"),
-      new CheckboxPropertyDescriptor(DIRECT, "Is direct input?"),
-      new TextPropertyDescriptor(TYPE, "Type"),
-      new TextPropertyDescriptor(LABEL, "Label"),
-      new TextPropertyDescriptor(NAME, "Name"))
-  }
-  override def getEditableValue() = { this.model }
-  override def getPropertyDescriptors() : Array[IPropertyDescriptor] = { desc }
-  override def isPropertySet(id : Object) : Boolean = { false }
-  override def resetPropertyValue(id : Object) = { }
-  override def getPropertyValue(id : Object) : Object = {
-    id match {
-      case INPUT => return null
-      case NAME => return model.name
-      case TYPE => return model.ttype
-      case DIRECT => return null
-      case LABEL => return null
-    }
-  }
-  override def setPropertyValue(id:Object, value:Object) = {
-    id match {
-      case INPUT => 
-      case NAME => model.name_=(value.asInstanceOf[String])
-      case TYPE => model.ttype_=(value.asInstanceOf[String])
-      case DIRECT => 
-      case LABEL => 
-    }
-  }
-} 
   
 class CheckboxPropertyDescriptor(id:Object,name:String) extends PropertyDescriptor(id,name) {
   import org.eclipse.jface.viewers.CellEditor;

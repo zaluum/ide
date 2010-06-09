@@ -293,6 +293,7 @@ trait FileEditor extends GraphicalEditor {
         Activator.logError(e.getMessage(), e);
         return;
     }
+   // super.getGraphicalViewer().setContents(model)
     super.setPartName(file.getName());
     getEditorInput match {
       case i : IFileEditorInput => 
@@ -312,15 +313,14 @@ trait FileEditor extends GraphicalEditor {
     val file = getEditorInput.asInstanceOf[IFileEditorInput].getFile
     try {
       val stream = serialize
-      //val stream = ProtoSerial.serializeTextStream(model) ;
       file.setContents(stream, true,// keep saving, even if IFile is out
           // of sync with the Workspace
           false, // dont keep history
           monitor);
       
-      getCommandStack().markSaveLocation();
+      super.getCommandStack().markSaveLocation();
     } catch {
-      case e => Activator.logError("Error saving", e);
+      case e:Exception => e.printStackTrace;Activator.logError("Error saving", e);
     }
   }
 }

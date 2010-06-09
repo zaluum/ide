@@ -23,6 +23,7 @@ import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.Rectangle
 import Commands._
+
 trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
   type F<:Figure
   def model : T
@@ -39,14 +40,28 @@ trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
   override protected def createEditPolicies (){}
 }
 
+trait DirectEditPart extends AbstractGraphicalEditPart {
+  def editFigure : BoxLabel
+  def doEdit
+  override def performRequest(req : Request) = req.getType match {
+    case RequestConstants.REQ_DIRECT_EDIT => doEdit
+    case _ => super.performRequest(req)
+  }
+  def policyEdit
+  override abstract protected def createEditPolicies {
+    policyEdit
+    super.createEditPolicies
+  }
+}
+
 trait OpenPart extends AbstractGraphicalEditPart {
   def doOpen
-  override def  performRequest(req : Request) =  req.getType match {
+  override def performRequest(req : Request) =  req.getType match {
     case RequestConstants.REQ_OPEN => doOpen
-    case _ =>  super.performRequest(req);
+    case _ =>  super.performRequest(req)
   }
-
 }
+
 trait MainPart[M <: Subject] extends AbstractGraphicalEditPart with BasePart[VModel] with XYLayoutPart with SnapPart with Subject with Updater{
   type F =FreeformLayer
   private var currentSubject_ : M = _
@@ -84,15 +99,6 @@ trait HelpContext extends IAdaptable{
   abstract override def getAdapter(key: Class[_]) = {
     if (key == classOf[IContextProvider]) 
       new ContextProvider(helpKey);
-    else super.getAdapter(key)
-  }
-}
-
-trait PropertySource extends IAdaptable{
-  def propertySource : IPropertySource
-  abstract override def getAdapter(key: Class[_]) = {
-    if (key == classOf[IPropertySource]) 
-      propertySource
     else super.getAdapter(key)
   }
 }
@@ -139,7 +145,9 @@ trait DeletablePart extends AbstractGraphicalEditPart{
     super.createEditPolicies
   }
 }
+
 case class Start[T](val p:T) extends Command
+
 trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
   def anchor : ConnectionAnchor
   override  def getSourceConnectionAnchor(connection:ConnectionEditPart)= anchor
@@ -167,7 +175,7 @@ trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
 }
 
 trait ConnectionPart extends AbstractConnectionEditPart{
-  def delete : Command
+  def delete : Command = null
   override abstract protected def createEditPolicies{
     installEditPolicy(EditPolicy.CONNECTION_BENDPOINTS_ROLE,
         new BendpointEditPolicy(){

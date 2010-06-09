@@ -233,6 +233,12 @@
             id="zaluum.BoxPerspective"
             name="Box Perspective">
       </perspective>
+      <perspective
+            class="org.zaluum.ide.DebugPerspective"
+            icon="icons/debug.png"
+            id="zaluum.DebugPerspective"
+            name="Debug Perspective">
+      </perspective>
    </extension>
    <extension
          point="org.eclipse.ui.decorators">

@@ -27,12 +27,14 @@ class ZFileEditor extends UpEditor with FileEditor{
   def factory = ZaluumWriteFactory
   def getPaletteRoot = Palette()
   import com.google.common.base.Charsets
-  def serialize = new java.io.ByteArrayInputStream(
-      model.root.asInstanceOf[ComposedPBox].toProto
-        .build.toString.getBytes(Charsets.UTF_8)
-        )
+  def serialize = new java.io.ByteArrayInputStream({
+      val s = model.root.asInstanceOf[ComposedPBox].toProto
+        .build.toString
+      println(s)
+      s.getBytes(Charsets.UTF_8)})
   def deserialize (i:java.io.InputStream) {
     model = Deserialize.deserialize(i)
+    println("deserialized model" +model)
   }
   
   override def setInput(input : IEditorInput){

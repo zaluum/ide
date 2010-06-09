@@ -10,5 +10,6 @@ Require-Bundle:
  scala.library
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: org.zaluum.runtime
+Export-Package: org.zaluum.runtime,
+ org.zaluum.runtime.serial
 Import-Package: org.osgi.framework;version="1.5.0"

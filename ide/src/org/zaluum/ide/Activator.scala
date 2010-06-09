@@ -8,7 +8,9 @@ import org.zaluum.ide.icons.Icons
 object Activator {
   val PLUGIN_ID : String = "org.zaluum.ide.editor"
   var plugin : Activator = _
-  def logError(s:String, a:AnyRef){}
+  def logError(s:String, a:AnyRef){
+    println("ERROR" + s + " " + a)
+  }
    def getDefault() : Activator = {
     return plugin;
   }
