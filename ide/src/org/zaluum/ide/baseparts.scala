@@ -24,6 +24,17 @@ import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.Rectangle
 import Commands._
 
+	import org.eclipse.gef.tools.DirectEditManager
+    import org.eclipse.gef.requests.DirectEditRequest
+	import org.eclipse.jface.fieldassist.ContentProposalAdapter
+	import org.eclipse.jface.fieldassist.SimpleContentProposalProvider
+	import org.eclipse.jface.bindings.keys.KeyStroke
+	import org.eclipse.jface.fieldassist.TextContentAdapter
+		  import org.eclipse.swt.widgets.Composite
+	  import org.eclipse.jface.viewers.TextCellEditor
+	  import org.eclipse.jface.viewers.CellEditor
+
+
 trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
   type F<:Figure
   def model : T
@@ -42,14 +53,29 @@ trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
 
 trait DirectEditPart extends AbstractGraphicalEditPart {
   def editFigure : BoxLabel
-  def doEdit
+  def contents : Array[String]
+  def editCommand(v:String) : Command
+  private val directManager = new DirectEditManager(this, null, new TextEditorLocator(editFigure)) {
+	  def initCellEditor = {
+	      getCellEditor.setValue(editFigure.getText)
+	      getCellEditor.getControl.setFont(editFigure.getFont)
+	      new ContentProposalAdapter(getCellEditor.getControl, new TextContentAdapter, 
+	        new SimpleContentProposalProvider(contents), KeyStroke.getInstance("Ctrl+Space"), null)
+	  }
+	  override def createCellEditorOn(composite : Composite) = new TextCellEditor(composite)	  
+  }
   override def performRequest(req : Request) = req.getType match {
-    case RequestConstants.REQ_DIRECT_EDIT => doEdit
+    case RequestConstants.REQ_DIRECT_EDIT => directManager.show
     case _ => super.performRequest(req)
   }
-  def policyEdit : DirectEditPolicy
   override abstract protected def createEditPolicies {
-    installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, policyEdit)
+    installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, new org.eclipse.gef.editpolicies.DirectEditPolicy {
+	    def getDirectEditCommand(edit:DirectEditRequest) = editCommand(edit.getCellEditor.getValue.asInstanceOf[String].replaceAll("\n", ""))
+	    def showCurrentEditValue(req : DirectEditRequest) = {
+	      editFigure.setText(req.getCellEditor.getValue.asInstanceOf[String])
+	      getHostFigure.getUpdateManager.performUpdate
+	    }
+    })
     super.createEditPolicies
   }
 }
