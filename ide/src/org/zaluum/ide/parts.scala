@@ -41,7 +41,7 @@ class ModelEditPart(val model : VModel) extends MainPart[Subject]{
   }
   override def createCommand(t : AnyRef, r:Rectangle) = (t,currentSubject) match {
     case (classes.ComposedVBoxClass, c:ComposedVBox) =>
-      val b = new PBox
+      val b = new ComposedPBox
       b.pos =(r.x,r.y)
       b.size =(r.width,r.height)
       new CreateBoxCommand(c,b)
@@ -197,9 +197,21 @@ class PortEditPart(val model : VPort)extends BasePart[VPort]
 }
 class PortEditPartWrite(model:VPort) extends PortEditPart(model) 
             with DirectEditPart with RefPropertySourceWrite[VPort]{
-  def editFigure = fig.link
-  def editCommand(v:String) = new SCommand(model.link,model.link_=,v,model)
-  def contents = Array("Hola","Adeu")
+  override def editFigure = fig.link
+  override def editCommand(v:String) = new SCommand(model.link,model.link_=,v,model)
+  def contents = {
+   val mainBox = model.vbox.parent
+   val ports = for {
+      p <- mainBox.ports
+      if(p.name!="" && model.in!=p.in)
+   }  yield "@" + p.name
+   val labels = for {
+      b <- mainBox.boxes
+      p <- b.ports
+      if(p.link!="" && model.in!=p.in)} 
+   yield p.link
+   ((List()++labels).sort(_<_) ++ ((List()++ports).sort(_<_))).toArray // XXX improve!
+  }
   override def connect(source:VPort) = model.vbox.parent match {
     case null=> null // do not create wire on top
     case p => CreateWireCommand(p,source,model)

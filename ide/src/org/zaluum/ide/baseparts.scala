@@ -32,7 +32,16 @@ import org.eclipse.jface.viewers.TextCellEditor
 import org.eclipse.jface.viewers.CellEditor
 import org.eclipse.swt.widgets.Composite
 import Commands._
-
+import org.eclipse.gef.tools.DirectEditManager
+import org.eclipse.gef.requests.DirectEditRequest
+import org.eclipse.jface.fieldassist.ContentProposalAdapter
+import org.eclipse.jface.fieldassist.SimpleContentProposalProvider
+import org.eclipse.jface.bindings.keys.KeyStroke
+import org.eclipse.jface.fieldassist.TextContentAdapter
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.jface.viewers.TextCellEditor
+import org.eclipse.jface.viewers.CellEditor
+import org.eclipse.jface.viewers.LabelProvider
 
 trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
   type F<:Figure
@@ -58,8 +67,13 @@ trait DirectEditPart extends AbstractGraphicalEditPart {
 	  def initCellEditor = {
 	      getCellEditor.setValue(editFigure.getText)
 	      getCellEditor.getControl.setFont(editFigure.getFont)
-	      new ContentProposalAdapter(getCellEditor.getControl, new TextContentAdapter, 
-	        new SimpleContentProposalProvider(contents), KeyStroke.getInstance("Ctrl+Space"), null)
+	      new ContentProposalAdapter(getCellEditor.getControl, new TextContentAdapter, new EditCPP(contents),
+          KeyStroke.getInstance("Ctrl+Space"), null).setLabelProvider(
+          new LabelProvider(){
+            override def getText(o : Object) = {
+              o.asInstanceOf[ContentProposal].getContent
+            }
+          })
 	  }
 	  override def createCellEditorOn(composite : Composite) = new TextCellEditor(composite)	  
   }
@@ -269,11 +283,7 @@ trait SnapPart extends AbstractGraphicalEditPart {
         return null;
       if (snapStrategies.size() == 1)
         return snapStrategies.get(0);
-
-      val ss = new Array[SnapToHelper](snapStrategies.size());
-      for (i <- 0 to snapStrategies.size())
-        ss(i) = snapStrategies.get(i);
-      return new CompoundSnapToHelper(ss);
+      new CompoundSnapToHelper(Array.tabulate(snapStrategies.size)(snapStrategies.get(_)))
     } else
       return super.getAdapter(adapter);
   }
