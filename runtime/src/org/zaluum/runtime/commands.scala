@@ -27,7 +27,7 @@ case class CreateBoxCommand(val parent:ComposedVBox, val box:VBox) extends Comma
     parent.notifyObservers
   }
 }
-class ComposedCommand(val commands : List[Command]) extends Command{
+case class ComposedCommand(val commands : List[Command]) extends Command{
   def redo = commands foreach {_.redo }
   def undo = commands.reverse foreach { _.undo }
 }
@@ -101,5 +101,33 @@ case class CreateWireCommand(parent: ComposedVBox, source:VPort, target:VPort) e
   def undo {
     parent.asInstanceOf[ComposedPBox].connections.remove(w)
     notifyObservers
+  }
+}
+case class CreateBendpointCommand(wire : VWire, pos: Bendpoint, i : Int) extends Command{
+  val old = wire.bendpoints
+  def redo {
+    val s = wire.bendpoints.splitAt(i) match {
+      case (p1,p2) => p1 ::: pos :: p2
+    }
+    wire.asInstanceOf[PWire].bendpoints = s
+    wire.notifyObservers
+  }
+  def undo {
+    wire.asInstanceOf[PWire].bendpoints = old
+    wire.notifyObservers
+  }
+}
+case class DeleteBendpointCommand(wire : VWire, i:Int) extends Command{
+  val old = wire.bendpoints
+  def redo {
+    wire.asInstanceOf[PWire].bendpoints =  wire.bendpoints.splitAt(i) match { 
+      case (pre, e :: post)  => pre ::: post
+      case _ => error("out of range")
+    }
+    wire.notifyObservers
+  }
+  def undo {
+    wire.asInstanceOf[PWire].bendpoints = old
+    wire.notifyObservers
   }
 }

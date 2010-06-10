@@ -13,11 +13,13 @@ object ProtoConversions {
   }
 }
 import ProtoConversions._
+
 class PBox extends VBox {
   override var parent : ComposedVBox = _
   var ports = Set[VPort]()
   override var name = ""
   def fqName = ""  
+  override def uniquenessSet = if (parent==null) List() else parent.boxes
   def toProto = {
      val b = Box.newBuilder
     b.setType(BoxType.SCRIPT)
@@ -37,6 +39,7 @@ class PPort extends VPort {
   override var link = ""
   def fqName = ""
   override var name = ""
+  override def uniquenessSet = vbox.ports
   def toProto = {
      Port.newBuilder()
       .setName(name)

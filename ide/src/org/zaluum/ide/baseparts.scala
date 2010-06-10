@@ -22,6 +22,15 @@ import scala.collection.mutable._
 import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.Rectangle
+import org.eclipse.gef.tools.DirectEditManager
+import org.eclipse.gef.requests.DirectEditRequest
+import org.eclipse.jface.fieldassist.ContentProposalAdapter
+import org.eclipse.jface.fieldassist.SimpleContentProposalProvider
+import org.eclipse.jface.fieldassist.TextContentAdapter
+import org.eclipse.jface.bindings.keys.KeyStroke
+import org.eclipse.jface.viewers.TextCellEditor
+import org.eclipse.jface.viewers.CellEditor
+import org.eclipse.swt.widgets.Composite
 import Commands._
 import org.eclipse.gef.tools.DirectEditManager
 import org.eclipse.gef.requests.DirectEditRequest
@@ -117,6 +126,7 @@ trait MainPart[M <: Subject] extends AbstractGraphicalEditPart with BasePart[VMo
     freeformLayer
   }
 }
+
 trait Updater {
   self : Observer with AbstractGraphicalEditPart =>
   override def receiveUpdate(s: Subject) {
@@ -146,9 +156,9 @@ trait HighlightPart extends AbstractGraphicalEditPart {
 
 trait XYLayoutPart extends AbstractGraphicalEditPart{
   def resizeCommand(res:Resizable, r:Rectangle):Command = ResizeCommand(res, (r.x,r.y), (r.width,r.height))
-  def positionCommand(pos:Positional, p : org.eclipse.draw2d.geometry.Point):Command =PositionCommand(pos,(p.x,p.y))
+  def positionCommand(pos:Positional, p : geometry.Point):Command =PositionCommand(pos,(p.x,p.y))
+  def specialPlaceCommand(p:AnyRef, rect:Rectangle) :Command= null
   def createCommand(newObject : AnyRef, r:Rectangle):Command = null
-  def resizableChild = false
 
   override abstract protected def createEditPolicies {
     installEditPolicy(EditPolicy.LAYOUT_ROLE, new XYLayoutEditPolicy(){
@@ -157,12 +167,14 @@ trait XYLayoutPart extends AbstractGraphicalEditPart{
             (child.getModel,constraint) match {
               case (c:Resizable, rect:Rectangle) => resizeCommand(c,rect)
               case (p:Positional, rect:Rectangle) => positionCommand(p,rect.getTopLeft)
+              case (p, rect:Rectangle) => specialPlaceCommand(p,rect)
           }
         override protected def getCreateCommand(request : CreateRequest) = 
           createCommand(request.getNewObject,getConstraintFor(request).asInstanceOf[Rectangle])
-        override protected def createChildEditPolicy(child : EditPart) = 
-          if (resizableChild) new NonResizableEditPolicy()
-          else super.createChildEditPolicy(child)
+        override protected def createChildEditPolicy(child : EditPart) = child.getModel match{
+          case r:Resizable => super.createChildEditPolicy(child)
+          case _ =>new NonResizableEditPolicy()
+        }
       });
     super.createEditPolicies
   }
@@ -204,15 +216,36 @@ trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
     super.createEditPolicies
   }
 }
-
 trait ConnectionPart extends AbstractConnectionEditPart{
   def delete : Command = null
+  def createBendpoint(p:geometry.Point, i:Int):Command = null
+  def deleteBendpoint(i:Int):Command = null
   override abstract protected def createEditPolicies{
     installEditPolicy(EditPolicy.CONNECTION_BENDPOINTS_ROLE,
         new BendpointEditPolicy(){
-      def getCreateBendpointCommand(req : BendpointRequest):Command=null;
-      def getDeleteBendpointCommand(req : BendpointRequest):Command=null;
-      def getMoveBendpointCommand(req : BendpointRequest):Command=null;
+         private def toBendpoint(request : BendpointRequest)={
+            val p = request.getLocation();
+            val conn = getConnection();
+            conn.translateToRelative(p);
+            
+            val ref1 = getConnection().getSourceAnchor().getReferencePoint();
+            val ref2 = getConnection().getTargetAnchor().getReferencePoint();
+            
+            conn.translateToRelative(ref1);
+            conn.translateToRelative(ref2);
+            
+            val p1 = p.getDifference(ref1)
+            val p2 = p.getDifference(ref2)
+            ((p1.width,p1.height),(p2.width,p2.height))
+         }
+      def getCreateBendpointCommand(req : BendpointRequest):Command=createBendpoint(req.getLocation,req.getIndex)
+      def getDeleteBendpointCommand(req : BendpointRequest):Command=deleteBendpoint(req.getIndex);
+      def getMoveBendpointCommand(req : BendpointRequest):Command= { 
+        val c= new CompoundCommand()
+        c.add(deleteBendpoint(req.getIndex))
+        c.add(createBendpoint(req.getLocation,req.getIndex))
+        c
+      }
     });
     installEditPolicy(EditPolicy.CONNECTION_ENDPOINTS_ROLE,
         new ConnectionEndpointEditPolicy());
@@ -221,6 +254,7 @@ trait ConnectionPart extends AbstractConnectionEditPart{
     });
     super.createEditPolicies
   }
+ 
 }
 
 trait SnapPart extends AbstractGraphicalEditPart {
@@ -259,4 +293,32 @@ trait SnapPart extends AbstractGraphicalEditPart {
       return super.getAdapter(adapter);
   }
 
+}
+
+trait RefPropertySource[T<:Subject] extends BasePart[T] with IPropertySource{
+  def getEditableValue = model  
+  def properties : List[Property[_]]
+  def toDescriptor : PartialFunction[Property[_],IPropertyDescriptor]= {
+      case p: Property[_] => new PropertyDescriptor(p, p.desc)
+  }
+  lazy val getPropertyDescriptors : Array[IPropertyDescriptor] = (properties map toDescriptor).toArray  
+  def isPropertySet(id : Object) = false 
+  def resetPropertyValue(id : Object) { }
+  override def getPropertyValue(id : Object) : Object =  id.asInstanceOf[Property[AnyRef]].get()
+  override def setPropertyValue(id:Object, value:Object)  {}
+  abstract override def getAdapter(key: Class[_]) = {
+    if (key == classOf[IPropertySource]) 
+      this
+    else super.getAdapter(key)
+  }
+}
+trait RefPropertySourceWrite[T<:Subject] extends RefPropertySource[T]{
+  override def toDescriptor : PartialFunction[Property[_],IPropertyDescriptor]= {
+      case str: StringProperty => new TextPropertyDescriptor(str, str.desc)
+      case b : BooleanProperty => new CheckboxPropertyDescriptor(b, b.desc)
+  }
+  override def setPropertyValue(id:Object, value:Object)  {
+    id.asInstanceOf[Property[AnyRef]].set(value)
+    model.notifyObservers
+  }
 }

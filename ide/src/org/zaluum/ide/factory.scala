@@ -1,7 +1,7 @@
 package org.zaluum.ide
 import org.eclipse.gef._
 import org.zaluum.runtime._
-object ZaluumFactory extends EditPartFactory {
+object ZaluumReadOnlyFactory extends EditPartFactory {
   def createEditPart(context: EditPart, model: Object): EditPart = model match { 
     case model : VModel => new ModelEditPart(model)
     case cbox : ComposedVBox => new BoxEditPart(context,cbox) with ComposedEditPartT
