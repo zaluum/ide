@@ -24,6 +24,7 @@ case class CreateBoxCommand(val parent:ComposedVBox, val box:VBox) extends Comma
   def redo = {
     box.parent = parent
     parent.boxes += box
+    box.uniqueName("box")
     parent.notifyObservers
   }
 }

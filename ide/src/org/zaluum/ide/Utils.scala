@@ -35,17 +35,9 @@ class TextEditorLocator(label:Figure) extends CellEditorLocator {
   } 
 }
 
-class EditCPP(c : Array[String]) extends IContentProposalProvider() {
-  val contents = c
-  override def getProposals(contentsProposal : String, position : Int) : Array[IContentProposal] = {
-    val c : Buffer[ContentProposal] = Buffer()
-    var i = 0
-    while(i < contents.size) {
-      c.add(new ContentProposal(i, contents(i)))
-      i+=1
-    }
-    c.toArray
-  }
+class EditCPP(val c : Array[String]) extends IContentProposalProvider() {
+  override def getProposals(contentsProposal : String, position : Int) = 
+    Array.tabulate(c.size)(i=> new ContentProposal(i,c(i)))
 }
 
 class ContentProposal(index : Int, text : String) extends IContentProposal {

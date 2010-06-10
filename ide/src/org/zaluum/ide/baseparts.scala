@@ -63,7 +63,6 @@ trait DirectEditPart extends AbstractGraphicalEditPart {
   def editFigure : BoxLabel
   def contents : Array[String]
   def editCommand(v:String) : Command
-  val upSeparator = "@"
   private val directManager = new DirectEditManager(this, null, new TextEditorLocator(editFigure)) {
 	  def initCellEditor = {
 	      getCellEditor.setValue(editFigure.getText)
@@ -284,11 +283,7 @@ trait SnapPart extends AbstractGraphicalEditPart {
         return null;
       if (snapStrategies.size() == 1)
         return snapStrategies.get(0);
-
-      val ss = new Array[SnapToHelper](snapStrategies.size());
-      for (i <- 0 to snapStrategies.size())
-        ss(i) = snapStrategies.get(i);
-      return new CompoundSnapToHelper(ss);
+      new CompoundSnapToHelper(Array.tabulate(snapStrategies.size)(snapStrategies.get(_)))
     } else
       return super.getAdapter(adapter);
   }
