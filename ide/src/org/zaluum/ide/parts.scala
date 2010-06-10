@@ -44,10 +44,6 @@ class ModelEditPart(val model : VModel) extends MainPart[Subject]{
       val b = new PBox
       b.pos =(r.x,r.y)
       b.size =(r.width,r.height)
-      var name = "box"
-      var i = 0
-      while (c.boxes exists {_.name == "box"+ i}) {i+=1}
-      b.name = "box"+i
       new CreateBoxCommand(c,b)
     case _ => null
   }

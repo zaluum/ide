@@ -29,14 +29,18 @@ trait Resizable extends Positional {
 trait FQNamable {
   def name : String
   def name_= (s:String) { error("VO")}
-  type Named = { def name:String}
   def uniquenessSet : Iterable[FQNamable] = List.empty
+  def toValidStr (str :String) = {
+    val s = str.filter(_.isLetterOrDigit) 
+    if (s.length==0) "A" else s
+  }
   def uniqueName(str:String)={
-    var candidate = str
+    val valid = toValidStr(str)
+    var candidate = valid
     var i = 0
     while(uniquenessSet.exists(_.name==candidate)) {
       i+=1
-      candidate = str + i
+      candidate = valid + i
     } 
     name = candidate
   }
