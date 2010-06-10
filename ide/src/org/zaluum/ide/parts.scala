@@ -172,7 +172,16 @@ class PortEditPart(val model : VPort)extends BasePart[VPort]
        )
   def editFigure = fig.link
   def editCommand(v:String) = new SCommand(model.link,model.link_=,v,model)
-  def contents = Array("Hola","Adeu")
+  def contents = {
+    val ports : Buffer[String] = Buffer()
+    val mainBox = model.vbox.parent
+    for(p <- mainBox.ports)
+      if(p.name!="" && !ports.contains(upSeparator + p.name) && model.in!=p.in) ports.add(upSeparator + p.name)
+    for(b <- mainBox.boxes)
+      for(p <- b.ports)
+        if(p.link!="" && !ports.contains(p.link) && model.in!=p.in) ports.add(p.link)
+    ports.toArray
+  }
   private def filterWires (f : (VWire => Boolean)) = {
     val s = Set[VWire]()
     for {

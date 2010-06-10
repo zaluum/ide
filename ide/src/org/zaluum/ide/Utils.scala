@@ -4,6 +4,10 @@ import org.eclipse.swt.widgets.Text
 import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.gef.tools.CellEditorLocator
 import org.eclipse.draw2d.Figure
+import org.eclipse.jface.fieldassist.IContentProposalProvider
+import org.eclipse.jface.fieldassist.IContentProposal
+import scala.collection.JavaConversions._
+import scala.collection.mutable._
 
 object Utils {
 
@@ -29,4 +33,26 @@ class TextEditorLocator(label:Figure) extends CellEditorLocator {
     rect.translate(trim.x, trim.y); rect.width += trim.width; rect.height += trim.height;
     text.setBounds(rect.x, rect.y, rect.width, rect.height);    
   } 
+}
+
+class EditCPP(c : Array[String]) extends IContentProposalProvider() {
+  val contents = c
+  override def getProposals(contentsProposal : String, position : Int) : Array[IContentProposal] = {
+    val c : Buffer[ContentProposal] = Buffer()
+    var i = 0
+    while(i < contents.size) {
+      c.add(new ContentProposal(i, contents(i)))
+      i+=1
+    }
+    c.toArray
+  }
+}
+
+class ContentProposal(index : Int, text : String) extends IContentProposal {
+  override def getContent() : String = { text }
+  override def getCursorPosition() : Int = { index }
+  override def getLabel() : String = { text }
+  override def getDescription() : String = { 
+      if(text.startsWith("@")) "Connect to outer port " + text.substring(1) else "Connect to neighbor port " + text
+  }
 }
