@@ -204,6 +204,17 @@ class PortEditPartWrite(model:VPort) extends PortEditPart(model)
   def editFigure = fig.link
   def editCommand(v:String) = new SCommand(model.link,model.link_=,v,model)
   def contents = Array("Hola","Adeu")
-  override def connect(source:VPort) = new CreateWireCommand(model.vbox.parent,source,model)
-  override def reconnect(req:ReconnectRequest) = null
+  override def connect(source:VPort) = model.vbox.parent match {
+    case null=> null // do not create wire on top
+    case p => CreateWireCommand(p,source,model)
+  }
+  override def reconnect(req:ReconnectRequest) = req.getConnectionEditPart.getModel match {
+    case w : VWire => 
+      val cn = if (req.isMovingStartAnchor) (model,w.to) else (w.from,model) 
+      ComposedCommand(List(
+        DeleteWireCommand(w,model.vbox.parent),
+        CreateWireCommand(model.vbox.parent, cn._1, cn._2)
+        ))
+      
+  }
 }

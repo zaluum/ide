@@ -27,7 +27,7 @@ case class CreateBoxCommand(val parent:ComposedVBox, val box:VBox) extends Comma
     parent.notifyObservers
   }
 }
-class ComposedCommand(val commands : List[Command]) extends Command{
+case class ComposedCommand(val commands : List[Command]) extends Command{
   def redo = commands foreach {_.redo }
   def undo = commands.reverse foreach { _.undo }
 }
