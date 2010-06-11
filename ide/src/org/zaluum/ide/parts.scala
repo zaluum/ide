@@ -192,7 +192,7 @@ class PortEditPart(val model : VPort)extends BasePart[VPort]
   def highlightFigure = fig.triangle 
   
   override def refreshVisuals {
-    fig.arrange(true,model.slot.left, model.slot.pos, model.name, model.link)
+    fig.arrange(model.in,model.slot.left, model.slot.pos, model.name, model.link)
   }
 }
 class PortEditPartWrite(model:VPort) extends PortEditPart(model) 

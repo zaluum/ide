@@ -75,6 +75,7 @@ case class DeleteBoxCommand(val box:VBox) extends Command{
 case class CreatePortCommand(box : VBox, slot: Slot) extends Command{
   val p = new PPort()
   p.slot = slot
+  p.in = slot.left
   def redo {
     box.asInstanceOf[PBox].ports += p
     p.vbox = box
