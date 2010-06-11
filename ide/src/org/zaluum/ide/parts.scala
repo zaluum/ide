@@ -202,15 +202,15 @@ class PortEditPartWrite(model:VPort) extends PortEditPart(model)
   def contents = {
    val mainBox = model.vbox.parent
    val ports = for {
-      p <- mainBox.ports
-      if(p.name!="" && model.in!=p.in)
-   }  yield "@" + p.name
+     p <- mainBox.ports
+     if(p.name!="" && model.in!=p.in)}  
+     yield "@" + p.name
    val labels = for {
-      b <- mainBox.boxes
-      p <- b.ports
-      if(p.link!="" && model.in!=p.in)} 
-   yield p.link
-   ((List()++labels).sort(_<_) ++ ((List()++ports).sort(_<_))).toArray // XXX improve!
+     b <- mainBox.boxes
+     p <- b.ports
+     if(p.link!="" && model.in!=p.in)} 
+     yield p.link
+   ((List()++labels).sorted ++ ((List()++ports).sorted)).toArray // XXX improve!
   }
   override def connect(source:VPort) = model.vbox.parent match {
     case null=> null // do not create wire on top

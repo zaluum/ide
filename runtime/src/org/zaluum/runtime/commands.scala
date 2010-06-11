@@ -24,7 +24,7 @@ case class CreateBoxCommand(val parent:ComposedVBox, val box:VBox) extends Comma
   def redo = {
     box.parent = parent
     parent.boxes += box
-    box.uniqueName("box")
+    box.uniqueName(box.name)
     parent.notifyObservers
   }
 }
@@ -131,4 +131,21 @@ case class DeleteBendpointCommand(wire : VWire, i:Int) extends Command{
     wire.asInstanceOf[PWire].bendpoints = old
     wire.notifyObservers
   }
+}
+import scala.collection.JavaConversions._
+case class PasteCommand(val c: ComposedPBox, val clip:serial.ModelProtos.Clipboard) extends Command{
+  val boxes = clip.getBoxList map {b=>Deserialize.deserialize(b)}
+  val wires = clip.getWireList map {w=>Deserialize.wire(boxes,c.ports,w)}
+  val command = ComposedCommand(List() ++
+      (boxes map (b=>CreateBoxCommand(c,b))) ++  
+      (wires map (w=>CreateWireCommand(c,w.from,w.to))))
+  def redo() = command.redo 
+  def undo() = command.undo
+}
+case class CutCommand(val c: ComposedPBox, val boxes:Iterable[PBox], val wires:Iterable[PWire]) extends Command{
+  val command = ComposedCommand(List() ++
+      (wires map (w=>DeleteWireCommand(w,c))) ++  
+      (boxes map (b=>DeleteBoxCommand(b))))
+  def redo() = command.redo 
+  def undo() = command.undo
 }

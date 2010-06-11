@@ -62,8 +62,9 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
   override def createActions {
     super.createActions()
     val w = this.asInstanceOf[IWorkbenchPart]
-//    add(new CopyAction(w))
-   
+    addAction(new CutAction(w))
+    addAction(new CopyAction(w))
+    addAction(new PasteAction(w))
     addAction(new AlignmentAction(w,PositionConstants.LEFT))
     addAction(new AlignmentAction(w,PositionConstants.RIGHT))
     addAction(new AlignmentAction(w,PositionConstants.TOP))
@@ -121,10 +122,10 @@ class BaseContextMenuProvider(viewer:EditPartViewer, val registry:ActionRegistry
     menu.appendToGroup(GEFActionConstants.GROUP_EDIT, 
         action(GoToDeclarationAction.ID));*/
 
-   /* addm(GROUP_COPY,ActionFactory.CUT.getId);
+    addm(GROUP_COPY,ActionFactory.CUT.getId);
     addm(GROUP_COPY,ActionFactory.COPY.getId);
     addm(GROUP_COPY,ActionFactory.PASTE.getId);
-*/
+
     val submenu = new MenuManager("&Align");
     def add(s:String){
       val a = action(s)
@@ -158,10 +159,9 @@ class BaseActionBarContributor extends ActionBarContributor
   
   val iww = getPage().getWorkbenchWindow();
   addRetargetAction(new DeleteRetargetAction());
-  /*addRetargetAction(ActionFactory.CUT.create(iww));
-  addRetargetAction((RetargetAction)ActionFactory.COPY.create(iww));
-  addRetargetAction((RetargetAction)ActionFactory.PASTE.create(iww));
-  */
+  addRetargetAction(ActionFactory.CUT.create(iww).asInstanceOf[RetargetAction]);
+  addRetargetAction(ActionFactory.COPY.create(iww).asInstanceOf[RetargetAction]);
+  addRetargetAction(ActionFactory.PASTE.create(iww).asInstanceOf[RetargetAction]);
   addRetargetAction(new AlignmentRetargetAction(PositionConstants.LEFT));
   addRetargetAction(new AlignmentRetargetAction(PositionConstants.CENTER));
   addRetargetAction(new AlignmentRetargetAction(PositionConstants.RIGHT));

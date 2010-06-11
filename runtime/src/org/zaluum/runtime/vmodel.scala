@@ -10,10 +10,6 @@ trait Subject {
 trait Observer {
     def receiveUpdate(subject: Subject)
 }
-trait Interactive {
-  def onClick() : Unit = {}
-  def onDoubleClick() : Unit = {}
-}
 trait Positional {
   self:Subject =>
   private var _pos : (Int,Int) = (0,0)
@@ -46,19 +42,10 @@ trait FQNamable {
   }
   def fqName : String
 }
-trait Context {
-  def valueOf(fqName:String) : String
-  def setValue(fqName:String, value:String):Unit
-}
-trait Evaluable {
-  self : FQNamable =>
-  def value(c:Context) : String = c.valueOf(fqName)
-  def value_=(s:String,c:Context) : Unit = c.setValue(fqName, s)
-}
 
 case class Slot(pos:Int, left:Boolean)
 
-trait VPort extends Evaluable with FQNamable with Interactive with Subject {
+trait VPort extends FQNamable with Subject {
   def slot:Slot
   def slot_=(s:Slot) { error("RO")}
   def ttype : String 
@@ -70,7 +57,7 @@ trait VPort extends Evaluable with FQNamable with Interactive with Subject {
   def in:Boolean
   def in_=(b:Boolean) {error("RO")}
 }
-trait VBox extends Interactive with Resizable with Subject with FQNamable{
+trait VBox extends Resizable with Subject with FQNamable{
   def ports : Set[VPort]
   def parent : ComposedVBox
   def parent_= (p:ComposedVBox) { error("RO") }

@@ -85,6 +85,7 @@ import java.io.InputStreamReader
 import com.google.common.base.Charsets
 import serial.ModelProtos
 import scala.collection.JavaConversions._
+
 object Deserialize {
   def deserialize(in:java.io.InputStream) : VModel= {
     val boxb = Box.newBuilder();

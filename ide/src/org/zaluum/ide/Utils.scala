@@ -48,3 +48,11 @@ class ContentProposal(index : Int, text : String) extends IContentProposal {
       if(text.startsWith("@")) "Connect to outer port " + text.substring(1) else "Connect to neighbor port " + text
   }
 }
+
+class RichCast(val a:Any) {
+  def castOption[A](implicit m:Manifest[A]) = 
+    if (m.erasure.isInstance(a)) Some(a.asInstanceOf[A]) else None
+}
+object RichCast {
+  implicit def optionCast(a:Any) = new RichCast(a)   
+}
