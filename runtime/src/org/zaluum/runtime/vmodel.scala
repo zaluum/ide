@@ -53,11 +53,6 @@ abstract class VisualModel{
     def boxes : Set[B]
     def connections : Set[W]
   }
-  trait DebugVPort[A] extends VPort{
-    def value:A
-    def push(v:A)
-    def force(v:A)
-  }
   trait VModel extends Subject{
     def root:C 
   }

@@ -12,6 +12,7 @@ object ProtoConversions {
   }
 }
 import ProtoConversions._
+
 trait PFQNameble extends FQNamable{
   def name_=(s:String)
   def uniquenessSet : Iterable[FQNamable] = List.empty

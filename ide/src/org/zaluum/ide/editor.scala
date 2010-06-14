@@ -13,7 +13,7 @@ trait UpEditor extends BaseEditor{
     super.createActions()
     addAction(new UpAction(this))
   }
-  def modelEditPart =  super.getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[ModelEditPart] 
+  def modelEditPart =  super.getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[Parts#ModelEditPart] 
 }
 class Editor extends UpEditor{
   val mainbox = new MainBox()

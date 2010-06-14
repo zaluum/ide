@@ -16,6 +16,7 @@ import scala.collection.mutable.Buffer
 import Commands._
 import RichCast.optionCast
 import PersistentModel._
+import PersistentEditParts._
 abstract class ClipboardAction(part:IWorkbenchPart) extends SelectionAction(part) {
   override protected def calculateEnabled = true // TODO: implement me (mirar que l'editor sigui el mateix?)
   def execute(c:Command) = 

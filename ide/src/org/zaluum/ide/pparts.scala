@@ -28,94 +28,107 @@ object classes{
   val pport = classOf[PPort]
   val ComposedPBoxClass = classOf[ComposedPBox]
 }
-
-class PortEditPartWrite(val model :PPort) extends PortEditPart
-            with DirectEditPart with RefPropertySourceWrite{
-  type S = PPort
-   def properties = List(
-       BooleanProperty("Is input",model.in _, Some(model.in_= _)),
-       StringProperty("Type", model.ttype _, Some(model.ttype_= _)),
-       StringProperty("Name", model.name _, Some(model.uniqueName _)),
-       StringProperty("Label", model.link _, Some(model.link_= _))
-       )
-  override def editFigure = fig.link
-  override def editCommand(v:String) = new SCommand(model.link,model.link_=,v,model)
-  def contents = {
-   val mainBox = model.vbox.parent
-   val ports = for {
-     p <- mainBox.ports
-     if(p.name!="" && model.in!=p.in)}  
-     yield "@" + p.name
-   val labels = for {
-     b <- mainBox.boxes
-     p <- b.ports
-     if(p.link!="" && model.in!=p.in)} 
-     yield p.link
-   ((List()++labels).sorted ++ ((List()++ports).sorted)).toArray // XXX improve!
-  }
-  override def connect(source:PPort) = model.vbox.parent match {
-    case null=> null // do not create wire on top
-    case p => CreateWireCommand(p,source,model)
-  }
-  override def reconnect(req:ReconnectRequest) = req.getConnectionEditPart.getModel match {
-    case w : PWire => 
-      val cn = if (req.isMovingStartAnchor) (model,w.to) else (w.from,model) 
-      ComposedCommand(List(
-        DeleteWireCommand(w,model.vbox.parent),
-        CreateWireCommand(model.vbox.parent, cn._1, cn._2)
-        ))
-    case _ => null
-  }
+object REditParts extends Parts{
+  type B = VisualModel#VBox
+  type P = VisualModel#VPort
+  type C = VisualModel#ComposedVBox
+  type W = VisualModel#VWire
+  type M = VisualModel#VModel
+  
 }
-class WireEditPartWrite(model:PWire) extends WireEditPart(model) {
-  def modelEditPart = this.getRoot.
-    asInstanceOf[RootEditPart].
-    getChildren.get(0).
-    asInstanceOf[ModelEditPart] // TODO improve
-  override def delete = DeleteWireCommand(
-                          model,
-                          modelEditPart.currentSubject.asInstanceOf[ComposedPBox])
-  implicit def dimToTuple (d:Dimension) = (d.width,d.height)
-  implicit def toBendpoint(p : geometry.Point) = {
-    fig.translateToRelative(p);
-    val ref1 = fig.getSourceAnchor.getReferencePoint
-    val ref2 = fig.getTargetAnchor.getReferencePoint
-    fig.translateToRelative(ref1);
-    fig.translateToRelative(ref2);
-    BP(p.getDifference(ref1),p.getDifference(ref2))
-  }
-  override def createBendpoint(l:geometry.Point, i: Int) = CreateBendpointCommand(model, l, i)
-  override def deleteBendpoint(i: Int) = DeleteBendpointCommand(model, i)
-}
-class ModelEditPartWrite(override val model:PModel) extends ModelEditPart(model){
+object PersistentEditParts extends Parts{
+  type B = PBox
+  type P = PPort
   type C = ComposedPBox
-  override def createCommand(t : AnyRef, r:Rectangle) = (t,currentSubject) match {
-    case (classes.ComposedPBoxClass, c:ComposedPBox) =>
-      val b = new ComposedPBox
-      b.pos =(r.x,r.y)
-      b.size =(r.width,r.height)
-      new CreateBoxCommand(c,b)
-    case _ => null
-  }
-}
-class BoxEditPartWrite(parent:EditPart, model:PBox) extends BoxEditPart(parent,model)
-    with DeletablePart with RefPropertySourceWrite{
-  override def properties = List(StringProperty("Name",model.name _,Some(model.uniqueName _)))
-  def delete = DeleteBoxCommand(model)  
-  def freeSlot(r:Rectangle) : Option[Slot] = {
-    val slot = fig.slotFromPosition(r.getTopLeft)
-    if (model.slotUsed(slot)) None else Some(slot)
-  }
-  override def specialPlaceCommand(port:AnyRef, r:Rectangle)={
-    (port,freeSlot(r)) match { 
-      case (p:PPort,Some(slot)) =>  new SCommand(p.slot,p.slot_=,slot,p)
-      case (p,v) => null
-    } 
-  }
-  override def createCommand(clazz:Object, r:Rectangle) =  {
-    (clazz, freeSlot(r)) match {
-      case (classes.pport, Some(s:Slot)) => CreatePortCommand(model,s)  
+  type W = PWire
+  type M = PModel
+    
+  abstract class PortEditPartWrite extends PortEditPart
+              with DirectEditPart with RefPropertySourceWrite{
+     override def properties = List(
+         BooleanProperty("Is input",model.in _, Some(model.in_= _)),
+         StringProperty("Type", model.ttype _, Some(model.ttype_= _)),
+         StringProperty("Name", model.name _, Some(model.uniqueName _)),
+         StringProperty("Label", model.link _, Some(model.link_= _))
+         )
+    override def editFigure = fig.link
+    override def editCommand(v:String) = new SCommand(model.link,model.link_=,v,model)
+    def contents = {
+     val mainBox = model.vbox.parent
+     val ports = for {
+       p <- mainBox.ports
+       if(p.name!="" && model.in!=p.in)}  
+       yield "@" + p.name
+     val labels = for {
+       b <- mainBox.boxes
+       p <- b.ports
+       if(p.link!="" && model.in!=p.in)} 
+       yield p.link
+     ((List()++labels).sorted ++ ((List()++ports).sorted)).toArray // XXX improve!
+    }
+    override def connect(source:PPort) = model.vbox.parent match {
+      case null=> null // do not create wire on top
+      case p => CreateWireCommand(p,source,model)
+    }
+    override def reconnect(req:ReconnectRequest) = req.getConnectionEditPart.getModel match {
+      case w : PWire => 
+        val cn = if (req.isMovingStartAnchor) (model,w.to) else (w.from,model) 
+        ComposedCommand(List(
+          DeleteWireCommand(w,model.vbox.parent),
+          CreateWireCommand(model.vbox.parent, cn._1, cn._2)
+          ))
       case _ => null
+    }
+  }
+  abstract class WireEditPartWrite extends WireEditPart {
+    def modelEditPart = this.getRoot.
+      asInstanceOf[RootEditPart].
+      getChildren.get(0).
+      asInstanceOf[ModelEditPart] // TODO improve
+    override def delete = DeleteWireCommand(
+                            model,
+                            modelEditPart.currentSubject.asInstanceOf[ComposedPBox])
+    implicit def dimToTuple (d:Dimension) = (d.width,d.height)
+    implicit def toBendpoint(p : geometry.Point) = {
+      fig.translateToRelative(p);
+      val ref1 = fig.getSourceAnchor.getReferencePoint
+      val ref2 = fig.getTargetAnchor.getReferencePoint
+      fig.translateToRelative(ref1);
+      fig.translateToRelative(ref2);
+      BP(p.getDifference(ref1),p.getDifference(ref2))
+    }
+    override def createBendpoint(l:geometry.Point, i: Int) = CreateBendpointCommand(model, l, i)
+    override def deleteBendpoint(i: Int) = DeleteBendpointCommand(model, i)
+  }
+  abstract class ModelEditPartWrite extends ModelEditPart{
+    override def createCommand(t : AnyRef, r:Rectangle) = (t,currentSubject) match {
+      case (classes.ComposedPBoxClass, c:ComposedPBox) =>
+        val b = new ComposedPBox
+        b.pos =(r.x,r.y)
+        b.size =(r.width,r.height)
+        new CreateBoxCommand(c,b)
+      case _ => null
+    }
+  }
+  abstract class BoxEditPartWrite extends BoxEditPart
+      with DeletablePart with RefPropertySourceWrite{
+    override def properties = List(StringProperty("Name",model.name _,Some(model.uniqueName _)))
+    def delete = DeleteBoxCommand(model)  
+    def freeSlot(r:Rectangle) : Option[Slot] = {
+      val slot = fig.slotFromPosition(r.getTopLeft)
+      if (model.slotUsed(slot)) None else Some(slot)
+    }
+    override def specialPlaceCommand(port:AnyRef, r:Rectangle)={
+      (port,freeSlot(r)) match { 
+        case (p:PPort,Some(slot)) =>  new SCommand(p.slot,p.slot_=,slot,p)
+        case (p,v) => null
+      } 
+    }
+    override def createCommand(clazz:Object, r:Rectangle) =  {
+      (clazz, freeSlot(r)) match {
+        case (classes.pport, Some(s:Slot)) => CreatePortCommand(model,s)  
+        case _ => null
+      }
     }
   }
 }
