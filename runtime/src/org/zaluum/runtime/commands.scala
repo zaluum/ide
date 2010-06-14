@@ -96,11 +96,11 @@ case class CreateWireCommand(parent: ComposedPBox, source:PPort, target:PPort) e
     w.to .notifyObservers    
   }
   def redo {
-    parent.connections.add(w)
+    parent.connections += w
     notifyObservers
   }
   def undo {
-    parent.connections.remove(w)
+    parent.connections -= w
     notifyObservers
   }
 }

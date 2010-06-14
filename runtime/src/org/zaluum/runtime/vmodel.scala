@@ -1,5 +1,4 @@
 package org.zaluum.runtime
-import scala.collection.mutable.{Buffer,MultiMap,Set}
 
 trait Subject {
   private var observers = List[Observer]()
@@ -24,39 +23,17 @@ trait Resizable extends Positional {
 }
 trait FQNamable {
   def name : String
-  def name_= (s:String) { error("VO")}
-  def uniquenessSet : Iterable[FQNamable] = List.empty
-  def toValidStr (str :String) = {
-    val s = str.filter(_.isLetterOrDigit) 
-    if (s.length==0) "A" else s
-  }
-  def uniqueName(str:String)={
-    val valid = toValidStr(str)
-    var candidate = valid
-    var i = 0
-    while(uniquenessSet.exists(_.name==candidate)) {
-      i+=1
-      candidate = valid + i
-    } 
-    name = candidate
-  }
   def fqName : String
 }
-
 case class Slot(pos:Int, left:Boolean)
 
 trait VPort extends FQNamable with Subject {
   type B <: VBox
   def slot:Slot
-  def slot_=(s:Slot) { error("RO")}
   def ttype : String 
-  def ttype_=(s:String) { error("RO")}
   def link:String
-  def link_=(s:String) {error("RO")}
   def vbox : B
-  def vbox_=(v:B) { error("RO")}
   def in:Boolean
-  def in_=(b:Boolean) {error("RO")}
 }
 trait VBox extends Resizable with Subject with FQNamable{
   type P <: VPort
@@ -64,7 +41,6 @@ trait VBox extends Resizable with Subject with FQNamable{
   type W <: VWire
   def ports : Set[P]
   def parent : C
-  def parent_= (p:C) { error("RO") }
   def slotUsed(s : Slot) = ports exists(_.slot == s) 
 }
 case class Bendpoint(a: (Int,Int), b: (Int,Int))

@@ -8,10 +8,10 @@ import org.zaluum.runtime._;
 abstract class Property[T]{
   val desc:String 
   val get : ()=>T 
-  val set: T=>_
+  val set: Option[T=>_]
 }
-case class StringProperty(desc:String, get : ()=>String, set : String=>_) extends Property[String]
-case class BooleanProperty(desc:String, get : ()=>Boolean, set : Boolean=>_) extends Property[Boolean]
+case class StringProperty(desc:String, get : ()=>String, set : Option[String=>_]) extends Property[String]
+case class BooleanProperty(desc:String, get : ()=>Boolean, set : Option[Boolean=>_]) extends Property[Boolean]
   
 class CheckboxPropertyDescriptor(id:Object,name:String) extends PropertyDescriptor(id,name) {
   import org.eclipse.jface.viewers.CellEditor;

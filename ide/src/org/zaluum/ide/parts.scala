@@ -72,13 +72,13 @@ class ModelEditPartWrite(override val model:PModel) extends ModelEditPart(model)
  * @author frede
  *
  */
-class BoxEditPart(val parent:EditPart, val model : VBox) extends BasePart 
+class BoxEditPart(val parent:EditPart, val model:VBox) extends BasePart 
                                 with Updater with HelpContext with HighlightPart
                                 with XYLayoutPart with RefPropertySource{
   type F = BoxFigure
   type S = VBox
   def helpKey = "org.zaluum.box"
-  def properties = List(StringProperty("Name",model.name _,model.uniqueName _))
+  def properties = List(StringProperty("Name",model.name _,None))
   override protected def getModelChildren = new ArrayList(model.ports)
   override def createFigure = new BoxFigure() 
   def highlightFigure = fig.rectangle 
@@ -92,7 +92,6 @@ class BoxEditPart(val parent:EditPart, val model : VBox) extends BasePart
     fig.revalidate()
   }
 }
-
 trait ComposedEditPartT extends OpenPart{
   self : BoxEditPart =>
   def doOpen = parentPart.currentSubject = model.asInstanceOf[S]
@@ -100,6 +99,7 @@ trait ComposedEditPartT extends OpenPart{
 
 class BoxEditPartWrite(parent:EditPart, model:PBox) extends BoxEditPart(parent,model)
     with DeletablePart with RefPropertySourceWrite{
+  //type S = PBox
   def delete = DeleteBoxCommand(model)  
   def freeSlot(r:Rectangle) : Option[Slot] = {
     val slot = fig.slotFromPosition(r.getTopLeft)
@@ -107,7 +107,7 @@ class BoxEditPartWrite(parent:EditPart, model:PBox) extends BoxEditPart(parent,m
   }
   override def specialPlaceCommand(port:AnyRef, r:Rectangle)={
     (port,freeSlot(r)) match { 
-      case (p:VPort,Some(slot)) =>  new SCommand(p.slot,p.slot_=,slot,p)
+      case (p:PPort,Some(slot)) =>  new SCommand(p.slot,p.slot_=,slot,p)
       case (p,v) => null
     } 
   }
@@ -178,10 +178,10 @@ abstract class PortEditPart extends BasePart
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
   def properties = List(
-       BooleanProperty("Is input",model.in _, model.in_= _),
-       StringProperty("Type", model.ttype _, model.ttype_= _),
-       StringProperty("Name", model.name _, model.uniqueName _),
-       StringProperty("Label", model.link _, model.link_= _)
+       BooleanProperty("Is input",model.in _, None),
+       StringProperty("Type", model.ttype _, None),
+       StringProperty("Name", model.name _, None),
+       StringProperty("Label", model.link _, None)
        )
   private def filterWires (f : (VWire => Boolean)) = {
     val s = Set[VWire]()

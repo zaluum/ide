@@ -313,7 +313,8 @@ trait RefPropertySourceWrite extends RefPropertySource{
       case b : BooleanProperty => new CheckboxPropertyDescriptor(b, b.desc)
   }
   override def setPropertyValue(id:Object, value:Object)  {
-    id.asInstanceOf[Property[AnyRef]].set(value)
+    val o = id.asInstanceOf[Property[AnyRef]].set
+    
     model.notifyObservers
   }
 }

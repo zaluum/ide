@@ -1,6 +1,5 @@
 package org.zaluum.runtime
 import serial.ModelProtos._
-import scala.collection.mutable.Set
 
 object ProtoConversions {
   implicit def toPoint(point:(Int,Int)) = {
@@ -14,12 +13,31 @@ object ProtoConversions {
 }
 import ProtoConversions._
 
-class PBox extends VBox {
+trait PFQNameble extends FQNamable{
+  def name_=(s:String)
+  def uniquenessSet : Iterable[FQNamable] = List.empty
+  def toValidStr (str :String) = {
+    val s = str.filter(_.isLetterOrDigit) 
+    if (s.length==0) "A" else s
+  }
+  def uniqueName(str:String)={
+    val valid = toValidStr(str)
+    var candidate = valid
+    var i = 0
+    while(uniquenessSet.exists(_.name==candidate)) {
+      i+=1
+      candidate = valid + i
+    } 
+    name = candidate
+  }  
+}
+
+class PBox extends VBox with PFQNameble {
   type B = PBox
   type C = ComposedPBox
   type W = PWire
   type P = PPort
-  override var parent : C = _
+  var parent : C = _
   var ports = Set[PPort]()
   override var name = ""
   def fqName = ""  
@@ -35,13 +53,13 @@ class PBox extends VBox {
     b
   }
 }
-class PPort extends VPort{
+class PPort extends VPort with PFQNameble{
   type B = PBox
-  override var vbox : PBox = _
-  override var ttype = ""
-  override var slot = Slot(0,true)
-  override var in = true
-  override var link = ""
+  var vbox : PBox = _
+  var ttype = ""
+  var slot = Slot(0,true)
+  var in = true
+  var link = ""
   def fqName = ""
   override var name = ""
   override def uniquenessSet = vbox.ports
