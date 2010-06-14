@@ -6,6 +6,7 @@ import org.eclipse.ui._
 import org.zaluum.runtime._
 import org.zaluum.example._
 import org.eclipse.core.runtime._;
+import PersistentModel._
 
 trait UpEditor extends BaseEditor{
  override def createActions(){
@@ -17,7 +18,7 @@ trait UpEditor extends BaseEditor{
 class Editor extends UpEditor{
   val mainbox = new MainBox()
   new Example().create(mainbox)
-  val model : VModel = VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox])
+  val model : VModel = null//VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox])
   override def getPaletteRoot = Palette()
   def factory = ZaluumReadOnlyFactory  
   override def doSave(p : IProgressMonitor) {}

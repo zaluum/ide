@@ -12,6 +12,7 @@ import org.eclipse.gef.tools.AbstractTool
 import org.zaluum.ide.icons.Icons
 import org.eclipse.jface.resource.{ImageDescriptor,ImageRegistry}
 import org.zaluum.runtime._
+import PersistentModel._
 object Palette {
   def apply() = {
 		val palette = new PaletteRoot()

@@ -45,7 +45,7 @@ import org.eclipse.jface.viewers.LabelProvider
 
 trait BasePart extends AbstractGraphicalEditPart with Observer{
   type F<:Figure
-  type S<:Subject
+  type S<: Subject
   def model : S
   def fig = getFigure.asInstanceOf[F];
   setModel(model)
@@ -103,7 +103,8 @@ trait OpenPart extends AbstractGraphicalEditPart {
 }
 
 trait MainPart extends AbstractGraphicalEditPart with BasePart with XYLayoutPart with SnapPart with Subject with Updater{
-  type F =FreeformLayer
+  type F = FreeformLayer
+  type S = Subject
   private var currentSubject_ : Subject = _
   def currentSubject = currentSubject_
   def currentSubject_= (s:Subject) {

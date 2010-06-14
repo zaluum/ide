@@ -23,60 +23,38 @@ import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.{Rectangle,Dimension}
 import Commands._
-/**
- * 
- * @author frede
- *
- */
-object classes{
-  val pport = classOf[PPort]
-  val ComposedPBoxClass = classOf[ComposedPBox]
-}
 
-class ModelEditPart(val model:BaseVModel) extends MainPart{
-  type C <: ComposedVBox
-  type S = BaseVModel
+class ModelEditPart(val model:VisualModel#VModel) extends MainPart{
   currentSubject = model
   override def getModelChildren : java.util.List[_]= currentSubject match  {
-    case c:ComposedVBox => new ArrayList(c.boxes)
-    case v:BaseVModel => Buffer(v.root)
+    case c:VisualModel#ComposedVBox => new ArrayList(c.boxes)
+    case v:VisualModel#VModel => Buffer(v.root)
   }
 
   def up() = {
     currentSubject match {
-      case c: ComposedVBox => currentSubject = c.parent match { 
+      case c: VisualModel#ComposedVBox => currentSubject = c.parent match { 
         case null =>   model
-        case p =>  p.asInstanceOf[C]
+        case p =>  p.asInstanceOf[VisualModel#ComposedVBox]
       }
       case _ => // do not move 
     }
   }
   override def refreshVisuals  {
     fig.setBackgroundColor(ColorConstants.lightGray)
-    fig.setOpaque(currentSubject.isInstanceOf[BaseVModel])
+    fig.setOpaque(currentSubject.isInstanceOf[VisualModel#VModel])
   }
 } 
-class ModelEditPartWrite(override val model:PModel) extends ModelEditPart(model){
-  type C = ComposedPBox
-  override def createCommand(t : AnyRef, r:Rectangle) = (t,currentSubject) match {
-    case (classes.ComposedPBoxClass, c:ComposedPBox) =>
-      val b = new ComposedPBox
-      b.pos =(r.x,r.y)
-      b.size =(r.width,r.height)
-      new CreateBoxCommand(c,b)
-    case _ => null
-  }
-}
 /**
  * Box Edit Part
  * @author frede
  *
  */
-class BoxEditPart(val parent:EditPart, val model:VBox) extends BasePart 
+class BoxEditPart(val parent:EditPart, val model:VisualModel#VBox) extends BasePart 
                                 with Updater with HelpContext with HighlightPart
                                 with XYLayoutPart with RefPropertySource{
   type F = BoxFigure
-  type S = VBox
+  type S = VisualModel#VBox
   def helpKey = "org.zaluum.box"
   def properties = List(StringProperty("Name",model.name _,None))
   override protected def getModelChildren = new ArrayList(model.ports)
@@ -94,39 +72,19 @@ class BoxEditPart(val parent:EditPart, val model:VBox) extends BasePart
 }
 trait ComposedEditPartT extends OpenPart{
   self : BoxEditPart =>
-  def doOpen = parentPart.currentSubject = model.asInstanceOf[S]
+  def doOpen = parentPart.currentSubject = model.asInstanceOf[VisualModel#VBox]
 }
 
-class BoxEditPartWrite(parent:EditPart, model:PBox) extends BoxEditPart(parent,model)
-    with DeletablePart with RefPropertySourceWrite{
-  override def properties = List(StringProperty("Name",model.name _,Some(model.uniqueName _)))
-  def delete = DeleteBoxCommand(model)  
-  def freeSlot(r:Rectangle) : Option[Slot] = {
-    val slot = fig.slotFromPosition(r.getTopLeft)
-    if (model.slotUsed(slot)) None else Some(slot)
-  }
-  override def specialPlaceCommand(port:AnyRef, r:Rectangle)={
-    (port,freeSlot(r)) match { 
-      case (p:PPort,Some(slot)) =>  new SCommand(p.slot,p.slot_=,slot,p)
-      case (p,v) => null
-    } 
-  }
-  override def createCommand(clazz:Object, r:Rectangle) =  {
-    (clazz, freeSlot(r)) match {
-      case (classes.pport, Some(s:Slot)) => CreatePortCommand(model,s)  
-      case _ => null
-    }
-  }
-}
+
 /**
  * Wire Edit Part
  * @author frede
  *
  */
-class WireEditPart(val model : VWire) extends AbstractConnectionEditPart 
+class WireEditPart(val model : VisualModel#VWire) extends AbstractConnectionEditPart 
         with BasePart with Updater with ConnectionPart {
   type F = PolylineConnection
-  type S = VWire
+  type S = VisualModel#VWire
   override def createFigure = WireFigure()
   
   override def refreshVisuals  = {
@@ -143,43 +101,24 @@ class WireEditPart(val model : VWire) extends AbstractConnectionEditPart
   }
 }
 
-class WireEditPartWrite(model:PWire) extends WireEditPart(model) {
-  def modelEditPart = this.getRoot.
-    asInstanceOf[RootEditPart].
-    getChildren.get(0).
-    asInstanceOf[ModelEditPart] // TODO improve
-  override def delete = DeleteWireCommand(
-                          model,
-                          modelEditPart.currentSubject.asInstanceOf[ComposedPBox])
-  implicit def dimToTuple (d:Dimension) = (d.width,d.height)
-  implicit def toBendpoint(p : geometry.Point) = {
-    fig.translateToRelative(p);
-    val ref1 = fig.getSourceAnchor.getReferencePoint
-    val ref2 = fig.getTargetAnchor.getReferencePoint
-    fig.translateToRelative(ref1);
-    fig.translateToRelative(ref2);
-    BP(p.getDifference(ref1),p.getDifference(ref2))
-  }
-  override def createBendpoint(l:geometry.Point, i: Int) = CreateBendpointCommand(model, l, i)
-  override def deleteBendpoint(i: Int) = DeleteBendpointCommand(model, i)
-}
+
 /**
  * Port Edit Part
  * @author frede
  *
  */
-abstract class PortEditPart extends BasePart 
+abstract class PortEditPart extends BasePart
                with SimpleNodePart with Updater 
                with HelpContext with HighlightPart
                with RefPropertySource
                {
   type F = PortFigure
-  type S <: VPort
+  type S <: VisualModel#VPort
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
  
-  private def filterWires (f : (VWire => Boolean)) = {
-    val s = Set[VWire]()
+  private def filterWires (f : (VisualModel#VWire => Boolean)) = {
+    val s = Set[VisualModel#VWire]()
     for {
       box <- Option(model.vbox.parent)
       c <- box.connections
@@ -196,50 +135,12 @@ abstract class PortEditPart extends BasePart
     fig.arrange(model.in,model.slot.left, model.slot.pos, model.name, model.link)
   }
 }
-class PortEditPartRead(val model:VPort) extends PortEditPart{
-  type S = VPort
+class PortEditPartRead(val model:VisualModel#VPort) extends PortEditPart{
+  type S = VisualModel#VPort
   def properties = List(
        BooleanProperty("Is input",model.in _, None),
        StringProperty("Type", model.ttype _, None),
        StringProperty("Name", model.name _, None),
        StringProperty("Label", model.link _, None)
        )
-}
-class PortEditPartWrite(val model :PPort) extends PortEditPart
-            with DirectEditPart with RefPropertySourceWrite{
-  type S = PPort
-   def properties = List(
-       BooleanProperty("Is input",model.in _, Some(model.in_= _)),
-       StringProperty("Type", model.ttype _, Some(model.ttype_= _)),
-       StringProperty("Name", model.name _, Some(model.uniqueName _)),
-       StringProperty("Label", model.link _, Some(model.link_= _))
-       )
-  override def editFigure = fig.link
-  override def editCommand(v:String) = new SCommand(model.link,model.link_=,v,model)
-  def contents = {
-   val mainBox = model.vbox.parent
-   val ports = for {
-     p <- mainBox.ports
-     if(p.name!="" && model.in!=p.in)}  
-     yield "@" + p.name
-   val labels = for {
-     b <- mainBox.boxes
-     p <- b.ports
-     if(p.link!="" && model.in!=p.in)} 
-     yield p.link
-   ((List()++labels).sorted ++ ((List()++ports).sorted)).toArray // XXX improve!
-  }
-  override def connect(source:PPort) = model.vbox.parent match {
-    case null=> null // do not create wire on top
-    case p => CreateWireCommand(p,source,model)
-  }
-  override def reconnect(req:ReconnectRequest) = req.getConnectionEditPart.getModel match {
-    case w : PWire => 
-      val cn = if (req.isMovingStartAnchor) (model,w.to) else (w.from,model) 
-      ComposedCommand(List(
-        DeleteWireCommand(w,model.vbox.parent),
-        CreateWireCommand(model.vbox.parent, cn._1, cn._2)
-        ))
-    case _ => null
-  }
 }

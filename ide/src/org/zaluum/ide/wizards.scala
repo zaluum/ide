@@ -15,7 +15,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.INewWizard;
 import org.zaluum.runtime._
-
+import PersistentModel._
 class BoxWizard extends Wizard with INewWizard{
 
   var page : ZaluumWizardPage = null;
@@ -79,7 +79,7 @@ class BoxWizardPage(
   import com.google.common.base.Charsets
   override protected def getInitialContents = {
     val box = new ComposedPBox()
-    val model = VModel(box)
+    val model = PModel(box)
     new java.io.ByteArrayInputStream(box.toProto.build.toString.getBytes(Charsets.UTF_8))
   }
 

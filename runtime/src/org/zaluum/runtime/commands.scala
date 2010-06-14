@@ -1,5 +1,5 @@
 package org.zaluum.runtime
-
+import PersistentModel._
 trait Command {
   def undo
   def redo
