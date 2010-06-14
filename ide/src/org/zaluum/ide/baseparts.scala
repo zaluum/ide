@@ -43,9 +43,10 @@ import org.eclipse.jface.viewers.TextCellEditor
 import org.eclipse.jface.viewers.CellEditor
 import org.eclipse.jface.viewers.LabelProvider
 
-trait BasePart[T<:Subject] extends AbstractGraphicalEditPart with Observer{
+trait BasePart extends AbstractGraphicalEditPart with Observer{
   type F<:Figure
-  def model : T
+  type S<:Subject
+  def model : S
   def fig = getFigure.asInstanceOf[F];
   setModel(model)
   override def activate { 
@@ -83,9 +84,9 @@ trait DirectEditPart extends AbstractGraphicalEditPart {
   }
   override abstract protected def createEditPolicies {
     installEditPolicy(EditPolicy.DIRECT_EDIT_ROLE, new org.eclipse.gef.editpolicies.DirectEditPolicy {
-	    def getDirectEditCommand(edit:DirectEditRequest) = editCommand(edit.getCellEditor.getValue.asInstanceOf[String].replaceAll("\n", ""))
+	    def getDirectEditCommand(edit:DirectEditRequest) = editCommand(edit.getCellEditor.getValue.toString.replaceAll("\n", ""))
 	    def showCurrentEditValue(req : DirectEditRequest) = {
-	      editFigure.setText(req.getCellEditor.getValue.asInstanceOf[String])
+	      editFigure.setText(req.getCellEditor.getValue.toString)
 	      getHostFigure.getUpdateManager.performUpdate
 	    }
     })
@@ -101,11 +102,11 @@ trait OpenPart extends AbstractGraphicalEditPart {
   }
 }
 
-trait MainPart[M <: Subject] extends AbstractGraphicalEditPart with BasePart[VModel] with XYLayoutPart with SnapPart with Subject with Updater{
+trait MainPart extends AbstractGraphicalEditPart with BasePart with XYLayoutPart with SnapPart with Subject with Updater{
   type F =FreeformLayer
-  private var currentSubject_ : M = _
+  private var currentSubject_ : Subject = _
   def currentSubject = currentSubject_
-  def currentSubject_= (s:M) {
+  def currentSubject_= (s:Subject) {
     if (currentSubject_ ne null)
       currentSubject_.removeObserver(this);
     currentSubject_ = s;
@@ -178,6 +179,7 @@ trait XYLayoutPart extends AbstractGraphicalEditPart{
     super.createEditPolicies
   }
 }
+
 trait DeletablePart extends AbstractGraphicalEditPart{
   def delete : Command
   override abstract protected def createEditPolicies {
@@ -190,13 +192,13 @@ trait DeletablePart extends AbstractGraphicalEditPart{
 
 case class Start[T](val p:T) extends Command
 
-trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
+trait SimpleNodePart extends BasePart with NodeEditPart{
   def anchor : ConnectionAnchor
   override  def getSourceConnectionAnchor(connection:ConnectionEditPart)= anchor
   override  def getSourceConnectionAnchor(connection:Request)           = anchor
   override  def getTargetConnectionAnchor(connection:ConnectionEditPart)= anchor
   override  def getTargetConnectionAnchor(connection:Request)           = anchor  
-  protected def connect(source:T) : Command = null
+  protected def connect(source:S) : Command = null
   protected def reconnect(req: ReconnectRequest):Command = null  
   override abstract protected def createEditPolicies{
     installEditPolicy(EditPolicy.GRAPHICAL_NODE_ROLE, new GraphicalNodeEditPolicy(){
@@ -208,7 +210,7 @@ trait SimpleNodePart[T<: Subject] extends BasePart[T] with NodeEditPart{
         c
       }
       protected def getConnectionCompleteCommand(req : CreateConnectionRequest) = req.getStartCommand match{
-        case Start(source: AnyRef) if (source!=model) => connect(source.asInstanceOf[T])
+        case Start(source: AnyRef) if (source!=model) => connect(source.asInstanceOf[S])
         case p => null 
       }
     });
@@ -266,31 +268,29 @@ trait SnapPart extends AbstractGraphicalEditPart {
     super.createEditPolicies
     installEditPolicy("Snap Feedback", new SnapFeedbackPolicy());
   }
-  override def getAdapter(adapter : Class[_]) : Object= {
+  override def getAdapter(adapter : Class[_]) = {
     if (adapter == classOf[SnapToHelper]) {
-      val snapStrategies = new ArrayList[SnapToHelper]()
-      val v = getViewer().getProperty(RulerProvider.PROPERTY_RULER_VISIBILITY).asInstanceOf[Boolean]
-      if (v)
+      def prop(s:String) = getViewer().getProperty(s).asInstanceOf[Boolean]
+      val snapStrategies = Buffer[SnapToHelper]()
+      if (prop(RulerProvider.PROPERTY_RULER_VISIBILITY))
         snapStrategies.add(new SnapToGuides(this))
-      val se = getViewer().getProperty(SnapToGeometry.PROPERTY_SNAP_ENABLED).asInstanceOf[Boolean]
-      if (se)
+      if (prop(SnapToGeometry.PROPERTY_SNAP_ENABLED))
         snapStrategies.add(new SnapToGeometry(this))
-      val ge = getViewer().getProperty(SnapToGrid.PROPERTY_GRID_ENABLED).asInstanceOf[Boolean]
-      if (ge)
-        snapStrategies.add(new SnapToGrid(this));
-
-      if (snapStrategies.size() == 0)
-        return null;
-      if (snapStrategies.size() == 1)
-        return snapStrategies.get(0);
-      new CompoundSnapToHelper(Array.tabulate(snapStrategies.size)(snapStrategies.get(_)))
+      if (prop(SnapToGrid.PROPERTY_GRID_ENABLED))
+        snapStrategies.add(new SnapToGrid(this))
+      if (snapStrategies.size == 0) 
+        null
+      else if (snapStrategies.size == 1)
+        snapStrategies.get(0)
+      else  
+        new CompoundSnapToHelper(Array.tabulate(snapStrategies.size)(snapStrategies.get(_)))
     } else
-      return super.getAdapter(adapter);
+      super.getAdapter(adapter);
   }
 
 }
 
-trait RefPropertySource[T<:Subject] extends BasePart[T] with IPropertySource{
+trait RefPropertySource extends BasePart with IPropertySource{
   def getEditableValue = model  
   def properties : List[Property[_]]
   def toDescriptor : PartialFunction[Property[_],IPropertyDescriptor]= {
@@ -307,7 +307,7 @@ trait RefPropertySource[T<:Subject] extends BasePart[T] with IPropertySource{
     else super.getAdapter(key)
   }
 }
-trait RefPropertySourceWrite[T<:Subject] extends RefPropertySource[T]{
+trait RefPropertySourceWrite extends RefPropertySource{
   override def toDescriptor : PartialFunction[Property[_],IPropertyDescriptor]= {
       case str: StringProperty => new TextPropertyDescriptor(str, str.desc)
       case b : BooleanProperty => new CheckboxPropertyDescriptor(b, b.desc)

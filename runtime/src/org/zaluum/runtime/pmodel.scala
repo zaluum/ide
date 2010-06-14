@@ -15,8 +15,12 @@ object ProtoConversions {
 import ProtoConversions._
 
 class PBox extends VBox {
-  override var parent : ComposedVBox = _
-  var ports = Set[VPort]()
+  type B = PBox
+  type C = ComposedPBox
+  type W = PWire
+  type P = PPort
+  override var parent : C = _
+  var ports = Set[PPort]()
   override var name = ""
   def fqName = ""  
   override def uniquenessSet = if (parent==null) List() else parent.boxes
@@ -25,14 +29,15 @@ class PBox extends VBox {
     b.setType(BoxType.SCRIPT)
     b.setBounds((pos,size))
     b.setId(name)
-    implicit val o = Ordering.by((_:VPort).name)
+    implicit val o = Ordering.by((_:PPort).name)
     val oports = (List() ++ ports).sorted
-    oports foreach {p=> b.addPort(p.asInstanceOf[PPort].toProto) }
+    oports foreach {p=> b.addPort(p.toProto) }
     b
   }
 }
-class PPort extends VPort {
-  override var vbox : VBox = _
+class PPort extends VPort{
+  type B = PBox
+  override var vbox : PBox = _
   override var ttype = ""
   override var slot = Slot(0,true)
   override var in = true
@@ -53,30 +58,31 @@ class PPort extends VPort {
   }
 }
 class ComposedPBox extends PBox with ComposedVBox{
-  var connections = Set[VWire]()
-  var boxes = Set[VBox]()
+  var connections = Set[PWire]()
+  var boxes = Set[PBox]()
   override def toProto = {
     val box = super.toProto
     box.setType(BoxType.COMPOSED);
-    val sorted = (List()++boxes).sorted(Ordering.by((_:VBox).name));
-    sorted foreach {c => box.addChild(c.asInstanceOf[PBox].toProto)}
-    val wsorted = (List()++connections).sorted(Ordering.by((_:VWire).from.name));
-    wsorted foreach {w => box.addWire(w.asInstanceOf[PWire].toProto(this))}
+    val sorted = (List()++boxes).sorted(Ordering.by((_:PBox).name));
+    sorted foreach {c => box.addChild(c.toProto)}
+    val wsorted = (List()++connections).sorted(Ordering.by((_:PWire).from.name));
+    wsorted foreach {w => box.addWire(w.toProto(this))}
     box
   }
 }
 import scala.collection.mutable.ArrayBuffer
-class PWire extends VWire  {
+class PWire extends VWire {
+  type P = PPort
   var bendpoints = List[Bendpoint]()
-  var from :VPort= _
-  var to : VPort= _ 
+  var from :PPort= _
+  var to : PPort= _ 
   def toProto(comp:ComposedPBox) = {
     val line = Line.newBuilder()
     for (bend <- bendpoints) {
       line.addBendpoint(serial.ModelProtos.Bendpoint.newBuilder.setP1(
           bend.a).setP2(bend.b).setWeight(1.0f))
     }
-    def pname(p:VPort) =  (if (p.vbox == comp) "#" + p.vbox.name else p.vbox.name) + "#" + p.name
+    def pname(p:PPort) =  (if (p.vbox == comp) "#" + p.vbox.name else p.vbox.name) + "#" + p.name
     line.setFrom( pname(from)).setTo(pname(to))    
   }
 }
@@ -87,17 +93,17 @@ import serial.ModelProtos
 import scala.collection.JavaConversions._
 
 object Deserialize {
-  def deserialize(in:java.io.InputStream) : VModel= {
+  def deserialize(in:java.io.InputStream) : PModel = {
     val boxb = Box.newBuilder();
     TextFormat.merge(new InputStreamReader(in, Charsets.UTF_8), boxb);
-    new VModel(deserialize(boxb.build()).asInstanceOf[ComposedVBox]);
+    PModel(deserializeComposed(boxb.build()));
   }
   import BoxType._
-  def deserialize(b:ModelProtos.Box) : VBox = b.getType match {
+  def deserialize(b:ModelProtos.Box) : PBox = b.getType match {
     case COMPOSED => deserializeComposed(b)
     case _ => deserializeScript(b)
   }
-  def fillBox(b:ModelProtos.Box, r:VBox){
+  def fillBox(b:ModelProtos.Box, r:PBox){
     r.name =b.getId
     val lu = b.getBounds.getLeftUp
     val bd = b.getBounds.getRightDown
@@ -123,11 +129,11 @@ object Deserialize {
     }
     c
   }
-  def wire(boxes : Iterable[VBox], ports:Iterable[VPort], w: ModelProtos.Line) : VWire ={
+  def wire(boxes : Iterable[PBox], ports:Iterable[PPort], w: ModelProtos.Line) : PWire ={
     val from = w.getFrom()
     val to = w.getTo()
-    var pfrom : VPort = null
-    var pto : VPort = null
+    var pfrom : PPort = null
+    var pto : PPort = null
     import com.google.common.base.Splitter
     def getExternal(port:String) = {
        val names = List() ++ Splitter.on('#').split(port);

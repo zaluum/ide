@@ -40,7 +40,7 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
 	override def toString():String = name + "=" + v
 	val fqName = box.fqName + "$" + name
 	def in:Boolean
-	lazy val vport = new VPort {
+	/*lazy val vport = new VPort {
 	  def vbox = Port.this.box.vbox 
 	  def name = Port.this.name
 	  def slot = Slot(0,true)
@@ -49,7 +49,8 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
 	  def link = ""
 	  def in = Port.this.in
 	  lazy val connections = box.vbox 
-	}
+	}*/
+	val vport = null
 }
 abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed with Subject{
 	val ports:Map[String,Port[_]] = Map()
@@ -72,8 +73,9 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	def act(process:Process):Unit
 	def recursiveQueue():Unit = {
 	  assert(parent!=null,this)
-	  parent.director.queue(this); parent.recursiveQueue()}
-	trait DefaultVBox extends VBox{
+	  parent.director.queue(this); parent.recursiveQueue()
+	}
+/*	trait DefaultVBox extends VBox{
 	  override def name = Box.this.name
 	  override def fqName = Box.this.fqName
 	  override def parent = Box.this.parent.vbox 
@@ -83,8 +85,8 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	    case p:Positional => {pos = p.pos; size = (50,50)}
 	    case _ =>
 	  }
-	}
-	lazy val vbox =  new DefaultVBox(){}
+	}*/
+	lazy val vbox =  null// new DefaultVBox(){}
 }
 abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,parent){
 
@@ -92,11 +94,11 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
 	val children : Map[String,Box] = Map()
 	private[runtime] def add(box:Box) = addTemplate(children,box)
 	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
-  case class DefaultVWire(from : VPort, to:VPort) extends VWire {
+  /*case class DefaultVWire(from : PPort, to:PPort) extends VWire {
     def bendpoints = List(Bendpoint((30,30), (20,20)))
-  }
+  }*/
 
-  class DefaultComposedVBox extends ComposedVBox with DefaultVBox {
+  /*class DefaultComposedVBox extends ComposedVBox with DefaultVBox {
     override lazy val boxes = Set[VBox]() ++ (children.values map {_.vbox})
     override lazy val connections = {
       val s = Set[VWire]()
@@ -107,6 +109,6 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
       } s+=DefaultVWire(from.vport ,to.vport)
       s
     }
-  }
-  override lazy val vbox = new DefaultComposedVBox
+  }*/
+  override lazy val vbox = null//new DefaultComposedVBox
 }

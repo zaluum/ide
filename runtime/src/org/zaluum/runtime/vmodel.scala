@@ -46,31 +46,47 @@ trait FQNamable {
 case class Slot(pos:Int, left:Boolean)
 
 trait VPort extends FQNamable with Subject {
+  type B <: VBox
   def slot:Slot
   def slot_=(s:Slot) { error("RO")}
   def ttype : String 
   def ttype_=(s:String) { error("RO")}
   def link:String
   def link_=(s:String) {error("RO")}
-  def vbox : VBox
-  def vbox_=(v:VBox) { error("RO")}
+  def vbox : B
+  def vbox_=(v:B) { error("RO")}
   def in:Boolean
   def in_=(b:Boolean) {error("RO")}
 }
 trait VBox extends Resizable with Subject with FQNamable{
-  def ports : Set[VPort]
-  def parent : ComposedVBox
-  def parent_= (p:ComposedVBox) { error("RO") }
+  type P <: VPort
+  type C <: ComposedVBox
+  type W <: VWire
+  def ports : Set[P]
+  def parent : C
+  def parent_= (p:C) { error("RO") }
   def slotUsed(s : Slot) = ports exists(_.slot == s) 
 }
 case class Bendpoint(a: (Int,Int), b: (Int,Int))
 trait VWire extends Subject{
-  def from : VPort
-  def to : VPort
+  type P <: VPort
+  def from : P
+  def to : P
   def bendpoints : List[Bendpoint]
 }
 trait ComposedVBox extends VBox {
-  def boxes : Set[VBox]
-  def connections : Set[VWire]
+  type B <: VBox
+  def boxes : Set[B]
+  def connections : Set[W]
 }
-case class VModel(root:ComposedVBox) extends Subject
+
+abstract class BaseVModel extends Subject {
+  type C <: ComposedVBox
+  val root : C
+}
+case class VModel(val root:ComposedVBox) extends BaseVModel{
+  type C = ComposedVBox
+}
+case class PModel(val root:ComposedPBox) extends BaseVModel{
+  type C = ComposedPBox
+}

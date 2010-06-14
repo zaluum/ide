@@ -15,7 +15,7 @@ case class PositionCommand(val p: Positional, val pos: (Int,Int)) extends Comman
   def redo = {p.pos = pos}
   def undo = {p.pos = oldPos}
 }
-case class CreateBoxCommand(val parent:ComposedVBox, val box:VBox) extends Command{
+case class CreateBoxCommand(val parent:ComposedPBox, val box:PBox) extends Command{
   def undo = {
     box.parent = null
     parent.boxes -= box
@@ -32,7 +32,7 @@ case class ComposedCommand(val commands : List[Command]) extends Command{
   def redo = commands foreach {_.redo }
   def undo = commands.reverse foreach { _.undo }
 }
-case class DeleteWireCommand(val w : VWire, val p : ComposedVBox) extends Command{
+case class DeleteWireCommand(val w : PWire, val p : ComposedPBox) extends Command{
   def notifyObservers(){
     p.notifyObservers
     w.from .notifyObservers
@@ -47,7 +47,7 @@ case class DeleteWireCommand(val w : VWire, val p : ComposedVBox) extends Comman
     notifyObservers()
   }
 }
-case class DeleteBoxCommand(val box:VBox) extends Command{
+case class DeleteBoxCommand(val box:PBox) extends Command{
   lazy val parent = box.parent
   lazy val c = { 
     if (parent!=null){
@@ -72,21 +72,21 @@ case class DeleteBoxCommand(val box:VBox) extends Command{
     parent.notifyObservers
   }
 }
-case class CreatePortCommand(box : VBox, slot: Slot) extends Command{
+case class CreatePortCommand(box : PBox, slot: Slot) extends Command{
   val p = new PPort()
   p.slot = slot
   def redo {
-    box.asInstanceOf[PBox].ports += p
+    box.ports += p
     p.vbox = box
     box.notifyObservers
   }
   def undo {
-    box.asInstanceOf[PBox].ports -= p
+    box.ports -= p
     p.vbox = null
     box.notifyObservers
   }
 }
-case class CreateWireCommand(parent: ComposedVBox, source:VPort, target:VPort) extends Command{
+case class CreateWireCommand(parent: ComposedPBox, source:PPort, target:PPort) extends Command{
   val w = new PWire()
   w.from = source
   w.to = target
@@ -96,39 +96,39 @@ case class CreateWireCommand(parent: ComposedVBox, source:VPort, target:VPort) e
     w.to .notifyObservers    
   }
   def redo {
-    parent.asInstanceOf[ComposedPBox].connections.add(w)
+    parent.connections.add(w)
     notifyObservers
   }
   def undo {
-    parent.asInstanceOf[ComposedPBox].connections.remove(w)
+    parent.connections.remove(w)
     notifyObservers
   }
 }
-case class CreateBendpointCommand(wire : VWire, pos: Bendpoint, i : Int) extends Command{
+case class CreateBendpointCommand(wire : PWire, pos: Bendpoint, i : Int) extends Command{
   val old = wire.bendpoints
   def redo {
     val s = wire.bendpoints.splitAt(i) match {
       case (p1,p2) => p1 ::: pos :: p2
     }
-    wire.asInstanceOf[PWire].bendpoints = s
+    wire.bendpoints = s
     wire.notifyObservers
   }
   def undo {
-    wire.asInstanceOf[PWire].bendpoints = old
+    wire.bendpoints = old
     wire.notifyObservers
   }
 }
-case class DeleteBendpointCommand(wire : VWire, i:Int) extends Command{
+case class DeleteBendpointCommand(wire : PWire, i:Int) extends Command{
   val old = wire.bendpoints
   def redo {
-    wire.asInstanceOf[PWire].bendpoints =  wire.bendpoints.splitAt(i) match { 
+    wire.bendpoints =  wire.bendpoints.splitAt(i) match { 
       case (pre, e :: post)  => pre ::: post
       case _ => error("out of range")
     }
     wire.notifyObservers
   }
   def undo {
-    wire.asInstanceOf[PWire].bendpoints = old
+    wire.bendpoints = old
     wire.notifyObservers
   }
 }

@@ -38,8 +38,8 @@ class CopyAction(part : IWorkbenchPart) extends ClipboardAction(part) {
     val pack = serial.ModelProtos.Clipboard.newBuilder
     val selectedBoxes = for{
       o<-getSelectedObjects
-      e<-o.castOption[BoxEditPart]
-    }yield e.model.asInstanceOf[PBox]       
+      e<-o.castOption[BoxEditPartWrite]
+    }yield e.model       
     val validBoxes = currentComposed match {
       case Some(p) => selectedBoxes filter {_.parent == p}
       case None => Buffer[PBox]()
@@ -54,7 +54,7 @@ class CopyAction(part : IWorkbenchPart) extends ClipboardAction(part) {
       pack.addWire(w.asInstanceOf[PWire].toProto(p))
       wires +=w.asInstanceOf[PWire]
     }
-    validBoxes.foreach{b=>pack.addBox(b.toProto)}
+    //validBoxes.foreach{b=>pack.addBox(b.toProto)}
     val ret= pack.build
     clipboard.setContents(Array(ret), Array(ClipTransfer))
     (validBoxes,wires)
@@ -76,8 +76,8 @@ class CopyAction(part : IWorkbenchPart) extends ClipboardAction(part) {
 class CutAction(part: IWorkbenchPart) extends CopyAction(part){
   override def runClipboard(clipboard:Clipboard) {
     val (validBoxes,wires) = copy(clipboard)
-    for (c<-currentComposed)
-      execute(CutCommand(c,validBoxes,wires))
+   /* for (c<-currentComposed)
+      execute(CutCommand(c,validBoxes,wires))*/
   }
    override def init {
     setId(ActionFactory.CUT.getId());

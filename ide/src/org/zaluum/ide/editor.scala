@@ -23,7 +23,7 @@ class Editor extends UpEditor{
   override def doSave(p : IProgressMonitor) {}
 }
 class ZFileEditor extends UpEditor with FileEditor{
-  var model : VModel = _
+  var model : PModel = _
   def factory = ZaluumWriteFactory
   def getPaletteRoot = Palette()
   import com.google.common.base.Charsets
