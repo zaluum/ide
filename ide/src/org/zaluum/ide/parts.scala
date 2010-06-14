@@ -99,7 +99,7 @@ trait ComposedEditPartT extends OpenPart{
 
 class BoxEditPartWrite(parent:EditPart, model:PBox) extends BoxEditPart(parent,model)
     with DeletablePart with RefPropertySourceWrite{
-  //type S = PBox
+  override def properties = List(StringProperty("Name",model.name _,Some(model.uniqueName _)))
   def delete = DeleteBoxCommand(model)  
   def freeSlot(r:Rectangle) : Option[Slot] = {
     val slot = fig.slotFromPosition(r.getTopLeft)
@@ -177,12 +177,7 @@ abstract class PortEditPart extends BasePart
   type S <: VPort
   def helpKey = "org.zaluum.Port"
   def anchor = fig.anchor
-  def properties = List(
-       BooleanProperty("Is input",model.in _, None),
-       StringProperty("Type", model.ttype _, None),
-       StringProperty("Name", model.name _, None),
-       StringProperty("Label", model.link _, None)
-       )
+ 
   private def filterWires (f : (VWire => Boolean)) = {
     val s = Set[VWire]()
     for {
@@ -198,15 +193,27 @@ abstract class PortEditPart extends BasePart
   def highlightFigure = fig.triangle 
   
   override def refreshVisuals {
-    fig.arrange(true,model.slot.left, model.slot.pos, model.name, model.link)
+    fig.arrange(model.in,model.slot.left, model.slot.pos, model.name, model.link)
   }
 }
 class PortEditPartRead(val model:VPort) extends PortEditPart{
   type S = VPort
+  def properties = List(
+       BooleanProperty("Is input",model.in _, None),
+       StringProperty("Type", model.ttype _, None),
+       StringProperty("Name", model.name _, None),
+       StringProperty("Label", model.link _, None)
+       )
 }
 class PortEditPartWrite(val model :PPort) extends PortEditPart
             with DirectEditPart with RefPropertySourceWrite{
   type S = PPort
+   def properties = List(
+       BooleanProperty("Is input",model.in _, Some(model.in_= _)),
+       StringProperty("Type", model.ttype _, Some(model.ttype_= _)),
+       StringProperty("Name", model.name _, Some(model.uniqueName _)),
+       StringProperty("Label", model.link _, Some(model.link_= _))
+       )
   override def editFigure = fig.link
   override def editCommand(v:String) = new SCommand(model.link,model.link_=,v,model)
   def contents = {

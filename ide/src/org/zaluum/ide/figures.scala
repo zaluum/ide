@@ -61,6 +61,16 @@ class BoxFigure extends Figure with HandleBounds with ZaluumConstraint{
     else
       Slot(y, false);
   }
+  override def findFigureAt(x : Int, y : Int, search : TreeSearch) : IFigure = {
+    if (!containsPoint(x, y) || search.prune(this)) null
+    val child = findDescendantAtExcluding(x, y, new TreeSearch() {
+      override def prune(figure : IFigure) = if (figure==rectangle) true else search.prune(figure)
+      override def accept(f:IFigure) = { search.accept(f) }
+    })
+    if (child != null) child
+    else if (search.accept(this)) this
+    else null
+  }
 }
 
 class PortsLayout extends XYLayout {

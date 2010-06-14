@@ -30,9 +30,8 @@ object Palette {
 			toolbar
 		});
     val boxToolbar = new PaletteToolbar("Box Tools")
-    boxToolbar.add(newTool("Composed Box","A Box Composed of other boxes", "composed", classOf[ComposedPBox],classOf[Icons]));
-    boxToolbar.add(newTool("Input port","Input port", "portin", classOf[PPort],classOf[Icons]));
-    boxToolbar.add(newTool("Output port","Ouput port", "portout", classOf[PPort],classOf[Icons]));
+    boxToolbar.add(newTool("Composed Box","A Box Composed of other boxes", "composed", classOf[ComposedPBox],classOf[Icons]))
+    boxToolbar.add(newTool("Port","Port", "portin", classOf[PPort],classOf[Icons]))
     boxToolbar.add(new ConnectionCreationToolEntry("Wire",
       "Creates a new Wire", new CreationFactory() {
         def getObjectType() = classOf[VWire]
