@@ -16,10 +16,22 @@ import PersistentModel._
 object ZaluumWriteFactory extends EditPartFactory {
   import PersistentEditParts._
   def createEditPart(context: EditPart, model: Object): EditPart = model match {
-    case model2 : PModel => new ModelEditPartWrite {val model = model2 }
-    case cbox : ComposedPBox => new BoxEditPartWrite with ComposedEditPartT {val model = cbox}
-    case box : PBox => new BoxEditPartWrite {val model = box }
-    case port : PPort => new PortEditPartWrite {val model = port }
-    case wire : PWire => new WireEditPartWrite {val model = wire }
+    case model2 : PModel => new ModelEditPartWrite(model2)
+    case cbox : ComposedPBox => new BoxEditPartWrite(cbox) with ComposedEditPartT
+    case box : PBox => new BoxEditPartWrite(box)
+    case port : PPort => new PortEditPartWrite(port)
+    case wire : PWire => new WireEditPartWrite(wire)
+  }
+}
+import Debug2Model._
+object ZaluumDebugFactory extends EditPartFactory {
+  import DebugEditParts._
+  def createEditPart(context: EditPart, model: Object): EditPart = model match { 
+    case model2 : LocalDebugModel => new DModelEditPart(model2)
+    case cbox : ComposedDBox => new DBoxEditPart(cbox) with ComposedEditPartT 
+    case box : DBox => new DBoxEditPart(box)
+    case port : DPort => new DPortEditPart(port)
+    case wire : DWire => new DWireEditPart(wire)
+    case _ => null
   }
 }

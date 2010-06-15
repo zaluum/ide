@@ -12,7 +12,7 @@ import org.eclipse.ui._
 import org.eclipse.ui.actions._
 import org.eclipse.swt.graphics._
 import org.eclipse.draw2d.geometry.Rectangle
-import org.zaluum.example.Example
+//import org.zaluum.example.Example
 import org.eclipse.jface.action._;
 import scala.collection.JavaConversions._
 import scala.collection.mutable._

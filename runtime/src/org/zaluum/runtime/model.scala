@@ -1,7 +1,9 @@
 package org.zaluum.runtime
 import scala.collection.mutable.{Map,MultiMap,HashMap,Set}
+import scala.collection.immutable.{Set => ISet}
 import java.util.concurrent._
 import se.scalablesolutions.akka.actor._
+import Debug2Model._
 trait Named {
 	def name:String
 	def fqName : String
@@ -40,6 +42,7 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
 	override def toString():String = name + "=" + v
 	val fqName = box.fqName + "$" + name
 	def in:Boolean
+	lazy val debug : DPort=  new DPort( name, fqName, Slot(0,false), "ttype", "link", box.debug,in) 
 }
 abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed with Subject{
 	val ports:Map[String,Port[_]] = Map()
@@ -50,7 +53,7 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 		parent.add(this)
 	def InPort[T](name:String, value:T) = new InPort(name,value,this)
   def OutPort[T](name:String, value:T)  = new OutPort(name,value,this)
-
+	
 	private[runtime] def add(port:Port[_]) = { 
 	  addTemplate(ports,port)
 	  port match {
@@ -64,24 +67,25 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	  assert(parent!=null,this)
 	  parent.director.queue(this); parent.recursiveQueue()
 	}
+	lazy val debug = new Debug2Model.DBox( name, fqName, ISet()++ports.values map {_.debug},null) 
 }
 abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,parent){
-
   val director : Director
 	val children : Map[String,Box] = Map()
 	private[runtime] def add(box:Box) = addTemplate(children,box)
 	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
-
-  /*class DefaultComposedVBox extends ComposedVBox with DefaultVBox {
-    override lazy val boxes = Set[VBox]() ++ (children.values map {_.vbox})
-    override lazy val connections = {
-      val s = Set[VWire]()
+  lazy val cdebug : ComposedDBox= {
+    val boxes = ISet[DBox]() ++ (children.values map {_.debug})
+    val dports = ISet[DPort]() ++ (ports.values map {_.debug})
+    val connections = {
+      var s = ISet[DWire]()
       for {
         b<-children.values
         from<- b.ports.values
         to<- from.connections
-      } s+=DefaultVWire(from.vport ,to.vport)
+      } s+=new Debug2Model.DWire(from.debug ,to.debug, List())
       s
     }
-  }*/
+    new Debug2Model.ComposedDBox(name, fqName, dports, null,connections,boxes)
+  }
 }

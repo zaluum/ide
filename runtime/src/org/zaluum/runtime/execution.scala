@@ -14,6 +14,7 @@ case class PushInputEvent(s: String, v:Int) extends Event
 case class LoadEvent(model: Model ) extends Event 
 case class NewDataEvent(data : Any, dst:Box) extends Event
 case class TimeEvent(dst:Box) extends Event
+case class DebugModel(str:String) extends Event
 
 class MainBox extends ComposedBox(name="main",parent=null) {
   val director = new EventDirector(this)
@@ -39,10 +40,11 @@ trait Process extends Actor {
         })
       a forward msg
     }
+    case DebugModel(str) => 
     case TimeEvent(box) => box
     case NewDataEvent(data,dst) => data
   }
-  def reschedule(b:Box, t:Long) = time ! (b,t) 
+  def reschedule(b:Box, t:Long) = time ! (b,t)
 //  def debugRun() =   while (!eventQueue.isEmpty) process(eventQueue.take())
 }
 class Time(val p:Process) extends Actor {

@@ -156,6 +156,15 @@
             id="org.zaluum.ide.editor"
             name="Zaluum">
       </editor>
+      <editor
+            class="org.zaluum.ide.LocalDebugEditor"
+            contributorClass="org.zaluum.ide.BaseActionBarContributor"
+            default="false"
+            extensions="zserver"
+            icon="icons/composed_16.png"
+            id="org.zaluum.ide.debug"
+            name="Debug Editor">
+      </editor>
    </extension>
    
    <extension point="org.eclipse.ui.newWizards">

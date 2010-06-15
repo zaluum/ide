@@ -4,7 +4,6 @@ import org.eclipse.gef._
 import org.eclipse.gef.ui.actions._
 import org.eclipse.ui._
 import org.zaluum.runtime._
-import org.zaluum.example._
 import org.eclipse.core.runtime._;
 import PersistentModel._
 
@@ -17,10 +16,18 @@ trait UpEditor extends BaseEditor{
 }
 class Editor extends UpEditor{
   val mainbox = new MainBox()
-  new Example().create(mainbox)
+  new org.zaluum.example.Example().create(mainbox)
   val model : VModel = null//VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox])
   override def getPaletteRoot = Palette()
   def factory = ZaluumReadOnlyFactory  
+  override def doSave(p : IProgressMonitor) {}
+}
+class LocalDebugEditor extends UpEditor{
+  val mainbox = new MainBox()
+  new org.zaluum.example.Example().create(mainbox)
+  val model = new LocalDebugModel(mainbox)
+  def factory = ZaluumDebugFactory
+  def getPaletteRoot = Palette()
   override def doSave(p : IProgressMonitor) {}
 }
 class ZFileEditor extends UpEditor with FileEditor{

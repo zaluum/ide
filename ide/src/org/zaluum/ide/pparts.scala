@@ -43,7 +43,7 @@ object PersistentEditParts extends Parts{
   type W = PWire
   type M = PModel
     
-  abstract class PortEditPartWrite extends PortEditPart
+  class PortEditPartWrite(val model:PPort) extends PortEditPart
               with DirectEditPart with RefPropertySourceWrite{
      override def properties = List(
          BooleanProperty("Is input",model.in _, Some(model.in_= _)),
@@ -80,7 +80,7 @@ object PersistentEditParts extends Parts{
       case _ => null
     }
   }
-  abstract class WireEditPartWrite extends WireEditPart {
+  class WireEditPartWrite(val model:PWire) extends WireEditPart {
     def modelEditPart = this.getRoot.
       asInstanceOf[RootEditPart].
       getChildren.get(0).
@@ -100,7 +100,7 @@ object PersistentEditParts extends Parts{
     override def createBendpoint(l:geometry.Point, i: Int) = CreateBendpointCommand(model, l, i)
     override def deleteBendpoint(i: Int) = DeleteBendpointCommand(model, i)
   }
-  abstract class ModelEditPartWrite extends ModelEditPart{
+  class ModelEditPartWrite(val model:PModel) extends ModelEditPart{
     override def createCommand(t : AnyRef, r:Rectangle) = (t,currentSubject) match {
       case (classes.ComposedPBoxClass, c:ComposedPBox) =>
         val b = new ComposedPBox
@@ -110,7 +110,7 @@ object PersistentEditParts extends Parts{
       case _ => null
     }
   }
-  abstract class BoxEditPartWrite extends BoxEditPart
+  class BoxEditPartWrite(val model:PBox) extends BoxEditPart
       with DeletablePart with RefPropertySourceWrite{
     override def properties = List(StringProperty("Name",model.name _,Some(model.uniqueName _)))
     def delete = DeleteBoxCommand(model)  

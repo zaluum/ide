@@ -26,7 +26,7 @@ import Commands._
 abstract class Parts{
   type B <: VisualModel#VBox
   type P <: VisualModel#VPort
-  type C <: VisualModel#ComposedVBox
+  type C <: VisualModel#ComposedVBox 
   type W <: VisualModel#VWire
   type M <: VisualModel#VModel
   
@@ -64,8 +64,8 @@ abstract class Parts{
     def helpKey = "org.zaluum.box"
     def properties = List(StringProperty("Name",model.name _,None))
     override protected def getModelChildren = new ArrayList(model.ports)
-    override def createFigure = new BoxFigure() 
-    def highlightFigure = fig.rectangle 
+    override def createFigure = {println("creating figure"); new BoxFigure()} 
+    def highlightFigure = {println("highlight=" + this + " " +fig.rectangle); fig.rectangle }
     def parentPart = getParent.asInstanceOf[ModelEditPart]
     
     override protected def refreshVisuals {
@@ -76,7 +76,7 @@ abstract class Parts{
       fig.revalidate()
     }
   }
-  
+
   trait ComposedEditPartT extends OpenPart{
     self : BoxEditPart =>
     def doOpen = parentPart.currentSubject = model.asInstanceOf[B]
@@ -118,7 +118,7 @@ abstract class Parts{
                  with HelpContext with HighlightPart
                  with RefPropertySource
                  {
-    type F = PortFigure
+    type F <: PortFigure
     type S = P
     def properties = List(
          BooleanProperty("Is input",model.in _, None),
