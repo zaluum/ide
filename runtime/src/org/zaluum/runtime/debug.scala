@@ -17,10 +17,10 @@ object Debug2Model extends VisualModel{
       val slot:Slot,
       val ttype : String, 
       val link:String,
-      val vbox : DBox,
       val in:Boolean
     ) extends VPort {
-    var value :String= "hola"
+      var value :String= "hola"
+      var vbox : DBox = _
     }
   class DWire(val from:DPort, val to:DPort, val bendpoints:List[Bendpoint]) extends VWire 
   class ComposedDBox(name:String,fqName:String,ports:Set[DPort], parent:ComposedDBox,

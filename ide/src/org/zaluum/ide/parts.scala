@@ -64,8 +64,8 @@ abstract class Parts{
     def helpKey = "org.zaluum.box"
     def properties = List(StringProperty("Name",model.name _,None))
     override protected def getModelChildren = new ArrayList(model.ports)
-    override def createFigure = {println("creating figure"); new BoxFigure()} 
-    def highlightFigure = {println("highlight=" + this + " " +fig.rectangle); fig.rectangle }
+    override def createFigure = new BoxFigure() 
+    def highlightFigure = fig.rectangle 
     def parentPart = getParent.asInstanceOf[ModelEditPart]
     
     override protected def refreshVisuals {

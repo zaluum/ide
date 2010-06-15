@@ -42,7 +42,7 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
 	override def toString():String = name + "=" + v
 	val fqName = box.fqName + "$" + name
 	def in:Boolean
-	lazy val debug : DPort=  new DPort( name, fqName, Slot(0,false), "ttype", "link", box.debug,in) 
+	lazy val debug : DPort=  new DPort( name, fqName, Slot(0,false), "ttype", "link",in) 
 }
 abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed with Subject{
 	val ports:Map[String,Port[_]] = Map()
@@ -67,7 +67,11 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	  assert(parent!=null,this)
 	  parent.director.queue(this); parent.recursiveQueue()
 	}
-	lazy val debug = new Debug2Model.DBox( name, fqName, ISet()++ports.values map {_.debug},null) 
+	lazy val debug = {
+	  val b = new Debug2Model.DBox( name, fqName, ISet()++ports.values map {_.debug},null)
+	  b.ports foreach {_.vbox = b}
+	  b
+	}
 }
 abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,parent){
   val director : Director
