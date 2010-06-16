@@ -98,8 +98,9 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     super.commandStackChanged(e);
   }
   override def getAdapter(c : Class[_]) = {
-//    if(c == classOf[IContentOutlinePage])
-//      if(outlinePage == null) new ZaluumOutlinePage(this)
+    val v = classOf[IContentOutlinePage]
+    if(c == classOf[IContentOutlinePage])
+      if(outlinePage == null) new ZaluumOutlinePage(this)
     super.getAdapter(c)
   }
   override def dispose {

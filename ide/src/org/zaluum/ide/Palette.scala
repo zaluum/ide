@@ -251,9 +251,9 @@ class ZaluumTool extends SelectionTool {
   }
   
   override def handleMove() : Boolean = {
-    if(!getTargetEditPart.isInstanceOf[PortEditPart] && !isInState(STATE_CONNECTION_STARTED)) {
-      super.handleMove
-    }else{
+   // if(!getTargetEditPart.isInstanceOf[org.zaluum.ide.Parts.PortEditPart] && !isInState(STATE_CONNECTION_STARTED)) {
+    //  super.handleMove
+    //}else{
       if (isInState(STATE_CONNECTION_STARTED) && viewer != getCurrentViewer())
         return false;
       if (isInState(STATE_CONNECTION_STARTED | STATE_INITIAL 
@@ -266,7 +266,7 @@ class ZaluumTool extends SelectionTool {
         setCurrentCommand(getCommand());
       }
       return true;
-    }
+    //}
   }
   
   def handleSourceDeactivated() = {
