@@ -23,9 +23,8 @@ class Editor extends UpEditor{
   override def doSave(p : IProgressMonitor) {}
 }
 class LocalDebugEditor extends UpEditor{
-  val mainbox = new MainBox()
-  new org.zaluum.example.Example().create(mainbox)
-  val model = new LocalDebugModel(mainbox)
+  
+  val model = new LocalDebugModel(new org.zaluum.example.Example())
   def factory = ZaluumDebugFactory
   def getPaletteRoot = Palette()
   override def doSave(p : IProgressMonitor) {}

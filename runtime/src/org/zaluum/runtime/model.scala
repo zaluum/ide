@@ -72,10 +72,18 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	  b.ports foreach {_.vbox = b}
 	  b
 	}
+
 }
 abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,parent){
   val director : Director
 	val children : Map[String,Box] = Map()
+	def find(names : List[String]):Option[ComposedBox] = names match {
+    case Nil => Some(this)
+    case head :: tail => children.get(head) match {
+      case Some(c : ComposedBox) => c.find(tail)
+      case _ => None
+    }
+  }
 	private[runtime] def add(box:Box) = addTemplate(children,box)
 	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
   lazy val cdebug : ComposedDBox= {

@@ -14,7 +14,7 @@ case class PushInputEvent(s: String, v:Int) extends Event
 case class LoadEvent(model: Model ) extends Event 
 case class NewDataEvent(data : Any, dst:Box) extends Event
 case class TimeEvent(dst:Box) extends Event
-case class DebugModel(str:String) extends Event
+case class DebugModelEvent(str:String) extends Event
 
 class MainBox extends ComposedBox(name="main",parent=null) {
   val director = new EventDirector(this)
@@ -22,7 +22,7 @@ class MainBox extends ComposedBox(name="main",parent=null) {
   override private[runtime] def add(port:Port[_]) = error ("Port cannot be added")
   override def recursiveQueue():Unit = {}
 }
-
+import Debug2Model._
 trait Process extends Actor {
   val time : ActorRef
   val remote : ActorRef
@@ -30,21 +30,25 @@ trait Process extends Actor {
   var root : MainBox = null
   override def receive = {
     case PushInputEvent(s,v) => s
-    case msg @ LoadEvent(model) => {
-      val a = self.spawn({
-          Thread.sleep(4000)
-          println(model)
-          assert(model!=null)
-          self.reply("ok");
-          exit
-        })
-      a forward msg
-    }
-    case DebugModel(str) => 
+    case msg @ LoadEvent(model) => 
+      root = new MainBox
+      model.create(root)
+      self.reply("ok")
+    case DebugModelEvent(str) => self.reply(toDModel(str))
     case TimeEvent(box) => box
     case NewDataEvent(data,dst) => data
   }
   def reschedule(b:Box, t:Long) = time ! (b,t)
+  def toDModel(str:String) : Option[ComposedDBox] = {
+    for (c <- findComposed(str)) 
+      yield c.cdebug
+  }
+  def findComposed(fqName : String) : Option[ComposedBox] = {
+    val names  = List() ++fqName.split("/")
+    if (root!=null)
+      root.find(names)
+    else None
+  }
 //  def debugRun() =   while (!eventQueue.isEmpty) process(eventQueue.take())
 }
 class Time(val p:Process) extends Actor {
@@ -68,6 +72,9 @@ class Remote(val p:Process) extends Actor{
   override def shutdown = {
     println("stopping remote")    
   }
+}
+object RunServer {
+  def make  = actorOf[ProductionServer]
 }
 class ProductionServer extends Process{
   lazy val remote = actorOf(new Remote(this));

@@ -3,7 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Ide
 Bundle-SymbolicName: org.zaluum.ide; singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Require-Bundle: com.google.common;bundle-version="1.0.0",
+Require-Bundle: akka;bundle-version="0.9.0",
+ scala.library,
+ com.google.common;bundle-version="1.0.0",
  org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.jface.text,
@@ -11,14 +13,13 @@ Require-Bundle: com.google.common;bundle-version="1.0.0",
  org.eclipse.ui.editors,
  org.eclipse.ui.ide,
  org.zaluum.runtime;bundle-version="1.0.0",
- akka;bundle-version="0.9.0",
  org.eclipse.gef;bundle-version="3.6.0",
  com.ibm.icu;bundle-version="4.0.1",
  org.eclipse.help;bundle-version="3.4.1",
- scala.library,
  org.eclipse.core.filesystem;bundle-version="1.2.1",
  org.zaluum.example;bundle-version="1.0.0",
- org.eclipse.ui.views;bundle-version="3.4.1"
+ org.eclipse.ui.views;bundle-version="3.4.1",
+ com.google.protobuf;bundle-version="2.3.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-Activator: org.zaluum.ide.Activator

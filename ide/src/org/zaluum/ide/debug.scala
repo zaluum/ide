@@ -25,8 +25,72 @@ import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.{Rectangle,Dimension}
 import Commands._
 import Debug2Model._
-class LocalDebugModel(p:MainBox) extends VModel{
-  def root : ComposedDBox = p.cdebug
+import se.scalablesolutions.akka.actor._
+import se.scalablesolutions.akka.dispatch._
+
+object LocalDebugModel {
+  val process =  RunServer.make
+  process.start 
+  
+  def spawnReturn[T](body: => Option[T]): Future[T] = {
+    case object Spawn
+    val promise = new DefaultCompletableFuture[T](3000)
+    Actor.actorOf(new Actor() {
+      def receive = {
+        case Spawn =>
+        try{
+          body match {
+            case Some(a) => promise completeWithResult a
+            case None => promise completeWithException (None,null)
+          }
+        } catch {
+          case e => promise completeWithException (None, e)
+        }
+        self.stop
+      }
+    }).start ! Spawn
+    promise
+  }
+  def awaitActor[T](body : => Option[T]): Option[T]={
+    val f = spawnReturn(body)
+    f.await
+    f.result
+  }
+}
+import scala.concurrent.SyncVar
+class ModelUpdater {
+  val process = RunServer.make
+  process.start
+  val model = new VModel {
+    val root = null
+  }
+  
+  val currentDBox = new SyncVar[Option[ComposedDBox]]
+  case object Time
+  case class Change(fqName : String)
+  val actor = Actor.init {
+    process !! LoadEvent(new org.zaluum.example.Example())
+  } receive {
+    case Time => /*change currentDBox port values*/
+    case Change(s:String) => 
+      val o = process !! DebugModelEvent(s)
+      o match {
+        case v @ Some(p:Option[ComposedDBox]) => currentDBox.set(v)  
+        case None => println("error timeout")
+      }
+  }
+  actor.start
+  import java.util.concurrent.TimeUnit
+  Scheduler.schedule(actor, Time, 100, 100, TimeUnit.MILLISECONDS)
+}
+class LocalDebugModel(m:Model) extends VModel{
+  val root : ComposedDBox=  LocalDebugModel.awaitActor[Option[ComposedDBox]] {
+      LocalDebugModel.process !! LoadEvent(m)
+      LocalDebugModel.process !! DebugModelEvent("/")
+    } match {
+      case Some( Some (p : ComposedDBox) ) => p
+      case _ => null
+    }
 }
 
 object DebugEditParts extends Parts{
