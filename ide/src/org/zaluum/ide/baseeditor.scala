@@ -21,7 +21,7 @@ import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 
 abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
   var gridColor : Color = null
-  val outlinePage : ZaluumOutlinePage = null
+  var outlinePage : ZaluumOutlinePage = null
   setEditDomain(new DefaultEditDomain(this));
   def model:AnyRef
   
@@ -97,10 +97,14 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     firePropertyChange(IEditorPart.PROP_DIRTY);
     super.commandStackChanged(e);
   }
-  override def getAdapter(c : Class[_]) = {
-//    if(c == classOf[IContentOutlinePage])
-//      if(outlinePage == null) new ZaluumOutlinePage(this)
-    super.getAdapter(c)
+  override def getAdapter(c : Class[_]) : Object = {
+    if(c == classOf[IContentOutlinePage]) {
+      if(outlinePage == null) { 
+        outlinePage = new ZaluumOutlinePage(this)
+        return outlinePage
+      }
+    }
+    return super.getAdapter(c)
   }
   override def dispose {
     super.dispose
