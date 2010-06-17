@@ -79,7 +79,6 @@ class BoxWizardPage(
   import com.google.common.base.Charsets
   override protected def getInitialContents = {
     val box = new ComposedPBox()
-    val model = PModel(box)
     new java.io.ByteArrayInputStream(box.toProto.build.toString.getBytes(Charsets.UTF_8))
   }
 

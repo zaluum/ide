@@ -30,25 +30,37 @@ abstract class Parts{
   type W <: VisualModel#VWire
   type M <: VisualModel#VModel
   
-  abstract class ModelEditPart extends MainPart{
-    currentSubject = model
-    override def getModelChildren : java.util.List[_]= currentSubject match  {
-      case c:VisualModel#ComposedVBox => new ArrayList(c.boxes)
-      case v:VisualModel#VModel => Buffer(v.root)
+  abstract class ModelEditPart extends BasePart with XYLayoutPart with SnapPart with Subject with Updater{
+    type S = M
+    protected var currentBox : Option[VisualModel#ComposedVBox] = None
+    receiveUpdate(model)
+    override def getModelChildren : java.util.List[_]= currentBox match  {
+      case Some(c:VisualModel#ComposedVBox) => new ArrayList(c.boxes)
+      case None => Buffer[AnyRef](model.root)
     }
-  
-    def up() = {
-      currentSubject match {
-        case c: VisualModel#ComposedVBox => currentSubject = c.parent match { 
-          case null =>   model
-          case p =>  p.asInstanceOf[VisualModel#ComposedVBox]
-        }
-        case _ => // do not move 
+    override def receiveUpdate(s:Subject){
+      if (s==model){
+        for (c <- currentBox) 
+          c.removeObserver(this)
+        currentBox = model.currentBox
+        for (c <- currentBox) 
+          c.addObserver(this)
       }
+      super.receiveUpdate(s)
+    }
+    override def deactivate {
+      for (c <- currentBox)
+        c.removeObserver(this)
+      super.deactivate
     }
     override def refreshVisuals  {
       fig.setBackgroundColor(ColorConstants.lightGray)
-      fig.setOpaque(currentSubject.isInstanceOf[VisualModel#VModel])
+      fig.setOpaque(currentBox == None)
+    }
+    override def createFigure : IFigure = {
+      val freeformLayer = new FreeformLayer()
+      freeformLayer.setLayoutManager(new FreeformLayout())
+      freeformLayer
     }
   } 
   /**
@@ -79,7 +91,10 @@ abstract class Parts{
 
   trait ComposedEditPartT extends OpenPart{
     self : BoxEditPart =>
-    def doOpen = parentPart.currentSubject = model.asInstanceOf[B]
+    def doOpen = {
+      val m = parentPart.model
+      m.moveTo(Some(model.asInstanceOf[m.CC]))
+    }
   }
   
   /**

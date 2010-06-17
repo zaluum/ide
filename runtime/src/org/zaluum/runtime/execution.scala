@@ -39,9 +39,9 @@ trait Process extends Actor {
     case NewDataEvent(data,dst) => data
   }
   def reschedule(b:Box, t:Long) = time ! (b,t)
-  def toDModel(str:String) : Option[ComposedDBox] = {
+  def toDModel(str:String) : Option[serial.ModelProtos.Box] = {
     for (c <- findComposed(str)) 
-      yield c.cdebug
+      yield c.cproto
   }
   def findComposed(fqName : String) : Option[ComposedBox] = {
     val names  = List() ++fqName.split("/")

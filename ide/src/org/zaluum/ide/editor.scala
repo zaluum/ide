@@ -23,8 +23,7 @@ class Editor extends UpEditor{
   override def doSave(p : IProgressMonitor) {}
 }
 class LocalDebugEditor extends UpEditor{
-  
-  val model = new LocalDebugModel(new org.zaluum.example.Example())
+  val model = new ModelUpdater(org.eclipse.swt.widgets.Display.getCurrent)
   def factory = ZaluumDebugFactory
   def getPaletteRoot = Palette()
   override def doSave(p : IProgressMonitor) {}
@@ -41,7 +40,6 @@ class ZFileEditor extends UpEditor with FileEditor{
       s.getBytes(Charsets.UTF_8)})
   def deserialize (i:java.io.InputStream) {
     model = Deserialize.deserialize(i)
-    println("deserialized model" +model)
   }
   
   override def setInput(input : IEditorInput){
@@ -54,7 +52,6 @@ class ZFileEditor extends UpEditor with FileEditor{
     } */
   }
 
- 
 }
 object UpAction{
   val ID = "org.zaluum.ide.editor.up"
@@ -70,7 +67,7 @@ class UpAction(e:UpEditor) extends EditorPartAction(e){
   override protected def calculateEnabled = true
   def editor = getEditorPart.asInstanceOf[UpEditor]
   override def run {
-    editor.modelEditPart.up();
+    editor.modelEditPart.model.up();
   }
 
 }

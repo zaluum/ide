@@ -23,9 +23,9 @@ abstract class ClipboardAction(part:IWorkbenchPart) extends SelectionAction(part
     for (z <- getWorkbenchPart.castOption[ZFileEditor])
       z.editDomain.getCommandStack.execute(c)
 
-  def currentComposed = 
+  def currentComposed : Option[VisualModel#C] = 
     for {e<-getWorkbenchPart.castOption[ZFileEditor] 
-      c <- e.modelEditPart.currentSubject.castOption[ComposedPBox]
+      c <- e.modelEditPart.model.currentBox
     } yield c
     
   override def runWithEvent(event:Event) {runClipboard(new Clipboard(event.display))}
@@ -47,13 +47,15 @@ class CopyAction(part : IWorkbenchPart) extends ClipboardAction(part) {
       case None => Buffer[PBox]()
     }
     // filter contained wires
-    def containedWire(w:VWire)={
-      def containsPort(p:VPort) = validBoxes.exists(b => b.ports.contains(p))
+    def containedWire(w:VisualModel#W)={
+      def containsPort(p:VisualModel#P) = validBoxes.exists(b => b.ports.contains(p))
       containsPort(w.to) && containsPort(w.from)
     }
     val wires = Buffer[PWire]()
-    for (p <- currentComposed; w <- p.connections; if containedWire(w)){ 
-      pack.addWire(w.asInstanceOf[PWire].toProto(p))
+    for (p <- currentComposed; 
+      w <- p.connections; 
+      if containedWire(w)){ 
+      pack.addWire(w.asInstanceOf[PWire].toProto(p.asInstanceOf[ComposedPBox]))
       wires +=w.asInstanceOf[PWire]
     }
     //validBoxes.foreach{b=>pack.addBox(b.toProto)}
@@ -99,7 +101,7 @@ class PasteAction(part:IWorkbenchPart) extends ClipboardAction(part) {
   override def runClipboard(clipboard:Clipboard) {
      for {c<-currentComposed
        clip <- clipboard.getContents(ClipTransfer).castOption[serial.ModelProtos.Clipboard]
-     } execute(PasteCommand(c,clip))
+     } execute(PasteCommand(c.asInstanceOf[ComposedPBox],clip))
   }
   protected override def init {
     setId(ActionFactory.PASTE.getId());

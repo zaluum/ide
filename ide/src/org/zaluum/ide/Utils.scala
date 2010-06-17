@@ -8,7 +8,8 @@ import org.eclipse.jface.fieldassist.IContentProposalProvider
 import org.eclipse.jface.fieldassist.IContentProposal
 import scala.collection.JavaConversions._
 import scala.collection.mutable._
-
+import se.scalablesolutions.akka.actor._
+import se.scalablesolutions.akka.dispatch._
 object Utils {
 
   def loadIcons(ir : ImageRegistry, base : Class[_], keys : String*) = {
@@ -21,7 +22,37 @@ object Utils {
       ir.put(key, ImageDescriptor.createFromURL(base.getResource(key + ".png")));
     }
   }
-  
+    def spawnReturn[T](body: => Option[T]): Future[T] = {
+    case object Spawn
+    val promise = new DefaultCompletableFuture[T](3000)
+    Actor.actorOf(new Actor() {
+      def receive = {
+        case Spawn =>
+        try{
+          body match {
+            case Some(a) => promise completeWithResult a
+            case None => promise completeWithException (None,null)
+          }
+        } catch {
+          case e => promise completeWithException (None, e)
+        }
+        self.stop
+      }
+    }).start ! Spawn
+    promise
+  }
+  def awaitActor[T](body : => Option[T]): Option[T]={
+    val f = spawnReturn(body)
+    f.await
+    f.result
+  }
+  implicit def asRunnable(func : ()=>Unit) : Runnable = {
+   new Runnable() {
+       def run() {
+           func()
+       }
+   }
+  }
 }
 
 class TextEditorLocator(label:Figure) extends CellEditorLocator {

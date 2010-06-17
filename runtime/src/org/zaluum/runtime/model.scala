@@ -4,6 +4,8 @@ import scala.collection.immutable.{Set => ISet}
 import java.util.concurrent._
 import se.scalablesolutions.akka.actor._
 import Debug2Model._
+import serial._
+import ProtoConversions._
 trait Named {
 	def name:String
 	def fqName : String
@@ -42,7 +44,15 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
 	override def toString():String = name + "=" + v
 	val fqName = box.fqName + "$" + name
 	def in:Boolean
-	lazy val debug : DPort=  new DPort( name, fqName, Slot(0,false), "ttype", "link",in) 
+	lazy val proto =  ModelProtos.Port.newBuilder()
+        .setName(name)
+        .setIn(in)
+        .setDirect(false)
+        .setLeft(false)
+        .setSlot(0)
+        .setType("ttype")
+        .setLabel("link")
+        .setPosition((0,0))
 }
 abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed with Subject{
 	val ports:Map[String,Port[_]] = Map()
@@ -67,11 +77,16 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	  assert(parent!=null,this)
 	  parent.director.queue(this); parent.recursiveQueue()
 	}
-	lazy val debug = {
-	  val b = new Debug2Model.DBox( name, fqName, ISet()++ports.values map {_.debug},null)
-	  b.ports foreach {_.vbox = b}
-	  b
+	protected def toProto = {
+	  val b = ModelProtos.Box.newBuilder
+	  b.setType(ModelProtos.BoxType.SCRIPT)
+	  b.setBounds((0,0),(50,50))
+	  b.setId(name)
+	  val oports = (List() ++ ports.values).sorted(Ordering.by((_:Port[_]).name))
+	  oports foreach {p=> b.addPort(p.proto) }
+	  b	  
 	}
+	lazy val proto = toProto.build
 
 }
 abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,parent){
@@ -86,18 +101,33 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
   }
 	private[runtime] def add(box:Box) = addTemplate(children,box)
 	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
-  lazy val cdebug : ComposedDBox= {
-    val boxes = ISet[DBox]() ++ (children.values map {_.debug})
-    val dports = ISet[DPort]() ++ (ports.values map {_.debug})
-    val connections = {
-      var s = ISet[DWire]()
-      for {
-        b<-children.values
-        from<- b.ports.values
+  lazy val cproto : ModelProtos.Box = {
+	  val box =  ModelProtos.Box.newBuilder(proto)
+	  val sorted = (List()++children.values).sorted(Ordering.by((_:Box).name))
+	  sorted foreach {b => box.addChild(b.proto)}
+	  val connections = {
+      var s = ISet[ModelProtos.Line]()
+      for (b<-children.values;
+        from<- b.ports.values;
         to<- from.connections
-      } s+=new Debug2Model.DWire(from.debug ,to.debug, List())
+        if (to.box.parent ==  ComposedBox.this)) { // TODO internal connections
+          val line = ModelProtos.Line.newBuilder()
+            /*for (bend <- bendpoints) {
+              line.addBendpoint(serial.ModelProtos.Bendpoint.newBuilder.setP1(
+                  bend.a).setP2(bend.b).setWeight(1.0f))*/
+          def pname(p:Port[_]) =  p.box.name + "#" + p.name
+          line.setFrom( pname(from)).setTo(pname(to))
+          s+=line.build
+      }
       s
     }
-    new Debug2Model.ComposedDBox(name, fqName, dports, null,connections,boxes)
+    val wsorted = (List()++connections).sorted(Ordering.by((_:ModelProtos.Line).getFrom));
+    wsorted foreach {w => box.addWire(w)}
+	  box.build
+  }
+	override lazy val proto : ModelProtos.Box= {
+    val box = toProto
+    box.setType(ModelProtos.BoxType.COMPOSED);   
+    box.build
   }
 }

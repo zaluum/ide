@@ -87,7 +87,7 @@ object PersistentEditParts extends Parts{
       asInstanceOf[ModelEditPart] // TODO improve
     override def delete = DeleteWireCommand(
                             model,
-                            modelEditPart.currentSubject.asInstanceOf[ComposedPBox])
+                            modelEditPart.model.currentBox.get)
     implicit def dimToTuple (d:Dimension) = (d.width,d.height)
     implicit def toBendpoint(p : geometry.Point) = {
       fig.translateToRelative(p);
@@ -101,8 +101,8 @@ object PersistentEditParts extends Parts{
     override def deleteBendpoint(i: Int) = DeleteBendpointCommand(model, i)
   }
   class ModelEditPartWrite(val model:PModel) extends ModelEditPart{
-    override def createCommand(t : AnyRef, r:Rectangle) = (t,currentSubject) match {
-      case (classes.ComposedPBoxClass, c:ComposedPBox) =>
+    override def createCommand(t : AnyRef, r:Rectangle) = (t,currentBox) match {
+      case (classes.ComposedPBoxClass, Some(c:ComposedPBox)) =>
         val b = new ComposedPBox
         b.pos =(r.x,r.y)
         b.size =(r.width,r.height)

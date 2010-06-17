@@ -102,32 +102,6 @@ trait OpenPart extends AbstractGraphicalEditPart {
   }
 }
 
-trait MainPart extends AbstractGraphicalEditPart with BasePart with XYLayoutPart with SnapPart with Subject with Updater{
-  type F = FreeformLayer
-  type S = Subject
-  private var currentSubject_ : Subject = _
-  def currentSubject = currentSubject_
-  def currentSubject_= (s:Subject) {
-    if (currentSubject_ ne null)
-      currentSubject_.removeObserver(this);
-    currentSubject_ = s;
-    currentSubject_.addObserver(this);
-    notifyObservers
-    if (isActive)
-      refresh();
-  }
-  override def deactivate = {
-    if (currentSubject_ != null)
-      currentSubject_.removeObserver(this);
-    super.deactivate();
-  }
-  override def createFigure : IFigure = {
-    val freeformLayer = new FreeformLayer()
-    freeformLayer.setLayoutManager(new FreeformLayout())
-    freeformLayer
-  }
-}
-
 trait Updater {
   self : Observer with AbstractGraphicalEditPart =>
   override def receiveUpdate(s: Subject) {

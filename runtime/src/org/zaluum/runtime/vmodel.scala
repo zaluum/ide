@@ -54,6 +54,10 @@ abstract class VisualModel{
     def connections : Set[W]
   }
   trait VModel extends Subject{
-    def root:C 
+    type CC =C
+    def currentBox:Option[CC]
+    def moveTo(c:Option[CC])
+    def up()
+    val root : CC
   }
 }

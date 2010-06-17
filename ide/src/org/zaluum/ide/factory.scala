@@ -27,7 +27,7 @@ import Debug2Model._
 object ZaluumDebugFactory extends EditPartFactory {
   import DebugEditParts._
   def createEditPart(context: EditPart, model: Object): EditPart = model match { 
-    case model2 : LocalDebugModel => new DModelEditPart(model2)
+    case model2 : ModelUpdater => new DModelEditPart(model2)
     case cbox : ComposedDBox => new DBoxEditPart(cbox) with ComposedEditPartT 
     case box : DBox => new DBoxEditPart(box)
     case port : DPort => new DPortEditPart(port)

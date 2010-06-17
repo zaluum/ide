@@ -1,7 +1,9 @@
 package org.zaluum.ide
 
 import org.zaluum.runtime.{Command=>C,Bendpoint=>BP,_}
+import org.zaluum.runtime.serial.ModelProtos
 import org.eclipse.swt.SWT
+import org.eclipse.swt.widgets.Display
 import org.eclipse.draw2d._
 import org.eclipse.core.runtime._
 import org.eclipse.gef._
@@ -20,6 +22,7 @@ import org.eclipse.help.IContextProvider
 import org.eclipse.swt.graphics._
 import scala.collection.JavaConversions._
 import scala.collection.mutable._
+import scala.collection.immutable.{Set=>ISet}
 import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.{Rectangle,Dimension}
@@ -27,79 +30,76 @@ import Commands._
 import Debug2Model._
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.dispatch._
+import Utils._
 
-object LocalDebugModel {
-  val process =  RunServer.make
-  process.start 
-  
-  def spawnReturn[T](body: => Option[T]): Future[T] = {
-    case object Spawn
-    val promise = new DefaultCompletableFuture[T](3000)
-    Actor.actorOf(new Actor() {
-      def receive = {
-        case Spawn =>
-        try{
-          body match {
-            case Some(a) => promise completeWithResult a
-            case None => promise completeWithException (None,null)
-          }
-        } catch {
-          case e => promise completeWithException (None, e)
-        }
-        self.stop
-      }
-    }).start ! Spawn
-    promise
-  }
-  def awaitActor[T](body : => Option[T]): Option[T]={
-    val f = spawnReturn(body)
-    f.await
-    f.result
-  }
-}
-import scala.concurrent.SyncVar
-class ModelUpdater {
+class ModelUpdater(display:Display) extends VModel {
+  println("creating ModelUpdater")
   val process = RunServer.make
   process.start
-  val model = new VModel {
-    val root = null
+  def currentBox:Option[ComposedDBox] = synchronized {
+    return _currentBox
   }
+  private var _currentBox:Option[ComposedDBox] = None 
+  val root = new ComposedDBox("main","/",ISet(),null,ISet(),ISet());
+  def up() = synchronized {
+    for (o <- currentBox)
+      moveTo(Option(o.parent))
+  }
+  def moveTo(o:Option[ComposedDBox]) {}
   
-  val currentDBox = new SyncVar[Option[ComposedDBox]]
   case object Time
   case class Change(fqName : String)
-  val actor = Actor.init {
-    process !! LoadEvent(new org.zaluum.example.Example())
-  } receive {
-    case Time => /*change currentDBox port values*/
-    case Change(s:String) => 
-      val o = process !! DebugModelEvent(s)
-      o match {
-        case v @ Some(p:Option[ComposedDBox]) => currentDBox.set(v)  
-        case None => println("error timeout")
-      }
+  val actor = Actor.actorOf(new Actor {
+    override def init {
+      process !! LoadEvent(new org.zaluum.example.Example())
+    }
+    def receive = {
+      case Time => updatePortValues
+      case Change(s:String) => 
+        val o : Option[Option[ModelProtos.Box]] = process !! DebugModelEvent(s)
+        o match {
+          case Some(Some(p)) => setProto(Some(p))
+          case None => println("error timeout")
+          case _ => println("other")
+        }
+      case p => error(p.toString)
+    }
+  })
+  var i = 0
+  def updatePortValues = synchronized{
+    for (c <- _currentBox; b <- c.boxes; p<-b.ports){ 
+      
+      p.value = ""+i
+    }
+    i=i+1
+    display.asyncExec (notifyPortsLocked _)
+  }
+  def notifyPortsLocked = synchronized{
+    for (c <- _currentBox; b <- c.boxes; p<-b.ports){ 
+      p.notifyObservers
+      p.vbox .notifyObservers
+    }    
+  }
+  def notifyObserversLocked : Unit = synchronized{
+    notifyObservers
+  }
+  def setProto(oproto : Option[ModelProtos.Box]) = synchronized{
+    _currentBox = oproto map {proto => Debug2Model.Deserialize.deserializeComposed(proto)}
+    println("set currentBox " + _currentBox)
+    display.asyncExec(notifyObserversLocked _)
   }
   actor.start
+  actor ! Change("/")
   import java.util.concurrent.TimeUnit
   Scheduler.schedule(actor, Time, 100, 100, TimeUnit.MILLISECONDS)
 }
-class LocalDebugModel(m:Model) extends VModel{
-  val root : ComposedDBox=  LocalDebugModel.awaitActor[Option[ComposedDBox]] {
-      LocalDebugModel.process !! LoadEvent(m)
-      LocalDebugModel.process !! DebugModelEvent("/")
-    } match {
-      case Some( Some (p : ComposedDBox) ) => p
-      case _ => null
-    }
-}
-
 object DebugEditParts extends Parts{
   type B = DBox
   type P = DPort
   type W = DWire
   type C = ComposedDBox
-  type M = LocalDebugModel
-  class DModelEditPart(val model:LocalDebugModel) extends ModelEditPart 
+  type M = ModelUpdater
+  class DModelEditPart(val model:ModelUpdater) extends ModelEditPart 
   class DBoxEditPart(val model:DBox) extends BoxEditPart
   class DPortEditPart(val model:DPort) extends PortEditPart{
     type F = PortDebugFigure
