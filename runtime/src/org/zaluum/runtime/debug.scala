@@ -30,18 +30,22 @@ object Debug2Model extends VisualModel{
   object Deserialize {
     import scala.collection.JavaConversions._
     import ModelProtos.BoxType._
-    def deserialize(b:ModelProtos.Box) : DBox = b.getType match {
-      case COMPOSED => deserializeComposed(b)
-      case _ => deserializeScript(b)
+    def deserialize(m:ModelProtos.ModelFragment) = {
+      deserializeComposed(m.getFragment, m.getFqName)
     }
-    def deserializeComposed(boxp:ModelProtos.Box) = {
+    def deserializeBox(b:ModelProtos.Box, fqName : String) : DBox = b.getType match {
+      case COMPOSED => deserializeComposed(b,fqName)
+      case _ => deserializeScript(b,fqName)
+    }
+    def deserializeComposed(boxp:ModelProtos.Box, fqName:String) = {
+      val myFqName = fqName + "/" + boxp.getId
       val boxes = for (ch <- boxp.getChildList()) 
-        yield deserialize(ch);
+        yield deserializeBox(ch,myFqName);
       val ports = for (p <- boxp.getPortList) 
-        yield port(p)
+        yield port(p,myFqName)
       val wires = for (w <- boxp.getWireList()) 
         yield wire(boxes,ports, w)
-      val r = new ComposedDBox(boxp.getId,boxp.getId/*FIXME*/, Set()++ports,null,Set()++wires, Set()++boxes)
+      val r = new ComposedDBox(boxp.getId,myFqName, Set()++ports,null,Set()++wires, Set()++boxes)
       r.boxes foreach { _.parent  =r}
       r.ports foreach { _.vbox = r}
       r
@@ -80,8 +84,9 @@ object Debug2Model extends VisualModel{
       new DWire(pfrom,pto, List() ++ deserialBendpoints(w))
     }
   
-    def port(p: ModelProtos.Port) = new DPort(p.getName, 
-          p.getName,
+    def port(p: ModelProtos.Port, fqName : String) = new DPort(
+          p.getName, 
+          fqName + "#" + p.getName,
           Slot(p.getSlot, p.getLeft),
           p.getType,
           if (p.hasLabel) p.getLabel else "",
@@ -92,11 +97,12 @@ object Debug2Model extends VisualModel{
       w.getBendpointList map {deserialize(_)}
     }
   
-    def deserializeScript(pb:ModelProtos.Box) = {
-      val ports = for (p <- pb.getPortList) 
-        yield port(p)
-      val r = new DBox(pb.getId, pb.getId, Set()++ports,null)
-      for (p<-r.ports) {pp : DPort => p.vbox = r}
+    def deserializeScript(pb:ModelProtos.Box, fqName : String) = {
+      val myFQName = fqName + "/" + pb.getId
+      val ports = for (p <- pb.getPortList)  
+        yield port(p, myFQName)
+      val r = new DBox(pb.getId, myFQName, Set()++ports,null)
+      r.ports foreach {_.vbox = r}
       r
     }
   }

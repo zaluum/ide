@@ -16,7 +16,7 @@ case class NewDataEvent(data : Any, dst:Box) extends Event
 case class TimeEvent(dst:Box) extends Event
 case class DebugModelEvent(str:String) extends Event
 
-class MainBox extends ComposedBox(name="main",parent=null) {
+class MainBox extends ComposedBox(name="",parent=null) {
   val director = new EventDirector(this)
   override lazy val fqName:String = ""
   override private[runtime] def add(port:Port[_]) = error ("Port cannot be added")
@@ -39,14 +39,22 @@ trait Process extends Actor {
     case NewDataEvent(data,dst) => data
   }
   def reschedule(b:Box, t:Long) = time ! (b,t)
-  def toDModel(str:String) : Option[serial.ModelProtos.Box] = {
+  def toDModel(str:String) : Option[serial.ModelProtos.ModelFragment] = {
     for (c <- findComposed(str)) 
-      yield c.cproto
+      yield {
+      val fqName = if (c.parent==null) "" else c.parent.fqName
+      serial.ModelProtos.ModelFragment.newBuilder
+        .setFragment(c.cproto).setFqName(fqName).build
+    }
   }
   def findComposed(fqName : String) : Option[ComposedBox] = {
-    val names  = List() ++fqName.split("/")
-    if (root!=null)
-      root.find(names)
+    val names  = (List() ++fqName.split("/")) filter {_.size!=0}
+    
+    if (root!=null){
+      val found = root.find(names)
+      println("find " + found + " " + names + " " + fqName)
+      found
+    }
     else None
   }
 //  def debugRun() =   while (!eventQueue.isEmpty) process(eventQueue.take())

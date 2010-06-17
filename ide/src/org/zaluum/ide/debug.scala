@@ -40,12 +40,17 @@ class ModelUpdater(display:Display) extends VModel {
     return _currentBox
   }
   private var _currentBox:Option[ComposedDBox] = None 
-  val root = new ComposedDBox("main","/",ISet(),null,ISet(),ISet());
-  def up() = synchronized {
-    for (o <- currentBox)
-      moveTo(Option(o.parent))
+  val root = new ComposedDBox("main","",ISet(),null,ISet(),ISet());
+  def up() = synchronized { // o.parent is null
+    for (c <- currentBox){
+      val s = c.fqName.split("/").dropRight(1).mkString("/")
+      actor ! Change(s)
+    }
   }
-  def moveTo(o:Option[ComposedDBox]) {}
+  def moveTo(o:Option[ComposedDBox])  = o match {
+    case Some(c) => actor ! Change(c.fqName)
+    case None => actor ! Change("")
+  }
   
   case object Time
   case class Change(fqName : String)
@@ -55,20 +60,21 @@ class ModelUpdater(display:Display) extends VModel {
     }
     def receive = {
       case Time => updatePortValues
-      case Change(s:String) => 
-        val o : Option[Option[ModelProtos.Box]] = process !! DebugModelEvent(s)
-        o match {
-          case Some(Some(p)) => setProto(Some(p))
-          case None => println("error timeout")
-          case _ => println("other")
-        }
+      case Change(s:String) => change(s)
       case p => error(p.toString)
     }
   })
+  def change(str : String){
+     val o : Option[Option[ModelProtos.ModelFragment]] = process !! DebugModelEvent(str)
+     o match {
+       case Some(Some(p)) => setProto(Some(p))
+       case None => println("error timeout")
+       case _ => println("not found")
+     }
+  }
   var i = 0
   def updatePortValues = synchronized{
     for (c <- _currentBox; b <- c.boxes; p<-b.ports){ 
-      
       p.value = ""+i
     }
     i=i+1
@@ -77,15 +83,13 @@ class ModelUpdater(display:Display) extends VModel {
   def notifyPortsLocked = synchronized{
     for (c <- _currentBox; b <- c.boxes; p<-b.ports){ 
       p.notifyObservers
-      p.vbox .notifyObservers
     }    
   }
   def notifyObserversLocked : Unit = synchronized{
     notifyObservers
   }
-  def setProto(oproto : Option[ModelProtos.Box]) = synchronized{
-    _currentBox = oproto map {proto => Debug2Model.Deserialize.deserializeComposed(proto)}
-    println("set currentBox " + _currentBox)
+  def setProto(oproto : Option[ModelProtos.ModelFragment]) = synchronized{
+    _currentBox = oproto map {proto => Debug2Model.Deserialize.deserialize(proto)}
     display.asyncExec(notifyObserversLocked _)
   }
   actor.start
