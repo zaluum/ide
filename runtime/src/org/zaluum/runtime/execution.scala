@@ -52,7 +52,6 @@ trait Process extends Actor {
     
     if (root!=null){
       val found = root.find(names)
-      println("find " + found + " " + names + " " + fqName)
       found
     }
     else None

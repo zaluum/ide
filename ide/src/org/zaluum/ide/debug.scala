@@ -33,7 +33,6 @@ import se.scalablesolutions.akka.dispatch._
 import Utils._
 
 class ModelUpdater(display:Display) extends VModel {
-  println("creating ModelUpdater")
   val process = RunServer.make
   process.start
   def currentBox:Option[ComposedDBox] = synchronized {
