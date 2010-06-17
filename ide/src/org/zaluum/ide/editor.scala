@@ -6,6 +6,7 @@ import org.eclipse.ui._
 import org.zaluum.runtime._
 import org.eclipse.core.runtime._;
 import PersistentModel._
+import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 
 trait UpEditor extends BaseEditor{
  override def createActions(){
@@ -14,6 +15,7 @@ trait UpEditor extends BaseEditor{
   }
   def modelEditPart =  super.getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[Parts#ModelEditPart] 
 }
+
 class Editor extends UpEditor{
   val mainbox = new MainBox()
   new org.zaluum.example.Example().create(mainbox)
@@ -22,14 +24,17 @@ class Editor extends UpEditor{
   def factory = ZaluumReadOnlyFactory  
   override def doSave(p : IProgressMonitor) {}
 }
+
 class LocalDebugEditor extends UpEditor{
   val model = new ModelUpdater(org.eclipse.swt.widgets.Display.getCurrent)
   def factory = ZaluumDebugFactory
   def getPaletteRoot = Palette()
   override def doSave(p : IProgressMonitor) {}
 }
+
 class ZFileEditor extends UpEditor with FileEditor{
   var model : PModel = _
+  lazy val outlinePage = new ZaluumOutlinePage(this)
   def factory = ZaluumWriteFactory
   def getPaletteRoot = Palette()
   import com.google.common.base.Charsets
@@ -41,7 +46,10 @@ class ZFileEditor extends UpEditor with FileEditor{
   def deserialize (i:java.io.InputStream) {
     model = Deserialize.deserialize(i)
   }
-  
+  override def getAdapter(c : Class[_]) : Object = {
+    if(c == classOf[IContentOutlinePage]) outlinePage 
+    else super.getAdapter(c)
+  }
   override def setInput(input : IEditorInput){
     super.setInput(input)
     /*   TODO val page = getSite.getWorkbenchWindow.getActivePage
@@ -53,9 +61,11 @@ class ZFileEditor extends UpEditor with FileEditor{
   }
 
 }
+
 object UpAction{
   val ID = "org.zaluum.ide.editor.up"
 }
+
 class UpAction(e:UpEditor) extends EditorPartAction(e){
   override protected def  init {
     setId(UpAction.ID);

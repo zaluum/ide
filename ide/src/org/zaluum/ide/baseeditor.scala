@@ -17,14 +17,13 @@ import org.eclipse.jface.action._;
 import scala.collection.JavaConversions._
 import scala.collection.mutable._
 import java.util.ArrayList
-import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
+
 
 abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
   var gridColor : Color = null
-  val outlinePage : ZaluumOutlinePage = null
+
   setEditDomain(new DefaultEditDomain(this));
-  def model:AnyRef
-  
+  def model: AnyRef
   def editDomain : EditDomain = { getEditDomain }
   override def initializeGraphicalViewer():Unit  = {
     super.initializeGraphicalViewer()
@@ -97,12 +96,7 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     firePropertyChange(IEditorPart.PROP_DIRTY);
     super.commandStackChanged(e);
   }
-  override def getAdapter(c : Class[_]) = {
-    val v = classOf[IContentOutlinePage]
-    if(c == classOf[IContentOutlinePage])
-      if(outlinePage == null) new ZaluumOutlinePage(this)
-    super.getAdapter(c)
-  }
+ 
   override def dispose {
     super.dispose
     if (gridColor!=null)
