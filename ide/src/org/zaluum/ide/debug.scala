@@ -34,17 +34,21 @@ import Utils._
 object DebugEditParts extends Parts{
   type T = Debug2Model.type
   class ModelUpdater(display:Display) extends VModel {
-    val process = RunServer.make
+    private val process = RunServer.make
     process.start
-    def currentView:Viewport = synchronized {_currentView}
-    private var _currentView:Viewport = TopView 
+    @volatile var currentView:Viewport = TopView 
     val root = new ComposedDBox("main","",ISet(),null,ISet(),ISet());
-    def up() = synchronized { _currentView match {
-        case ComposedView(c) => 
-          val s = c.fqName.split("/").dropRight(1).mkString("/")
-          actor ! Change(s)
-        case TopView => 
-    }}
+    private def swtRun (f : => Unit) {
+      display.asyncExec(new Runnable{ 
+        def run = synchronized(f)
+        })
+    }
+    def up() = currentView match {
+      case ComposedView(c) => 
+        val s = c.fqName.split("/").dropRight(1).mkString("/")
+        actor ! Change(s)
+      case TopView => 
+    }
     def moveTo(o:Viewport)  = o match {
       case ComposedView(c) => actor ! Change(c.fqName)
       case TopView => actor ! Change("")
@@ -52,17 +56,17 @@ object DebugEditParts extends Parts{
     
     case object Time
     case class Change(fqName : String)
-    val actor = Actor.actorOf(new Actor {
+    private val actor = Actor.actorOf(new Actor {
       override def init {
         process !! LoadEvent(new org.zaluum.example.Example())
       }
       def receive = {
-        case Time => updatePortValues
-        case Change(s:String) => change(s)
+        case Time => synchronized {updatePortValues}
+        case Change(s:String) => synchronized {change(s)}
         case p => error(p.toString)
       }
     })
-    def change(str : String){
+    private def change(str : String) {
        val o : Option[Option[ModelProtos.ModelFragment]] = process !! DebugModelEvent(str)
        o match {
          case Some(Some(p)) => setProto(Some(p))
@@ -71,29 +75,24 @@ object DebugEditParts extends Parts{
        }
     }
     var i = 0
-    def updatePortValues = synchronized{
+    private def updatePortValues  {
       currentView match {
         case ComposedView(c:ComposedDBox) => 
           for (b<- c.boxes; p<- b.ports) p.value ="" +i
         case TopView =>
       }
       i=i+1
-      display.asyncExec (notifyPortsLocked _)
-    }
-    def notifyPortsLocked = synchronized{
-      currentView match {
-        case ComposedView(c) => 
+      swtRun { currentView match {
+          case ComposedView(c) => 
           for (b<- c.boxes; p<- b.ports) p.notifyObservers
-        case TopView =>
+          case TopView =>
+        }
       }
     }
-    def notifyObserversLocked : Unit = synchronized{
-      notifyObservers
-    }
-    def setProto(oproto : Option[ModelProtos.ModelFragment]) = synchronized{
+    private def setProto(oproto : Option[ModelProtos.ModelFragment]) = synchronized{
       oproto foreach {proto => 
-        _currentView = ComposedView(Debug2Model.Deserialize.deserialize(proto))
-        display.asyncExec(notifyObserversLocked _)
+        currentView = ComposedView(Debug2Model.Deserialize.deserialize(proto))
+        swtRun {notifyObservers}
       }
     }
     actor.start
