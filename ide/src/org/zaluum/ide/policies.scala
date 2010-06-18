@@ -22,7 +22,7 @@ abstract class HighlightEditPolicy[T] extends org.eclipse.gef.editpolicies.Graph
       if (request.getType() == RequestConstants.REQ_SELECTION_HOVER)
        getHost else null
   }
-  protected def figure = getHost().asInstanceOf[GraphicalEditPart].getFigure().asInstanceOf[T]
+ // protected def figure = getHost().asInstanceOf[GraphicalEditPart].getFigure().asInstanceOf[T]
   protected def showHighlight() {
     if (opacity == 0){
       opacity = if (containerBackground!=null) containerBackground.intValue else 100;

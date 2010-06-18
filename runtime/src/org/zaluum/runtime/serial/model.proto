@@ -10,7 +10,10 @@ enum BoxType{
 	FSM=5;
 	CONST=6;
 }
-
+message ModelFragment {
+	required string fqName = 1;
+	required Box fragment = 2;
+}
 message Point {
   	required int32 x=1;
   	required int32 y=2;

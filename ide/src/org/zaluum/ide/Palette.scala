@@ -11,6 +11,9 @@ import org.eclipse.gef.requests.CreationFactory
 import org.zaluum.ide.icons.Icons
 import org.eclipse.jface.resource.{ImageDescriptor,ImageRegistry}
 import org.zaluum.runtime._
+
+
+import PersistentModel._
 import org.eclipse.gef.tools._
 import org.eclipse.gef.Tool
 import org.eclipse.gef.EditDomain
@@ -71,6 +74,7 @@ object Palette {
 class ZaluumToolEntry(label : String, shortDesc : String, factory : CreationFactory, iconSmall : ImageDescriptor, iconLarge : ImageDescriptor) 
   extends ToolEntry(label, shortDesc, iconSmall, iconLarge, classOf[ZaluumTool]);
 
+
 class ZaluumTool extends TargetingTool {
 
   val connection = new ConnectionCreationTool
@@ -80,5 +84,4 @@ class ZaluumTool extends TargetingTool {
   override def getCommandName() = {
     null
   }
-  
 }

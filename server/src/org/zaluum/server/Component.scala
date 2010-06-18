@@ -17,7 +17,7 @@ class Component {
          Nil))
 
   val myServer = new RemoteServer
-  myServer.start("localhost", 9999,Some(classOf[Process].getClassLoader))
+  myServer.start(new java.net.InetSocketAddress("localhost", 9999),classOf[Process].getClassLoader)
   myServer.register("zaluum-service",server)  
 	def bindModel(m: Model):Unit = {
     println ("loading model")

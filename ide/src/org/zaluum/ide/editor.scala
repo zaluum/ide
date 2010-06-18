@@ -4,26 +4,37 @@ import org.eclipse.gef._
 import org.eclipse.gef.ui.actions._
 import org.eclipse.ui._
 import org.zaluum.runtime._
-import org.zaluum.example._
 import org.eclipse.core.runtime._;
+import PersistentModel._
+import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 
 trait UpEditor extends BaseEditor{
  override def createActions(){
     super.createActions()
     addAction(new UpAction(this))
   }
-  def modelEditPart =  super.getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[ModelEditPart] 
+  def modelEditPart =  super.getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[Parts#ModelEditPart] 
 }
+
 class Editor extends UpEditor{
   val mainbox = new MainBox()
-  new Example().create(mainbox)
-  val model : VModel = VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox])
+  new org.zaluum.example.Example().create(mainbox)
+  val model : VModel = null//VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox])
   override def getPaletteRoot = Palette()
   def factory = ZaluumReadOnlyFactory  
   override def doSave(p : IProgressMonitor) {}
 }
+
+class LocalDebugEditor extends UpEditor{
+  val model = new ModelUpdater(org.eclipse.swt.widgets.Display.getCurrent)
+  def factory = ZaluumDebugFactory
+  def getPaletteRoot = Palette()
+  override def doSave(p : IProgressMonitor) {}
+}
+
 class ZFileEditor extends UpEditor with FileEditor{
   var model : PModel = _
+  lazy val outlinePage = new ZaluumOutlinePage(this)
   def factory = ZaluumWriteFactory
   def getPaletteRoot = Palette()
   import com.google.common.base.Charsets
@@ -34,9 +45,11 @@ class ZFileEditor extends UpEditor with FileEditor{
       s.getBytes(Charsets.UTF_8)})
   def deserialize (i:java.io.InputStream) {
     model = Deserialize.deserialize(i)
-    println("deserialized model" +model)
   }
-  
+  override def getAdapter(c : Class[_]) : Object = {
+    if(c == classOf[IContentOutlinePage]) outlinePage 
+    else super.getAdapter(c)
+  }
   override def setInput(input : IEditorInput){
     super.setInput(input)
     /*   TODO val page = getSite.getWorkbenchWindow.getActivePage
@@ -47,11 +60,12 @@ class ZFileEditor extends UpEditor with FileEditor{
     } */
   }
 
- 
 }
+
 object UpAction{
   val ID = "org.zaluum.ide.editor.up"
 }
+
 class UpAction(e:UpEditor) extends EditorPartAction(e){
   override protected def  init {
     setId(UpAction.ID);
@@ -63,7 +77,7 @@ class UpAction(e:UpEditor) extends EditorPartAction(e){
   override protected def calculateEnabled = true
   def editor = getEditorPart.asInstanceOf[UpEditor]
   override def run {
-    editor.modelEditPart.up();
+    editor.modelEditPart.model.up();
   }
 
 }

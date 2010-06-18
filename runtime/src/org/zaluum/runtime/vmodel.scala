@@ -26,43 +26,38 @@ trait FQNamable {
   def fqName : String
 }
 case class Slot(pos:Int, left:Boolean)
-
-trait VPort extends FQNamable with Subject {
+case class Bendpoint(a: (Int,Int), b: (Int,Int))
+abstract class VisualModel{
   type B <: VBox
-  def slot:Slot
-  def ttype : String 
-  def link:String
-  def vbox : B
-  def in:Boolean
-}
-trait VBox extends Resizable with Subject with FQNamable{
   type P <: VPort
   type C <: ComposedVBox
   type W <: VWire
-  def ports : Set[P]
-  def parent : C
-  def slotUsed(s : Slot) = ports exists(_.slot == s) 
-}
-case class Bendpoint(a: (Int,Int), b: (Int,Int))
-trait VWire extends Subject{
-  type P <: VPort
-  def from : P
-  def to : P
-  def bendpoints : List[Bendpoint]
-}
-trait ComposedVBox extends VBox {
-  type B <: VBox
-  def boxes : Set[B]
-  def connections : Set[W]
-}
-
-abstract class BaseVModel extends Subject {
-  type C <: ComposedVBox
-  val root : C
-}
-case class VModel(val root:ComposedVBox) extends BaseVModel{
-  type C = ComposedVBox
-}
-case class PModel(val root:ComposedPBox) extends BaseVModel{
-  type C = ComposedPBox
+  trait VPort extends FQNamable with Subject {
+    def slot:Slot
+    def ttype : String 
+    def link:String
+    def vbox : B
+    def in:Boolean
+  }
+  trait VBox extends Resizable with Subject with FQNamable{
+    def ports : Set[P]
+    def parent : C
+    def slotUsed(s : Slot) = ports exists(_.slot == s) 
+  }
+  trait VWire extends Subject{
+    def from : P
+    def to : P
+    def bendpoints : List[Bendpoint]
+  }
+  trait ComposedVBox extends VBox {
+    def boxes : Set[B]
+    def connections : Set[W]
+  }
+  trait VModel extends Subject{
+    type CC =C
+    def currentBox:Option[CC]
+    def moveTo(c:Option[CC])
+    def up()
+    val root : CC
+  }
 }

@@ -12,19 +12,18 @@ import org.eclipse.ui._
 import org.eclipse.ui.actions._
 import org.eclipse.swt.graphics._
 import org.eclipse.draw2d.geometry.Rectangle
-import org.zaluum.example.Example
+//import org.zaluum.example.Example
 import org.eclipse.jface.action._;
 import scala.collection.JavaConversions._
 import scala.collection.mutable._
 import java.util.ArrayList
-import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
+
 
 abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
   var gridColor : Color = null
-  var outlinePage : ZaluumOutlinePage = null
+
   setEditDomain(new DefaultEditDomain(this));
-  def model:AnyRef
-  
+  def model: AnyRef
   def editDomain : EditDomain = { getEditDomain }
   override def initializeGraphicalViewer():Unit  = {
     super.initializeGraphicalViewer()
@@ -97,15 +96,7 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     firePropertyChange(IEditorPart.PROP_DIRTY);
     super.commandStackChanged(e);
   }
-  override def getAdapter(c : Class[_]) : Object = {
-    if(c == classOf[IContentOutlinePage]) {
-      if(outlinePage == null) { 
-        outlinePage = new ZaluumOutlinePage(this)
-        return outlinePage
-      }
-    }
-    return super.getAdapter(c)
-  }
+ 
   override def dispose {
     super.dispose
     if (gridColor!=null)

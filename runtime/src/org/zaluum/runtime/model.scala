@@ -1,7 +1,11 @@
 package org.zaluum.runtime
 import scala.collection.mutable.{Map,MultiMap,HashMap,Set}
+import scala.collection.immutable.{Set => ISet}
 import java.util.concurrent._
 import se.scalablesolutions.akka.actor._
+import Debug2Model._
+import serial._
+import ProtoConversions._
 trait Named {
 	def name:String
 	def fqName : String
@@ -40,17 +44,15 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
 	override def toString():String = name + "=" + v
 	val fqName = box.fqName + "$" + name
 	def in:Boolean
-	/*lazy val vport = new VPort {
-	  def vbox = Port.this.box.vbox 
-	  def name = Port.this.name
-	  def slot = Slot(0,true)
-	  def fqName = Port.this.fqName
-	  def ttype :String = v.asInstanceOf[AnyRef].getClass().toString
-	  def link = ""
-	  def in = Port.this.in
-	  lazy val connections = box.vbox 
-	}*/
-	val vport = null
+	lazy val proto =  ModelProtos.Port.newBuilder()
+        .setName(name)
+        .setIn(in)
+        .setDirect(false)
+        .setLeft(false)
+        .setSlot(0)
+        .setType("ttype")
+        .setLabel("link")
+        .setPosition((0,0))
 }
 abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed with Subject{
 	val ports:Map[String,Port[_]] = Map()
@@ -61,7 +63,7 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 		parent.add(this)
 	def InPort[T](name:String, value:T) = new InPort(name,value,this)
   def OutPort[T](name:String, value:T)  = new OutPort(name,value,this)
-
+	
 	private[runtime] def add(port:Port[_]) = { 
 	  addTemplate(ports,port)
 	  port match {
@@ -75,40 +77,57 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	  assert(parent!=null,this)
 	  parent.director.queue(this); parent.recursiveQueue()
 	}
-/*	trait DefaultVBox extends VBox{
-	  override def name = Box.this.name
-	  override def fqName = Box.this.fqName
-	  override def parent = Box.this.parent.vbox 
-    override lazy val ports = Set[VPort]() ++ (inPorts map {_.vport}) ++ (outPorts map {_.vport}) 
-	  Box.this match {
-	    case r:Resizable => {pos = r.pos; size = r.size;}
-	    case p:Positional => {pos = p.pos; size = (50,50)}
-	    case _ =>
-	  }
-	}*/
-	lazy val vbox =  null// new DefaultVBox(){}
+	protected def toProto = {
+	  val b = ModelProtos.Box.newBuilder
+	  b.setType(ModelProtos.BoxType.SCRIPT)
+	  b.setBounds((0,0),(50,50))
+	  b.setId(name)
+	  val oports = (List() ++ ports.values).sorted(Ordering.by((_:Port[_]).name))
+	  oports foreach {p=> b.addPort(p.proto) }
+	  b	  
+	}
+	lazy val proto = toProto.build
+
 }
 abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,parent){
-
   val director : Director
 	val children : Map[String,Box] = Map()
+	def find(names : List[String]):Option[ComposedBox] = names match {
+    case Nil => Some(this)
+    case head :: tail => children.get(head) match {
+      case Some(c : ComposedBox) => c.find(tail)
+      case _ => None
+    }
+  }
 	private[runtime] def add(box:Box) = addTemplate(children,box)
 	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
-  /*case class DefaultVWire(from : PPort, to:PPort) extends VWire {
-    def bendpoints = List(Bendpoint((30,30), (20,20)))
-  }*/
-
-  /*class DefaultComposedVBox extends ComposedVBox with DefaultVBox {
-    override lazy val boxes = Set[VBox]() ++ (children.values map {_.vbox})
-    override lazy val connections = {
-      val s = Set[VWire]()
-      for {
-        b<-children.values
-        from<- b.ports.values
+  lazy val cproto : ModelProtos.Box = {
+	  val box =  ModelProtos.Box.newBuilder(proto)
+	  val sorted = (List()++children.values).sorted(Ordering.by((_:Box).name))
+	  sorted foreach {b => box.addChild(b.proto)}
+	  val connections = {
+      var s = ISet[ModelProtos.Line]()
+      for (b<-children.values;
+        from<- b.ports.values;
         to<- from.connections
-      } s+=DefaultVWire(from.vport ,to.vport)
+        if (to.box.parent ==  ComposedBox.this)) { // TODO internal connections
+          val line = ModelProtos.Line.newBuilder()
+            /*for (bend <- bendpoints) {
+              line.addBendpoint(serial.ModelProtos.Bendpoint.newBuilder.setP1(
+                  bend.a).setP2(bend.b).setWeight(1.0f))*/
+          def pname(p:Port[_]) =  p.box.name + "#" + p.name
+          line.setFrom( pname(from)).setTo(pname(to))
+          s+=line.build
+      }
       s
     }
-  }*/
-  override lazy val vbox = null//new DefaultComposedVBox
+    val wsorted = (List()++connections).sorted(Ordering.by((_:ModelProtos.Line).getFrom));
+    wsorted foreach {w => box.addWire(w)}
+	  box.build
+  }
+	override lazy val proto : ModelProtos.Box= {
+    val box = toProto
+    box.setType(ModelProtos.BoxType.COMPOSED);   
+    box.build
+  }
 }

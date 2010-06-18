@@ -8,6 +8,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: org.osgi.framework;version="1.5.0"
 Require-Bundle: org.zaluum.runtime;bundle-version="1.0.0",
  akka;bundle-version="0.9.0",
- scala.library
+ scala.library,
+ com.google.protobuf;bundle-version="2.3.0"
 Service-Component: META-INF/component.xml
 Export-Package: org.zaluum.example

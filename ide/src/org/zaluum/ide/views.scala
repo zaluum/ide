@@ -6,9 +6,6 @@ import org.eclipse.swt.widgets.Composite
 import org.eclipse.gef.EditPartFactory
 import org.eclipse.gef.EditPart
 import org.eclipse.gef.editparts.AbstractTreeEditPart
-import org.zaluum.runtime.PModel
-import org.zaluum.runtime.PBox
-import org.zaluum.runtime.ComposedPBox
 import org.zaluum.runtime.Observer
 import org.zaluum.runtime.Subject
 import com.google.common.collect.Lists
@@ -17,17 +14,17 @@ import scala.collection.JavaConversions._
 import org.eclipse.gef.Request
 import org.eclipse.gef.RequestConstants
 import org.eclipse.gef.ui.parts.TreeViewer
+import org.zaluum.runtime.PersistentModel._
 
-class ZaluumOutlinePage(boxEditor : BaseEditor) extends ContentOutlinePage(new TreeViewer()) with Observer {
-  val model = boxEditor.model.asInstanceOf[PModel]
+class ZaluumOutlinePage(boxEditor : ZFileEditor) extends ContentOutlinePage(new TreeViewer()) with Observer {
   override def createControl(parent : Composite) = {
     super.createControl(parent)
     getViewer.setEditDomain(boxEditor.editDomain)
-    getViewer.setEditPartFactory(new ZaluumOutlineFactory(model))
-    getViewer.setContents(model.root)
-    model.root.addObserver(this)
+    getViewer.setEditPartFactory(new ZaluumOutlineFactory(boxEditor.model))
+    getViewer.setContents(boxEditor.model.root)
+    boxEditor.model.root.addObserver(this)
   }
-  override def dispose = model.removeObserver(this); super.dispose()
+  override def dispose = boxEditor.model.removeObserver(this); super.dispose()
   override def receiveUpdate(subject:Subject) = getViewer.getContents.refresh
 }
 
@@ -52,11 +49,11 @@ class ZaluumOutlineFactory(model : PModel) extends EditPartFactory {
     }
     override def receiveUpdate(model : Subject) = refresh
   }
-  override def createEditPart(c:EditPart, m:Object) : EditPart = {
-    if(m.isInstanceOf[ComposedPBox]) {
-      return new ListenerAbstractTreePart(m) {
-        override def getModelChildren = new ArrayList(m.asInstanceOf[ComposedPBox].boxes)
-        override def getText = m.asInstanceOf[ComposedPBox].name;
+  override def createEditPart(c:EditPart, m:Object) =  m match {
+    case c : ComposedPBox=> 
+      new ListenerAbstractTreePart(m) {
+        override def getModelChildren = new ArrayList(c.boxes)
+        override def getText = c.name;
         override def getImage = Activator.getDefault.getImageRegistry.get("composed_16")
         override def getDragTracker(req : Request) = new SelectEditPartTracker(this)
         override def performRequest(req : Request) = req.getType match {
@@ -64,8 +61,14 @@ class ZaluumOutlineFactory(model : PModel) extends EditPartFactory {
           case _ => super.performRequest(req)
         }
       }
-    }
-    throw new RuntimeException
+    case b: PBox => 
+     new ListenerAbstractTreePart(m) {
+        override def getModelChildren = new ArrayList()
+        override def getText = b.name;
+        override def getImage = Activator.getDefault.getImageRegistry.get("composed_16")
+        override def getDragTracker(req : Request) = new SelectEditPartTracker(this)
+      }
+    case _ => error("unexpected box type " + m)
   }
 }
 
