@@ -61,9 +61,10 @@ object DebugEditParts extends Parts{
         process !! LoadEvent(new org.zaluum.example.Example())
       }
       def receive = {
-        case Time => synchronized {updatePortValues}
+        case Time => synchronized {currentView foreach {c=>process ! DebugRequest(c.fqName)}}
+        case Some(d:ModelProtos.DebugValue) => synchronized {updatePortValues(d)}
         case Change(s:String) => synchronized {change(s)}
-        case p => error(p.toString)
+        case p => println("other" + p)
       }
     })
     private def change(str : String) {
@@ -75,19 +76,25 @@ object DebugEditParts extends Parts{
        }
     }
     var i = 0
-    private def updatePortValues  {
-      currentView match {
-        case ComposedView(c:ComposedDBox) => 
-          for (b<- c.boxes; p<- b.ports) p.value ="" +i
+    private def updatePortValues(data : ModelProtos.DebugValue) = currentView match {
+        case ComposedView(c:ComposedDBox) =>
+          if (c.fqName==data.getFqName){
+            val updatedPorts = Buffer[DPort]()
+            for (d <- data.getValueList; 
+              b <- c.boxes.find(_.name == d.getBox);
+              p <- b.ports.find(_.name == d.getPort)) {
+                if (p.value != d.getValue) {
+                    p.value =d.getValue
+                    updatedPorts += p
+                }
+            }
+            swtRun { 
+              for (p<-updatedPorts) {
+                p.notifyObservers
+              }
+            }
+          }else println("old data" + data)
         case TopView =>
-      }
-      i=i+1
-      swtRun { currentView match {
-          case ComposedView(c) => 
-          for (b<- c.boxes; p<- b.ports) p.notifyObservers
-          case TopView =>
-        }
-      }
     }
     private def setProto(oproto : Option[ModelProtos.ModelFragment]) = synchronized{
       oproto foreach {proto => 
