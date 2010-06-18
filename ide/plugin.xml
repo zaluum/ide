@@ -201,5 +201,14 @@
          </enablement>
       </decorator>
    </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            class="org.zaluum.ide.PlotView"
+            id="ide.PlotView"
+            name="Plot View"
+            restorable="true">
+      </view>
+   </extension>
    
 </plugin>

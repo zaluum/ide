@@ -68,3 +68,51 @@ class ZaluumOutlineFactory(model : PModel) extends EditPartFactory {
     throw new RuntimeException
   }
 }
+
+
+
+
+import java.awt.Font;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.part.ViewPart;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.data.general.PieDataset;
+import org.jfree.experimental.chart.swt.ChartComposite;
+
+class PlotView extends ViewPart {
+  def createPartControl(parent : Composite ) = new ChartComposite(parent, SWT.NONE, createChart(createDataset),true)
+  def setFocus {}
+  def createDataset = {
+    var dataset = new DefaultPieDataset
+	dataset.setValue("One", 43.2)
+	dataset.setValue("Two", 10.0)
+	dataset.setValue("Three", 27.5)
+	dataset.setValue("Four", 17.5)
+	dataset.setValue("Five", 11.0)
+	dataset.setValue("Six", 19.4)
+	dataset
+  }
+  def createChart(dataset : PieDataset) = {
+    val chart = ChartFactory.createPieChart("Pie Chart Demo 1", dataset,true,true, false)
+    var plot = chart.getPlot.asInstanceOf[PiePlot]
+	plot.setSectionOutlinesVisible(false)
+	plot.setLabelFont(new Font("SansSerif", Font.PLAIN, 12))
+	plot.setNoDataMessage("No data available")
+	plot.setCircular(false)
+	plot.setLabelGap(0.02)
+	chart
+  }
+}
+
+
+
+
+
+
+
+
+
