@@ -102,20 +102,7 @@ object PersistentModel extends VisualModel{
       line.setFrom( pname(from)).setTo(pname(to))    
     }
   }
-  class PModel(val root:ComposedPBox) extends VModel {
-    var currentBox : Option[CC] = None
-    def moveTo(c:Option[CC]) {
-      currentBox = c
-      notifyObservers
-    }
-    def up {
-      currentBox = currentBox match {
-        case Some(c) if c==root => None
-        case Some(c) => Some(c.parent)
-        case None => None
-      }
-    }
-  }
+  
   import com.google.protobuf.TextFormat
   import java.io.InputStreamReader
   import com.google.common.base.Charsets
@@ -123,10 +110,10 @@ object PersistentModel extends VisualModel{
   import scala.collection.JavaConversions._
 
   object Deserialize {
-    def deserialize(in:java.io.InputStream) : PModel = {
+    def deserialize(in:java.io.InputStream) : ComposedPBox = {
       val boxb = Box.newBuilder();
       TextFormat.merge(new InputStreamReader(in, Charsets.UTF_8), boxb);
-      new PModel(deserializeComposed(boxb.build()));
+      deserializeComposed(boxb.build());
     }
     import BoxType._
     def deserialize(b:ModelProtos.Box) : PBox = b.getType match {

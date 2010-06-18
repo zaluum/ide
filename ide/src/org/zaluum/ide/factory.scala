@@ -1,17 +1,6 @@
 package org.zaluum.ide
 import org.eclipse.gef._
 import org.zaluum.runtime._
-object ZaluumReadOnlyFactory extends EditPartFactory {
-  import REditParts._
-  def createEditPart(context: EditPart, model: Object): EditPart = model match { 
-    case model2 : VisualModel#VModel => new ModelEditPart { val model = model2}
-    case cbox : VisualModel#ComposedVBox => new BoxEditPart with ComposedEditPartT  {val model=cbox}
-    case box : VisualModel#VBox => new BoxEditPart {val model = box}
-    case port : VisualModel#VPort => new PortEditPart {val model = port}
-    case wire : VisualModel#VWire => new WireEditPart {val model = wire}
-    case _ => null
-  }
-}
 import PersistentModel._
 object ZaluumWriteFactory extends EditPartFactory {
   import PersistentEditParts._

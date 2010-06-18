@@ -1,9 +1,9 @@
 package org.zaluum.ide
 import org.zaluum.runtime.{Command=>C,Bendpoint=>BP,_}
 import org.eclipse.swt.SWT
-import org.eclipse.draw2d._
 import org.eclipse.core.runtime._
 import org.eclipse.gef._
+import org.eclipse.draw2d.geometry.Point
 import commands._
 import editpolicies._
 import rulers._
@@ -28,21 +28,23 @@ object classes{
   val pport = classOf[PPort]
   val ComposedPBoxClass = classOf[ComposedPBox]
 }
-object REditParts extends Parts{
-  type B = VisualModel#VBox
-  type P = VisualModel#VPort
-  type C = VisualModel#ComposedVBox
-  type W = VisualModel#VWire
-  type M = VisualModel#VModel
-  
-}
+
 object PersistentEditParts extends Parts{
-  type B = PBox
-  type P = PPort
-  type C = ComposedPBox
-  type W = PWire
-  type M = PModel
-    
+  type T = PersistentModel.type
+    class PModel(val root:ComposedPBox) extends VModel {
+    var currentView : Viewport = TopView
+    def moveTo(c:Viewport) {
+      currentView = c
+      notifyObservers
+    }
+    def up {
+      currentView = currentView match {
+        case ComposedView(c) if c==root => TopView
+        case ComposedView(c) => ComposedView(c.parent)
+        case TopView => TopView
+      }
+    }
+  }
   class PortEditPartWrite(val model:PPort) extends PortEditPart
               with DirectEditPart with RefPropertySourceWrite{
      override def properties = List(
@@ -85,11 +87,13 @@ object PersistentEditParts extends Parts{
       asInstanceOf[RootEditPart].
       getChildren.get(0).
       asInstanceOf[ModelEditPart] // TODO improve
-    override def delete = DeleteWireCommand(
-                            model,
-                            modelEditPart.model.currentBox.get)
+    override def delete = modelEditPart.model.currentView match {
+      case ComposedView(c:ComposedPBox) => DeleteWireCommand(model,c)
+      case _ => null
+    }
+                            
     implicit def dimToTuple (d:Dimension) = (d.width,d.height)
-    implicit def toBendpoint(p : geometry.Point) = {
+    implicit def toBendpoint(p : Point) = {
       fig.translateToRelative(p);
       val ref1 = fig.getSourceAnchor.getReferencePoint
       val ref2 = fig.getTargetAnchor.getReferencePoint
@@ -97,12 +101,12 @@ object PersistentEditParts extends Parts{
       fig.translateToRelative(ref2);
       BP(p.getDifference(ref1),p.getDifference(ref2))
     }
-    override def createBendpoint(l:geometry.Point, i: Int) = CreateBendpointCommand(model, l, i)
+    override def createBendpoint(l:Point, i: Int) = CreateBendpointCommand(model, l, i)
     override def deleteBendpoint(i: Int) = DeleteBendpointCommand(model, i)
   }
   class ModelEditPartWrite(val model:PModel) extends ModelEditPart{
-    override def createCommand(t : AnyRef, r:Rectangle) = (t,currentBox) match {
-      case (classes.ComposedPBoxClass, Some(c:ComposedPBox)) =>
+    override def createCommand(t : AnyRef, r:Rectangle) = (t,currentView) match {
+      case (classes.ComposedPBoxClass, ComposedView(c:ComposedPBox)) =>
         val b = new ComposedPBox
         b.pos =(r.x,r.y)
         b.size =(r.width,r.height)

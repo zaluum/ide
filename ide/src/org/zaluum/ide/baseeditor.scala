@@ -23,7 +23,7 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
   var gridColor : Color = null
 
   setEditDomain(new DefaultEditDomain(this));
-  def model: AnyRef
+  def model: Parts#VModel
   def editDomain : EditDomain = { getEditDomain }
   override def initializeGraphicalViewer():Unit  = {
     super.initializeGraphicalViewer()

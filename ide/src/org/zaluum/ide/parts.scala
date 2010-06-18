@@ -1,7 +1,7 @@
 package org.zaluum.ide
 import org.zaluum.runtime.{Command=>C,Bendpoint=>BP,_}
 import org.eclipse.swt.SWT
-import org.eclipse.draw2d._
+import org.eclipse.draw2d.{PolylineConnection,RelativeBendpoint, FreeformLayer,FreeformLayout, IFigure, ColorConstants}
 import org.eclipse.core.runtime._
 import org.eclipse.gef._
 import commands._
@@ -23,39 +23,38 @@ import java.util.ArrayList
 import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.{Rectangle,Dimension}
 import Commands._
+
 abstract class Parts{
-  type B <: VisualModel#VBox
-  type P <: VisualModel#VPort
-  type C <: VisualModel#ComposedVBox 
-  type W <: VisualModel#VWire
-  type M <: VisualModel#VModel
-  
+  type T <: VisualModel
+  trait VModel extends Subject{
+    def currentView:Viewport
+    def moveTo(c:Viewport)
+    def up()
+    def root : T#C
+  }
   abstract class ModelEditPart extends BasePart with XYLayoutPart with SnapPart with Subject with Updater{
-    type S = M
-    protected var currentBox : Option[VisualModel#ComposedVBox] = None
+    type S = VModel
+    protected var currentView : Viewport = TopView
     receiveUpdate(model)
-    override def getModelChildren : java.util.List[_]= currentBox match  {
-      case Some(c:VisualModel#ComposedVBox) => new ArrayList(c.boxes)
-      case None => Buffer[AnyRef](model.root)
+    override def getModelChildren : java.util.List[_]= currentView match  {
+      case ComposedView(c) => new ArrayList(c.boxes)
+      case TopView => Buffer[AnyRef](model.root)
     }
     override def receiveUpdate(s:Subject){
       if (s==model){
-        for (c <- currentBox) 
-          c.removeObserver(this)
-        currentBox = model.currentBox
-        for (c <- currentBox) 
-          c.addObserver(this)
+        currentView foreach {_.removeObserver(this)}
+        currentView = model.currentView
+        currentView foreach {_.addObserver(this)}
       }
       super.receiveUpdate(s)
     }
     override def deactivate {
-      for (c <- currentBox)
-        c.removeObserver(this)
+      currentView foreach {_.removeObserver(this)}
       super.deactivate
     }
     override def refreshVisuals  {
       fig.setBackgroundColor(ColorConstants.lightGray)
-      fig.setOpaque(currentBox == None)
+      fig.setOpaque(currentView == TopView)
     }
     override def createFigure : IFigure = {
       val freeformLayer = new FreeformLayer()
@@ -72,7 +71,7 @@ abstract class Parts{
                                   with Updater with HelpContext with HighlightPart
                                   with XYLayoutPart with RefPropertySource{
     type F = BoxFigure
-    type S = B
+    type S = T#B
     def helpKey = "org.zaluum.box"
     def properties = List(StringProperty("Name",model.name _,None))
     override protected def getModelChildren = new ArrayList(model.ports)
@@ -89,11 +88,10 @@ abstract class Parts{
     }
   }
 
-  trait ComposedEditPartT extends OpenPart{
-    self : BoxEditPart =>
+  trait ComposedEditPartT extends BoxEditPart with OpenPart{
     def doOpen = {
       val m = parentPart.model
-      m.moveTo(Some(model.asInstanceOf[m.CC]))
+      m.moveTo(ComposedView(model.asInstanceOf[T#C]))
     }
   }
   
@@ -105,7 +103,7 @@ abstract class Parts{
   abstract class WireEditPart extends AbstractConnectionEditPart 
           with BasePart with Updater with ConnectionPart {
     type F = PolylineConnection
-    type S = W
+    type S = T#W
     override def createFigure = WireFigure()
     
     override def refreshVisuals  = {
@@ -134,7 +132,7 @@ abstract class Parts{
                  with RefPropertySource
                  {
     type F <: PortFigure
-    type S = P
+    type S = T#P
     def properties = List(
          BooleanProperty("Is input",model.in _, None),
          StringProperty("Type", model.ttype _, None),
@@ -144,8 +142,8 @@ abstract class Parts{
     def helpKey = "org.zaluum.Port"
     def anchor = fig.anchor
    
-    private def filterWires (f : (VisualModel#VWire => Boolean)) = {
-      val s = Set[VisualModel#VWire]()
+    private def filterWires (f : (T#W => Boolean)) = {
+      val s = Set[T#W]()
       for {
         box <- Option(model.vbox.parent)
         c <- box.connections

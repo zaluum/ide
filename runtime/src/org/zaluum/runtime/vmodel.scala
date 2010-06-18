@@ -53,11 +53,12 @@ abstract class VisualModel{
     def boxes : Set[B]
     def connections : Set[W]
   }
-  trait VModel extends Subject{
-    type CC =C
-    def currentBox:Option[CC]
-    def moveTo(c:Option[CC])
-    def up()
-    val root : CC
-  }
 }
+  sealed abstract class Viewport {
+     def foreach[U](f: VisualModel#ComposedVBox => U) : Unit =  this match {
+         case TopView => 
+         case ComposedView(c) => f(c)
+     }
+  }
+  case object TopView extends Viewport
+  case class ComposedView(c:VisualModel#ComposedVBox) extends Viewport
