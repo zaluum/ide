@@ -35,12 +35,11 @@ object DebugEditParts extends Parts{
   type T = Debug2Model.type
   class ModelUpdater(display:Display) extends VModel {
     private val process = RunServer.make
-    process.start
     @volatile var currentView:Viewport = TopView 
     val root = new ComposedDBox("main","",ISet(),null,ISet(),ISet());
     private def swtRun (f : => Unit) {
       display.asyncExec(new Runnable{ 
-        def run = synchronized(f)
+        def run = if (!display.isDisposed) synchronized(f)
         })
     }
     def up() = currentView match {
@@ -58,7 +57,11 @@ object DebugEditParts extends Parts{
     case class Change(fqName : String)
     private val actor = Actor.actorOf(new Actor {
       override def init {
+        process.start
         process !! LoadEvent(new org.zaluum.example.Example())
+      }
+      override def shutdown {
+        process.stop
       }
       def receive = {
         case Time => synchronized {currentView foreach {c=>process ! DebugRequest(c.fqName)}}

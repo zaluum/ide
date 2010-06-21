@@ -1,5 +1,5 @@
 package org.zaluum.runtime
-import scala.collection.mutable.Map
+import scala.collection.mutable.{Map,Set}
 import java.util.concurrent._
 import scala.concurrent.JavaConversions._
 import scala.concurrent.{ops,TaskRunner,SyncVar}
@@ -13,7 +13,7 @@ sealed abstract class Event
 case class PushInputEvent(s: String, v:Int) extends Event 
 case class LoadEvent(model: Model ) extends Event 
 case class NewDataEvent(data : Any, dst:Box) extends Event
-case class TimeEvent(dst:Box) extends Event
+case class TimeEvent(dst:List[Box]) extends Event
 case class DebugModelEvent(fqName:String) extends Event
 case class DebugRequest(fqName:String) extends Event
 
@@ -24,23 +24,32 @@ class MainBox extends ComposedBox(name="",parent=null) {
   override def recursiveQueue():Unit = {}
 }
 import Debug2Model._
-trait Process extends Actor {
-  val time : ActorRef
-  val remote : ActorRef
-  var currentTime : Long = System.nanoTime
-  var root : MainBox = null
-  override def receive = {
-    case PushInputEvent(s,v) => s
-    case msg @ LoadEvent(model) => 
-      root = new MainBox
-      model.create(root)
-      self.reply("ok")
-    case DebugModelEvent(str) => self.reply(toDModel(str))
-    case TimeEvent(box) => box
-    case NewDataEvent(data,dst) => data
-    case DebugRequest(fqName) => self.reply(debugData(fqName))
+
+class Process (val time:Time) {
+  var root : Option[MainBox] = None
+  
+  def run {
+    for (r<-root) {
+      r.director.run(this)
+    }
+    time.commit
   }
-  def reschedule(b:Box, t:Long) = time ! (b,t)
+  def load (model:Model){
+    root = Some(new MainBox)
+    model.create(root.get)
+    def visit(b:Box) : Unit = b match{
+      case c:ComposedBox =>
+        c.children.values foreach {child =>visit(child)}
+        c.recursiveQueue
+      case _ => b.recursiveQueue
+    }
+    visit(root.get)
+    run
+  }
+  def wakeup(boxes:List[Box]){
+    boxes.foreach { b=> b.recursiveQueue}
+    run
+  }
   def toDModel(str:String) : Option[serial.ModelProtos.ModelFragment] = {
     for (c <- findComposed(str)) 
       yield {
@@ -65,49 +74,56 @@ trait Process extends Actor {
   }
   def findComposed(fqName : String) : Option[ComposedBox] = {
     val names  = (List() ++fqName.split("/")) filter {_.size!=0}
-    
-    if (root!=null){
-      val found = root.find(names)
-      found
+    root match {
+      case Some(r) =>  r.find(names)
+      case None => None
     }
-    else None
   }
 //  def debugRun() =   while (!eventQueue.isEmpty) process(eventQueue.take())
 }
-class Time(val p:Process) extends Actor {
-  override def receive = { 
-    case _ =>
+trait Time {
+  def commit 
+  def queue(b : Box, t: Long)
+  def now : Long
+}
+class WallTime extends Time{
+  
+  val scheduler = Executors.newSingleThreadScheduledExecutor()
+  val startTime = System.nanoTime
+  var timeQueue = Map[Box,Long]()
+  var actor :ActorRef = _
+  def commit {
+    for ((box,time) <- timeQueue) {
+      scheduler.schedule(new Runnable{
+        def run = actor ! TimeEvent(List(box))
+      }, time, TimeUnit.MILLISECONDS)
+    }
+    timeQueue = timeQueue.empty
   }
-  override def init = {
-    println("starting time")
+  def queue(b : Box, t: Long){timeQueue += ((b,t))}
+  def now : Long = 0
+
+}
+
+class RealTimeActor extends Actor{
+  val time = new WallTime
+  val process = new Process(time)
+  override def init  {
+    time.actor = self
+    process.run
   }
-  override def shutdown = {
-    println("stopping time")    
+  override def shutdown  {
+  }
+  override def receive = {
+    case NewDataEvent(data,dst) => error("not implemented")
+    case PushInputEvent(s,v) => error("not implemented")
+    case TimeEvent(boxes) => process.wakeup(boxes)
+    case LoadEvent(model) =>  process.load(model); self.reply("ok")
+    case DebugModelEvent(str) => self.reply(process.toDModel(str))
+    case DebugRequest(fqName) => self.reply(process.debugData(fqName))
   }
 }
-class Remote(val p:Process) extends Actor{
-  override def receive = { 
-    case _ =>
-  }
-  override def init = {
-    println("starting remote")
-  }
-  override def shutdown = {
-    println("stopping remote")    
-  }
-}
+
 object RunServer {
-  def make  = actorOf[ProductionServer]
-}
-class ProductionServer extends Process{
-  lazy val remote = actorOf(new Remote(this));
-  lazy val time = actorOf(new Time(this));
-  override def init = {
-    remote.start
-    time.start
-  }
-  override def shutdown = {
-    remote.stop
-    time.stop
-  }
+  def make  = actorOf[RealTimeActor]
 }

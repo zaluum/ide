@@ -8,7 +8,7 @@ import se.scalablesolutions.akka.config.ScalaConfig._
 
 class Component {
   
-  val server = actorOf[ProductionServer]
+  val server = RunServer.make
   val c =  Supervisor(SupervisorConfig(
        RestartStrategy(OneForOne, 3, 10, List(classOf[Throwable])),
        Supervise(
