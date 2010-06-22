@@ -437,6 +437,757 @@ public final class ModelProtos {
     // @@protoc_insertion_point(class_scope:ModelFragment)
   }
   
+  public static final class PortValue extends
+      com.google.protobuf.GeneratedMessage {
+    // Use PortValue.newBuilder() to construct.
+    private PortValue() {
+      initFields();
+    }
+    private PortValue(boolean noInit) {}
+    
+    private static final PortValue defaultInstance;
+    public static PortValue getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public PortValue getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.zaluum.runtime.serial.ModelProtos.internal_static_PortValue_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.zaluum.runtime.serial.ModelProtos.internal_static_PortValue_fieldAccessorTable;
+    }
+    
+    // required string box = 1;
+    public static final int BOX_FIELD_NUMBER = 1;
+    private boolean hasBox;
+    private java.lang.String box_ = "";
+    public boolean hasBox() { return hasBox; }
+    public java.lang.String getBox() { return box_; }
+    
+    // required string port = 2;
+    public static final int PORT_FIELD_NUMBER = 2;
+    private boolean hasPort;
+    private java.lang.String port_ = "";
+    public boolean hasPort() { return hasPort; }
+    public java.lang.String getPort() { return port_; }
+    
+    // required string value = 3;
+    public static final int VALUE_FIELD_NUMBER = 3;
+    private boolean hasValue;
+    private java.lang.String value_ = "";
+    public boolean hasValue() { return hasValue; }
+    public java.lang.String getValue() { return value_; }
+    
+    private void initFields() {
+    }
+    public final boolean isInitialized() {
+      if (!hasBox) return false;
+      if (!hasPort) return false;
+      if (!hasValue) return false;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (hasBox()) {
+        output.writeString(1, getBox());
+      }
+      if (hasPort()) {
+        output.writeString(2, getPort());
+      }
+      if (hasValue()) {
+        output.writeString(3, getValue());
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (hasBox()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(1, getBox());
+      }
+      if (hasPort()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(2, getPort());
+      }
+      if (hasValue()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(3, getValue());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.PortValue parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.zaluum.runtime.serial.ModelProtos.PortValue prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private org.zaluum.runtime.serial.ModelProtos.PortValue result;
+      
+      // Construct using org.zaluum.runtime.serial.ModelProtos.PortValue.newBuilder()
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new org.zaluum.runtime.serial.ModelProtos.PortValue();
+        return builder;
+      }
+      
+      protected org.zaluum.runtime.serial.ModelProtos.PortValue internalGetResult() {
+        return result;
+      }
+      
+      public Builder clear() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new org.zaluum.runtime.serial.ModelProtos.PortValue();
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(result);
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.zaluum.runtime.serial.ModelProtos.PortValue.getDescriptor();
+      }
+      
+      public org.zaluum.runtime.serial.ModelProtos.PortValue getDefaultInstanceForType() {
+        return org.zaluum.runtime.serial.ModelProtos.PortValue.getDefaultInstance();
+      }
+      
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
+      public org.zaluum.runtime.serial.ModelProtos.PortValue build() {
+        if (result != null && !isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return buildPartial();
+      }
+      
+      private org.zaluum.runtime.serial.ModelProtos.PortValue buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        if (!isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return buildPartial();
+      }
+      
+      public org.zaluum.runtime.serial.ModelProtos.PortValue buildPartial() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        org.zaluum.runtime.serial.ModelProtos.PortValue returnMe = result;
+        result = null;
+        return returnMe;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.zaluum.runtime.serial.ModelProtos.PortValue) {
+          return mergeFrom((org.zaluum.runtime.serial.ModelProtos.PortValue)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(org.zaluum.runtime.serial.ModelProtos.PortValue other) {
+        if (other == org.zaluum.runtime.serial.ModelProtos.PortValue.getDefaultInstance()) return this;
+        if (other.hasBox()) {
+          setBox(other.getBox());
+        }
+        if (other.hasPort()) {
+          setPort(other.getPort());
+        }
+        if (other.hasValue()) {
+          setValue(other.getValue());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              setBox(input.readString());
+              break;
+            }
+            case 18: {
+              setPort(input.readString());
+              break;
+            }
+            case 26: {
+              setValue(input.readString());
+              break;
+            }
+          }
+        }
+      }
+      
+      
+      // required string box = 1;
+      public boolean hasBox() {
+        return result.hasBox();
+      }
+      public java.lang.String getBox() {
+        return result.getBox();
+      }
+      public Builder setBox(java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  result.hasBox = true;
+        result.box_ = value;
+        return this;
+      }
+      public Builder clearBox() {
+        result.hasBox = false;
+        result.box_ = getDefaultInstance().getBox();
+        return this;
+      }
+      
+      // required string port = 2;
+      public boolean hasPort() {
+        return result.hasPort();
+      }
+      public java.lang.String getPort() {
+        return result.getPort();
+      }
+      public Builder setPort(java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  result.hasPort = true;
+        result.port_ = value;
+        return this;
+      }
+      public Builder clearPort() {
+        result.hasPort = false;
+        result.port_ = getDefaultInstance().getPort();
+        return this;
+      }
+      
+      // required string value = 3;
+      public boolean hasValue() {
+        return result.hasValue();
+      }
+      public java.lang.String getValue() {
+        return result.getValue();
+      }
+      public Builder setValue(java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  result.hasValue = true;
+        result.value_ = value;
+        return this;
+      }
+      public Builder clearValue() {
+        result.hasValue = false;
+        result.value_ = getDefaultInstance().getValue();
+        return this;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:PortValue)
+    }
+    
+    static {
+      defaultInstance = new PortValue(true);
+      org.zaluum.runtime.serial.ModelProtos.internalForceInit();
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:PortValue)
+  }
+  
+  public static final class DebugValue extends
+      com.google.protobuf.GeneratedMessage {
+    // Use DebugValue.newBuilder() to construct.
+    private DebugValue() {
+      initFields();
+    }
+    private DebugValue(boolean noInit) {}
+    
+    private static final DebugValue defaultInstance;
+    public static DebugValue getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public DebugValue getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.zaluum.runtime.serial.ModelProtos.internal_static_DebugValue_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.zaluum.runtime.serial.ModelProtos.internal_static_DebugValue_fieldAccessorTable;
+    }
+    
+    // required string fqName = 1;
+    public static final int FQNAME_FIELD_NUMBER = 1;
+    private boolean hasFqName;
+    private java.lang.String fqName_ = "";
+    public boolean hasFqName() { return hasFqName; }
+    public java.lang.String getFqName() { return fqName_; }
+    
+    // repeated .PortValue value = 2;
+    public static final int VALUE_FIELD_NUMBER = 2;
+    private java.util.List<org.zaluum.runtime.serial.ModelProtos.PortValue> value_ =
+      java.util.Collections.emptyList();
+    public java.util.List<org.zaluum.runtime.serial.ModelProtos.PortValue> getValueList() {
+      return value_;
+    }
+    public int getValueCount() { return value_.size(); }
+    public org.zaluum.runtime.serial.ModelProtos.PortValue getValue(int index) {
+      return value_.get(index);
+    }
+    
+    private void initFields() {
+    }
+    public final boolean isInitialized() {
+      if (!hasFqName) return false;
+      for (org.zaluum.runtime.serial.ModelProtos.PortValue element : getValueList()) {
+        if (!element.isInitialized()) return false;
+      }
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (hasFqName()) {
+        output.writeString(1, getFqName());
+      }
+      for (org.zaluum.runtime.serial.ModelProtos.PortValue element : getValueList()) {
+        output.writeMessage(2, element);
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (hasFqName()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(1, getFqName());
+      }
+      for (org.zaluum.runtime.serial.ModelProtos.PortValue element : getValueList()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(2, element);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.zaluum.runtime.serial.ModelProtos.DebugValue parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.zaluum.runtime.serial.ModelProtos.DebugValue prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private org.zaluum.runtime.serial.ModelProtos.DebugValue result;
+      
+      // Construct using org.zaluum.runtime.serial.ModelProtos.DebugValue.newBuilder()
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new org.zaluum.runtime.serial.ModelProtos.DebugValue();
+        return builder;
+      }
+      
+      protected org.zaluum.runtime.serial.ModelProtos.DebugValue internalGetResult() {
+        return result;
+      }
+      
+      public Builder clear() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new org.zaluum.runtime.serial.ModelProtos.DebugValue();
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(result);
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.zaluum.runtime.serial.ModelProtos.DebugValue.getDescriptor();
+      }
+      
+      public org.zaluum.runtime.serial.ModelProtos.DebugValue getDefaultInstanceForType() {
+        return org.zaluum.runtime.serial.ModelProtos.DebugValue.getDefaultInstance();
+      }
+      
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
+      public org.zaluum.runtime.serial.ModelProtos.DebugValue build() {
+        if (result != null && !isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return buildPartial();
+      }
+      
+      private org.zaluum.runtime.serial.ModelProtos.DebugValue buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        if (!isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return buildPartial();
+      }
+      
+      public org.zaluum.runtime.serial.ModelProtos.DebugValue buildPartial() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        if (result.value_ != java.util.Collections.EMPTY_LIST) {
+          result.value_ =
+            java.util.Collections.unmodifiableList(result.value_);
+        }
+        org.zaluum.runtime.serial.ModelProtos.DebugValue returnMe = result;
+        result = null;
+        return returnMe;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.zaluum.runtime.serial.ModelProtos.DebugValue) {
+          return mergeFrom((org.zaluum.runtime.serial.ModelProtos.DebugValue)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(org.zaluum.runtime.serial.ModelProtos.DebugValue other) {
+        if (other == org.zaluum.runtime.serial.ModelProtos.DebugValue.getDefaultInstance()) return this;
+        if (other.hasFqName()) {
+          setFqName(other.getFqName());
+        }
+        if (!other.value_.isEmpty()) {
+          if (result.value_.isEmpty()) {
+            result.value_ = new java.util.ArrayList<org.zaluum.runtime.serial.ModelProtos.PortValue>();
+          }
+          result.value_.addAll(other.value_);
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                return this;
+              }
+              break;
+            }
+            case 10: {
+              setFqName(input.readString());
+              break;
+            }
+            case 18: {
+              org.zaluum.runtime.serial.ModelProtos.PortValue.Builder subBuilder = org.zaluum.runtime.serial.ModelProtos.PortValue.newBuilder();
+              input.readMessage(subBuilder, extensionRegistry);
+              addValue(subBuilder.buildPartial());
+              break;
+            }
+          }
+        }
+      }
+      
+      
+      // required string fqName = 1;
+      public boolean hasFqName() {
+        return result.hasFqName();
+      }
+      public java.lang.String getFqName() {
+        return result.getFqName();
+      }
+      public Builder setFqName(java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  result.hasFqName = true;
+        result.fqName_ = value;
+        return this;
+      }
+      public Builder clearFqName() {
+        result.hasFqName = false;
+        result.fqName_ = getDefaultInstance().getFqName();
+        return this;
+      }
+      
+      // repeated .PortValue value = 2;
+      public java.util.List<org.zaluum.runtime.serial.ModelProtos.PortValue> getValueList() {
+        return java.util.Collections.unmodifiableList(result.value_);
+      }
+      public int getValueCount() {
+        return result.getValueCount();
+      }
+      public org.zaluum.runtime.serial.ModelProtos.PortValue getValue(int index) {
+        return result.getValue(index);
+      }
+      public Builder setValue(int index, org.zaluum.runtime.serial.ModelProtos.PortValue value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        result.value_.set(index, value);
+        return this;
+      }
+      public Builder setValue(int index, org.zaluum.runtime.serial.ModelProtos.PortValue.Builder builderForValue) {
+        result.value_.set(index, builderForValue.build());
+        return this;
+      }
+      public Builder addValue(org.zaluum.runtime.serial.ModelProtos.PortValue value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        if (result.value_.isEmpty()) {
+          result.value_ = new java.util.ArrayList<org.zaluum.runtime.serial.ModelProtos.PortValue>();
+        }
+        result.value_.add(value);
+        return this;
+      }
+      public Builder addValue(org.zaluum.runtime.serial.ModelProtos.PortValue.Builder builderForValue) {
+        if (result.value_.isEmpty()) {
+          result.value_ = new java.util.ArrayList<org.zaluum.runtime.serial.ModelProtos.PortValue>();
+        }
+        result.value_.add(builderForValue.build());
+        return this;
+      }
+      public Builder addAllValue(
+          java.lang.Iterable<? extends org.zaluum.runtime.serial.ModelProtos.PortValue> values) {
+        if (result.value_.isEmpty()) {
+          result.value_ = new java.util.ArrayList<org.zaluum.runtime.serial.ModelProtos.PortValue>();
+        }
+        super.addAll(values, result.value_);
+        return this;
+      }
+      public Builder clearValue() {
+        result.value_ = java.util.Collections.emptyList();
+        return this;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:DebugValue)
+    }
+    
+    static {
+      defaultInstance = new DebugValue(true);
+      org.zaluum.runtime.serial.ModelProtos.internalForceInit();
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:DebugValue)
+  }
+  
   public static final class Point extends
       com.google.protobuf.GeneratedMessage {
     // Use Point.newBuilder() to construct.
@@ -5254,6 +6005,16 @@ public final class ModelProtos {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_ModelFragment_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_PortValue_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_PortValue_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_DebugValue_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_DebugValue_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_Point_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -5309,33 +6070,36 @@ public final class ModelProtos {
     java.lang.String[] descriptorData = {
       "\n%org/zaluum/runtime/serial/model.proto\"" +
       "7\n\rModelFragment\022\016\n\006fqName\030\001 \002(\t\022\026\n\010frag" +
-      "ment\030\002 \002(\0132\004.Box\"\035\n\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001" +
-      "y\030\002 \002(\005\"@\n\tRectangle\022\027\n\007left_up\030\001 \002(\0132\006." +
-      "Point\022\032\n\nright_down\030\002 \002(\0132\006.Point\"\203\001\n\004Po" +
-      "rt\022\014\n\004name\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022\n\n\002in\030\003 \002" +
-      "(\010\022\016\n\006direct\030\004 \002(\010\022\030\n\010position\030\005 \002(\0132\006.P" +
-      "oint\022\014\n\004slot\030\006 \001(\r\022\014\n\004left\030\007 \001(\010\022\r\n\005labe" +
-      "l\030\010 \001(\t\"C\n\tBendpoint\022\022\n\002p1\030\001 \002(\0132\006.Point" +
-      "\022\022\n\002p2\030\002 \001(\0132\006.Point\022\016\n\006weight\030\003 \001(\002\"L\n\004",
-      "Line\022\014\n\004from\030\001 \002(\t\022\n\n\002to\030\002 \002(\t\022\035\n\tbendpo" +
-      "int\030\003 \003(\0132\n.Bendpoint\022\013\n\003str\030\004 \001(\t\"\332\001\n\003B" +
-      "ox\022\n\n\002id\030\001 \002(\t\022\026\n\004type\030\002 \002(\0162\010.BoxType\022\032" +
-      "\n\006bounds\030\003 \002(\0132\n.Rectangle\022\013\n\003str\030\004 \001(\t\022" +
-      "\023\n\004port\030\005 \003(\0132\005.Port\022\023\n\004wire\030\006 \003(\0132\005.Lin" +
-      "e\022\023\n\005child\030\007 \003(\0132\004.Box\022\025\n\005state\030\010 \003(\0132\006." +
-      "State\022\031\n\ntransition\030\t \003(\0132\005.Line\022\025\n\004note" +
-      "\030\n \003(\0132\007.Sticky\"\177\n\005State\022\n\n\002id\030\001 \002(\t\022\030\n\010" +
-      "position\030\002 \002(\0132\006.Point\022\017\n\007initial\030\003 \002(\010\022" +
-      "\024\n\014entry_action\030\004 \001(\t\022\023\n\013exit_action\030\005 \001",
-      "(\t\022\024\n\014input_action\030\006 \001(\t\"\221\001\n\tClipboard\022\021" +
-      "\n\003box\030\001 \003(\0132\004.Box\022\023\n\004port\030\002 \003(\0132\005.Port\022\025" +
-      "\n\004note\030\003 \003(\0132\007.Sticky\022\025\n\005state\030\004 \003(\0132\006.S" +
-      "tate\022\023\n\004wire\030\005 \003(\0132\005.Line\022\031\n\ntransition\030" +
-      "\006 \003(\0132\005.Line\"0\n\006Sticky\022\014\n\004note\030\001 \002(\t\022\030\n\010" +
-      "position\030\002 \002(\0132\006.Point*P\n\007BoxType\022\014\n\010COM" +
-      "POSED\020\001\022\014\n\010INSTANCE\020\002\022\n\n\006SCRIPT\020\003\022\t\n\005VAL" +
-      "UE\020\004\022\007\n\003FSM\020\005\022\t\n\005CONST\020\006B*\n\031org.zaluum.r" +
-      "untime.serialB\013ModelProtosH\001"
+      "ment\030\002 \002(\0132\004.Box\"5\n\tPortValue\022\013\n\003box\030\001 \002" +
+      "(\t\022\014\n\004port\030\002 \002(\t\022\r\n\005value\030\003 \002(\t\"7\n\nDebug" +
+      "Value\022\016\n\006fqName\030\001 \002(\t\022\031\n\005value\030\002 \003(\0132\n.P" +
+      "ortValue\"\035\n\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005\"" +
+      "@\n\tRectangle\022\027\n\007left_up\030\001 \002(\0132\006.Point\022\032\n" +
+      "\nright_down\030\002 \002(\0132\006.Point\"\203\001\n\004Port\022\014\n\004na" +
+      "me\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022\n\n\002in\030\003 \002(\010\022\016\n\006di" +
+      "rect\030\004 \002(\010\022\030\n\010position\030\005 \002(\0132\006.Point\022\014\n\004",
+      "slot\030\006 \001(\r\022\014\n\004left\030\007 \001(\010\022\r\n\005label\030\010 \001(\t\"" +
+      "C\n\tBendpoint\022\022\n\002p1\030\001 \002(\0132\006.Point\022\022\n\002p2\030\002" +
+      " \001(\0132\006.Point\022\016\n\006weight\030\003 \001(\002\"L\n\004Line\022\014\n\004" +
+      "from\030\001 \002(\t\022\n\n\002to\030\002 \002(\t\022\035\n\tbendpoint\030\003 \003(" +
+      "\0132\n.Bendpoint\022\013\n\003str\030\004 \001(\t\"\332\001\n\003Box\022\n\n\002id" +
+      "\030\001 \002(\t\022\026\n\004type\030\002 \002(\0162\010.BoxType\022\032\n\006bounds" +
+      "\030\003 \002(\0132\n.Rectangle\022\013\n\003str\030\004 \001(\t\022\023\n\004port\030" +
+      "\005 \003(\0132\005.Port\022\023\n\004wire\030\006 \003(\0132\005.Line\022\023\n\005chi" +
+      "ld\030\007 \003(\0132\004.Box\022\025\n\005state\030\010 \003(\0132\006.State\022\031\n" +
+      "\ntransition\030\t \003(\0132\005.Line\022\025\n\004note\030\n \003(\0132\007",
+      ".Sticky\"\177\n\005State\022\n\n\002id\030\001 \002(\t\022\030\n\010position" +
+      "\030\002 \002(\0132\006.Point\022\017\n\007initial\030\003 \002(\010\022\024\n\014entry" +
+      "_action\030\004 \001(\t\022\023\n\013exit_action\030\005 \001(\t\022\024\n\014in" +
+      "put_action\030\006 \001(\t\"\221\001\n\tClipboard\022\021\n\003box\030\001 " +
+      "\003(\0132\004.Box\022\023\n\004port\030\002 \003(\0132\005.Port\022\025\n\004note\030\003" +
+      " \003(\0132\007.Sticky\022\025\n\005state\030\004 \003(\0132\006.State\022\023\n\004" +
+      "wire\030\005 \003(\0132\005.Line\022\031\n\ntransition\030\006 \003(\0132\005." +
+      "Line\"0\n\006Sticky\022\014\n\004note\030\001 \002(\t\022\030\n\010position" +
+      "\030\002 \002(\0132\006.Point*P\n\007BoxType\022\014\n\010COMPOSED\020\001\022" +
+      "\014\n\010INSTANCE\020\002\022\n\n\006SCRIPT\020\003\022\t\n\005VALUE\020\004\022\007\n\003",
+      "FSM\020\005\022\t\n\005CONST\020\006B*\n\031org.zaluum.runtime.s" +
+      "erialB\013ModelProtosH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -5350,8 +6114,24 @@ public final class ModelProtos {
               new java.lang.String[] { "FqName", "Fragment", },
               org.zaluum.runtime.serial.ModelProtos.ModelFragment.class,
               org.zaluum.runtime.serial.ModelProtos.ModelFragment.Builder.class);
-          internal_static_Point_descriptor =
+          internal_static_PortValue_descriptor =
             getDescriptor().getMessageTypes().get(1);
+          internal_static_PortValue_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_PortValue_descriptor,
+              new java.lang.String[] { "Box", "Port", "Value", },
+              org.zaluum.runtime.serial.ModelProtos.PortValue.class,
+              org.zaluum.runtime.serial.ModelProtos.PortValue.Builder.class);
+          internal_static_DebugValue_descriptor =
+            getDescriptor().getMessageTypes().get(2);
+          internal_static_DebugValue_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_DebugValue_descriptor,
+              new java.lang.String[] { "FqName", "Value", },
+              org.zaluum.runtime.serial.ModelProtos.DebugValue.class,
+              org.zaluum.runtime.serial.ModelProtos.DebugValue.Builder.class);
+          internal_static_Point_descriptor =
+            getDescriptor().getMessageTypes().get(3);
           internal_static_Point_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Point_descriptor,
@@ -5359,7 +6139,7 @@ public final class ModelProtos {
               org.zaluum.runtime.serial.ModelProtos.Point.class,
               org.zaluum.runtime.serial.ModelProtos.Point.Builder.class);
           internal_static_Rectangle_descriptor =
-            getDescriptor().getMessageTypes().get(2);
+            getDescriptor().getMessageTypes().get(4);
           internal_static_Rectangle_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Rectangle_descriptor,
@@ -5367,7 +6147,7 @@ public final class ModelProtos {
               org.zaluum.runtime.serial.ModelProtos.Rectangle.class,
               org.zaluum.runtime.serial.ModelProtos.Rectangle.Builder.class);
           internal_static_Port_descriptor =
-            getDescriptor().getMessageTypes().get(3);
+            getDescriptor().getMessageTypes().get(5);
           internal_static_Port_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Port_descriptor,
@@ -5375,7 +6155,7 @@ public final class ModelProtos {
               org.zaluum.runtime.serial.ModelProtos.Port.class,
               org.zaluum.runtime.serial.ModelProtos.Port.Builder.class);
           internal_static_Bendpoint_descriptor =
-            getDescriptor().getMessageTypes().get(4);
+            getDescriptor().getMessageTypes().get(6);
           internal_static_Bendpoint_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Bendpoint_descriptor,
@@ -5383,7 +6163,7 @@ public final class ModelProtos {
               org.zaluum.runtime.serial.ModelProtos.Bendpoint.class,
               org.zaluum.runtime.serial.ModelProtos.Bendpoint.Builder.class);
           internal_static_Line_descriptor =
-            getDescriptor().getMessageTypes().get(5);
+            getDescriptor().getMessageTypes().get(7);
           internal_static_Line_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Line_descriptor,
@@ -5391,7 +6171,7 @@ public final class ModelProtos {
               org.zaluum.runtime.serial.ModelProtos.Line.class,
               org.zaluum.runtime.serial.ModelProtos.Line.Builder.class);
           internal_static_Box_descriptor =
-            getDescriptor().getMessageTypes().get(6);
+            getDescriptor().getMessageTypes().get(8);
           internal_static_Box_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Box_descriptor,
@@ -5399,7 +6179,7 @@ public final class ModelProtos {
               org.zaluum.runtime.serial.ModelProtos.Box.class,
               org.zaluum.runtime.serial.ModelProtos.Box.Builder.class);
           internal_static_State_descriptor =
-            getDescriptor().getMessageTypes().get(7);
+            getDescriptor().getMessageTypes().get(9);
           internal_static_State_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_State_descriptor,
@@ -5407,7 +6187,7 @@ public final class ModelProtos {
               org.zaluum.runtime.serial.ModelProtos.State.class,
               org.zaluum.runtime.serial.ModelProtos.State.Builder.class);
           internal_static_Clipboard_descriptor =
-            getDescriptor().getMessageTypes().get(8);
+            getDescriptor().getMessageTypes().get(10);
           internal_static_Clipboard_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Clipboard_descriptor,
@@ -5415,7 +6195,7 @@ public final class ModelProtos {
               org.zaluum.runtime.serial.ModelProtos.Clipboard.class,
               org.zaluum.runtime.serial.ModelProtos.Clipboard.Builder.class);
           internal_static_Sticky_descriptor =
-            getDescriptor().getMessageTypes().get(9);
+            getDescriptor().getMessageTypes().get(11);
           internal_static_Sticky_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_Sticky_descriptor,

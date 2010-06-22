@@ -23,7 +23,7 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
   var gridColor : Color = null
 
   setEditDomain(new DefaultEditDomain(this));
-  def model: AnyRef
+  def model: Parts#VModel
   def editDomain : EditDomain = { getEditDomain }
   override def initializeGraphicalViewer():Unit  = {
     super.initializeGraphicalViewer()
@@ -52,7 +52,9 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     val connectionLayer = rootEditPart
         .getLayer(LayerConstants.CONNECTION_LAYER).asInstanceOf[ConnectionLayer]
     connectionLayer.setConnectionRouter(new BendpointConnectionRouter())
-    getGraphicalViewer().setContents(model)
+    model.synchronized{ // fixme
+      getGraphicalViewer().setContents(model)
+    }
   }
   
   protected def addAction(a:IAction) {

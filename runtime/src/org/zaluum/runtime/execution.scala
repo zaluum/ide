@@ -14,7 +14,8 @@ case class PushInputEvent(s: String, v:Int) extends Event
 case class LoadEvent(model: Model ) extends Event 
 case class NewDataEvent(data : Any, dst:Box) extends Event
 case class TimeEvent(dst:Box) extends Event
-case class DebugModelEvent(str:String) extends Event
+case class DebugModelEvent(fqName:String) extends Event
+case class DebugRequest(fqName:String) extends Event
 
 class MainBox extends ComposedBox(name="",parent=null) {
   val director = new EventDirector(this)
@@ -37,6 +38,7 @@ trait Process extends Actor {
     case DebugModelEvent(str) => self.reply(toDModel(str))
     case TimeEvent(box) => box
     case NewDataEvent(data,dst) => data
+    case DebugRequest(fqName) => self.reply(debugData(fqName))
   }
   def reschedule(b:Box, t:Long) = time ! (b,t)
   def toDModel(str:String) : Option[serial.ModelProtos.ModelFragment] = {
@@ -45,6 +47,20 @@ trait Process extends Actor {
       val fqName = if (c.parent==null) "" else c.parent.fqName
       serial.ModelProtos.ModelFragment.newBuilder
         .setFragment(c.cproto).setFqName(fqName).build
+    }
+  }
+  def debugData(fqName:String)= {
+    for (c<-findComposed(fqName)) yield {
+      val d = serial.ModelProtos.DebugValue.newBuilder
+      d.setFqName(fqName);
+      for (b<- c.children.values; 
+        p<- b.ports.values){
+          d.addValue(serial.ModelProtos.PortValue.newBuilder
+            .setBox(b.name)
+            .setPort(p.name)
+            .setValue(p.v.toString))
+      }
+      d.build
     }
   }
   def findComposed(fqName : String) : Option[ComposedBox] = {

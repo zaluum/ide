@@ -28,7 +28,7 @@ class ZaluumOutlinePage(boxEditor : ZFileEditor) extends ContentOutlinePage(new 
   override def receiveUpdate(subject:Subject) = getViewer.getContents.refresh
 }
 
-class ZaluumOutlineFactory(model : PModel) extends EditPartFactory {
+class ZaluumOutlineFactory(model : PersistentEditParts.PModel) extends EditPartFactory {
   var manager = model
   class ListenerAbstractTreePart(model : Object) extends AbstractTreeEditPart with Observer {
     setModel(model)

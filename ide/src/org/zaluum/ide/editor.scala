@@ -16,24 +16,15 @@ trait UpEditor extends BaseEditor{
   def modelEditPart =  super.getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[Parts#ModelEditPart] 
 }
 
-class Editor extends UpEditor{
-  val mainbox = new MainBox()
-  new org.zaluum.example.Example().create(mainbox)
-  val model : VModel = null//VModel(mainbox.children.values.head.vbox.asInstanceOf[ComposedVBox])
-  override def getPaletteRoot = Palette()
-  def factory = ZaluumReadOnlyFactory  
-  override def doSave(p : IProgressMonitor) {}
-}
-
 class LocalDebugEditor extends UpEditor{
-  val model = new ModelUpdater(org.eclipse.swt.widgets.Display.getCurrent)
+  val model = new DebugEditParts.ModelUpdater(org.eclipse.swt.widgets.Display.getCurrent)
   def factory = ZaluumDebugFactory
   def getPaletteRoot = Palette()
   override def doSave(p : IProgressMonitor) {}
 }
 
 class ZFileEditor extends UpEditor with FileEditor{
-  var model : PModel = _
+  var model : PersistentEditParts.PModel= _
   lazy val outlinePage = new ZaluumOutlinePage(this)
   def factory = ZaluumWriteFactory
   def getPaletteRoot = Palette()
@@ -44,7 +35,7 @@ class ZFileEditor extends UpEditor with FileEditor{
       println(s)
       s.getBytes(Charsets.UTF_8)})
   def deserialize (i:java.io.InputStream) {
-    model = Deserialize.deserialize(i)
+    model = new PersistentEditParts.PModel(Deserialize.deserialize(i))
   }
   override def getAdapter(c : Class[_]) : Object = {
     if(c == classOf[IContentOutlinePage]) outlinePage 

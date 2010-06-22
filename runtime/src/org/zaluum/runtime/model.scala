@@ -37,6 +37,7 @@ class OutPort[A](name:String, value:A, box:Box) extends Port[A](name,value,box){
   def in = false
 }
 abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with Subject{
+  val slot = if (in) box.inPorts.size else box.outPorts.size
 	box.add(this)
 	
 	var connections : Set[Port[A]] = Set()
@@ -48,8 +49,8 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
         .setName(name)
         .setIn(in)
         .setDirect(false)
-        .setLeft(false)
-        .setSlot(0)
+        .setLeft(in)
+        .setSlot(slot)
         .setType("ttype")
         .setLabel("link")
         .setPosition((0,0))

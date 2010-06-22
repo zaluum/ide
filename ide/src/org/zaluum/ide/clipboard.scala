@@ -23,10 +23,13 @@ abstract class ClipboardAction(part:IWorkbenchPart) extends SelectionAction(part
     for (z <- getWorkbenchPart.castOption[ZFileEditor])
       z.editDomain.getCommandStack.execute(c)
 
-  def currentComposed : Option[VisualModel#C] = 
-    for {e<-getWorkbenchPart.castOption[ZFileEditor] 
-      c <- e.modelEditPart.model.currentBox
-    } yield c
+  def currentComposed : Option[VisualModel#C] = getWorkbenchPart match {
+    case e:ZFileEditor =>  e.modelEditPart.model.currentView match {
+        case TopView => None
+        case ComposedView(c) => Some(c.asInstanceOf[VisualModel#C])
+      }
+    case _ => None
+  }
     
   override def runWithEvent(event:Event) {runClipboard(new Clipboard(event.display))}
   def runClipboard(clipboard:Clipboard)
