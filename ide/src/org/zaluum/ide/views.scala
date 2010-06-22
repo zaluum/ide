@@ -63,8 +63,7 @@ class ZaluumOutlineFactory(model : PModel) extends EditPartFactory {
       }
     case b: PBox => 
      new ListenerAbstractTreePart(m) {
-        override def getModelChildren = new ArrayList()
-        override def getText = b.name;
+        override def getText = b.name
         override def getImage = Activator.getDefault.getImageRegistry.get("composed_16")
         override def getDragTracker(req : Request) = new SelectEditPartTracker(this)
       }
@@ -83,31 +82,55 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.data.xy.XYSeries;
 import org.jfree.data.general.PieDataset;
 import org.jfree.experimental.chart.swt.ChartComposite;
+import java.awt.Color;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.ApplicationFrame;
+import org.jfree.ui.RefineryUtilities;
 
 class PlotView extends ViewPart {
-  def createPartControl(parent : Composite ) = new ChartComposite(parent, SWT.NONE, createChart(createDataset),true)
+	
+	def createPartControl(parent : Composite ) = new ChartComposite(parent, SWT.NONE, createChart(createDataset),true)
   def setFocus {}
   def createDataset = {
-    var dataset = new DefaultPieDataset
-	dataset.setValue("One", 43.2)
-	dataset.setValue("Two", 10.0)
-	dataset.setValue("Three", 27.5)
-	dataset.setValue("Four", 17.5)
-	dataset.setValue("Five", 11.0)
-	dataset.setValue("Six", 19.4)
-	dataset
+    var series2 = new XYSeries("Second");
+    series2.add(1.0, 5.0);
+    series2.add(2.0, 7.0);
+    series2.add(3.0, 6.0);
+    series2.add(4.0, 8.0);
+    series2.add(5.0, 4.0);
+    series2.add(6.0, 4.0);
+    series2.add(7.0, 2.0);
+    series2.add(8.0, 1.0);
+    val dataset = new XYSeriesCollection
+    dataset.addSeries(series2)
+    dataset
   }
-  def createChart(dataset : PieDataset) = {
-    val chart = ChartFactory.createPieChart("Pie Chart Demo 1", dataset,true,true, false)
-    var plot = chart.getPlot.asInstanceOf[PiePlot]
-	plot.setSectionOutlinesVisible(false)
-	plot.setLabelFont(new Font("SansSerif", Font.PLAIN, 12))
-	plot.setNoDataMessage("No data available")
-	plot.setCircular(false)
-	plot.setLabelGap(0.02)
-	chart
+  def createChart(dataset : XYDataset) = {
+  	var chart = ChartFactory.createXYLineChart("Plotting","X","Y",dataset,PlotOrientation.VERTICAL,true,true,false)
+    chart.setBackgroundPaint(Color.white)
+    val plot = chart.getXYPlot()
+    plot.setBackgroundPaint(Color.lightGray)
+    plot.setDomainGridlinePaint(Color.white)
+    plot.setRangeGridlinePaint(Color.white)
+    val renderer = new XYLineAndShapeRenderer()
+    renderer.setSeriesLinesVisible(0, false)
+    renderer.setSeriesShapesVisible(1, false)
+    plot.setRenderer(renderer)
+    val rangeAxis = plot.getRangeAxis.asInstanceOf[NumberAxis]
+    rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
+  	chart
   }
 }
 

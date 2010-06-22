@@ -130,7 +130,7 @@ abstract class Parts{
    */
   abstract class PortEditPart extends BasePart
                  with SimpleNodePart with Updater 
-                 with HelpContext with HighlightPart
+                 with HelpContext with NeighborsHighlightPart
                  with RefPropertySource
                  {
     type F <: PortFigure
@@ -157,7 +157,21 @@ abstract class Parts{
     override def getModelTargetConnections():JList[_] = filterWires(_.to==model)
     override def createFigure = new PortFigure
     def highlightFigure = fig.triangle 
-    
+    def highlightNeighbors = {
+    	val mainBoxPart = getParent.getParent.asInstanceOf[AbstractGraphicalEditPart]
+    	var triangles : Buffer[Triangle] = Buffer()
+    	//FIXME: High performance and correct selection (works equal with for-yield structure...)
+    	for (b <- mainBoxPart.getChildren) {
+      	for(p <- b.asInstanceOf[AbstractGraphicalEditPart].getChildren) {
+      		val portm = p.asInstanceOf[AbstractGraphicalEditPart].getModel.asInstanceOf[P]
+    	    val portf = p.asInstanceOf[AbstractGraphicalEditPart].getFigure.asInstanceOf[PortFigure].triangle
+      		if(portm.link!="" && portm.link == model.link) {
+      			triangles.add(portf)
+      		}
+      	}
+      } 
+      List()++triangles
+    }
     override def refreshVisuals {
       fig.arrange(model.in,model.slot.left, model.slot.pos, model.name, model.link)
     }

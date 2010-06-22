@@ -121,11 +121,19 @@ trait HelpContext extends IAdaptable{
 
 trait HighlightPart extends AbstractGraphicalEditPart {
   def highlightFigure : Shape
+  def highlightPolicy : GraphicalEditPolicy = new HighlightEditPolicy {
+  	override def containerFigure = highlightFigure 
+  }
   override abstract protected def createEditPolicies {
-    installEditPolicy(EditPolicy.SELECTION_FEEDBACK_ROLE, new HighlightEditPolicy(){
-      override def containerFigure = highlightFigure 
-    });
+    installEditPolicy(EditPolicy.SELECTION_FEEDBACK_ROLE, highlightPolicy);
     super.createEditPolicies
+  }
+}
+
+trait NeighborsHighlightPart extends HighlightPart {
+	def highlightNeighbors : List[Shape]
+	override def highlightPolicy = new NeighborsHighlightEditPolicy(highlightNeighbors) {
+      override def containerFigure = highlightFigure 
   }
 }
 
