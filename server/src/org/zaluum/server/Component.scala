@@ -22,7 +22,7 @@ class Component {
 	def bindModel(m: Model):Unit = {
     println ("loading model")
     spawn({
-      val r = server !! LoadEvent(null)
+      val r = server !! LoadEvent(m)
       println(r)
     });
     println ("model loading in background")

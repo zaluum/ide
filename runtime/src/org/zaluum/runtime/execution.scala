@@ -42,26 +42,29 @@ class Process (val time:Time) {
     boxes.foreach { b=> b.recursiveQueue}
     run
   }
-  def toDModel(str:String) : Option[serial.ModelProtos.ModelFragment] = {
-    for (c <- findComposed(str)) 
-      yield {
-      val fqName = if (c.parent==null) "" else c.parent.fqName
-      serial.ModelProtos.ModelFragment.newBuilder
+  def toDModel(fqName:String) : serial.ModelProtos.ModelFragment = {
+    findComposed(fqName) match {
+      case Some(c:ComposedBox) =>
+        val fqName = if (c.parent==null) "" else c.parent.fqName
+        serial.ModelProtos.ModelFragment.newBuilder
         .setFragment(c.cproto).setFqName(fqName).build
+      case None => error("fixme")
     }
   }
   def debugData(fqName:String)= {
-    for (c<-findComposed(fqName)) yield {
-      val d = serial.ModelProtos.DebugValue.newBuilder
-      d.setFqName(fqName);
-      for (b<- c.children.values; 
-        p<- b.ports.values){
-          d.addValue(serial.ModelProtos.PortValue.newBuilder
-            .setBox(b.name)
-            .setPort(p.name)
-            .setValue(p.v.toString))
-      }
-      d.build
+    findComposed(fqName) match {
+      case Some(c:ComposedBox) =>
+        val d = serial.ModelProtos.DebugValue.newBuilder
+        d.setFqName(fqName);
+        for (b<- c.children.values; 
+          p<- b.ports.values){
+            d.addValue(serial.ModelProtos.PortValue.newBuilder
+              .setBox(b.name)
+              .setPort(p.name)
+              .setValue(p.v.toString))
+        }
+        d.build
+      case None => error("fixme") 
     }
   }
   def findComposed(fqName : String) : Option[ComposedBox] = {
