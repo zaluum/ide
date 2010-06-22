@@ -34,9 +34,10 @@ import Utils._
 object DebugEditParts extends Parts{
   type T = Debug2Model.type
   class ModelUpdater(display:Display) extends VModel {
-    private val process = RunServer.make
+    private val process = RealtimeServer.make
     @volatile var currentView:Viewport = TopView 
     val root = new ComposedDBox("main","",ISet(),null,ISet(),ISet());
+    
     private def swtRun (f : => Unit) {
       display.asyncExec(new Runnable{ 
         def run = if (!display.isDisposed) synchronized(f)
@@ -53,8 +54,9 @@ object DebugEditParts extends Parts{
       case TopView => actor ! Change("")
     }
     
-    case object Time
+    case class Time(i:Int)
     case class Change(fqName : String)
+    
     private val actor = Actor.actorOf(new Actor {
       override def init {
         process.start
@@ -64,21 +66,24 @@ object DebugEditParts extends Parts{
         process.stop
       }
       def receive = {
-        case Time => synchronized {currentView foreach {c=>process ! DebugRequest(c.fqName)}}
+        case Time(i) => synchronized {currentView foreach {c=>requestData(c.fqName)}}
         case Some(d:ModelProtos.DebugValue) => synchronized {updatePortValues(d)}
         case Change(s:String) => synchronized {change(s)}
         case p => println("other" + p)
       }
+      private def requestData(fqName : String){
+        process ! DebugRequest(fqName)
+      }
+      private def change(str : String) {
+        val o : Option[Option[ModelProtos.ModelFragment]] = process !! DebugModelEvent(str)
+        o match {
+          case Some(Some(p)) => setProto(Some(p))
+          case None => println("error timeout")
+          case _ => println("not found")
+      }
+      }
     })
-    private def change(str : String) {
-       val o : Option[Option[ModelProtos.ModelFragment]] = process !! DebugModelEvent(str)
-       o match {
-         case Some(Some(p)) => setProto(Some(p))
-         case None => println("error timeout")
-         case _ => println("not found")
-       }
-    }
-    var i = 0
+    
     private def updatePortValues(data : ModelProtos.DebugValue) = currentView match {
         case ComposedView(c:ComposedDBox) =>
           if (c.fqName==data.getFqName){
@@ -108,7 +113,7 @@ object DebugEditParts extends Parts{
     actor.start
     actor ! Change("/")
     import java.util.concurrent.TimeUnit
-    Scheduler.schedule(actor, Time, 100, 100, TimeUnit.MILLISECONDS)
+    Scheduler.schedule(actor, Time(1), 100, 100, TimeUnit.MILLISECONDS)
   }
 
   
