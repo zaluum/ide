@@ -32,12 +32,46 @@ import se.scalablesolutions.akka.dispatch._
 import Utils._
 import se.scalablesolutions.akka.remote._
 import org.zaluum.runtime._
+import java.util.concurrent.TimeUnit
 
 object DebugEditParts extends Parts{
   type T = Debug2Model.type
   
   class ModelUpdater(display:Display) extends VModel {
-    private val process = RemoteClient.actorFor("zaluum-service", "localhost", 9999, classOf[ModelProtos].getClassLoader())
+    case class Time(i:Int)
+    case class Change(fqName : String)
+    
+    private val actor = Actor.actorOf(new Actor {
+      private val process = RemoteClient.actorFor("zaluum-service","localhost",9999,classOf[ModelProtos].getClassLoader)
+      override def init {
+        process.start 
+      }
+      override def shutdown{
+        process.stop
+      }
+      def receive = {
+        case Time(i) => synchronized {currentView foreach {c=>requestData(c.fqName)}}
+        case d:ModelProtos.DebugValue => synchronized {updatePortValues(d)}
+        case Change(s:String) => synchronized {change(s)}
+        
+        case p => println("other" + p)
+        
+      }
+      private def requestData(fqName : String){
+        val value: Option[ModelProtos.DebugValue] = process !! DebugRequest(fqName)
+        for (v <- value)
+          updatePortValues(v)
+      }
+      private def change(str : String) {
+        val o : Option[ModelProtos.ModelFragment] = process !! DebugModelEvent(str)
+        o match {
+          case Some(p) => setProto(Some(p))
+          case None => println("error timeout")
+          case _ => println("not found")
+      }
+      }
+    })
+//        "localhost", 9999, classOf[ModelProtos].getClassLoader())
     @volatile var currentView:Viewport = TopView 
     val root = new ComposedDBox("main","",ISet(),null,ISet(),ISet());
     
@@ -55,32 +89,7 @@ object DebugEditParts extends Parts{
     def moveTo(o:Viewport)  = o match {
       case ComposedView(c) => actor ! Change(c.fqName)
       case TopView => actor ! Change("")
-    }
-    
-    case class Time(i:Int)
-    case class Change(fqName : String)
-    
-    private val actor = Actor.actorOf(new Actor {
-      def receive = {
-        case Time(i) => synchronized {currentView foreach {c=>requestData(c.fqName)}}
-        case d:ModelProtos.DebugValue => synchronized {updatePortValues(d)}
-        case Change(s:String) => synchronized {change(s)}
-        case p => println("other" + p)
-      }
-      private def requestData(fqName : String){
-        val value: Option[ModelProtos.DebugValue] = process !! DebugRequest(fqName)
-        for (v <- value)
-          updatePortValues(v)
-      }
-      private def change(str : String) {
-        val o : Option[ModelProtos.ModelFragment] = process !! DebugModelEvent(str)
-        o match {
-          case Some(p) => setProto(Some(p))
-          case None => println("error timeout")
-          case _ => println("not found")
-      }
-      }
-    })
+    }   
     
     private def updatePortValues(data : ModelProtos.DebugValue) = currentView match {
         case ComposedView(c:ComposedDBox) =>
@@ -108,14 +117,28 @@ object DebugEditParts extends Parts{
         swtRun {notifyObservers}
       }
     }
-    actor.start
-    actor ! Change("/")
-    import java.util.concurrent.TimeUnit
-    Scheduler.schedule(actor, Time(1), 100, 100, TimeUnit.MILLISECONDS)
+    def stop {
+      Scheduler.unschedule(actor)
+      actor.stop
+    }
+    def start {
+      actor.start
+      actor ! Change("/")
+      Scheduler.schedule(actor, Time(1), 100, 100, TimeUnit.MILLISECONDS)
+    }
   }
 
   
-  class DModelEditPart(val model:ModelUpdater) extends ModelEditPart 
+  class DModelEditPart(val model:ModelUpdater) extends ModelEditPart {
+    override def activate {
+      super.activate
+      model.start
+    }
+    override def deactivate {
+      model.stop
+      super.deactivate
+    }
+  }
   class DBoxEditPart(val model:DBox) extends BoxEditPart
   class DPortEditPart(val model:DPort) extends PortEditPart{
     type F = PortDebugFigure
