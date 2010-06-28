@@ -45,8 +45,8 @@
 <location path="${project_loc:targetplatform}/ignored" type="Directory"/>
 <location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
 <unit id="org.eclipse.contribution.weaving.feature.group" version="1.6.4.20090313172428"/>
-<unit id="ch.epfl.lamp.sdt.feature.group" version="2.8.0.RC3-t20100618040616-gf9c8cc7aab635193f77aca11f0eac3d95e48f3ec"/>
-<repository location="http://download.scala-ide.org/nightly-update-master-2.8.0.RC3"/>
+<unit id="ch.epfl.lamp.sdt.feature.group" version="2.8.0.RC6-t20100628034722-gd7e8fe3a18aec16eb1cffea23b3378ed793cfe69"/>
+<repository location="http://download.scala-ide.org/nightly-update-master-2.8.0.RC6"/>
 </location>
 </locations>
 </target>

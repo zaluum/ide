@@ -203,10 +203,10 @@ Library.
       <import plugin="org.eclipse.ui.editors"/>
       <import plugin="org.eclipse.ui.ide"/>
       <import feature="org.eclipse.gef" version="3.5.2.v20100111-1352-777928194B66D5D476C33B2A"/>
-      <import feature="ch.epfl.lamp.sdt" version="2.8.0.r21985-b20100520025543"/>
       <import feature="org.eclipse.jdt" version="3.5.2.r352_v20100108-7r88FEwFI0WTuoBl0iaG0tyhfZH6"/>
       <import feature="org.eclipse.pde" version="3.5.2.R35x_v20100119-7Z7_FA2FDX-aXQYWqYDBz-z0qufo"/>
       <import plugin="scala.library"/>
+      <import plugin="org.eclipse.equinox.app"/>
    </requires>
 
    <plugin
@@ -267,6 +267,32 @@ Library.
 
    <plugin
          id="org.eclipse.gef"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="scala.library"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.aspectj.runtime"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+   <plugin
+         id="org.aspectj.weaver"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"/>
+
+   <plugin
+         id="org.zaluum.server"
          download-size="0"
          install-size="0"
          version="0.0.0"

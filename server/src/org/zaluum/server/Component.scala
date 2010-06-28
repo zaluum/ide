@@ -8,7 +8,7 @@ import se.scalablesolutions.akka.config.ScalaConfig._
 
 class Component {
   
-  val server = actorOf[ProductionServer]
+  val server = RealtimeServer.make
   val c =  Supervisor(SupervisorConfig(
        RestartStrategy(OneForOne, 3, 10, List(classOf[Throwable])),
        Supervise(
@@ -22,7 +22,7 @@ class Component {
 	def bindModel(m: Model):Unit = {
     println ("loading model")
     spawn({
-      val r = server !! LoadEvent(null)
+      val r = server !! LoadEvent(m)
       println(r)
     });
     println ("model loading in background")
