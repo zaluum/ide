@@ -98,13 +98,17 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
+import org.eclipse.ui.PlatformUI
 
 class PlotView extends ViewPart {
+	val editor = PlatformUI.getWorkbench.getActiveWorkbenchWindow.getActivePage.getActiveEditor.asInstanceOf[BaseEditor]
 	
-	def createPartControl(parent : Composite ) = new ChartComposite(parent, SWT.NONE, createChart(createDataset),true)
+	def createPartControl(parent : Composite ) = {
+		new ChartComposite(parent, SWT.NONE, createChart(createDataset),true)
+	}
   def setFocus {}
   def createDataset = {
-    var series2 = new XYSeries("Second");
+    var series2 = new XYSeries(editor.model.root.name);
     series2.add(1.0, 5.0);
     series2.add(2.0, 7.0);
     series2.add(3.0, 6.0);

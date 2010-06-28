@@ -1,7 +1,7 @@
 package org.zaluum.ide
 import org.zaluum.runtime.{Command=>C,Bendpoint=>BP,_}
 import org.eclipse.swt.SWT
-import org.eclipse.draw2d.{PolylineConnection,RelativeBendpoint, FreeformLayer,FreeformLayout, IFigure, ColorConstants}
+import org.eclipse.draw2d.{PolylineConnection,RelativeBendpoint, FreeformLayer,FreeformLayout, IFigure, ColorConstants, Shape}
 import org.eclipse.core.runtime._
 import org.eclipse.gef._
 import commands._
@@ -157,11 +157,11 @@ abstract class Parts{
     def highlightFigure = fig.triangle 
     def highlightNeighbors = {
     	val mainBoxPart = getParent.getParent.asInstanceOf[AbstractGraphicalEditPart]
-    	var triangles : Buffer[Triangle] = Buffer()
+    	var triangles : Buffer[Shape] = Buffer()
     	//FIXME: High performance and correct selection (works equal with for-yield structure...)
     	for (b <- mainBoxPart.getChildren) {
       	for(p <- b.asInstanceOf[AbstractGraphicalEditPart].getChildren) {
-      		val portm = p.asInstanceOf[AbstractGraphicalEditPart].getModel.asInstanceOf[P]
+      		val portm = p.asInstanceOf[AbstractGraphicalEditPart].getModel.asInstanceOf[T#P]
     	    val portf = p.asInstanceOf[AbstractGraphicalEditPart].getFigure.asInstanceOf[PortFigure].triangle
       		if(portm.link!="" && portm.link == model.link) {
       			triangles.add(portf)
