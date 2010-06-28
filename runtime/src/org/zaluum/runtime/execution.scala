@@ -1,8 +1,16 @@
 package org.zaluum.runtime
 import scala.collection.mutable.{Map,Set}
+
 import java.util.concurrent._
 import scala.concurrent.JavaConversions._
 import scala.concurrent.{ops,TaskRunner,SyncVar}
+
+sealed abstract class ValueChange{ 
+  def fqName:String
+}
+case class PushValue(fqName:String, value:Any) extends ValueChange
+case class ForceValue(fqName:String, value:Any) extends ValueChange
+case class UnforceValue(fqName:String) extends ValueChange
 
 trait Model {
   def create(m : MainBox) : Unit
@@ -38,6 +46,21 @@ class Process (val time:Time) {
     visit(root.get)
     run
   }
+  def push(values:List[ValueChange]) {
+    for (v <- values;
+     port <- findPort(v.fqName)){
+       v match {
+         case PushValue(_,v) => 
+           //port.v = v
+           //propagate
+           port.box.recursiveQueue
+         case ForceValue(_,v) => 
+           //port.v = v
+           port.box.recursiveQueue
+         case UnforceValue(_) => /*unforce*/
+       }
+    }
+  }
   def wakeup(boxes:List[Box]){
     boxes.foreach { b=> b.recursiveQueue}
     run
@@ -67,13 +90,23 @@ class Process (val time:Time) {
       case None => error("fixme") 
     }
   }
-  def findComposed(fqName : String) : Option[ComposedBox] = {
-    val names  = (List() ++fqName.split("/")) filter {_.size!=0}
-    root match {
-      case Some(r) =>  r.find(names)
-      case None => None
-    }
+  private def boxFqNameToList(fqName:String) = (List() ++fqName.split("/")) filter {_.size!=0}
+  private def portFqNameToList(fqName:String) :(List[String],Option[String]) = { 
+    val boxList = boxFqNameToList(fqName)
+    if (boxList.length>0){
+      val portSplit = boxList.last.split("#")
+      if (portSplit.length==2)
+        (boxList.dropRight(1) ::: List(portSplit.head),Some(portSplit.last))
+      else (boxList,None)
+    }else
+      (boxList,None)
   }
+  def findComposed(fqName : String) : Option[ComposedBox] =  root flatMap{_.find(boxFqNameToList(fqName))}
+  def findPort(fqName:String) : Option[Port[_]]= root flatMap { r=>
+    val (box, portO) = portFqNameToList(fqName)
+    portO flatMap {port=> r.find(box) flatMap {b=> b.ports.get(port)}}
+  }
+    
 //  def debugRun() =   while (!eventQueue.isEmpty) process(eventQueue.take())
 }
 trait Time {

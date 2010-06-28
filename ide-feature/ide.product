@@ -185,7 +185,7 @@ along with Zaluum.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
       <feature id="org.eclipse.pde" version="3.5.2.R35x_v20100119-7Z7_FA2FDX-aXQYWqYDBz-z0qufo"/>
       <feature id="org.eclipse.platform" version="3.5.2.R35x_v20100210-0800-9hEiFzmFst-TiEn9hNYgDWg1XN8ulH_JvCNGB"/>
       <feature id="org.eclipse.rcp" version="3.5.2.R35x_v20100119-9SA0FxwFnoCU5XxWItFdXXb27BA6"/>
-      <feature id="ch.epfl.lamp.sdt" version="2.8.0.RC3-t20100618040616-gf9c8cc7aab635193f77aca11f0eac3d95e48f3ec"/>
+      <feature id="ch.epfl.lamp.sdt" version="2.8.0.RC6-t20100618105513-g384bb488745134bb4fd40f48f2d765883c0220bb"/>
    </features>
 
    <configurations>

@@ -6,7 +6,7 @@ import Actor._
 
 
 sealed abstract class Event 
-case class PushInputEvent(s: String, v:Int) extends Event 
+case class Push(values : List[ValueChange]) extends Event 
 case class LoadEvent(model: Model ) extends Event 
 case class NewDataEvent(data : Any, dst:Box) extends Event
 case class TimeEvent(dst:List[Box]) extends Event
@@ -44,7 +44,7 @@ class RealTimeActor extends Actor{
   }
   override def receive = {
     case NewDataEvent(data,dst) => error("not implemented")
-    case PushInputEvent(s,v) => error("not implemented")
+    case Push(values) => process.push(values)
     case TimeEvent(boxes) => process.wakeup(boxes)
     case LoadEvent(model) =>  process.load(model); self.reply("ok")
     case DebugModelEvent(str) => self.reply(process.toDModel(str)); 

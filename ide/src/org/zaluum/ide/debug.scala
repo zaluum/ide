@@ -71,7 +71,6 @@ object DebugEditParts extends Parts{
       }
       }
     })
-//        "localhost", 9999, classOf[ModelProtos].getClassLoader())
     @volatile var currentView:Viewport = TopView 
     val root = new ComposedDBox("main","",ISet(),null,ISet(),ISet());
     

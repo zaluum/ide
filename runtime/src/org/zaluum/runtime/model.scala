@@ -45,15 +45,17 @@ abstract class Port[A](val name:String, var v:A, val box:Box) extends Named with
 	override def toString():String = name + "=" + v
 	val fqName = box.fqName + "$" + name
 	def in:Boolean
-	lazy val proto =  ModelProtos.Port.newBuilder()
+	lazy val proto = { 
+    ModelProtos.Port.newBuilder()
         .setName(name)
         .setIn(in)
         .setDirect(false)
         .setLeft(in)
         .setSlot(slot)
-        .setType("ttype")
-        .setLabel("link")
+        .setType("")
+        .setLabel("")
         .setPosition((0,0))
+  }
 }
 abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed with Subject{
 	val ports:Map[String,Port[_]] = Map()
@@ -110,16 +112,19 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
       var s = ISet[ModelProtos.Line]()
       for (b<-children.values;
         from<- b.ports.values;
-        to<- from.connections
-        if (to.box.parent ==  ComposedBox.this)) { // TODO internal connections
-          val line = ModelProtos.Line.newBuilder()
-            /*for (bend <- bendpoints) {
-              line.addBendpoint(serial.ModelProtos.Bendpoint.newBuilder.setP1(
-                  bend.a).setP2(bend.b).setWeight(1.0f))*/
-          def pname(p:Port[_]) =  p.box.name + "#" + p.name
-          line.setFrom( pname(from)).setTo(pname(to))
-          s+=line.build
-      }
+        to<- from.connections) { 
+          if (to.box.parent ==  ComposedBox.this) {
+            val line = ModelProtos.Line.newBuilder()
+              /*for (bend <- bendpoints) {
+                line.addBendpoint(serial.ModelProtos.Bendpoint.newBuilder.setP1(
+                    bend.a).setP2(bend.b).setWeight(1.0f))*/
+            def pname(p:Port[_]) =  p.box.name + "#" + p.name
+            line.setFrom( pname(from)).setTo(pname(to))
+            s+=line.build
+          }else{
+            
+          }
+     }
       s
     }
     val wsorted = (List()++connections).sorted(Ordering.by((_:ModelProtos.Line).getFrom));
