@@ -51,9 +51,11 @@ class Process (val time:Time) {
      port <- findPort(vc.fqName)){
        vc match {
          case PushValue(_,newv) =>
-           if (port.manifest.erasure == classOf[Int]){
+           if (Util.checkAssignable(newv, port.manifest)){
              port.asInstanceOf[Port[Any]].v = newv
              port.changed
+           }else {
+             println ("push failed " + newv + " " + port.manifest.erasure)
            }
          case ForceValue(_,newv) => 
            port.asInstanceOf[Port[Any]].forced = Some(newv)
@@ -70,13 +72,14 @@ class Process (val time:Time) {
     boxes.foreach { b=> b.activate}
     run
   }
-  def toDModel(fqName:String) : serial.ModelProtos.ModelFragment = {
+  def toDModel(fqName:String) : Option[serial.ModelProtos.ModelFragment] = {
     findComposed(fqName) match {
       case Some(c:ComposedBox) =>
         val fqName = if (c.parent==null) "" else c.parent.fqName
-        serial.ModelProtos.ModelFragment.newBuilder
-        .setFragment(c.cproto).setFqName(fqName).build
-      case None => error("fixme")
+        Some(serial.ModelProtos.ModelFragment.newBuilder
+            .setFragment(c.cproto).setFqName(fqName).build
+            )
+      case None => None
     }
   }
   def debugData(fqName:String)= {
@@ -91,8 +94,8 @@ class Process (val time:Time) {
               .setPort(p.name)
               .setValue(p.v.toString))
         }
-        d.build
-      case None => error("fixme") 
+        Some(d.build)
+      case None => None  
     }
   }
   private def boxFqNameToList(fqName:String) = (List() ++fqName.split("/")) filter {_.size!=0}

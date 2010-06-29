@@ -143,20 +143,27 @@ object DebugEditParts extends Parts{
     }
   }
   class DBoxEditPart(val model:DBox) extends BoxEditPart
-  class DPortEditPart(val model:DPort) extends PortEditPart with OpenPart{
+  class DPortEditPart(val model:DPort) extends PortEditPart with DirectEditPart {
     type F = PortDebugFigure
     override def createFigure = new PortDebugFigure
-    override def refreshVisuals {
-      fig.arrange(model.in,model.slot.left, model.slot.pos, model.name, model.link + " = " + model.value)
+    override def editFigure = fig.value
+    override def editCommand(v:String) = {
+      val mu = getRoot.getChildren.get(0).asInstanceOf[DModelEditPart].model
+      mu.push(model,Integer.parseInt(v))
+      null
     }
-    override def doOpen{
-      
+    override def contents = Array()
+    override def refreshVisuals {
+      fig.arrange(model.in,model.slot.left, model.slot.pos, model.name, model.link, model.value)
     }
   }
   class DWireEditPart(val model:DWire) extends WireEditPart
   class ComposedDBoxEditPart(val model:DBox) extends BoxEditPart with ComposedEditPartT
 }
 class PortDebugFigure extends PortFigure {
+  override def getFont = anchorFont
+  override def getTextToEdit = value.getText
+  override def getEditLabel = value
 }
 
 

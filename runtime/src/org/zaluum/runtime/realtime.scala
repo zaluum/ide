@@ -47,8 +47,8 @@ class RealTimeActor extends Actor{
     case Push(values) => process.push(values)
     case TimeEvent(boxes) => process.wakeup(boxes)
     case LoadEvent(model) =>  process.load(model); self.reply("ok")
-    case DebugModelEvent(str) => self.reply(process.toDModel(str)); 
-    case DebugRequest(fqName) => self.reply(process.debugData(fqName)); 
+    case DebugModelEvent(str) => process.toDModel(str) foreach { d=> self.reply(d)}
+    case DebugRequest(fqName) => process.debugData(fqName) foreach {d => self.reply(d)} 
   }
 }
 

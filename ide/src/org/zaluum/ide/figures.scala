@@ -179,18 +179,20 @@ class PortFigure extends Figure with DirectEditFigure {
   }
   val name = newLabel("name") 
   val link  = newLabel("link")
+  val value = newLabel("")
   val anchor = new PortConnectionAnchor(this);
   
   def linkWidth = link.getPreferredSize().width
   def textWidth = name.getPreferredSize().width
+  def valueWidth = value.getPreferredSize().width
   def triangleWidth = triangle.getPreferredSize().width + SPACING
   def slotPosition = 24 - SPACING + slot*12 - 1;
   override def useLocalCoordinates : Boolean = true
-  def neededWidth = linkWidth + triangleWidth
+  def neededWidth = valueWidth + linkWidth + triangleWidth
   override def getFont = anchorFont
   override def getTextToEdit = link.getText
   override def getEditLabel = link
-  def arrange(in:Boolean, left:Boolean, slot:Int, nname:String, label:String) {
+  def arrange(in:Boolean, left:Boolean, slot:Int, nname:String, label:String, v:String ="") {
     this.left = left
     this.slot = slot
     triangle.setDirection(
@@ -199,12 +201,13 @@ class PortFigure extends Figure with DirectEditFigure {
         else 
           PositionConstants.WEST)
     if (left) {
-      add(link);  add(triangle);  add(name);
+      add(link); add(value); add(triangle);  add(name);
     } else {
-      add(name);  add(triangle);  add(link);
+      add(name);  add(triangle);  add(value); add(link);
     }
     name.setText(nname)
     link.setText(label)
+    value.setText(v)
   }
   class PortConnectionAnchor(owner:IFigure) extends AbstractConnectionAnchor(owner){
 
