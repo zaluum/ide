@@ -4,7 +4,7 @@ import org.eclipse.gef._
 import org.eclipse.gef.ui.actions._
 import org.eclipse.ui._
 import org.zaluum.runtime._
-import org.eclipse.core.runtime._;
+//import org.eclipse.core.runtime.;
 import PersistentModel._
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 
@@ -16,12 +16,7 @@ trait UpEditor extends BaseEditor{
   def modelEditPart =  super.getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[Parts#ModelEditPart] 
 }
 
-class LocalDebugEditor extends UpEditor{
-  val model = new DebugEditParts.ModelUpdater(org.eclipse.swt.widgets.Display.getCurrent)
-  def factory = ZaluumDebugFactory
-  def getPaletteRoot = Palette()
-  override def doSave(p : IProgressMonitor) {}
-}
+
 
 class ZFileEditor extends UpEditor with FileEditor{
   var model : PersistentEditParts.PModel= _

@@ -1,5 +1,6 @@
-package org.zaluum.ide
+package org.zaluum.ide.debug
 
+import org.zaluum.ide._
 import org.zaluum.runtime.{Command=>C,Bendpoint=>BP,_}
 import org.zaluum.runtime.serial.ModelProtos
 import org.eclipse.swt.SWT
@@ -29,10 +30,11 @@ import Commands._
 import Debug2Model._
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.dispatch._
-import Utils._
+import org.zaluum.ide.Utils._
 import se.scalablesolutions.akka.remote._
 import org.zaluum.runtime._
 import java.util.concurrent.TimeUnit
+
 
 object DebugEditParts extends Parts{
   type T = Debug2Model.type
@@ -40,9 +42,9 @@ object DebugEditParts extends Parts{
   class ModelUpdater(display:Display) extends VModel {
     case class Time(i:Int)
     case class Change(fqName : String)
+    private val process = RemoteClient.actorFor("zaluum-service","localhost",9999,classOf[ModelProtos].getClassLoader)
     
     private val actor = Actor.actorOf(new Actor {
-      private val process = RemoteClient.actorFor("zaluum-service","localhost",9999,classOf[ModelProtos].getClassLoader)
       override def init {
         process.start 
       }
@@ -89,7 +91,9 @@ object DebugEditParts extends Parts{
       case ComposedView(c) => actor ! Change(c.fqName)
       case TopView => actor ! Change("")
     }   
-    
+    def push(p:DPort, v:Any) {
+      process ! Push(List(PushValue(p.fqName , v)))
+    }
     private def updatePortValues(data : ModelProtos.DebugValue) = currentView match {
         case ComposedView(c:ComposedDBox) =>
           if (c.fqName==data.getFqName){
@@ -139,11 +143,14 @@ object DebugEditParts extends Parts{
     }
   }
   class DBoxEditPart(val model:DBox) extends BoxEditPart
-  class DPortEditPart(val model:DPort) extends PortEditPart{
+  class DPortEditPart(val model:DPort) extends PortEditPart with OpenPart{
     type F = PortDebugFigure
     override def createFigure = new PortDebugFigure
     override def refreshVisuals {
       fig.arrange(model.in,model.slot.left, model.slot.pos, model.name, model.link + " = " + model.value)
+    }
+    override def doOpen{
+      
     }
   }
   class DWireEditPart(val model:DWire) extends WireEditPart
@@ -151,3 +158,5 @@ object DebugEditParts extends Parts{
 }
 class PortDebugFigure extends PortFigure {
 }
+
+

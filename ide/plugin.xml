@@ -157,7 +157,7 @@
             name="Zaluum">
       </editor>
       <editor
-            class="org.zaluum.ide.LocalDebugEditor"
+            class="org.zaluum.ide.debug.DebugEditor"
             contributorClass="org.zaluum.ide.BaseActionBarContributor"
             default="false"
             extensions="zserver"

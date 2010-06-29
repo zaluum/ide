@@ -7,7 +7,7 @@ class Squarewave(period: Int,name:String, parent:ComposedBox) extends Box(name,p
   val o = OutPort("o",0)
   override def act(process:Process):Unit = {
     o.v = if (o.v==0) 1 else 0
-    process.time.queue(this, period)
+    //process.time.queue(this, period)
   }
 }
 
@@ -16,7 +16,7 @@ class Sum(name:String,parent:ComposedBox) extends Box(name,parent){
 	val b = InPort("b",0)
 	val c = InPort("c",0)
 	val o = OutPort("o",0)	
-	override def act(process:Process) = o.v = a.v+b.v+c.v
+	override def act(process:Process) = o.v = a.v*b.v+c.v
 }
 
 class SquareSum(name:String, parent:ComposedBox) extends ComposedBox(name,parent){

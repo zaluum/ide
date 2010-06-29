@@ -17,7 +17,8 @@ import org.eclipse.jface.action._;
 import scala.collection.JavaConversions._
 import scala.collection.mutable._
 import java.util.ArrayList
-
+import GEFActionConstants._
+import org.eclipse.ui.actions.ActionFactory
 
 abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
   var gridColor : Color = null
@@ -78,11 +79,13 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     addAction(new MatchHeightAction(w))
     addAction(new MatchWidthAction(w))
   }
+  
   def factory : EditPartFactory 
+
   override def configureGraphicalViewer() = {
-    super.configureGraphicalViewer();
-    val viewer = getGraphicalViewer();
-    viewer.setEditPartFactory(factory);
+    super.configureGraphicalViewer()
+    val viewer = getGraphicalViewer
+    viewer.setEditPartFactory(factory)
     viewer.setRootEditPart(new ScalableFreeformRootEditPart());
     viewer.setKeyHandler(new GraphicalViewerKeyHandler(viewer));
     val gridColorDesc = PlatformUI.getWorkbench().getThemeManager()
@@ -91,41 +94,21 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     gridColor = gridColorDesc.createColor(viewer.getControl().getDisplay());
     
     // configure the context menu provider
-    val cmProvider = new BaseContextMenuProvider(viewer, getActionRegistry())
-    viewer.setContextMenu(cmProvider);
+    viewer.setContextMenu(new ContextMenuProvider(getGraphicalViewer){
+      override def buildContextMenu(menu : IMenuManager) {
+        addStandardActionGroups(menu)
+        fillContextMenu(menu)
+      }
+    });
   }
-  override def commandStackChanged(e :java.util.EventObject) {
-    firePropertyChange(IEditorPart.PROP_DIRTY);
-    super.commandStackChanged(e);
-  }
- 
-  override def dispose {
-    super.dispose
-    if (gridColor!=null)
-      gridColor.dispose();
-  }
-}
+  def addm(s:String,a:String)(implicit menu:IMenuManager) = menu.appendToGroup(s,action(a))
+  def action(actionId:String) = getActionRegistry.getAction(actionId);
+  def fillContextMenu(implicit menu:IMenuManager){
 
-
-class BaseContextMenuProvider(viewer:EditPartViewer, val registry:ActionRegistry) 
-        extends ContextMenuProvider(viewer) {
-
-  override def buildContextMenu(menu : IMenuManager) {
-    import GEFActionConstants._
-    import org.eclipse.ui.actions.ActionFactory
-    // Add standard action groups to the menu
-    addStandardActionGroups(menu);
-    // Add actions to the menu
-    def addm(s:String,a:String) = menu.appendToGroup(s,action(a))
     addm(GROUP_UNDO,UpAction.ID);
     addm(GROUP_UNDO,ActionFactory.UNDO.getId)
     addm(GROUP_UNDO,ActionFactory.REDO.getId)
     addm(GROUP_EDIT,ActionFactory.DELETE.getId)
-
-    /*menu.appendToGroup(GEFActionConstants.GROUP_EDIT, 
-        action(InstanceAction.ID));
-    menu.appendToGroup(GEFActionConstants.GROUP_EDIT, 
-        action(GoToDeclarationAction.ID));*/
 
     addm(GROUP_COPY,ActionFactory.CUT.getId);
     addm(GROUP_COPY,ActionFactory.COPY.getId);
@@ -147,13 +130,22 @@ class BaseContextMenuProvider(viewer:EditPartViewer, val registry:ActionRegistry
     add(GEFActionConstants.ALIGN_BOTTOM);
     if (!submenu.isEmpty())
       menu.appendToGroup(GEFActionConstants.GROUP_REST, submenu);
-    
   }
 
-  private def action(actionId:String) = registry.getAction(actionId);
+  override def commandStackChanged(e :java.util.EventObject) {
+    firePropertyChange(IEditorPart.PROP_DIRTY);
+    super.commandStackChanged(e);
+  }
+ 
+  override def dispose {
+    super.dispose
+    if (gridColor!=null)
+      gridColor.dispose();
+  }
   
-
 }
+
+
 
 class BaseActionBarContributor extends ActionBarContributor
 {

@@ -20,7 +20,7 @@ class MainBox extends ComposedBox(name="",parent=null) {
   val director = new EventDirector(this)
   override lazy val fqName:String = ""
   override private[runtime] def add(port:Port[_]) = error ("Port cannot be added")
-  override def recursiveQueue():Unit = {}
+  override def activate():Unit = {}
 }
 import Debug2Model._
 
@@ -40,29 +40,34 @@ class Process (val time:Time) {
     def visit(b:Box) : Unit = b match{
       case c:ComposedBox =>
         c.children.values foreach {child =>visit(child)}
-        c.recursiveQueue
-      case _ => b.recursiveQueue
+        c.activate
+      case _ => b.activate
     }
     visit(root.get)
     run
   }
   def push(values:List[ValueChange]) {
-    for (v <- values;
-     port <- findPort(v.fqName)){
-       v match {
-         case PushValue(_,v) => 
-           //port.v = v
-           //propagate
-           port.box.recursiveQueue
-         case ForceValue(_,v) => 
-           //port.v = v
-           port.box.recursiveQueue
-         case UnforceValue(_) => /*unforce*/
+    for (vc <- values;
+     port <- findPort(vc.fqName)){
+       vc match {
+         case PushValue(_,newv) =>
+           if (port.manifest.erasure == classOf[Int]){
+             port.asInstanceOf[Port[Any]].v = newv
+             port.changed
+           }
+         case ForceValue(_,newv) => 
+           port.asInstanceOf[Port[Any]].forced = Some(newv)
+           port.asInstanceOf[Port[Any]].v = newv
+           port.changed
+         case UnforceValue(_) => 
+           port.asInstanceOf[Port[Any]].forced = None
+           port.changed
        }
     }
+    run
   }
   def wakeup(boxes:List[Box]){
-    boxes.foreach { b=> b.recursiveQueue}
+    boxes.foreach { b=> b.activate}
     run
   }
   def toDModel(fqName:String) : serial.ModelProtos.ModelFragment = {
@@ -101,10 +106,14 @@ class Process (val time:Time) {
     }else
       (boxList,None)
   }
-  def findComposed(fqName : String) : Option[ComposedBox] =  root flatMap{_.find(boxFqNameToList(fqName))}
+  def findComposed(fqName : String) : Option[ComposedBox] =  root flatMap{_.find(boxFqNameToList(fqName)) match {
+    case Some(c:ComposedBox) => Some(c)
+    case _ => None
+    }
+  }
   def findPort(fqName:String) : Option[Port[_]]= root flatMap { r=>
-    val (box, portO) = portFqNameToList(fqName)
-    portO flatMap {port=> r.find(box) flatMap {b=> b.ports.get(port)}}
+    val (boxl, portO) = portFqNameToList(fqName)
+    portO flatMap {port=>  r.find(boxl) flatMap {b=> b.ports.get(port)} }
   }
     
 //  def debugRun() =   while (!eventQueue.isEmpty) process(eventQueue.take())
