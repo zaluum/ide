@@ -41,18 +41,15 @@ abstract class Port[A : Manifest](val name:String, var v:A, val box:Box) extends
   val slot = if (in) box.inPorts.size else box.outPorts.size
   var forced : Option[A] = None
 	box.add(this)
-	
+	def effectiveValue = forced.getOrElse(v)
 	var connections : Set[Port[A]] = Set()
   def connect(dst : Port[A]):Unit 
 	override def toString():String = name + "=" + v
 	val fqName = box.fqName + "$" + name
 	def changed : Unit = {
-    if (!forced.isEmpty) v = forced.get
     if (in) box.activate
-    for (
-      dst <- connections;
-      if dst.v!=v) { 
-      dst.v = v
+    for ( dst <- connections; if dst.v!=effectiveValue) { 
+      dst.v = effectiveValue
       dst.changed 
     }
   }

@@ -47,24 +47,21 @@ class Process (val time:Time) {
     run
   }
   def push(values:List[ValueChange]) {
-    for (vc <- values;
-     port <- findPort(vc.fqName)){
-       vc match {
-         case PushValue(_,newv) =>
-           if (Util.checkAssignable(newv, port.manifest)){
-             port.asInstanceOf[Port[Any]].v = newv
-             port.changed
-           }else {
-             println ("push failed " + newv + " " + port.manifest.erasure)
-           }
-         case ForceValue(_,newv) => 
-           port.asInstanceOf[Port[Any]].forced = Some(newv)
-           port.asInstanceOf[Port[Any]].v = newv
-           port.changed
-         case UnforceValue(_) => 
-           port.asInstanceOf[Port[Any]].forced = None
-           port.changed
-       }
+    def dopush(port:Port[Any], v:Any, force:Boolean){
+      if (Util.checkAssignable(v, port.manifest)){
+        if (force) 
+          port.forced = Some(v)
+        else {port.forced = None; port.v = v}
+        port.changed
+      } 
+    }
+    for (vc <- values; port <- findPort(vc.fqName)){
+      val aport = port.asInstanceOf[Port[Any]]
+      vc match {
+        case PushValue(_,newv) => dopush(aport,newv,false)
+        case ForceValue(_,newv) => dopush(aport,newv,true)
+        case UnforceValue(_) => aport.forced = None; aport.changed
+      }
     }
     run
   }

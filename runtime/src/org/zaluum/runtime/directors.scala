@@ -23,7 +23,6 @@ class CyclicDirector(c: ComposedBox) extends Director(c){
 }
 class EventDirector(c:ComposedBox) extends Director(c){
   private var queued : TreeSet[Box]= TreeSet[Box]()(Ordering.by(_.name)) ++ c.children.values
-  // PRE port values are in equillibrium
   override def run(process:Process) {
     while(!queued.isEmpty){
       val b = queued.firstKey
