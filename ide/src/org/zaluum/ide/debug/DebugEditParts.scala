@@ -31,7 +31,6 @@ import Debug2Model._
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.dispatch._
 import org.zaluum.ide.Utils._
-import se.scalablesolutions.akka.remote._
 import org.zaluum.runtime._
 import java.util.concurrent.TimeUnit
 
@@ -39,18 +38,11 @@ import java.util.concurrent.TimeUnit
 object DebugEditParts extends Parts{
   type T = Debug2Model.type
   
-  class ModelUpdater(display:Display) extends VModel {
+  class ModelUpdater(display:Display, process : ActorRef) extends VModel {
     case class Time(i:Int)
     case class Change(fqName : String)
-    private val process = RemoteClient.actorFor("zaluum-service","localhost",9999,classOf[ModelProtos].getClassLoader)
     
     private val actor = Actor.actorOf(new Actor {
-      override def init {
-        process.start 
-      }
-      override def shutdown{
-        process.stop
-      }
       def receive = {
         case Time(i) => synchronized {currentView foreach {c=>requestData(c.fqName)}}
         case d:ModelProtos.DebugValue => synchronized {updatePortValues(d)}

@@ -8,6 +8,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.zaluum.runtime.Debug2Model._
+import org.zaluum.runtime._
 object PushAction{
   val ID = "PushAction";
   
@@ -39,5 +40,5 @@ class PushAction(e : DebugEditor)  extends SelectionAction(e) {
     }
   }
 
-  def doPush(p:DPort, v:Any) = e.model.push(p,v)
+  def doPush(p:DPort, v:Any) = e.model ! Push(List(PushValue(p.fqName ,v)))
 }

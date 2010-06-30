@@ -18,14 +18,15 @@ trait UpEditor extends BaseEditor{
 
 
 
-class ZFileEditor extends UpEditor with FileEditor{
-  var model : PersistentEditParts.PModel= _
+class ZFileEditor extends UpEditor with FileEditor with StackChangeDirtyFile{
+  type M = PersistentEditParts.PModel
+  var model : PersistentEditParts.PModel = _
   lazy val outlinePage = new ZaluumOutlinePage(this)
   def factory = ZaluumWriteFactory
   def getPaletteRoot = Palette()
   import com.google.common.base.Charsets
   def serialize = new java.io.ByteArrayInputStream({
-      val s = model.root.asInstanceOf[ComposedPBox].toProto
+      val s = model.asInstanceOf[PersistentEditParts.PModel].root.asInstanceOf[ComposedPBox].toProto
         .build.toString
       println(s)
       s.getBytes(Charsets.UTF_8)})
@@ -36,16 +37,6 @@ class ZFileEditor extends UpEditor with FileEditor{
     if(c == classOf[IContentOutlinePage]) outlinePage 
     else super.getAdapter(c)
   }
-  override def setInput(input : IEditorInput){
-    super.setInput(input)
-    /*   TODO val page = getSite.getWorkbenchWindow.getActivePage
-    if(page!=null) {
-      val reg = getSite.getWorkbenchWindow.getWorkbench.getPerspectiveRegistry;
-      if(PerspectiveUtil.confirmPerspectiveSwitch(getSite().getWorkbenchWindow(), reg.findPerspectiveWithId(BoxPerspective.ID)))
-          page.setPerspective(reg.findPerspectiveWithId(BoxPerspective.ID));
-    } */
-  }
-
 }
 
 object UpAction{

@@ -21,10 +21,10 @@ import GEFActionConstants._
 import org.eclipse.ui.actions.ActionFactory
 
 abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
+  type M <: AnyRef
   var gridColor : Color = null
-
+  def model : M 
   setEditDomain(new DefaultEditDomain(this));
-  def model: Parts#VModel
   def editDomain : EditDomain = { getEditDomain }
   override def initializeGraphicalViewer():Unit  = {
     super.initializeGraphicalViewer()
@@ -131,21 +131,21 @@ abstract class BaseEditor extends GraphicalEditorWithFlyoutPalette {
     if (!submenu.isEmpty())
       menu.appendToGroup(GEFActionConstants.GROUP_REST, submenu);
   }
-
-  override def commandStackChanged(e :java.util.EventObject) {
-    firePropertyChange(IEditorPart.PROP_DIRTY);
-    super.commandStackChanged(e);
-  }
  
   override def dispose {
     super.dispose
     if (gridColor!=null)
       gridColor.dispose();
   }
-  
+  override def firePropertyChange(i : Int) = super.firePropertyChange(i)
 }
 
-
+trait StackChangeDirtyFile extends BaseEditor{
+  override def commandStackChanged(e :java.util.EventObject) {
+    firePropertyChange(IEditorPart.PROP_DIRTY);
+    super.commandStackChanged(e);
+  }
+}
 
 class BaseActionBarContributor extends ActionBarContributor
 {
@@ -268,7 +268,9 @@ trait FileEditor extends GraphicalEditor {
       }
     }
   val resourceTracker:IResourceChangeListener = new RTracker()
+  
   def deserialize(i : java.io.InputStream)
+  
   override protected def setInput(input : IEditorInput) {
     getEditorInput match {
       case i : IFileEditorInput => 
@@ -281,7 +283,6 @@ trait FileEditor extends GraphicalEditor {
       val contents = file.getContents(false);
       try {
         deserialize(contents)
-         //  TODO new ProtoDeserial().deserialize(contents);
       } finally {
         contents.close();
       }
@@ -290,7 +291,6 @@ trait FileEditor extends GraphicalEditor {
         Activator.logError(e.getMessage(), e);
         return;
     }
-   // super.getGraphicalViewer().setContents(model)
     super.setPartName(file.getName());
     getEditorInput match {
       case i : IFileEditorInput => 
@@ -298,6 +298,7 @@ trait FileEditor extends GraphicalEditor {
       case _ =>
     }
   }
+  
   override def dispose() {
     super.dispose();
     getEditorInput match {
