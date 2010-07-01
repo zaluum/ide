@@ -100,49 +100,178 @@ import org.jfree.ui.ApplicationFrame;
 import org.jfree.ui.RefineryUtilities;
 import org.eclipse.ui.PlatformUI
 
-class PlotView extends ViewPart {
-	val editor = PlatformUI.getWorkbench.getActiveWorkbenchWindow.getActivePage.getActiveEditor.asInstanceOf[BaseEditor]
-	
-	def createPartControl(parent : Composite ) = {
-		new ChartComposite(parent, SWT.NONE, createChart(createDataset),true)
+
+
+import org.eclipse.ui.part.PageBookView
+import org.eclipse.ui.part.PageBook
+import org.eclipse.ui.part.IPage
+import org.eclipse.ui.part.Page
+import org.eclipse.ui.part.MessagePage
+import org.eclipse.ui.IWorkbenchPage
+import org.eclipse.ui.IWorkbenchPart
+import org.eclipse.ui.SubActionBars
+import org.eclipse.gef.util.MyPageBookView
+import org.eclipse.gef.ui.views.palette.PaletteViewerPage
+
+abstract class BaseView extends MyPageBookView {
+  override protected def isImportant(part : IWorkbenchPart ) = part.isInstanceOf[BaseEditor]
+	override protected def getBootstrapPart = { if (getSite.getPage != null) getSite.getPage.getActiveEditor else null }
+	override protected def createDefaultPage(book : PageBook) = {
+		var messagePage = new MessagePage
+		messagePage.createControl(getPageBook)
+		initPage(messagePage)
+		messagePage
 	}
-  def setFocus {}
-  def createDataset = {
-    var series2 = new XYSeries(editor.model.root.name);
-    series2.add(1.0, 5.0);
-    series2.add(2.0, 7.0);
-    series2.add(3.0, 6.0);
-    series2.add(4.0, 8.0);
-    series2.add(5.0, 4.0);
-    series2.add(6.0, 4.0);
-    series2.add(7.0, 2.0);
-    series2.add(8.0, 1.0);
-    val dataset = new XYSeriesCollection
-    dataset.addSeries(series2)
-    dataset
+}
+
+class PlotView extends BaseView {
+	override def getMyPage(part : IWorkbenchPart) = new PlotPage(part.asInstanceOf[BaseEditor])
+}
+
+class WatchView extends BaseView {
+	override def getMyPage(part : IWorkbenchPart) = new WatchPage(part.asInstanceOf[BaseEditor])
+}
+
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.layout.GridData;
+import java.lang.Thread
+
+class Sinus extends Thread with Subject {
+	var t : Double = 0
+	@volatile var sin : Double = 0
+	override def run {
+		while(true) {
+			sin = Math.sin(t)
+			t=t+1
+			if(t==360) t=0
+			notifyObservers
+			Thread.sleep(1000)
+		}
+	}
+}
+
+class WatchPage(editor : BaseEditor) extends Page with Observer {
+  var composite : Composite = null
+  var table : Table = null
+	override def getControl = composite
+	override def setFocus = composite.setFocus
+	override def createControl(parent : Composite) {
+  	composite = new Composite(parent, SWT.FILL)
+  	var layout = new GridLayout
+  	layout.numColumns = 1
+  	composite.setLayout(layout)
+  	
+  	//Values list
+  	var groupValues = new Group(composite, SWT.FILL )
+    var group2Layout = new GridLayout
+    groupValues.setLayout(group2Layout)
+    var dataValues = new GridData( SWT.FILL, SWT.FILL, false, true );
+  	dataValues.widthHint = 400
+    groupValues.setLayoutData(dataValues)
+    groupValues.setText( " Values " )
+    table = new Table( groupValues,  SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION)
+    table.setLinesVisible(true)
+	  table.setHeaderVisible(true)
+    var data = new GridData( SWT.FILL, SWT.FILL, true, true )
+    data.heightHint = 400
+    table.setLayoutData(data)
+    var titles = List("Name","Type","Value")
+	  for (t <- titles) {
+	  	var column = new TableColumn (table, SWT.NONE);
+	  	column.setText(t);
+	  }	
+    for(c <- table.getColumns) c.pack
+    
+    addItem
+    
+    var sin = new Sinus
+    sin.addObserver(this)
+    sin.start
+    
   }
-  def createChart(dataset : XYDataset) = {
-  	var chart = ChartFactory.createXYLineChart("Plotting","X","Y",dataset,PlotOrientation.VERTICAL,true,true,false)
-    chart.setBackgroundPaint(Color.white)
-    val plot = chart.getXYPlot()
-    plot.setBackgroundPaint(Color.lightGray)
-    plot.setDomainGridlinePaint(Color.white)
-    plot.setRangeGridlinePaint(Color.white)
-    val renderer = new XYLineAndShapeRenderer()
-    renderer.setSeriesLinesVisible(0, false)
-    renderer.setSeriesShapesVisible(1, false)
-    plot.setRenderer(renderer)
-    val rangeAxis = plot.getRangeAxis.asInstanceOf[NumberAxis]
-    rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-  	chart
+  def addItem() {
+  	var item = new TableItem (table, SWT.NONE);
+    item.setText (0, "Sinus");
+		item.setText (1, "Double");
+		item.setText (2, "0");
+  }
+  override def receiveUpdate(subject:Subject) = {
+    	Display.getDefault.asyncExec(new Runnable {
+    		override def run = {
+    			table
+    			.getItem(0)
+    			.setText(2,subject.asInstanceOf[Sinus]
+    			.sin.
+    			toString)
+    		}
+    	})
   }
 }
 
+class PlotPage(editor : BaseEditor) extends Page with Observer {
+	var viewer : ChartComposite = null
+	var composite : Composite = null
+	var set : Set[Double] = Set(0)
+	override def getControl = composite
+	override def setFocus = composite.setFocus
+	override def createControl(parent : Composite) {
 
-
-
-
-
-
-
-
+		composite = new Composite(parent, SWT.FILL)
+  	var layout = new GridLayout( 2, false )
+  	composite.setLayout(layout)
+     	
+    //Plots
+    var groupValuesP = new Group(composite, SWT.FILL )
+    var group2LayoutP = new GridLayout
+    groupValuesP.setLayout(group2LayoutP)
+    var dataValuesP = new GridData( SWT.FILL, SWT.FILL, false, true );
+    dataValuesP.widthHint = 400
+    groupValuesP.setLayoutData(dataValuesP)
+    groupValuesP.setText( " Plot " )
+    viewer = new ChartComposite(groupValuesP, SWT.FILL, createChart(createDataset), true);
+    var hlcDataP = new GridData( SWT.FILL, SWT.FILL, true, true )
+    viewer.setLayoutData(hlcDataP)
+    
+    var sin = new Sinus
+    sin.addObserver(this)
+    sin.start
+    
+	}
+    def createDataset() = {
+    	var sinSeries = new XYSeries("Sin");
+    	var seriesCollection = new XYSeriesCollection()
+    	var index = 0
+    	for(s <- set) {
+    		sinSeries.add(index,s)
+    		index = index + 1
+    	}
+    	seriesCollection.addSeries(sinSeries);
+    	seriesCollection
+    }
+    
+    def createChart(xydataset : XYDataset ) = {
+    	var jfreechart = ChartFactory.createXYLineChart("Sin Curve Demo", "Angle (Deg)", "Y", xydataset, PlotOrientation.VERTICAL, true, true, false);
+    	jfreechart.setBackgroundPaint(Color.white);
+    	var xyplot = jfreechart.getPlot.asInstanceOf[XYPlot];
+    	xyplot.setBackgroundPaint(Color.lightGray);
+    	xyplot.setDomainGridlinePaint(Color.white);
+    	xyplot.setRangeGridlinePaint(Color.white);
+    	jfreechart;
+    }
+      override def receiveUpdate(subject:Subject) = {
+    	Display.getDefault.asyncExec(new Runnable {
+    		override def run = {
+    			set.add(subject.asInstanceOf[Sinus].sin)
+    			viewer.setChart(createChart(createDataset))
+    		}
+    	})
+  }
+}

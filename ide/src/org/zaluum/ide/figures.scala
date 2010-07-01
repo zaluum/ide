@@ -24,6 +24,10 @@ object Conversions {
 import scala.collection.JavaConversions._
 import Conversions._ 
 
+trait PlotGraphic {
+	
+}
+
 class BoxFigure extends Figure with HandleBounds with ZaluumConstraint{
   setLayoutManager(new PortsLayout())
   
@@ -38,15 +42,21 @@ class BoxFigure extends Figure with HandleBounds with ZaluumConstraint{
     nameL.setFont(boxFont)
     add(nameL)
     
-  val numChilds = new BoxLabel("0")
+  val numChilds = new BoxLabel("")
+  	numChilds.setFont(boxFont)
+  	numChilds.setForegroundColor(ColorConstants.lightBlue)
+  	add(numChilds)
+  	
   val rectangle = new RoundedRectangle
-  rectangle.setOpaque(false);
-  rectangle.setAlpha(50);
-  rectangle.setBackgroundColor(ColorConstants.lightBlue);
+  	rectangle.setOpaque(false);
+  	rectangle.setAlpha(50);
+  	rectangle.setBackgroundColor(ColorConstants.lightBlue);
     add(rectangle)
+    
+  def numChild = { numChilds.getText }
+  def numChild_= (num:Int) {numChilds.setText(if(num==0) "" else num.toString) }
   def name = { nameL.getText }
   def name_= (nname:String) { nameL.setText(nname) }
-  def numChild_= (num:Int) {numChilds.setText(if(num==0) "" else num.toString) }
   override def getHandleBounds = getConstraint
   override def getConstraint = rectangle.getBounds
   def slotFromPosition(position :Point) = {

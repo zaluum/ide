@@ -214,8 +214,14 @@
          point="org.eclipse.ui.views">
       <view
             class="org.zaluum.ide.PlotView"
-            id="ide.PlotView"
+            id="org.zaluum.ide.plotview"
             name="Plot View"
+            restorable="true">
+      </view>
+      <view
+            class="org.zaluum.ide.WatchView"
+            id="org.zaluum.ide.watchview"
+            name="Watch View"
             restorable="true">
       </view>
    </extension>

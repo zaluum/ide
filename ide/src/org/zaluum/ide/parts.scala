@@ -88,11 +88,16 @@ abstract class Parts{
     }
   }
 
+  trait PlotEditPartT extends BoxEditPart {
+  	override def createFigure = new BoxFigure with PlotGraphic
+  }
+  
   trait ComposedEditPartT extends BoxEditPart with OpenPart{
-    def doOpen = {
-      val m = parentPart.model
-      m.moveTo(ComposedView(model.asInstanceOf[T#C]))
-    }
+  	override protected def refreshVisuals {
+  		super.refreshVisuals
+  		fig.numChild = model.asInstanceOf[T#C].boxes.size
+  	}
+    def doOpen = parentPart.model.moveTo(ComposedView(model.asInstanceOf[T#C]))
   }
   
   /**
