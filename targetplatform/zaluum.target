@@ -48,5 +48,10 @@
 <unit id="ch.epfl.lamp.sdt.feature.group" version="2.8.0.RC6-t20100618105513-g384bb488745134bb4fd40f48f2d765883c0220bb"/>
 <repository location="http://download.scala-ide.org/update-current"/>
 </location>
+<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
+<unit id="gnu.io.rxtx.feature.group" version="2.1.7.4_v20071016-7B57e7UAXMAAqGAGf"/>
+<unit id="gnu.io.rxtx.sdk.feature.group" version="2.1.7.4_v20071016-417C7DP1Bh_eEaQJBrHBHg"/>
+<repository location="http://rxtx.qbang.org/eclipse/"/>
+</location>
 </locations>
 </target>

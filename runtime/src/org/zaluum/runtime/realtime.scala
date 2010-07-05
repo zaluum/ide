@@ -39,6 +39,8 @@ class RealTimeActor extends Actor{
   override def init  {
     time.actor = self
     process.run
+    //val r = new io.Robotis()
+    
   }
   override def shutdown  {
   }
