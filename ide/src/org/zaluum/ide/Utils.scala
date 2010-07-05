@@ -22,17 +22,14 @@ object Utils {
       ir.put(key, ImageDescriptor.createFromURL(base.getResource(key + ".png")));
     }
   }
-    def spawnReturn[T](body: => Option[T]): Future[T] = {
+  def spawnReturn[T](body: => T): Future[T] = {
     case object Spawn
     val promise = new DefaultCompletableFuture[T](3000)
     Actor.actorOf(new Actor() {
       def receive = {
         case Spawn =>
         try{
-          body match {
-            case Some(a) => promise completeWithResult a
-            case None => promise completeWithException (None,null)
-          }
+          promise completeWithResult (body)
         } catch {
           case e => promise completeWithException (None, e)
         }
@@ -44,7 +41,7 @@ object Utils {
   def awaitActor[T](body : => Option[T]): Option[T]={
     val f = spawnReturn(body)
     f.await
-    f.result
+    f.result map {_.get};
   }
   implicit def asRunnable(func : ()=>Unit) : Runnable = {
    new Runnable() {

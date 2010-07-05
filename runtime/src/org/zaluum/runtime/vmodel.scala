@@ -54,11 +54,11 @@ abstract class VisualModel{
     def connections : Set[W]
   }
 }
-  sealed abstract class Viewport {
-     def foreach[U](f: VisualModel#ComposedVBox => U) : Unit =  this match {
-         case TopView => 
-         case ComposedView(c) => f(c)
-     }
-  }
-  case object TopView extends Viewport
-  case class ComposedView(c:VisualModel#ComposedVBox) extends Viewport
+sealed abstract class Viewport {
+   def foreach[U](f: VisualModel#ComposedVBox => U) : Unit =  this match {
+       case TopView => 
+       case ComposedView(c) => f(c)
+   }
+}
+case object TopView extends Viewport
+case class ComposedView(c:VisualModel#ComposedVBox) extends Viewport // fix type

@@ -40,5 +40,5 @@ class PushAction(e : DebugEditor)  extends SelectionAction(e) {
     }
   }
 
-  def doPush(p:DPort, v:Any) = e.model ! Push(List(PushValue(p.fqName ,v)))
+  def doPush(p:DPort, v:Any) = {}//e.model.push(p ,v)
 }

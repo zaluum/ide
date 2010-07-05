@@ -1,6 +1,6 @@
 package org.zaluum.runtime
 import scala.collection.mutable.{Map,Set}
-
+import scala.collection.immutable.{Set => ISet}
 import java.util.concurrent._
 import scala.concurrent.JavaConversions._
 import scala.concurrent.{ops,TaskRunner,SyncVar}
@@ -74,28 +74,30 @@ class Process (val time:Time) {
       case Some(c:ComposedBox) =>
         val fqName = if (c.parent==null) "" else c.parent.fqName
         Some(serial.ModelProtos.ModelFragment.newBuilder
-            .setFragment(c.cproto).setFqName(fqName).build
+            .setFragment(c.proto).setFqName(fqName).build
             )
       case None => None
     }
   }
-  def debugData(fqName:String)= {
-    findComposed(fqName) match {
-      case Some(c:ComposedBox) =>
-        val d = serial.ModelProtos.DebugValue.newBuilder
-        d.setFqName(fqName);
-        for (b<- c.children.values; 
-          p<- b.ports.values){
-            d.addValue(serial.ModelProtos.PortValue.newBuilder
-              .setBox(b.name)
-              .setPort(p.name)
+  def debugData(fqNames:ISet[String])= {
+    val dr = serial.ModelProtos.DebugResponse.newBuilder
+    for (fqName <- fqNames){
+      findBox(fqName) map { b=>
+        val dv = serial.ModelProtos.DebugValue.newBuilder
+        dv.setBoxFQ(fqName);
+        for (p<- b.ports.values){
+            dv.addPortValue(serial.ModelProtos.PortValue.newBuilder
+              .setPortName(p.name)
               .setValue(p.v.toString))
         }
-        Some(d.build)
-      case None => None  
+        dr.addValue(dv);
+      }
     }
+    dr.build
   }
+  
   private def boxFqNameToList(fqName:String) = (List() ++fqName.split("/")) filter {_.size!=0}
+  
   private def portFqNameToList(fqName:String) :(List[String],Option[String]) = { 
     val boxList = boxFqNameToList(fqName)
     if (boxList.length>0){
@@ -106,11 +108,14 @@ class Process (val time:Time) {
     }else
       (boxList,None)
   }
-  def findComposed(fqName : String) : Option[ComposedBox] =  root flatMap{_.find(boxFqNameToList(fqName)) match {
+  
+  def findBox(fqName:String) : Option[Box] = root flatMap{_.find(boxFqNameToList(fqName))}
+
+  def findComposed(fqName : String) : Option[ComposedBox] = findBox(fqName) match {
     case Some(c:ComposedBox) => Some(c)
-    case _ => None
-    }
+    case None => None
   }
+
   def findPort(fqName:String) : Option[Port[_]]= root flatMap { r=>
     val (boxl, portO) = portFqNameToList(fqName)
     portO flatMap {port=>  r.find(boxl) flatMap {b=> b.ports.get(port)} }

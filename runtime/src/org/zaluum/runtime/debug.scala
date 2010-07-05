@@ -19,7 +19,7 @@ object Debug2Model extends VisualModel{
       val link:String,
       val in:Boolean
     ) extends VPort {
-      var value :String= "?"
+      @volatile var value :String= "?"
       var vbox : DBox = _
     }
   class DWire(val from:DPort, val to:DPort, val bendpoints:List[Bendpoint]) extends VWire 

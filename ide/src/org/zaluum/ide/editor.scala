@@ -16,8 +16,6 @@ trait UpEditor extends BaseEditor{
   def modelEditPart =  super.getGraphicalViewer.getRootEditPart.getChildren.get(0).asInstanceOf[Parts#ModelEditPart] 
 }
 
-
-
 class ZFileEditor extends UpEditor with FileEditor with StackChangeDirtyFile{
   type M = PersistentEditParts.PModel
   var model : PersistentEditParts.PModel = _

@@ -78,7 +78,6 @@ abstract class Parts{
     override def createFigure = new BoxFigure() 
     def highlightFigure = fig.rectangle 
     def parentPart = getParent.asInstanceOf[ModelEditPart]
-    
     override protected def refreshVisuals {
       parentPart.setLayoutConstraint(this,
           figure, 

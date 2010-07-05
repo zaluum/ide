@@ -14,14 +14,17 @@ message ModelFragment {
 	required string fqName = 1;
 	required Box fragment = 2;
 }
-message PortValue {
-  required string box=1;
-  required string port=2;
-  required string value=3;
+
+message DebugResponse {
+	repeated DebugValue value =1;
 }
 message DebugValue {
-	required string fqName = 1;
-	repeated PortValue value =2;
+	required string boxFQ = 1;
+	repeated PortValue portValue =2;
+}
+message PortValue {
+  required string portName=2;
+  required string value=3;
 }
 message Point {
   	required int32 x=1;

@@ -11,7 +11,7 @@ case class LoadEvent(model: Model ) extends Event
 case class NewDataEvent(data : Any, dst:Box) extends Event
 case class TimeEvent(dst:List[Box]) extends Event
 case class DebugModelEvent(fqName:String) extends Event
-case class DebugRequest(fqName:String) extends Event
+case class DebugRequest(fqName:Set[String]) extends Event
 
 class WallTime extends Time{
   
@@ -48,7 +48,7 @@ class RealTimeActor extends Actor{
     case TimeEvent(boxes) => process.wakeup(boxes)
     case LoadEvent(model) =>  process.load(model); self.reply("ok")
     case DebugModelEvent(str) => process.toDModel(str) foreach { d=> self.reply(d)}
-    case DebugRequest(fqName) => process.debugData(fqName) foreach {d => self.reply(d)} 
+    case DebugRequest(boxes) => self.reply(process.debugData(boxes)) 
   }
 }
 

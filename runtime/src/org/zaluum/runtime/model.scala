@@ -117,8 +117,9 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
   }
 	private[runtime] def add(box:Box) = addTemplate(children,box)
 	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
-  lazy val cproto : ModelProtos.Box = {
-	  val box =  ModelProtos.Box.newBuilder(proto)
+  override lazy val proto : ModelProtos.Box = {
+    val box = toProto
+    box.setType(ModelProtos.BoxType.COMPOSED);   
 	  val sorted = (List()++children.values).sorted(Ordering.by((_:Box).name))
 	  sorted foreach {b => box.addChild(b.proto)}
 	  val connections = {
@@ -143,10 +144,5 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
     val wsorted = (List()++connections).sorted(Ordering.by((_:ModelProtos.Line).getFrom));
     wsorted foreach {w => box.addWire(w)}
 	  box.build
-  }
-	override lazy val proto : ModelProtos.Box= {
-    val box = toProto
-    box.setType(ModelProtos.BoxType.COMPOSED);   
-    box.build
   }
 }

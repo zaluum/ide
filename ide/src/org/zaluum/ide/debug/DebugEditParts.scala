@@ -38,110 +38,55 @@ import java.util.concurrent.TimeUnit
 object DebugEditParts extends Parts{
   type T = Debug2Model.type
   
-  class ModelUpdater(display:Display, process : ActorRef) extends VModel {
-    case class Time(i:Int)
-    case class Change(fqName : String)
+  class DebugModel ( val root : ComposedDBox, val conn : DebugConnection) extends VModel {
     
-    private val actor = Actor.actorOf(new Actor {
-      def receive = {
-        case Time(i) => synchronized {currentView foreach {c=>requestData(c.fqName)}}
-        case d:ModelProtos.DebugValue => synchronized {updatePortValues(d)}
-        case Change(s:String) => synchronized {change(s)}
-        
-        case p => println("other" + p)
-        
-      }
-      private def requestData(fqName : String){
-        val value: Option[ModelProtos.DebugValue] = process !! DebugRequest(fqName)
-        for (v <- value)
-          updatePortValues(v)
-      }
-      private def change(str : String) {
-        val o : Option[ModelProtos.ModelFragment] = process !! DebugModelEvent(str)
-        o match {
-          case Some(p) => setProto(Some(p))
-          case None => println("error timeout")
-          case _ => println("not found")
-      }
-      }
-    })
     @volatile var currentView:Viewport = TopView 
-    val root = new ComposedDBox("main","",ISet(),null,ISet(),ISet());
-    
-    private def swtRun (f : => Unit) {
-      display.asyncExec(new Runnable{ 
-        def run = if (!display.isDisposed) synchronized(f)
-        })
-    }
+      
     def up() = currentView match {
-      case ComposedView(c) => 
-        val s = c.fqName.split("/").dropRight(1).mkString("/")
-        actor ! Change(s)
+      case ComposedView(c) =>
+        val parent = Option(c.parent.asInstanceOf[ComposedDBox])
+        setView(parent)
       case TopView => 
     }
     def moveTo(o:Viewport)  = o match {
-      case ComposedView(c) => actor ! Change(c.fqName)
-      case TopView => actor ! Change("")
+      case ComposedView(c:ComposedDBox) => setView(Some(c)) // XXX fix type
+      case TopView => setView(None)
     }   
-    def push(p:DPort, v:Any) {
-      process ! Push(List(PushValue(p.fqName , v)))
-    }
-    private def updatePortValues(data : ModelProtos.DebugValue) = currentView match {
-        case ComposedView(c:ComposedDBox) =>
-          if (c.fqName==data.getFqName){
-            val updatedPorts = Buffer[DPort]()
-            for (d <- data.getValueList; 
-              b <- c.boxes.find(_.name == d.getBox);
-              p <- b.ports.find(_.name == d.getPort)) {
-                if (p.value != d.getValue) {
-                    p.value =d.getValue
-                    updatedPorts += p
-                }
-            }
-            swtRun { 
-              for (p<-updatedPorts) {
-                p.notifyObservers
-              }
-            }
-          }else println("old data" + data)
-        case TopView =>
-    }
-    private def setProto(oproto : Option[ModelProtos.ModelFragment]) = synchronized{
-      oproto foreach {proto => 
-        currentView = ComposedView(Debug2Model.Deserialize.deserialize(proto))
-        swtRun {notifyObservers}
+    private def setView(box: Option[ComposedDBox]) = synchronized{
+      box match { 
+        case Some(b) => currentView = ComposedView(b)
+        case None => currentView = TopView
       }
-    }
-    def stop {
-      Scheduler.unschedule(actor)
-      actor.stop
-    }
-    def start {
-      actor.start
-      actor ! Change("/")
-      Scheduler.schedule(actor, Time(1), 100, 100, TimeUnit.MILLISECONDS)
+      notifyObservers
     }
   }
 
   
-  class DModelEditPart(val model:ModelUpdater) extends ModelEditPart {
-    override def activate {
-      super.activate
-      model.start
-    }
+  class DModelEditPart(val model:DebugModel) extends ModelEditPart {
     override def deactivate {
-      model.stop
+      model.conn.stop
       super.deactivate
     }
   }
-  class DBoxEditPart(val model:DBox) extends BoxEditPart
+  class DBoxEditPart(val model:DBox) extends BoxEditPart {
+    lazy val debugModel = getRoot.getChildren.get(0).asInstanceOf[DModelEditPart].model
+    override def activate {
+      debugModel.conn.suscribe(model)
+      super.activate
+    }
+    override def deactivate {
+      debugModel.conn.unsuscribe(model)
+      super.deactivate
+    }
+  }
   class DPortEditPart(val model:DPort) extends PortEditPart with DirectEditPart {
     type F = PortDebugFigure
     override def createFigure = new PortDebugFigure
     override def editFigure = fig.value
+    lazy val debugModel = getRoot.getChildren.get(0).asInstanceOf[DModelEditPart].model
+
     override def editCommand(v:String) = {
-      val mu = getRoot.getChildren.get(0).asInstanceOf[DModelEditPart].model
-      mu.push(model,Integer.parseInt(v))
+      debugModel.conn.push(model,Integer.parseInt(v))
       null
     }
     override def contents = Array()

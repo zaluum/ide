@@ -1,6 +1,7 @@
 package org.zaluum.ide
 import org.zaluum.runtime.{Command=>C,_}
 import org.eclipse.swt.SWT
+import org.eclipse.swt.widgets.Display
 import org.eclipse.draw2d._
 import org.eclipse.core.runtime._
 import org.eclipse.gef._
@@ -104,9 +105,16 @@ trait OpenPart extends AbstractGraphicalEditPart {
 
 trait Updater {
   self : Observer with AbstractGraphicalEditPart =>
-  override def receiveUpdate(s: Subject) {
-    if (isActive)
-      refresh
+  val display = Display.getCurrent
+  private def inSWT(toRun: =>Unit){
+    if (Display.getCurrent!=null) 
+      toRun
+    else
+      display.asyncExec(new Runnable {override def run {toRun}})
+  }
+    
+  override def receiveUpdate(s: Subject) = inSWT{
+    if (isActive) refresh
   }
 }
 
