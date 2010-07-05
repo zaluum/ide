@@ -1,7 +1,7 @@
 package org.zaluum.ide
 import org.zaluum.runtime.{Command=>C,Bendpoint=>BP,_}
 import org.eclipse.swt.SWT
-import org.eclipse.draw2d.{PolylineConnection,RelativeBendpoint, FreeformLayer,FreeformLayout, IFigure, ColorConstants}
+import org.eclipse.draw2d.{PolylineConnection,RelativeBendpoint, FreeformLayer,FreeformLayout, IFigure, ColorConstants, Shape}
 import org.eclipse.core.runtime._
 import org.eclipse.gef._
 import commands._
@@ -87,11 +87,16 @@ abstract class Parts{
     }
   }
 
+  trait PlotEditPartT extends BoxEditPart {
+  	override def createFigure = new BoxFigure with PlotGraphic
+  }
+  
   trait ComposedEditPartT extends BoxEditPart with OpenPart{
-    def doOpen = {
-      val m = parentPart.model
-      m.moveTo(ComposedView(model.asInstanceOf[T#C]))
-    }
+  	override protected def refreshVisuals {
+  		super.refreshVisuals
+  		fig.numChild = model.asInstanceOf[T#C].boxes.size
+  	}
+    def doOpen = parentPart.model.moveTo(ComposedView(model.asInstanceOf[T#C]))
   }
   
   /**
@@ -127,7 +132,7 @@ abstract class Parts{
    */
   abstract class PortEditPart extends BasePart
                  with SimpleNodePart with Updater 
-                 with HelpContext with HighlightPart
+                 with HelpContext with NeighborsHighlightPart
                  with RefPropertySource
                  {
     type F <: PortFigure
@@ -154,7 +159,21 @@ abstract class Parts{
     override def getModelTargetConnections():JList[_] = filterWires(_.to==model)
     override def createFigure = new PortFigure
     def highlightFigure = fig.triangle 
-    
+    def highlightNeighbors = {
+    	val mainBoxPart = getParent.getParent.asInstanceOf[AbstractGraphicalEditPart]
+    	var triangles : Buffer[Shape] = Buffer()
+    	//FIXME: High performance and correct selection (works equal with for-yield structure...)
+    	for (b <- mainBoxPart.getChildren) {
+      	for(p <- b.asInstanceOf[AbstractGraphicalEditPart].getChildren) {
+      		val portm = p.asInstanceOf[AbstractGraphicalEditPart].getModel.asInstanceOf[T#P]
+    	    val portf = p.asInstanceOf[AbstractGraphicalEditPart].getFigure.asInstanceOf[PortFigure].triangle
+      		if(portm.link!="" && portm.link == model.link) {
+      			triangles.add(portf)
+      		}
+      	}
+      } 
+      List()++triangles
+    }
     override def refreshVisuals {
       fig.arrange(model.in,model.slot.left, model.slot.pos, model.name, model.link)
     }

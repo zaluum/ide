@@ -74,6 +74,7 @@ object PersistentModel extends VisualModel{
         .setPosition((0,0))
     }
   }
+  class PlotPBox extends PBox {}
   class ComposedPBox extends PBox with ComposedVBox{
     var connections = Set[PWire]()
     var boxes = Set[PBox]()

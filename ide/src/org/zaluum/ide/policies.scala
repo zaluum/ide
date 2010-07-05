@@ -4,8 +4,15 @@ import org.eclipse.gef._
 import parts._
 import org.eclipse.swt.SWT
 
+abstract class NeighborsHighlightEditPolicy(neighbors : List[Shape]) extends HighlightEditPolicy {
+  override def containerBackground_= (alpha: Int) { 
+  	for(n <- neighbors) { n.setAlpha(alpha) }
+  	containerFigure.setAlpha(alpha)
+  }
+}
+
 abstract class HighlightEditPolicy[T] extends org.eclipse.gef.editpolicies.GraphicalEditPolicy{
-  private var opacity : Int = _
+  protected var opacity : Int = _
   
   override def eraseTargetFeedback(request: Request){
     if (opacity != 0){
@@ -14,8 +21,8 @@ abstract class HighlightEditPolicy[T] extends org.eclipse.gef.editpolicies.Graph
     }
   }
   
-  private def containerBackground :java.lang.Integer= containerFigure.getAlpha
-  private def containerBackground_= (alpha: Int) { containerFigure.setAlpha(alpha)}
+  protected def containerBackground :java.lang.Integer= containerFigure.getAlpha
+  protected def containerBackground_= (alpha: Int) { containerFigure.setAlpha(alpha)}
   protected def containerFigure : Shape 
   
   override def getTargetEditPart(request : Request) : EditPart = { 

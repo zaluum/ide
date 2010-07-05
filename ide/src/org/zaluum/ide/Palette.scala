@@ -65,7 +65,7 @@ object Palette {
 		});
     val boxToolbar = new PaletteToolbar("Box Tools")
     boxToolbar.add(newTool("Composed Box","A Box Composed of other boxes", "composed", classOf[ComposedPBox],classOf[Icons]))
-    boxToolbar.add(newTool("Port","Port", "portin", classOf[PPort],classOf[Icons]))
+    boxToolbar.add(newTool("Port","Port to input and output data", "portin", classOf[PPort],classOf[Icons]))
     palette.add(boxToolbar)
 		palette
 	}
