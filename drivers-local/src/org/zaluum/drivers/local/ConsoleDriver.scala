@@ -1,4 +1,4 @@
-package org.zaluum.runtime.io
+package org.zaluum.drivers.local
 
 import org.zaluum.runtime.{Sink,DirtySink,Driver,Setup,Util}
 import se.scalablesolutions.akka.actor.ActorRef

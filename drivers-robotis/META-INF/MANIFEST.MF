@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Drivers_robotis
+Bundle-SymbolicName: org.zaluum.drivers.robotis
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: scala.library,
+ org.zaluum.runtime;bundle-version="1.0.0",
+ gnu.io.rxtx;bundle-version="2.1.7",
+ akka;bundle-version="0.9.1",
+ com.google.protobuf;bundle-version="2.3.0"
+Export-Package: org.zaluum.drivers.robotis

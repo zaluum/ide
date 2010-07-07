@@ -1,6 +1,8 @@
 package org.zaluum.example
 import org.zaluum.runtime._
-import org.zaluum.runtime.io._
+import org.zaluum.drivers.local.ConsoleDriver
+import org.zaluum.drivers.local.SWTKeyboardDriver
+import org.zaluum.drivers.robotis.RobotisDriver
 import scala.collection.mutable.{Map,Set}
 
 trait RobotisExampleIO {

@@ -24,11 +24,11 @@ class Source[A] {
   def connect(dst : InPort[Int]) {ports += dst}
 }
 trait Sink[A]{
-  private[runtime] var v :A =_
+  var v :A =_
   def changed
 }
 class DirtySink[A] extends Sink[A] {
-	private[runtime] var dirty = false
+	var dirty = false
 	def changed {  dirty = true }
 }
 class InPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,value,box){

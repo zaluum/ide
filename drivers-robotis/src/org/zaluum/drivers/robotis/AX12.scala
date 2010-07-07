@@ -1,4 +1,4 @@
-package org.zaluum.runtime.io
+package org.zaluum.drivers.robotis
 import scala.collection.mutable.Buffer
 import Robotis._
 class AX12(port:String){

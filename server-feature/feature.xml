@@ -16,6 +16,10 @@
       [Enter License Description here.]
    </license>
 
+   <includes
+         id="gnu.io.rxtx"
+         version="0.0.0"/>
+
    <plugin
          id="org.zaluum.runtime"
          download-size="0"
@@ -102,6 +106,20 @@
 
    <plugin
          id="com.google.protobuf"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.zaluum.drivers.local"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.zaluum.drivers.robotis"
          download-size="0"
          install-size="0"
          version="0.0.0"
