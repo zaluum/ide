@@ -19,7 +19,18 @@ trait UniqueNamed {
 			set += n.name -> n		
 	}
 }
-
+class Source[A] {
+  val ports = Set[InPort[Int]]()
+  def connect(dst : InPort[Int]) {ports += dst}
+}
+trait Sink[A]{
+  private[runtime] var v :A =_
+  def changed
+}
+class DirtySink[A] extends Sink[A] {
+	private[runtime] var dirty = false
+	def changed {  dirty = true }
+}
 class InPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,value,box){
   override def connect(dst : Port[A]):Unit = {
     if (!(dst.box.parent == box && dst.isInstanceOf[InPort[_]])) { error("invalid connection")}
@@ -29,10 +40,19 @@ class InPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,val
   def in = true
 }
 class OutPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,value,box){
-  override def connect(dst : Port[A]):Unit = {
+	val sinks = Set[Sink[A]]()
+  override def connect(dst : Port[A]) {
     if (!((dst.box.parent == box.parent && dst.isInstanceOf[InPort[_]]) ||
         (dst.box == box.parent && dst.isInstanceOf[OutPort[_]] && dst!=this))) {error("invalid connection")}
     connections += dst
+	}
+  def connect(dst : Sink[A]) :Unit = {sinks += dst}
+  override def changed {
+  	super.changed
+  	for (sink <- sinks; if sink.v != effectiveValue){
+  		sink.v = effectiveValue
+  		sink.changed
+  	}
   }
   def in = false
 }
@@ -84,7 +104,8 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	  }
 	}
 	override def toString = name + " (" + (ports.values map { _.toString} mkString(",")) +")"  
-	def act(process:Process):Unit
+	def act(process:Process):Unit = act
+	def act {}
 	def activate():Unit = {
 	  assert(parent!=null,this)
 	  parent.director.activate(this); parent.activate()
@@ -116,7 +137,8 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
     }
   }
 	private[runtime] def add(box:Box) = addTemplate(children,box)
-	final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
+	override final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
+	override final def act {} 
   override lazy val proto : ModelProtos.Box = {
     val box = toProto
     box.setType(ModelProtos.BoxType.COMPOSED);   

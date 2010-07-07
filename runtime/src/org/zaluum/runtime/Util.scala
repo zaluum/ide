@@ -1,6 +1,16 @@
 package org.zaluum.runtime
-
+import scala.collection.mutable.{Map,MultiMap,Set, HashMap}
 object Util {
+	def cache[A,B](id:A, map: Map[A,B])(builder : => B) : B = {
+    map.get(id).getOrElse{
+      val s = builder
+      map(id) =s
+      s
+    }
+  } 
+	def createMultiMap[A,B]() : MultiMap[A,B] = { 
+			new HashMap[A,Set[B]] with MultiMap[A,B]
+	}
   def checkAssignable[T](x: Any,mf: Manifest[T]) = {
     mf == manifest[Any] || {
       def primitive(c: Class[_]) = mf == manifest[AnyVal] || mf.erasure == c

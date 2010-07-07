@@ -1,8 +1,16 @@
 package org.zaluum.runtime.io
 import scala.collection.mutable.Buffer
 import Robotis._
-class AX12_IO{
-	val ser =  new Robotis
+class AX12(port:String){
+	var ser : Robotis  = null 
+	def start {
+		ser = new Robotis(port)
+	}
+	def stop {
+		if (ser!=null) 
+			ser.stop
+		ser = null
+	}
 	/*def __init__(self, port, baudrate):
       try:
           self.__sio = SerialIO(port, baudrate)

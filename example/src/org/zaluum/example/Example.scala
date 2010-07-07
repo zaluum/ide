@@ -37,8 +37,8 @@ class MultiSum(name:String, parent:ComposedBox) extends ComposedBox(name,parent)
   val SS2 = new SquareSum("SS2",this)
   val SS3 = new SquareSum("SS3",this) 
 }
-class Example extends Model{
-  override def create(main:MainBox) : Unit = {
-    new MultiSum("MultiSum",main)
+class Example extends ModelBuilder{
+  override def create(setup:Setup) = new MainBox {
+    val multisum = new MultiSum("MultiSum",this)
   }
 }

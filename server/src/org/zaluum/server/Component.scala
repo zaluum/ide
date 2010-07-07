@@ -19,7 +19,7 @@ class Component {
   val myServer = new RemoteServer
   myServer.start(new java.net.InetSocketAddress("localhost", 9999),classOf[Process].getClassLoader)
   myServer.register("zaluum-service",server)  
-	def bindModel(m: Model):Unit = {
+	def bindModel(m: ModelBuilder):Unit = {
     println ("loading model")
     spawn({
       val r = server !! LoadEvent(m)
@@ -28,6 +28,6 @@ class Component {
     println ("model loading in background")
     
 	}
-	def unbindModel(m : Model):Unit = {
+	def unbindModel(m : ModelBuilder):Unit = {
 	}
 }	

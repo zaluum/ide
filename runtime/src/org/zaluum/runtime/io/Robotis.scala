@@ -94,29 +94,33 @@ object Robotis {
   val AX_GOAL_SPEED = 2
   val AX_TORQUE_EN = 3
 }
-class Robotis {
+class Robotis(private val port:String) {
 	import Robotis._
 	def calcChecksum(data:Buffer[Int]) = data.take(data.length-2).dropRight(1).sum % 256
 	
-  val portIdentifier = CommPortIdentifier.getPortIdentifier("name");
-  val (in,out) = 
-	if (portIdentifier.isCurrentlyOwned)
-    throw new Exception("Error: Port is currently in use")
-  else {
-  	portIdentifier.open(this.getClass().getName(),2000) match {
-    	case serialPort : SerialPort => 
-        serialPort.setSerialPortParams(57600,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);         
-        //(new Thread(new SerialWriter(out))).start();
-        //serialPort.addEventListener(new SerialReader(in));
-        serialPort.notifyOnDataAvailable(true);
-        val in = serialPort.getInputStream();
-        val out = serialPort.getOutputStream();
-        (in,out)
-    	case _ => 
-    		throw new Exception ("Serial port not found")
-  	}
-  }     
-	
+  val portIdentifier = CommPortIdentifier.getPortIdentifier(port);
+  val (serialPort,in,out) = 
+  	if (portIdentifier.isCurrentlyOwned)
+      throw new Exception("Error: Port is currently in use")
+    else {
+    	portIdentifier.open(this.getClass().getName(),2000) match {
+      	case serialPort : SerialPort => 
+          serialPort.setSerialPortParams(1000000,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);         
+          //(new Thread(new SerialWriter(out))).start();
+          //serialPort.addEventListener(new SerialReader(in));
+          serialPort.notifyOnDataAvailable(true);
+          val in = serialPort.getInputStream();
+          val out = serialPort.getOutputStream();
+          (serialPort,in,out)
+      	case _ => 
+      		throw new Exception ("Serial port not found")
+    	}
+    }     
+	def stop {
+		in.close()
+		out.close()
+		serialPort.close()
+	}
   def chr(i:Int) : Byte = i.asInstanceOf[Byte]
   def uint(b:Int) : Int = 0xFF & b
 	/**""" Read "size" bytes of data from servo with "servoId" starting at the

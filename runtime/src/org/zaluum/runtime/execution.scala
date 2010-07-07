@@ -1,5 +1,6 @@
 package org.zaluum.runtime
 import scala.collection.mutable.{Map,Set}
+import scala.collection.immutable.{Map => IMap,Set => ISet}
 import scala.collection.immutable.{Set => ISet}
 import java.util.concurrent._
 import scala.concurrent.JavaConversions._
@@ -12,8 +13,8 @@ case class PushValue(fqName:String, value:Any) extends ValueChange
 case class ForceValue(fqName:String, value:Any) extends ValueChange
 case class UnforceValue(fqName:String) extends ValueChange
 
-trait Model {
-  def create(m : MainBox) : Unit
+trait ModelBuilder {
+  def create(setup:Setup) : MainBox
 }
 
 class MainBox extends ComposedBox(name="",parent=null) {
@@ -24,19 +25,18 @@ class MainBox extends ComposedBox(name="",parent=null) {
 }
 import Debug2Model._
 
-class Process (val time:Time) {
+class Process (begin : ()=> Unit, end : ()=> Unit) {
   var root : Option[MainBox] = None
   
   def run {
-    time.updateNow
+    begin()
     for (r<-root) {
       r.director.run(this)
     }
-    time.commit
+    end()
   }
-  def load (model:Model){
-    root = Some(new MainBox)
-    model.create(root.get)
+  def load (mainBox : MainBox){
+  	root = Some(mainBox)
     def visit(b:Box) : Unit = b match{
       case c:ComposedBox =>
         c.children.values foreach {child =>visit(child)}
@@ -46,8 +46,7 @@ class Process (val time:Time) {
     visit(root.get)
     run
   }
-  def push(values:List[ValueChange]) {
-    def dopush(port:Port[Any], v:Any, force:Boolean){
+  private def dopush(port:Port[Any], v:Any, force:Boolean){
       if (Util.checkAssignable(v, port.manifest)){
         if (force) 
           port.forced = Some(v)
@@ -55,6 +54,7 @@ class Process (val time:Time) {
         port.changed
       } 
     }
+  def push(values:List[ValueChange]) {
     for (vc <- values; port <- findPort(vc.fqName)){
       val aport = port.asInstanceOf[Port[Any]]
       vc match {
@@ -78,6 +78,17 @@ class Process (val time:Time) {
             )
       case None => None
     }
+  }
+  def sourceValues(values : IMap[Source[_],Any]){
+  	for ((source,value) <- values; port <- source.ports ) {
+  		dopush(port.asInstanceOf[Port[Any]], value, false)
+  	}
+  	run
+  }
+  def sinkValues(sinks : ISet[Sink[_]]) : IMap[Sink[_],Any] = {
+  	val v :ISet[(Sink[_],Any)]= for {sink <-sinks} 
+  		yield (sink, sink.v)
+  	v.toMap
   }
   def debugData(fqNames:ISet[String])= {
     val dr = serial.ModelProtos.DebugResponse.newBuilder
