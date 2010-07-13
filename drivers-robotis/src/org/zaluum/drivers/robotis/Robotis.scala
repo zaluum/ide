@@ -94,9 +94,14 @@ object Robotis {
   val AX_GOAL_SPEED = 2
   val AX_TORQUE_EN = 3
 }
-class Robotis(private val port:String) {
+class Robotis(val port:String) {
 	import Robotis._
-	def calcChecksum(data:Buffer[Int]) = data.take(data.length-2).dropRight(1).sum % 256
+	def calcChecksum(data:Buffer[Int]) = {
+	  var sum = 0
+	  for (i <- 2 until data.length-1)
+	    sum+= data(i)
+	  255 - (sum % 256)
+	}
 	
   val portIdentifier = CommPortIdentifier.getPortIdentifier(port);
   val (serialPort,in,out) = 
@@ -105,10 +110,11 @@ class Robotis(private val port:String) {
     else {
     	portIdentifier.open(this.getClass().getName(),2000) match {
       	case serialPort : SerialPort => 
-          serialPort.setSerialPortParams(1000000,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);         
-          //(new Thread(new SerialWriter(out))).start();
-          //serialPort.addEventListener(new SerialReader(in));
-          serialPort.notifyOnDataAvailable(true);
+          serialPort.setSerialPortParams(57600,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
+
+          serialPort.enableReceiveTimeout(100)
+          
+          //serialPort.notifyOnDataAvailable(true)
           val in = serialPort.getInputStream();
           val out = serialPort.getOutputStream();
           (serialPort,in,out)
@@ -121,179 +127,113 @@ class Robotis(private val port:String) {
 		out.close()
 		serialPort.close()
 	}
-  def chr(i:Int) : Byte = i.asInstanceOf[Byte]
+  def chr(i:Int) : Byte = (i & 0xFF).asInstanceOf[Byte]
   def uint(b:Int) : Int = 0xFF & b
-	/**""" Read "size" bytes of data from servo with "servoId" starting at the
-	register with "address". "address" is an integer between 0 and 49. It is
-	recommended to use the constants in module ax12_const for readability.
-	
-	To read the position from servo with id 1, the method should be called
-	like:
-		read_from_servo(1, AX_GOAL_POSITION_L, 2)
-		"""*/
-	def read_from_servo(servoId : Int , address : Int, size: Int) : Buffer[Int] = {
-    //flush
-    // Number of bytes following standard header (0xFF, 0xFF, id, length)
-    val length = 4  // instruction, address, size, checksum
-    
-    // directly from AX-12 manual:
-    // Check Sum = ~ (ID + LENGTH + INSTRUCTION + PARAM_1 + ... + PARAM_N)
-    // If the calculated value is > 255, the lower byte is the check sum.
-    val checksum = 255 - ( (servoId + length + AX_READ_DATA +  address + size) % 256 )
-    // packet: FF  FF  ID LENGTH INSTRUCTION PARAM_1 ... CHECKSUM
-    val packet = Array[Byte](chr(0xFF), chr(0xFF), chr(servoId), chr(length), 
-                chr(AX_READ_DATA), chr(address), chr(size), 
-                chr(checksum))
-    out.write(packet);
-    
-    // wait for response packet from AX-12+
-    Thread.sleep(0,500000)
-    
-    // read response
-    val data = scala.collection.mutable.Buffer[Int]()
-    data.append(uint(in.read)) // 0 read 0xFF
-    if (data(0) != 0xff) 
-    	return Buffer()
+  
+  def readData : Buffer[Int] = {
+    val data = Buffer[Int]()
+    data.append(uint(in.read())) // 0 read 0xFF
+    if (data(0) != 0xff) error("bad header" + data(0)) 
     data.append(uint(in.read)) // 1 read 0xFF
-    if (data(1) != 0xff) 
-    	return Buffer()
+    if (data(1) != 0xff) error("bad header")
     data.append(uint(in.read)) // 2 read id
     data.append(uint(in.read)) // 3 read length
     for (i <- 0 until data(3)) 
-      data.append(chr(in.read))
-    // verify checksum
-    
-    if (calcChecksum(data)!= data.last)
-        throw new Exception ("checksum error")
-    return data
+      data.append(uint(in.read))
+    //println ("read" + (data.map(_.toHexString) mkString(" ")))
+    val readChecksum = uint(data.last)
+    val calc = calcChecksum(data)
+    if (calc!= (data.last.asInstanceOf[Int] & 0xFF))
+      error ("checksum error: read " + readChecksum + " calc " + calc )
+    data
+  }
+  def enterTossMode() {
+    out.write('t')
+    out.write('\n')
+    out.flush
+    //println("toss mode on")
+  }
+  def writePacket(servoId: Int, instruction: Int, params: Buffer[Int]){
+    import scala.collection.mutable.ArrayBuilder
+     //Number of bytes following standard header (0xFF, 0xFF, id, length)
+    val length = 1 + params.length +1
+    val packet = ArrayBuilder.make[Byte]
+    packet.sizeHint(5)
+    packet ++= Array(chr(0xff),chr(0xff),chr(servoId),chr(length),chr(instruction))
+    val checksum = 255 - ((servoId + length + instruction + params.sum) % 256)
+    packet ++= params map {chr(_)}
+    packet += chr(checksum)
+    val p = packet.result
+    //in.read
+    //println("writing " + ((p map {_.toHexString}) mkString(" ")))
+    out.write(p)
+    out.flush
+  }
+  def writeRead(servoId:Int, instruction:Int,params:Buffer[Int]) = {
+    println("writing packet")
+    writePacket(servoId,instruction,params)
+    // wait for response packet from AX-12+
+    Thread.sleep(0,500000)
+    println("reading packet")
+    val l = readData
+    println("read packet")
+    l
+  }
+	/**
+	 *  Read "size" bytes of data from servo with "servoId" starting at the
+	 *  register with "address". "address" is an integer between 0 and 49. It is
+	 *  recommended to use the constants in module ax12_const for readability.
+	 *  	To read the position from servo with id 1, the method should be called
+	 *  	like:
+	 *  		read_from_servo(1, AX_GOAL_POSITION_L, 2)
+   */
+	def read_from_servo(servoId : Int , address : Int, size: Int) : Buffer[Int] = {
+    writePacket(servoId, AX_READ_DATA, Buffer(address,size))
+    // wait
+    Thread.sleep(0,500000)
+    // read response
+    readData
 	}
 	
-  /**""" Write the values from the "data" list to the servo with "servoId"
-	starting with data[0] at "address", continuing through data[n-1] at
-	"address" + (n-1), where n = len(data). "address" is an integer between
-	0 and 49. It is recommended to use the constants in module ax12_const
-	for readability. "data" is a list/tuple of integers.
+  /**
+   *  Write the values from the "data" list to the servo with "servoId"
+	  starting with data[0] at "address", continuing through data[n-1] at
+	  "address" + (n-1), where n = len(data). "address" is an integer between
+	  0 and 49. It is recommended to use the constants in module ax12_const
+	  for readability. "data" is a list/tuple of integers.
 	
-	To set servo with id 1 to position 276, the method should be called
-	like:
-		read_from_servo(1, AX_GOAL_POSITION_L, (20, 1))
-		"""
+	  To set servo with id 1 to position 276, the method should be called
+	  like:
+		  read_from_servo(1, AX_GOAL_POSITION_L, (20, 1))
 	 */
 	def write_to_servo(servoId : Int , address : Int , toWrite : Buffer[Int]) = {
-		//self.ser.flushInput()
-    // Number of bytes following standard header (0xFF, 0xFF, id, length)
-    val l = 3 + toWrite.length // instruction, address, len(data), checksum
-    
-    // directly from AX-12 manual:
-    // Check Sum = ~ (ID + LENGTH + INSTRUCTION + PARAM_1 + ... + PARAM_N)
-    // If the calculated value is > 255, the lower byte is the check sum.
-    val checksum = 255 - ((servoId + l + AX_WRITE_DATA + 
-                       address + toWrite.sum) % 256)
-    
-    // packet: FF  FF  ID LENGTH INSTRUCTION PARAM_1 ... CHECKSUM
-    val packet = Array[Byte](chr(0xFF), chr(0xFF), chr(servoId), chr(l),
-                   chr(AX_WRITE_DATA), chr(address))
-    out.write(packet)
-    for (d <- toWrite)
-      out.write(chr(d))
-    out.write(chr(checksum))
-    
-    // wait for response packet from AX-12+
-    Thread.sleep(0,500000)
-    
-    // read response
-    val  data = Buffer[Int]() 
-    def read {
-    	data.append(uint(in.read))
-    }
-    read // read 0xFF
-    read // read 0xFF
-    read // read id
-    read // read length
-    for (i <- 0 until data(3)){
-    	read
-    }    
-    // verify checksum
-    if (calcChecksum(data) != data.last)
-        throw new Exception("Checksum error")
-    data
+	  writeRead(servoId, AX_WRITE_DATA, Buffer(address) ++ toWrite)
 	}
 	
-  /*      """ Ping the servo with "servoId". This causes the servo to return a
-        "status packet". This can tell us if the servo is attached and powered,
-        and if so, if there is any errors.
+  /** Ping the servo with "servoId". This causes the servo to return a
+      "status packet". This can tell us if the servo is attached and powered,
+      and if so, if there is any errors.
         
-        To ping the servo with id 1 to position 276, the method should be called
-        like:
-            ping_servo(1)
-        """*/
-	def ping_servo(servoId:Int)={
-    //self.ser.flushInput()
-    
-    // Number of bytes following standard header (0xFF, 0xFF, id, length)
-    val length = 2  // instruction, checksum
-    
-    // directly from AX-12 manual:
-    // Check Sum = ~ (ID + LENGTH + INSTRUCTION + PARAM_1 + ... + PARAM_N)
-    // If the calculated value is > 255, the lower byte is the check sum.
-    val checksum = 255 - ((servoId + length + AX_PING) % 256)
-    
-    // packet: FF  FF  ID LENGTH INSTRUCTION CHECKSUM
-    val packet = Array[Byte](chr(0xFF) , chr(0xFF) , chr(servoId) , chr(length) ,
-                   chr(AX_PING) , chr(checksum))
-    out.write(packet)
-    
-    // wait for response packet from AX-12+
-    Thread.sleep(0,500000)
-     // read response
-    val data = Buffer[Int]()
-    def read {
-			data.append(uint(in.read))
-		}
-		read // read 0xFF
-    read // read 0xFF
-    read // read id
-    read // read length
-    for (i<- 0 until data(3))
-    	read
-    // verify checksum
-    if (calcChecksum(data)!= data.last)
-    	throw new Exception("Checksum error")
-    data
+      To ping the servo with id 1 to position 276, the method should be called
+      like:
+      ping_servo(1)
+  */
+	def ping_servo(servoId:Int)={ 
+	  writeRead(servoId, AX_PING, Buffer())
 	}
-	/*        """ Use Broadcast message to send multiple servos instructions at the
-        same time. No "status packet" will be returned from any servos.
-        "address" is an integer between 0 and 49. It is recommended to use the
-        constants in module ax12_const for readability. "data" is a tuple of
-        tuples. Each tuple in "data" must contain the servo id followed by the
-        data that should be written from the starting address. The amount of
-        data can be as long as needed.
-        
-        To set servo with id 1 to position 276 and servo with id 2 to position
-        550, the method should be called like:
-            sync_write_to_servos(AX_GOAL_POSITION_L, ( (1, 20, 1), (2 ,38, 2) ))
-        """*/
+	/** Use Broadcast message to send multiple servos instructions at the
+     same time. No "status packet" will be returned from any servos.
+     "address" is an integer between 0 and 49. It is recommended to use the
+     constants in module ax12_const for readability. "data" is a tuple of
+     tuples. Each tuple in "data" must contain the servo id followed by the
+     data that should be written from the starting address. The amount of
+     data can be as long as needed.
+     
+     To set servo with id 1 to position 276 and servo with id 2 to position
+     550, the method should be called like:
+       sync_write_to_servos(AX_GOAL_POSITION_L, ( (1, 20, 1), (2 ,38, 2) ))
+   */
 	def sync_write_to_servos(address:Int, packetLen : Int , data:Buffer[Int]){
-    //self.ser.flushInput()
-    
-    // Number of bytes following standard header (0xFF, 0xFF, id, length)
-    var length = 4 + data.length  // instruction, address, length, checksum
-    // Must iterate through data to calculate length and keep running sum
-    // for the checksum
-    var valsum = data.sum
-    
-    val checksum = 255 - ((AX_BROADCAST + length + 
-                      AX_SYNC_WRITE + address + packetLen + 
-                      valsum) % 256)
-    
-    // packet: FF  FF  ID LENGTH INSTRUCTION PARAM_1 ... CHECKSUM
-    val packet = Array[Byte](chr(0xFF), chr(0xFF), chr(AX_BROADCAST), 
-                chr(length), chr(AX_SYNC_WRITE), chr(address), 
-                chr(packetLen))
-    out.write(packet)
-    for (b <- data){
-    		out.write(chr(b))
-    }
-    out.write(chr(checksum))
+	  writePacket(AX_BROADCAST, AX_SYNC_WRITE, Buffer(address,data.size) ++ data)
 	}
 }

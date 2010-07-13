@@ -33,6 +33,7 @@ class SWTKeyboardDriver(setup:Setup) extends Driver{
   				changeValue(e.character,true)
   			}
   		});
+  		realtime ! SourceValuesEvent(IMap() ++( sources.values map { s => s -> s.upVal }) )
   		shell = new Shell(display)
   		shell.setSize(50,50)
   		shell.open;
@@ -47,7 +48,8 @@ class SWTKeyboardDriver(setup:Setup) extends Driver{
 	}
 
 	def getKeySource(c: Char, upVal : Int, downVal:Int) : Source[Int] = { 
-		Util.cache(c,sources){new KeyboardSource(upVal,downVal)} 
+	  
+		Util.cache(c,sources){println("creating swt key " + upVal + " " + downVal);new KeyboardSource(upVal,downVal)} 
 	}
 	def commit(){}
 }

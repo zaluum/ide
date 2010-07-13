@@ -81,6 +81,7 @@ class Process (begin : ()=> Unit, end : ()=> Unit) {
   }
   def sourceValues(values : IMap[Source[_],Any]){
   	for ((source,value) <- values; port <- source.ports ) {
+  		println (" source " + source + " = " + value )
   		dopush(port.asInstanceOf[Port[Any]], value, false)
   	}
   	run

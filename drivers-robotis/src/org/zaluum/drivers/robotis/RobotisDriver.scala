@@ -1,62 +1,107 @@
 package org.zaluum.drivers.robotis
 import scala.collection.mutable.Map
+import scala.collection.immutable.{Map => IMap}
 import org.zaluum.runtime.{Source,Sink}
 import se.scalablesolutions.akka.actor.{Actor,ActorRef}
 import org.zaluum.runtime._
+import scala.util.control.Exception._
 
 
 class RobotisDriver(setup : Setup, 
     val refresh : Int = 100, 
-    val port : String = "/dev/ttyUSB1") extends Driver{
+    val port : String = "/dev/ttyUSB0") extends Driver{
   
   case class RobotisPositionSource(id:Int) extends Source[Int]
   case class RobotisPositionSink(id:Int) extends DirtySink[Int] 
+  case class RobotisTorqueSink(id:Int) extends DirtySink[Int] 
   
   val sourceMap = Map[Int,RobotisPositionSource]()
   val sinkMap = Map[Int,RobotisPositionSink]()
+  val torqueSinkMap = Map[Int,RobotisTorqueSink]()
 
   setup.registerDriver("robotis",this)
+  
   var realtime : ActorRef = null
   def positionSourceForId(id : Int) : Source[Int] = Util.cache(id,sourceMap){RobotisPositionSource(id)}
   def positionSinkForId(id : Int) : Sink[Int] = Util.cache(id,sinkMap){RobotisPositionSink(id)}
+  def torqueSinkForId(id : Int) : Sink[Int] = Util.cache(id,torqueSinkMap){RobotisTorqueSink(id)}
+  
   case object Work
-  val ax12 = new AX12(port)
+  var ax12 : AX12 = null
   val updater = Actor.actorOf(new Updater)
   class Updater extends Actor {
-  	override def init {
-  		ax12.start
+    def checkConnection() {
+      if (ax12 == null)
+        reconnect()
+    }
+  	def reconnect() {
+  	  try {
+  	    try{
+  	    if (ax12!=null)
+  	      ax12.stop
+  	    }
+  	    Thread.sleep(100) // wait 100ms to let ax12 restart comms
+    	  ax12 = new AX12(port)
+    	  ax12.start
+    	  println("connected")
+    	 // ax12.enterTossMode()
+    	  Thread.sleep(200)
+  	  }catch {
+  	    case ex : Exception => ex.printStackTrace()
+  	  }
+  	}
+    override def init {
+      reconnect()
   	}
   	override def shutdown {
-  		ax12.stop
+  	  if (ax12 !=null){
+  	    ax12.stop
+  	    ax12 =null
+  	  }
   	}
   	
   	def getValues = { 	
-  		(for (s <- sourceMap.values) 
-  			yield (s,ax12.get_servo_position(s.id))  
-  			).toMap[Source[_],Any]
+  		var m = IMap[Source[_],Any]()
+  	  for (s <- sourceMap.values)	{
+  		  ignoring(classOf[Exception]){
+  		   m += s -> ax12.get_servo_position(s.id)
+  		  }  		
+  		}
+  		m
   	}
   	
-  	def requestValues() : Option[Map[Sink[_],Any]] = {
-  		realtime !! SinkValuesRequest(Set() ++ sinkMap.values)
+  	def setValues() {
+  	  for (vmap <- requestValues(); (sink,value) <- vmap){
+        ignoring(classOf[Exception]){
+          (sink,value) match {
+            case (s:RobotisPositionSink, v:Int) =>
+              ax12.set_servo_position(s.id , v)
+            case (s:RobotisTorqueSink, v:Int) =>
+              ax12.set_torque_enabled(s.id, v!=0)
+            case _ =>
+          }
+        }
+  	  }
+    }
+  	def requestValues() : Option[IMap[Sink[_],Any]] = {
+  		realtime !! SinkValuesRequest(Set() ++ sinkMap.values ++ torqueSinkMap.values)
   	}
-
   	override def receive = {
   		case Work =>
-    		realtime ! SourceValuesEvent(getValues)
-    			for (vmap <- requestValues(); (sink,value) <- vmap){ 
-    				(sink,value) match {
-    					case (s:RobotisPositionSink, v:Int) =>
-    						ax12.set_servo_position(s.id , v)
-    					case _ =>
-    				}
-    			}
-    		Thread.sleep(100)
+  		  ignoring(classOf[Exception]){
+    		  checkConnection()
+      		realtime ! SourceValuesEvent(getValues)
+      		setValues()
+      	}
+    		//Thread.sleep(1)
+    		//println("work")
     		self ! Work  		
   	}
   }
   def start(realtime : ActorRef) {
   	this.realtime = realtime
     updater.start
+    updater ! Work
   }
   def stop() {
    updater.stop 

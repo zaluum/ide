@@ -20,6 +20,10 @@
          id="gnu.io.rxtx"
          version="0.0.0"/>
 
+   <includes
+         id="org.eclipse.platform"
+         version="0.0.0"/>
+
    <plugin
          id="org.zaluum.runtime"
          download-size="0"
@@ -120,6 +124,36 @@
 
    <plugin
          id="org.zaluum.drivers.robotis"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="rxtx"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="rxtx_linux_x86"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         fragment="true"
+         unpack="false"/>
+
+   <plugin
+         id="rxtx_linux_x86_64"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         fragment="true"
+         unpack="false"/>
+
+   <plugin
+         id="org.zaluum.example"
          download-size="0"
          install-size="0"
          version="0.0.0"

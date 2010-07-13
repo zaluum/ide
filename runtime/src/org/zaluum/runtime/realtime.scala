@@ -67,7 +67,7 @@ class RealTimeActor extends Actor{
   }
   override def receive = {
     case SourceValuesEvent(map) => process.sourceValues(map)
-    case SinkValuesRequest(sinks) => process.sinkValues(sinks)
+    case SinkValuesRequest(sinks) => self.reply(process.sinkValues(sinks))
     case Push(values) => process.push(values)
     case TimeEvent(boxes) => process.wakeup(boxes)
     case ModelReplace(model,setup) =>
