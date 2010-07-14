@@ -9,9 +9,7 @@ sealed abstract class Event
 case class Push(values : List[ValueChange]) extends Event 
 case class LoadEvent(modelBuilder: ModelBuilder ) extends Event 
 case class ModelReplace(mainBox: MainBox, setup:Setup) extends Event
-case class SinkValuesRequest(sinks : Set[Sink[_]]) extends Event
-case class SourceValuesEvent(values : Map[Source[_],Any]) extends Event
-case class TimeEvent(dst:List[Box]) extends Event
+case class Activate(dst:List[Box]) extends Event
 case class DebugModelEvent(fqName:String) extends Event
 case class DebugRequest(fqName:Set[String]) extends Event
 
@@ -25,7 +23,7 @@ class WallTime {
   def commit() {
     for ((box,time) <- timeQueue) {
       scheduler.schedule(new Runnable{
-        def run = actor ! TimeEvent(List(box))
+        def run = actor ! Activate(List(box))
       }, time, TimeUnit.MILLISECONDS)
     }
     timeQueue = timeQueue.empty
@@ -38,6 +36,7 @@ trait Driver {
   def start(realtime:ActorRef)
   def stop()
   def commit()
+  def begin()
 }
 class Setup private[runtime]() {
 	private[runtime] val drivers = collection.mutable.Map[String,Driver]() 
@@ -51,6 +50,9 @@ class RealTimeActor extends Actor{
   val time = new WallTime
   private def begin {
   	time.updateNow()
+		if (setup!=null)
+			setup.drivers.values foreach (_.begin())
+
   }
   private def end {  	
 		if (setup!=null)
@@ -66,10 +68,8 @@ class RealTimeActor extends Actor{
   override def shutdown  {
   }
   override def receive = {
-    case SourceValuesEvent(map) => process.sourceValues(map)
-    case SinkValuesRequest(sinks) => self.reply(process.sinkValues(sinks))
     case Push(values) => process.push(values)
-    case TimeEvent(boxes) => process.wakeup(boxes)
+    case Activate(boxes) => process.wakeup(boxes)
     case ModelReplace(model,setup) =>
     	// process setup
       // TODO hotreplace drivers

@@ -1,13 +1,16 @@
 package org.zaluum.drivers.local
-import org.zaluum.runtime.{Driver,Sink,Source,Setup,Util, SourceValuesEvent}
+import org.zaluum.runtime.{Driver,Sink,Source,DefaultSource,Setup,Util, Activate}
 import javax.swing.{JFrame,WindowConstants}
 import java.awt.event.{KeyListener,KeyEvent}
 import se.scalablesolutions.akka.actor.ActorRef
 import scala.collection.mutable.{Map}
 import scala.collection.immutable.{Map => IMap}
+
 class SwingKeyboardDriver(setup:Setup) extends Driver {
-	class KeyboardSource(val upVal : Int, val downVal : Int) extends Source[Int] 
-	setup.registerDriver("swingkey", this)
+	
+  class KeyboardSource(val upVal : Int, val downVal : Int) extends DefaultSource[Int] 
+	
+  setup.registerDriver("swingkey", this)
 	val sources = Map[Char,KeyboardSource]()
 	var jframe : JFrame =_
 	
@@ -19,7 +22,8 @@ class SwingKeyboardDriver(setup:Setup) extends Driver {
 			def keyTyped(e:KeyEvent){}
 			def changeValue(e:KeyEvent, up : Boolean) {
 				sources.get(e.getKeyChar) foreach {
-					s => realtime ! SourceValuesEvent(IMap((s,if (up) s.upVal else s.downVal)))
+				  s => s.write(if (up) s.upVal else s.downVal)
+				  realtime ! Activate(List()++s.boxes)
 				}
 			}
 			def keyPressed(e: KeyEvent) = changeValue(e,true)
@@ -33,5 +37,8 @@ class SwingKeyboardDriver(setup:Setup) extends Driver {
 	def getKeySource(c: Char, upVal : Int, downVal:Int) : Source[Int] = { 
 		Util.cache(c,sources){new KeyboardSource(upVal,downVal)} 
 	}
-	def commit(){}
+	def begin() {
+	  sources.values foreach { _.commit }
+	}
+	def commit(){	}
 }

@@ -1,5 +1,5 @@
 package org.zaluum.drivers.robotis
-import scala.collection.mutable.Map
+import scala.collection.mutable.{Map,Set}
 import scala.collection.immutable.{Map => IMap}
 import org.zaluum.runtime.{Source,Sink}
 import se.scalablesolutions.akka.actor.{Actor,ActorRef}
@@ -11,14 +11,16 @@ class RobotisDriver(setup : Setup,
     val refresh : Int = 100, 
     val port : String = "/dev/ttyUSB0") extends Driver{
   
-  private case class RobotisPositionSource(id:Int) extends Source[Int]
-  private case class RobotisPositionSink(id:Int) extends DirtySink[Int] 
-  private case class RobotisTorqueSink(id:Int) extends DirtySink[Int] 
-  private case class RobotisFeedbackSource(id:Int) extends Source[RobotisFeedback] 
+  private case class RobotisPositionSource(id:Int) extends DefaultSource[Int]
+  private case class RobotisPositionSink(id:Int) extends DefaultSink[Int] 
+  private case class RobotisTorqueSink(id:Int) extends DefaultSink[Int] 
+  private case class RobotisFeedbackSource(id:Int) extends DefaultSource[RobotisFeedback] 
+
   private val sourceMap = Map[Int,RobotisPositionSource]()
   private val sinkMap = Map[Int,RobotisPositionSink]()
   private val torqueSinkMap = Map[Int,RobotisTorqueSink]()
   private val feedbackMap = Map[Int,RobotisFeedbackSource]()
+  
   setup.registerDriver("robotis",this)
   
   private var realtime : ActorRef = null
@@ -27,7 +29,10 @@ class RobotisDriver(setup : Setup,
 
   def positionSinkForId(id : Int) : Sink[Int] = Util.cache(id,sinkMap){RobotisPositionSink(id)}
   def torqueSinkForId(id : Int) : Sink[Int] = Util.cache(id,torqueSinkMap){RobotisTorqueSink(id)}
-  private case object Work
+  
+  private case object Read
+  private case class Write(s:Sink[_], v:Any)
+
   private var ax12 : AX12 = null
   private val updater = Actor.actorOf(new Updater)
   private  class Updater extends Actor {
@@ -60,52 +65,45 @@ class RobotisDriver(setup : Setup,
   	    ax12 =null
   	  }
   	}
-  	
-  	def getValues = { 	
-  		var m = IMap[Source[_],Any]()
-  	  for (s <- feedbackMap.values)	{
+  	  	
+  	override def receive = {
+  		case Read =>
   		  ignoring(classOf[Exception]){
-  		   m += s -> ax12.get_servo_feedback(s.id);
-  		  }  		
-  		}
-  		m
-  	}
-  	
-  	def setValues() {
-  	  for (vmap <- requestValues(); (sink,value) <- vmap){
-        ignoring(classOf[Exception]){
-          (sink,value) match {
+    		  checkConnection()
+	        for (s <- feedbackMap.values) {
+	          ignoring(classOf[Exception]){
+	            s.write(ax12.get_servo_feedback(s.id))
+	            realtime ! Activate(List()++s.boxes)
+	          }     
+	        }
+      	}
+    		self ! Read  		
+  		case Write(sink,value) =>
+    		ignoring(classOf[Exception]){
+    		  checkConnection()
+    		  (sink,value) match {
             case (s:RobotisPositionSink, v:Int) =>
               ax12.set_servo_position(s.id , v)
             case (s:RobotisTorqueSink, v:Int) =>
               ax12.set_torque_enabled(s.id, v!=0)
             case _ =>
-          }
-        }
-  	  }
-    }
-  	def requestValues() : Option[IMap[Sink[_],Any]] = {
-  		realtime !! SinkValuesRequest(Set() ++ sinkMap.values ++ torqueSinkMap.values)
-  	}
-  	override def receive = {
-  		case Work =>
-  		  ignoring(classOf[Exception]){
-    		  checkConnection()
-      		realtime ! SourceValuesEvent(getValues)
-      		setValues()
-      	}
-    		//Thread.sleep(1)
-    		//println("work")
-    		self ! Work  		
+          } 
+    		}
   	}
   }
   def start(realtime : ActorRef) {
   	this.realtime = realtime
     updater.start
-    updater ! Work
+    updater ! Read
   }
   def stop() {
    updater.stop 
   }
-  def commit(){}
+  def commit(){
+    sinkMap.values foreach {s => if (s.commit) updater ! Write(s,s.real)}
+  }
+  def begin() = {
+    sourceMap.values foreach { _.commit } 
+    feedbackMap.values foreach { _.commit }
+  }
 }

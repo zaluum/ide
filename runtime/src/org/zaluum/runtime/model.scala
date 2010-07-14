@@ -19,17 +19,27 @@ trait UniqueNamed {
 			set += n.name -> n		
 	}
 }
-class Source[A] {
-  val ports = Set[InPort[A]]()
-  def connect(dst : InPort[A]) {ports += dst}
+trait Source[A] {
+  val boxes_ = Set[Box]()
+  def boxes = synchronized{boxes_}
+  def suscribe(box : Box) {synchronized {boxes += box}}
+  def v : A
 }
+class DefaultSource[A] extends Source[A] with CommitValue[A]
+
 trait Sink[A]{
-  var v :A =_
-  def changed
+	def write (a:A) : Unit 
 }
-class DirtySink[A] extends Sink[A] {
-	var dirty = false
-	def changed {  dirty = true }
+class DefaultSink[A] extends Sink[A] with CommitValue[A]
+trait CommitValue[A] { 
+	var v : A = _
+	var real : A = _
+	def write(a:A) { v = a}
+	def commit = { 
+		val changed = real != v
+		real = v
+		changed
+	}
 }
 class InPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,value,box){
   override def connect(dst : Port[A]):Unit = {
@@ -40,20 +50,11 @@ class InPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,val
   def in = true
 }
 class OutPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,value,box){
-	val sinks = Set[Sink[A]]()
   override def connect(dst : Port[A]) {
     if (!((dst.box.parent == box.parent && dst.isInstanceOf[InPort[_]]) ||
         (dst.box == box.parent && dst.isInstanceOf[OutPort[_]] && dst!=this))) {error("invalid connection")}
     connections += dst
 	}
-  def connect(dst : Sink[A]) :Unit = {sinks += dst}
-  override def changed {
-  	super.changed
-  	for (sink <- sinks; if sink.v != effectiveValue){
-  		sink.v = effectiveValue
-  		sink.changed
-  	}
-  }
   def in = false
 }
 abstract class Port[A : Manifest](val name:String, var v:A, val box:Box) extends Named with Subject{
@@ -106,6 +107,7 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	override def toString = name + " (" + (ports.values map { _.toString} mkString(",")) +")"  
 	def act(process:Process):Unit = act
 	def act {}
+	def init(process:Process)  {}
 	def activate():Unit = {
 	  assert(parent!=null,this)
 	  parent.director.activate(this); parent.activate()

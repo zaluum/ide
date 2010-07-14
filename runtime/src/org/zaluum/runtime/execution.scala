@@ -39,8 +39,11 @@ class Process (begin : ()=> Unit, end : ()=> Unit) {
     def visit(b:Box) : Unit = b match{
       case c:ComposedBox =>
         c.children.values foreach {child =>visit(child)}
+        c.init(this)
         c.activate
-      case _ => b.activate
+      case _ => 
+        b.init(this) 
+        b.activate
     }
     visit(root.get)
     run
@@ -77,17 +80,6 @@ class Process (begin : ()=> Unit, end : ()=> Unit) {
             )
       case None => None
     }
-  }
-  def sourceValues(values : IMap[Source[_],Any]){
-  	for ((source,value) <- values; port <- source.ports ) {
-  		dopush(port.asInstanceOf[Port[Any]], value, false)
-  	}
-  	run
-  }
-  def sinkValues(sinks : ISet[Sink[_]]) : IMap[Sink[_],Any] = {
-  	val v :ISet[(Sink[_],Any)]= for {sink <-sinks} 
-  		yield (sink, sink.v)
-  	v.toMap
   }
   def debugData(fqNames:ISet[String])= {
     val dr = serial.ModelProtos.DebugResponse.newBuilder
