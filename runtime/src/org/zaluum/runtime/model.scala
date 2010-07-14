@@ -20,8 +20,8 @@ trait UniqueNamed {
 	}
 }
 class Source[A] {
-  val ports = Set[InPort[Int]]()
-  def connect(dst : InPort[Int]) {ports += dst}
+  val ports = Set[InPort[A]]()
+  def connect(dst : InPort[A]) {ports += dst}
 }
 trait Sink[A]{
   var v :A =_
@@ -127,8 +127,8 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 
 }
 abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,parent){
-  val director : Director
 	val children : Map[String,Box] = Map()
+	val director : Director = new EventDirector(this)
 	override def find(names : List[String]):Option[Box] = names match {
     case Nil => Some(this)
     case head :: tail => children.get(head) match {

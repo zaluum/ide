@@ -29,14 +29,15 @@ class DebugConnection {
       val s = DebugConnection.this.synchronized{Set() ++ boxesToUpdate.keys}
       val odr : Option[ModelProtos.DebugResponse] = process !! DebugRequest(s)
       for (dr <- odr; v <- dr.getValueList){
-        val (box,num) = DebugConnection.this.synchronized{boxesToUpdate.get(v.getBoxFQ).get}
-        if (box!=null){
-          for (portValue <- v.getPortValueList;
-          port <- box.ports.find{_.name==portValue.getPortName}){
-            port.value = portValue.getValue
-            port.notifyObservers
-          }
-        }
+        DebugConnection.this.synchronized{boxesToUpdate.get(v.getBoxFQ)} match {
+          case Some((box,portValue)) if (box != null) =>
+            for (portValue <- v.getPortValueList;
+            port <- box.ports.find{_.name==portValue.getPortName}){
+              port.value = portValue.getValue
+              port.notifyObservers
+            }
+          case _ => println(v.getBoxFQ  + " not found")
+        }        
       }
       waitActor ! Wait
   }

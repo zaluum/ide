@@ -18,7 +18,6 @@ trait ModelBuilder {
 }
 
 class MainBox extends ComposedBox(name="",parent=null) {
-  val director = new EventDirector(this)
   override lazy val fqName:String = ""
   override private[runtime] def add(port:Port[_]) = error ("Port cannot be added")
   override def activate():Unit = {}
@@ -81,7 +80,6 @@ class Process (begin : ()=> Unit, end : ()=> Unit) {
   }
   def sourceValues(values : IMap[Source[_],Any]){
   	for ((source,value) <- values; port <- source.ports ) {
-  		println (" source " + source + " = " + value )
   		dopush(port.asInstanceOf[Port[Any]], value, false)
   	}
   	run

@@ -11,25 +11,26 @@ class RobotisDriver(setup : Setup,
     val refresh : Int = 100, 
     val port : String = "/dev/ttyUSB0") extends Driver{
   
-  case class RobotisPositionSource(id:Int) extends Source[Int]
-  case class RobotisPositionSink(id:Int) extends DirtySink[Int] 
-  case class RobotisTorqueSink(id:Int) extends DirtySink[Int] 
-  
-  val sourceMap = Map[Int,RobotisPositionSource]()
-  val sinkMap = Map[Int,RobotisPositionSink]()
-  val torqueSinkMap = Map[Int,RobotisTorqueSink]()
-
+  private case class RobotisPositionSource(id:Int) extends Source[Int]
+  private case class RobotisPositionSink(id:Int) extends DirtySink[Int] 
+  private case class RobotisTorqueSink(id:Int) extends DirtySink[Int] 
+  private case class RobotisFeedbackSource(id:Int) extends Source[RobotisFeedback] 
+  private val sourceMap = Map[Int,RobotisPositionSource]()
+  private val sinkMap = Map[Int,RobotisPositionSink]()
+  private val torqueSinkMap = Map[Int,RobotisTorqueSink]()
+  private val feedbackMap = Map[Int,RobotisFeedbackSource]()
   setup.registerDriver("robotis",this)
   
-  var realtime : ActorRef = null
+  private var realtime : ActorRef = null
   def positionSourceForId(id : Int) : Source[Int] = Util.cache(id,sourceMap){RobotisPositionSource(id)}
+  def feedbackSource(id:Int) : Source[RobotisFeedback] = Util.cache(id,feedbackMap){RobotisFeedbackSource(id:Int)}
+
   def positionSinkForId(id : Int) : Sink[Int] = Util.cache(id,sinkMap){RobotisPositionSink(id)}
   def torqueSinkForId(id : Int) : Sink[Int] = Util.cache(id,torqueSinkMap){RobotisTorqueSink(id)}
-  
-  case object Work
-  var ax12 : AX12 = null
-  val updater = Actor.actorOf(new Updater)
-  class Updater extends Actor {
+  private case object Work
+  private var ax12 : AX12 = null
+  private val updater = Actor.actorOf(new Updater)
+  private  class Updater extends Actor {
     def checkConnection() {
       if (ax12 == null)
         reconnect()
@@ -43,7 +44,7 @@ class RobotisDriver(setup : Setup,
   	    Thread.sleep(100) // wait 100ms to let ax12 restart comms
     	  ax12 = new AX12(port)
     	  ax12.start
-    	  println("connected")
+    	  //println("connected")
     	 // ax12.enterTossMode()
     	  Thread.sleep(200)
   	  }catch {
@@ -62,9 +63,9 @@ class RobotisDriver(setup : Setup,
   	
   	def getValues = { 	
   		var m = IMap[Source[_],Any]()
-  	  for (s <- sourceMap.values)	{
+  	  for (s <- feedbackMap.values)	{
   		  ignoring(classOf[Exception]){
-  		   m += s -> ax12.get_servo_position(s.id)
+  		   m += s -> ax12.get_servo_feedback(s.id);
   		  }  		
   		}
   		m

@@ -20,7 +20,6 @@ class Sum(name:String,parent:ComposedBox) extends Box(name,parent){
 }
 
 class SquareSum(name:String, parent:ComposedBox) extends ComposedBox(name,parent){
-	val director = new EventDirector(this)
 	val o = OutPort("o",0)
 	val sq1 = new Squarewave(200,"SQ1",this)
 	val sq2 = new Squarewave(250,"SQ2",this)
@@ -32,7 +31,6 @@ class SquareSum(name:String, parent:ComposedBox) extends ComposedBox(name,parent
   sum.o connect o
 }
 class MultiSum(name:String, parent:ComposedBox) extends ComposedBox(name,parent){
-  val director = new EventDirector(this)
   val SS1 = new SquareSum("SS1",this) 
   val SS2 = new SquareSum("SS2",this)
   val SS3 = new SquareSum("SS3",this) 

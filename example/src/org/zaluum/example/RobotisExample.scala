@@ -14,29 +14,21 @@ class RealRobotisExample(setup:Setup) {
   val m3PositionSource = keyboard.getKeySource('s', 500, 700)
   
   //val m1TorqueEnabledSink = driver.torqueSinkForId(10)
-  val m1PositionSink = driver.positionSinkForId(15)
-  val m2PositionSink = driver.positionSinkForId(13)
-  val m3PositionSink = driver.positionSinkForId(16)
+  val m1PositionSink = driver.positionSinkForId(8)
+  val m2PositionSink = driver.positionSinkForId(10)
+  val m3PositionSink = driver.positionSinkForId(12)
 }
 
-class Op(name:String,parent:ComposedBox)(op : Int => Int) extends Box(name,parent) {
-  val in = InPort("in",0)
-  val out = OutPort("out",0)
-  override def act { out.v = op(in.v) }
-}
-class Const(name : String, parent:ComposedBox, const : Int) extends Box(name,parent) {
-  val  out = OutPort("out",const)
-}
 class RobotisExample extends ModelBuilder{  
   
   def create(setup:Setup) = {
     var io  =  new RealRobotisExample(setup)
     
     new MainBox {
-      val forward1 = new Op ("F1",this)(x => x)
-      val forward2 = new Op("F2",this)(x => x)
-      val forward3 = new Op("F3",this)(x => x)
-
+      val forward1 = new Forward ("F1",this)
+      val forward2 = new Forward("F2",this)
+      val forward3 = new Forward("F3",this)
+      val m1 = new AX12Motor("M1",this,io.driver,8)
       val torque = new Const ("one", this, 0)
       
     //  torque.out connect io.m1TorqueEnabledSink

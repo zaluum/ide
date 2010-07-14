@@ -170,13 +170,10 @@ class Robotis(val port:String) {
     out.flush
   }
   def writeRead(servoId:Int, instruction:Int,params:Buffer[Int]) = {
-    println("writing packet")
     writePacket(servoId,instruction,params)
     // wait for response packet from AX-12+
     Thread.sleep(0,500000)
-    println("reading packet")
     val l = readData
-    println("read packet")
     l
   }
 	/**

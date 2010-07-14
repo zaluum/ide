@@ -227,8 +227,8 @@ class AX12(port:String){
       val voltage = response(11)
       val temperature = response(12)
       val moving = response(15)
-      ServoFeedBack (servoId, position, speed, sload, voltage, temperature, moving)          
+      RobotisFeedback (servoId, position, speed, sload, voltage, temperature, moving)          
   }
   
 }
-case class ServoFeedBack(id : Int, position : Int, speed : Int, sload: Int, volage: Int, temperature: Int, moving: Int)
+case class RobotisFeedback(id : Int, position : Int, speed : Int, sload: Int, voltage: Int, temperature: Int, moving: Int)
