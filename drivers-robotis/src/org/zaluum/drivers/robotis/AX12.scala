@@ -6,10 +6,10 @@ import Robotis._
  * http://code.google.com/p/ua-ros-pkg/source/browse/trunk/arrg/ua_drivers/ax12_driver_core/src/ax12_driver_core/
  *
  */
-class AX12(port:String){
+class AX12(port:String, baud:Int = 57600){
 	var ser : Robotis  = null 
 	def start {
-		ser = new Robotis(port)
+		ser = new Robotis(port,baud)
 	}
 	def stop {
 		if (ser!=null) 

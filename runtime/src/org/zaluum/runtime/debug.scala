@@ -46,6 +46,9 @@ object Debug2Model extends VisualModel{
       val wires = for (w <- boxp.getWireList()) 
         yield wire(boxes,ports, w)
       val r = new ComposedDBox(boxp.getId,myFqName, Set()++ports,null,Set()++wires, Set()++boxes)
+      val (pos,size) = boundsToPosSize(boxp.getBounds)
+      r.pos = pos 
+      r.size = size
       r.boxes foreach { _.parent  =r}
       r.ports foreach { _.vbox = r}
       r
@@ -96,12 +99,18 @@ object Debug2Model extends VisualModel{
       def deserialize(p:ModelProtos.Bendpoint) =  Bendpoint((p.getP1.getX, p.getP1.getY),(p.getP2.getX, p.getP2.getY)) 
       w.getBendpointList map {deserialize(_)}
     }
-  
+    def boundsToPosSize(r:ModelProtos.Rectangle)= {
+    	((r.getLeftUp.getX,r.getLeftUp.getX),(r.getRightDown.getX - r.getLeftUp.getX, r.getRightDown.getY - r.getLeftUp.getY))
+    }
     def deserializeScript(pb:ModelProtos.Box, fqName : String) = {
       val myFQName = fqName + "/" + pb.getId
+      
       val ports = for (p <- pb.getPortList)  
         yield port(p, myFQName)
       val r = new DBox(pb.getId, myFQName, Set()++ports,null)
+      val (pos,size) = boundsToPosSize(pb.getBounds)
+      r.pos = pos 
+      r.size = size
       r.ports foreach {_.vbox = r}
       r
     }

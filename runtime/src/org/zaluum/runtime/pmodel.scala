@@ -43,7 +43,7 @@ object PersistentModel extends VisualModel{
     def fqName = ""  
     override def uniquenessSet = if (parent==null) List() else parent.boxes
     def toProto = {
-       val b = Box.newBuilder
+       val b = serial.ModelProtos.Box.newBuilder
       b.setType(BoxType.SCRIPT)
       b.setBounds((pos,size))
       b.setId(name)
@@ -112,7 +112,7 @@ object PersistentModel extends VisualModel{
 
   object Deserialize {
     def deserialize(in:java.io.InputStream) : ComposedPBox = {
-      val boxb = Box.newBuilder();
+      val boxb = ModelProtos.Box.newBuilder();
       TextFormat.merge(new InputStreamReader(in, Charsets.UTF_8), boxb);
       deserializeComposed(boxb.build());
     }

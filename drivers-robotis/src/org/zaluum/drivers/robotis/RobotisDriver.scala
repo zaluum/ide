@@ -9,7 +9,8 @@ import scala.util.control.Exception._
 
 class RobotisDriver(setup : Setup, 
     val refresh : Int = 100, 
-    val port : String = "/dev/ttyUSB0") extends Driver{
+    val port : String = "/dev/ttyUSB0",
+    val baud : Int = 57600) extends Driver{
   
   private case class RobotisPositionSource(id:Int) extends DefaultSource[Int]
   private case class RobotisPositionSink(id:Int) extends DefaultSink[Int] 
@@ -68,18 +69,26 @@ class RobotisDriver(setup : Setup,
   	  	
   	override def receive = {
   		case Read =>
-  		  ignoring(classOf[Exception]){
+  		  try {
     		  checkConnection()
 	        for (s <- feedbackMap.values) {
-	          ignoring(classOf[Exception]){
+	          try {
 	            s.write(ax12.get_servo_feedback(s.id))
 	            realtime ! Activate(List()++s.boxes)
-	          }     
+	          } catch {
+	            case ex : Exception => 
+	              println(ex.toString + "getting servo feedback " + s.id)
+	              reconnect()
+	          }
 	        }
+      	}catch{
+      	  case ex: Exception => 
+      	    println(ex.toString + "data")
+            reconnect()
       	}
     		self ! Read  		
   		case Write(sink,value) =>
-    		ignoring(classOf[Exception]){
+    		try{
     		  checkConnection()
     		  (sink,value) match {
             case (s:RobotisPositionSink, v:Int) =>
@@ -88,6 +97,11 @@ class RobotisDriver(setup : Setup,
               ax12.set_torque_enabled(s.id, v!=0)
             case _ =>
           } 
+    		}catch{
+    		  case ex:Exception => 
+    		    println(ex.toString + "writing " + sink)
+              reconnect()
+
     		}
   	}
   }

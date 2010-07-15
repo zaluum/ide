@@ -41,7 +41,7 @@ trait CommitValue[A] {
 		changed
 	}
 }
-class InPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,value,box){
+class InPort[A:Manifest](name:String, box:Box) extends Port[A](name,box){
   override def connect(dst : Port[A]):Unit = {
     if (!(dst.box.parent == box && dst.isInstanceOf[InPort[_]])) { error("invalid connection")}
     // TODO in to out connection
@@ -49,15 +49,17 @@ class InPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,val
   }
   def in = true
 }
-class OutPort[A:Manifest](name:String, value:A, box:Box) extends Port[A](name,value,box){
+class OutPort[A:Manifest](name:String, box:Box) extends Port[A](name,box){
   override def connect(dst : Port[A]) {
+  	
     if (!((dst.box.parent == box.parent && dst.isInstanceOf[InPort[_]]) ||
         (dst.box == box.parent && dst.isInstanceOf[OutPort[_]] && dst!=this))) {error("invalid connection")}
     connections += dst
 	}
   def in = false
 }
-abstract class Port[A : Manifest](val name:String, var v:A, val box:Box) extends Named with Subject{
+abstract class Port[A : Manifest](val name:String,val box:Box) extends Named with Subject{
+	var v : A = _
   val manifest = implicitly[Manifest[A]]
   val slot = if (in) box.inPorts.size else box.outPorts.size
   var forced : Option[A] = None
@@ -87,15 +89,25 @@ abstract class Port[A : Manifest](val name:String, var v:A, val box:Box) extends
         .setPosition((0,0))
   }
 }
-abstract class Box(val name:String,val parent:ComposedBox) extends Named with UniqueNamed with Subject{
+abstract class Box(val name:String,val parent:ComposedBox, var pos : (Int,Int,Int,Int) = (0,0,50,50))extends Named with UniqueNamed with Subject{
 	val ports:Map[String,Port[_]] = Map()
 	val inPorts:Set[Port[_]] = Set()
 	val outPorts:Set[Port[_]] = Set()
 	lazy val fqName:String = parent.fqName + "/" + name
 	if (parent!=null) 
 		parent.add(this)
-	def InPort[T](name:String, value:T)(implicit m : Manifest[T]) = new InPort(name,value,this)
-  def OutPort[T](name:String, value:T)(implicit m : Manifest[T])  = new OutPort(name,value,this)
+	def InPort[T](name:String)(implicit m : Manifest[T]) = new InPort[T](name,this)
+	def InPort[T](name:String, value:T)(implicit m : Manifest[T]) = {
+		val i = new InPort[T](name,this)
+		i.v = value
+		i
+	}
+  def OutPort[T](name:String)(implicit m : Manifest[T])  = new OutPort[T](name,this)
+  def OutPort[T](name:String, value:T)(implicit m : Manifest[T])  = {
+		val o = new OutPort[T](name,this)
+		o.v = value
+		o
+	}
 	
 	private[runtime] def add(port:Port[_]) = { 
 	  addTemplate(ports,port)
@@ -119,7 +131,7 @@ abstract class Box(val name:String,val parent:ComposedBox) extends Named with Un
 	protected def toProto = {
 	  val b = ModelProtos.Box.newBuilder
 	  b.setType(ModelProtos.BoxType.SCRIPT)
-	  b.setBounds((0,0),(50,50))
+	  b.setBounds((pos._1,pos._2),(pos._3,pos._4))
 	  b.setId(name)
 	  val oports = (List() ++ ports.values).sorted(Ordering.by((_:Port[_]).name))
 	  oports foreach {p=> b.addPort(p.proto) }

@@ -94,7 +94,7 @@ object Robotis {
   val AX_GOAL_SPEED = 2
   val AX_TORQUE_EN = 3
 }
-class Robotis(val port:String) {
+class Robotis(val port:String, val baud:Int) {
 	import Robotis._
 	def calcChecksum(data:Buffer[Int]) = {
 	  var sum = 0
@@ -102,7 +102,15 @@ class Robotis(val port:String) {
 	    sum+= data(i)
 	  255 - (sum % 256)
 	}
-	
+	def read()={
+	  var i = 0
+	  while (in.available==0){
+	     Thread.sleep(1)
+	     i+=1
+	     if (i==100) error("timeout")
+	  }
+	  in.read
+	}
   val portIdentifier = CommPortIdentifier.getPortIdentifier(port);
   val (serialPort,in,out) = 
   	if (portIdentifier.isCurrentlyOwned)
@@ -110,9 +118,12 @@ class Robotis(val port:String) {
     else {
     	portIdentifier.open(this.getClass().getName(),2000) match {
       	case serialPort : SerialPort => 
-          serialPort.setSerialPortParams(57600,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
-
-          serialPort.enableReceiveTimeout(100)
+          serialPort.setSerialPortParams(baud,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
+          //serialPort.setLowLatency
+          serialPort.setInputBufferSize(2048)
+          serialPort.setOutputBufferSize(2048)
+          
+          //serialPort.enableReceiveTimeout(100)
           
           //serialPort.notifyOnDataAvailable(true)
           val in = serialPort.getInputStream();
@@ -132,14 +143,14 @@ class Robotis(val port:String) {
   
   def readData : Buffer[Int] = {
     val data = Buffer[Int]()
-    data.append(uint(in.read())) // 0 read 0xFF
+    data.append(uint(read())) // 0 read 0xFF
     if (data(0) != 0xff) error("bad header" + data(0)) 
-    data.append(uint(in.read)) // 1 read 0xFF
+    data.append(uint(read())) // 1 read 0xFF
     if (data(1) != 0xff) error("bad header")
-    data.append(uint(in.read)) // 2 read id
-    data.append(uint(in.read)) // 3 read length
+    data.append(uint(read())) // 2 read id
+    data.append(uint(read())) // 3 read length
     for (i <- 0 until data(3)) 
-      data.append(uint(in.read))
+      data.append(uint(read()))
     //println ("read" + (data.map(_.toHexString) mkString(" ")))
     val readChecksum = uint(data.last)
     val calc = calcChecksum(data)
@@ -164,7 +175,6 @@ class Robotis(val port:String) {
     packet ++= params map {chr(_)}
     packet += chr(checksum)
     val p = packet.result
-    //in.read
     //println("writing " + ((p map {_.toHexString}) mkString(" ")))
     out.write(p)
     out.flush
@@ -172,7 +182,7 @@ class Robotis(val port:String) {
   def writeRead(servoId:Int, instruction:Int,params:Buffer[Int]) = {
     writePacket(servoId,instruction,params)
     // wait for response packet from AX-12+
-    Thread.sleep(0,500000)
+    Thread.sleep(1)
     val l = readData
     l
   }
@@ -187,7 +197,7 @@ class Robotis(val port:String) {
 	def read_from_servo(servoId : Int , address : Int, size: Int) : Buffer[Int] = {
     writePacket(servoId, AX_READ_DATA, Buffer(address,size))
     // wait
-    Thread.sleep(0,500000)
+    Thread.sleep(1)
     // read response
     readData
 	}

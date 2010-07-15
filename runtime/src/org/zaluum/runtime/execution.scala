@@ -24,7 +24,7 @@ class MainBox extends ComposedBox(name="",parent=null) {
 }
 import Debug2Model._
 
-class Process (begin : ()=> Unit, end : ()=> Unit) {
+class Process (begin : ()=> Unit, end : ()=> Unit, val time:  WallTime) {
   var root : Option[MainBox] = None
   
   def run {

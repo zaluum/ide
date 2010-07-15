@@ -23,12 +23,14 @@ class WallTime {
   def commit() {
     for ((box,time) <- timeQueue) {
       scheduler.schedule(new Runnable{
-        def run = actor ! Activate(List(box))
+        def run = {
+        	actor ! Activate(List(box))
+        }
       }, time, TimeUnit.MILLISECONDS)
     }
     timeQueue = timeQueue.empty
   }
-  def queue(b : Box, t: Long){timeQueue += ((b,t))}
+  def queue(b : Box, milliseconds: Long){timeQueue += ((b,milliseconds))}
   def updateNow() = _currentTime = System.nanoTime
   def nowNano = _currentTime - startTime
 }
@@ -59,7 +61,7 @@ class RealTimeActor extends Actor{
 			setup.drivers.values foreach (_.commit())
 		time.commit()
   }
-  val process = new Process(begin _, end _)
+  val process = new Process(begin _, end _, time)
   var setup : Setup = _
   override def init  {
     time.actor = self

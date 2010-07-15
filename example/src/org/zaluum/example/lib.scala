@@ -1,15 +1,15 @@
 package org.zaluum.example;
-import org.zaluum.runtime.{Box, InPort,OutPort,ComposedBox,Process}
+import org.zaluum.runtime.{Box, InPort,OutPort,ComposedBox,Process, Sink,Source}
 import org.zaluum.drivers.robotis.{RobotisDriver, RobotisFeedback}
-class Op(name:String,parent:ComposedBox)(op : Int => Int) extends Box(name,parent) {
-  val in = InPort("in",0)
-  val out = OutPort("out",0)
+class Op[A:Manifest,B:Manifest](name:String,parent:ComposedBox)(op : A => B) extends Box(name,parent) {
+  val in = InPort[A]("in")
+  val out = OutPort[B]("out")
   override def act { out.v = op(in.v) }
 }
-class Const(name : String, parent:ComposedBox, const : Int) extends Box(name,parent) {
-  val  out = OutPort("out",const)
+class Const[A:Manifest](name : String, parent:ComposedBox, const : A) extends Box(name,parent) {
+  val  out = OutPort[A]("out",const)
 }
-class Forward(name:String,parent:ComposedBox) extends Op(name,parent)({x=>x})
+class Forward[A:Manifest](name:String,parent:ComposedBox) extends Op[A,A](name,parent)({x=>x})
 
 trait Motor {
   self : Box => 
@@ -24,7 +24,29 @@ trait RPMSensor {
   self : Box =>
   val speed = OutPort("speed",0.0)
 }
+class SourceBox(name:String,parent:ComposedBox,source:Source[Double]) extends Box(name,parent) {
+  val out = OutPort("out",0.0)
+  override def init(process:Process){
+    source.suscribe(this)
+  }
+  override def act {
+    out.v = source.v
+  }
+}
+class SinkBox(name:String,parent:ComposedBox,sink:Sink[Int]) extends Box(name,parent) {
+  val in = InPort("in",0)
+  override def act {
+    sink.write(in.v);
+  }
+}
 
+class Time(name:String,parent:ComposedBox) extends Box(name,parent){
+  val out = OutPort("out",0)
+  override def act (process:Process) {
+    out.v = (process.time.nowNano / 1000000) .asInstanceOf[Int]
+    process.time .queue(this, 10)
+  }
+}
 class AX12Motor(name:String,parent:ComposedBox,driver : RobotisDriver, id:Int) extends Box(name,parent) {
   val position = OutPort("position", 0.0)
   val speed = OutPort("speed",0.0)

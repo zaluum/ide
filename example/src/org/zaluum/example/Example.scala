@@ -24,7 +24,7 @@ class SquareSum(name:String, parent:ComposedBox) extends ComposedBox(name,parent
 	val sq1 = new Squarewave(200,"SQ1",this)
 	val sq2 = new Squarewave(250,"SQ2",this)
 	val sq3 = new Squarewave(250,"SQ3",this)
-  val sum = new Sum("SUM",this) with Resizable 
+  val sum = new Sum("SUM",this)
 	sq1.o connect sum.a
 	sq2.o connect sum.b
 	sq3.o connect sum.c

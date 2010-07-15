@@ -17,7 +17,6 @@ class SWTKeyboardDriver(setup:Setup) extends Driver{
   		def changeValue(c:Char, up : Boolean) {
   			sources.get(c) foreach {
   				s => 
-  				  println("key pressed " + c)
   				  s.write(if (up) s.upVal else s.downVal)
   				  realtime ! Activate(List() ++ s.boxes)
   			}

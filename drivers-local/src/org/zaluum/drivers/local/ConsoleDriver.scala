@@ -14,7 +14,7 @@ class ConsoleDriver(setup:Setup) extends Driver {
   def commit (){
   	for ((id, sink) <- map) {
   		if (sink.commit) 
-  			println ("** " + id + " = " + sink.real)
+  			println (System.nanoTime + "\t\t ** \t " + id + " = " + sink.real)
   	}
   }
   def begin(){}

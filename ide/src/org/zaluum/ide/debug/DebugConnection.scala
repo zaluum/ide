@@ -21,7 +21,7 @@ class DebugConnection {
   private val boxesToUpdate = Map[String,(DBox,Int)]()
 
   val waitActor = Actor.actor {
-    case Wait => Thread.sleep(250); refresh ! Refresh 
+    case Wait => Thread.sleep(50); refresh ! Refresh 
   }
   
   val refresh : ActorRef = Actor.actor{
