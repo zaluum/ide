@@ -24,8 +24,8 @@ trait RPMSensor {
   self : Box =>
   val speed = OutPort("speed",0.0)
 }
-class SourceBox(name:String,parent:ComposedBox,source:Source[Double]) extends Box(name,parent) {
-  val out = OutPort("out",0.0)
+class SourceBox[A:Manifest](name:String,parent:ComposedBox,source:Source[A]) extends Box(name,parent) {
+  val out = OutPort[A]("out")
   override def init(process:Process){
     source.suscribe(this)
   }
@@ -33,17 +33,17 @@ class SourceBox(name:String,parent:ComposedBox,source:Source[Double]) extends Bo
     out.v = source.v
   }
 }
-class SinkBox(name:String,parent:ComposedBox,sink:Sink[Int]) extends Box(name,parent) {
-  val in = InPort("in",0)
+class SinkBox[A:Manifest](name:String,parent:ComposedBox,sink:Sink[A]) extends Box(name,parent) {
+  val in = InPort[A]("in")
   override def act {
     sink.write(in.v);
   }
 }
 
 class Time(name:String,parent:ComposedBox) extends Box(name,parent){
-  val out = OutPort("out",0)
+  val out = OutPort[Long]("out")
   override def act (process:Process) {
-    out.v = (process.time.nowNano / 1000000) .asInstanceOf[Int]
+    out.v = (process.time.nowNano / 1000000)
     process.time .queue(this, 10)
   }
 }

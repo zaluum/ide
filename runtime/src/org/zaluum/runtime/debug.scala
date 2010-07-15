@@ -99,8 +99,8 @@ object Debug2Model extends VisualModel{
       def deserialize(p:ModelProtos.Bendpoint) =  Bendpoint((p.getP1.getX, p.getP1.getY),(p.getP2.getX, p.getP2.getY)) 
       w.getBendpointList map {deserialize(_)}
     }
-    def boundsToPosSize(r:ModelProtos.Rectangle)= {
-    	((r.getLeftUp.getX,r.getLeftUp.getX),(r.getRightDown.getX - r.getLeftUp.getX, r.getRightDown.getY - r.getLeftUp.getY))
+    def boundsToPosSize(rect:ModelProtos.Rectangle)= {
+    	((rect.getLeftUp.getX,rect.getLeftUp.getY),(rect.getRightDown.getX - rect.getLeftUp.getX, rect.getRightDown.getY - rect.getLeftUp.getY))
     }
     def deserializeScript(pb:ModelProtos.Box, fqName : String) = {
       val myFQName = fqName + "/" + pb.getId

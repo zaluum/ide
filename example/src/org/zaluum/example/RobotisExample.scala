@@ -27,33 +27,29 @@ class RobotisExample extends ModelBuilder{
     
     new MainBox {
       val sourcem1 = new SourceBox("Source1",this,io.m1PositionSource)
-      sourcem1.pos = (0,0,50,50)
       val sourcem2 = new SourceBox("Source2",this,io.m2PositionSource)
-      sourcem2.pos = (0,100,50,50)
-
       val sourcem3 = new SourceBox("Source3",this,io.m3PositionSource)
-      sourcem3.pos = (0,200,50,50)
 
       val m1 = new AX12Motor("M1",this,io.driver,3)
-      m1.pos = (200,0, 70,90)
       val m2 = new AX12Motor("M2",this,io.driver,10)
-      m2.pos = (200,100, 70,90)
       val m3 = new AX12Motor("M3",this,io.driver,12)
-      m3.pos = (200,200, 70,90)
+      
       val t = new Time("time",this)
-      val sin = new Op("sin",this)( (x : Int) => 
-        math.abs((math.sin(x/500.0)+1) * 512))
-      val c = new SinkBox("timeSink",this,io.consoleSink)
-      //t.out connect c.in
+      val sin = new Op("sin",this)( (x:Long) =>  (math.sin(x/500.0)+1) * 512)
+      
       t.out connect sin.in
-      val torque = new Const ("one", this, 0)
       sin.out connect m1.goalPosition
-      //sourcem1.out connect m1.goalPosition 
       sourcem2.out connect m2.goalPosition 
       sourcem3.out connect m3.goalPosition 
       
-      
+      sourcem1.pos = (  0,  0, 50, 50)
+      sourcem2.pos = (  0,200, 50, 50)
+      sourcem3.pos = (  0,400, 50, 50)
+      m1.pos       = (300,  0,150,150)
+      m2.pos       = (300,200,150,150)
+      m3.pos       = (300,400,150,150)
     //  torque.out connect io.m1TorqueEnabledSink
+    //  val c = new SinkBox("timeSink",this,io.consoleSink)
     }
   }
 }
