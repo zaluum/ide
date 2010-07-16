@@ -1,6 +1,6 @@
 package org.zaluum.ide
 import org.eclipse.jface.viewers.CellEditor
-import org.eclipse.swt.widgets.Text
+import org.eclipse.swt.widgets.{Text,Display}
 import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.gef.tools.CellEditorLocator
 import org.eclipse.draw2d.Figure
@@ -49,6 +49,15 @@ object Utils {
            func()
        }
    }
+  }
+  def inSWT(toRun: =>Unit)(implicit display:Display){
+    if (Display.getCurrent!=null) 
+      toRun
+    else{
+      (if (display==null)
+        Display.getDefault
+       else display).asyncExec(new Runnable {override def run {toRun}})
+    }
   }
 }
 

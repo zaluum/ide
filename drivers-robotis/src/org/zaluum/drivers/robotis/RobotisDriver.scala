@@ -1,5 +1,5 @@
 package org.zaluum.drivers.robotis
-import scala.collection.mutable.{Map,Set}
+import scala.collection.mutable.{Map,Set,Buffer}
 import scala.collection.immutable.{Map => IMap}
 import org.zaluum.runtime.{Source,Sink}
 import se.scalablesolutions.akka.actor.{Actor,ActorRef}
@@ -12,27 +12,20 @@ class RobotisDriver(setup : Setup,
     val port : String = "/dev/ttyUSB0",
     val baud : Int = 57600) extends Driver{
   
-  private case class RobotisPositionSource(id:Int) extends DefaultSource[Int]
-  private case class RobotisPositionSink(id:Int) extends DefaultSink[Int] 
-  private case class RobotisTorqueSink(id:Int) extends DefaultSink[Int] 
+  private case class RobotisCommandSink(id:Int) extends DefaultSink[RobotisCommand] 
   private case class RobotisFeedbackSource(id:Int) extends DefaultSource[RobotisFeedback] 
 
-  private val sourceMap = Map[Int,RobotisPositionSource]()
-  private val sinkMap = Map[Int,RobotisPositionSink]()
-  private val torqueSinkMap = Map[Int,RobotisTorqueSink]()
-  private val feedbackMap = Map[Int,RobotisFeedbackSource]()
+  private val sinkMap = Map[Int,RobotisCommandSink]()
+  private val sourceMap = Map[Int,RobotisFeedbackSource]()
   
   setup.registerDriver("robotis",this)
   
   private var realtime : ActorRef = null
-  def positionSourceForId(id : Int) : Source[Int] = Util.cache(id,sourceMap){RobotisPositionSource(id)}
-  def feedbackSource(id:Int) : Source[RobotisFeedback] = Util.cache(id,feedbackMap){RobotisFeedbackSource(id:Int)}
-
-  def positionSinkForId(id : Int) : Sink[Int] = Util.cache(id,sinkMap){RobotisPositionSink(id)}
-  def torqueSinkForId(id : Int) : Sink[Int] = Util.cache(id,torqueSinkMap){RobotisTorqueSink(id)}
-  
+  def feedbackSource(id:Int) : Source[RobotisFeedback] = Util.cache(id,sourceMap){RobotisFeedbackSource(id:Int)}
+  def commandSinkForId(id : Int) : Sink[RobotisCommand] = Util.cache(id,sinkMap){RobotisCommandSink(id)}
+   
   private case object Read
-  private case class Write(s:Sink[_], v:Any)
+  private case class Write(values: List[RobotisCommand])
 
   private var ax12 : AX12 = null
   private val updater = Actor.actorOf(new Updater)
@@ -48,10 +41,10 @@ class RobotisDriver(setup : Setup,
   	      ax12.stop
   	    }
   	    Thread.sleep(100) // wait 100ms to let ax12 restart comms
-    	  ax12 = new AX12(port)
+    	  ax12 = new AX12(port,baud)
     	  ax12.start
     	  //println("connected")
-    	 // ax12.enterTossMode()
+    	  ax12.enterTossMode()
     	  Thread.sleep(200)
   	  }catch {
   	    case ex : Exception => ex.printStackTrace()
@@ -71,7 +64,7 @@ class RobotisDriver(setup : Setup,
   		case Read =>
   		  try {
     		  checkConnection()
-	        for (s <- feedbackMap.values) {
+	        for (s <- sourceMap.values) {
 	          try {
 	            s.write(ax12.get_servo_feedback(s.id))
 	            realtime ! Activate(List()++s.boxes)
@@ -87,19 +80,13 @@ class RobotisDriver(setup : Setup,
             reconnect()
       	}
     		self ! Read  		
-  		case Write(sink,value) =>
+  		case w : Write =>
     		try{
     		  checkConnection()
-    		  (sink,value) match {
-            case (s:RobotisPositionSink, v:Int) =>
-              ax12.set_servo_position(s.id , v)
-            case (s:RobotisTorqueSink, v:Int) =>
-              ax12.set_torque_enabled(s.id, v!=0)
-            case _ =>
-          } 
+    		  ax12.set_multi_servo_command(w.values);
     		}catch{
     		  case ex:Exception => 
-    		    println(ex.toString + "writing " + sink)
+    		    println(ex.toString + "writing " + w)
               reconnect()
 
     		}
@@ -114,10 +101,13 @@ class RobotisDriver(setup : Setup,
    updater.stop 
   }
   def commit(){
-    sinkMap.values foreach {s => if (s.commit) updater ! Write(s,s.real)}
+    var b = List[RobotisCommand]()
+    sinkMap.values foreach {s => if (s.commit) b = s.real :: b}
+    if (!b.isEmpty)
+      updater ! Write(b)
   }
   def begin() = {
     sourceMap.values foreach { _.commit } 
-    feedbackMap.values foreach { _.commit }
+    sinkMap.values foreach { _.commit }
   }
 }

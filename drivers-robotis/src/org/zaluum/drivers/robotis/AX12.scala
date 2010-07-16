@@ -229,6 +229,32 @@ class AX12(port:String, baud:Int = 57600){
       val moving = response(15)
       RobotisFeedback (servoId, position, speed, sload, voltage, temperature, moving)          
   }
-  
+  def set_multi_servo_command(commands : List[RobotisCommand]) {
+    val buff = Buffer[Int]()
+    def addbyte(i:Int) = buff += i.asInstanceOf[Byte]
+    def addlohi(i:Int) = {
+      val l = lohi(i)
+      buff += l._1
+      buff += l._2
+    }
+    var len= -1
+    for (c <- commands) {
+      addbyte(c.id)
+      addbyte(if (c.torqueEnable) 1 else 0)
+      addbyte(if (c.led) 1 else 0)
+      addbyte(c.cwmargin)
+      addbyte(c.ccwmargin)
+      addbyte(c.cwslope)
+      addbyte(c.ccwslope)
+      addlohi(c.goalPosition)
+      addlohi(c.movingSpeed)
+      addlohi(c.torqueLimit )
+      if (len== -1) len = buff.length
+    }
+    //println("sending " + buff + " from " + commands + " len " + len)
+    ser.sync_write_to_servos(AX_TORQUE_ENABLE, len-1, buff)
+  }
 }
+case class RobotisCommand(id:Int, torqueEnable: Boolean, led:Boolean, cwmargin : Int, ccwmargin: Int, cwslope : Int, ccwslope: Int,
+      goalPosition:Int, movingSpeed:Int, torqueLimit:Int)
 case class RobotisFeedback(id : Int, position : Int, speed : Int, sload: Int, voltage: Int, temperature: Int, moving: Int)

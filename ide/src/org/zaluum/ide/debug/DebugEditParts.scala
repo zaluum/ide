@@ -71,7 +71,6 @@ object DebugEditParts extends Parts{
   class DBoxEditPart(val model:DBox) extends BoxEditPart {
     lazy val debugModel = getRoot.getChildren.get(0).asInstanceOf[DModelEditPart].model
     override def activate {
-      println(model  + " " + model.pos + " "+model.size)
       debugModel.conn.suscribe(model)
       super.activate
     }
@@ -87,7 +86,7 @@ object DebugEditParts extends Parts{
     lazy val debugModel = getRoot.getChildren.get(0).asInstanceOf[DModelEditPart].model
 
     override def editCommand(v:String) = {
-      debugModel.conn.push(model,Integer.parseInt(v))
+      debugModel.conn.push(model,java.lang.Double.parseDouble(v))
       null
     }
     override def contents = Array()

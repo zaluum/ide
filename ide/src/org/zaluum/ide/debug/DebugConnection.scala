@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.ConcurrentMap
 import org.zaluum.ide.Utils._
 import scala.collection.JavaConversions._
-import scala.collection.mutable.Map
+import scala.collection.mutable.{Map,Buffer}
 import com.google.common.collect.MapMaker
 
 class DebugConnection {
@@ -21,24 +21,27 @@ class DebugConnection {
   private val boxesToUpdate = Map[String,(DBox,Int)]()
 
   val waitActor = Actor.actor {
-    case Wait => Thread.sleep(50); refresh ! Refresh 
+    case Wait => Thread.sleep(100); refresh ! Refresh 
   }
   
   val refresh : ActorRef = Actor.actor{
     case Refresh => 
       val s = DebugConnection.this.synchronized{Set() ++ boxesToUpdate.keys}
       val odr : Option[ModelProtos.DebugResponse] = process !! DebugRequest(s)
+      val ports= Buffer[DPort]()
       for (dr <- odr; v <- dr.getValueList){
         DebugConnection.this.synchronized{boxesToUpdate.get(v.getBoxFQ)} match {
           case Some((box,portValue)) if (box != null) =>
             for (portValue <- v.getPortValueList;
             port <- box.ports.find{_.name==portValue.getPortName}){
               port.value = portValue.getValue
-              port.notifyObservers
+              ports += port
             }
           case _ => println(v.getBoxFQ  + " not found")
         }        
+        inSWT{ ports foreach { _.notifyObservers} }(null)
       }
+      
       waitActor ! Wait
   }
   

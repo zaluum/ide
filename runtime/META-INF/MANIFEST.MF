@@ -4,10 +4,10 @@ Bundle-Name: Java
 Bundle-SymbolicName: org.zaluum.runtime;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Require-Bundle: 
- scala.library,
  com.google.protobuf;bundle-version="2.3.0";visibility:=reexport,
  com.google.common;bundle-version="1.0.0",
- akka;bundle-version="0.9.0";visibility:=reexport
+ akka;bundle-version="0.9.0";visibility:=reexport,
+ org.scala-ide.scala.library;bundle-version="2.8.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: org.zaluum.runtime,

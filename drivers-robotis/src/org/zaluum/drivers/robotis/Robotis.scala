@@ -182,7 +182,7 @@ class Robotis(val port:String, val baud:Int) {
   def writeRead(servoId:Int, instruction:Int,params:Buffer[Int]) = {
     writePacket(servoId,instruction,params)
     // wait for response packet from AX-12+
-    Thread.sleep(1)
+    Thread.sleep(0,500000)
     val l = readData
     l
   }
@@ -241,6 +241,6 @@ class Robotis(val port:String, val baud:Int) {
        sync_write_to_servos(AX_GOAL_POSITION_L, ( (1, 20, 1), (2 ,38, 2) ))
    */
 	def sync_write_to_servos(address:Int, packetLen : Int , data:Buffer[Int]){
-	  writePacket(AX_BROADCAST, AX_SYNC_WRITE, Buffer(address,data.size) ++ data)
+	  writePacket(AX_BROADCAST, AX_SYNC_WRITE, Buffer(address,packetLen) ++ data)
 	}
 }

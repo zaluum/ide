@@ -1,6 +1,6 @@
 package org.zaluum.example;
 import org.zaluum.runtime.{Box, InPort,OutPort,ComposedBox,Process, Sink,Source}
-import org.zaluum.drivers.robotis.{RobotisDriver, RobotisFeedback}
+import org.zaluum.drivers.robotis.{RobotisDriver, RobotisFeedback, RobotisCommand}
 class Op[A:Manifest,B:Manifest](name:String,parent:ComposedBox)(op : A => B) extends Box(name,parent) {
   val in = InPort[A]("in")
   val out = OutPort[B]("out")
@@ -55,15 +55,15 @@ class AX12Motor(name:String,parent:ComposedBox,driver : RobotisDriver, id:Int) e
   val temperature = OutPort("temp",0.0)
   val moving = OutPort("moving",false)
   
-  val torqueEnable = InPort("torque",false)
+  val torqueEnable = InPort("torque",true)
   val led = InPort("led", false)
   val cwMargin = InPort("CWMargin",0.0)
   val ccwMargin = InPort("CCWMargin",0.0)
-  val cwSlope = InPort("CWSlope",0.0)
-  val ccwSlope = InPort("CCWSlope",0.0)
+  val cwSlope = InPort("CWSlope",32.0)
+  val ccwSlope = InPort("CCWSlope",32.0)
   val goalPosition = InPort("goalPosition",0.0)
-  val goalSpeed = InPort("goalSpeed",0.0)
-  val torqueLimit = InPort("torqueLimit",0.0)
+  val goalSpeed = InPort("goalSpeed",144.0)
+  val torqueLimit = InPort("torqueLimit",100.0)
   val punch = InPort("punch",0.0)
   override def init(process:Process) {
     driver.feedbackSource(id).suscribe(this)
@@ -78,7 +78,23 @@ class AX12Motor(name:String,parent:ComposedBox,driver : RobotisDriver, id:Int) e
       temperature.v = v.temperature 
       moving.v = v.moving ==1
     }
-    driver.positionSinkForId(id).write(goalPosition.v.asInstanceOf[Int])
+    def scale(in:Double, min: Double, max:Double, newmin:Int, newmax:Int) = {
+      val scin = if (in>max) max else if (in<min) min else in
+      ((scin / ((max - min) / (newmax - newmin))) + newmin).toInt;
+    }
+    val r = RobotisCommand(id, 
+        torqueEnable.v, 
+        led.v, 
+        cwMargin.v.asInstanceOf[Int], 
+        ccwMargin.v.asInstanceOf[Int], 
+        cwSlope.v.asInstanceOf[Int], 
+        ccwSlope.v.asInstanceOf[Int],
+        scale(goalPosition.v+150, 0,300, 0,1023),
+        scale(goalSpeed.v,0,144,0,1023),
+        scale(torqueLimit.v,0,100,0,1023)
+        )
+        
+    driver.commandSinkForId(id).write(r)
   }
   
 }
