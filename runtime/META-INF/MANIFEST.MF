@@ -9,7 +9,8 @@ Require-Bundle:
  akka;bundle-version="0.9.0";visibility:=reexport,
  org.scala-ide.scala.library;bundle-version="2.8.0"
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Export-Package: org.zaluum.runtime,
- org.zaluum.runtime.serial
+ org.zaluum.runtime.serial,
+ se.scalablesolutions.akka.dispatch
 Import-Package: org.osgi.framework;version="1.5.0"

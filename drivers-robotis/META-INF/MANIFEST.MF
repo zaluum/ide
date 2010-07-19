@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Drivers_robotis
 Bundle-SymbolicName: org.zaluum.drivers.robotis
 Bundle-Version: 1.0.0.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Require-Bundle: org.zaluum.runtime;bundle-version="1.0.0",
  akka;bundle-version="0.9.1",
  com.google.protobuf;bundle-version="2.3.0",

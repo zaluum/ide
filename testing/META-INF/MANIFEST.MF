@@ -5,7 +5,7 @@ Bundle-SymbolicName: org.zaluum.testing
 Bundle-Version: 1.0.0.qualifier
 Bundle-Activator: org.zaluum.testing.Activator
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Import-Package: org.osgi.framework;version="1.5.0"
 Require-Bundle: org.zaluum.runtime;bundle-version="1.0.0",
  org.scala-ide.scala.library;bundle-version="2.8.0"

@@ -32,9 +32,9 @@ class RobotisExample extends ModelBuilder{
       val m3 = new AX12Motor("M3",this,io.driver,12)
       
       val t = new Time("time",this)
-      val sin1 = new Op("sin1",this)( (x:Long) =>  ((math.sin(x/500)+1) * 20))
-      val sin2 = new Op("sin2",this)( (x:Long) =>  ((math.sin(x/400)+1) * 20))
-      val sin3= new Op("sin3",this)( (x:Long) =>  ((math.sin(x/300)+1) * 20))
+      val sin1 = new Op("sin1",this)( (x:Long) =>  ((math.sin(x/500.0)+1.0) * 20.0))
+      val sin2 = new Op("sin2",this)( (x:Long) =>  ((math.sin(x/400.0)+1.0) * 20.0))
+      val sin3= new Op("sin3",this)( (x:Long) =>  ((math.sin(x/300.0)+1.0) * 20.0))
       
       t.out connect sin1.in
       t.out connect sin2.in

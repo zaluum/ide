@@ -37,17 +37,16 @@
 <repository location="http://download.eclipse.org/eclipse/updates/3.5"/>
 </location>
 <location path="${project_loc:targetplatform}/ignored" type="Directory"/>
-<location path="${project_loc:targetplatform}/third" type="Directory"/>
 <location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
 <unit id="org.eclipse.ajdt.feature.group" version="2.1.0.e35x-release-20100630-1500"/>
 <unit id="org.eclipse.contribution.weaving.feature.group" version="2.1.0.e35x-release-20100630-1500"/>
 <unit id="org.eclipse.equinox.weaving.sdk.feature.group" version="1.0.0.v20090817"/>
 <repository location="http://download.eclipse.org/tools/ajdt/35/update"/>
 </location>
+<location path="${project_loc:targetplatform}/third" type="Directory"/>
 <location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
-<unit id="org.scala-ide.sdt.weaving.feature.feature.group" version="1.0.0.201007150009"/>
-<unit id="org.scala-ide.sdt.feature.feature.group" version="1.0.0.201007150009"/>
-<repository location="http://download.scala-ide.org/nightly-update-tycho-reorg-2.8.0.RC6"/>
+<unit id="org.scala-ide.sdt.feature.feature.group" version="1.0.0.201007190832"/>
+<repository location="http://download.scala-ide.org/nightly-update-tycho-reorg-2.8.0.final"/>
 </location>
 </locations>
 </target>

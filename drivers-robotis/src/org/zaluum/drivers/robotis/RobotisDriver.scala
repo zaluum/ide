@@ -3,9 +3,10 @@ import scala.collection.mutable.{Map,Set,Buffer}
 import scala.collection.immutable.{Map => IMap}
 import org.zaluum.runtime.{Source,Sink}
 import se.scalablesolutions.akka.actor.{Actor,ActorRef}
+import se.scalablesolutions.akka.dispatch.RealtimeThreadBasedDispatcher
 import org.zaluum.runtime._
 import scala.util.control.Exception._
-
+import scala.concurrent.SyncVar
 
 class RobotisDriver(setup : Setup, 
     val refresh : Int = 100, 
@@ -24,12 +25,13 @@ class RobotisDriver(setup : Setup,
   def feedbackSource(id:Int) : Source[RobotisFeedback] = Util.cache(id,sourceMap){RobotisFeedbackSource(id:Int)}
   def commandSinkForId(id : Int) : Sink[RobotisCommand] = Util.cache(id,sinkMap){RobotisCommandSink(id)}
    
-  private case object Read
-  private case class Write(values: List[RobotisCommand])
-
+  private case object Write
+  @volatile private var  toWrite = List[RobotisCommand]()
   private var ax12 : AX12 = null
   private val updater = Actor.actorOf(new Updater)
   private  class Updater extends Actor {
+    self.dispatcher = new RealtimeThreadBasedDispatcher(self)
+
     def checkConnection() {
       if (ax12 == null)
         reconnect()
@@ -61,7 +63,7 @@ class RobotisDriver(setup : Setup,
   	}
   	  	
   	override def receive = {
-  		case Read =>
+  		case  Write =>
   		  try {
     		  checkConnection()
 	        for (s <- sourceMap.values) {
@@ -74,28 +76,21 @@ class RobotisDriver(setup : Setup,
 	              reconnect()
 	          }
 	        }
+    		  val w = toWrite
+    		  if (!w.isEmpty)
+    		  ax12.set_multi_servo_command(w);
       	}catch{
       	  case ex: Exception => 
       	    println(ex.toString + "data")
             reconnect()
       	}
-    		self ! Read  		
-  		case w : Write =>
-    		try{
-    		  checkConnection()
-    		  ax12.set_multi_servo_command(w.values);
-    		}catch{
-    		  case ex:Exception => 
-    		    println(ex.toString + "writing " + w)
-              reconnect()
-
-    		}
+    		self ! Write  		
   	}
   }
   def start(realtime : ActorRef) {
   	this.realtime = realtime
     updater.start
-    updater ! Read
+    updater ! Write
   }
   def stop() {
    updater.stop 
@@ -103,8 +98,9 @@ class RobotisDriver(setup : Setup,
   def commit(){
     var b = List[RobotisCommand]()
     sinkMap.values foreach {s => if (s.commit) b = s.real :: b}
-    if (!b.isEmpty)
-      updater ! Write(b)
+    if (!b.isEmpty){
+      toWrite = b
+    }
   }
   def begin() = {
     sourceMap.values foreach { _.commit } 

@@ -27,7 +27,7 @@ class DebugConnection {
   val refresh : ActorRef = Actor.actor{
     case Refresh => 
       val s = DebugConnection.this.synchronized{Set() ++ boxesToUpdate.keys}
-      val odr : Option[ModelProtos.DebugResponse] = process !! DebugRequest(s)
+      val odr = (process !! DebugRequest(s)).asInstanceOf[Option[ModelProtos.DebugResponse]]
       val ports= Buffer[DPort]()
       for (dr <- odr; v <- dr.getValueList){
         DebugConnection.this.synchronized{boxesToUpdate.get(v.getBoxFQ)} match {
@@ -64,7 +64,7 @@ class DebugConnection {
   refresh ! Refresh
   
   def contents = {
-      val frag : Option[ModelProtos.ModelFragment] = awaitActor{process !! DebugModelEvent("/")}
+      val frag = awaitActor{(process !! DebugModelEvent("/")).asInstanceOf[Option[ModelProtos.ModelFragment]]}
       frag map {p => Debug2Model.Deserialize.deserialize(p)}
   }
   
