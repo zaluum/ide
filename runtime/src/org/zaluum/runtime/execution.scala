@@ -17,11 +17,7 @@ trait ModelBuilder {
   def create(setup:Setup) : MainBox
 }
 
-class MainBox extends ComposedBox(name="",parent=null) {
-  override lazy val fqName:String = ""
-  override private[runtime] def add(port:Port[_]) = error ("Port cannot be added")
-  override def activate():Unit = {}
-}
+
 import Debug2Model._
 
 class Process (begin : ()=> Unit, end : ()=> Unit, val time:  WallTime) {
@@ -36,8 +32,8 @@ class Process (begin : ()=> Unit, end : ()=> Unit, val time:  WallTime) {
   }
   def load (mainBox : MainBox){
   	root = Some(mainBox)
-    def visit(b:Box) : Unit = b match{
-      case c:ComposedBox =>
+    def visit(b:BaseBox) : Unit = b match{
+      case c:DirectedBox =>
         c.children.values foreach {child =>visit(child)}
         c.init(this)
         c.activate
@@ -111,7 +107,7 @@ class Process (begin : ()=> Unit, end : ()=> Unit, val time:  WallTime) {
       (boxList,None)
   }
   
-  def findBox(fqName:String) : Option[Box] = root flatMap{_.find(boxFqNameToList(fqName))}
+  def findBox(fqName:String) : Option[BaseBox] = root flatMap{_.find(boxFqNameToList(fqName))}
 
   def findComposed(fqName : String) : Option[ComposedBox] = findBox(fqName) match {
     case Some(c:ComposedBox) => Some(c)

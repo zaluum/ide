@@ -1,7 +1,7 @@
 package org.zaluum.runtime
 import scala.collection.immutable._
 
-abstract class Director(val c:ComposedBox){
+abstract class Director(val c:DirectedBox){
   def run(process:Process):Unit
   def activate(box:Box) 
 }
@@ -21,8 +21,10 @@ class CyclicDirector(c: ComposedBox) extends Director(c){
   }
   def activate(box:Box){}
 }
-class EventDirector(c:ComposedBox) extends Director(c){
-  private var queued : TreeSet[Box]= TreeSet[Box]()(Ordering.by(_.name)) ++ c.children.values
+class EventDirector(c:DirectedBox) extends Director(c){
+	assert(c!=null)
+  private var queued : TreeSet[Box]= TreeSet[Box]()(Ordering.by(_.num)) 
+  		++ c.children.values
   override def run(process:Process) {
     while(!queued.isEmpty){
       val b = queued.firstKey

@@ -27,7 +27,7 @@ class RealtimeThreadFactory private (val back : ThreadFactory) extends ThreadFac
 	def newThread(r:Runnable) : Thread = {
   		if (customMethod.isDefined) {
   			val newThread = back.newThread(r);
-  			customMethod.get.invoke(newThread, 1.asInstanceOf[Integer]);
+  			customMethod.get.invoke(newThread, 1.asInstanceOf[java.lang.Integer]);
   			println("New custom OpenJDK thread" + newThread);
   			return newThread 				
   		} else if (realtimeConstructor.isDefined) {

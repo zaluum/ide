@@ -1,15 +1,15 @@
 package org.zaluum.example;
-import org.zaluum.runtime.{Box, InPort,OutPort,ComposedBox,Process, Sink,Source}
+import org.zaluum.runtime.{Box, InPort,OutPort,ComposedBox,DirectedBox,Process, Sink,Source}
 import org.zaluum.drivers.robotis.{RobotisDriver, RobotisFeedback, RobotisCommand}
-class Op[A:Manifest,B:Manifest](name:String,parent:ComposedBox)(op : A => B) extends Box(name,parent) {
+class Op[A:Manifest,B:Manifest](name:String,parent:DirectedBox)(op : A => B) extends Box(name,parent) {
   val in = InPort[A]("in")
   val out = OutPort[B]("out")
   override def act { out.v = op(in.v) }
 }
-class Const[A:Manifest](name : String, parent:ComposedBox, const : A) extends Box(name,parent) {
+class Const[A:Manifest](name : String, parent:DirectedBox, const : A) extends Box(name,parent) {
   val  out = OutPort[A]("out",const)
 }
-class Forward[A:Manifest](name:String,parent:ComposedBox) extends Op[A,A](name,parent)({x=>x})
+class Forward[A:Manifest](name:String,parent:DirectedBox) extends Op[A,A](name,parent)({x=>x})
 
 trait Motor {
   self : Box => 
@@ -24,7 +24,7 @@ trait RPMSensor {
   self : Box =>
   val speed = OutPort("speed",0.0)
 }
-class SourceBox[A:Manifest](name:String,parent:ComposedBox,source:Source[A]) extends Box(name,parent) {
+class SourceBox[A:Manifest](name:String,parent:DirectedBox,source:Source[A]) extends Box(name,parent) {
   val out = OutPort[A]("out")
   override def init(process:Process){
     source.suscribe(this)
@@ -33,21 +33,21 @@ class SourceBox[A:Manifest](name:String,parent:ComposedBox,source:Source[A]) ext
     out.v = source.v
   }
 }
-class SinkBox[A:Manifest](name:String,parent:ComposedBox,sink:Sink[A]) extends Box(name,parent) {
+class SinkBox[A:Manifest](name:String,parent:DirectedBox,sink:Sink[A]) extends Box(name,parent) {
   val in = InPort[A]("in")
   override def act {
     sink.write(in.v);
   }
 }
 
-class Time(name:String,parent:ComposedBox) extends Box(name,parent){
+class Time(name:String,parent:DirectedBox) extends Box(name,parent){
   val out = OutPort[Long]("out")
   override def act (process:Process) {
     out.v = (process.time.nowNano / 1000000)
     process.time .queue(this, 10)
   }
 }
-class AX12Motor(name:String,parent:ComposedBox,driver : RobotisDriver, id:Int) extends Box(name,parent) {
+class AX12Motor(name:String,parent:DirectedBox,driver : RobotisDriver, id:Int) extends Box(name,parent) {
   val position = OutPort("position", 0.0)
   val speed = OutPort("speed",0.0)
   val sload = OutPort("sload",0.0)

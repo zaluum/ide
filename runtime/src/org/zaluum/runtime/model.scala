@@ -89,25 +89,13 @@ abstract class Port[A : Manifest](val name:String,val box:Box) extends Named wit
         .setPosition((0,0))
   }
 }
-abstract class Box(val name:String,val parent:ComposedBox, var pos : (Int,Int,Int,Int) = (0,0,50,50))extends Named with UniqueNamed with Subject{
+trait BaseBox extends Named with UniqueNamed with Subject{
+	val name:String
+	var pos : (Int,Int,Int,Int) = (0,0,50,50)
 	val ports:Map[String,Port[_]] = Map()
 	val inPorts:Set[Port[_]] = Set()
 	val outPorts:Set[Port[_]] = Set()
-	lazy val fqName:String = parent.fqName + "/" + name
-	if (parent!=null) 
-		parent.add(this)
-	def InPort[T](name:String)(implicit m : Manifest[T]) = new InPort[T](name,this)
-	def InPort[T](name:String, value:T)(implicit m : Manifest[T]) = {
-		val i = new InPort[T](name,this)
-		i.v = value
-		i
-	}
-  def OutPort[T](name:String)(implicit m : Manifest[T])  = new OutPort[T](name,this)
-  def OutPort[T](name:String, value:T)(implicit m : Manifest[T])  = {
-		val o = new OutPort[T](name,this)
-		o.v = value
-		o
-	}
+	def fqName:String 
 	
 	private[runtime] def add(port:Port[_]) = { 
 	  addTemplate(ports,port)
@@ -120,14 +108,7 @@ abstract class Box(val name:String,val parent:ComposedBox, var pos : (Int,Int,In
 	def act(process:Process):Unit = act
 	def act {}
 	def init(process:Process)  {}
-	def activate():Unit = {
-	  assert(parent!=null,this)
-	  parent.director.activate(this); parent.activate()
-	}
-	def find(names : List[String]):Option[Box] = names match {
-	  case Nil => Some(this)
-	  case _ => None
-	}
+	def activate():Unit 
 	protected def toProto = {
 	  val b = ModelProtos.Box.newBuilder
 	  b.setType(ModelProtos.BoxType.SCRIPT)
@@ -138,22 +119,47 @@ abstract class Box(val name:String,val parent:ComposedBox, var pos : (Int,Int,In
 	  b	  
 	}
 	lazy val proto = toProto.build
+	
 
 }
-abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,parent){
+abstract class Box (val name:String, val parent:DirectedBox) extends BaseBox{
+	val num = parent.children.size
+	parent.add(this)	
+	lazy val fqName : String =  parent.fqName + "/" + name
+	def activate() {
+	  parent.director.activate(this); parent.activate()
+	}
+	def InPort[T](name:String)(implicit m : Manifest[T]) = new InPort[T](name,this)
+	def InPort[T](name:String, value:T)(implicit m : Manifest[T]) = {
+		val i = new InPort[T](name,this)
+		i.v = value
+		i
+	}
+  def OutPort[T](name:String)(implicit m : Manifest[T])  = new OutPort[T](name,this)
+  def OutPort[T](name:String, value:T)(implicit m : Manifest[T])  = {
+		val o = new OutPort[T](name,this)
+		o.v = value
+		o
+	}
+
+}
+trait DirectedBox extends  BaseBox {
+	val director = new EventDirector(this)	
 	val children : Map[String,Box] = Map()
-	val director : Director = new EventDirector(this)
-	override def find(names : List[String]):Option[Box] = names match {
-    case Nil => Some(this)
-    case head :: tail => children.get(head) match {
-      case Some(b : Box) => b.find(tail)
-      case _ => None
-    }
-  }
-	private[runtime] def add(box:Box) = addTemplate(children,box)
+	private[runtime] def add(box:Box) = addTemplate(children,box)	
+	def find(names : List[String]):Option[BaseBox] = names match {
+		case Nil => Some(this)
+		case head :: tail => children.get(head) match {
+			case Some(b : Box) => None //FIXME
+			case _ => None
+		}
+	}
 	override final def act(process:Process):Unit = {director.run(process)} // TODO pattern strategy
 	override final def act {} 
-  override lazy val proto : ModelProtos.Box = {
+}
+abstract class ComposedBox(name:String, parent:DirectedBox) extends Box(name,parent) with DirectedBox{
+
+	override lazy val proto : ModelProtos.Box = {
     val box = toProto
     box.setType(ModelProtos.BoxType.COMPOSED);   
 	  val sorted = (List()++children.values).sorted(Ordering.by((_:Box).name))
@@ -181,4 +187,9 @@ abstract class ComposedBox(name:String, parent:ComposedBox) extends Box(name,par
     wsorted foreach {w => box.addWire(w)}
 	  box.build
   }
+}
+class MainBox extends DirectedBox {
+	val name = ""
+  override lazy val fqName:String = ""
+  override def activate():Unit = {}
 }

@@ -3,7 +3,7 @@ package org.zaluum.example
 import org.zaluum.runtime._
 import java.util.concurrent._
 
-class Squarewave(period: Int,name:String, parent:ComposedBox) extends Box(name,parent) {
+class Squarewave(period: Int,name:String, parent:DirectedBox) extends Box(name,parent) {
   val o = OutPort("o",0)
   override def act(process:Process):Unit = {
     o.v = if (o.v==0) 1 else 0
@@ -11,7 +11,7 @@ class Squarewave(period: Int,name:String, parent:ComposedBox) extends Box(name,p
   }
 }
 
-class Sum(name:String,parent:ComposedBox) extends Box(name,parent){
+class Sum(name:String,parent:DirectedBox) extends Box(name,parent){
 	val a = InPort("a",0)
 	val b = InPort("b",0)
 	val c = InPort("c",0)
@@ -19,7 +19,7 @@ class Sum(name:String,parent:ComposedBox) extends Box(name,parent){
 	override def act(process:Process) = o.v = a.v*b.v+c.v
 }
 
-class SquareSum(name:String, parent:ComposedBox) extends ComposedBox(name,parent){
+class SquareSum(name:String, parent:DirectedBox) extends ComposedBox(name,parent){
 	val o = OutPort("o",0)
 	val sq1 = new Squarewave(200,"SQ1",this)
 	val sq2 = new Squarewave(250,"SQ2",this)
@@ -30,7 +30,7 @@ class SquareSum(name:String, parent:ComposedBox) extends ComposedBox(name,parent
 	sq3.o connect sum.c
   sum.o connect o
 }
-class MultiSum(name:String, parent:ComposedBox) extends ComposedBox(name,parent){
+class MultiSum(name:String, parent:DirectedBox) extends ComposedBox(name,parent){
   val SS1 = new SquareSum("SS1",this) 
   val SS2 = new SquareSum("SS2",this)
   val SS3 = new SquareSum("SS3",this) 
