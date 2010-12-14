@@ -112,6 +112,7 @@ class Process (begin : ()=> Unit, end : ()=> Unit, val time:  WallTime) {
   def findComposed(fqName : String) : Option[ComposedBox] = findBox(fqName) match {
     case Some(c:ComposedBox) => Some(c)
     case None => None
+    case p => throw new Exception(""+p)
   }
 
   def findPort(fqName:String) : Option[Port[_]]= root flatMap { r=>

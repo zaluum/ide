@@ -1,9 +1,9 @@
 package org.zaluum.drivers.robotis
 import scala.collection.mutable.{Map,Set,Buffer}
 import scala.collection.immutable.{Map => IMap}
-import org.zaluum.runtime.{Source,Sink}
+/*import org.zaluum.runtime.{Source,Sink}
 import se.scalablesolutions.akka.actor.{Actor,ActorRef}
-import se.scalablesolutions.akka.dispatch.RealtimeThreadBasedDispatcher
+//import se.scalablesolutions.akka.dispatch.RealtimeThreadBasedDispatcher
 import org.zaluum.runtime._
 import scala.util.control.Exception._
 import scala.concurrent.SyncVar
@@ -30,7 +30,7 @@ class RobotisDriver(setup : Setup,
   private var ax12 : AX12 = null
   private val updater = Actor.actorOf(new Updater)
   private  class Updater extends Actor {
-    self.dispatcher = new RealtimeThreadBasedDispatcher(self)
+   // self.dispatcher = new RealtimeThreadBasedDispatcher(self)
 
     def checkConnection() {
       if (ax12 == null)
@@ -52,10 +52,10 @@ class RobotisDriver(setup : Setup,
   	    case ex : Exception => ex.printStackTrace()
   	  }
   	}
-    override def init {
+    override def preStart {
       reconnect()
   	}
-  	override def shutdown {
+  	override def postStop {
   	  if (ax12 !=null){
   	    ax12.stop
   	    ax12 =null
@@ -106,4 +106,4 @@ class RobotisDriver(setup : Setup,
     sourceMap.values foreach { _.commit } 
     sinkMap.values foreach { _.commit }
   }
-}
+}*/

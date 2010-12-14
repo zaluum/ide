@@ -1,11 +1,13 @@
 package org.zaluum.ide.debug
-import org.zaluum.runtime._
+
 import org.zaluum.runtime.serial.ModelProtos
 import org.zaluum.runtime.Debug2Model._
+import org.zaluum.runtime.{DebugModelEvent,DebugRequest,Push,Debug2Model,PushValue}
 import se.scalablesolutions.akka.remote.RemoteClient
 import se.scalablesolutions.akka.actor.Actor
 import se.scalablesolutions.akka.actor.ActorRef
 import se.scalablesolutions.akka.actor.Scheduler
+import se.scalablesolutions.akka.remote.MessageSerializer
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.ConcurrentMap
@@ -17,7 +19,8 @@ import com.google.common.collect.MapMaker
 class DebugConnection {
   case object Refresh
   case object Wait
-  private val process = RemoteClient.actorFor("zaluum-service","localhost",9999,classOf[ModelProtos].getClassLoader)
+  private val process = RemoteClient.actorFor("zaluum-service","localhost",9999,classOf[ModelProtos.DebugResponse].getClassLoader)
+  MessageSerializer.setClassLoader(classOf[ModelProtos].getClassLoader)
   private val boxesToUpdate = Map[String,(DBox,Int)]()
 
   val waitActor = Actor.actor {

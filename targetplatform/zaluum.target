@@ -45,8 +45,8 @@
 </location>
 <location path="${project_loc:targetplatform}/third" type="Directory"/>
 <location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
-<unit id="org.scala-ide.sdt.feature.feature.group" version="1.0.0.201007190832"/>
-<repository location="http://download.scala-ide.org/nightly-update-tycho-reorg-2.8.0.final"/>
+<unit id="org.scala-ide.sdt.feature.feature.group" version="1.0.0.201009190257"/>
+<repository location="http://download.scala-ide.org/nightly-update-master-2.8.0.final"/>
 </location>
 </locations>
 </target>

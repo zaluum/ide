@@ -31,7 +31,7 @@ object Utils {
         try{
           promise completeWithResult (body)
         } catch {
-          case e => promise completeWithException (None, e)
+          case e => promise completeWithException (e)
         }
         self.stop
       }

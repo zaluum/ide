@@ -144,8 +144,8 @@ abstract class Box (val name:String, val parent:DirectedBox) extends BaseBox{
 
 }
 trait DirectedBox extends  BaseBox {
-	val director = new EventDirector(this)	
 	val children : Map[String,Box] = Map()
+	val director = new EventDirector(this)	
 	private[runtime] def add(box:Box) = addTemplate(children,box)	
 	def find(names : List[String]):Option[BaseBox] = names match {
 		case Nil => Some(this)

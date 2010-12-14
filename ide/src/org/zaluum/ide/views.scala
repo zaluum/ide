@@ -73,7 +73,7 @@ class ZaluumOutlineFactory(model : PersistentEditParts.PModel) extends EditPartF
 
 
 
-
+/*
 import java.awt.Font;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
@@ -274,4 +274,4 @@ class PlotPage(editor : BaseEditor) extends Page with Observer {
     		}
     	})
   }
-}
+}*/

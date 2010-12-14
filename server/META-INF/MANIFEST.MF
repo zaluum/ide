@@ -7,7 +7,9 @@ Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Import-Package: org.osgi.framework;version="1.5.0"
 Require-Bundle: com.google.protobuf;bundle-version="2.3.0",
- akka;bundle-version="0.9.0",
  org.zaluum.runtime;bundle-version="1.0.0",
- org.scala-ide.scala.library;bundle-version="2.8.0"
+ org.scala-ide.scala.library;bundle-version="2.8.0",
+ se.scalablesolutions.akka.actor;bundle-version="1.0.0",
+ se.scalablesolutions.akka.remote;bundle-version="1.0.0",
+ se.scalablesolutions.akka.osgi.dependencies.bundle;bundle-version="1.0.0"
 Service-Component: META-INF/component.xml

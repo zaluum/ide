@@ -110,8 +110,7 @@ class PasteAction(part:IWorkbenchPart) extends ClipboardAction(part) {
     setId(ActionFactory.PASTE.getId());
     setText("Paste");
     setToolTipText("Paste");
-    val sharedImages = PlatformUI.getWorkbench()
-        .getSharedImages();
+    val sharedImages = PlatformUI.getWorkbench().getSharedImages();
     setImageDescriptor(sharedImages
         .getImageDescriptor(ISharedImages.IMG_TOOL_PASTE));
     setDisabledImageDescriptor(sharedImages

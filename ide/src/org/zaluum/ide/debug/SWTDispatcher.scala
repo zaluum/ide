@@ -1,7 +1,8 @@
 package se.scalablesolutions.akka.dispatch
 import se.scalablesolutions.akka.actor.ActorRef
 import org.eclipse.swt.widgets.Display
-class ThreadBasedDispatcher(private val actor: ActorRef, private val display:Display) extends MessageDispatcher {
+class ThreadBasedDispatcher(private val actor: ActorRef, private val display:Display) 
+  extends MessageDispatcher {
   private val name = actor.getClass.getName + ":" + actor.uuid
   @volatile private var active: Boolean = false
 
@@ -20,10 +21,10 @@ class ThreadBasedDispatcher(private val actor: ActorRef, private val display:Dis
   def isShutdown = !active
 
   def usesActorMailbox = false
-
+  def mailboxSize(actorRef: ActorRef):Int = 0
   def shutdown = if (active) {
     log.debug("Shutting down SWTThreadBasedDispatcher [%s]", name)
     active = false
-    references.clear
+    //references.clear
   }
 }

@@ -9,7 +9,7 @@ import org.zaluum.runtime.RealtimeThreadFactory
  *
  * @author <a href="http://jonasboner.com">Jonas Bon&#233;r</a>
  */
-class RealtimeThreadBasedDispatcher(val actor: ActorRef, val factory : ThreadFactory = RealtimeThreadFactory.default) extends MessageDispatcher {
+/*class RealtimeThreadBasedDispatcher(val actor: ActorRef, val factory : ThreadFactory = RealtimeThreadFactory.default) extends MessageDispatcher {
   private val name = actor.getClass.getName + ":" + actor.uuid
   private val threadName = "rtthread-based:dispatcher:" + name
   private val queue = new BlockingMessageQueue(name)
@@ -43,4 +43,4 @@ class RealtimeThreadBasedDispatcher(val actor: ActorRef, val factory : ThreadFac
     selectorThread.interrupt
     references.clear
   }
-}
+}*/

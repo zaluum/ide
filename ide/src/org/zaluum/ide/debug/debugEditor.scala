@@ -41,7 +41,7 @@ class DebugEditor extends UpEditor{
        new ProgressMonitorDialog(PlatformUI.getWorkbench.getActiveWorkbenchWindow.getShell)
          .run(false, false, irp);
      }catch{
-       case ex => throw new Exception("Connection refused. Close and open to retry")
+       case ex => throw new Exception("Connection refused. Close and open to retry",ex)
      }
      super.setInput(input);
   }

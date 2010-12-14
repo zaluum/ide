@@ -23,8 +23,8 @@ class CyclicDirector(c: ComposedBox) extends Director(c){
 }
 class EventDirector(c:DirectedBox) extends Director(c){
 	assert(c!=null)
-  private var queued : TreeSet[Box]= TreeSet[Box]()(Ordering.by(_.num)) 
-  		++ c.children.values
+	assert(c.children!=null)
+  private var queued : TreeSet[Box]= TreeSet[Box]()(Ordering.by(_.name)) ++ c.children.values
   override def run(process:Process) {
     while(!queued.isEmpty){
       val b = queued.firstKey

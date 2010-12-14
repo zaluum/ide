@@ -70,17 +70,17 @@ class AX12Motor(name:String,parent:DirectedBox,driver : RobotisDriver, id:Int) e
   }
   override def act {
     val v = driver.feedbackSource(id).v
-    if (v!=null){
-      position.v = v.position  
-      speed.v = (v.speed / 1023.0) * 144
-      sload.v = v.sload 
-      voltage.v = (v.voltage /10.0) 
-      temperature.v = v.temperature 
-      moving.v = v.moving ==1
-    }
     def scale(in:Double, min: Double, max:Double, newmin:Int, newmax:Int) = {
       val scin = if (in>max) max else if (in<min) min else in
       ((scin / ((max - min) / (newmax - newmin))) + newmin).toInt;
+    }
+    if (v!=null){
+      position.v = v.position  
+      speed.v = scale(v.speed, 0,1023,0,144)
+      sload.v = v.sload 
+      voltage.v = scale(v.voltage, 0,100, 0,10)
+      temperature.v = v.temperature 
+      moving.v = v.moving ==1
     }
     val r = RobotisCommand(id, 
         torqueEnable.v, 

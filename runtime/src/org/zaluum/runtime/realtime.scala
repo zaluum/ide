@@ -2,7 +2,7 @@ package org.zaluum.runtime
 import java.util.concurrent._
 import se.scalablesolutions.akka.actor._
 import se.scalablesolutions.akka.config._
-import se.scalablesolutions.akka.dispatch.RealtimeThreadBasedDispatcher
+//import se.scalablesolutions.akka.dispatch.RealtimeThreadBasedDispatcher
 
 import Actor._
 
@@ -51,7 +51,7 @@ class Setup private[runtime]() {
 }
 
 class RealTimeActor extends Actor{
-	self.dispatcher = new RealtimeThreadBasedDispatcher(self)
+	//self.dispatcher = new RealtimeThreadBasedDispatcher(self)
   val time = new WallTime
   private def begin {
   	time.updateNow()
@@ -66,11 +66,11 @@ class RealTimeActor extends Actor{
   }
   val process = new Process(begin _, end _, time)
   var setup : Setup = _
-  override def init  {
+  override def preStart  {
     time.actor = self
     process.run
   }
-  override def shutdown  {
+  override def postStop  {
   }
   override def receive = {
     case Push(values) => process.push(values)
