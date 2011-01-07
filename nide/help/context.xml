@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<contexts>
+   <context id="context_box_composed" title="Composed Box">
+      <description>This is a Composed Box, a Box that can contain multiple Boxes, Ports, as many as you want.</description>
+      <topic href="html/elements/box_composed.html" label="Composed Box"/>
+      <topic href="html/elements/types.html" label="Box Types"/>
+   </context>
+   <context id="context_box_instance" title="Instance Box">
+      <description>This is an Instance Box, a powerful Box that you can use to represent the &quot;concept&quot; of other Composed Boxes that you made, 
+without copying all the design of this Composed Boxes, only instantiating them.</description>
+      <topic href="html/elements/box_instance.html" label="Instance Box"/>
+      <topic href="html/elements/types.html" label="Box Types"/>
+   </context>
+   <context id="context_box_cast" title="Cast Box">
+      <description>This is a Cast Box, that converts an input type to another type, and throws it to the box output.</description>
+      <topic href="html/elements/box_cast.html" label="Cast Box"/>
+      <topic href="html/elements/types.html" label="Box Types"/>
+   </context>
+   <context id="context_port" title="Port">
+      <description>A Port is an element that provides a connection point to the data.</description>
+      <topic href="html/elements/ports.html" label="Port"/>
+   </context>
+   <context id="context_box_const" title="Constant Box">
+      <description>A Constant Box is a specific box that give us a constant value.</description>
+      <topic href="html/elements/box_const.html" label="Constant Box"/>
+      <topic href="html/elements/types.html" label="Box Types"/>
+   </context>
+   <context id="context_box_count" title="Count Box">
+      <description>A Count Box is a simple counter, like a clock.</description>
+      <topic href="html/elements/box_count.html" label="Count Box"/>
+      <topic href="html/elements/types.html" label="Box Types"/>
+      <topic href="html/types/types.html" label="Default Data Types"/>
+   </context>
+   <context id="context_box_timeout" title="Timeout Box">
+      <description>A Timeout Box is like a &quot;count-down&quot; timer, it says you when the time specified has passed.</description>
+      <topic href="html/elements/box_timeout.html" label="Timeout Box"/>
+      <topic href="html/elements/types.html" label="Box Types"/>
+      <topic href="html/types/types.html" label="Default Data Types"/>
+   </context>
+   <context id="context_box_highlow" title="HighLow Box">
+      <description>HighLow Box is simply a threshold between 2 values, and it says if the value entered is over or below this 2 values.</description>
+      <topic href="html/elements/box_highlow.html" label="HighLow Box"/>
+      <topic href="html/elements/types.html" label="Box Types"/>
+      <topic href="html/types/types.html" label="Default Data Types"/>
+   </context>
+   <context id="context_box_remote" title="Remote Box">
+      <description>Remote Box is an I/O Box to get or send data from/to a remote device.</description>
+      <topic href="html/elements/box_remote.html" label="Remote Box"/>
+      <topic href="html/types/types.html" label="Box Types"/>
+   </context>
+   <context id="context_stickynote" title="Sticky Note">
+      <description>It&apos;s a utility for creating notes on your editor.</description>
+   </context>
+</contexts>
