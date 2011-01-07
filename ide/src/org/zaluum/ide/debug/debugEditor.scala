@@ -6,8 +6,8 @@ import org.eclipse.gef.{EditPartFactory,EditPart}
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.jface.action.IMenuManager
 import org.eclipse.gef.ui.actions.GEFActionConstants._
-import se.scalablesolutions.akka.remote._
-import se.scalablesolutions.akka.actor.{ActorRef,Actor}
+/*import se.scalablesolutions.akka.remote._
+import se.scalablesolutions.akka.actor.{ActorRef,Actor}*/
 import org.eclipse.ui.IEditorInput
 import org.eclipse.swt.widgets.Display
 import org.eclipse.core.runtime.IProgressMonitor
@@ -30,11 +30,11 @@ class DebugEditor extends UpEditor{
      val irp = new IRunnableWithProgress() {
         override def run(monitor : IProgressMonitor){
           monitor.beginTask("Connecting", 2);
-          val conn = new DebugConnection
+      /*    val conn = new DebugConnection
           monitor.worked(1)
           model = (conn.contents.getOrElse{
             throw new Exception("Cannot connect server")
-          }, conn)
+          }, conn)*/
         }
      }
      try{

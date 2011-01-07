@@ -20,7 +20,7 @@ trait ModelBuilder {
 
 import Debug2Model._
 
-class Process (begin : ()=> Unit, end : ()=> Unit, val time:  WallTime) {
+class Process (begin : ()=> Unit, end : ()=> Unit/*, val time:  WallTime*/) {
   var root : Option[MainBox] = None
   
   def run {

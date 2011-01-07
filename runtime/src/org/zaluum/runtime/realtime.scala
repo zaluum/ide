@@ -1,10 +1,6 @@
 package org.zaluum.runtime
 import java.util.concurrent._
-import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.config._
-//import se.scalablesolutions.akka.dispatch.RealtimeThreadBasedDispatcher
 
-import Actor._
 
 
 sealed abstract class Event 
@@ -15,7 +11,7 @@ case class Activate(dst:List[Box]) extends Event
 case class DebugModelEvent(fqName:String) extends Event
 case class DebugRequest(fqName:Set[String]) extends Event
 
-class WallTime {
+/*class WallTime {
   
   val scheduler = Executors.newSingleThreadScheduledExecutor(RealtimeThreadFactory.default)
   val startTime = System.nanoTime
@@ -35,9 +31,9 @@ class WallTime {
   def queue(b : Box, milliseconds: Long){timeQueue += ((b,milliseconds))}
   def updateNow() = _currentTime = System.nanoTime
   def nowNano = _currentTime - startTime
-}
+}*/
 trait Driver {
-  def start(realtime:ActorRef)
+  def start()
   def stop()
   def commit()
   def begin()
@@ -50,7 +46,7 @@ class Setup private[runtime]() {
 	}
 }
 
-class RealTimeActor extends Actor{
+/*class RealTimeActor extends Actor{
 	//self.dispatcher = new RealtimeThreadBasedDispatcher(self)
   val time = new WallTime
   private def begin {
@@ -96,4 +92,4 @@ class RealTimeActor extends Actor{
 
 object RealtimeServer {
   def make  = actorOf[RealTimeActor]
-}
+}*/

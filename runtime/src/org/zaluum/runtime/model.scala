@@ -2,7 +2,6 @@ package org.zaluum.runtime
 import scala.collection.mutable.{Map,MultiMap,HashMap,Set}
 import scala.collection.immutable.{Set => ISet}
 import java.util.concurrent._
-import se.scalablesolutions.akka.actor._
 import Debug2Model._
 import serial._
 import ProtoConversions._

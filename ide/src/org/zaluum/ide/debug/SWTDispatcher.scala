@@ -1,4 +1,4 @@
-package se.scalablesolutions.akka.dispatch
+/*package se.scalablesolutions.akka.dispatch
 import se.scalablesolutions.akka.actor.ActorRef
 import org.eclipse.swt.widgets.Display
 class ThreadBasedDispatcher(private val actor: ActorRef, private val display:Display) 
@@ -28,3 +28,4 @@ class ThreadBasedDispatcher(private val actor: ActorRef, private val display:Dis
     //references.clear
   }
 }
+*/

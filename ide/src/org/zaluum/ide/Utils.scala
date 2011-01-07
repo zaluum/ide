@@ -8,8 +8,6 @@ import org.eclipse.jface.fieldassist.IContentProposalProvider
 import org.eclipse.jface.fieldassist.IContentProposal
 import scala.collection.JavaConversions._
 import scala.collection.mutable._
-import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.dispatch._
 object Utils {
 
   def loadIcons(ir : ImageRegistry, base : Class[_], keys : String*) = {
@@ -22,7 +20,7 @@ object Utils {
       ir.put(key, ImageDescriptor.createFromURL(base.getResource(key + ".png")));
     }
   }
-  def spawnReturn[T](body: => T): Future[T] = {
+  /*def spawnReturn[T](body: => T): Future[T] = {
     case object Spawn
     val promise = new DefaultCompletableFuture[T](3000)
     Actor.actorOf(new Actor() {
@@ -42,7 +40,7 @@ object Utils {
     val f = spawnReturn(body)
     f.await
     f.result map {_.get};
-  }
+  }*/
   implicit def asRunnable(func : ()=>Unit) : Runnable = {
    new Runnable() {
        def run() {

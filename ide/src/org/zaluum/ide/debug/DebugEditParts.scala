@@ -28,8 +28,6 @@ import java.util.{List => JList}
 import org.eclipse.draw2d.geometry.{Rectangle,Dimension}
 import Commands._
 import Debug2Model._
-import se.scalablesolutions.akka.actor._
-import se.scalablesolutions.akka.dispatch._
 import org.zaluum.ide.Utils._
 import org.zaluum.runtime._
 import java.util.concurrent.TimeUnit
@@ -64,18 +62,18 @@ object DebugEditParts extends Parts{
   
   class DModelEditPart(val model:DebugModel) extends ModelEditPart {
     override def deactivate {
-      model.conn.stop
+     // model.conn.stop
       super.deactivate
     }
   }
   class DBoxEditPart(val model:DBox) extends BoxEditPart {
     lazy val debugModel = getRoot.getChildren.get(0).asInstanceOf[DModelEditPart].model
     override def activate {
-      debugModel.conn.suscribe(model)
+     // debugModel.conn.suscribe(model)
       super.activate
     }
     override def deactivate {
-      debugModel.conn.unsuscribe(model)
+     // debugModel.conn.unsuscribe(model)
       super.deactivate
     }
   }
@@ -86,7 +84,7 @@ object DebugEditParts extends Parts{
     lazy val debugModel = getRoot.getChildren.get(0).asInstanceOf[DModelEditPart].model
 
     override def editCommand(v:String) = {
-      debugModel.conn.push(model,java.lang.Double.parseDouble(v))
+     // debugModel.conn.push(model,java.lang.Double.parseDouble(v))
       null
     }
     override def contents = Array()

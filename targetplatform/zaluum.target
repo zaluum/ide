@@ -37,16 +37,6 @@
 <repository location="http://download.eclipse.org/eclipse/updates/3.5"/>
 </location>
 <location path="${project_loc:targetplatform}/ignored" type="Directory"/>
-<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
-<unit id="org.eclipse.ajdt.feature.group" version="2.1.0.e35x-release-20100630-1500"/>
-<unit id="org.eclipse.contribution.weaving.feature.group" version="2.1.0.e35x-release-20100630-1500"/>
-<unit id="org.eclipse.equinox.weaving.sdk.feature.group" version="1.0.0.v20090817"/>
-<repository location="http://download.eclipse.org/tools/ajdt/35/update"/>
-</location>
 <location path="${project_loc:targetplatform}/third" type="Directory"/>
-<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
-<unit id="org.scala-ide.sdt.feature.feature.group" version="1.0.0.201009190257"/>
-<repository location="http://download.scala-ide.org/nightly-update-master-2.8.0.final"/>
-</location>
 </locations>
 </target>

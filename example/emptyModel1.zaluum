@@ -1,0 +1,83 @@
+id: ""
+type: COMPOSED
+bounds {
+  left_up {
+    x: 252
+    y: 120
+  }
+  right_down {
+    x: 302
+    y: 170
+  }
+}
+wire {
+  from: "A#"
+  to: "A1#"
+}
+child {
+  id: "A"
+  type: COMPOSED
+  bounds {
+    left_up {
+      x: 156
+      y: 60
+    }
+    right_down {
+      x: 253
+      y: 109
+    }
+  }
+  port {
+    name: ""
+    type: ""
+    in: true
+    direct: false
+    position {
+      x: 0
+      y: 0
+    }
+    slot: 0
+    left: true
+    label: ""
+  }
+  port {
+    name: ""
+    type: ""
+    in: false
+    direct: false
+    position {
+      x: 0
+      y: 0
+    }
+    slot: 0
+    left: false
+    label: ""
+  }
+}
+child {
+  id: "A1"
+  type: COMPOSED
+  bounds {
+    left_up {
+      x: 336
+      y: 60
+    }
+    right_down {
+      x: 385
+      y: 109
+    }
+  }
+  port {
+    name: ""
+    type: ""
+    in: true
+    direct: false
+    position {
+      x: 0
+      y: 0
+    }
+    slot: 0
+    left: true
+    label: ""
+  }
+}

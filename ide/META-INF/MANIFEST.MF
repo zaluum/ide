@@ -3,8 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Ide
 Bundle-SymbolicName: org.zaluum.ide; singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Require-Bundle: org.scala-ide.scala.library;bundle-version="2.8.0",
- com.google.common;bundle-version="1.0.0",
+Require-Bundle: com.google.common;bundle-version="1.0.0",
  org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.jface.text,
@@ -16,11 +15,9 @@ Require-Bundle: org.scala-ide.scala.library;bundle-version="2.8.0",
  org.eclipse.help,
  org.eclipse.core.filesystem,
  org.eclipse.ui.views,
- com.google.protobuf,
  org.eclipse.gef,
- se.scalablesolutions.akka.actor;bundle-version="1.0.0",
- se.scalablesolutions.akka.remote;bundle-version="1.0.0",
- se.scalablesolutions.akka.osgi.dependencies.bundle;bundle-version="1.0.0"
+ org.scala-ide.scala.library;bundle-version="2.8.1",
+ com.google.protobuf;bundle-version="2.3.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-Activator: org.zaluum.ide.Activator

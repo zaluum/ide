@@ -2,7 +2,6 @@ package se.scalablesolutions.akka.dispatch
 import java.util.concurrent.{LinkedBlockingQueue,ThreadFactory}
 import java.util.Queue
 
-import se.scalablesolutions.akka.actor.{Actor, ActorRef}
 import org.zaluum.runtime.RealtimeThreadFactory
 /**
  * Dedicates a unique thread for each actor passed in as reference. Served through its messageQueue.
