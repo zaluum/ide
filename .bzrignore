@@ -7,3 +7,4 @@ updatesite/content.jar
 updatesite/index.html
 .scala_dependencies
 ignored
+classes

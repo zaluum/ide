@@ -43,7 +43,13 @@ class PathScanner(zaluumDir:File) {
     }
   }
   private def scanClassPath() {
-    val discoverer = new ClasspathDiscoverer();
+    val discoverer = new Discoverer(){
+      def findResources() = {
+        Array(new File("./bin").toURL)
+      }
+      def getFilter =  new FilterImpl()
+    }
+   // discoverer.setFilter(new FilterImpl());
     // Register class annotation listener
     
     val inStr = classOf[graystone.zaluum.annotations.In].getName

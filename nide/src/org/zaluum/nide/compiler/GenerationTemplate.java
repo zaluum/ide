@@ -1,11 +1,11 @@
 package org.zaluum.nide.compiler;
 
-import graystone.zaluum.TestBox;
+import graystone.zaluum.SumBox;
 
 public class GenerationTemplate {
-  public TestBox a = new TestBox();
-  public TestBox b = new TestBox();
-  public TestBox c = new TestBox();
+  public SumBox a = new SumBox();
+  public SumBox b = new SumBox();
+  public SumBox c = new SumBox();
   
   public void apply() {
     a.apply();

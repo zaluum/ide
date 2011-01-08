@@ -64,8 +64,8 @@ object FastSWT {
     val buttonFromCode = new Button(buttons, SWT.PUSH)
     buttonFromCode.setText("ModelFromCode")
     addReaction(buttonFromCode,{ 
-      createViewer(Example.testModel)
-    })
+      createViewer(Example.sumsumModel)
+    }) 
     val buttonGenerate = new Button(buttons,SWT.PUSH)
     buttonGenerate.setText("Generate")
     addReaction(buttonGenerate, {

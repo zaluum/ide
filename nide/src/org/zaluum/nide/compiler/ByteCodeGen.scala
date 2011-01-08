@@ -51,6 +51,7 @@ object ByteCodeGen {
       mv.visitLabel(l0);
       for (box ← c.order) {
         // invoke box
+        println("invoking box " + box.name)
         mv.visitVarInsn(ALOAD, 0);
         mv.visitFieldInsn(GETFIELD, internal(c.m.className), box.name, classDescriptor(box.className));
         mv.visitMethodInsn(INVOKEVIRTUAL, internal(box.className), "apply", "()V");
@@ -65,14 +66,13 @@ object ByteCodeGen {
           mv.visitFieldInsn(GETFIELD, internal(from.box.className), from.name, "D");
           mv.visitFieldInsn(PUTFIELD, internal(to.box.className), to.name, "D");
         }
-
-        val lend = new Label();
-        mv.visitInsn(RETURN);
-        mv.visitLabel(lend);
-        mv.visitLocalVariable("this", classDescriptor(c.m.className), null, l0, lend, 0);
-        mv.visitMaxs(-1, -1);
-        mv.visitEnd();
       }
+      val lend = new Label(); 
+      mv.visitInsn(RETURN);
+      mv.visitLabel(lend);
+      mv.visitLocalVariable("this", classDescriptor(c.m.className), null, l0, lend, 0);
+      mv.visitMaxs(-1, -1);
+      mv.visitEnd();
     }
     cw.visitEnd();
     cw.toByteArray();
