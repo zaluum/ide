@@ -7,7 +7,7 @@ import java.io.OutputStreamWriter
 import java.io.File
 
 object TestCompiler {
-  val path = new BoxClassPath(new File("./src"))
+  val path = new BoxClassPath(new File("./src"), currentThread.getContextClassLoader()) 
   val outDir = "classes/"
   def compile(model:Model) {
     val comp = new Compiler(model,path)

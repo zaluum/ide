@@ -9,18 +9,21 @@ import org.zaluum.nide.model._
 import com.impetus.annovention._
 import com.impetus.annovention.listener._
 import scala.util.control.Exception._
-object PathScanner {
-  def main(args: Array[String]) {
-    new BoxClassPath(new File("."))
-  }
-}
-class BoxClassPath(zaluumDir: File) {
+/**
+ * ClassPath
+ */
+class BoxClassPath(zaluumDir: File, classLoader : ClassLoader) {
   var cache = Map[String,BoxClass]()
   
   if (!zaluumDir.isDirectory) throw new java.io.IOException()
-
+  /** 
+   * Use this
+   */
   def find(str: String) :Option[BoxClass] =  {
-    cache.get(str) orElse findZaluum(str) orElse findClass(str)
+    cache.get(str) orElse 
+    findZaluum(str) orElse 
+    findClass(str) orElse 
+    {println(str + " not found");None}
   }
 
   def findZaluum(str:String)  = {
@@ -28,14 +31,15 @@ class BoxClassPath(zaluumDir: File) {
     val f = new File(zaluumDir.getAbsolutePath + "/" + fn + ".zaluum")
     addCache(readZaluum(f)) 
   }
-  def forName(str:String) : Option[Class[_]] = {
-    try { Some(Class.forName(str)) }
-    catch{ case e:Exception=> e.printStackTrace; None }
-  }
+  
   def findClass(str:String) = {
     forName(str) flatMap { 
       c=>  addCache(classToBoxClass(c))  
     }
+  }
+  def forName(str:String) : Option[Class[_]] = {
+      try { Some(classLoader.loadClass(str)) }
+      catch{ case e:Exception=> e.printStackTrace; None }
   }
   def addCache(c : Option[BoxClass]) =  {
     c foreach { bc => cache += (bc.className -> bc) }
@@ -45,7 +49,6 @@ class BoxClassPath(zaluumDir: File) {
   def classToBoxClass(cl:Class[_]) :Option[BoxClass] = {
     cl.getAnnotations().find {a => a.isInstanceOf[BoxAnn]} map { _=>
         val bc = new BoxClass(cl.getName)
-        println("found class" + cl.getName)
         for (f <- cl.getFields()) {
           f.getAnnotations() foreach { 
             _ match {
@@ -70,8 +73,7 @@ class BoxClassPath(zaluumDir: File) {
     } 
   }
 }
-class BoxClassPathScanner(zaluumDir: File) extends BoxClassPath(zaluumDir){
-  // TODO weak hashmap on demand find
+class BoxClassPathScanner(zaluumDir: File,cl:ClassLoader) extends BoxClassPath(zaluumDir,cl){
 
   var zaluums = Map[String, BoxClass]()
   var javaClasses = Map[String, BoxClass]()
@@ -88,7 +90,7 @@ class BoxClassPathScanner(zaluumDir: File) extends BoxClassPath(zaluumDir){
   private def scanClassPath() {
     val discoverer = new Discoverer() {
       def findResources() = {
-        Array(new File("./bin").toURL)
+        Array(new File("./bin").toURL)   // FIXME use classloader to explore instead of bin 
       }
       def getFilter = new FilterImpl()
     }
