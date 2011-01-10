@@ -25,8 +25,9 @@ import org.zaluum.nide.model._
 trait BoxFigure extends Figure{
   def viewer:Viewer
   val box:Box
+  var boxClass:Option[BoxClass]
   lazy val feed = new BoxFeedbackFigure(this)
-  
+  def size : (Int,Int)
   def showFeedback() {
     viewer.feedbackLayer.add(feed)
     update()
@@ -42,7 +43,7 @@ trait BoxFigure extends Figure{
    viewer.layer.remove(this) 
   }
   def update() {
-    val rect = new Rectangle(box.pos._1,box.pos._2,box.size._1,box.size._2)
+    val rect = new Rectangle(box.pos._1,box.pos._2,size._1,size._2)
     setBounds(rect)
     feed.setInnerBounds(rect)
   }
@@ -86,9 +87,13 @@ trait WithPorts extends BoxFigure{
   }
 }
 
-class ImageBoxFigure(val box:Box,val viewer:Viewer, val image:Image) extends ImageFigure(image) with BoxFigure with WithPorts
-class SwingBoxFigure(val viewer:Viewer,val box:Box, c: JComponent)  extends SwingFigure(c) with BoxFigure
-
+class ImageBoxFigure(val box:Box,var boxClass:Option[BoxClass],val viewer:Viewer, val image:Image) extends ImageFigure(image) with BoxFigure with WithPorts{
+  def size =( image.getBounds.width, image.getBounds.height)
+}
+class SwingBoxFigure(val viewer:Viewer,val box:Box, c: JComponent)  extends SwingFigure(c) with BoxFigure{
+  def size = (50,50) //FIXME
+  var boxClass:Option[BoxClass] = None // FIXME
+}
 
 class ConnectionFigure(val c: Connection) extends Polyline {
   def update() {

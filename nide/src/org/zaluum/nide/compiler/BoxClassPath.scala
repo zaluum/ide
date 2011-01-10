@@ -48,17 +48,18 @@ class BoxClassPath(zaluumDir: File, classLoader: ClassLoader) {
   }
 
   def classToBoxClass(cl: Class[_]): Option[BoxClass] = {
-    cl.getAnnotations().find { a ⇒ a.isInstanceOf[BoxAnn] } map { _ ⇒
+    cl.getAnnotations().find { a ⇒ a.isInstanceOf[BoxAnn] } map { ann ⇒
+      val bann = ann.asInstanceOf[BoxAnn] 
       val scala = cl.getAnnotation(classOf[ScalaSignature])!=null
-      val bc = new BoxClass(cl.getName,scala)
+      val bc = new BoxClass(cl.getName,scala,bann.image)
       for (f ← cl.getDeclaredFields()) {
         println("found field " + f.getName)
         f.getAnnotations() foreach {
           _ match {
-            case _: In ⇒ 
-              bc.ports += TypedPort(f.getType.toString, true, f.getName)
-            case _: Out ⇒
-              bc.ports += TypedPort(f.getType.toString, false, f.getName)
+            case in: In ⇒ 
+              bc.ports += TypedPort(f.getType.toString, true, f.getName, (in.x,in.y))
+            case out: Out ⇒
+              bc.ports += TypedPort(f.getType.toString, false, f.getName, (out.x,out.y))
           }
         }
       }
@@ -107,7 +108,7 @@ class BoxClassPathScanner(zaluumDir: File, cl: ClassLoader) extends BoxClassPath
     discoverer.addAnnotationListener(new ClassAnnotationDiscoveryListener() {
       def discovered(clazz: String, annotation: String) {
         println("Discovered Class(" + clazz + ") " + "with Annotation(" + annotation + ")");
-        val cl = new BoxClass(clazz);
+        val cl = new BoxClass(clazz,false,"null"); // FIXME
         addCache(Some(cl))
         javaClasses += (clazz -> cl)
       }
@@ -116,7 +117,7 @@ class BoxClassPathScanner(zaluumDir: File, cl: ClassLoader) extends BoxClassPath
     discoverer.addAnnotationListener(new FieldAnnotationDiscoveryListener() {
       def discovered(clazz: String, field: String, descriptor: String, annotation: String) {
         javaClasses.get(clazz) foreach { bc ⇒
-          bc.ports += TypedPort(descriptor, annotation == inStr, field)
+          bc.ports += TypedPort(descriptor, annotation == inStr, field,(0,0)) // FIXME
         }
         println("clazz: " + clazz + " field " + field + " descriptor " + descriptor + " annotation " + annotation)
       }

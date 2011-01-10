@@ -153,8 +153,8 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def doEnter{}
     def buttonUp {
       val newBounds = handle.deltaAdd(d,bf.getBounds);
-      val comm = new ResizeCommand(bf.box, (newBounds.x,newBounds.y), (newBounds.width,newBounds.height))
-      controller.exec(comm)
+      //val comm = new ResizeCommand(bf.box, (newBounds.x,newBounds.y), (newBounds.width,newBounds.height))
+      //controller.exec(comm)
       exit()
     }
     def doMove() {  bf.resizeDeltaFeed(delta,handle)  }

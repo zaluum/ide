@@ -3,19 +3,19 @@ import org.zaluum.nide.zge._
 object Example {
   def sumsumModel = {
     val model = new Model;
-    val a = Box("A", "graystone.zaluum.SumBox", (0, 0), (50, 50))
+    val a = Box("A", "graystone.zaluum.SumBox", (0, 0))
     Port(a, "a")
     Port(a, "b")
     val ac = Port(a, "c")
     model.boxes += a
 
-    val b = Box("B", "graystone.zaluum.SumBox", (100, 100), (50, 50))
+    val b = Box("B", "graystone.zaluum.SumBox", (100, 100))
     Port(b, "a")
     Port(b, "b")
     val bc = Port(b, "c")
     model.boxes += b
 
-    val s = Box("S", "graystone.zaluum.SumBox", (200, 200), (50, 50))
+    val s = Box("S", "graystone.zaluum.SumBox", (200, 200))
     val sa = Port(s, "a")
     val sb = Port(s, "b")
     Port(s, "c")
@@ -28,11 +28,11 @@ object Example {
   }
   def printModel = {
     val model = new Model;
-    val a = Box("A", "graystone.zaluum.ConstBox", (0,0), (50,50))
+    val a = Box("A", "graystone.zaluum.ConstBox", (0,0))
     val ao = Port(a, "o")
     model.boxes += a
 
-    val b = Box("B", "graystone.zaluum.ScalaPrintBox",(100,100),(50,50) )
+    val b = Box("B", "graystone.zaluum.ScalaPrintBox",(100,100))
     val ba = Port(b, "a")
     model.boxes += b
 

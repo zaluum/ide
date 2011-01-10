@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.compiler.BoxClassPath
 import org.eclipse.swt.widgets.Widget
 import java.io.FileInputStream
 import org.eclipse.swt.events.SelectionEvent
@@ -36,8 +37,9 @@ object FastSWT {
     buttons.setLayout(new RowLayout())
     val buttonLoad = new Button(buttons, SWT.PUSH)
     var viewer: Viewer = null
+    val bcp = new BoxClassPath(new File("."),currentThread.getContextClassLoader)
     def createViewer(model: Model) {
-      val controller = new Controller(model)
+      val controller = new Controller(model,bcp)
       if (viewer != null)
         viewer.dispose()
       viewer = new Viewer(shell, controller)

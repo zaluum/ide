@@ -54,7 +54,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeBoxFeedbackFigure) ext
     } else if (y == 2) {
       res.height += dy
     }
-    res
+    res 
   }
   def doPosition(outside: Rectangle, inside: Rectangle) {
     setSize(expansion, expansion)
@@ -72,9 +72,13 @@ class PortFigure(val bf:BoxFigure,val p:Port, viewer:Viewer) extends Ellipse {
   def hide(){
     viewer.portsLayer.remove(this)
   }
+
   def update(){
-    val x = bf.getBounds.x + p.pos._1
-    val y = bf.getBounds.y + p.pos._2
+    val portType = bf.boxClass flatMap {_.port(p.name)}
+    val dx =portType map {_.pos._1} getOrElse 0
+    val dy =portType map {_.pos._2} getOrElse 0
+    val x = bf.getBounds.x + dx
+    val y = bf.getBounds.y + dy
     setLocation(new Point(x,y))
     setSize(10,10)
   }

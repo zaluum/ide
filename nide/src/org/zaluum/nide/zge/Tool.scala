@@ -8,6 +8,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.events._
 import org.eclipse.swt.widgets.Canvas
 import scala.reflect.Manifest._
+
 abstract class Tool(viewer: Viewer) {
   def viewport = viewer.viewport
   def canvas = viewer.canvas

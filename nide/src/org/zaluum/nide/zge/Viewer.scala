@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.compiler.BoxClassPath
 import org.eclipse.draw2d.Polyline
 import org.eclipse.swt.graphics.Image
 import org.eclipse.draw2d.ImageFigure
@@ -65,11 +66,20 @@ class Viewer(parent: Composite, val controller:Controller) {
   def moveMarquee(r:Rectangle) { marquee.setBounds(r)}
   def hideMarquee() { feedbackLayer.remove(marquee) }
   UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
+  object imageFactory {
+    lazy val notFound = new Image(canvas.getDisplay, "icons/notFound.png")
+    def apply(str:String) = {
+      try { 
+        new Image(canvas.getDisplay, str)
+      }catch{
+        case _=> notFound
+      }
+    }
+  }
 }
-
-class ModelView(val viewer:Viewer,val model:Model) {
+class ModelView(val viewer:Viewer,val model:Model, val bcp :BoxClassPath) {
+  
   var selected  = Set[BoxFigure]()
-  val img = new Image(viewer.canvas.getDisplay,"icons/op.png")
   private var viewMap = Map[Box,BoxFigure]() 
   private var connectionMap = Map[Connection,ConnectionFigure]()
   def update() {
@@ -78,7 +88,9 @@ class ModelView(val viewer:Viewer,val model:Model) {
     removed foreach {b => viewMap(b).hide; viewMap -= b}
     for (box <- added) {
       //val boxview = new SwingBoxFigure(viewer,box, new JButton("text"))
-      val boxview = new ImageBoxFigure(box,viewer,img)
+      val cl = bcp.find(box.className) 
+      val image = cl map { c => viewer.imageFactory(c.image) }
+      val boxview = new ImageBoxFigure(box,cl,viewer, image.getOrElse{viewer.imageFactory.notFound})
       viewMap += (box -> boxview)
       boxview.show
     }

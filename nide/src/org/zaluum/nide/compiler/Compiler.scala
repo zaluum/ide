@@ -103,7 +103,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
       reporter(from != to, "Connection to itself", Some(c))
       // port type and direction
       (portType(from), portType(to)) match {
-        case (TypedPort(a, fromIn, _), TypedPort(b, toIn, _)) if (a == b) ⇒
+        case (TypedPort(a, fromIn, _,_), TypedPort(b, toIn, _,_)) if (a == b) ⇒
           (fromIn, toIn, isModelPort(from), isModelPort(to)) match {
             case (true, true, true, false) ⇒ // in -> in model -> box
             case (false, true, false, false) ⇒ // out -> in box->box 

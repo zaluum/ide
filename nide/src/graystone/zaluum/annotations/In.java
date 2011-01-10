@@ -6,4 +6,7 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface In {}
+public @interface In {
+  int x();
+  int y();
+}

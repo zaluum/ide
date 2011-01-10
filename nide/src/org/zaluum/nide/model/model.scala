@@ -42,7 +42,7 @@ object ProtoModel{
   }
   def readDefinition(in:InputStream) = { 
     val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
-    new BoxClass(definition.getClassName)
+    new BoxClass(definition.getClassName,false,definition.getImageName)
   }
   def read(in : InputStream) ={
     val model = new Model()
@@ -80,12 +80,11 @@ class Model {
 
 class Connection(var from: Option[Port], var to:Option[Port]) 
 object Box {
-  def apply(name:String, className:String, pos : (Int,Int),  size:(Int,Int)) ={
+  def apply(name:String, className:String, pos : (Int,Int)) ={
     val b = new Box()
     b.className = className
     b.pos = pos
     b.name = name
-    b.size = size
     b
   }
 }
@@ -94,7 +93,6 @@ class Box {
   var className = "img"
   var pos = (0, 0)
   var name = ""
-  var size = (30, 30)
   var ports = Set[Port]()
   def toInstance = {
     val instance = BoxFileProtos.Contents.Instance.newBuilder()
@@ -118,11 +116,12 @@ class Port(var box:Box,var name:String) {
   var pos = (0,10)
   override def toString = box +"->" + name
 }
-class BoxClass(val className: String,val scala:Boolean = false) {
+class BoxClass(val className: String,val scala:Boolean = false, val image:String) {
   var ports = Set[TypedPort]()
+  def port(s:String) = ports find {_.name ==s}
   override def toString = "boxClass["+className+"]"
 }
-case class TypedPort(val descriptor: String, val in: Boolean, val name: String)
+case class TypedPort(val descriptor: String, val in: Boolean, val name: String, val pos:(Int,Int))
 
 abstract class Command {
   def act() = redo()
@@ -139,12 +138,12 @@ class MoveCommand(box: Box, pos: (Int, Int)) extends Command{
   def redo() { box.pos = pos }
   def undo() { box.pos = old }
 }
-class ResizeCommand(box: Box, pos:(Int,Int),size: (Int,Int)) extends Command{
+/*class ResizeCommand(box: Box, pos:(Int,Int),size: (Int,Int)) extends Command{
   val oldSize = box.size
   val oldPos = box.pos
   def redo() { box.size = size; box.pos = pos }
   def undo() { box.size = oldSize; box.pos = oldPos }
-}
+}*/
 class CreateCommand(box:Box, model:Model) extends Command{
   def redo { model.boxes += box }
   def undo { model.boxes -= box }

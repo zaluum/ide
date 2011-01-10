@@ -1,8 +1,8 @@
 package graystone.zaluum
 import graystone.zaluum.annotations._
-@Box
+@Box(image="icons/const.png")
 class ScalaConstBox {
-  @Out var o = 1.0
+  @Out(x=15,y=32) var o = 1.0
   def apply() {
     
   }
