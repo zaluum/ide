@@ -2,12 +2,6 @@ package org.zaluum.nide.zge
 
 
  
-/*
- * GC example snippet: capture a widget image with a GC
- *
- * For a list of all SWT example snippets see
- * http://www.eclipse.org/swt/snippets/
- */
 import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.widgets.Display
 import org.eclipse.swt._;

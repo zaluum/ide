@@ -19,10 +19,10 @@ object HandleSizes {
   val expansion = 8
 }
 import HandleSizes._
-class FeedbackRectangle(val feed: ResizeFeedbackFigure) extends RectangleFigure {
+class FeedbackRectangle(val feed: BoxFeedbackFigure) extends RectangleFigure {
   def boxFigure = feed.bf
 }
-class HandleRectangle(val x: Int, val y: Int, feed: ResizeFeedbackFigure) extends FeedbackRectangle(feed) {
+class HandleRectangle(val x: Int, val y: Int, feed: ResizeBoxFeedbackFigure) extends FeedbackRectangle(feed) {
   setBackgroundColor(ColorConstants.lightBlue)
   setForegroundColor(ColorConstants.white)
   def resizeCursor = {
@@ -79,19 +79,11 @@ class PortFigure(val bf:BoxFigure,val p:Port, viewer:Viewer) extends Ellipse {
     setSize(10,10)
   }
 }
-class ResizeFeedbackFigure(val bf: BoxFigure) extends Figure {
-  
-  val handles =
-    (for {
-      i <- 0 to 2;
-      j <- 0 to 2;
-      if (!(i == 1 && j == 1))
-    } yield new HandleRectangle(i, j, this)).toList
-
+class BoxFeedbackFigure(val bf : BoxFigure) extends Figure {
   val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
+  rectangle.setFill(false);
   add(rectangle)
-  handles foreach (add(_))
   
   def innerLocation = rectangle.getLocation
   def innerBounds = rectangle.getBounds.getCopy
@@ -104,6 +96,22 @@ class ResizeFeedbackFigure(val bf: BoxFigure) extends Figure {
   }
   
   def setInnerBounds(inside: Rectangle) {
+    setBounds(inside)
+    rectangle.setBounds(inside)
+  }
+
+}
+class ResizeBoxFeedbackFigure(bf: BoxFigure) extends BoxFeedbackFigure(bf) {
+  
+  val handles =
+    (for {
+      i <- 0 to 2;
+      j <- 0 to 2;
+      if (!(i == 1 && j == 1))
+    } yield new HandleRectangle(i, j, this)).toList
+
+  handles foreach (add(_))
+  override def setInnerBounds(inside:Rectangle) {
     val outside = new Rectangle(inside)
     outside.expand(expansion, expansion)
     setBounds(outside)
