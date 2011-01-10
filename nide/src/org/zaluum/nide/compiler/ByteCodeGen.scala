@@ -3,11 +3,12 @@ package org.zaluum.nide.compiler
 import org.objectweb.asm._;
 
 import Opcodes._
+import org.zaluum.nide.model.Box
 
 object ByteCodeGen {
   def internal(classname: String) = classname.replace('.', '/')
   def classDescriptor(classname: String) = 'L' + internal(classname) + ";"
-  def dump(c: Compiled) ={
+  def dump(c: Compiled) = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
     cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, internal(c.m.className), null, "java/lang/Object", null);
@@ -51,7 +52,7 @@ object ByteCodeGen {
       mv.visitLabel(l0);
       for (box ← c.order) {
         // invoke box
-        println("invoking box " + box.name)
+        println("creating bytecode for box " + box.name)
         mv.visitVarInsn(ALOAD, 0);
         mv.visitFieldInsn(GETFIELD, internal(c.m.className), box.name, classDescriptor(box.className));
         mv.visitMethodInsn(INVOKEVIRTUAL, internal(box.className), "apply", "()V");
@@ -59,15 +60,26 @@ object ByteCodeGen {
         for (conn ← c.m.connections if (conn.from.get.box == box)) {
           val from = conn.from.get
           val to = conn.to.get
-          mv.visitVarInsn(ALOAD, 0);
-          mv.visitFieldInsn(GETFIELD, internal(c.m.className), to.box.name, classDescriptor(to.box.className));
-          mv.visitVarInsn(ALOAD, 0);
-          mv.visitFieldInsn(GETFIELD, internal(c.m.className), from.box.name, classDescriptor(from.box.className));
-          mv.visitFieldInsn(GETFIELD, internal(from.box.className), from.name, "D");
-          mv.visitFieldInsn(PUTFIELD, internal(to.box.className), to.name, "D");
+          def loadBox(b: Box) {
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitFieldInsn(GETFIELD, internal(c.m.className), b.name, classDescriptor(b.className));
+          }
+          loadBox(to.box);
+          // get
+          {
+            loadBox(from.box)
+            if (c.boxType(from.box).scala)
+              mv.visitMethodInsn(INVOKEVIRTUAL, internal(from.box.className), from.name, "()D");
+            else
+              mv.visitFieldInsn(GETFIELD, internal(from.box.className), from.name, "D");
+          }
+          if (c.boxType(to.box).scala)
+            mv.visitMethodInsn(INVOKEVIRTUAL, internal(to.box.className), to.name + "_$eq", "(D)V");
+          else
+            mv.visitFieldInsn(PUTFIELD, internal(to.box.className), to.name, "D");
         }
       }
-      val lend = new Label(); 
+      val lend = new Label();
       mv.visitInsn(RETURN);
       mv.visitLabel(lend);
       mv.visitLocalVariable("this", classDescriptor(c.m.className), null, l0, lend, 0);

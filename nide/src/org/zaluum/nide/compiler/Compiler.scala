@@ -7,7 +7,9 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleDirectedGraph;
 import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.zaluum.nide.model._
-class Compiled(val m: Model, val order: List[Box], val types: Map[Port, TypedPort], val source:String) {
+
+class Compiled(val m: Model, val order: List[Box], 
+    val portType: Map[Port, TypedPort], val boxType:Map[Box,BoxClass], val source:String) {
   lazy val boxesInOrder = m.boxes.toList.sortWith(_.name < _.name);
 }
 object Compiler {
@@ -65,25 +67,24 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
     // TODO check already defined
     
   } 
-  def checkSignature(b: Box, bc: BoxClass) = {
+  def checkSignature(b: Box, bc: BoxClass) {
     // check ports
-    var ok = true
     for (p <- b.ports) {
       bc.ports find { _.name == p.name } match {
         case Some(tp) => portType += (p -> tp)
-        case None => ok = false
+        case None => reporter.report("port not found " + p, Some(p))
       }
     }
-    ok
     // TODO check parameters?
   }
-  def checkBox(b: Box) {
+  def checkBox(b: Box) = {
     // check name
     reporter(Compiler.isValidJavaIdentifier(b.name), b.name + " is not a valid Java identifier", Some(b))
     // check className is a box class
     val boxClass = getBoxClass(b.className).getOrElse { reporter.fail(b.className + " is not a valid box class", Some(b)) }
     // check box signature is compatible
     checkSignature(b, boxClass)
+    boxClass
   }
   def checkValidPort(port: Port) {
 
@@ -135,10 +136,14 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
     checkValidClassname(m.className)
     //checkValidPorts(m.ports)
     // check all boxes recursive
-    m.boxes foreach { checkBox(_) }
+    var boxTypes  = Map[Box,BoxClass]() 
+    m.boxes foreach { b =>
+      boxTypes += (b->checkBox(b))
+    }
+    reporter.check()
     // check connections
     val order = checkConnections
     reporter.check()
-    new Compiled(m, order, portType,"source.zaluum")
+    new Compiled(m, order, portType,boxTypes,"source.zaluum")
   }
 }

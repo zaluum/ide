@@ -1,6 +1,7 @@
 package org.zaluum.nide.compiler
 
-import graystone.zaluum.annotations.{In,Out,Box=>BoxAnn}
+import scala.reflect.ScalaSignature
+import graystone.zaluum.annotations.{ In, Out, Box ⇒ BoxAnn }
 import org.objectweb.asm.ClassReader
 import java.net.URL
 import java.io.File
@@ -12,68 +13,72 @@ import scala.util.control.Exception._
 /**
  * ClassPath
  */
-class BoxClassPath(zaluumDir: File, classLoader : ClassLoader) {
-  var cache = Map[String,BoxClass]()
-  
+class BoxClassPath(zaluumDir: File, classLoader: ClassLoader) {
+  var cache = Map[String, BoxClass]()
+
   if (!zaluumDir.isDirectory) throw new java.io.IOException()
   /** 
    * Use this
    */
-  def find(str: String) :Option[BoxClass] =  {
-    cache.get(str) orElse 
-    findZaluum(str) orElse 
-    findClass(str) orElse 
-    {println(str + " not found");None}
+  def find(str: String): Option[BoxClass] = {
+    cache.get(str) orElse
+      findZaluum(str) orElse
+      findClass(str) orElse
+      { println(str + " not found"); None }
   }
 
-  def findZaluum(str:String)  = {
-    val fn= str.replace('.','/')
+  def findZaluum(str: String) = {
+    val fn = str.replace('.', '/')
     val f = new File(zaluumDir.getAbsolutePath + "/" + fn + ".zaluum")
-    addCache(readZaluum(f)) 
+    addCache(readZaluum(f))
   }
-  
-  def findClass(str:String) = {
-    forName(str) flatMap { 
-      c=>  addCache(classToBoxClass(c))  
+
+  def findClass(str: String) = {
+    forName(str) flatMap { c ⇒
+      addCache(classToBoxClass(c))
     }
   }
-  def forName(str:String) : Option[Class[_]] = {
-      try { Some(classLoader.loadClass(str)) }
-      catch{ case e:Exception=> e.printStackTrace; None }
+  def forName(str: String): Option[Class[_]] = {
+    try { Some(classLoader.loadClass(str)) }
+    catch { case e: Exception ⇒ e.printStackTrace; None }
   }
-  def addCache(c : Option[BoxClass]) =  {
-    c foreach { bc => cache += (bc.className -> bc) }
+  def addCache(c: Option[BoxClass]) = {
+    c foreach { bc ⇒ cache += (bc.className -> bc) }
     c
   }
-  
-  def classToBoxClass(cl:Class[_]) :Option[BoxClass] = {
-    cl.getAnnotations().find {a => a.isInstanceOf[BoxAnn]} map { _=>
-        val bc = new BoxClass(cl.getName)
-        for (f <- cl.getFields()) {
-          f.getAnnotations() foreach { 
-            _ match {
-              case _:In =>  bc.ports += TypedPort(f.getType.toString, true, f.getName)
-              case _:Out=>  bc.ports += TypedPort(f.getType.toString, false, f.getName)
-            }
+
+  def classToBoxClass(cl: Class[_]): Option[BoxClass] = {
+    cl.getAnnotations().find { a ⇒ a.isInstanceOf[BoxAnn] } map { _ ⇒
+      val scala = cl.getAnnotation(classOf[ScalaSignature])!=null
+      val bc = new BoxClass(cl.getName,scala)
+      for (f ← cl.getDeclaredFields()) {
+        println("found field " + f.getName)
+        f.getAnnotations() foreach {
+          _ match {
+            case _: In ⇒ 
+              bc.ports += TypedPort(f.getType.toString, true, f.getName)
+            case _: Out ⇒
+              bc.ports += TypedPort(f.getType.toString, false, f.getName)
           }
         }
-        bc
+      }
+      bc
     }
   }
   def readZaluum(f: File): Option[BoxClass] = {
     try {
       val in = new FileInputStream(f)
-      try{
+      try {
         val d = ProtoModel.readDefinition(in)
         println("discovered zaluum " + f.getName + " " + d)
         Some(d)
-      }finally{in.close()}
+      } finally { in.close() }
     } catch {
-      case e:Exception => None 
-    } 
+      case e: Exception ⇒ None
+    }
   }
 }
-class BoxClassPathScanner(zaluumDir: File,cl:ClassLoader) extends BoxClassPath(zaluumDir,cl){
+class BoxClassPathScanner(zaluumDir: File, cl: ClassLoader) extends BoxClassPath(zaluumDir, cl) {
 
   var zaluums = Map[String, BoxClass]()
   var javaClasses = Map[String, BoxClass]()
@@ -83,14 +88,14 @@ class BoxClassPathScanner(zaluumDir: File,cl:ClassLoader) extends BoxClassPath(z
   private def scanZaluums() {
     if (zaluumDir.isDirectory) {
       for (f ← zaluumDir.listFiles if f.getName.endsWith(".zaluum")) {
-        addCache(readZaluum(f)) foreach { bc => zaluums += (bc.className -> bc) } 
+        addCache(readZaluum(f)) foreach { bc ⇒ zaluums += (bc.className -> bc) }
       }
     }
   }
   private def scanClassPath() {
     val discoverer = new Discoverer() {
       def findResources() = {
-        Array(new File("./bin").toURL)   // FIXME use classloader to explore instead of bin 
+        Array(new File("./bin").toURL) // FIXME use classloader to explore instead of bin 
       }
       def getFilter = new FilterImpl()
     }

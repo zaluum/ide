@@ -79,6 +79,17 @@ class Model {
 }
 
 class Connection(var from: Option[Port], var to:Option[Port]) 
+object Box {
+  def apply(name:String, className:String, pos : (Int,Int),  size:(Int,Int)) ={
+    val b = new Box()
+    b.className = className
+    b.pos = pos
+    b.name = name
+    b.size = size
+    b
+  }
+}
+
 class Box {
   var className = "img"
   var pos = (0, 0)
@@ -93,12 +104,23 @@ class Box {
     instance.build
     // TODO ports
   }
+  override def toString = name 
+}
+object Port {
+  def apply(b:Box, name:String, pos:(Int,Int) = (0,10)) : Port= {
+    val p = new Port(b,name)
+    p.pos = pos
+    b.ports += p
+    p
+  }
 }
 class Port(var box:Box,var name:String) {
   var pos = (0,10)
+  override def toString = box +"->" + name
 }
-class BoxClass(val className: String) {
+class BoxClass(val className: String,val scala:Boolean = false) {
   var ports = Set[TypedPort]()
+  override def toString = "boxClass["+className+"]"
 }
 case class TypedPort(val descriptor: String, val in: Boolean, val name: String)
 

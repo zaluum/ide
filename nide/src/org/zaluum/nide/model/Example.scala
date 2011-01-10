@@ -2,68 +2,42 @@ package org.zaluum.nide.model
 import org.zaluum.nide.zge._
 object Example {
   def sumsumModel = {
-      val model = new Model;
-        val a = new Box();
-        a.name = "A"
-        a.pos = (0, 0);
-        a.size = (50, 50);
-        a.className = "graystone.zaluum.SumBox";
-        a.ports += new Port(a,"a")
-        a.ports += new Port(a,"b")
-        val ac = new Port(a,"c")
-        a.ports +=ac
-        model.boxes += a
+    val model = new Model;
+    val a = Box("A", "graystone.zaluum.SumBox", (0, 0), (50, 50))
+    Port(a, "a")
+    Port(a, "b")
+    val ac = Port(a, "c")
+    model.boxes += a
 
-        val b = new Box();
-        b.name = "B"
-        b.pos = (100, 100);
-        b.size = (50, 50);
-        b.className = "graystone.zaluum.SumBox";
-        b.ports += new Port(b,"a")
-        b.ports += new Port(b,"b")
-        val bc = new Port(b,"c")
-        b.ports += bc
-        model.boxes += b
-        
-        val s = new Box();
-        s.name = "S"
-        s.pos = (100, 100);
-        s.size = (50, 50);
-        s.className = "graystone.zaluum.SumBox";
-        val sa = new Port(s,"a")
-        val sb = new Port(s,"b")
-        s.ports += sa
-        s.ports += sb
-        s.ports += new Port(s,"c")
-        model.boxes += s
-        
-        model.connections += new Connection(Some(ac), Some(sa))
-        model.connections += new Connection(Some(bc), Some(sb))
-        model.className = "graystone.zaluum.SumSum"
-      model
-    }
-    def printModel = {
-      val model = new Model;
-        val a = new Box();
-        a.name = "A"
-        a.pos = (0, 0);
-        a.size = (50, 50);
-        a.className = "graystone.zaluum.ConstBox";
-        val ao = new Port(a,"o")
-        a.ports +=ao
-        model.boxes += a
+    val b = Box("B", "graystone.zaluum.SumBox", (100, 100), (50, 50))
+    Port(b, "a")
+    Port(b, "b")
+    val bc = Port(b, "c")
+    model.boxes += b
 
-        val b = new Box();
-        b.name = "B"
-        b.pos = (100, 100);
-        b.size = (50, 50);
-        b.className = "graystone.zaluum.PrintBox";
-        val ba = new Port(b,"a")
-        b.ports += ba
-        model.boxes += b
-                
-        model.connections += new Connection(Some(ao), Some(ba))
-        model.className = "graystone.zaluum.PrintResult"
-      model
-    }
+    val s = Box("S", "graystone.zaluum.SumBox", (200, 200), (50, 50))
+    val sa = Port(s, "a")
+    val sb = Port(s, "b")
+    Port(s, "c")
+    model.boxes += s
+
+    model.connections += new Connection(Some(ac), Some(sa))
+    model.connections += new Connection(Some(bc), Some(sb))
+    model.className = "graystone.zaluum.SumSum"
+    model
+  }
+  def printModel = {
+    val model = new Model;
+    val a = Box("A", "graystone.zaluum.ConstBox", (0,0), (50,50))
+    val ao = Port(a, "o")
+    model.boxes += a
+
+    val b = Box("B", "graystone.zaluum.ScalaPrintBox",(100,100),(50,50) )
+    val ba = Port(b, "a")
+    model.boxes += b
+
+    model.connections += new Connection(Some(ao), Some(ba))
+    model.className = "graystone.zaluum.PrintResult"
+    model
+  }
 }
