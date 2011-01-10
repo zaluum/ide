@@ -32,7 +32,7 @@ object Compiler {
     classname != null && checkParts
   }
 }
-class Compiler(val m: Model, val scan: PathScanner) {
+class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   object reporter {
     val errors = Buffer[String]()
     def report(str: String, mark: Option[AnyRef] = None) {
@@ -57,7 +57,7 @@ class Compiler(val m: Model, val scan: PathScanner) {
 
   var portType = Map[Port, TypedPort]()
   def getBoxClass(cl: String): Option[BoxClass] = {
-    scan.javaClasses.get(cl) orElse (scan.zaluumClasses.get(cl))
+    boxClassPath.find(cl) 
   }
   def checkValidClassname(classname: String) = {
     // check characters
