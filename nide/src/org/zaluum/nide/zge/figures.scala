@@ -1,6 +1,5 @@
 package org.zaluum.nide.zge
 
-
 import org.eclipse.draw2d.Polyline
 import org.eclipse.swt.graphics.Image
 import org.eclipse.draw2d.ImageFigure
@@ -17,17 +16,27 @@ import org.eclipse.swt.SWT
 import org.eclipse.draw2d.RectangleFigure
 import org.eclipse.draw2d.IFigure
 import org.eclipse.swt.graphics.Cursor
-import org.eclipse.draw2d.{FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, Ellipse, ColorConstants, Figure}
+import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, Ellipse, ColorConstants, Figure }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point, Dimension }
 import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.model._ 
+import org.zaluum.nide.model._
 
-trait BoxFigure extends Figure{
-  def viewer:Viewer
-  val box:Box
-  var boxClass:Option[BoxClass]
+trait CanShowFeedback extends Figure {
+  def showFeedback()
+  def hideFeedback()
+}
+trait CanShowUpdate extends Figure {
+  def show()
+  def hide()
+  def update()
+}
+
+trait BoxFigure extends Figure with CanShowFeedback with CanShowUpdate {
+  def viewer: Viewer
+  val box: Box
+  var boxClass: Option[BoxClass]
   lazy val feed = new BoxFeedbackFigure(this)
-  def size : (Int,Int)
+  def size: (Int, Int)
   def showFeedback() {
     viewer.feedbackLayer.add(feed)
     update()
@@ -39,73 +48,96 @@ trait BoxFigure extends Figure{
     viewer.layer.add(this)
     update()
   }
-  def hide(){
-   viewer.layer.remove(this) 
+  def hide() {
+    viewer.layer.remove(this)
   }
   def update() {
-    val rect = new Rectangle(box.pos._1,box.pos._2,size._1,size._2)
+    val rect = new Rectangle(box.pos._1, box.pos._2, size._1, size._2)
     setBounds(rect)
     feed.setInnerBounds(rect)
   }
-  def moveDeltaFeed(delta : (Int,Int)) {
-   val loc = new Point(box.pos._1 + delta._1, box.pos._2 + delta._2)
-   feed.setInnerLocation(loc)
+  def moveDeltaFeed(delta: (Int, Int)) {
+    val loc = new Point(box.pos._1 + delta._1, box.pos._2 + delta._2)
+    feed.setInnerLocation(loc)
   }
-  def resizeDeltaFeed(delta : (Int,Int), handle : HandleRectangle) {
-    feed.setInnerBounds(handle.deltaAdd(delta,getBounds))
+  def resizeDeltaFeed(delta: (Int, Int), handle: HandleRectangle) {
+    feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
 }
-
-trait WithPorts extends BoxFigure{
-  var ports = Map[Port,PortFigure]()
-  private var showing = false
+class PortFigure(val bf: BoxFigure, val p: Port, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
+  setAntialias(1)
+  setBackgroundColor(ColorConstants.white)
+  def show() {
+    viewer.portsLayer.add(this)
+    update()
+  }
+  def hide() {
+    viewer.portsLayer.remove(this)
+  }
+  def showFeedback() {
+    setBackgroundColor(ColorConstants.blue)
+  }
+  def hideFeedback() {
+    setBackgroundColor(ColorConstants.white)
+  }
+  def update() {
+    val portType = bf.boxClass flatMap { _.port(p.name) }
+    val dx = portType map { _.pos._1 } getOrElse 0
+    val dy = portType map { _.pos._2 } getOrElse 0
+    val x = bf.getBounds.x + dx
+    val y = bf.getBounds.y + dy
+    setLocation(new Point(x, y))
+    setSize(10, 10)
+  }
+}
+trait WithPorts extends BoxFigure {
+  object portMapper extends ModelViewMapper[Port,PortFigure] {
+    def modelSet = box.ports
+    def buildFigure(p:Port) = new PortFigure(WithPorts.this, p, viewer)
+  }
   override def show() {
     super.show()
-    ports.values foreach { _.show()}
-    showing = true
+    portMapper.viewMap.values foreach { _.show() }
   }
   override def hide() {
     super.hide()
-    ports.values foreach { _.hide()}
-    showing = false
+    portMapper.viewMap.values foreach { _.hide() }
   }
   override def update() {
     super.update()
-    val removed = ports.keySet -- box.ports
-    val added = box.ports -- ports.keySet
-    for (p <- removed) {
-      val pf = ports(p)
-      if (showing) pf.hide()
-      ports -= p
-    }
-    for (p <- added) {
-      val pf = new PortFigure(this,p,viewer)
-      ports += (p-> pf)
-      if (showing) pf.show()
-    }
-    ports.values foreach { _.update() }
+    portMapper.update()
   }
 }
 
-class ImageBoxFigure(val box:Box,var boxClass:Option[BoxClass],val viewer:Viewer, val image:Image) extends ImageFigure(image) with BoxFigure with WithPorts{
-  def size =( image.getBounds.width, image.getBounds.height)
+class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: Viewer, val image: Image) extends ImageFigure(image) with BoxFigure with WithPorts {
+  def size = (image.getBounds.width, image.getBounds.height)
 }
-class SwingBoxFigure(val viewer:Viewer,val box:Box, c: JComponent)  extends SwingFigure(c) with BoxFigure{
-  def size = (50,50) //FIXME
-  var boxClass:Option[BoxClass] = None // FIXME
+class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends SwingFigure(c) with BoxFigure {
+  def size = (50, 50) //FIXME
+  var boxClass: Option[BoxClass] = None // FIXME
 }
 
-class ConnectionFigure(val c: Connection,  modelView:ModelView) extends Polyline {
+class ConnectionFigure(val c: Connection, modelView: ModelView) extends Polyline with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
+  setLineStyle(SWT.LINE_SOLID)
+  setTolerance(5)
   def update() {
-    val fromFig = c.from flatMap { modelView.portFigure(_) } foreach { f=> setStart(f.getBounds.getCenter) }
-    val toFig = c.to flatMap { modelView.portFigure(_) } foreach { f=> setEnd(f.getBounds.getCenter) }
-  }    
+    val fromFig = c.from flatMap { modelView.portFigure(_) } foreach { f ⇒ setStart(f.getBounds.getCenter) }
+    val toFig = c.to flatMap { modelView.portFigure(_) } foreach { f ⇒ setEnd(f.getBounds.getCenter) }
+  }
   def hide {
     modelView.viewer.connectionsLayer.remove(this)
   }
   def show {
     modelView.viewer.connectionsLayer.add(this)
     update()
+  }
+  def showFeedback {
+    setLineStyle(SWT.LINE_DASH)
+    setLineWidthFloat(1.5f)
+  }
+  def hideFeedback {
+    setLineStyle(SWT.LINE_SOLID)
+    setLineWidthFloat(1.0f)
   }
 }

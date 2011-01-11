@@ -60,7 +60,7 @@ class Viewer(parent: Composite, val controller: Controller) {
   }
   def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: BoxFigure) ⇒ bf }
   def feedbackAt(p: Point) = findDeepAt(feedbackLayer, p)
-
+  def connectionAt(p: Point) = findShallowAt(connectionsLayer, p) map { case c: ConnectionFigure ⇒ c }
   val marquee = new RectangleFigure
   marquee.setFill(false)
   marquee.setLineStyle(SWT.LINE_DASH);
@@ -81,72 +81,37 @@ class Viewer(parent: Composite, val controller: Controller) {
 }
 class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
 
-  var selectedBoxes = Set[BoxFigure]()
-  private var viewMap = Map[Box, BoxFigure]()
-  private var connectionMap = Map[Connection, ConnectionFigure]()
+  var selectedBoxes = new SelectionManager[BoxFigure]()
+  var selectedConnections = new SelectionManager[ConnectionFigure]()
+
+  object boxMapper extends ModelViewMapper[Box, BoxFigure] {
+    def modelSet = model.boxes
+    def buildFigure(box: Box) = {
+      val cl = bcp.find(box.className)
+      val image = cl map { c ⇒ viewer.imageFactory(c.image) }
+      new ImageBoxFigure(box, cl, viewer, image.getOrElse { viewer.imageFactory.notFound })
+    }
+  }
+  object connectionMapper extends ModelViewMapper[Connection, ConnectionFigure] {
+    def modelSet = model.connections
+    def buildFigure(conn: Connection) = new ConnectionFigure(conn, ModelView.this)
+  }
+
   def portFigure(p: Port): Option[PortFigure] = {
-    viewMap.get(p.box) flatMap {
+    boxMapper.get(p.box) flatMap {
       _ match {
-        case w: WithPorts ⇒  w.ports.get(p)
+        case w: WithPorts ⇒ w.portMapper.get(p)
         case _ ⇒ None
       }
     }
   }
+
   def update() {
-    def updateBoxes() {
-      val removed = viewMap.keySet -- model.boxes
-      val added = model.boxes -- viewMap.keys
-      removed foreach { b ⇒ viewMap(b).hide; viewMap -= b }
-      for (box ← added) {
-        //val boxview = new SwingBoxFigure(viewer,box, new JButton("text"))
-        val cl = bcp.find(box.className)
-        val image = cl map { c ⇒ viewer.imageFactory(c.image) }
-        val boxview = new ImageBoxFigure(box, cl, viewer, image.getOrElse { viewer.imageFactory.notFound })
-        viewMap += (box -> boxview)
-        boxview.show
-      }
-      viewMap.values foreach { _.update() }
-    }
-    def updateConnections() {
-      val removed = connectionMap.keySet -- model.connections
-      val added = model.connections -- connectionMap.keySet
-      removed foreach { c ⇒ connectionMap(c).hide; connectionMap -= c }
-      for (conn ← added) {
-        val conFig = new ConnectionFigure(conn, this)
-        connectionMap += (conn -> conFig)
-        conFig.show
-      }
-      connectionMap.values foreach { _.update() }
-    }
-    updateBoxes()
-    updateConnections
-    // connections 
-  }
-  def select(box: BoxFigure) {
-    if (!selectedBoxes(box)) {
-      selectedBoxes += box
-      box.showFeedback
-    }
-  }
-  def deselect(box: BoxFigure) {
-    if (selectedBoxes(box)) {
-      box.hideFeedback
-      selectedBoxes -= box
-    }
+    boxMapper.update()
+    connectionMapper.update()
   }
   def deselectAll() {
-    selectedBoxes foreach { deselect(_) }
-  }
-  def toggleSelection(box: BoxFigure) {
-    if (selectedBoxes(box)) deselect(box)
-    else select(box)
-  }
-  def updateSelection(figs: Set[BoxFigure], shift: Boolean) {
-    if (shift) {
-      figs foreach { toggleSelection(_) }
-    } else {
-      deselectAll()
-      figs foreach { select(_) }
-    }
+    selectedBoxes.deselectAll
+    selectedConnections.deselectAll
   }
 }

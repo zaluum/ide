@@ -63,26 +63,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeBoxFeedbackFigure) ext
     setLocation(new Point(posx, posy))
   }
 }
-class PortFigure(val bf:BoxFigure,val p:Port, viewer:Viewer) extends Ellipse {
-  setAntialias(1)
-  def show(){
-    viewer.portsLayer.add(this)
-    update()
-  }
-  def hide(){
-    viewer.portsLayer.remove(this)
-  }
 
-  def update(){
-    val portType = bf.boxClass flatMap {_.port(p.name)}
-    val dx =portType map {_.pos._1} getOrElse 0
-    val dy =portType map {_.pos._2} getOrElse 0
-    val x = bf.getBounds.x + dx
-    val y = bf.getBounds.y + dy
-    setLocation(new Point(x,y))
-    setSize(10,10)
-  }
-}
 class BoxFeedbackFigure(val bf : BoxFigure) extends Figure {
   val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
@@ -103,7 +84,7 @@ class BoxFeedbackFigure(val bf : BoxFigure) extends Figure {
     setBounds(inside)
     rectangle.setBounds(inside)
   }
-
+  
 }
 class ResizeBoxFeedbackFigure(bf: BoxFigure) extends BoxFeedbackFigure(bf) {
   
