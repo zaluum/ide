@@ -95,8 +95,17 @@ class SwingBoxFigure(val viewer:Viewer,val box:Box, c: JComponent)  extends Swin
   var boxClass:Option[BoxClass] = None // FIXME
 }
 
-class ConnectionFigure(val c: Connection) extends Polyline {
+class ConnectionFigure(val c: Connection,  modelView:ModelView) extends Polyline {
+  setAntialias(1)
   def update() {
-    
+    val fromFig = c.from flatMap { modelView.portFigure(_) } foreach { f=> setStart(f.getBounds.getCenter) }
+    val toFig = c.to flatMap { modelView.portFigure(_) } foreach { f=> setEnd(f.getBounds.getCenter) }
+  }    
+  def hide {
+    modelView.viewer.connectionsLayer.remove(this)
+  }
+  def show {
+    modelView.viewer.connectionsLayer.add(this)
+    update()
   }
 }

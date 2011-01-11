@@ -57,7 +57,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
         case (None, _, Some(port)) => // connect
           connect.enter(initDrag,port)
         case (None, Some(fig),_) => // select and move
-          if (!modelView.selected.contains(fig))
+          if (!modelView.selectedBoxes.contains(fig))
             modelView.updateSelection(Set(fig),shift)
           moving.enter(initDrag)
         case (None,None,None) => marqueeing.enter(initDrag) // marquee
@@ -104,7 +104,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   object moving extends MovingState {
     def doEnter{}
     def buttonUp {
-      val commands= modelView.selected map {
+      val commands= modelView.selectedBoxes map {
           bf =>
           val oldLoc = bf.getBounds.getLocation
           new MoveCommand(bf.box, (oldLoc.x + d._1, oldLoc.y + d._2))
@@ -115,9 +115,9 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def drag{}
     def buttonDown{}
     def exit() { selecting.enter() }
-    def doMove() {  modelView.selected foreach { _.moveDeltaFeed(d) } }
+    def doMove() {  modelView.selectedBoxes foreach { _.moveDeltaFeed(d) } }
     def abort() {
-      modelView.selected foreach { _.moveDeltaFeed((0,0)) }
+      modelView.selectedBoxes foreach { _.moveDeltaFeed((0,0)) }
       exit()
     }
   }
