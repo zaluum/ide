@@ -78,7 +78,6 @@ class Model {
   var connections =Set[Connection]()
 }
 
-class Connection(var from: Option[Port], var to:Option[Port]) 
 object Box {
   def apply(name:String, className:String, pos : (Int,Int)) ={
     val b = new Box()

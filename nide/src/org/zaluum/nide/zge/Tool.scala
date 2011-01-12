@@ -15,7 +15,7 @@ abstract class Tool(viewer: Viewer) {
   def controller = viewer.controller
   def modelView = viewer.modelView
   def figureUnderMouse = viewer.figureAt(mouseLocation)
-  def connectionUnderMouse = viewer.connectionAt(mouseLocation)
+  def lineUnderMouse = viewer.lineAt(mouseLocation)
   def feedbackUnderMouse = viewer.feedbackAt(mouseLocation)
   val listener = new MouseMoveListener() with MouseListener with KeyListener with FocusListener with DragDetectListener with MenuDetectListener with MouseTrackListener with MouseWheelListener with TraverseListener {
     def dragDetected(e: DragDetectEvent) { updateMouse(e); state.drag() }

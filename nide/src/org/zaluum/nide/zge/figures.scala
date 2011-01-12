@@ -66,7 +66,11 @@ trait BoxFigure extends Figure with CanShowFeedback with CanShowUpdate {
 }
 class PortFigure(val bf: BoxFigure, val p: Port, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
-  setBackgroundColor(ColorConstants.white)
+  setAlpha(50)
+  setOutline(false)
+  val highlight = ColorConstants.blue
+  val normal = ColorConstants.gray
+  setBackgroundColor(normal)
   def show() {
     viewer.portsLayer.add(this)
     update()
@@ -75,10 +79,10 @@ class PortFigure(val bf: BoxFigure, val p: Port, viewer: Viewer) extends Ellipse
     viewer.portsLayer.remove(this)
   }
   def showFeedback() {
-    setBackgroundColor(ColorConstants.blue)
+    setBackgroundColor(highlight)
   }
   def hideFeedback() {
-    setBackgroundColor(ColorConstants.white)
+    setBackgroundColor(normal)
   }
   def update() {
     val portType = bf.boxClass flatMap { _.port(p.name) }
@@ -117,13 +121,13 @@ class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends Sw
   var boxClass: Option[BoxClass] = None // FIXME
 }
 
-class ConnectionFigure(val c: Connection, modelView: ModelView) extends Polyline with CanShowFeedback with CanShowUpdate {
+/*class ConnectionFigure(val c: Connection, modelView: ModelView) extends Polyline with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setLineStyle(SWT.LINE_SOLID)
   setTolerance(5)
   def update() {
-    val fromFig = c.from flatMap { modelView.portFigure(_) } foreach { f ⇒ setStart(f.getBounds.getCenter) }
-    val toFig = c.to flatMap { modelView.portFigure(_) } foreach { f ⇒ setEnd(f.getBounds.getCenter) }
+    c.from flatMap { modelView.portFigure(_) } foreach { f ⇒ setStart(f.getBounds.getCenter) }
+    c.to flatMap { modelView.portFigure(_) } foreach { f ⇒ setEnd(f.getBounds.getCenter) }
   }
   def hide {
     modelView.viewer.connectionsLayer.remove(this)
@@ -140,4 +144,35 @@ class ConnectionFigure(val c: Connection, modelView: ModelView) extends Polyline
     setLineStyle(SWT.LINE_SOLID)
     setLineWidthFloat(1.0f)
   }
+}*/
+import  org.eclipse.draw2d.Polyline
+
+class LineFigure(l:Line, val pl : ConnectionFigure, modelView:ModelView) extends Polyline with CanShowUpdate with CanShowFeedback{
+  def hide() = modelView.viewer.connectionsLayer.remove(this)
+  def show() = modelView.viewer.connectionsLayer.add(this)
+  def update() {
+    setStart(new Point(l.from.x,l.from.y))
+    setEnd(new Point(l.end.x,l.end.y))
+  }
+  def showFeedback {
+    setLineStyle(SWT.LINE_DASH)
+    setLineWidthFloat(1.5f)
+  }
+  def hideFeedback {
+    setLineStyle(SWT.LINE_SOLID)
+    setLineWidthFloat(1.0f)
+  }
+}
+class ConnectionFigure(c:Connection,modelView:ModelView) extends Figure with CanShowUpdate{
+  object lines extends ModelViewMapper[Line, LineFigure] {
+    def buildFigure(l:Line) = {
+      val lf = new LineFigure(l,ConnectionFigure.this,modelView)
+      lf.setAntialias(1)
+      lf
+    }
+    def modelSet = c.buf.toSet
+  }
+  def show() = lines.viewMap.values foreach { _.show() }
+  def hide() = lines.viewMap.values foreach { _.hide() }
+  def update() = lines.update()
 }

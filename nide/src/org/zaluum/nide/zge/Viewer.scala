@@ -60,7 +60,7 @@ class Viewer(parent: Composite, val controller: Controller) {
   }
   def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: BoxFigure) ⇒ bf }
   def feedbackAt(p: Point) = findDeepAt(feedbackLayer, p)
-  def connectionAt(p: Point) = findShallowAt(connectionsLayer, p) map { case c: ConnectionFigure ⇒ c }
+  def lineAt(p: Point) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
   val marquee = new RectangleFigure
   marquee.setFill(false)
   marquee.setLineStyle(SWT.LINE_DASH);
@@ -82,7 +82,7 @@ class Viewer(parent: Composite, val controller: Controller) {
 class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
 
   var selectedBoxes = new SelectionManager[BoxFigure]()
-  var selectedConnections = new SelectionManager[ConnectionFigure]()
+  var selectedLines = new SelectionManager[LineFigure]()
 
   object boxMapper extends ModelViewMapper[Box, BoxFigure] {
     def modelSet = model.boxes
@@ -112,6 +112,6 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
   }
   def deselectAll() {
     selectedBoxes.deselectAll
-    selectedConnections.deselectAll
+    selectedLines.deselectAll
   }
 }

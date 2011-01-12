@@ -16,21 +16,21 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   object selecting extends ToolState {
     
     var selected: Option[BoxFigure] = None
-    var connectionSelected : Option[ConnectionFigure] = None
+    var lineSelected : Option[LineFigure] = None
     var handle: Option[HandleRectangle] = None
     var port: Option[PortFigure] = None
     var initDrag : Point = _
     
     def buttonDown {
       selected = figureUnderMouse
-      if (selected.isEmpty) connectionSelected = connectionUnderMouse
+      if (selected.isEmpty) lineSelected = lineUnderMouse
       initDrag = mouseLocation.getCopy
     }
 
     def buttonUp {
-      (selected, connectionSelected) match {
+      (selected, lineSelected) match {
         case (Some(box),_) => modelView.selectedBoxes.updateSelection(Set(box),shift)
-        case (None, Some(con)) => modelView.selectedConnections.updateSelection(Set(con),shift)
+        case (None, Some(line)) => modelView.selectedLines.updateSelection(Set(line),shift)
         case (None,None) => modelView.deselectAll()
       }
     }
@@ -71,21 +71,21 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def exit {}
   }
   object connect extends MovingState {
+    implicit def toP(p:Point) = P(p.x,p.y)
     var dst : Option[PortFigure] = None
     var initPort : PortFigure = _
     val portsTrack = new OverTrack[PortFigure](viewer.portsLayer) {
-      def onEnter(p:PortFigure) { dst = Some(p); p.setBackgroundColor(ColorConstants.red) }
-      def onExit(p:PortFigure) { dst = None; p.setBackgroundColor(ColorConstants.white) }
+      def onEnter(p:PortFigure) { dst = Some(p); p.showFeedback }
+      def onExit(p:PortFigure) { dst = None; p.hideFeedback }
     }
-    val line = new Polyline
-    line.setAntialias(1)
-    line.setForegroundColor(ColorConstants.gray)
+    var con = new Connection(None,None)
+    var conf = new ConnectionFigure(con,modelView)
     def enter(initdrag:Point, initPort:PortFigure) {
       super.enter(initdrag)
       this.initPort = initPort
-      line.setStart(initPort.getBounds.getCenter)
-      line.setEnd(mouseLocation)
-      viewer.feedbackLayer.add(line)
+      con.simpleConnect(initPort.getBounds.getCenter, mouseLocation)
+      conf.show
+      conf.update
       viewer.setCursor(Cursors.HAND)
     }
     def doEnter{}
@@ -96,12 +96,15 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def drag{}
     def buttonDown{}
     def exit() {
-      dst foreach {_.setBackgroundColor(ColorConstants.white)}
-      viewer.feedbackLayer.remove(line); 
+      dst foreach {_.hideFeedback}
       viewer.setCursor(null)
       selecting.enter()
     }
-    def doMove() {  line.setEnd(mouseLocation); portsTrack.update() }
+    def doMove() {
+      con.simpleConnect(initPort.getBounds.getCenter, mouseLocation)
+      conf.update
+      portsTrack.update() 
+    }
     def abort() { exit() }  
   }
   // MOVE
