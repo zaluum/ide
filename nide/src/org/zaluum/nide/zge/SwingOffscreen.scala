@@ -31,7 +31,7 @@ object SwingOffscreen {
       }
     }
     frame.add(canvas)
-    frame.show
+    frame.setVisible(true)
     //awtWindow.show()
  }  
 }

@@ -96,7 +96,7 @@ class BoxClassPathScanner(zaluumDir: File, cl: ClassLoader) extends BoxClassPath
   private def scanClassPath() {
     val discoverer = new Discoverer() {
       def findResources() = {
-        Array(new File("./bin").toURL) // FIXME use classloader to explore instead of bin 
+        Array(new File("./bin").toURI.toURL) // FIXME use classloader to explore instead of bin 
       }
       def getFilter = new FilterImpl()
     }

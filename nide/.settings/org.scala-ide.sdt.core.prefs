@@ -1,4 +1,4 @@
-#Fri Jan 07 21:02:40 CET 2011
+#Wed Jan 12 18:07:41 CET 2011
 Xcheck-null=false
 Xcheckinit=false
 Xdisable-assertions=false
@@ -14,15 +14,18 @@ Xwarninit=false
 Ybuild-manager-debug=false
 Yclosure-elim=false
 Ydead-code=false
+Ydetach=false
 Yinline=false
 Ylinearizer=rpo
 Yno-generic-signatures=false
 Yno-imports=false
+Yno-predefs=false
 Yrecursion=0
 Yself-in-annots=false
+Ysqueeze=on
 Ystruct-dispatch=poly-cache
 Ywarn-dead-code=false
-deprecation=false
+deprecation=true
 eclipse.preferences.version=1
 g=vars
 no-specialization=false

@@ -59,7 +59,6 @@ abstract class Tool(viewer: Viewer) {
   canvas.addTraverseListener(listener);
 
   trait ToolState {
-    def enter() { state = this }
     def exit()
     def buttonDown() 
     def move() 
@@ -70,15 +69,12 @@ abstract class Tool(viewer: Viewer) {
 
   trait MovingState extends ToolState {
     var initDrag: Point = _
-    var d = (0,0)
     def enter(initDrag:Point) {
-      enter()
+      state = this
       this.initDrag = initDrag
       doEnter()
     }
     def doEnter()
-    def move() { d = delta; doMove()}
-    def doMove() 
     def delta = {
       val now = mouseLocation
       (now.x - initDrag.x, now.y - initDrag.y)

@@ -14,13 +14,12 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   state = selecting
   // SELECTING
   object selecting extends ToolState {
-    
     var selected: Option[BoxFigure] = None
     var lineSelected : Option[LineFigure] = None
     var handle: Option[HandleRectangle] = None
     var port: Option[PortFigure] = None
     var initDrag : Point = _
-    
+    def enter() { state=this }
     def buttonDown {
       selected = figureUnderMouse
       if (selected.isEmpty) lineSelected = lineUnderMouse
@@ -70,6 +69,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def abort {}
     def exit {}
   }
+  // CONNECT
   object connect extends MovingState {
     implicit def toP(p:Point) = P(p.x,p.y)
     var dst : Option[PortFigure] = None
@@ -112,7 +112,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
       viewer.setCursor(null)
       selecting.enter()
     }
-    def doMove() {
+    def move() {
       val end = dst match {
         case Some(df) => df.getBounds.getCenter
         case None => mouseLocation
@@ -130,7 +130,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
       val commands= modelView.selectedBoxes.selected map {
           bf =>
           val oldLoc = bf.getBounds.getLocation
-          new MoveCommand(bf.box, (oldLoc.x + d._1, oldLoc.y + d._2))
+          new MoveCommand(bf.box, (oldLoc.x + delta._1, oldLoc.y + delta._2))
       };
       controller.exec(new ChainCommand(commands.toList))
       exit()
@@ -138,7 +138,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def drag{}
     def buttonDown{}
     def exit() { selecting.enter() }
-    def doMove() {  modelView.selectedBoxes.selected foreach { _.moveDeltaFeed(d) } }
+    def move() {  modelView.selectedBoxes.selected foreach { _.moveDeltaFeed(delta) } }
     def abort() {
       modelView.selectedBoxes.selected foreach { _.moveDeltaFeed((0,0)) }
       exit()
@@ -162,7 +162,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
       viewer.hideMarquee()
       exit()
     }
-    def doMove { viewer.moveMarquee(new Rectangle(mouseLocation, initDrag)) }
+    def move { viewer.moveMarquee(new Rectangle(mouseLocation, initDrag)) }
   }
   // RESIZING
   object resizing extends MovingState {
@@ -175,12 +175,12 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     }
     def doEnter{}
     def buttonUp {
-      val newBounds = handle.deltaAdd(d,bf.getBounds);
+      val newBounds = handle.deltaAdd(delta,bf.getBounds);
       //val comm = new ResizeCommand(bf.box, (newBounds.x,newBounds.y), (newBounds.width,newBounds.height))
       //controller.exec(comm)
       exit()
     }
-    def doMove() {  bf.resizeDeltaFeed(delta,handle)  }
+    def move() {  bf.resizeDeltaFeed(delta,handle)  }
     def abort() {
       bf.resizeDeltaFeed((0,0),handle)
       exit()
@@ -189,5 +189,27 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def buttonDown {}
     def exit() { selecting.enter()  }
   }
-  
+  // CREATING 
+  object creating extends ToolState {
+    var bf : BoxFigure = _
+    def enter(boxClass:BoxClass){
+      state=this
+      val box = new Box()
+      box.className = boxClass.className
+      val image = viewer.imageFactory.apply(boxClass.image)
+      bf = new ImageBoxFigure(box,Some(boxClass),viewer,image)
+      bf.update()
+      bf.hide()
+      bf.showFeedback()
+    }
+    def move() { bf.moveFeed(mouseLocation) }
+    def abort() { exit() }
+    def drag() {}
+    def buttonUp() {
+      // execute
+      // exit()
+    }
+    def buttonDown() {}
+    def exit() { bf.hideFeedback; bf = null; selecting.enter() }
+  }
 }

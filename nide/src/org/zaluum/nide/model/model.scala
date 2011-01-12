@@ -91,6 +91,7 @@ class Model {
   var className = ""
   var imageName = ""
   var boxes = Set[Box]()
+  var portDecls = Set[PortDecl]() 
   def boxNamed(str:String) = boxes.exists{ _.name == str  }
   var connections =Set[Connection]()
   def cleanUp {
@@ -124,15 +125,16 @@ class Box {
   override def toString = name 
 }
 object PortDecl {
-  def apply(b:Box, name:String, pos:(Int,Int) = (0,10)) : PortDecl= {
-    val p = new PortDecl(b,name)
+  def apply(m:Model, name:String, pos:(Int,Int) = (0,10)) : PortDecl= {
+    val p = new PortDecl(m,name)
+    m.portDecls += p
     p.pos = pos
     p
   }
 }
-class PortDecl(var box:Box,var name:String) {
+class PortDecl(var m:Model,var name:String) {
   var pos = (0,10)
-  override def toString = box +"->" + name
+  override def toString = "portDecl(" + name + ")"
 }
 class BoxClass(val className: String,val scala:Boolean = false, val image:String) {
   var ports = Set[TypedPort]()

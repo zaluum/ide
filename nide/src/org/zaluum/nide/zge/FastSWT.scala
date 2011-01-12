@@ -78,6 +78,14 @@ object FastSWT {
       //new Generator().generate(viewer.controller.model,new CodeWriter(out))
       out.close
     })
+    val buttonCreate = new Button(buttons,SWT.PUSH)
+    buttonCreate.setText("new SUM")
+    addReaction(buttonCreate, {
+      if (viewer==null) return
+      viewer.tool.state.abort()
+      viewer.tool.creating.enter(bcp.find("graystone.zaluum.SumBox").get)
+      viewer.canvas.setFocus()
+    })
     //viewer.canvas.setPreferredSize(450,450)
     //shell.pack()
     shell.open()

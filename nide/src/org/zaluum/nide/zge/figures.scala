@@ -49,12 +49,16 @@ trait BoxFigure extends Figure with CanShowFeedback with CanShowUpdate {
     update()
   }
   def hide() {
-    viewer.layer.remove(this)
+    if (viewer.layer.getChildren.contains(this))
+      viewer.layer.remove(this)
   }
   def update() {
     val rect = new Rectangle(box.pos._1, box.pos._2, size._1, size._2)
     setBounds(rect)
     feed.setInnerBounds(rect)
+  }
+  def moveFeed(loc : Point) {
+    feed.setInnerLocation(loc)
   }
   def moveDeltaFeed(delta: (Int, Int)) {
     val loc = new Point(box.pos._1 + delta._1, box.pos._2 + delta._2)
@@ -76,7 +80,8 @@ class PortFigure(val bf: BoxFigure, val typ: TypedPort, val portRef: PortRef, vi
     update()
   }
   def hide() {
-    viewer.portsLayer.remove(this)
+    if (viewer.portsLayer.getChildren.contains(this))
+      viewer.portsLayer.remove(this)
   }
   def showFeedback() {
     setBackgroundColor(highlight)
@@ -86,12 +91,12 @@ class PortFigure(val bf: BoxFigure, val typ: TypedPort, val portRef: PortRef, vi
   }
   def anchor = getBounds.getCenter
   def update() {
+    setSize(10, 10)
     val dx = typ.pos._1
     val dy = typ.pos._2
-    val x = bf.getBounds.x + dx
-    val y = bf.getBounds.y + dy
+    val x = bf.getBounds.x + dx - getBounds.width/2
+    val y = bf.getBounds.y + dy - getBounds.height/2
     setLocation(new Point(x, y))
-    setSize(10, 10)
   }
 }
 trait WithPorts extends BoxFigure {
@@ -165,8 +170,7 @@ class ConnectionFigure(c: Connection, modelView: ModelView) extends Figure with 
   def toFig = c.to flatMap { t ⇒ modelView.findPortFigure(t) }
   def withFullConnection(body: (PortFigure, PortFigure) ⇒ Unit) {
     (fromFig, toFig) match {
-      case (Some(f), Some(t)) ⇒
-        body(f, t)
+      case (Some(f), Some(t)) ⇒ body(f, t)
       case _ ⇒
     }
   }
@@ -175,9 +179,9 @@ class ConnectionFigure(c: Connection, modelView: ModelView) extends Figure with 
       withFullConnection { (fromFig, toFig) ⇒
         c.simpleConnect(fromFig.anchor, toFig.anchor)
       }
-    }else{
-      withFullConnection { (fromFig,toFig) =>
-        if (pointToP(fromFig.anchor) != c.buf.first.from || pointToP(toFig.anchor) != c.buf.last.end)
+    } else {
+      withFullConnection { (fromFig, toFig) ⇒
+        if (pointToP(fromFig.anchor) != c.buf.head.from || pointToP(toFig.anchor) != c.buf.last.end)
           c.simpleConnect(fromFig.anchor, toFig.anchor) // TODO only move
       }
     }
