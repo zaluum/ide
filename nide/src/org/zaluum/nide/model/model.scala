@@ -26,7 +26,8 @@ object ProtoModel{
   }
   def contentsToProtos(m:Model) = {
     val c = BoxFileProtos.Contents.newBuilder()
-    for (b <- m.boxes) { c.addInstance(b.toInstance)  }
+    for (b <- m.boxes) { c.addInstance(b.toProto)  }
+    for (con <-m.connections ) {  }
     // TODO connections
     c.build
   }
@@ -60,22 +61,42 @@ object ProtoModel{
       model.boxes+=box
       // ports
     }
+    var portRefs = Map[Box,Set[PortRef]]() 
     for (connection <- contents.getConnectionList){
-      // TODO disconnected ports
-      connection.getSource
-      connection.getTarget
-      // lookup
+      if (connection.hasSource && connection.hasTarget){
+        def findBox(str:String) = model.boxes find { _.name == str }
+        def findPortRef(box : Box , name : String) = {
+          if (!portRefs.contains(box)) portRefs += (box -> Set())
+          portRefs(box).find {_.name == name} getOrElse {
+            val newRef = PortRef(box,name)
+            portRefs += (box -> (portRefs(box) + newRef))
+            newRef
+          }
+        }
+        def portOf (proto:BoxFileProtos.Contents.PortRef) = {
+          findBox(proto.getBoxName) map { b=> findPortRef(b,proto.getPortName) }
+        }
+        (portOf(connection.getSource), portOf(connection.getTarget)) match {
+          case (Some(from),Some(to)) =>
+            model.connections += new Connection(Some(from),Some(to))
+          case (f,t) => println("ports not found " + f + " " + t)
+        }
+      }
     }
+    model.cleanUp
     model
   }
 }
-
 class Model {
   var className = ""
   var imageName = ""
   var boxes = Set[Box]()
   def boxNamed(str:String) = boxes.exists{ _.name == str  }
   var connections =Set[Connection]()
+  def cleanUp {
+    connections = connections.filterNot {c => c.from == c.to  || // loop
+      (c.buf.isEmpty && !(c.from.isDefined && c.from.isDefined))} //empty waypoints
+  }
 }
 
 object Box {
@@ -92,26 +113,24 @@ class Box {
   var className = "img"
   var pos = (0, 0)
   var name = ""
-  var ports = Set[Port]()
-  def toInstance = {
+ // var ports = Set[Port]()
+  def toProto = {
     val instance = BoxFileProtos.Contents.Instance.newBuilder()
     instance.setName(name)
     instance.setClassName(className)
     instance.setPos(Model.toPoint(pos))
     instance.build
-    // TODO ports
   }
   override def toString = name 
 }
-object Port {
-  def apply(b:Box, name:String, pos:(Int,Int) = (0,10)) : Port= {
-    val p = new Port(b,name)
+object PortDecl {
+  def apply(b:Box, name:String, pos:(Int,Int) = (0,10)) : PortDecl= {
+    val p = new PortDecl(b,name)
     p.pos = pos
-    b.ports += p
     p
   }
 }
-class Port(var box:Box,var name:String) {
+class PortDecl(var box:Box,var name:String) {
   var pos = (0,10)
   override def toString = box +"->" + name
 }

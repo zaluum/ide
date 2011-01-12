@@ -79,7 +79,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     val portsTrack = new OverTrack[PortFigure](viewer.portsLayer) {
       def onEnter(p:PortFigure) { 
         dst= Some(p); 
-        con.get.to = Some(p.p); 
+        con.get.to = Some(p.portRef); 
         p.showFeedback 
       }
       def onExit(p:PortFigure) { dst= None; con.get.to = None; p.hideFeedback }
@@ -87,7 +87,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def enter(initdrag:Point, initPort:PortFigure) {
       super.enter(initdrag)
       this.initPort = Some(initPort)
-      con = Some(new Connection(Some(initPort.p),None))
+      con = Some(new Connection(Some(initPort.portRef),None))
       conf = Some(new ConnectionFigure(con.get,modelView))
       con.get.simpleConnect(initPort.getBounds.getCenter, mouseLocation)
       conf.get.show

@@ -1814,17 +1814,12 @@ public final class BoxFileProtos {
         return org.zaluum.nide.protobuf.BoxFileProtos.internal_static_zaluum_Contents_PortRef_fieldAccessorTable;
       }
       
-      // repeated string box_name = 1;
+      // required string box_name = 1;
       public static final int BOX_NAME_FIELD_NUMBER = 1;
-      private java.util.List<java.lang.String> boxName_ =
-        java.util.Collections.emptyList();
-      public java.util.List<java.lang.String> getBoxNameList() {
-        return boxName_;
-      }
-      public int getBoxNameCount() { return boxName_.size(); }
-      public java.lang.String getBoxName(int index) {
-        return boxName_.get(index);
-      }
+      private boolean hasBoxName;
+      private java.lang.String boxName_ = "";
+      public boolean hasBoxName() { return hasBoxName; }
+      public java.lang.String getBoxName() { return boxName_; }
       
       // required string port_name = 2;
       public static final int PORT_NAME_FIELD_NUMBER = 2;
@@ -1836,6 +1831,7 @@ public final class BoxFileProtos {
       private void initFields() {
       }
       public final boolean isInitialized() {
+        if (!hasBoxName) return false;
         if (!hasPortName) return false;
         return true;
       }
@@ -1843,8 +1839,8 @@ public final class BoxFileProtos {
       public void writeTo(com.google.protobuf.CodedOutputStream output)
                           throws java.io.IOException {
         getSerializedSize();
-        for (java.lang.String element : getBoxNameList()) {
-          output.writeString(1, element);
+        if (hasBoxName()) {
+          output.writeString(1, getBoxName());
         }
         if (hasPortName()) {
           output.writeString(2, getPortName());
@@ -1858,14 +1854,9 @@ public final class BoxFileProtos {
         if (size != -1) return size;
       
         size = 0;
-        {
-          int dataSize = 0;
-          for (java.lang.String element : getBoxNameList()) {
-            dataSize += com.google.protobuf.CodedOutputStream
-              .computeStringSizeNoTag(element);
-          }
-          size += dataSize;
-          size += 1 * getBoxNameList().size();
+        if (hasBoxName()) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeStringSize(1, getBoxName());
         }
         if (hasPortName()) {
           size += com.google.protobuf.CodedOutputStream
@@ -2013,10 +2004,6 @@ public final class BoxFileProtos {
             throw new IllegalStateException(
               "build() has already been called on this Builder.");
           }
-          if (result.boxName_ != java.util.Collections.EMPTY_LIST) {
-            result.boxName_ =
-              java.util.Collections.unmodifiableList(result.boxName_);
-          }
           org.zaluum.nide.protobuf.BoxFileProtos.Contents.PortRef returnMe = result;
           result = null;
           return returnMe;
@@ -2033,11 +2020,8 @@ public final class BoxFileProtos {
         
         public Builder mergeFrom(org.zaluum.nide.protobuf.BoxFileProtos.Contents.PortRef other) {
           if (other == org.zaluum.nide.protobuf.BoxFileProtos.Contents.PortRef.getDefaultInstance()) return this;
-          if (!other.boxName_.isEmpty()) {
-            if (result.boxName_.isEmpty()) {
-              result.boxName_ = new java.util.ArrayList<java.lang.String>();
-            }
-            result.boxName_.addAll(other.boxName_);
+          if (other.hasBoxName()) {
+            setBoxName(other.getBoxName());
           }
           if (other.hasPortName()) {
             setPortName(other.getPortName());
@@ -2068,7 +2052,7 @@ public final class BoxFileProtos {
                 break;
               }
               case 10: {
-                addBoxName(input.readString());
+                setBoxName(input.readString());
                 break;
               }
               case 18: {
@@ -2080,43 +2064,24 @@ public final class BoxFileProtos {
         }
         
         
-        // repeated string box_name = 1;
-        public java.util.List<java.lang.String> getBoxNameList() {
-          return java.util.Collections.unmodifiableList(result.boxName_);
+        // required string box_name = 1;
+        public boolean hasBoxName() {
+          return result.hasBoxName();
         }
-        public int getBoxNameCount() {
-          return result.getBoxNameCount();
+        public java.lang.String getBoxName() {
+          return result.getBoxName();
         }
-        public java.lang.String getBoxName(int index) {
-          return result.getBoxName(index);
-        }
-        public Builder setBoxName(int index, java.lang.String value) {
+        public Builder setBoxName(java.lang.String value) {
           if (value == null) {
     throw new NullPointerException();
   }
-  result.boxName_.set(index, value);
-          return this;
-        }
-        public Builder addBoxName(java.lang.String value) {
-          if (value == null) {
-    throw new NullPointerException();
-  }
-  if (result.boxName_.isEmpty()) {
-            result.boxName_ = new java.util.ArrayList<java.lang.String>();
-          }
-          result.boxName_.add(value);
-          return this;
-        }
-        public Builder addAllBoxName(
-            java.lang.Iterable<? extends java.lang.String> values) {
-          if (result.boxName_.isEmpty()) {
-            result.boxName_ = new java.util.ArrayList<java.lang.String>();
-          }
-          super.addAll(values, result.boxName_);
+  result.hasBoxName = true;
+          result.boxName_ = value;
           return this;
         }
         public Builder clearBoxName() {
-          result.boxName_ = java.util.Collections.emptyList();
+          result.hasBoxName = false;
+          result.boxName_ = getDefaultInstance().getBoxName();
           return this;
         }
         
@@ -3405,7 +3370,7 @@ public final class BoxFileProtos {
       "zaluum.Contents.Point\022-\n\tparameter\030\005 \003(\013" +
       "2\032.zaluum.Contents.Parameter\032\'\n\tParamete" +
       "r\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\032.\n\007PortRef" +
-      "\022\020\n\010box_name\030\001 \003(\t\022\021\n\tport_name\030\002 \002(\t\032\035\n" +
+      "\022\020\n\010box_name\030\001 \002(\t\022\021\n\tport_name\030\002 \002(\t\032\035\n" +
       "\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005\032\212\001\n\nConnect" +
       "ion\022(\n\006source\030\001 \001(\0132\030.zaluum.Contents.Po" +
       "rtRef\022(\n\006target\030\002 \001(\0132\030.zaluum.Contents." +

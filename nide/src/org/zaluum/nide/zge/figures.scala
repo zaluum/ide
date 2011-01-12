@@ -64,7 +64,7 @@ trait BoxFigure extends Figure with CanShowFeedback with CanShowUpdate {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
 }
-class PortFigure(val bf: BoxFigure, val p: Port, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
+class PortFigure(val bf: BoxFigure, val typ: TypedPort, val portRef: PortRef, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)
@@ -84,10 +84,10 @@ class PortFigure(val bf: BoxFigure, val p: Port, viewer: Viewer) extends Ellipse
   def hideFeedback() {
     setBackgroundColor(normal)
   }
+  def anchor = getBounds.getCenter
   def update() {
-    val portType = bf.boxClass flatMap { _.port(p.name) }
-    val dx = portType map { _.pos._1 } getOrElse 0
-    val dy = portType map { _.pos._2 } getOrElse 0
+    val dx = typ.pos._1
+    val dy = typ.pos._2
     val x = bf.getBounds.x + dx
     val y = bf.getBounds.y + dy
     setLocation(new Point(x, y))
@@ -95,10 +95,11 @@ class PortFigure(val bf: BoxFigure, val p: Port, viewer: Viewer) extends Ellipse
   }
 }
 trait WithPorts extends BoxFigure {
-  object portMapper extends ModelViewMapper[Port,PortFigure] {
-    def modelSet = box.ports
-    def buildFigure(p:Port) = new PortFigure(WithPorts.this, p, viewer)
+  object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
+    def modelSet = boxClass.map { _.ports } getOrElse Set()
+    def buildFigure(p: TypedPort) = new PortFigure(WithPorts.this, p, PortRef(box, p.name), viewer)
   }
+  def find(name: String) = portMapper.values.find { _.typ.name == name }
   override def show() {
     super.show()
     portMapper.viewMap.values foreach { _.show() }
@@ -121,9 +122,9 @@ class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends Sw
   var boxClass: Option[BoxClass] = None // FIXME
 }
 
-import  org.eclipse.draw2d.Polyline
+import org.eclipse.draw2d.Polyline
 
-class LineFigure(l:Line, val pl : ConnectionFigure, modelView:ModelView) extends Polyline with CanShowUpdate with CanShowFeedback{
+class LineFigure(l: Line, val pl: ConnectionFigure, modelView: ModelView) extends Polyline with CanShowUpdate with CanShowFeedback {
   //setAntialias(1)
   setForegroundColor(ColorConstants.gray)
   def hide() = modelView.viewer.connectionsLayer.remove(this)
@@ -131,40 +132,63 @@ class LineFigure(l:Line, val pl : ConnectionFigure, modelView:ModelView) extends
   var complete = false
   var feedback = false
   def update() {
-    setStart(new Point(l.from.x,l.from.y))
-    setEnd(new Point(l.end.x,l.end.y))
+    setStart(new Point(l.from.x, l.from.y))
+    setEnd(new Point(l.end.x, l.end.y))
   }
   def showFeedback { feedback = true; calcStyle }
   def hideFeedback { feedback = false; calcStyle }
-  def showComplete { complete = true; calcStyle } 
+  def showComplete { complete = true; calcStyle }
   def showIncomplete { complete = false; calcStyle }
   def calcStyle {
     if (feedback) {
       setLineStyle(SWT.LINE_DASH)
-      setLineWidth(2)      
-    }else{
+      setLineWidth(2)
+    } else {
       setLineWidth(1)
-      if (complete){
+      if (complete) {
         setLineStyle(SWT.LINE_SOLID)
-      }else {
+      } else {
         setLineStyle(SWT.LINE_DOT)
       }
     }
   }
 }
-class ConnectionFigure(c:Connection,modelView:ModelView) extends Figure with CanShowUpdate {
+class ConnectionFigure(c: Connection, modelView: ModelView) extends Figure with CanShowUpdate {
   object lines extends ModelViewMapper[Line, LineFigure] {
-    def buildFigure(l:Line) =  new LineFigure(l,ConnectionFigure.this,modelView)
+    def buildFigure(l: Line) = new LineFigure(l, ConnectionFigure.this, modelView)
     def modelSet = c.buf.toSet
   }
   def show() = lines.viewMap.values foreach { _.show() }
   def hide() = lines.viewMap.values foreach { _.hide() }
+  implicit def pointToP(p: Point) = P(p.x, p.y)
+  def fromFig = c.from flatMap { f ⇒ modelView.findPortFigure(f) }
+  def toFig = c.to flatMap { t ⇒ modelView.findPortFigure(t) }
+  def withFullConnection(body: (PortFigure, PortFigure) ⇒ Unit) {
+    (fromFig, toFig) match {
+      case (Some(f), Some(t)) ⇒
+        body(f, t)
+      case _ ⇒
+    }
+  }
+  def updateStarts() {
+    if (c.buf.isEmpty) {
+      withFullConnection { (fromFig, toFig) ⇒
+        c.simpleConnect(fromFig.anchor, toFig.anchor)
+      }
+    }else{
+      withFullConnection { (fromFig,toFig) =>
+        if (pointToP(fromFig.anchor) != c.buf.first.from || pointToP(toFig.anchor) != c.buf.last.end)
+          c.simpleConnect(fromFig.anchor, toFig.anchor) // TODO only move
+      }
+    }
+  }
   def update() = {
+    updateStarts()
     lines.update()
     if (c.from.isDefined && c.to.isDefined)
       lines.values.foreach { _.showComplete }
-    else 
+    else
       lines.values.foreach { _.showIncomplete }
   }
-  
+
 }

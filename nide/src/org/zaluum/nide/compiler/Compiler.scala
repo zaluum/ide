@@ -9,7 +9,7 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.zaluum.nide.model._
 
 class Compiled(val m: Model, val order: List[Box], 
-    val portType: Map[Port, TypedPort], val boxType:Map[Box,BoxClass], val source:String) {
+    val portType: Map[PortRef, TypedPort], val boxType:Map[Box,BoxClass], val source:String) {
   lazy val boxesInOrder = m.boxes.toList.sortWith(_.name < _.name);
 }
 object Compiler {
@@ -57,7 +57,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
     def apply() = check()
   }
 
-  var portType = Map[Port, TypedPort]()
+  var portType = Map[PortRef, TypedPort]()
   def getBoxClass(cl: String): Option[BoxClass] = {
     boxClassPath.find(cl) 
   }
@@ -69,12 +69,12 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   } 
   def checkSignature(b: Box, bc: BoxClass) {
     // check ports
-    for (p <- b.ports) {
+   /* for (p <- b.ports) {
       bc.ports find { _.name == p.name } match {
         case Some(tp) => portType += (p -> tp)
         case None => reporter.report("port not found " + p, Some(p))
       }
-    }
+    }*/
     // TODO check parameters?
   }
   def checkBox(b: Box) = {
@@ -86,14 +86,14 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
     checkSignature(b, boxClass)
     boxClass
   }
-  def checkValidPort(port: Port) {
+  def checkValidPort(port: PortRef) {
 
   }
   def checkConnections() = {
     val acyclic = new DirectedAcyclicGraph[Box, DefaultEdge](classOf[DefaultEdge])
     m.boxes foreach { acyclic.addVertex(_) }
-    var portsUsed = Set[Port]()
-    def isModelPort(p: Port) = false //TODO
+    var portsUsed = Set[PortRef]()
+    def isModelPort(p: PortRef) = false //TODO
     def checkConnection(c: Connection) {
       // complete connection
       reporter(c.from.isDefined && c.to.isDefined, "Connection c is incomplete", Some(c), true)

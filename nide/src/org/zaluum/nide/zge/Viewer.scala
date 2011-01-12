@@ -83,7 +83,6 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
 
   var selectedBoxes = new SelectionManager[BoxFigure]()
   var selectedLines = new SelectionManager[LineFigure]()
-
   object boxMapper extends ModelViewMapper[Box, BoxFigure] {
     def modelSet = model.boxes
     def buildFigure(box: Box) = {
@@ -96,16 +95,13 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
     def modelSet = model.connections
     def buildFigure(conn: Connection) = new ConnectionFigure(conn, ModelView.this)
   }
-
-  def portFigure(p: Port): Option[PortFigure] = {
-    boxMapper.get(p.box) flatMap {
-      _ match {
-        case w: WithPorts ⇒ w.portMapper.get(p)
-        case _ ⇒ None
-      }
+  def classOfB(b: Box) = bcp.find(b.className)
+  def findPortFigure(portRef: PortRef) = {
+    boxMapper.get(portRef.box) match {
+      case Some(w: WithPorts) ⇒ w.find(portRef.name)
+      case _ ⇒ None
     }
   }
-
   def update() {
     boxMapper.update()
     connectionMapper.update()

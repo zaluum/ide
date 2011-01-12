@@ -3,6 +3,7 @@ package org.zaluum.nide.model
 import org.eclipse.draw2d.geometry.Point
 import org.eclipse.draw2d.Figure
 import scala.collection.mutable.Buffer
+import org.zaluum.nide.protobuf.BoxFileProtos
 
 object P {
 }
@@ -37,9 +38,23 @@ case class Line(val dir:OrtoDirection, var from:P, var len:Int) {
     case V => P(from.x, from.y+len)
   }
 }
-
-class Connection(var from:Option[Port], var to:Option[Port]) {
+case class PortRef(box:Box, name:String) {
+  def toProto = {
+    val proto = BoxFileProtos.Contents.PortRef.newBuilder()
+    proto.setPortName(name)
+    proto.setBoxName(box.name)
+    proto.build
+  }
+}
+class Connection(var from:Option[PortRef], var to:Option[PortRef]) {
   var buf = Buffer[Line]()
+  def toProto = {
+    val proto = BoxFileProtos.Contents.Connection.newBuilder
+    from foreach { port=> proto.setSource(port.toProto) }
+    to foreach { port => proto.setTarget(port.toProto) }
+    proto.build
+    // TODO waypoints
+  }
   def simpleConnect(src:P,dst:P) {
      buf = if (src==dst) {
       Buffer() 
