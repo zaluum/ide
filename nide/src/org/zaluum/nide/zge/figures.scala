@@ -121,58 +121,50 @@ class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends Sw
   var boxClass: Option[BoxClass] = None // FIXME
 }
 
-/*class ConnectionFigure(val c: Connection, modelView: ModelView) extends Polyline with CanShowFeedback with CanShowUpdate {
-  setAntialias(1)
-  setLineStyle(SWT.LINE_SOLID)
-  setTolerance(5)
-  def update() {
-    c.from flatMap { modelView.portFigure(_) } foreach { f ⇒ setStart(f.getBounds.getCenter) }
-    c.to flatMap { modelView.portFigure(_) } foreach { f ⇒ setEnd(f.getBounds.getCenter) }
-  }
-  def hide {
-    modelView.viewer.connectionsLayer.remove(this)
-  }
-  def show {
-    modelView.viewer.connectionsLayer.add(this)
-    update()
-  }
-  def showFeedback {
-    setLineStyle(SWT.LINE_DASH)
-    setLineWidthFloat(1.5f)
-  }
-  def hideFeedback {
-    setLineStyle(SWT.LINE_SOLID)
-    setLineWidthFloat(1.0f)
-  }
-}*/
 import  org.eclipse.draw2d.Polyline
 
 class LineFigure(l:Line, val pl : ConnectionFigure, modelView:ModelView) extends Polyline with CanShowUpdate with CanShowFeedback{
+  //setAntialias(1)
+  setForegroundColor(ColorConstants.gray)
   def hide() = modelView.viewer.connectionsLayer.remove(this)
   def show() = modelView.viewer.connectionsLayer.add(this)
+  var complete = false
+  var feedback = false
   def update() {
     setStart(new Point(l.from.x,l.from.y))
     setEnd(new Point(l.end.x,l.end.y))
   }
-  def showFeedback {
-    setLineStyle(SWT.LINE_DASH)
-    setLineWidthFloat(1.5f)
-  }
-  def hideFeedback {
-    setLineStyle(SWT.LINE_SOLID)
-    setLineWidthFloat(1.0f)
+  def showFeedback { feedback = true; calcStyle }
+  def hideFeedback { feedback = false; calcStyle }
+  def showComplete { complete = true; calcStyle } 
+  def showIncomplete { complete = false; calcStyle }
+  def calcStyle {
+    if (feedback) {
+      setLineStyle(SWT.LINE_DASH)
+      setLineWidth(2)      
+    }else{
+      setLineWidth(1)
+      if (complete){
+        setLineStyle(SWT.LINE_SOLID)
+      }else {
+        setLineStyle(SWT.LINE_DOT)
+      }
+    }
   }
 }
-class ConnectionFigure(c:Connection,modelView:ModelView) extends Figure with CanShowUpdate{
+class ConnectionFigure(c:Connection,modelView:ModelView) extends Figure with CanShowUpdate {
   object lines extends ModelViewMapper[Line, LineFigure] {
-    def buildFigure(l:Line) = {
-      val lf = new LineFigure(l,ConnectionFigure.this,modelView)
-      lf.setAntialias(1)
-      lf
-    }
+    def buildFigure(l:Line) =  new LineFigure(l,ConnectionFigure.this,modelView)
     def modelSet = c.buf.toSet
   }
   def show() = lines.viewMap.values foreach { _.show() }
   def hide() = lines.viewMap.values foreach { _.hide() }
-  def update() = lines.update()
+  def update() = {
+    lines.update()
+    if (c.from.isDefined && c.to.isDefined)
+      lines.values.foreach { _.showComplete }
+    else 
+      lines.values.foreach { _.showIncomplete }
+  }
+  
 }

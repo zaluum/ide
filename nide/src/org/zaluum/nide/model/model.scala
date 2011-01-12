@@ -126,16 +126,28 @@ abstract class Command {
   def act() = redo()
   def redo()
   def undo()
+  def canExecute:Boolean
 }
 class ChainCommand(val commands: List[Command]) extends Command{
   override def act() { commands.foreach { _.act() } }
   def redo() { commands.foreach { _.redo() } }
   def undo() { commands.reverse.foreach { _.undo() } }
+  def canExecute = commands.forall( _.canExecute ) 
 }
 class MoveCommand(box: Box, pos: (Int, Int)) extends Command{
   var old = box.pos
   def redo() { box.pos = pos }
   def undo() { box.pos = old }
+  def canExecute = true
+}
+class ConnectCommand(m: Model, c:Connection) extends Command {
+  def redo() { m.connections += c }
+  def undo() { m.connections -= c }
+  def canExecute = { 
+    c.from.isDefined && c.to.isDefined &&
+    // not repeated 
+    !m.connections.exists(other => other.from==c.from && other.to==c.to )
+  }
 }
 /*class ResizeCommand(box: Box, pos:(Int,Int),size: (Int,Int)) extends Command{
   val oldSize = box.size
@@ -146,4 +158,5 @@ class MoveCommand(box: Box, pos: (Int, Int)) extends Command{
 class CreateCommand(box:Box, model:Model) extends Command{
   def redo { model.boxes += box }
   def undo { model.boxes -= box }
+  def canExecute = true
 }

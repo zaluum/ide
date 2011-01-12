@@ -44,6 +44,7 @@ abstract class ModelViewMapper[M,V <: CanShowUpdate] {
     }
     viewMap.values foreach { _.update()}
   }
+  def values = viewMap.values
   def apply(m:M) = viewMap(m)
   def get(m:M) = viewMap.get(m)
 }

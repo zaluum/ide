@@ -73,36 +73,52 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   object connect extends MovingState {
     implicit def toP(p:Point) = P(p.x,p.y)
     var dst : Option[PortFigure] = None
-    var initPort : PortFigure = _
+    var initPort : Option[PortFigure] = None
+    var con : Option[Connection] =  None
+    var conf : Option[ConnectionFigure] = None
     val portsTrack = new OverTrack[PortFigure](viewer.portsLayer) {
-      def onEnter(p:PortFigure) { dst = Some(p); p.showFeedback }
-      def onExit(p:PortFigure) { dst = None; p.hideFeedback }
+      def onEnter(p:PortFigure) { 
+        dst= Some(p); 
+        con.get.to = Some(p.p); 
+        p.showFeedback 
+      }
+      def onExit(p:PortFigure) { dst= None; con.get.to = None; p.hideFeedback }
     }
-    var con = new Connection(None,None)
-    var conf = new ConnectionFigure(con,modelView)
     def enter(initdrag:Point, initPort:PortFigure) {
       super.enter(initdrag)
-      this.initPort = initPort
-      con.simpleConnect(initPort.getBounds.getCenter, mouseLocation)
-      conf.show
-      conf.update
+      this.initPort = Some(initPort)
+      con = Some(new Connection(Some(initPort.p),None))
+      conf = Some(new ConnectionFigure(con.get,modelView))
+      con.get.simpleConnect(initPort.getBounds.getCenter, mouseLocation)
+      conf.get.show
+      conf.get.update
       viewer.setCursor(Cursors.HAND)
     }
     def doEnter{}
     def buttonUp {
-      dst foreach {d => println ("connect " + initPort.toString + " dst " + d)}
+      // execute model command
+      val command = new ConnectCommand(modelView.model,con.get)
+      if (command.canExecute)
+        controller.exec(command)
       exit()
     }
     def drag{}
     def buttonDown{}
     def exit() {
       dst foreach {_.hideFeedback}
+      conf.foreach { _.hide }
+      con = None
+      conf = None
       viewer.setCursor(null)
       selecting.enter()
     }
     def doMove() {
-      con.simpleConnect(initPort.getBounds.getCenter, mouseLocation)
-      conf.update
+      val end = dst match {
+        case Some(df) => df.getBounds.getCenter
+        case None => mouseLocation
+      }
+      con.get.simpleConnect(initPort.get.getBounds.getCenter, end)
+      conf.get.update
       portsTrack.update() 
     }
     def abort() { exit() }  
