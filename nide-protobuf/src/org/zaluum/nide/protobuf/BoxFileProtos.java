@@ -1814,7 +1814,7 @@ public final class BoxFileProtos {
         return org.zaluum.nide.protobuf.BoxFileProtos.internal_static_zaluum_Contents_PortRef_fieldAccessorTable;
       }
       
-      // required string box_name = 1;
+      // optional string box_name = 1;
       public static final int BOX_NAME_FIELD_NUMBER = 1;
       private boolean hasBoxName;
       private java.lang.String boxName_ = "";
@@ -1831,7 +1831,6 @@ public final class BoxFileProtos {
       private void initFields() {
       }
       public final boolean isInitialized() {
-        if (!hasBoxName) return false;
         if (!hasPortName) return false;
         return true;
       }
@@ -2064,7 +2063,7 @@ public final class BoxFileProtos {
         }
         
         
-        // required string box_name = 1;
+        // optional string box_name = 1;
         public boolean hasBoxName() {
           return result.hasBoxName();
         }
@@ -3370,7 +3369,7 @@ public final class BoxFileProtos {
       "zaluum.Contents.Point\022-\n\tparameter\030\005 \003(\013" +
       "2\032.zaluum.Contents.Parameter\032\'\n\tParamete" +
       "r\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\032.\n\007PortRef" +
-      "\022\020\n\010box_name\030\001 \002(\t\022\021\n\tport_name\030\002 \002(\t\032\035\n" +
+      "\022\020\n\010box_name\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\032\035\n" +
       "\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005\032\212\001\n\nConnect" +
       "ion\022(\n\006source\030\001 \001(\0132\030.zaluum.Contents.Po" +
       "rtRef\022(\n\006target\030\002 \001(\0132\030.zaluum.Contents." +

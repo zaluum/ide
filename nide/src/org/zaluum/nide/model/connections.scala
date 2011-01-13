@@ -28,19 +28,43 @@ case class Line(val dir:OrtoDirection, var from:Point, var len:Int) {
     case V => Point(from.x, from.y+len)
   }
 }
-case class PortRef(box:Box, name:String) {
+sealed trait PortRef {
+  val name:String
+  def protoAttach(proto:BoxFileProtos.Contents.PortRef.Builder):Unit
   def toProto = {
     val proto = BoxFileProtos.Contents.PortRef.newBuilder()
     proto.setPortName(name)
-    proto.setBoxName(box.name)
+    protoAttach(proto)
     proto.build
   }
 }
+sealed case class BoxPortRef(val box:Box,val name:String) extends PortRef{
+  def protoAttach(proto:BoxFileProtos.Contents.PortRef.Builder) {
+    proto.setBoxName(box.name)    
+  }
+}
+sealed case class ModelPortRef(val name:String) extends PortRef{
+  def protoAttach(proto:BoxFileProtos.Contents.PortRef.Builder) {}
+}
+
 object Connection{
   def apply(model:Model, from:Box, fromP:String, to:Box, toP:String){
-    val c = new Connection(Some(PortRef(from,fromP)),Some(PortRef(to,toP)))
+    val c = new Connection(Some(BoxPortRef(from,fromP)),Some(BoxPortRef(to,toP)))
     model.connections += c
   }
+  def apply(model:Model, from:PortDecl, to:Box, toP:String) {
+    val c = new Connection(Some(ModelPortRef(from.name)), Some(BoxPortRef(to,toP)))
+    model.connections +=c
+  }
+  def apply(model:Model, from:Box, fromP:String, to:PortDecl) {
+    val c = new Connection(Some(BoxPortRef(from,fromP)), Some(ModelPortRef(to.name)))
+    model.connections +=c
+  }
+  def apply(model:Model, from:PortDecl, to:PortDecl) {
+    val c = new Connection(Some(ModelPortRef(from.name)), Some(ModelPortRef(to.name)))
+    model.connections +=c
+  }
+
 }
 class Connection(var from:Option[PortRef], var to:Option[PortRef]) {
   var buf = Buffer[Line]()

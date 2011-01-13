@@ -98,7 +98,7 @@ trait BoxFigure extends FigureWithPorts{
   lazy val feed = new BasicFeedbackFigure(this)
   object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
     def modelSet = boxClass.map { _.ports } getOrElse Set()
-    def buildFigure(p: TypedPort) = new PortFigure(BoxFigure.this, p, PortRef(box, p.name), viewer)
+    def buildFigure(p: TypedPort) = new PortFigure(BoxFigure.this, p, BoxPortRef(box, p.name), viewer)
   }
 }
 class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer,var portType : Option[TypedPort]) extends RectangleFigure with FigureWithPorts {
@@ -107,7 +107,7 @@ class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer,var portType : Opt
   lazy val feed = new BasicFeedbackFigure(this)
   object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
     def modelSet = portType.toSet
-    def buildFigure(p: TypedPort) = new PortFigure(PortDeclFigure.this, p, PortRef(null/*FIXME*/, p.name), viewer)
+    def buildFigure(p: TypedPort) = new PortFigure(PortDeclFigure.this, p, ModelPortRef(p.name), viewer)
   }
 }
 class PortFigure(val bf: FigureWithPorts, val typ: TypedPort, val portRef: PortRef, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
@@ -134,8 +134,8 @@ class PortFigure(val bf: FigureWithPorts, val typ: TypedPort, val portRef: PortR
   def anchor = getBounds.getCenter
   def update() {
     setSize(10, 10)
-    val dx = typ.pos._1
-    val dy = typ.pos._2
+    val dx = typ.pos.x
+    val dy = typ.pos.y
     val x = bf.getBounds.x + dx - getBounds.width/2
     val y = bf.getBounds.y + dy - getBounds.height/2
     setLocation(Point(x, y))

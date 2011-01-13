@@ -57,9 +57,9 @@ class BoxClassPath(zaluumDir: File, classLoader: ClassLoader) {
         f.getAnnotations() foreach {
           _ match {
             case in: In ⇒ 
-              bc.ports += TypedPort(f.getType.toString, true, f.getName, (in.x,in.y))
+              bc.ports += TypedPort(f.getType.toString, true, f.getName, Point(in.x,in.y))
             case out: Out ⇒
-              bc.ports += TypedPort(f.getType.toString, false, f.getName, (out.x,out.y))
+              bc.ports += TypedPort(f.getType.toString, false, f.getName, Point(out.x,out.y))
           }
         }
       }
@@ -117,7 +117,7 @@ class BoxClassPathScanner(zaluumDir: File, cl: ClassLoader) extends BoxClassPath
     discoverer.addAnnotationListener(new FieldAnnotationDiscoveryListener() {
       def discovered(clazz: String, field: String, descriptor: String, annotation: String) {
         javaClasses.get(clazz) foreach { bc ⇒
-          bc.ports += TypedPort(descriptor, annotation == inStr, field,(0,0)) // FIXME
+          bc.ports += TypedPort(descriptor, annotation == inStr, field,Point(0,0)) // FIXME
         }
         println("clazz: " + clazz + " field " + field + " descriptor " + descriptor + " annotation " + annotation)
       }

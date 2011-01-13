@@ -13,8 +13,8 @@ object TestCompiler {
     val comp = new Compiler(model,path)
     try{
       val result = comp.compile()
-      val gen  = new Generator(result,new CodeWriter(new OutputStreamWriter(System.out)))
-      gen.generate()
+      //val gen  = new Generator(result,new CodeWriter(new OutputStreamWriter(System.out)))
+      //gen.generate()
       val bytes = ByteCodeGen.dump(result)
       val f = new File(outDir + model.className.replace(".","/") + ".class")
       f.createNewFile;
@@ -25,12 +25,13 @@ object TestCompiler {
       //new File("bin/")
     }catch {
       case e:Exception => 
-        e.printStackTrace
         println (comp.reporter.errors)
+        throw e
     }
   }
   def main(args:Array[String]) {
     compile(Example.sumsumModel)
     compile(Example.printModel)
+    compile(Example.encapsulatePrint)
   }
 }

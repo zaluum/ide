@@ -21,6 +21,7 @@ import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformL
 import org.eclipse.draw2d.geometry.{ Rectangle, Point, Dimension }
 import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.model._
+import org.zaluum.nide.model.{Point => MPoint}
 
 class Viewer(parent: Composite, val controller: Controller) {
 
@@ -92,28 +93,23 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
     }
   }
   object connectionMapper extends ModelViewMapper[Connection, ConnectionFigure] {
-    def modelSet =  model.connections 
+    def modelSet = model.connections
     def buildFigure(conn: Connection) = new ConnectionFigure(conn, ModelView.this)
   }
   object portDeclMapper extends ModelViewMapper[PortDecl, PortDeclFigure] {
-    def modelSet = model.portDecls 
-    def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl,viewer,Some(TypedPort("D", false, portDecl.name, (0,0)))) // FIXME types
+    def modelSet = model.portDecls
+    def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl, viewer, Some(TypedPort("D", false, portDecl.name, MPoint(0, 0)))) // FIXME types
   }
   def classOfB(b: Box) = bcp.find(b.className)
-  
-  def findPortFigure(portRef: PortRef) = {
-    if (portRef.box==null) { // FIXME 
-      portDeclMapper.values find 
-        { _.portDecl.name == portRef.name} map 
+
+  def findPortFigure(portRef: PortRef):Option[PortFigure] = portRef match {
+    case b: BoxPortRef ⇒
+      boxMapper.get(b.box) flatMap {_.find(b.name)}
+    case m: ModelPortRef ⇒
+      portDeclMapper.values find { _.portDecl.name == m.name } map
         { _.portMapper.values.head }
-    }else {
-      boxMapper.get(portRef.box) match {
-        case Some(w: FigureWithPorts) ⇒ w.find(portRef.name)
-        case _ ⇒ None
-      } 
-    }
   }
-  
+
   def update() {
     boxMapper.update()
     portDeclMapper.update()

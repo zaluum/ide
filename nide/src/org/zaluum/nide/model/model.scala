@@ -67,7 +67,7 @@ object ProtoModel{
         def findPortRef(box : Box , name : String) = {
           if (!portRefs.contains(box)) portRefs += (box -> Set())
           portRefs(box).find {_.name == name} getOrElse {
-            val newRef = PortRef(box,name)
+            val newRef = BoxPortRef(box,name) // FIXME modelPortRef
             portRefs += (box -> (portRefs(box) + newRef))
             newRef
           }
@@ -123,7 +123,6 @@ object Box {
     b.name = name
     model.boxes += b
     b
-    
   }
 }
 
@@ -131,7 +130,6 @@ class Box  extends Positionable {
   var className = "img"
   var pos = Point(0, 0)
   var name = ""
- // var ports = Set[Port]()
   def toProto = {
     val instance = BoxFileProtos.Contents.Instance.newBuilder()
     instance.setName(name)
@@ -142,14 +140,14 @@ class Box  extends Positionable {
   override def toString = name 
 }
 object PortDecl {
-  def apply(m:Model, name:String, pos:Point = Point(0,10)) : PortDecl= {
-    val p = new PortDecl(m,name)
+  def apply(m:Model, name:String, in:Boolean, pos:Point = Point(0,10)) : PortDecl= {
+    val p = new PortDecl(m,name,in)
     p.pos = pos
     m.portDecls += p
     p
   }
 }
-class PortDecl(var m:Model,var name:String) extends Positionable{
+class PortDecl(var m:Model,var name:String, var in:Boolean) extends Positionable{
   var pos = Point(0,10)
   override def toString = "portDecl(" + name + ")"
 }
@@ -158,7 +156,7 @@ class BoxClass(val className: String,val scala:Boolean = false, val image:String
   def port(s:String) = ports find {_.name ==s}
   override def toString = "boxClass["+className+"]"
 }
-case class TypedPort(val descriptor: String, val in: Boolean, val name: String, val pos:(Int,Int))
+case class TypedPort(val descriptor: String, val in: Boolean, val name: String, val pos:Point)
 
 abstract class Command {
   def act() = redo()
