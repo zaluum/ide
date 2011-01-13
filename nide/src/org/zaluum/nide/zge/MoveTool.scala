@@ -9,6 +9,7 @@ import org.eclipse.swt.graphics.Cursor
 import scala.collection.JavaConversions._
 import org.zaluum.nide.model._ 
 
+import draw2dConversions._
 
 class MoveTool(viewer: Viewer) extends Tool(viewer) {
   state = selecting
@@ -71,7 +72,6 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   }
   // CONNECT
   object connect extends MovingState {
-    implicit def toP(p:Point) = P(p.x,p.y)
     var dst : Option[PortFigure] = None
     var initPort : Option[PortFigure] = None
     var con : Option[Connection] =  None
@@ -130,7 +130,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
       val commands= modelView.selectedBoxes.selected map {
           bf =>
           val oldLoc = bf.getBounds.getLocation
-          new MoveCommand(bf.box, (oldLoc.x + delta._1, oldLoc.y + delta._2))
+          new MoveCommand(bf.box, oldLoc +  delta)
       };
       controller.exec(new ChainCommand(commands.toList))
       exit()
@@ -140,7 +140,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def exit() { selecting.enter() }
     def move() {  modelView.selectedBoxes.selected foreach { _.moveDeltaFeed(delta) } }
     def abort() {
-      modelView.selectedBoxes.selected foreach { _.moveDeltaFeed((0,0)) }
+      modelView.selectedBoxes.selected foreach { _.moveDeltaFeed(Vector2(0,0)) }
       exit()
     }
   }
@@ -182,7 +182,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     }
     def move() {  bf.resizeDeltaFeed(delta,handle)  }
     def abort() {
-      bf.resizeDeltaFeed((0,0),handle)
+      bf.resizeDeltaFeed(Vector2(0,0),handle)
       exit()
     }
     def drag {}

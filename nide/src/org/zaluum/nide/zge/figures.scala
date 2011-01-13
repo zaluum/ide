@@ -17,10 +17,17 @@ import org.eclipse.draw2d.RectangleFigure
 import org.eclipse.draw2d.IFigure
 import org.eclipse.swt.graphics.Cursor
 import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, Ellipse, ColorConstants, Figure }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point, Dimension }
+import org.eclipse.draw2d.geometry.{ Rectangle, Point => EPoint, Dimension=>EDimension }
 import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.model._
 
+object draw2dConversions {
+  implicit def point(p:Point) : EPoint = new EPoint(p.x,p.y)
+  implicit def dimension(d:Dimension) : EDimension = new EDimension(d.w,d.h)
+  implicit def rpoint(p:EPoint) : Point = Point(p.x,p.y)
+  implicit def rdimension(d:EDimension) : Dimension = Dimension(d.width,d.height)
+}
+import draw2dConversions._
 trait CanShowFeedback extends Figure {
   def showFeedback()
   def hideFeedback()
@@ -36,7 +43,7 @@ trait BoxFigure extends Figure with CanShowFeedback with CanShowUpdate {
   val box: Box
   var boxClass: Option[BoxClass]
   lazy val feed = new BoxFeedbackFigure(this)
-  def size: (Int, Int)
+  def size: Dimension
   def showFeedback() {
     viewer.feedbackLayer.add(feed)
     update()
@@ -53,18 +60,18 @@ trait BoxFigure extends Figure with CanShowFeedback with CanShowUpdate {
       viewer.layer.remove(this)
   }
   def update() {
-    val rect = new Rectangle(box.pos._1, box.pos._2, size._1, size._2)
+    val rect = new Rectangle(box.pos.x, box.pos.y, size.w, size.h)
     setBounds(rect)
     feed.setInnerBounds(rect)
   }
   def moveFeed(loc : Point) {
     feed.setInnerLocation(loc)
   }
-  def moveDeltaFeed(delta: (Int, Int)) {
-    val loc = new Point(box.pos._1 + delta._1, box.pos._2 + delta._2)
+  def moveDeltaFeed(delta: Vector2) {
+    val loc = box.pos + delta 
     feed.setInnerLocation(loc)
   }
-  def resizeDeltaFeed(delta: (Int, Int), handle: HandleRectangle) {
+  def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
 }
@@ -96,7 +103,7 @@ class PortFigure(val bf: BoxFigure, val typ: TypedPort, val portRef: PortRef, vi
     val dy = typ.pos._2
     val x = bf.getBounds.x + dx - getBounds.width/2
     val y = bf.getBounds.y + dy - getBounds.height/2
-    setLocation(new Point(x, y))
+    setLocation(Point(x, y))
   }
 }
 trait WithPorts extends BoxFigure {
@@ -120,10 +127,10 @@ trait WithPorts extends BoxFigure {
 }
 
 class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: Viewer, val image: Image) extends ImageFigure(image) with BoxFigure with WithPorts {
-  def size = (image.getBounds.width, image.getBounds.height)
+  def size = Dimension(image.getBounds.width, image.getBounds.height)
 }
 class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends SwingFigure(c) with BoxFigure {
-  def size = (50, 50) //FIXME
+  def size = Dimension(50, 50) //FIXME
   var boxClass: Option[BoxClass] = None // FIXME
 }
 
@@ -165,7 +172,6 @@ class ConnectionFigure(c: Connection, modelView: ModelView) extends Figure with 
   }
   def show() = lines.viewMap.values foreach { _.show() }
   def hide() = lines.viewMap.values foreach { _.hide() }
-  implicit def pointToP(p: Point) = P(p.x, p.y)
   def fromFig = c.from flatMap { f ⇒ modelView.findPortFigure(f) }
   def toFig = c.to flatMap { t ⇒ modelView.findPortFigure(t) }
   def withFullConnection(body: (PortFigure, PortFigure) ⇒ Unit) {
@@ -181,7 +187,7 @@ class ConnectionFigure(c: Connection, modelView: ModelView) extends Figure with 
       }
     } else {
       withFullConnection { (fromFig, toFig) ⇒
-        if (pointToP(fromFig.anchor) != c.buf.head.from || pointToP(toFig.anchor) != c.buf.last.end)
+        if (rpoint(fromFig.anchor) != c.buf.head.from || rpoint(toFig.anchor) != c.buf.last.end)
           c.simpleConnect(fromFig.anchor, toFig.anchor) // TODO only move
       }
     }

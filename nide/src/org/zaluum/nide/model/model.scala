@@ -8,11 +8,10 @@ import org.zaluum.nide.protobuf.BoxFileProtos
 import com.google.protobuf.TextFormat
 import scala.collection.JavaConversions._
 object Model {
-  def toPoint(i:(Int,Int)) = {
+  def toPoint(i:Point) = {
     val p = BoxFileProtos.Contents.Point.newBuilder
-    val (x,y) = i
-    p.setX(x)
-    p.setY(y)
+    p.setX(i.x)
+    p.setY(i.y)
     p.build
   }
   def fromPoint(p:BoxFileProtos.Contents.Point) =  (p.getX,p.getY)
@@ -56,7 +55,7 @@ object ProtoModel{
       if (model.boxNamed(instance.getName)) 
         throw new Exception("Box name repeated" + instance.getName)
       box.name = instance.getName
-      box.pos = (instance.getPos.getX, instance.getPos.getY)
+      box.pos = Point(instance.getPos.getX, instance.getPos.getY)
       box.className = instance.getClassName
       model.boxes+=box
       // ports
@@ -87,6 +86,22 @@ object ProtoModel{
     model
   }
 }
+trait Tuple2 {
+  val x : Int
+  val y: Int
+}
+case class Point(x:Int, y:Int) extends Tuple2{
+  def + (v: Vector2) = Point(x+v.x,y+v.y)
+  def - (o:Point) = Vector2(x-o.x, y-o.y) 
+  def >> (despl:Int) = Point(x+despl,y)
+}
+case class Vector2(x:Int,y:Int) extends Tuple2{
+  def + (v:Vector2) = Vector2(x+v.x,y+v.y)
+}
+case class Dimension(w:Int, h:Int)
+trait Positionable {
+  var pos :Point
+}
 class Model {
   var className = ""
   var imageName = ""
@@ -101,7 +116,7 @@ class Model {
 }
 
 object Box {
-  def apply(name:String, className:String, pos : (Int,Int)) ={
+  def apply(name:String, className:String, pos : Point) ={
     val b = new Box()
     b.className = className
     b.pos = pos
@@ -110,9 +125,9 @@ object Box {
   }
 }
 
-class Box {
+class Box  extends Positionable {
   var className = "img"
-  var pos = (0, 0)
+  var pos = Point(0, 0)
   var name = ""
  // var ports = Set[Port]()
   def toProto = {
@@ -155,7 +170,7 @@ class ChainCommand(val commands: List[Command]) extends Command{
   def undo() { commands.reverse.foreach { _.undo() } }
   def canExecute = commands.forall( _.canExecute ) 
 }
-class MoveCommand(box: Box, pos: (Int, Int)) extends Command{
+class MoveCommand(box: Box, pos: Point) extends Command{
   var old = box.pos
   def redo() { box.pos = pos }
   def undo() { box.pos = old }

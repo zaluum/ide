@@ -39,8 +39,9 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeBoxFeedbackFigure) ext
       case _ => Cursors.SIZEALL
     }
   }
-  def deltaAdd(delta: (Int, Int), b: Rectangle) = {
-    val (dx, dy) = delta
+  def deltaAdd(delta: Vector2, b: Rectangle) = {
+    val dx = delta.x
+    val dy = delta.y
     val res = new Rectangle(b)
     if (x == 0) {
       res.x += dx

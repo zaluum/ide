@@ -8,6 +8,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.events._
 import org.eclipse.swt.widgets.Canvas
 import scala.reflect.Manifest._
+import org.zaluum.nide.model.Vector2
 
 abstract class Tool(viewer: Viewer) {
   def viewport = viewer.viewport
@@ -77,7 +78,7 @@ abstract class Tool(viewer: Viewer) {
     def doEnter()
     def delta = {
       val now = mouseLocation
-      (now.x - initDrag.x, now.y - initDrag.y)
+      Vector2(now.x - initDrag.x, now.y - initDrag.y)
     }
   }
   var down = false
