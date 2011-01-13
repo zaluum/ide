@@ -20,7 +20,7 @@ object HandleSizes {
 }
 import HandleSizes._
 class FeedbackRectangle(val feed: BasicFeedbackFigure) extends RectangleFigure {
-  def boxFigure = feed.bf
+  def basicFigure = feed.bf
 }
 class HandleRectangle(val x: Int, val y: Int, feed: ResizeBasicFeedbackFigure) extends FeedbackRectangle(feed) {
   setBackgroundColor(ColorConstants.lightBlue)
@@ -66,24 +66,24 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeBasicFeedbackFigure) e
 }
 
 class BasicFeedbackFigure(val bf : BasicFigure) extends Figure {
-  val rectangle = new FeedbackRectangle(this)
+  protected val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
   rectangle.setFill(false);
   add(rectangle)
-  
-  def innerLocation = rectangle.getLocation
-  def innerBounds = rectangle.getBounds.getCopy
+  def innerLocation = innerBounds.getLocation
+  var innerBounds = new Rectangle()
   
   def setInnerLocation(innerp: Point) {
-    val bounds = getBounds.getCopy
+    val bounds = new Rectangle(innerBounds)
     bounds.setLocation(innerp)
-    bounds.setSize(rectangle.getSize)
     setInnerBounds(bounds)
   }
   
   def setInnerBounds(inside: Rectangle) {
-    setBounds(inside)
-    rectangle.setBounds(inside)
+    innerBounds = inside
+    val rectBounds = new Rectangle(inside).expand(2,2)
+    setBounds(rectBounds)
+    rectangle.setBounds(rectBounds)
   }
   
 }
@@ -98,6 +98,7 @@ class ResizeBasicFeedbackFigure(bf: BasicFigure) extends BasicFeedbackFigure(bf)
 
   handles foreach (add(_))
   override def setInnerBounds(inside:Rectangle) {
+    innerBounds = inside
     val outside = new Rectangle(inside)
     outside.expand(expansion, expansion)
     setBounds(outside)

@@ -36,8 +36,15 @@ case class PortRef(box:Box, name:String) {
     proto.build
   }
 }
+object Connection{
+  def apply(model:Model, from:Box, fromP:String, to:Box, toP:String){
+    val c = new Connection(Some(PortRef(from,fromP)),Some(PortRef(to,toP)))
+    model.connections += c
+  }
+}
 class Connection(var from:Option[PortRef], var to:Option[PortRef]) {
   var buf = Buffer[Line]()
+  override def toString = "Connection(" + from + "->" + to+ ")"
   def toProto = {
     val proto = BoxFileProtos.Contents.Connection.newBuilder
     from foreach { port=> proto.setSource(port.toProto) }

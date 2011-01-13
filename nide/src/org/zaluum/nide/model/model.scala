@@ -116,12 +116,14 @@ class Model {
 }
 
 object Box {
-  def apply(name:String, className:String, pos : Point) ={
+  def apply(model:Model, name:String, className:String, pos : Point) ={
     val b = new Box()
     b.className = className
     b.pos = pos
     b.name = name
+    model.boxes += b
     b
+    
   }
 }
 
@@ -140,15 +142,15 @@ class Box  extends Positionable {
   override def toString = name 
 }
 object PortDecl {
-  def apply(m:Model, name:String, pos:(Int,Int) = (0,10)) : PortDecl= {
+  def apply(m:Model, name:String, pos:Point = Point(0,10)) : PortDecl= {
     val p = new PortDecl(m,name)
-    m.portDecls += p
     p.pos = pos
+    m.portDecls += p
     p
   }
 }
-class PortDecl(var m:Model,var name:String) {
-  var pos = (0,10)
+class PortDecl(var m:Model,var name:String) extends Positionable{
+  var pos = Point(0,10)
   override def toString = "portDecl(" + name + ")"
 }
 class BoxClass(val className: String,val scala:Boolean = false, val image:String) {
@@ -170,10 +172,10 @@ class ChainCommand(val commands: List[Command]) extends Command{
   def undo() { commands.reverse.foreach { _.undo() } }
   def canExecute = commands.forall( _.canExecute ) 
 }
-class MoveCommand(box: Box, pos: Point) extends Command{
-  var old = box.pos
-  def redo() { box.pos = pos }
-  def undo() { box.pos = old }
+class MoveCommand(positionable: Positionable, pos: Point) extends Command{
+  var old = positionable.pos
+  def redo() { positionable.pos = pos }
+  def undo() { positionable.pos = old }
   def canExecute = true
 }
 class ConnectCommand(m: Model, c:Connection) extends Command {

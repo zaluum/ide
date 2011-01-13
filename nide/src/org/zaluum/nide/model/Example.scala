@@ -3,29 +3,20 @@ import org.zaluum.nide.zge._
 object Example {
   def sumsumModel = {
     val model = new Model;
-    val a = Box("A", "graystone.zaluum.SumBox", Point(0, 0))
-    model.boxes += a
-
-    val b = Box("B", "graystone.zaluum.SumBox", Point(100, 100))
-    model.boxes += b
-
-    val s = Box("S", "graystone.zaluum.SumBox", Point(200, 200))
-    model.boxes += s
-
-    model.connections += new Connection(Some(PortRef(a,"c")), Some(PortRef(s,"a")))
-    model.connections += new Connection(Some(PortRef(b,"c")), Some(PortRef(s,"b")))
+    val a = Box(model,"A", "graystone.zaluum.SumBox", Point(0, 0))
+    val b = Box(model,"B", "graystone.zaluum.SumBox", Point(100, 100))
+    val s = Box(model,"S", "graystone.zaluum.SumBox", Point(200, 200))
+    Connection(model,a,"c",s,"a")
+    Connection(model,b,"c",s,"b")
+    PortDecl(model,"out")
     model.className = "graystone.zaluum.SumSum"
     model
   }
   def printModel = {
     val model = new Model;
-    val a = Box("A", "graystone.zaluum.ConstBox", Point(0,0))
-    model.boxes += a
-
-    val b = Box("B", "graystone.zaluum.ScalaPrintBox",Point(100,100))
-    model.boxes += b
-
-    model.connections += new Connection(Some(PortRef(a,"o")), Some(PortRef(b,"a")))
+    val a = Box(model,"A", "graystone.zaluum.ConstBox", Point(0,0))
+    val b = Box(model,"B", "graystone.zaluum.ScalaPrintBox",Point(100,100))
+    Connection(model,a,"o",b,"a")
     model.className = "graystone.zaluum.PrintResult"
     model
   }

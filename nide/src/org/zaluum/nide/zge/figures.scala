@@ -48,7 +48,8 @@ trait BasicFigure extends Figure with CanShowFeedback with CanShowUpdate {
     update()
   }
   def hideFeedback {
-    viewer.feedbackLayer.remove(feed)
+    if (viewer.feedbackLayer.getChildren.contains(feed))
+      viewer.feedbackLayer.remove(feed)
   }
   def show() {
     viewer.layer.add(this)
@@ -74,13 +75,42 @@ trait BasicFigure extends Figure with CanShowFeedback with CanShowUpdate {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
 }
-trait BoxFigure extends BasicFigure {
-  val box:Box
+trait FigureWithPorts extends BasicFigure {
+  def portMapper : ModelViewMapper[TypedPort, PortFigure] ;
+  def find(name: String) = portMapper.values.find { _.typ.name == name }
+  override def show() {
+    super.show()
+    portMapper.viewMap.values foreach { _.show() }
+  }
+  override def hide() {
+    super.hide()
+    portMapper.viewMap.values foreach { _.hide() }
+  }
+  override def update() {
+    super.update()
+    portMapper.update()
+  }
+}
+trait BoxFigure extends FigureWithPorts{
+  def box:Box
   var boxClass: Option[BoxClass]
   def positionable = box
   lazy val feed = new BasicFeedbackFigure(this)
+  object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
+    def modelSet = boxClass.map { _.ports } getOrElse Set()
+    def buildFigure(p: TypedPort) = new PortFigure(BoxFigure.this, p, PortRef(box, p.name), viewer)
+  }
 }
-class PortFigure(val bf: BoxFigure, val typ: TypedPort, val portRef: PortRef, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
+class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer,var portType : Option[TypedPort]) extends RectangleFigure with FigureWithPorts {
+  def positionable = portDecl
+  def size = Dimension(50,20)
+  lazy val feed = new BasicFeedbackFigure(this)
+  object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
+    def modelSet = portType.toSet
+    def buildFigure(p: TypedPort) = new PortFigure(PortDeclFigure.this, p, PortRef(null/*FIXME*/, p.name), viewer)
+  }
+}
+class PortFigure(val bf: FigureWithPorts, val typ: TypedPort, val portRef: PortRef, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)
@@ -111,27 +141,8 @@ class PortFigure(val bf: BoxFigure, val typ: TypedPort, val portRef: PortRef, vi
     setLocation(Point(x, y))
   }
 }
-trait WithPorts extends BoxFigure {
-  object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
-    def modelSet = boxClass.map { _.ports } getOrElse Set()
-    def buildFigure(p: TypedPort) = new PortFigure(WithPorts.this, p, PortRef(box, p.name), viewer)
-  }
-  def find(name: String) = portMapper.values.find { _.typ.name == name }
-  override def show() {
-    super.show()
-    portMapper.viewMap.values foreach { _.show() }
-  }
-  override def hide() {
-    super.hide()
-    portMapper.viewMap.values foreach { _.hide() }
-  }
-  override def update() {
-    super.update()
-    portMapper.update()
-  }
-}
 
-class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: Viewer, val image: Image) extends ImageFigure(image) with BoxFigure with WithPorts {
+class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: Viewer, val image: Image) extends ImageFigure(image) with BoxFigure {
   
   def size = Dimension(image.getBounds.width, image.getBounds.height)
 }
@@ -186,15 +197,16 @@ class ConnectionFigure(c: Connection, modelView: ModelView) extends Figure with 
       case _ ⇒
     }
   }
-  def updateStarts() {
+  def updateStarts() { // FIXME move to command?
     if (c.buf.isEmpty) {
       withFullConnection { (fromFig, toFig) ⇒
         c.simpleConnect(fromFig.anchor, toFig.anchor)
       }
     } else {
       withFullConnection { (fromFig, toFig) ⇒
-        if (rpoint(fromFig.anchor) != c.buf.head.from || rpoint(toFig.anchor) != c.buf.last.end)
+        if (rpoint(fromFig.anchor) != c.buf.head.from || rpoint(toFig.anchor) != c.buf.last.end){
           c.simpleConnect(fromFig.anchor, toFig.anchor) // TODO only move
+        }
       }
     }
   }

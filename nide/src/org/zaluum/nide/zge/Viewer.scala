@@ -58,7 +58,7 @@ class Viewer(parent: Composite, val controller: Controller) {
     import scala.collection.JavaConversions._
     container.getChildren.asInstanceOf[java.util.List[IFigure]] find { _.containsPoint(p) };
   }
-  def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: BoxFigure) ⇒ bf }
+  def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: BasicFigure) ⇒ bf }
   def feedbackAt(p: Point) = findDeepAt(feedbackLayer, p)
   def lineAt(p: Point) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
   val marquee = new RectangleFigure
@@ -81,7 +81,7 @@ class Viewer(parent: Composite, val controller: Controller) {
 }
 class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
 
-  var selectedBoxes = new SelectionManager[BoxFigure]()
+  var selected = new SelectionManager[BasicFigure]()
   var selectedLines = new SelectionManager[LineFigure]()
   object boxMapper extends ModelViewMapper[Box, BoxFigure] {
     def modelSet = model.boxes
@@ -92,22 +92,35 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
     }
   }
   object connectionMapper extends ModelViewMapper[Connection, ConnectionFigure] {
-    def modelSet = model.connections
+    def modelSet =  model.connections 
     def buildFigure(conn: Connection) = new ConnectionFigure(conn, ModelView.this)
   }
+  object portDeclMapper extends ModelViewMapper[PortDecl, PortDeclFigure] {
+    def modelSet = model.portDecls 
+    def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl,viewer,Some(TypedPort("D", false, portDecl.name, (0,0)))) // FIXME types
+  }
   def classOfB(b: Box) = bcp.find(b.className)
+  
   def findPortFigure(portRef: PortRef) = {
-    boxMapper.get(portRef.box) match {
-      case Some(w: WithPorts) ⇒ w.find(portRef.name)
-      case _ ⇒ None
+    if (portRef.box==null) { // FIXME 
+      portDeclMapper.values find 
+        { _.portDecl.name == portRef.name} map 
+        { _.portMapper.values.head }
+    }else {
+      boxMapper.get(portRef.box) match {
+        case Some(w: FigureWithPorts) ⇒ w.find(portRef.name)
+        case _ ⇒ None
+      } 
     }
   }
+  
   def update() {
     boxMapper.update()
+    portDeclMapper.update()
     connectionMapper.update()
   }
   def deselectAll() {
-    selectedBoxes.deselectAll
+    selected.deselectAll
     selectedLines.deselectAll
   }
 }

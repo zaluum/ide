@@ -15,7 +15,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   state = selecting
   // SELECTING
   object selecting extends ToolState {
-    var selected: Option[BoxFigure] = None
+    var selected: Option[BasicFigure] = None
     var lineSelected : Option[LineFigure] = None
     var handle: Option[HandleRectangle] = None
     var port: Option[PortFigure] = None
@@ -29,7 +29,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
 
     def buttonUp {
       (selected, lineSelected) match {
-        case (Some(box),_) => modelView.selectedBoxes.updateSelection(Set(box),shift)
+        case (Some(box),_) => modelView.selected.updateSelection(Set(box),shift)
         case (None, Some(line)) => modelView.selectedLines.updateSelection(Set(line),shift)
         case (None,None) => modelView.deselectAll()
       }
@@ -61,8 +61,8 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
         case (None, _, Some(port)) => // connect
           connect.enter(initDrag,port)
         case (None, Some(fig),_) => // select and move
-          if (!modelView.selectedBoxes(fig))
-            modelView.selectedBoxes.updateSelection(Set(fig),shift)
+          if (!modelView.selected(fig))
+            modelView.selected.updateSelection(Set(fig),shift)
           moving.enter(initDrag)
         case (None,None,None) => marqueeing.enter(initDrag) // marquee
       }
@@ -98,8 +98,10 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def buttonUp {
       // execute model command
       val command = new ConnectCommand(modelView.model,con.get)
-      if (command.canExecute)
+      if (command.canExecute){
+        println("can execute")
         controller.exec(command)
+      }
       exit()
     }
     def drag{}
@@ -127,10 +129,10 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   object moving extends MovingState {
     def doEnter{}
     def buttonUp {
-      val commands= modelView.selectedBoxes.selected map {
+      val commands= modelView.selected.selected map {
           bf =>
           val oldLoc = bf.getBounds.getLocation
-          new MoveCommand(bf.box, oldLoc +  delta)
+          new MoveCommand(bf.positionable, oldLoc +  delta)
       };
       controller.exec(new ChainCommand(commands.toList))
       exit()
@@ -138,9 +140,9 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def drag{}
     def buttonDown{}
     def exit() { selecting.enter() }
-    def move() {  modelView.selectedBoxes.selected foreach { _.moveDeltaFeed(delta) } }
+    def move() {  modelView.selected.selected foreach { _.moveDeltaFeed(delta) } }
     def abort() {
-      modelView.selectedBoxes.selected foreach { _.moveDeltaFeed(Vector2(0,0)) }
+      modelView.selected.selected foreach { _.moveDeltaFeed(Vector2(0,0)) }
       exit()
     }
   }
@@ -167,7 +169,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   // RESIZING
   object resizing extends MovingState {
     var handle : HandleRectangle = _
-    def bf = handle.boxFigure
+    def bf = handle.basicFigure
     
     def enter(initDrag: Point, handle:HandleRectangle) {
       super.enter(initDrag)
