@@ -19,10 +19,10 @@ object HandleSizes {
   val expansion = 8
 }
 import HandleSizes._
-class FeedbackRectangle(val feed: BoxFeedbackFigure) extends RectangleFigure {
+class FeedbackRectangle(val feed: BasicFeedbackFigure) extends RectangleFigure {
   def boxFigure = feed.bf
 }
-class HandleRectangle(val x: Int, val y: Int, feed: ResizeBoxFeedbackFigure) extends FeedbackRectangle(feed) {
+class HandleRectangle(val x: Int, val y: Int, feed: ResizeBasicFeedbackFigure) extends FeedbackRectangle(feed) {
   setBackgroundColor(ColorConstants.lightBlue)
   setForegroundColor(ColorConstants.white)
   def resizeCursor = {
@@ -65,7 +65,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeBoxFeedbackFigure) ext
   }
 }
 
-class BoxFeedbackFigure(val bf : BoxFigure) extends Figure {
+class BasicFeedbackFigure(val bf : BasicFigure) extends Figure {
   val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
   rectangle.setFill(false);
@@ -87,7 +87,7 @@ class BoxFeedbackFigure(val bf : BoxFigure) extends Figure {
   }
   
 }
-class ResizeBoxFeedbackFigure(bf: BoxFigure) extends BoxFeedbackFigure(bf) {
+class ResizeBasicFeedbackFigure(bf: BasicFigure) extends BasicFeedbackFigure(bf) {
   
   val handles =
     (for {

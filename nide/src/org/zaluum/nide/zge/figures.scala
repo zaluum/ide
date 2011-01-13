@@ -38,11 +38,10 @@ trait CanShowUpdate extends Figure {
   def update()
 }
 
-trait BoxFigure extends Figure with CanShowFeedback with CanShowUpdate {
+trait BasicFigure extends Figure with CanShowFeedback with CanShowUpdate {
   def viewer: Viewer
-  val box: Box
-  var boxClass: Option[BoxClass]
-  lazy val feed = new BoxFeedbackFigure(this)
+  def positionable : Positionable
+  def feed : BasicFeedbackFigure
   def size: Dimension
   def showFeedback() {
     viewer.feedbackLayer.add(feed)
@@ -60,7 +59,7 @@ trait BoxFigure extends Figure with CanShowFeedback with CanShowUpdate {
       viewer.layer.remove(this)
   }
   def update() {
-    val rect = new Rectangle(box.pos.x, box.pos.y, size.w, size.h)
+    val rect = new Rectangle(positionable.pos.x, positionable.pos.y, size.w, size.h)
     setBounds(rect)
     feed.setInnerBounds(rect)
   }
@@ -68,12 +67,18 @@ trait BoxFigure extends Figure with CanShowFeedback with CanShowUpdate {
     feed.setInnerLocation(loc)
   }
   def moveDeltaFeed(delta: Vector2) {
-    val loc = box.pos + delta 
+    val loc = positionable.pos + delta 
     feed.setInnerLocation(loc)
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
+}
+trait BoxFigure extends BasicFigure {
+  val box:Box
+  var boxClass: Option[BoxClass]
+  def positionable = box
+  lazy val feed = new BasicFeedbackFigure(this)
 }
 class PortFigure(val bf: BoxFigure, val typ: TypedPort, val portRef: PortRef, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
@@ -127,6 +132,7 @@ trait WithPorts extends BoxFigure {
 }
 
 class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: Viewer, val image: Image) extends ImageFigure(image) with BoxFigure with WithPorts {
+  
   def size = Dimension(image.getBounds.width, image.getBounds.height)
 }
 class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends SwingFigure(c) with BoxFigure {
