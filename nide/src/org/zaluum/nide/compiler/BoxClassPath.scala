@@ -26,7 +26,13 @@ class BoxClassPath(zaluumDir: File, classLoader: ClassLoader) {
       findClass(str) orElse
       { println(str + " not found"); None }
   }
-
+  def getResource(str:String) : Option[URL] = {
+    val f = new File(zaluumDir.getAbsolutePath + "/" + str)
+    if (f.exists) Some(f.toURI.toURL)
+    else {
+      Option(classLoader.getResource(str))
+    }
+  }
   def findZaluum(str: String) = {
     val fn = str.replace('.', '/')
     val f = new File(zaluumDir.getAbsolutePath + "/" + fn + ".zaluum")

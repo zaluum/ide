@@ -1,12 +1,13 @@
 package org.zaluum.nide.model
 
+import org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction
 import com.google.common.base.Charsets
 import java.io.OutputStreamWriter
 import java.io.OutputStream
 import java.io.InputStream
 import org.zaluum.nide.protobuf.BoxFileProtos
 import com.google.protobuf.TextFormat
-import scala.collection.JavaConversions._
+
 object Model {
   def toPoint(i:Point) = {
     val p = BoxFileProtos.Contents.Point.newBuilder
@@ -16,76 +17,7 @@ object Model {
   }
   def fromPoint(p:BoxFileProtos.Contents.Point) =  (p.getX,p.getY)
 }
-object ProtoModel{
-  def definitionToProtos(m:Model) = {
-    val b =BoxFileProtos.Definition.newBuilder()
-    b.setClassName(m.className)
-    b.setImageName(m.imageName)
-    b.build
-  }
-  def contentsToProtos(m:Model) = {
-    val c = BoxFileProtos.Contents.newBuilder()
-    for (b <- m.boxes) { c.addInstance(b.toProto)  }
-    for (con <-m.connections ) {  }
-    // TODO connections
-    c.build
-  }
-  def writeTo(m:Model,out: OutputStream) {
-    definitionToProtos(m).writeDelimitedTo(out)
-    contentsToProtos(m).writeDelimitedTo(out)
-  }
-  def writeTextTo(m:Model,out:OutputStream) {
-    val o = new OutputStreamWriter(out,Charsets.UTF_8)
-    TextFormat.print(definitionToProtos(m), o);
-    TextFormat.print(contentsToProtos(m), o)
-    o.flush
-  }
-  def readDefinition(in:InputStream) = { 
-    val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
-    new BoxClass(definition.getClassName,false,definition.getImageName)
-  }
-  def read(in : InputStream) ={
-    val model = new Model()
-    val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
-    model.className = definition.getClassName()
-    model.imageName = definition.getImageName()
-    val contents = BoxFileProtos.Contents.parseDelimitedFrom(in)
-    for (instance <- contents.getInstanceList) {
-      val box = new Box
-      if (model.boxNamed(instance.getName)) 
-        throw new Exception("Box name repeated" + instance.getName)
-      box.name = instance.getName
-      box.pos = Point(instance.getPos.getX, instance.getPos.getY)
-      box.className = instance.getClassName
-      model.boxes+=box
-      // ports
-    }
-    var portRefs = Map[Box,Set[PortRef]]() 
-    for (connection <- contents.getConnectionList){
-      if (connection.hasSource && connection.hasTarget){
-        def findBox(str:String) = model.boxes find { _.name == str }
-        def findPortRef(box : Box , name : String) = {
-          if (!portRefs.contains(box)) portRefs += (box -> Set())
-          portRefs(box).find {_.name == name} getOrElse {
-            val newRef = BoxPortRef(box,name) // FIXME modelPortRef
-            portRefs += (box -> (portRefs(box) + newRef))
-            newRef
-          }
-        }
-        def portOf (proto:BoxFileProtos.Contents.PortRef) = {
-          findBox(proto.getBoxName) map { b=> findPortRef(b,proto.getPortName) }
-        }
-        (portOf(connection.getSource), portOf(connection.getTarget)) match {
-          case (Some(from),Some(to)) =>
-            model.connections += new Connection(Some(from),Some(to))
-          case (f,t) => println("ports not found " + f + " " + t)
-        }
-      }
-    }
-    model.cleanUp
-    model
-  }
-}
+
 trait Tuple2 {
   val x : Int
   val y: Int
@@ -113,6 +45,8 @@ class Model {
     connections = connections.filterNot {c => c.from == c.to  || // loop
       (c.buf.isEmpty && !(c.from.isDefined && c.from.isDefined))} //empty waypoints
   }
+  def findBox(str: String) = boxes find { _.name == str }
+  def findPortDecl(str:String) = portDecls find {_.name==str}
 }
 
 object Box {
@@ -150,6 +84,12 @@ object PortDecl {
 class PortDecl(var m:Model,var name:String, var in:Boolean) extends Positionable{
   var pos = Point(0,10)
   override def toString = "portDecl(" + name + ")"
+  def toProto = {
+    val port = BoxFileProtos.Definition.Port.newBuilder()
+    port.setDirection(if (in) Direction.IN else Direction.OUT)
+    port.setName(name)
+    port.setType("D")
+  }
 }
 class BoxClass(val className: String,val scala:Boolean = false, val image:String) {
   var ports = Set[TypedPort]()

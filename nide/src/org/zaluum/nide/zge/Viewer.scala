@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.swt.widgets.Display
 import org.zaluum.nide.icons.Icons
 import org.eclipse.jface.resource.ImageDescriptor
 import org.eclipse.jface.resource.ImageRegistry
@@ -27,7 +28,7 @@ import org.zaluum.nide.model._
 import org.zaluum.nide.model.{ Point ⇒ MPoint }
 
 class Viewer(parent: Composite, val controller: Controller) {
-
+ val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
   canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
@@ -75,25 +76,9 @@ class Viewer(parent: Composite, val controller: Controller) {
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
   def hideMarquee() { feedbackLayer.remove(marquee) }
   UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
-  object imageFactory {
-    val reg = new ImageRegistry
-    reg.put("*",ImageDescriptor.createFromFile(classOf[Icons],"notFound.png"))
-    def notFound = reg.get("*")
-    def apply(resource:String) = {
-      Option(reg.get(resource)) orElse {
-        val url = Option(currentThread.getContextClassLoader().getResource(resource));
-        url map { u=>
-          reg.put(resource, ImageDescriptor.createFromURL(u))
-          reg.get(resource)
-        }
-      } getOrElse notFound
-    }
-    def apply(boxClass : Option[BoxClass]) : Image= {
-      boxClass map { c ⇒ apply(c.image) } getOrElse notFound     
-    }
-  }
-
+ 
 }
+
 class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
 
   var selected = new SelectionManager[BasicFigure]()

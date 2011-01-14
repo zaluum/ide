@@ -68,6 +68,7 @@ class Palette(viewer: Viewer, mainShell: Shell) {
   def dispose() {
     //popup.dispose()
   }
+  
 }
 /*
 val bar = new ExpandBar (shell, SWT.V_SCROLL);

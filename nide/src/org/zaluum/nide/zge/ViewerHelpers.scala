@@ -1,5 +1,32 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.icons.Icons
+import org.eclipse.swt.graphics.Image
+import org.zaluum.nide.model.BoxClass
+import org.eclipse.jface.resource.ImageDescriptor
+import org.zaluum.nide.compiler.BoxClassPath
+import org.eclipse.jface.resource.ImageRegistry
+import org.eclipse.swt.widgets.Display
+
+
+class ImageFactory(val display:Display, bcp: BoxClassPath) {
+    val reg = new ImageRegistry
+    reg.put("*",ImageDescriptor.createFromFile(classOf[Icons],"notFound.png"))
+    def notFound = reg.get("*")
+    private def get(resource:String) = {
+      Option(reg.get(resource)) orElse {
+        val url = bcp.getResource(resource);
+        url map { u=>
+          reg.put(resource, ImageDescriptor.createFromURL(u))
+          reg.get(resource)
+        }
+      } 
+    }
+    def apply(boxClass : Option[BoxClass]) : Image= {
+      def defaultImage(bc:BoxClass) = bc.className.replace('.','/') + ".png";
+      boxClass flatMap { c ⇒ get(c.image).orElse { get(defaultImage(c)) } } getOrElse notFound     
+    }
+}
 class SelectionManager[T <: CanShowFeedback]{
   var selected = Set[T]()
   def apply(f:T) = selected(f)
