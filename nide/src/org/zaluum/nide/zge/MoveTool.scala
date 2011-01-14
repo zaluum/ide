@@ -8,7 +8,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Cursor
 import scala.collection.JavaConversions._
 import org.zaluum.nide.model._ 
-
+import org.zaluum.nide.model.{Point=>MPoint}
 import draw2dConversions._
 
 class MoveTool(viewer: Viewer) extends Tool(viewer) {
@@ -66,6 +66,10 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
           moving.enter(initDrag)
         case (None,None,None) => marqueeing.enter(initDrag) // marquee
       }
+    }
+    override def menu() {
+      
+      viewer.palette.show(swtMouseLocation)
     }
     def abort {}
     def exit {}
@@ -198,8 +202,8 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
       state=this
       val box = new Box()
       box.className = boxClass.className
-      val image = viewer.imageFactory.apply(boxClass.image)
-      bf = new ImageBoxFigure(box,Some(boxClass),viewer,image)
+      box.pos = MPoint(1,1)
+      bf = new ImageBoxFigure(box,Some(boxClass),viewer)
       bf.update()
       bf.hide()
       bf.showFeedback()
@@ -209,7 +213,10 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def drag() {}
     def buttonUp() {
       // execute
-      // exit()
+      bf.box.pos = MPoint(mouseLocation.x,mouseLocation.y)
+      val com = new CreateCommand(bf.box,model)
+      controller.exec(com)
+      exit()
     }
     def buttonDown() {}
     def exit() { bf.hideFeedback; bf = null; selecting.enter() }

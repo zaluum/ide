@@ -7,7 +7,7 @@ import scala.collection.mutable.Stack
 import scala.collection.mutable.Buffer
 import org.zaluum.nide.model._ 
 
-class Controller(val model: Model, bcp :BoxClassPath) {
+class Controller(val model: Model, val bcp :BoxClassPath) {
   private var viewModels = Buffer[ModelView]()
   def registerView(viewer:Viewer) = {
     val viewModel = new ModelView(viewer,model,bcp)

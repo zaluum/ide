@@ -142,9 +142,9 @@ class PortFigure(val bf: FigureWithPorts, val typ: TypedPort, val portRef: PortR
   }
 }
 
-class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: Viewer, val image: Image) extends ImageFigure(image) with BoxFigure {
-  
-  def size = Dimension(image.getBounds.width, image.getBounds.height)
+class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: Viewer) extends ImageFigure with BoxFigure {
+  setImage(viewer.imageFactory(boxClass))
+  def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
 }
 class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends SwingFigure(c) with BoxFigure {
   def size = Dimension(50, 50) //FIXME

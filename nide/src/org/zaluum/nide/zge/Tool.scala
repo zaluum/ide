@@ -15,18 +15,19 @@ abstract class Tool(viewer: Viewer) {
   def canvas = viewer.canvas
   def controller = viewer.controller
   def modelView = viewer.modelView
+  def model = viewer.modelView.model 
   def figureUnderMouse = viewer.figureAt(mouseLocation)
   def lineUnderMouse = viewer.lineAt(mouseLocation)
   def feedbackUnderMouse = viewer.feedbackAt(mouseLocation)
   val listener = new MouseMoveListener() with MouseListener with KeyListener with FocusListener with DragDetectListener with MenuDetectListener with MouseTrackListener with MouseWheelListener with TraverseListener {
     def dragDetected(e: DragDetectEvent) { updateMouse(e); state.drag() }
-    def focusGained(e: FocusEvent) { println("gain" + e) }
+    def focusGained(e: FocusEvent) { println("gain" + e);  }
     def focusLost(e: FocusEvent) { println("lost" + e) }
     def keyPressed(e: KeyEvent) = { 
       if (e.keyCode == SWT.ESC) handleAbort()
     }
     def keyReleased(e: KeyEvent) {}
-    def menuDetected(e: MenuDetectEvent) { println("menu" + e) }
+    def menuDetected(e: MenuDetectEvent) { state.menu() }
     def mouseScrolled(e: MouseEvent) { println("scroll" + e) }
     def mouseDoubleClick(me: MouseEvent) { updateMouse(me); }
     def mouseDown(me: MouseEvent) {
@@ -36,7 +37,7 @@ abstract class Tool(viewer: Viewer) {
         state.buttonDown()
       }
     }
-    def mouseEnter(e: MouseEvent) {}
+    def mouseEnter(me: MouseEvent) { updateMouse(me); state.move(); println("enter")}
     def mouseExit(e: MouseEvent) {}
     def mouseHover(e: MouseEvent) {} //println("hover" + e)}
     def mouseMove(me: MouseEvent) { updateMouse(me); state.move() }
@@ -65,6 +66,7 @@ abstract class Tool(viewer: Viewer) {
     def move() 
     def buttonUp() 
     def drag() 
+    def menu() {}
     def abort() 
   }
 
@@ -85,8 +87,12 @@ abstract class Tool(viewer: Viewer) {
   var state: ToolState = _
   var stateMask = 0
   var mouseLocation = new Point
+  var swtMouseLocation = new org.eclipse.swt.graphics.Point(0,0)
   def updateMouse(me: MouseEvent) {
     stateMask = me.stateMask
+    swtMouseLocation.x = me.x
+    swtMouseLocation.y = me.y
+    swtMouseLocation = canvas.getDisplay.map(canvas, null, swtMouseLocation)
     mouseLocation.x = me.x
     mouseLocation.y = me.y
     viewport.translateFromParent(mouseLocation);

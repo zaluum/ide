@@ -17,15 +17,18 @@ import org.eclipse.swt.widgets.Display
 import org.eclipse.swt.layout.FillLayout
 import org.zaluum.nide.model._ 
 
-
-object FastSWT {
-  def addReaction(b:Button, r : =>Unit) {
+object SWTScala {
+  def addReaction(b:Button)(r : =>Unit) {
     b.addSelectionListener(new SelectionAdapter() {
       override def widgetSelected(e: SelectionEvent) {
         r
       }
     })
   }
+}
+import SWTScala._
+object FastSWT {
+  
   def main(args: Array[String]) {
     val display = new Display()
     val shell = new Shell(display)
@@ -47,45 +50,38 @@ object FastSWT {
       shell.pack
     }
     buttonLoad.setText("Load")
-    addReaction(buttonLoad, {
+    addReaction(buttonLoad) {
       val f = new FileInputStream("testOutput.zaluum")
         try {
           val model = ProtoModel.read(f)
           createViewer(model)
         } finally { f.close() }
-    })
+    }
     val buttonSave = new Button(buttons, SWT.PUSH)
     buttonSave.setText("Save")
-    addReaction(buttonSave, {
+    addReaction(buttonSave) {
         if (viewer == null) return
         val f = new FileOutputStream("testOutput.zaluum")
         try {
           ProtoModel.writeTo(viewer.controller.model,f)
         } finally (f.close())
-    })
+    }
     val buttonFromCode = new Button(buttons, SWT.PUSH)
     buttonFromCode.setText("ModelFromCode")
-    addReaction(buttonFromCode,{ 
+    addReaction(buttonFromCode){ 
       createViewer(Example.sumsumModel)
-    }) 
+    }
     val buttonGenerate = new Button(buttons,SWT.PUSH)
     buttonGenerate.setText("Generate")
-    addReaction(buttonGenerate, {
+    addReaction(buttonGenerate) {
       if (viewer==null) return
       println("generating...")
       val f = new FileOutputStream("Generated.java")
       val out = new java.io.PrintWriter(f);
       //new Generator().generate(viewer.controller.model,new CodeWriter(out))
       out.close
-    })
-    val buttonCreate = new Button(buttons,SWT.PUSH)
-    buttonCreate.setText("new SUM")
-    addReaction(buttonCreate, {
-      if (viewer==null) return
-      viewer.tool.state.abort()
-      viewer.tool.creating.enter(bcp.find("graystone.zaluum.SumBox").get)
-      viewer.canvas.setFocus()
-    })
+    }
+    
     //viewer.canvas.setPreferredSize(450,450)
     //shell.pack()
     shell.open()

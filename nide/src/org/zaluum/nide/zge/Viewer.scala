@@ -1,5 +1,8 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.icons.Icons
+import org.eclipse.jface.resource.ImageDescriptor
+import org.eclipse.jface.resource.ImageRegistry
 import org.zaluum.nide.compiler.BoxClassPath
 import org.eclipse.draw2d.Polyline
 import org.eclipse.swt.graphics.Image
@@ -21,7 +24,7 @@ import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformL
 import org.eclipse.draw2d.geometry.{ Rectangle, Point, Dimension }
 import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.model._
-import org.zaluum.nide.model.{Point => MPoint}
+import org.zaluum.nide.model.{ Point ⇒ MPoint }
 
 class Viewer(parent: Composite, val controller: Controller) {
 
@@ -44,8 +47,11 @@ class Viewer(parent: Composite, val controller: Controller) {
   innerLayers.add(feedbackLayer)
   viewport.setContents(innerLayers);
   canvas.setViewport(viewport)
+  // SHELL
+  val palette = new Palette(this, parent.getShell)
   var tool = new MoveTool(this)
   val modelView = controller.registerView(this)
+
   def dispose() {
     canvas.dispose()
   }
@@ -70,15 +76,23 @@ class Viewer(parent: Composite, val controller: Controller) {
   def hideMarquee() { feedbackLayer.remove(marquee) }
   UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
   object imageFactory {
-    lazy val notFound = new Image(canvas.getDisplay, "icons/notFound.png")
-    def apply(str: String) = {
-      try {
-        new Image(canvas.getDisplay, str)
-      } catch {
-        case _ ⇒ notFound
-      }
+    val reg = new ImageRegistry
+    reg.put("*",ImageDescriptor.createFromFile(classOf[Icons],"notFound.png"))
+    def notFound = reg.get("*")
+    def apply(resource:String) = {
+      Option(reg.get(resource)) orElse {
+        val url = Option(currentThread.getContextClassLoader().getResource(resource));
+        url map { u=>
+          reg.put(resource, ImageDescriptor.createFromURL(u))
+          reg.get(resource)
+        }
+      } getOrElse notFound
+    }
+    def apply(boxClass : Option[BoxClass]) : Image= {
+      boxClass map { c ⇒ apply(c.image) } getOrElse notFound     
     }
   }
+
 }
 class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
 
@@ -88,8 +102,7 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
     def modelSet = model.boxes
     def buildFigure(box: Box) = {
       val cl = bcp.find(box.className)
-      val image = cl map { c ⇒ viewer.imageFactory(c.image) }
-      new ImageBoxFigure(box, cl, viewer, image.getOrElse { viewer.imageFactory.notFound })
+      new ImageBoxFigure(box, cl, viewer)
     }
   }
   object connectionMapper extends ModelViewMapper[Connection, ConnectionFigure] {
@@ -102,9 +115,9 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
   }
   def classOfB(b: Box) = bcp.find(b.className)
 
-  def findPortFigure(portRef: PortRef):Option[PortFigure] = portRef match {
+  def findPortFigure(portRef: PortRef): Option[PortFigure] = portRef match {
     case b: BoxPortRef ⇒
-      boxMapper.get(b.box) flatMap {_.find(b.name)}
+      boxMapper.get(b.box) flatMap { _.find(b.name) }
     case m: ModelPortRef ⇒
       portDeclMapper.values find { _.portDecl.name == m.name } map
         { _.portMapper.values.head }
