@@ -1,4 +1,8 @@
-package org.zaluum.nide
+package org.zaluum.nide.eclipse
+
+import org.zaluum.nide.model.ProtoModel
+import java.io.ByteArrayOutputStream
+import org.zaluum.nide.model.Model
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IWorkbench;
@@ -75,10 +79,12 @@ class BoxWizardPage(
     setPageComplete(validatePage());
   }
   import com.google.common.base.Charsets
-  /*override protected def getInitialContents = {
-    val box = new ComposedPBox()
-    new java.io.ByteArrayInputStream(box.toProto.build.toString.getBytes(Charsets.UTF_8))
-  }*/
+  override protected def getInitialContents = {
+    val model = Model.emptyModel(this.getFileName)
+    val out = new ByteArrayOutputStream()
+    ProtoModel.writeTo(model,out)
+    new java.io.ByteArrayInputStream(out.toByteArray)
+  }
 
   def setDescription() {
     this.setTitle("New Box TypedModel Wizard");

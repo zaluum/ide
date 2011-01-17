@@ -1,8 +1,8 @@
 package graystone.zaluum;
 
-import graystone.zaluum.annotations.Box;
-import graystone.zaluum.annotations.In;
-import graystone.zaluum.annotations.Out;
+import org.zaluum.nide.java.Box;
+import org.zaluum.nide.java.In;
+import org.zaluum.nide.java.Out;
 
 @Box(image="graystone/zaluum/op.png")
 public class SumBox {

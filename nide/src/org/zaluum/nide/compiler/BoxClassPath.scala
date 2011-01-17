@@ -1,7 +1,7 @@
 package org.zaluum.nide.compiler
 
 import scala.reflect.ScalaSignature
-import graystone.zaluum.annotations.{ In, Out, Box ⇒ BoxAnn }
+import org.zaluum.nide.java.{ In, Out, Box ⇒ BoxAnn }
 import org.objectweb.asm.ClassReader
 import java.net.URL
 import java.io.File
@@ -109,8 +109,8 @@ class BoxClassPathScanner(zaluumDir: File, cl: ClassLoader) extends BoxClassPath
     // discoverer.setFilter(new FilterImpl());
     // Register class annotation listener
 
-    val inStr = classOf[graystone.zaluum.annotations.In].getName
-    val outStr = classOf[graystone.zaluum.annotations.Out].getName
+    val inStr = classOf[In].getName
+    val outStr = classOf[Out].getName
     discoverer.addAnnotationListener(new ClassAnnotationDiscoveryListener() {
       def discovered(clazz: String, annotation: String) {
         println("Discovered Class(" + clazz + ") " + "with Annotation(" + annotation + ")");
@@ -118,7 +118,7 @@ class BoxClassPathScanner(zaluumDir: File, cl: ClassLoader) extends BoxClassPath
         addCache(Some(cl))
         javaClasses += (clazz -> cl)
       }
-      def supportedAnnotations() = Array(classOf[graystone.zaluum.annotations.Box].getName)
+      def supportedAnnotations() = Array(classOf[Box].getName)
     });
     discoverer.addAnnotationListener(new FieldAnnotationDiscoveryListener() {
       def discovered(clazz: String, field: String, descriptor: String, annotation: String) {

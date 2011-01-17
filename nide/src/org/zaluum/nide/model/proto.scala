@@ -1,5 +1,6 @@
 package org.zaluum.nide.model
 
+import java.io.ByteArrayOutputStream
 import org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction
 import com.google.common.base.Charsets
 import java.io.InputStream
@@ -15,19 +16,22 @@ object ProtoModel {
     b.setClassName(m.className)
     b.setImageName(m.imageName)
     for (portDecl ← m.portDecls) { b.addPort(portDecl.toProto) }
-
     b.build
   }
   def contentsToProtos(m: Model) = {
     val c = BoxFileProtos.Contents.newBuilder()
     for (b ← m.boxes) { c.addInstance(b.toProto) }
     for (con ← m.connections) { c.addConnection(con.toProto) }
-    // TODO connections
     c.build
   }
   def writeTo(m: Model, out: OutputStream) {
     definitionToProtos(m).writeDelimitedTo(out)
     contentsToProtos(m).writeDelimitedTo(out)
+  }
+  def toByteArray(m:Model) = {
+    val out = new ByteArrayOutputStream()
+    writeTo(m,out)
+    out.toByteArray
   }
   def writeTextTo(m: Model, out: OutputStream) {
     val o = new OutputStreamWriter(out, Charsets.UTF_8)

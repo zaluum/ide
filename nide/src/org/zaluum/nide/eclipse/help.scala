@@ -1,4 +1,4 @@
-package org.zaluum.nide
+package org.zaluum.nide.eclipse
 import org.eclipse.help._
 class ContextProvider(val str : String) extends IContextProvider {
   def getContextChangeMask() : Int = 0

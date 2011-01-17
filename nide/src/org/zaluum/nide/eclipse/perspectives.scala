@@ -1,4 +1,4 @@
-package org.zaluum.nide
+package org.zaluum.nide.eclipse
 
 import org.eclipse.ui.IFolderLayout
 import org.eclipse.ui.IPageLayout

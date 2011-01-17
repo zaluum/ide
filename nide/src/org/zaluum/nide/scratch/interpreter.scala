@@ -3,8 +3,8 @@ package graystone.zaluum.interpreter
 
 import scala.collection.mutable.MultiMap
 import graystone.zaluum.{BoxM,ConnectionBoxM}
-import graystone.zaluum.annotations.In;
-import graystone.zaluum.annotations.Out;
+import org.zaluum.nide.java.In;
+import org.zaluum.nide.java.Out;
 import java.lang.reflect.{ Field, Method }
 import scala.collection.mutable.{Buffer, HashMap, Set, MultiMap}
 

@@ -1,7 +1,7 @@
 package graystone.zaluum;
 
-import graystone.zaluum.annotations.Box;
-import graystone.zaluum.annotations.In;
+import org.zaluum.nide.java.Box;
+import org.zaluum.nide.java.In;
 
 @Box(image="graystone/zaluum/print.png")
 public class PrintBox {

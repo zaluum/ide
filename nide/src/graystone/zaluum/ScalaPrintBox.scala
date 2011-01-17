@@ -1,7 +1,6 @@
 package graystone.zaluum
 
-import graystone.zaluum.annotations.In
-import graystone.zaluum.annotations.Box
+import org.zaluum.nide.java.{In,Box}
 
 @Box(image="graystone/zaluum/print.png")
 class ScalaPrintBox {

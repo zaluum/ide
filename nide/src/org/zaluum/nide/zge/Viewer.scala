@@ -32,7 +32,7 @@ class Viewer(parent: Composite, val controller: Controller) {
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
   canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
-
+  
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
   val connectionsLayer = new FreeformLayer
@@ -52,7 +52,7 @@ class Viewer(parent: Composite, val controller: Controller) {
   val palette = new Palette(this, parent.getShell)
   var tool = new MoveTool(this)
   val modelView = controller.registerView(this)
-
+  def model = controller.model
   def dispose() {
     canvas.dispose()
   }

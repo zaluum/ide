@@ -1,5 +1,8 @@
 package org.zaluum.nide.eclipse
 
+import java.io.ByteArrayInputStream
+import org.zaluum.nide.model.ProtoModel
+import org.eclipse.ui.part.FileEditorInput
 import org.zaluum.nide.zge.Controller
 import org.zaluum.nide.zge.Viewer
 import org.zaluum.nide.model.Example
@@ -22,7 +25,10 @@ class GraphicalEditor extends EditorPart with ISelectionListener {
   var viewer : Viewer = _
   def selectionChanged(part: IWorkbenchPart, selection: ISelection) {  }
 
-  def doSave(monitor: IProgressMonitor) {  }
+  def doSave(monitor: IProgressMonitor) {
+    val in = new ByteArrayInputStream(ProtoModel.toByteArray(viewer.model))
+    inputFile.setContents(in,true,true,monitor);
+  }
 
   def doSaveAs() {  }
 
@@ -31,17 +37,20 @@ class GraphicalEditor extends EditorPart with ISelectionListener {
     setInput(input)
   }
 
-  def isDirty(): Boolean = { false }
+  def isDirty(): Boolean = { true }
 
   def isSaveAsAllowed(): Boolean = { false }
-
+  
+  def inputFile = getEditorInput.asInstanceOf[FileEditorInput].getFile
+  def input = inputFile.getContents(true)
   def createPartControl(parent: Composite){
     val bcp = new BoxClassPath(new File("."),currentThread.getContextClassLoader)
-    val model = Example.sumsumModel
+    val model = ProtoModel.read(input)
+    input.close()
     val controller = new Controller(model,bcp)
     viewer = new Viewer(parent,controller) 
   } 
 
-  def setFocus() {  }
+  def setFocus() { viewer.canvas.setFocus }
   
 }

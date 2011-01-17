@@ -9,6 +9,11 @@ import org.zaluum.nide.protobuf.BoxFileProtos
 import com.google.protobuf.TextFormat
 
 object Model {
+  def emptyModel(name:String) ={
+    val m = new Model()
+    m.className = name
+    m
+  }
   def toPoint(i:Point) = {
     val p = BoxFileProtos.Contents.Point.newBuilder
     p.setX(i.x)

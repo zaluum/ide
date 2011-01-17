@@ -1,7 +1,7 @@
 package graystone.zaluum;
 
-import graystone.zaluum.annotations.Box;
-import graystone.zaluum.annotations.Out;
+import org.zaluum.nide.java.Box;
+import org.zaluum.nide.java.Out;
 
 @Box(image="")
 public class ConstBox {

@@ -174,20 +174,20 @@
       </category>
       <wizard
             category="org.zaluum.nide"
-            class="org.zaluum.nide.BoxWizard"
-            id="org.zaluum.nide.BoxWizard"
+            class="org.zaluum.nide.eclipse.BoxWizard"
+            id="org.zaluum.nide.eclipse.BoxWizard"
             name="Box file">
       </wizard>
    </extension>
    <extension point="org.eclipse.ui.perspectives">
       <perspective
-            class="org.zaluum.nide.BoxPerspective"
+            class="org.zaluum.nide.eclipse.BoxPerspective"
             icon="icons/composed_16.png"
             id="zaluum.BoxPerspective"
             name="Box Perspective">
       </perspective>
       <perspective
-            class="org.zaluum.nide.DebugPerspective"
+            class="org.zaluum.nide.eclipse.DebugPerspective"
             icon="icons/debug.png"
             id="zaluum.DebugPerspective"
             name="Debug Perspective">

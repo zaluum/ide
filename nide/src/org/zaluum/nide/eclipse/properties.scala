@@ -1,4 +1,4 @@
-package org.zaluum.nide
+package org.zaluum.nide.eclipse
 
 import org.eclipse.ui.views.properties.IPropertySource
 import org.eclipse.ui.views.properties.IPropertyDescriptor;

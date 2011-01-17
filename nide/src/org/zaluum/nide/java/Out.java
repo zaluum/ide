@@ -1,4 +1,4 @@
-package graystone.zaluum.annotations;
+package org.zaluum.nide.java;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
