@@ -148,8 +148,8 @@
    <extension
          point="org.eclipse.ui.editors">
       <editor
-            class="org.zaluum.nide.zge.GraphicalEditor"
-            contributorClass="org.zaluum.nide.BaseActionBarContributor"
+            class="org.zaluum.nide.eclipse.GraphicalEditor"
+            contributorClass="org.zaluum.nide.eclipse.BaseActionBarContributor"
             default="false"
             extensions="zaluum"
             icon="icons/composed_16.png"

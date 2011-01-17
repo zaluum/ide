@@ -16,6 +16,7 @@ import org.eclipse.jface.dialogs.PopupDialog
 import org.eclipse.swt.widgets.Display
 import org.eclipse.swt.layout.{ FillLayout, GridLayout };
 import SWTScala._
+
 object Palette {
   val w = 400
   val h = 300

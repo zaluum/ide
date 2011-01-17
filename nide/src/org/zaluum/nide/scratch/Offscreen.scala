@@ -1,4 +1,4 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.scratch
 
 
  

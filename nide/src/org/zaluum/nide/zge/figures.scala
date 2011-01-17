@@ -146,10 +146,10 @@ class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: V
   setImage(viewer.imageFactory(boxClass))
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
 }
-class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends SwingFigure(c) with BoxFigure {
+/*class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends SwingFigure(c) with BoxFigure {
   def size = Dimension(50, 50) //FIXME
   var boxClass: Option[BoxClass] = None // FIXME
-}
+}*/
 
 import org.eclipse.draw2d.Polyline
 

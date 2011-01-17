@@ -28,7 +28,7 @@ import org.zaluum.nide.model._
 import org.zaluum.nide.model.{ Point ⇒ MPoint }
 
 class Viewer(parent: Composite, val controller: Controller) {
- val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
+  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
   canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)

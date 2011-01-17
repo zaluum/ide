@@ -1,5 +1,6 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.scratch
 
+import org.zaluum.nide.zge.SWTUtils
 import javax.swing.JComponent
 import java.awt.BorderLayout
 import javax.swing.JPanel

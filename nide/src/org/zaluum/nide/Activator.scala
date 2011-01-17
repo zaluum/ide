@@ -5,7 +5,7 @@ import org.eclipse.jface.resource.ImageRegistry
 import org.osgi.framework.BundleContext
 
 object Activator {
-  val PLUGIN_ID : String = "org.zaluum.ide.editor"
+  val PLUGIN_ID : String = "org.zaluum.nide"
   var plugin : Activator = _
   def logError(s:String, a:AnyRef){
     println("ERROR" + s + " " + a)

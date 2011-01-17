@@ -1,5 +1,10 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.zge.Controller
+import org.zaluum.nide.zge.Viewer
+import org.zaluum.nide.model.Example
+import java.io.File
+import org.zaluum.nide.compiler.BoxClassPath
 import org.eclipse.ui.IEditorInput
 import org.eclipse.ui.IWorkbenchPartSite
 import org.eclipse.ui.IWorkbenchPart
@@ -30,7 +35,12 @@ class GraphicalEditor extends EditorPart with ISelectionListener {
 
   def isSaveAsAllowed(): Boolean = { false }
 
-  def createPartControl(parent: Composite){ viewer = new Viewer(parent,null) } // FIXME null
+  def createPartControl(parent: Composite){
+    val bcp = new BoxClassPath(new File("."),currentThread.getContextClassLoader)
+    val model = Example.sumsumModel
+    val controller = new Controller(model,bcp)
+    viewer = new Viewer(parent,controller) 
+  } 
 
   def setFocus() {  }
   
