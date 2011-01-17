@@ -1,5 +1,6 @@
 package org.zaluum.nide.compiler
 
+import org.zaluum.nide.model.ProtoModel
 import org.zaluum.nide.model.Model
 import java.io.FileOutputStream
 import org.zaluum.nide.model.Example
@@ -9,6 +10,16 @@ import java.io.File
 object TestCompiler {
   val path = new BoxClassPath(new File("./src"), currentThread.getContextClassLoader()) 
   val outDir = "classes/"
+  def compile(str:String) {
+    path.getResource(str) match {
+      case Some(url) =>
+        val i = url.openStream
+        val model = ProtoModel.read(i)
+        i.close
+        compile(model)
+      case None => println("File " + str + " not found")
+    }
+  }
   def compile(model:Model) {
     val comp = new Compiler(model,path)
     try{
@@ -30,7 +41,7 @@ object TestCompiler {
     }
   }
   def main(args:Array[String]) {
-    compile(Example.sumsumModel)
+    compile("graystone/zaluum/SumSum.zaluum")
     compile(Example.printModel)
     compile(Example.encapsulatePrint)
   }

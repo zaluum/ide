@@ -16,13 +16,20 @@ Require-Bundle: org.scala-ide.scala.library;bundle-version="2.8.1",
  org.eclipse.help,
  org.eclipse.core.filesystem,
  org.eclipse.ui.views,
- org.eclipse.gef,
  com.google.protobuf;bundle-version="2.3.0",
  org.zaluum.nide.protobuf;bundle-version="1.0.0",
  jgrapht;bundle-version="0.8.1",
  javassist.osgi;bundle-version="3.6.0",
- org.apache.commons.logging;bundle-version="1.0.4"
+ org.apache.commons.logging;bundle-version="1.0.4",
+ org.eclipse.gef;bundle-version="3.5.1"
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6,
+ J2SE-1.5
 Bundle-Activator: org.zaluum.nide.Activator
- .
+Bundle-ClassPath: .,
+ libs/annovention-0.1.jar,
+ libs/asm-3.3.1.jar,
+ libs/asm-commons-3.3.1.jar,
+ libs/scala-arm_2.8.1.jar,
+ libs/scalax-io-core_2.8.1.jar,
+ libs/scalax-io-file_2.8.1.jar

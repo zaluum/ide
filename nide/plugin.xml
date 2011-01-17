@@ -48,7 +48,7 @@
       </colorDefinition>
       <fontDefinition
             categoryId="org.zaluum.nide.themeElementCategory1"
-            id="org.zaluum.ide.fontDefinition"
+            id="org.zaluum.nide.fontDefinition"
             label="Box font"
             value="Monospace-regular-8">
         <description>
