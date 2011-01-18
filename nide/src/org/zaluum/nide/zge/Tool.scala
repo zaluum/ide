@@ -21,14 +21,14 @@ abstract class Tool(viewer: Viewer) {
   def feedbackUnderMouse = viewer.feedbackAt(mouseLocation)
   val listener = new MouseMoveListener() with MouseListener with KeyListener with FocusListener with DragDetectListener with MenuDetectListener with MouseTrackListener with MouseWheelListener with TraverseListener {
     def dragDetected(e: DragDetectEvent) { updateMouse(e); state.drag() }
-    def focusGained(e: FocusEvent) { println("gain" + e);  }
-    def focusLost(e: FocusEvent) { println("lost" + e) }
+    def focusGained(e: FocusEvent) { }
+    def focusLost(e: FocusEvent) {  }
     def keyPressed(e: KeyEvent) = { 
       if (e.keyCode == SWT.ESC) handleAbort()
     }
     def keyReleased(e: KeyEvent) {}
     def menuDetected(e: MenuDetectEvent) { state.menu() }
-    def mouseScrolled(e: MouseEvent) { println("scroll" + e) }
+    def mouseScrolled(e: MouseEvent) {  }
     def mouseDoubleClick(me: MouseEvent) { updateMouse(me); }
     def mouseDown(me: MouseEvent) {
       updateMouse(me);
@@ -37,7 +37,7 @@ abstract class Tool(viewer: Viewer) {
         state.buttonDown()
       }
     }
-    def mouseEnter(me: MouseEvent) { updateMouse(me); state.move(); println("enter")}
+    def mouseEnter(me: MouseEvent) { updateMouse(me); state.move(); }
     def mouseExit(e: MouseEvent) {}
     def mouseHover(e: MouseEvent) {} //println("hover" + e)}
     def mouseMove(me: MouseEvent) { updateMouse(me); state.move() }
@@ -48,7 +48,7 @@ abstract class Tool(viewer: Viewer) {
         state.buttonUp()
       }
     }
-    def keyTraversed(e: TraverseEvent) { println("traverse" + e) }
+    def keyTraversed(e: TraverseEvent) {  }
   }
   canvas.addKeyListener(listener);
   canvas.addDragDetectListener(listener);

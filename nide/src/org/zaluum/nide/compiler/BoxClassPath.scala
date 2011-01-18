@@ -59,7 +59,6 @@ class BoxClassPath(zaluumDir: File, classLoader: ClassLoader) {
       val scala = cl.getAnnotation(classOf[ScalaSignature])!=null
       val bc = new BoxClass(cl.getName,scala,bann.image)
       for (f ← cl.getDeclaredFields()) {
-        println("found field " + f.getName)
         f.getAnnotations() foreach {
           _ match {
             case in: In ⇒ 
