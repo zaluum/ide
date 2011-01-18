@@ -42,13 +42,15 @@ class Palette(viewer: Viewer, mainShell: Shell) {
         layout.verticalSpacing = 10;
         content.setLayout(layout)
       }
-      val b = new Button(content, SWT.PUSH)
-      b.setText("Crear")
-      addReaction(b){
-        viewer.tool.state.abort()
-        viewer.tool.creating.enter(viewer.controller.bcp.find("graystone.zaluum.SumBox").get)
-        viewer.canvas.setFocus()
-        hide()
+      for (bc <- viewer.controller.bcp.boxClasses) {
+        val b = new Button(content, SWT.PUSH)
+        b.setText(bc.className)
+        addReaction(b){
+          viewer.tool.state.abort()
+          viewer.tool.creating.enter(bc)
+          viewer.canvas.setFocus()
+          hide()
+        }
       }
       content.setSize(content.computeSize(SWT.DEFAULT,SWT.DEFAULT))
       composite

@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.compiler.ScannedBoxClassPath
 import org.zaluum.nide.compiler.BoxClassPath
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.Ellipse
@@ -7,7 +8,7 @@ import scala.collection.mutable.Stack
 import scala.collection.mutable.Buffer
 import org.zaluum.nide.model._ 
 
-class Controller(val model: Model, val bcp :BoxClassPath) {
+class Controller(val model: Model, val bcp :ScannedBoxClassPath) {
   private var viewModels = Buffer[ModelView]()
   def registerView(viewer:Viewer) = {
     val viewModel = new ModelView(viewer,model,bcp)

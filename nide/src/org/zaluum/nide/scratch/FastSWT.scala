@@ -1,5 +1,7 @@
 package org.zaluum.nide.scratch
 
+import org.zaluum.nide.compiler.SimpleScannedBoxClassPath
+import org.zaluum.nide.compiler.SimpleBoxClassPath
 import org.zaluum.nide.zge.SWTScala
 import org.zaluum.nide.zge.Viewer
 import org.zaluum.nide.zge.Controller
@@ -34,7 +36,7 @@ object FastSWT {
     buttons.setLayout(new RowLayout())
     val buttonLoad = new Button(buttons, SWT.PUSH)
     var viewer: Viewer = null
-    val bcp = new BoxClassPath(new File("."),currentThread.getContextClassLoader)
+    val bcp = new SimpleScannedBoxClassPath(new File("."),currentThread.getContextClassLoader)
     def createViewer(model: Model) {
       val controller = new Controller(model,bcp)
       if (viewer != null)

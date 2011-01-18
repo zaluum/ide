@@ -10,10 +10,18 @@ import org.zaluum.nide.model._
 import com.impetus.annovention._
 import com.impetus.annovention.listener._
 import scala.util.control.Exception._
+
+trait BoxClassPath {
+  def find(str: String): Option[BoxClass]
+  def getResource(str:String) : Option[URL]
+}
+trait ScannedBoxClassPath extends BoxClassPath {
+  def boxClasses : Set[BoxClass]
+}
 /**
  * ClassPath
  */
-class BoxClassPath(zaluumDir: File, classLoader: ClassLoader) {
+class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxClassPath{
   var cache = Map[String, BoxClass]()
 
   if (!zaluumDir.isDirectory) throw new java.io.IOException()
@@ -84,17 +92,16 @@ class BoxClassPath(zaluumDir: File, classLoader: ClassLoader) {
     }
   }
 }
-class BoxClassPathScanner(zaluumDir: File, cl: ClassLoader) extends BoxClassPath(zaluumDir, cl) {
+class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends SimpleBoxClassPath(zaluumDir, cl) with ScannedBoxClassPath{
 
-  var zaluums = Map[String, BoxClass]()
-  var javaClasses = Map[String, BoxClass]()
   scanZaluums()
   scanClassPath()
-
+  
+  def boxClasses = cache.values.toSet;
   private def scanZaluums() {
     if (zaluumDir.isDirectory) {
       for (f ← zaluumDir.listFiles if f.getName.endsWith(".zaluum")) {
-        addCache(readZaluum(f)) foreach { bc ⇒ zaluums += (bc.className -> bc) }
+        addCache(readZaluum(f)) 
       }
     }
   }
@@ -115,13 +122,12 @@ class BoxClassPathScanner(zaluumDir: File, cl: ClassLoader) extends BoxClassPath
         println("Discovered Class(" + clazz + ") " + "with Annotation(" + annotation + ")");
         val cl = new BoxClass(clazz,false,"null"); // FIXME
         addCache(Some(cl))
-        javaClasses += (clazz -> cl)
       }
       def supportedAnnotations() = Array(classOf[Box].getName)
     });
     discoverer.addAnnotationListener(new FieldAnnotationDiscoveryListener() {
       def discovered(clazz: String, field: String, descriptor: String, annotation: String) {
-        javaClasses.get(clazz) foreach { bc ⇒
+        cache.get(clazz) foreach { bc ⇒
           bc.ports += TypedPort(descriptor, annotation == inStr, field,Point(0,0)) // FIXME
         }
         println("clazz: " + clazz + " field " + field + " descriptor " + descriptor + " annotation " + annotation)

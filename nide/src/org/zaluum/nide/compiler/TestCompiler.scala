@@ -8,7 +8,7 @@ import java.io.OutputStreamWriter
 import java.io.File
 
 object TestCompiler {
-  val path = new BoxClassPath(new File("./src"), currentThread.getContextClassLoader()) 
+  val path = new SimpleBoxClassPath(new File("./src"), currentThread.getContextClassLoader()) 
   val outDir = "classes/"
   def compile(str:String) {
     path.getResource(str) match {

@@ -1,5 +1,14 @@
 package org.zaluum.nide.eclipse;
 
+import org.eclipse.jdt.core.IType
+import org.eclipse.jdt.core.search.SearchMatch
+import org.eclipse.jdt.core.search.SearchRequestor
+import org.eclipse.jdt.core.search.SearchPattern
+import org.eclipse.jdt.core.search.IJavaSearchConstants
+import org.eclipse.jdt.core.search.TypeNameMatch
+import org.eclipse.jdt.core.search.TypeNameMatchRequestor
+import org.eclipse.jdt.core.IJavaElement
+import org.eclipse.jdt.core.search.SearchEngine
 import org.eclipse.jdt.core.IClasspathEntry
 import org.eclipse.jdt.internal.core.JavaModelManager
 import org.eclipse.core.resources.IFile;
@@ -74,10 +83,11 @@ class ZaluumBuilder extends IncrementalProjectBuilder {
   private def deleteMarkers(file: IFile) {
     file.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_ZERO);
   }
+  def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
+  def jproject = jmodel.getJavaProject(getProject);
 
   protected def fullBuild(monitor: IProgressMonitor) {
-    val jmodel = JavaModelManager.getJavaModelManager().getJavaModel()
-    val jproject = jmodel.getJavaProject(getProject);
+    val cl = new EclipseBoxClasspath(getProject)
     val classpath = jproject.getResolvedClasspath(true)
     for (c<-classpath) {
       if (c.getEntryKind == IClasspathEntry.CPE_SOURCE){

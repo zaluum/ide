@@ -8,7 +8,7 @@ import org.zaluum.nide.zge.Controller
 import org.zaluum.nide.zge.Viewer
 import org.zaluum.nide.model.Example
 import java.io.File
-import org.zaluum.nide.compiler.BoxClassPath
+import org.zaluum.nide.compiler.SimpleScannedBoxClassPath
 import org.eclipse.ui.IEditorInput
 import org.eclipse.ui.IWorkbenchPartSite
 import org.eclipse.ui.IWorkbenchPart
@@ -47,7 +47,7 @@ class GraphicalEditor extends EditorPart {
   def inputFile = getEditorInput.asInstanceOf[FileEditorInput].getFile
   def input = inputFile.getContents(true)
   def createPartControl(parent: Composite){
-    val bcp = new BoxClassPath(new File("."),currentThread.getContextClassLoader)
+    val bcp = new EclipseBoxClasspath(inputFile.getProject)
     val model = ProtoModel.read(input)
     input.close()
     val controller = new Controller(model,bcp)
