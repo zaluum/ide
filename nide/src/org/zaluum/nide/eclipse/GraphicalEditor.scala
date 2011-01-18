@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse
 
+import org.eclipse.ui.IEditorPart
 import java.io.ByteArrayInputStream
 import org.zaluum.nide.model.ProtoModel
 import org.eclipse.ui.part.FileEditorInput
@@ -20,14 +21,15 @@ import org.eclipse.ui.ISelectionListener
 import org.eclipse.swt.graphics.Image
 import org.eclipse.jface.viewers.ISelection
 
-class GraphicalEditor extends EditorPart with ISelectionListener {
+class GraphicalEditor extends EditorPart {
   
   var viewer : Viewer = _
-  def selectionChanged(part: IWorkbenchPart, selection: ISelection) {  }
-
+  def controller = viewer.controller
   def doSave(monitor: IProgressMonitor) {
     val in = new ByteArrayInputStream(ProtoModel.toByteArray(viewer.model))
     inputFile.setContents(in,true,true,monitor);
+    controller.markSaved()
+    firePropertyChange(IEditorPart.PROP_DIRTY)
   }
 
   def doSaveAs() {  }
@@ -35,9 +37,10 @@ class GraphicalEditor extends EditorPart with ISelectionListener {
   def init(site: IEditorSite, input: IEditorInput) {
     setSite(site)
     setInput(input)
+    setPartName(inputFile.getName)
   }
 
-  def isDirty(): Boolean = { true }
+  def isDirty(): Boolean = { controller.isDirty }
 
   def isSaveAsAllowed(): Boolean = { false }
   
@@ -48,6 +51,9 @@ class GraphicalEditor extends EditorPart with ISelectionListener {
     val model = ProtoModel.read(input)
     input.close()
     val controller = new Controller(model,bcp)
+    controller.onExecute {
+      firePropertyChange(IEditorPart.PROP_DIRTY)
+    }
     viewer = new Viewer(parent,controller) 
   } 
 

@@ -210,6 +210,57 @@
          </enablement>
       </decorator>
    </extension>
+   <extension
+         id="zaluumBuilder"
+         name="Zaluum Project Builder"
+         point="org.eclipse.core.resources.builders">
+      <builder
+            hasNature="true">
+         <run
+               class="org.zaluum.nide.eclipse.ZaluumBuilder">
+         </run>
+      </builder>
+   </extension>
+   <extension
+         id="zaluumNature"
+         name="Zaluum Project Nature"
+         point="org.eclipse.core.resources.natures">
+      <runtime>
+         <run
+               class="org.zaluum.nide.eclipse.ZaluumNature">
+         </run>
+      </runtime>
+      <builder
+            id="org.zaluum.nide.zaluumBuilder">
+      </builder>
+   </extension>
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <objectContribution
+            adaptable="true"
+            id="org.zaluum.nide.contribution1"
+            nameFilter="*"
+            objectClass="org.eclipse.core.resources.IProject">
+         <action
+               class="org.zaluum.nide.eclipse.ToggleNatureAction"
+               enablesFor="+"
+               id="org.zaluum.nide.addRemoveNatureAction"
+               label="Add/Remove Sample Nature"
+               menubarPath="additions">
+         </action>
+      </objectContribution>
+   </extension>
+   <extension
+         id="xmlProblem"
+         name="XML Problem"
+         point="org.eclipse.core.resources.markers">
+      <super
+            type="org.eclipse.core.resources.problemmarker">
+      </super>
+      <persistent
+            value="true">
+      </persistent>
+   </extension>
    
    
 </plugin>
