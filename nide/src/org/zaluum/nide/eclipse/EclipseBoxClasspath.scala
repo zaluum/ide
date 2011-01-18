@@ -55,7 +55,6 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
     }
     def processType(t: IType) {
       val fqn = t.getFullyQualifiedName;
-      println("Box " + fqn)
       val img = findAnnotations(t,t, "org.zaluum.nide.java.Box").headOption flatMap  { a=> 
         findStringValueOfAnnotation(a, "image")
       }
@@ -72,11 +71,9 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
       for (f ← t.getFields) {
         findAnnotations(t,f, "org.zaluum.nide.java.In") foreach { a ⇒
           bc.ports += TypedPort(f.getTypeSignature, true, f.getElementName, pointOf(a)) // FIXME 
-          println("got @In")
         }
         findAnnotations(t,f, "org.zaluum.nide.java.Out") foreach { a ⇒
           bc.ports += TypedPort(f.getTypeSignature, false, f.getElementName, pointOf(a)) // FIXME 
-          println("got @Out")
         }
       }
       cache += (bc.className -> bc)
@@ -101,11 +98,22 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
   def find(str: String): Option[BoxClass] = cache.get(str)
   def getResource(str: String): Option[URL] = {
     val cpaths = jproject.getResolvedClasspath(true)
+    if (str=="") return None
     for (c<-cpaths) {
-      val path = c.getPath
-      val p = path.toFile.getAbsolutePath
-      val file = new java.io.File(p + "/" + str)
-      if (file.exists)  return Some(file.toURI.toURL)
+      val path = c.getPath.makeAbsolute
+      if (path.getFileExtension == "jar") {
+        val url = new URL ("jar:" + path.toFile.toURI.toURL.toString + "!/" + str)
+        try{
+          val c = url.openConnection.asInstanceOf[java.net.JarURLConnection]
+          c.connect()
+          return Some(url)
+        }catch {
+          case e:java.io.IOException => 
+        }
+      }else {
+        val file = new java.io.File(path + "/" + str)
+        if (file.exists)  return Some(file.toURI.toURL)
+      }
     }
     return None
   }
