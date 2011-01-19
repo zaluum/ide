@@ -104,17 +104,21 @@ trait BoxFigure extends FigureWithPorts{
 object PortDeclFigure {
   def img(in:Boolean) = "org/zaluum/nide/icons/portDecl" + (if(in) "In" else "Out") + ".png"
 }
-class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer,var portType : Option[TypedPort]) extends ImageFigure with FigureWithPorts {
+class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer) extends ImageFigure with FigureWithPorts {
   def positionable = portDecl
-  def size = Dimension(50,20)
+  var size = Dimension(50,20)
   lazy val feed = new BasicFeedbackFigure(this)
+  def position = if (portDecl.in) Point(48,8) else Point(0,8) 
+  def typedPort = TypedPort(portDecl.descriptor,portDecl.in,portDecl.name,position)
+
   object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
-    def modelSet = portType.toSet
+    def modelSet = Set(typedPort)
     def buildFigure(p: TypedPort) = new PortFigure(PortDeclFigure.this, p, ModelPortRef(p.name), viewer)
   }
   override def update(){
     val image = viewer.imageFactory.get(PortDeclFigure.img(portDecl.in)).get
     setImage(image)
+    size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
     super.update()
   }
 }

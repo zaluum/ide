@@ -11,7 +11,9 @@ message Definition {
   message Port {
     required string name = 1;
     required string type = 2;
-    required Direction direction = 3; 
+    required Direction direction = 3;
+    required Point pos_internal = 4;
+    required Point pos_external = 5; 
   }
   required string class_name = 1;
   required string image_name = 2;
@@ -35,13 +37,13 @@ message Contents {
   	optional string box_name =1;
   	required string port_name =2;
   }
-  message Point {
-  	required int32 x =1;
-  	required int32 y =2;
-  }
   message Connection {
     optional PortRef source = 1;
     optional PortRef target = 2;
    	repeated Point waypoint = 3; 
   }
+}
+message Point {
+ 	required int32 x =1;
+  	required int32 y =2;
 }

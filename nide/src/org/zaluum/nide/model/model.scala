@@ -15,13 +15,6 @@ object Model {
     m.className = name
     m
   }
-  def toPoint(i:Point) = {
-    val p = BoxFileProtos.Contents.Point.newBuilder
-    p.setX(i.x)
-    p.setY(i.y)
-    p.build
-  }
-  def fromPoint(p:BoxFileProtos.Contents.Point) =  (p.getX,p.getY)
 }
 
 trait Tuple2 {
@@ -87,7 +80,7 @@ class Box  extends Positionable {
     val instance = BoxFileProtos.Contents.Instance.newBuilder()
     instance.setName(name)
     instance.setClassName(className)
-    instance.setPos(Model.toPoint(pos))
+    instance.setPos(ProtoModel.toPoint(pos))
     instance.build
   }
   override def toString = name 
@@ -100,14 +93,16 @@ object PortDecl {
     p
   }
 }
-class PortDecl(var m:Model,var name:String, var in:Boolean) extends Positionable{
+class PortDecl(var m:Model,var name:String, var in:Boolean, var descriptor:String="D") extends Positionable{
   var pos = Point(0,10)
   override def toString = "portDecl(" + name + ")"
   def toProto = {
     val port = BoxFileProtos.Definition.Port.newBuilder()
     port.setDirection(if (in) Direction.IN else Direction.OUT)
+    port.setPosInternal(ProtoModel.toPoint(pos));
+    port.setPosExternal(ProtoModel.toPoint(Point(0,0))) // FIXME
     port.setName(name)
-    port.setType("D")
+    port.setType(descriptor)
   }
 }
 class BoxClass(val className: String,val scala:Boolean = false, val image:String) {

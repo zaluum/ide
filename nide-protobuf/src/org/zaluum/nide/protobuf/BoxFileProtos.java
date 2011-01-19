@@ -150,13 +150,33 @@ public final class BoxFileProtos {
       public boolean hasDirection() { return hasDirection; }
       public org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction getDirection() { return direction_; }
       
+      // required .zaluum.Point pos_internal = 4;
+      public static final int POS_INTERNAL_FIELD_NUMBER = 4;
+      private boolean hasPosInternal;
+      private org.zaluum.nide.protobuf.BoxFileProtos.Point posInternal_;
+      public boolean hasPosInternal() { return hasPosInternal; }
+      public org.zaluum.nide.protobuf.BoxFileProtos.Point getPosInternal() { return posInternal_; }
+      
+      // required .zaluum.Point pos_external = 5;
+      public static final int POS_EXTERNAL_FIELD_NUMBER = 5;
+      private boolean hasPosExternal;
+      private org.zaluum.nide.protobuf.BoxFileProtos.Point posExternal_;
+      public boolean hasPosExternal() { return hasPosExternal; }
+      public org.zaluum.nide.protobuf.BoxFileProtos.Point getPosExternal() { return posExternal_; }
+      
       private void initFields() {
         direction_ = org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction.IN;
+        posInternal_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
+        posExternal_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
       }
       public final boolean isInitialized() {
         if (!hasName) return false;
         if (!hasType) return false;
         if (!hasDirection) return false;
+        if (!hasPosInternal) return false;
+        if (!hasPosExternal) return false;
+        if (!getPosInternal().isInitialized()) return false;
+        if (!getPosExternal().isInitialized()) return false;
         return true;
       }
       
@@ -171,6 +191,12 @@ public final class BoxFileProtos {
         }
         if (hasDirection()) {
           output.writeEnum(3, getDirection().getNumber());
+        }
+        if (hasPosInternal()) {
+          output.writeMessage(4, getPosInternal());
+        }
+        if (hasPosExternal()) {
+          output.writeMessage(5, getPosExternal());
         }
         getUnknownFields().writeTo(output);
       }
@@ -192,6 +218,14 @@ public final class BoxFileProtos {
         if (hasDirection()) {
           size += com.google.protobuf.CodedOutputStream
             .computeEnumSize(3, getDirection().getNumber());
+        }
+        if (hasPosInternal()) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeMessageSize(4, getPosInternal());
+        }
+        if (hasPosExternal()) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeMessageSize(5, getPosExternal());
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
@@ -360,6 +394,12 @@ public final class BoxFileProtos {
           if (other.hasDirection()) {
             setDirection(other.getDirection());
           }
+          if (other.hasPosInternal()) {
+            mergePosInternal(other.getPosInternal());
+          }
+          if (other.hasPosExternal()) {
+            mergePosExternal(other.getPosExternal());
+          }
           this.mergeUnknownFields(other.getUnknownFields());
           return this;
         }
@@ -401,6 +441,24 @@ public final class BoxFileProtos {
                 } else {
                   setDirection(value);
                 }
+                break;
+              }
+              case 34: {
+                org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder();
+                if (hasPosInternal()) {
+                  subBuilder.mergeFrom(getPosInternal());
+                }
+                input.readMessage(subBuilder, extensionRegistry);
+                setPosInternal(subBuilder.buildPartial());
+                break;
+              }
+              case 42: {
+                org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder();
+                if (hasPosExternal()) {
+                  subBuilder.mergeFrom(getPosExternal());
+                }
+                input.readMessage(subBuilder, extensionRegistry);
+                setPosExternal(subBuilder.buildPartial());
                 break;
               }
             }
@@ -468,6 +526,80 @@ public final class BoxFileProtos {
         public Builder clearDirection() {
           result.hasDirection = false;
           result.direction_ = org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction.IN;
+          return this;
+        }
+        
+        // required .zaluum.Point pos_internal = 4;
+        public boolean hasPosInternal() {
+          return result.hasPosInternal();
+        }
+        public org.zaluum.nide.protobuf.BoxFileProtos.Point getPosInternal() {
+          return result.getPosInternal();
+        }
+        public Builder setPosInternal(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          result.hasPosInternal = true;
+          result.posInternal_ = value;
+          return this;
+        }
+        public Builder setPosInternal(org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder builderForValue) {
+          result.hasPosInternal = true;
+          result.posInternal_ = builderForValue.build();
+          return this;
+        }
+        public Builder mergePosInternal(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
+          if (result.hasPosInternal() &&
+              result.posInternal_ != org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance()) {
+            result.posInternal_ =
+              org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder(result.posInternal_).mergeFrom(value).buildPartial();
+          } else {
+            result.posInternal_ = value;
+          }
+          result.hasPosInternal = true;
+          return this;
+        }
+        public Builder clearPosInternal() {
+          result.hasPosInternal = false;
+          result.posInternal_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
+          return this;
+        }
+        
+        // required .zaluum.Point pos_external = 5;
+        public boolean hasPosExternal() {
+          return result.hasPosExternal();
+        }
+        public org.zaluum.nide.protobuf.BoxFileProtos.Point getPosExternal() {
+          return result.getPosExternal();
+        }
+        public Builder setPosExternal(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          result.hasPosExternal = true;
+          result.posExternal_ = value;
+          return this;
+        }
+        public Builder setPosExternal(org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder builderForValue) {
+          result.hasPosExternal = true;
+          result.posExternal_ = builderForValue.build();
+          return this;
+        }
+        public Builder mergePosExternal(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
+          if (result.hasPosExternal() &&
+              result.posExternal_ != org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance()) {
+            result.posExternal_ =
+              org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder(result.posExternal_).mergeFrom(value).buildPartial();
+          } else {
+            result.posExternal_ = value;
+          }
+          result.hasPosExternal = true;
+          return this;
+        }
+        public Builder clearPosExternal() {
+          result.hasPosExternal = false;
+          result.posExternal_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
           return this;
         }
         
@@ -944,19 +1076,19 @@ public final class BoxFileProtos {
       public boolean hasClassName() { return hasClassName; }
       public java.lang.String getClassName() { return className_; }
       
-      // required .zaluum.Contents.Point pos = 3;
+      // required .zaluum.Point pos = 3;
       public static final int POS_FIELD_NUMBER = 3;
       private boolean hasPos;
-      private org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point pos_;
+      private org.zaluum.nide.protobuf.BoxFileProtos.Point pos_;
       public boolean hasPos() { return hasPos; }
-      public org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point getPos() { return pos_; }
+      public org.zaluum.nide.protobuf.BoxFileProtos.Point getPos() { return pos_; }
       
-      // optional .zaluum.Contents.Point size = 4;
+      // optional .zaluum.Point size = 4;
       public static final int SIZE_FIELD_NUMBER = 4;
       private boolean hasSize;
-      private org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point size_;
+      private org.zaluum.nide.protobuf.BoxFileProtos.Point size_;
       public boolean hasSize() { return hasSize; }
-      public org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point getSize() { return size_; }
+      public org.zaluum.nide.protobuf.BoxFileProtos.Point getSize() { return size_; }
       
       // repeated .zaluum.Contents.Parameter parameter = 5;
       public static final int PARAMETER_FIELD_NUMBER = 5;
@@ -971,8 +1103,8 @@ public final class BoxFileProtos {
       }
       
       private void initFields() {
-        pos_ = org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.getDefaultInstance();
-        size_ = org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.getDefaultInstance();
+        pos_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
+        size_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
       }
       public final boolean isInitialized() {
         if (!hasName) return false;
@@ -1249,7 +1381,7 @@ public final class BoxFileProtos {
                 break;
               }
               case 26: {
-                org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.newBuilder();
+                org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder();
                 if (hasPos()) {
                   subBuilder.mergeFrom(getPos());
                 }
@@ -1258,7 +1390,7 @@ public final class BoxFileProtos {
                 break;
               }
               case 34: {
-                org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.newBuilder();
+                org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder();
                 if (hasSize()) {
                   subBuilder.mergeFrom(getSize());
                 }
@@ -1319,14 +1451,14 @@ public final class BoxFileProtos {
           return this;
         }
         
-        // required .zaluum.Contents.Point pos = 3;
+        // required .zaluum.Point pos = 3;
         public boolean hasPos() {
           return result.hasPos();
         }
-        public org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point getPos() {
+        public org.zaluum.nide.protobuf.BoxFileProtos.Point getPos() {
           return result.getPos();
         }
-        public Builder setPos(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point value) {
+        public Builder setPos(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
           if (value == null) {
             throw new NullPointerException();
           }
@@ -1334,16 +1466,16 @@ public final class BoxFileProtos {
           result.pos_ = value;
           return this;
         }
-        public Builder setPos(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.Builder builderForValue) {
+        public Builder setPos(org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder builderForValue) {
           result.hasPos = true;
           result.pos_ = builderForValue.build();
           return this;
         }
-        public Builder mergePos(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point value) {
+        public Builder mergePos(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
           if (result.hasPos() &&
-              result.pos_ != org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.getDefaultInstance()) {
+              result.pos_ != org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance()) {
             result.pos_ =
-              org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.newBuilder(result.pos_).mergeFrom(value).buildPartial();
+              org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder(result.pos_).mergeFrom(value).buildPartial();
           } else {
             result.pos_ = value;
           }
@@ -1352,18 +1484,18 @@ public final class BoxFileProtos {
         }
         public Builder clearPos() {
           result.hasPos = false;
-          result.pos_ = org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.getDefaultInstance();
+          result.pos_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
           return this;
         }
         
-        // optional .zaluum.Contents.Point size = 4;
+        // optional .zaluum.Point size = 4;
         public boolean hasSize() {
           return result.hasSize();
         }
-        public org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point getSize() {
+        public org.zaluum.nide.protobuf.BoxFileProtos.Point getSize() {
           return result.getSize();
         }
-        public Builder setSize(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point value) {
+        public Builder setSize(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
           if (value == null) {
             throw new NullPointerException();
           }
@@ -1371,16 +1503,16 @@ public final class BoxFileProtos {
           result.size_ = value;
           return this;
         }
-        public Builder setSize(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.Builder builderForValue) {
+        public Builder setSize(org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder builderForValue) {
           result.hasSize = true;
           result.size_ = builderForValue.build();
           return this;
         }
-        public Builder mergeSize(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point value) {
+        public Builder mergeSize(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
           if (result.hasSize() &&
-              result.size_ != org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.getDefaultInstance()) {
+              result.size_ != org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance()) {
             result.size_ =
-              org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.newBuilder(result.size_).mergeFrom(value).buildPartial();
+              org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder(result.size_).mergeFrom(value).buildPartial();
           } else {
             result.size_ = value;
           }
@@ -1389,7 +1521,7 @@ public final class BoxFileProtos {
         }
         public Builder clearSize() {
           result.hasSize = false;
-          result.size_ = org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.getDefaultInstance();
+          result.size_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
           return this;
         }
         
@@ -2117,331 +2249,6 @@ public final class BoxFileProtos {
       // @@protoc_insertion_point(class_scope:zaluum.Contents.PortRef)
     }
     
-    public static final class Point extends
-        com.google.protobuf.GeneratedMessage {
-      // Use Point.newBuilder() to construct.
-      private Point() {
-        initFields();
-      }
-      private Point(boolean noInit) {}
-      
-      private static final Point defaultInstance;
-      public static Point getDefaultInstance() {
-        return defaultInstance;
-      }
-      
-      public Point getDefaultInstanceForType() {
-        return defaultInstance;
-      }
-      
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return org.zaluum.nide.protobuf.BoxFileProtos.internal_static_zaluum_Contents_Point_descriptor;
-      }
-      
-      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return org.zaluum.nide.protobuf.BoxFileProtos.internal_static_zaluum_Contents_Point_fieldAccessorTable;
-      }
-      
-      // required int32 x = 1;
-      public static final int X_FIELD_NUMBER = 1;
-      private boolean hasX;
-      private int x_ = 0;
-      public boolean hasX() { return hasX; }
-      public int getX() { return x_; }
-      
-      // required int32 y = 2;
-      public static final int Y_FIELD_NUMBER = 2;
-      private boolean hasY;
-      private int y_ = 0;
-      public boolean hasY() { return hasY; }
-      public int getY() { return y_; }
-      
-      private void initFields() {
-      }
-      public final boolean isInitialized() {
-        if (!hasX) return false;
-        if (!hasY) return false;
-        return true;
-      }
-      
-      public void writeTo(com.google.protobuf.CodedOutputStream output)
-                          throws java.io.IOException {
-        getSerializedSize();
-        if (hasX()) {
-          output.writeInt32(1, getX());
-        }
-        if (hasY()) {
-          output.writeInt32(2, getY());
-        }
-        getUnknownFields().writeTo(output);
-      }
-      
-      private int memoizedSerializedSize = -1;
-      public int getSerializedSize() {
-        int size = memoizedSerializedSize;
-        if (size != -1) return size;
-      
-        size = 0;
-        if (hasX()) {
-          size += com.google.protobuf.CodedOutputStream
-            .computeInt32Size(1, getX());
-        }
-        if (hasY()) {
-          size += com.google.protobuf.CodedOutputStream
-            .computeInt32Size(2, getY());
-        }
-        size += getUnknownFields().getSerializedSize();
-        memoizedSerializedSize = size;
-        return size;
-      }
-      
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseFrom(
-          com.google.protobuf.ByteString data)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
-      }
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseFrom(
-          com.google.protobuf.ByteString data,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
-      }
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseFrom(byte[] data)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data).buildParsed();
-      }
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseFrom(
-          byte[] data,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return newBuilder().mergeFrom(data, extensionRegistry)
-                 .buildParsed();
-      }
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseFrom(java.io.InputStream input)
-          throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
-      }
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseFrom(
-          java.io.InputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
-      }
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseDelimitedFrom(java.io.InputStream input)
-          throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
-      }
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseDelimitedFrom(
-          java.io.InputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        Builder builder = newBuilder();
-        if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-          return builder.buildParsed();
-        } else {
-          return null;
-        }
-      }
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseFrom(
-          com.google.protobuf.CodedInputStream input)
-          throws java.io.IOException {
-        return newBuilder().mergeFrom(input).buildParsed();
-      }
-      public static org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point parseFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        return newBuilder().mergeFrom(input, extensionRegistry)
-                 .buildParsed();
-      }
-      
-      public static Builder newBuilder() { return Builder.create(); }
-      public Builder newBuilderForType() { return newBuilder(); }
-      public static Builder newBuilder(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point prototype) {
-        return newBuilder().mergeFrom(prototype);
-      }
-      public Builder toBuilder() { return newBuilder(this); }
-      
-      public static final class Builder extends
-          com.google.protobuf.GeneratedMessage.Builder<Builder> {
-        private org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point result;
-        
-        // Construct using org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.newBuilder()
-        private Builder() {}
-        
-        private static Builder create() {
-          Builder builder = new Builder();
-          builder.result = new org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point();
-          return builder;
-        }
-        
-        protected org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point internalGetResult() {
-          return result;
-        }
-        
-        public Builder clear() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "Cannot call clear() after build().");
-          }
-          result = new org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point();
-          return this;
-        }
-        
-        public Builder clone() {
-          return create().mergeFrom(result);
-        }
-        
-        public com.google.protobuf.Descriptors.Descriptor
-            getDescriptorForType() {
-          return org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.getDescriptor();
-        }
-        
-        public org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point getDefaultInstanceForType() {
-          return org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.getDefaultInstance();
-        }
-        
-        public boolean isInitialized() {
-          return result.isInitialized();
-        }
-        public org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point build() {
-          if (result != null && !isInitialized()) {
-            throw newUninitializedMessageException(result);
-          }
-          return buildPartial();
-        }
-        
-        private org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point buildParsed()
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          if (!isInitialized()) {
-            throw newUninitializedMessageException(
-              result).asInvalidProtocolBufferException();
-          }
-          return buildPartial();
-        }
-        
-        public org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point buildPartial() {
-          if (result == null) {
-            throw new IllegalStateException(
-              "build() has already been called on this Builder.");
-          }
-          org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point returnMe = result;
-          result = null;
-          return returnMe;
-        }
-        
-        public Builder mergeFrom(com.google.protobuf.Message other) {
-          if (other instanceof org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point) {
-            return mergeFrom((org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point)other);
-          } else {
-            super.mergeFrom(other);
-            return this;
-          }
-        }
-        
-        public Builder mergeFrom(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point other) {
-          if (other == org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.getDefaultInstance()) return this;
-          if (other.hasX()) {
-            setX(other.getX());
-          }
-          if (other.hasY()) {
-            setY(other.getY());
-          }
-          this.mergeUnknownFields(other.getUnknownFields());
-          return this;
-        }
-        
-        public Builder mergeFrom(
-            com.google.protobuf.CodedInputStream input,
-            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-            throws java.io.IOException {
-          com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-            com.google.protobuf.UnknownFieldSet.newBuilder(
-              this.getUnknownFields());
-          while (true) {
-            int tag = input.readTag();
-            switch (tag) {
-              case 0:
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              default: {
-                if (!parseUnknownField(input, unknownFields,
-                                       extensionRegistry, tag)) {
-                  this.setUnknownFields(unknownFields.build());
-                  return this;
-                }
-                break;
-              }
-              case 8: {
-                setX(input.readInt32());
-                break;
-              }
-              case 16: {
-                setY(input.readInt32());
-                break;
-              }
-            }
-          }
-        }
-        
-        
-        // required int32 x = 1;
-        public boolean hasX() {
-          return result.hasX();
-        }
-        public int getX() {
-          return result.getX();
-        }
-        public Builder setX(int value) {
-          result.hasX = true;
-          result.x_ = value;
-          return this;
-        }
-        public Builder clearX() {
-          result.hasX = false;
-          result.x_ = 0;
-          return this;
-        }
-        
-        // required int32 y = 2;
-        public boolean hasY() {
-          return result.hasY();
-        }
-        public int getY() {
-          return result.getY();
-        }
-        public Builder setY(int value) {
-          result.hasY = true;
-          result.y_ = value;
-          return this;
-        }
-        public Builder clearY() {
-          result.hasY = false;
-          result.y_ = 0;
-          return this;
-        }
-        
-        // @@protoc_insertion_point(builder_scope:zaluum.Contents.Point)
-      }
-      
-      static {
-        defaultInstance = new Point(true);
-        org.zaluum.nide.protobuf.BoxFileProtos.internalForceInit();
-        defaultInstance.initFields();
-      }
-      
-      // @@protoc_insertion_point(class_scope:zaluum.Contents.Point)
-    }
-    
     public static final class Connection extends
         com.google.protobuf.GeneratedMessage {
       // Use Connection.newBuilder() to construct.
@@ -2483,15 +2290,15 @@ public final class BoxFileProtos {
       public boolean hasTarget() { return hasTarget; }
       public org.zaluum.nide.protobuf.BoxFileProtos.Contents.PortRef getTarget() { return target_; }
       
-      // repeated .zaluum.Contents.Point waypoint = 3;
+      // repeated .zaluum.Point waypoint = 3;
       public static final int WAYPOINT_FIELD_NUMBER = 3;
-      private java.util.List<org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point> waypoint_ =
+      private java.util.List<org.zaluum.nide.protobuf.BoxFileProtos.Point> waypoint_ =
         java.util.Collections.emptyList();
-      public java.util.List<org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point> getWaypointList() {
+      public java.util.List<org.zaluum.nide.protobuf.BoxFileProtos.Point> getWaypointList() {
         return waypoint_;
       }
       public int getWaypointCount() { return waypoint_.size(); }
-      public org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point getWaypoint(int index) {
+      public org.zaluum.nide.protobuf.BoxFileProtos.Point getWaypoint(int index) {
         return waypoint_.get(index);
       }
       
@@ -2506,7 +2313,7 @@ public final class BoxFileProtos {
         if (hasTarget()) {
           if (!getTarget().isInitialized()) return false;
         }
-        for (org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point element : getWaypointList()) {
+        for (org.zaluum.nide.protobuf.BoxFileProtos.Point element : getWaypointList()) {
           if (!element.isInitialized()) return false;
         }
         return true;
@@ -2521,7 +2328,7 @@ public final class BoxFileProtos {
         if (hasTarget()) {
           output.writeMessage(2, getTarget());
         }
-        for (org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point element : getWaypointList()) {
+        for (org.zaluum.nide.protobuf.BoxFileProtos.Point element : getWaypointList()) {
           output.writeMessage(3, element);
         }
         getUnknownFields().writeTo(output);
@@ -2541,7 +2348,7 @@ public final class BoxFileProtos {
           size += com.google.protobuf.CodedOutputStream
             .computeMessageSize(2, getTarget());
         }
-        for (org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point element : getWaypointList()) {
+        for (org.zaluum.nide.protobuf.BoxFileProtos.Point element : getWaypointList()) {
           size += com.google.protobuf.CodedOutputStream
             .computeMessageSize(3, element);
         }
@@ -2715,7 +2522,7 @@ public final class BoxFileProtos {
           }
           if (!other.waypoint_.isEmpty()) {
             if (result.waypoint_.isEmpty()) {
-              result.waypoint_ = new java.util.ArrayList<org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point>();
+              result.waypoint_ = new java.util.ArrayList<org.zaluum.nide.protobuf.BoxFileProtos.Point>();
             }
             result.waypoint_.addAll(other.waypoint_);
           }
@@ -2763,7 +2570,7 @@ public final class BoxFileProtos {
                 break;
               }
               case 26: {
-                org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.newBuilder();
+                org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder();
                 input.readMessage(subBuilder, extensionRegistry);
                 addWaypoint(subBuilder.buildPartial());
                 break;
@@ -2847,48 +2654,48 @@ public final class BoxFileProtos {
           return this;
         }
         
-        // repeated .zaluum.Contents.Point waypoint = 3;
-        public java.util.List<org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point> getWaypointList() {
+        // repeated .zaluum.Point waypoint = 3;
+        public java.util.List<org.zaluum.nide.protobuf.BoxFileProtos.Point> getWaypointList() {
           return java.util.Collections.unmodifiableList(result.waypoint_);
         }
         public int getWaypointCount() {
           return result.getWaypointCount();
         }
-        public org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point getWaypoint(int index) {
+        public org.zaluum.nide.protobuf.BoxFileProtos.Point getWaypoint(int index) {
           return result.getWaypoint(index);
         }
-        public Builder setWaypoint(int index, org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point value) {
+        public Builder setWaypoint(int index, org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
           if (value == null) {
             throw new NullPointerException();
           }
           result.waypoint_.set(index, value);
           return this;
         }
-        public Builder setWaypoint(int index, org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.Builder builderForValue) {
+        public Builder setWaypoint(int index, org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder builderForValue) {
           result.waypoint_.set(index, builderForValue.build());
           return this;
         }
-        public Builder addWaypoint(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point value) {
+        public Builder addWaypoint(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
           if (value == null) {
             throw new NullPointerException();
           }
           if (result.waypoint_.isEmpty()) {
-            result.waypoint_ = new java.util.ArrayList<org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point>();
+            result.waypoint_ = new java.util.ArrayList<org.zaluum.nide.protobuf.BoxFileProtos.Point>();
           }
           result.waypoint_.add(value);
           return this;
         }
-        public Builder addWaypoint(org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.Builder builderForValue) {
+        public Builder addWaypoint(org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder builderForValue) {
           if (result.waypoint_.isEmpty()) {
-            result.waypoint_ = new java.util.ArrayList<org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point>();
+            result.waypoint_ = new java.util.ArrayList<org.zaluum.nide.protobuf.BoxFileProtos.Point>();
           }
           result.waypoint_.add(builderForValue.build());
           return this;
         }
         public Builder addAllWaypoint(
-            java.lang.Iterable<? extends org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point> values) {
+            java.lang.Iterable<? extends org.zaluum.nide.protobuf.BoxFileProtos.Point> values) {
           if (result.waypoint_.isEmpty()) {
-            result.waypoint_ = new java.util.ArrayList<org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point>();
+            result.waypoint_ = new java.util.ArrayList<org.zaluum.nide.protobuf.BoxFileProtos.Point>();
           }
           super.addAll(values, result.waypoint_);
           return this;
@@ -3306,6 +3113,331 @@ public final class BoxFileProtos {
     // @@protoc_insertion_point(class_scope:zaluum.Contents)
   }
   
+  public static final class Point extends
+      com.google.protobuf.GeneratedMessage {
+    // Use Point.newBuilder() to construct.
+    private Point() {
+      initFields();
+    }
+    private Point(boolean noInit) {}
+    
+    private static final Point defaultInstance;
+    public static Point getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public Point getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.zaluum.nide.protobuf.BoxFileProtos.internal_static_zaluum_Point_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.zaluum.nide.protobuf.BoxFileProtos.internal_static_zaluum_Point_fieldAccessorTable;
+    }
+    
+    // required int32 x = 1;
+    public static final int X_FIELD_NUMBER = 1;
+    private boolean hasX;
+    private int x_ = 0;
+    public boolean hasX() { return hasX; }
+    public int getX() { return x_; }
+    
+    // required int32 y = 2;
+    public static final int Y_FIELD_NUMBER = 2;
+    private boolean hasY;
+    private int y_ = 0;
+    public boolean hasY() { return hasY; }
+    public int getY() { return y_; }
+    
+    private void initFields() {
+    }
+    public final boolean isInitialized() {
+      if (!hasX) return false;
+      if (!hasY) return false;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (hasX()) {
+        output.writeInt32(1, getX());
+      }
+      if (hasY()) {
+        output.writeInt32(2, getY());
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (hasX()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(1, getX());
+      }
+      if (hasY()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(2, getY());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static org.zaluum.nide.protobuf.BoxFileProtos.Point parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.zaluum.nide.protobuf.BoxFileProtos.Point prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private org.zaluum.nide.protobuf.BoxFileProtos.Point result;
+      
+      // Construct using org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder()
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new org.zaluum.nide.protobuf.BoxFileProtos.Point();
+        return builder;
+      }
+      
+      protected org.zaluum.nide.protobuf.BoxFileProtos.Point internalGetResult() {
+        return result;
+      }
+      
+      public Builder clear() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new org.zaluum.nide.protobuf.BoxFileProtos.Point();
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(result);
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.zaluum.nide.protobuf.BoxFileProtos.Point.getDescriptor();
+      }
+      
+      public org.zaluum.nide.protobuf.BoxFileProtos.Point getDefaultInstanceForType() {
+        return org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
+      }
+      
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
+      public org.zaluum.nide.protobuf.BoxFileProtos.Point build() {
+        if (result != null && !isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return buildPartial();
+      }
+      
+      private org.zaluum.nide.protobuf.BoxFileProtos.Point buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        if (!isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return buildPartial();
+      }
+      
+      public org.zaluum.nide.protobuf.BoxFileProtos.Point buildPartial() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        org.zaluum.nide.protobuf.BoxFileProtos.Point returnMe = result;
+        result = null;
+        return returnMe;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.zaluum.nide.protobuf.BoxFileProtos.Point) {
+          return mergeFrom((org.zaluum.nide.protobuf.BoxFileProtos.Point)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(org.zaluum.nide.protobuf.BoxFileProtos.Point other) {
+        if (other == org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance()) return this;
+        if (other.hasX()) {
+          setX(other.getX());
+        }
+        if (other.hasY()) {
+          setY(other.getY());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                return this;
+              }
+              break;
+            }
+            case 8: {
+              setX(input.readInt32());
+              break;
+            }
+            case 16: {
+              setY(input.readInt32());
+              break;
+            }
+          }
+        }
+      }
+      
+      
+      // required int32 x = 1;
+      public boolean hasX() {
+        return result.hasX();
+      }
+      public int getX() {
+        return result.getX();
+      }
+      public Builder setX(int value) {
+        result.hasX = true;
+        result.x_ = value;
+        return this;
+      }
+      public Builder clearX() {
+        result.hasX = false;
+        result.x_ = 0;
+        return this;
+      }
+      
+      // required int32 y = 2;
+      public boolean hasY() {
+        return result.hasY();
+      }
+      public int getY() {
+        return result.getY();
+      }
+      public Builder setY(int value) {
+        result.hasY = true;
+        result.y_ = value;
+        return this;
+      }
+      public Builder clearY() {
+        result.hasY = false;
+        result.y_ = 0;
+        return this;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:zaluum.Point)
+    }
+    
+    static {
+      defaultInstance = new Point(true);
+      org.zaluum.nide.protobuf.BoxFileProtos.internalForceInit();
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:zaluum.Point)
+  }
+  
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_zaluum_Definition_descriptor;
   private static
@@ -3337,15 +3469,15 @@ public final class BoxFileProtos {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_zaluum_Contents_PortRef_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_zaluum_Contents_Point_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_zaluum_Contents_Point_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_zaluum_Contents_Connection_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_zaluum_Contents_Connection_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_zaluum_Point_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_zaluum_Point_fieldAccessorTable;
   
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -3355,27 +3487,28 @@ public final class BoxFileProtos {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rBoxFile.proto\022\006zaluum\"\316\001\n\nDefinition\022\022" +
+      "\n\rBoxFile.proto\022\006zaluum\"\231\002\n\nDefinition\022\022" +
       "\n\nclass_name\030\001 \002(\t\022\022\n\nimage_name\030\002 \002(\t\022%" +
-      "\n\004port\030\003 \003(\0132\027.zaluum.Definition.Port\032S\n" +
-      "\004Port\022\014\n\004name\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022/\n\tdir" +
-      "ection\030\003 \002(\0162\034.zaluum.Definition.Directi" +
-      "on\"\034\n\tDirection\022\006\n\002IN\020\000\022\007\n\003OUT\020\001\"\226\004\n\010Con" +
-      "tents\022+\n\010instance\030\001 \003(\0132\031.zaluum.Content" +
-      "s.Instance\022/\n\nconnection\030\002 \003(\0132\033.zaluum." +
-      "Contents.Connection\032\246\001\n\010Instance\022\014\n\004name" +
-      "\030\001 \002(\t\022\022\n\nclass_name\030\002 \002(\t\022#\n\003pos\030\003 \002(\0132",
-      "\026.zaluum.Contents.Point\022$\n\004size\030\004 \001(\0132\026." +
-      "zaluum.Contents.Point\022-\n\tparameter\030\005 \003(\013" +
-      "2\032.zaluum.Contents.Parameter\032\'\n\tParamete" +
-      "r\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\032.\n\007PortRef" +
-      "\022\020\n\010box_name\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\032\035\n" +
-      "\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005\032\212\001\n\nConnect" +
-      "ion\022(\n\006source\030\001 \001(\0132\030.zaluum.Contents.Po" +
-      "rtRef\022(\n\006target\030\002 \001(\0132\030.zaluum.Contents." +
-      "PortRef\022(\n\010waypoint\030\003 \003(\0132\026.zaluum.Conte" +
-      "nts.PointB)\n\030org.zaluum.nide.protobufB\rB",
-      "oxFileProtos"
+      "\n\004port\030\003 \003(\0132\027.zaluum.Definition.Port\032\235\001" +
+      "\n\004Port\022\014\n\004name\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022/\n\tdi" +
+      "rection\030\003 \002(\0162\034.zaluum.Definition.Direct" +
+      "ion\022#\n\014pos_internal\030\004 \002(\0132\r.zaluum.Point" +
+      "\022#\n\014pos_external\030\005 \002(\0132\r.zaluum.Point\"\034\n" +
+      "\tDirection\022\006\n\002IN\020\000\022\007\n\003OUT\020\001\"\334\003\n\010Contents" +
+      "\022+\n\010instance\030\001 \003(\0132\031.zaluum.Contents.Ins" +
+      "tance\022/\n\nconnection\030\002 \003(\0132\033.zaluum.Conte",
+      "nts.Connection\032\224\001\n\010Instance\022\014\n\004name\030\001 \002(" +
+      "\t\022\022\n\nclass_name\030\002 \002(\t\022\032\n\003pos\030\003 \002(\0132\r.zal" +
+      "uum.Point\022\033\n\004size\030\004 \001(\0132\r.zaluum.Point\022-" +
+      "\n\tparameter\030\005 \003(\0132\032.zaluum.Contents.Para" +
+      "meter\032\'\n\tParameter\022\013\n\003key\030\001 \002(\t\022\r\n\005value" +
+      "\030\002 \002(\t\032.\n\007PortRef\022\020\n\010box_name\030\001 \001(\t\022\021\n\tp" +
+      "ort_name\030\002 \002(\t\032\201\001\n\nConnection\022(\n\006source\030" +
+      "\001 \001(\0132\030.zaluum.Contents.PortRef\022(\n\006targe" +
+      "t\030\002 \001(\0132\030.zaluum.Contents.PortRef\022\037\n\010way" +
+      "point\030\003 \003(\0132\r.zaluum.Point\"\035\n\005Point\022\t\n\001x",
+      "\030\001 \002(\005\022\t\n\001y\030\002 \002(\005B)\n\030org.zaluum.nide.pro" +
+      "tobufB\rBoxFileProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -3395,7 +3528,7 @@ public final class BoxFileProtos {
           internal_static_zaluum_Definition_Port_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Definition_Port_descriptor,
-              new java.lang.String[] { "Name", "Type", "Direction", },
+              new java.lang.String[] { "Name", "Type", "Direction", "PosInternal", "PosExternal", },
               org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port.class,
               org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port.Builder.class);
           internal_static_zaluum_Contents_descriptor =
@@ -3430,22 +3563,22 @@ public final class BoxFileProtos {
               new java.lang.String[] { "BoxName", "PortName", },
               org.zaluum.nide.protobuf.BoxFileProtos.Contents.PortRef.class,
               org.zaluum.nide.protobuf.BoxFileProtos.Contents.PortRef.Builder.class);
-          internal_static_zaluum_Contents_Point_descriptor =
-            internal_static_zaluum_Contents_descriptor.getNestedTypes().get(3);
-          internal_static_zaluum_Contents_Point_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_zaluum_Contents_Point_descriptor,
-              new java.lang.String[] { "X", "Y", },
-              org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.class,
-              org.zaluum.nide.protobuf.BoxFileProtos.Contents.Point.Builder.class);
           internal_static_zaluum_Contents_Connection_descriptor =
-            internal_static_zaluum_Contents_descriptor.getNestedTypes().get(4);
+            internal_static_zaluum_Contents_descriptor.getNestedTypes().get(3);
           internal_static_zaluum_Contents_Connection_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Contents_Connection_descriptor,
               new java.lang.String[] { "Source", "Target", "Waypoint", },
               org.zaluum.nide.protobuf.BoxFileProtos.Contents.Connection.class,
               org.zaluum.nide.protobuf.BoxFileProtos.Contents.Connection.Builder.class);
+          internal_static_zaluum_Point_descriptor =
+            getDescriptor().getMessageTypes().get(2);
+          internal_static_zaluum_Point_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_zaluum_Point_descriptor,
+              new java.lang.String[] { "X", "Y", },
+              org.zaluum.nide.protobuf.BoxFileProtos.Point.class,
+              org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder.class);
           return null;
         }
       };

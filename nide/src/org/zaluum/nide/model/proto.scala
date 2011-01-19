@@ -41,7 +41,11 @@ object ProtoModel {
   }
   def readDefinition(in: InputStream) = {
     val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
-    new BoxClass(definition.getClassName, false, definition.getImageName)
+    val boxClass = new BoxClass(definition.getClassName, false, definition.getImageName)
+    for ( port <- definition.getPortList) {
+      boxClass.ports += TypedPort(port.getType, port.getDirection==Direction.IN, port.getName, fromPoint(port.getPosExternal))
+    }
+    boxClass
   }
   def read(in: InputStream) = {
     val model = new Model()
@@ -49,7 +53,7 @@ object ProtoModel {
     model.className = definition.getClassName()
     model.imageName = definition.getImageName()
     for (port ← definition.getPortList) {
-      PortDecl(model, port.getName, port.getDirection == Direction.IN) // TODO type
+      PortDecl(model, port.getName, port.getDirection == Direction.IN, fromPoint(port.getPosInternal)) // TODO type
     }
 
     val contents = BoxFileProtos.Contents.parseDelimitedFrom(in)
@@ -90,4 +94,12 @@ object ProtoModel {
     model.cleanUp
     model
   }
+  def toPoint(i:Point) = {
+    val p = BoxFileProtos.Point.newBuilder
+    p.setX(i.x)
+    p.setY(i.y)
+    p.build
+  }
+  def fromPoint(p:BoxFileProtos.Point) =  Point(p.getX,p.getY)
+
 }
