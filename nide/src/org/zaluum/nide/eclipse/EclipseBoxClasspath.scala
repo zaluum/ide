@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse
 
+import org.eclipse.core.runtime.Path
 import org.eclipse.core.resources.IFile
 import org.eclipse.jdt.core.IClasspathEntry
 import java.net.URL
@@ -106,12 +107,14 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
         case None ⇒ result
       }
     }
-  }
+  } 
+  def root = project.getWorkspace.getRoot
   def getResource(str: String): Option[URL] = {
     val cpaths = jproject.getResolvedClasspath(true)
     if (str == "") return None
     for (c ← cpaths) {
-      val path = c.getPath.makeAbsolute
+      val path = c.getPath
+      println("path " + path)
       if (path.getFileExtension == "jar") {
         val url = new URL("jar:" + path.toFile.toURI.toURL.toString + "!/" + str)
         try {
@@ -122,8 +125,16 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
           case e: java.io.IOException ⇒
         }
       } else {
-        val file = new java.io.File(path + "/" + str)
-        if (file.exists) return Some(file.toURI.toURL)
+        val fullPath = path.append(new Path(str))
+        val res = root.findMember(fullPath);
+        if (res == null) {
+          val f = fullPath.toFile;
+          if (f.exists) {
+            return Some(f.toURI.toURL)
+          }
+        } else {
+          return Some(res.getLocationURI.toURL)
+        }
       }
     }
     return None

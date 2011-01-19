@@ -55,6 +55,7 @@ class Viewer(parent: Composite, val controller: Controller) {
   def model = controller.model
   def dispose() {
     canvas.dispose()
+    imageFactory.reg .dispose
   }
   def setCursor(cursor: Cursor) {
     canvas.setCursor(cursor)

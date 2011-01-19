@@ -1,5 +1,7 @@
 package org.zaluum.nide.eclipse;
 
+import scala.collection.mutable.Buffer
+import org.eclipse.core.resources.IContainer
 import org.eclipse.jdt.core.IType
 import org.eclipse.jdt.core.search.SearchMatch
 import org.eclipse.jdt.core.search.SearchRequestor
@@ -11,6 +13,7 @@ import org.eclipse.jdt.core.IJavaElement
 import org.eclipse.jdt.core.search.SearchEngine
 import org.eclipse.jdt.core.IClasspathEntry
 import org.eclipse.jdt.internal.core.JavaModelManager
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -22,6 +25,9 @@ import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import java.util.{ Map ⇒ JMap }
+import java.io.ByteArrayInputStream
+import org.zaluum.nide.model.ProtoModel
+import org.zaluum.nide.compiler.{ Compiler, ByteCodeGen }
 
 object ZaluumBuilder {
   val BUILDER_ID = "org.zaluum.nide.zaluumBuilder";
@@ -41,13 +47,6 @@ class ZaluumBuilder extends IncrementalProjectBuilder {
         // handle changed resource
         case _ ⇒
       }
-      //return true to continue visiting children.
-      true;
-    }
-  }
-
-  class SampleResourceVisitor extends IResourceVisitor {
-    def visit(resource: IResource) = {
       //return true to continue visiting children.
       true;
     }
@@ -85,17 +84,58 @@ class ZaluumBuilder extends IncrementalProjectBuilder {
   }
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(getProject);
+  def defaultOutputFolder = { jproject.getOutputLocation }
+  /*private def toBuild : Buffer[IFile] = {
+    val classpath = jproject.getResolvedClasspath(true)
+    val result = Buffer[IFile]()  
+    for (c ← classpath; if (c.getEntryKind == IClasspathEntry.CPE_SOURCE)) {
+      def doContainer(container:IContainer) {
+        container.members foreach { _  match {
+            case c: IContainer =>  doContainer(c)
+            case f: IFile => if ("zaluum" == f.getFileExtension) result+=f
+            case _ =>
+          }
+        }
+      }
+      val root = getProject.getWorkspace.getRoot;
+      val rootContainer = root.getContainerForLocation(c.getPath);
+      doContainer(rootContainer)
+    }
+    result
+  }*/
+  def toRelativePathClass(className: String) = new Path(className.replace(".", "/") + ".class")
 
   protected def fullBuild(monitor: IProgressMonitor) {
     val cl = new EclipseBoxClasspath(getProject)
     cl.update()
-    val classpath = jproject.getResolvedClasspath(true)
-    for (c<-classpath) {
-      if (c.getEntryKind == IClasspathEntry.CPE_SOURCE){
-        println ("source " + c)
-      }
-    }
-    getProject().accept(new SampleResourceVisitor())
+    getProject().accept(
+      new IResourceVisitor {
+        def visit(resource: IResource) = resource match {
+          case f: IFile if ("zaluum" == f.getFileExtension) ⇒
+            cl.toClassName(f) foreach { className ⇒
+              val model = ProtoModel.read(f.getContents, className)
+              val compiler = new Compiler(model, cl)
+              try {
+                val compiled = compiler.compile
+                try {
+                  val bytes = new ByteArrayInputStream(ByteCodeGen.dump(compiled))
+                  val outputPath = defaultOutputFolder.append(toRelativePathClass(className))
+                  val root = getProject.getWorkspace.getRoot;
+                  val outputFile = root.getFile(outputPath)
+                  if (outputFile.exists)
+                    outputFile.setContents(bytes,true,false,monitor)
+                  else
+                    outputFile.create(bytes, true, monitor)
+                } catch { case e ⇒ e.printStackTrace() }
+              } catch {
+                case e ⇒ println("errors" + compiler.reporter)
+              }
+            }
+            false
+          case c: IContainer ⇒ true
+          case _ ⇒ true
+        }
+      })
   }
 
   protected def incrementalBuild(delta: IResourceDelta,

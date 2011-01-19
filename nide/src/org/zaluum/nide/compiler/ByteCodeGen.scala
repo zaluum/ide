@@ -7,9 +7,9 @@ import Opcodes._
 import org.zaluum.nide.model.{ Box, PortRef, ModelPortRef, BoxPortRef }
 
 object ByteCodeGen {
-  def internal(classname: String) = classname.replace('.', '/')
-  def classDescriptor(classname: String) = 'L' + internal(classname) + ";"
-  def dump(c: Compiled) = {
+  private def internal(classname: String) = classname.replace('.', '/')
+  private def classDescriptor(classname: String) = 'L' + internal(classname) + ";"
+  def dump(c: Compiled) : Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
     cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, internal(c.m.className), null, "java/lang/Object", null);

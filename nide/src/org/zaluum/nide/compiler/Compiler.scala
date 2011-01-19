@@ -56,6 +56,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
       if (fail) check()
     }
     def apply() = check()
+    override def toString = errors.toString
   }
   var boxTypes = Map[Box, BoxClass]()
   var portType = Map[PortRef, TypedPort]()
@@ -73,7 +74,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
       reporter(Compiler.isValidJavaIdentifier(name), name + " is not a valid Java identifier", Some(portDecl))
       reporter(!names(name), "Port name " + name + " is already defined", Some(portDecl))
       names = names + name
-      portType += (ModelPortRef(name) -> TypedPort("double", portDecl.in, name, portDecl.pos))
+      portType += (ModelPortRef(name) -> TypedPort(portDecl.descriptor , portDecl.in, name, portDecl.pos))
     }
   }
   def checkPortRef(portRef: PortRef, blame: AnyRef) = {
