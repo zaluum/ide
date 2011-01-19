@@ -1,5 +1,6 @@
 package org.zaluum.nide.model
 
+import scala.annotation.tailrec
 import org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction
 import com.google.common.base.Charsets
 import java.io.OutputStreamWriter
@@ -52,6 +53,19 @@ class Model {
   }
   def findBox(str: String) = boxes find { _.name == str }
   def findPortDecl(str:String) = portDecls find {_.name==str}
+  def isNameTaken(str:String) :Boolean= {
+    boxes.exists {_.name==str } || portDecls.exists{_.name==str}
+  }
+  def nextName(str:String) :String = {
+    val digits = str.reverse.takeWhile(_.isDigit).reverse
+    val nextValue = if (digits.isEmpty) 1 else digits.toInt +1
+    str.slice(0, str.length-digits.length) + nextValue
+  }
+  @tailrec
+  final def nextFreeName(str:String):String = {
+    if (!isNameTaken(str)) str
+    else nextFreeName(nextName(str))
+  }
 }
 
 object Box {
@@ -139,5 +153,10 @@ class ConnectCommand(m: Model, c:Connection) extends Command {
 class CreateCommand(box:Box, model:Model) extends Command{
   def redo { model.boxes += box }
   def undo { model.boxes -= box }
+  def canExecute = true
+}
+class CreatePortDeclCommand(portDecl:PortDecl, model:Model) extends Command{
+  def redo { model.portDecls += portDecl }
+  def undo { model.portDecls -= portDecl }
   def canExecute = true
 }

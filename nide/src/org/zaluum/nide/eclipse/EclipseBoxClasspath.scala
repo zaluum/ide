@@ -1,29 +1,20 @@
 package org.zaluum.nide.eclipse
-
-import org.eclipse.jdt.core.IMemberValuePair
-import org.eclipse.jdt.core.IAnnotation
-import org.zaluum.nide.model.Point
-import org.zaluum.nide.model.TypedPort
-import org.eclipse.jdt.core.search.TypeReferenceMatch
-import org.eclipse.jdt.core.IJavaProject
-import org.eclipse.jdt.core.{IType,IAnnotatable}
-import org.eclipse.jdt.internal.core.JavaModelManager
-import org.eclipse.jdt.core.search.IJavaSearchConstants
-import org.eclipse.jdt.core.IJavaElement
-import org.eclipse.jdt.core.search.SearchMatch
-import org.eclipse.jdt.core.search.SearchRequestor
-import org.eclipse.jdt.core.search.SearchPattern
-import org.eclipse.jdt.core.search.SearchEngine
+import java.net.URL
 import org.eclipse.core.resources.IProject
 import org.eclipse.core.runtime.IProgressMonitor
-import java.net.URL
-import org.zaluum.nide.model.BoxClass
+import org.eclipse.jdt.core.{IJavaElement, IType, IAnnotatable, IJavaProject, IAnnotation, IMemberValuePair}
+import org.eclipse.jdt.core.search.{SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch}
+import org.eclipse.jdt.internal.core.JavaModelManager
 import org.zaluum.nide.compiler.ScannedBoxClassPath
+import org.zaluum.nide.model.{BoxClass, TypedPort, Point}
 
 class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
   var cache = Map[String, BoxClass]()
-  findAnnotated(null)
-  protected def findAnnotated(monitor: IProgressMonitor) {
+  def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
+  def jproject = jmodel.getJavaProject(project);
+  
+  def update() {
+    cache = cache.empty
     val searchScope = SearchEngine.createJavaSearchScope(
       Array[IJavaElement](jproject))
     val search = new SearchEngine()
@@ -89,10 +80,8 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
         }
       }
     }
-    search.search(pattern, participants, searchScope, searchRequestor, monitor)
+    search.search(pattern, participants, searchScope, searchRequestor, null)
   }
-  def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
-  def jproject = jmodel.getJavaProject(project);
 
   def boxClasses: Set[BoxClass] = { cache.values.toSet }
   def find(str: String): Option[BoxClass] = cache.get(str)
@@ -112,6 +101,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
         }
       }else {
         val file = new java.io.File(path + "/" + str)
+        println(file)
         if (file.exists)  return Some(file.toURI.toURL)
       }
     }

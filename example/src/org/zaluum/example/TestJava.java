@@ -7,4 +7,4 @@ import org.zaluum.nide.java.In;
 public class TestJava {
   @In(x=0,y=0)  
   public double d = 0.0;
-} 
+}

@@ -48,6 +48,7 @@ class GraphicalEditor extends EditorPart {
   def input = inputFile.getContents(true)
   def createPartControl(parent: Composite){
     val bcp = new EclipseBoxClasspath(inputFile.getProject)
+    bcp.update()
     val model = ProtoModel.read(input)
     input.close()
     val controller = new Controller(model,bcp)

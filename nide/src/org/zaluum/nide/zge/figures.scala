@@ -101,13 +101,21 @@ trait BoxFigure extends FigureWithPorts{
     def buildFigure(p: TypedPort) = new PortFigure(BoxFigure.this, p, BoxPortRef(box, p.name), viewer)
   }
 }
-class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer,var portType : Option[TypedPort]) extends RectangleFigure with FigureWithPorts {
+object PortDeclFigure {
+  def img(in:Boolean) = "org/zaluum/nide/icons/portDecl" + (if(in) "In" else "Out") + ".png"
+}
+class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer,var portType : Option[TypedPort]) extends ImageFigure with FigureWithPorts {
   def positionable = portDecl
   def size = Dimension(50,20)
   lazy val feed = new BasicFeedbackFigure(this)
   object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
     def modelSet = portType.toSet
     def buildFigure(p: TypedPort) = new PortFigure(PortDeclFigure.this, p, ModelPortRef(p.name), viewer)
+  }
+  override def update(){
+    val image = viewer.imageFactory.get(PortDeclFigure.img(portDecl.in)).get
+    setImage(image)
+    super.update()
   }
 }
 class PortFigure(val bf: FigureWithPorts, val typ: TypedPort, val portRef: PortRef, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {

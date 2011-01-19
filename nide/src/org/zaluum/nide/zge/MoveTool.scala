@@ -7,8 +7,8 @@ import org.eclipse.draw2d.geometry.{ Point, Rectangle, Dimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Cursor
 import scala.collection.JavaConversions._
-import org.zaluum.nide.model._ 
-import org.zaluum.nide.model.{Point=>MPoint}
+import org.zaluum.nide.model._
+import org.zaluum.nide.model.{ Point ⇒ MPoint }
 import draw2dConversions._
 
 class MoveTool(viewer: Viewer) extends Tool(viewer) {
@@ -16,11 +16,11 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   // SELECTING
   object selecting extends ToolState {
     var selected: Option[BasicFigure] = None
-    var lineSelected : Option[LineFigure] = None
+    var lineSelected: Option[LineFigure] = None
     var handle: Option[HandleRectangle] = None
     var port: Option[PortFigure] = None
-    var initDrag : Point = _
-    def enter() { state=this }
+    var initDrag: Point = _
+    def enter() { state = this }
     def buttonDown {
       selected = figureUnderMouse
       if (selected.isEmpty) lineSelected = lineUnderMouse
@@ -29,46 +29,46 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
 
     def buttonUp {
       (selected, lineSelected) match {
-        case (Some(box),_) => modelView.selected.updateSelection(Set(box),shift)
-        case (None, Some(line)) => modelView.selectedLines.updateSelection(Set(line),shift)
-        case (None,None) => modelView.deselectAll()
+        case (Some(box), _) ⇒ modelView.selected.updateSelection(Set(box), shift)
+        case (None, Some(line)) ⇒ modelView.selectedLines.updateSelection(Set(line), shift)
+        case (None, None) ⇒ modelView.deselectAll()
       }
     }
     val handleTrack = new OverTrack[HandleRectangle](viewer.feedbackLayer) {
-      def onEnter(h:HandleRectangle) { 
+      def onEnter(h: HandleRectangle) {
         handle = Some(h)
-        h.setXOR(true); 
-        viewer.setCursor(h.resizeCursor) 
+        h.setXOR(true);
+        viewer.setCursor(h.resizeCursor)
       }
-      def onExit(f:HandleRectangle) {
+      def onExit(f: HandleRectangle) {
         handle = None
-        f.setXOR(false); 
+        f.setXOR(false);
         viewer.setCursor(null)
       }
     }
     val portsTrack = new OverTrack[PortFigure](viewer.portsLayer) {
-      def onEnter(p:PortFigure) { port = Some(p); p.showFeedback }
-      def onExit(p:PortFigure) { port = None; p.hideFeedback }
+      def onEnter(p: PortFigure) { port = Some(p); p.showFeedback }
+      def onExit(p: PortFigure) { port = None; p.hideFeedback }
     }
-    def move { 
-      handleTrack.update()  
+    def move {
+      handleTrack.update()
       portsTrack.update()
     }
     def drag {
-      (handle,selected,port) match {
-        case (Some(h),_,_) => // resize
-          resizing.enter(initDrag,h)
-        case (None, _, Some(port)) => // connect
-          connect.enter(initDrag,port)
-        case (None, Some(fig),_) => // select and move
+      (handle, selected, port) match {
+        case (Some(h), _, _) ⇒ // resize
+          resizing.enter(initDrag, h)
+        case (None, _, Some(port)) ⇒ // connect
+          connect.enter(initDrag, port)
+        case (None, Some(fig), _) ⇒ // select and move
           if (!modelView.selected(fig))
-            modelView.selected.updateSelection(Set(fig),shift)
+            modelView.selected.updateSelection(Set(fig), shift)
           moving.enter(initDrag)
-        case (None,None,None) => marqueeing.enter(initDrag) // marquee
+        case (None, None, None) ⇒ marqueeing.enter(initDrag) // marquee
       }
     }
     override def menu() {
-      
+
       viewer.palette.show(swtMouseLocation)
     }
     def abort {}
@@ -76,42 +76,42 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   }
   // CONNECT
   object connect extends MovingState {
-    var dst : Option[PortFigure] = None
-    var initPort : Option[PortFigure] = None
-    var con : Option[Connection] =  None
-    var conf : Option[ConnectionFigure] = None
+    var dst: Option[PortFigure] = None
+    var initPort: Option[PortFigure] = None
+    var con: Option[Connection] = None
+    var conf: Option[ConnectionFigure] = None
     val portsTrack = new OverTrack[PortFigure](viewer.portsLayer) {
-      def onEnter(p:PortFigure) { 
-        dst= Some(p); 
-        con.get.to = Some(p.portRef); 
-        p.showFeedback 
+      def onEnter(p: PortFigure) {
+        dst = Some(p);
+        con.get.to = Some(p.portRef);
+        p.showFeedback
       }
-      def onExit(p:PortFigure) { dst= None; con.get.to = None; p.hideFeedback }
+      def onExit(p: PortFigure) { dst = None; con.get.to = None; p.hideFeedback }
     }
-    def enter(initdrag:Point, initPort:PortFigure) {
+    def enter(initdrag: Point, initPort: PortFigure) {
       super.enter(initdrag)
       this.initPort = Some(initPort)
-      con = Some(new Connection(Some(initPort.portRef),None))
-      conf = Some(new ConnectionFigure(con.get,modelView))
+      con = Some(new Connection(Some(initPort.portRef), None))
+      conf = Some(new ConnectionFigure(con.get, modelView))
       con.get.simpleConnect(initPort.getBounds.getCenter, mouseLocation)
       conf.get.show
       conf.get.update
       viewer.setCursor(Cursors.HAND)
     }
-    def doEnter{}
+    def doEnter {}
     def buttonUp {
       // execute model command
-      val command = new ConnectCommand(modelView.model,con.get)
-      if (command.canExecute){
+      val command = new ConnectCommand(modelView.model, con.get)
+      if (command.canExecute) {
         println("can execute")
         controller.exec(command)
       }
       exit()
     }
-    def drag{}
-    def buttonDown{}
+    def drag {}
+    def buttonDown {}
     def exit() {
-      dst foreach {_.hideFeedback}
+      dst foreach { _.hideFeedback }
       conf.foreach { _.hide }
       con = None
       conf = None
@@ -120,50 +120,49 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     }
     def move() {
       val end = dst match {
-        case Some(df) => df.getBounds.getCenter
-        case None => mouseLocation
+        case Some(df) ⇒ df.getBounds.getCenter
+        case None ⇒ mouseLocation
       }
       con.get.simpleConnect(initPort.get.getBounds.getCenter, end)
       conf.get.update
-      portsTrack.update() 
+      portsTrack.update()
     }
-    def abort() { exit() }  
+    def abort() { exit() }
   }
   // MOVE
   object moving extends MovingState {
-    def doEnter{}
+    def doEnter {}
     def buttonUp {
-      val commands= modelView.selected.selected map {
-          bf =>
-          val oldLoc = bf.getBounds.getLocation
-          new MoveCommand(bf.positionable, oldLoc +  delta)
+      val commands = modelView.selected.selected map { bf ⇒
+        val oldLoc = bf.getBounds.getLocation
+        new MoveCommand(bf.positionable, oldLoc + delta)
       };
       controller.exec(new ChainCommand(commands.toList))
       exit()
     }
-    def drag{}
-    def buttonDown{}
+    def drag {}
+    def buttonDown {}
     def exit() { selecting.enter() }
-    def move() {  modelView.selected.selected foreach { _.moveDeltaFeed(delta) } }
+    def move() { modelView.selected.selected foreach { _.moveDeltaFeed(delta) } }
     def abort() {
-      modelView.selected.selected foreach { _.moveDeltaFeed(Vector2(0,0)) }
+      modelView.selected.selected foreach { _.moveDeltaFeed(Vector2(0, 0)) }
       exit()
     }
   }
   /// MARQUEE
   object marqueeing extends MovingState {
-    def doEnter(){
+    def doEnter() {
       viewer.setCursor(Cursors.CROSS)
       viewer.showMarquee()
       move()
     }
-    def exit(){ 
+    def exit() {
       viewer.setCursor(null)
-      selecting.enter() 
+      selecting.enter()
     }
-    def abort(){ exit()}
-    def buttonDown{}
-    def drag{}
+    def abort() { exit() }
+    def buttonDown {}
+    def drag {}
     def buttonUp {
       viewer.hideMarquee()
       exit()
@@ -172,38 +171,40 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   }
   // RESIZING
   object resizing extends MovingState {
-    var handle : HandleRectangle = _
+    var handle: HandleRectangle = _
     def bf = handle.basicFigure
-    
-    def enter(initDrag: Point, handle:HandleRectangle) {
+
+    def enter(initDrag: Point, handle: HandleRectangle) {
       super.enter(initDrag)
       this.handle = handle
     }
-    def doEnter{}
+    def doEnter {}
     def buttonUp {
-      val newBounds = handle.deltaAdd(delta,bf.getBounds);
+      val newBounds = handle.deltaAdd(delta, bf.getBounds);
       //val comm = new ResizeCommand(bf.box, (newBounds.x,newBounds.y), (newBounds.width,newBounds.height))
       //controller.exec(comm)
       exit()
     }
-    def move() {  bf.resizeDeltaFeed(delta,handle)  }
+    def move() { bf.resizeDeltaFeed(delta, handle) }
     def abort() {
-      bf.resizeDeltaFeed(Vector2(0,0),handle)
+      bf.resizeDeltaFeed(Vector2(0, 0), handle)
       exit()
     }
     def drag {}
     def buttonDown {}
-    def exit() { selecting.enter()  }
+    def exit() { selecting.enter() }
   }
   // CREATING 
   object creating extends ToolState {
-    var bf : BoxFigure = _
-    def enter(boxClass:BoxClass){
-      state=this
+    var bf: BoxFigure = _
+    def enter(boxClass: BoxClass) {
+      state = this
+      val name = model.nextFreeName("box")
       val box = new Box()
       box.className = boxClass.className
-      box.pos = MPoint(1,1)
-      bf = new ImageBoxFigure(box,Some(boxClass),viewer)
+      box.name = name
+      box.pos = MPoint(1, 1)
+      bf = new ImageBoxFigure(box, Some(boxClass), viewer)
       bf.update()
       bf.hide()
       bf.showFeedback()
@@ -213,12 +214,38 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def drag() {}
     def buttonUp() {
       // execute
-      bf.box.pos = MPoint(mouseLocation.x,mouseLocation.y)
-      val com = new CreateCommand(bf.box,model)
+      bf.box.pos = MPoint(mouseLocation.x, mouseLocation.y)
+      val com = new CreateCommand(bf.box, model)
       controller.exec(com)
       exit()
     }
     def buttonDown() {}
     def exit() { bf.hideFeedback; bf = null; selecting.enter() }
+  }
+  object creatingPort extends ToolState {
+    var pf: PortDeclFigure = _
+    def enter(in: Boolean) {
+      state = this
+      val name = model.nextFreeName("port")
+      val portDecl = new PortDecl(model, name, in)
+      portDecl.pos = MPoint(1, 1)
+      val typedPort = TypedPort("D", in, name, MPoint(0, 0))
+      pf = new PortDeclFigure(portDecl, viewer, Some(typedPort))
+      pf.update()
+      pf.hide()
+      pf.showFeedback()
+    }
+    def move() { pf.moveFeed(mouseLocation) }
+    def abort() { exit() }
+    def drag() {}
+    def buttonUp() {
+      // execute
+      pf.portDecl.pos = MPoint(mouseLocation.x, mouseLocation.y)
+      val com = new CreatePortDeclCommand(pf.portDecl, model)
+      controller.exec(com)
+      exit()
+    }
+    def buttonDown() {}
+    def exit() { pf.hideFeedback; pf = null; selecting.enter() }
   }
 }

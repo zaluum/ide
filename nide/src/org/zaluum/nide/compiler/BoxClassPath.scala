@@ -17,6 +17,7 @@ trait BoxClassPath {
 }
 trait ScannedBoxClassPath extends BoxClassPath {
   def boxClasses : Set[BoxClass]
+  def update() 
 }
 /**
  * ClassPath
@@ -93,10 +94,11 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
   }
 }
 class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends SimpleBoxClassPath(zaluumDir, cl) with ScannedBoxClassPath{
-
-  scanZaluums()
-  scanClassPath()
-  
+  def update() {
+    cache = cache.empty
+    scanZaluums()
+    scanClassPath()
+  }
   def boxClasses = cache.values.toSet;
   private def scanZaluums() {
     if (zaluumDir.isDirectory) {

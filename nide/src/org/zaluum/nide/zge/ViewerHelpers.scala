@@ -13,7 +13,7 @@ class ImageFactory(val display:Display, bcp: BoxClassPath) {
     val reg = new ImageRegistry
     reg.put("*",ImageDescriptor.createFromFile(classOf[Icons],"notFound.png"))
     def notFound = reg.get("*")
-    private def get(resource:String) = {
+    def get(resource:String) = {
       Option(reg.get(resource)) orElse {
         val url = bcp.getResource(resource);
         url map { u=>

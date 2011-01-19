@@ -88,6 +88,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder {
 
   protected def fullBuild(monitor: IProgressMonitor) {
     val cl = new EclipseBoxClasspath(getProject)
+    cl.update()
     val classpath = jproject.getResolvedClasspath(true)
     for (c<-classpath) {
       if (c.getEntryKind == IClasspathEntry.CPE_SOURCE){
