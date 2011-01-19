@@ -73,7 +73,7 @@ object Box {
 }
 
 class Box  extends Positionable {
-  var className = "img"
+  var className = ""
   var pos = Point(0, 0)
   var name = ""
   def toProto = {

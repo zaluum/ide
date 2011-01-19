@@ -13,7 +13,6 @@ import scala.collection.JavaConversions._
 object ProtoModel {
   def definitionToProtos(m: Model) = {
     val b = BoxFileProtos.Definition.newBuilder()
-    b.setClassName(m.className)
     b.setImageName(m.imageName)
     for (portDecl ← m.portDecls) { b.addPort(portDecl.toProto) }
     b.build
@@ -39,19 +38,19 @@ object ProtoModel {
     TextFormat.print(contentsToProtos(m), o)
     o.flush
   }
-  def readDefinition(in: InputStream) = {
+  def readDefinition(in: InputStream, className:String) = {
     val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
-    val boxClass = new BoxClass(definition.getClassName, false, definition.getImageName)
+    val boxClass = new BoxClass(className, false, definition.getImageName)
     for ( port <- definition.getPortList) {
       boxClass.ports += TypedPort(port.getType, port.getDirection==Direction.IN, port.getName, fromPoint(port.getPosExternal))
     }
     boxClass
   }
-  def read(in: InputStream) = {
+  def read(in: InputStream, className:String) = {
     val model = new Model()
     val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
-    model.className = definition.getClassName()
-    model.imageName = definition.getImageName()
+    model.className = className
+    model.imageName = if (definition.hasImageName) definition.getImageName() else ""
     for (port ← definition.getPortList) {
       PortDecl(model, port.getName, port.getDirection == Direction.IN, fromPoint(port.getPosInternal)) // TODO type
     }

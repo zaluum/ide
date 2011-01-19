@@ -10,14 +10,14 @@ import java.io.File
 object TestCompiler {
   val path = new SimpleBoxClassPath(new File("./src"), currentThread.getContextClassLoader()) 
   val outDir = "classes/"
-  def compile(str:String) {
-    path.getResource(str) match {
+  def compile(className:String) {
+    path.zaluumSourceURL(className) match {
       case Some(url) =>
         val i = url.openStream
-        val model = ProtoModel.read(i)
+        val model = ProtoModel.read(i,className)
         i.close
         compile(model)
-      case None => println("File " + str + " not found")
+      case None => println("Source for " + className + " not found")
     }
   }
   def compile(model:Model) {
@@ -41,7 +41,7 @@ object TestCompiler {
     }
   }
   def main(args:Array[String]) {
-    compile("graystone/zaluum/SumSum.zaluum")
+    compile("graystone.zaluum.SumSum")
     compile(Example.printModel)
     compile(Example.encapsulatePrint)
   }

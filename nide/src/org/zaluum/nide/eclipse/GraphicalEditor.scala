@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse
 
+import org.eclipse.core.resources.IFile
 import org.eclipse.ui.IEditorPart
 import java.io.ByteArrayInputStream
 import org.zaluum.nide.model.ProtoModel
@@ -49,7 +50,8 @@ class GraphicalEditor extends EditorPart {
   def createPartControl(parent: Composite){
     val bcp = new EclipseBoxClasspath(inputFile.getProject)
     bcp.update()
-    val model = ProtoModel.read(input)
+    val className = bcp.toClassName(inputFile).getOrElse { "NotFound" }
+    val model = ProtoModel.read(input,className)
     input.close()
     val controller = new Controller(model,bcp)
     controller.onExecute {

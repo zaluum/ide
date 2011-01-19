@@ -29,12 +29,21 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
   /** 
    * Use this
    */
-  def find(str: String): Option[BoxClass] = {
-    cache.get(str) orElse
-      findZaluum(str) orElse
-      findClass(str) orElse
-      { println(str + " not found"); None }
+  def find(className: String): Option[BoxClass] = {
+    cache.get(className) orElse
+      loadZaluum(className) orElse
+      findClass(className) orElse
+      { println(className + " not found"); None }
   }
+  def zaluumSourceFile(className:String) : File = {
+    val fn = className.replace('.', '/')
+    new File(zaluumDir.getAbsolutePath + "/" + fn + ".zaluum")
+  }
+  def zaluumSourceURL(className:String) : Option[URL] = {
+    val f = zaluumSourceFile(className)
+    toURL(f)
+  }
+  def toURL(f:File) : Option[URL] =  if (f.exists) Some(f.toURI.toURL) else None
   def getResource(str:String) : Option[URL] = {
     val f = new File(zaluumDir.getAbsolutePath + "/" + str)
     if (f.exists) Some(f.toURI.toURL)
@@ -42,10 +51,8 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
       Option(classLoader.getResource(str))
     }
   }
-  def findZaluum(str: String) = {
-    val fn = str.replace('.', '/')
-    val f = new File(zaluumDir.getAbsolutePath + "/" + fn + ".zaluum")
-    addCache(readZaluum(f))
+  def loadZaluum(className: String) = {
+    addCache(readZaluum(zaluumSourceFile(className),className))
   }
 
   def findClass(str: String) = {
@@ -80,11 +87,11 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
       bc
     }
   }
-  def readZaluum(f: File): Option[BoxClass] = {
+  def readZaluum(f: File,className:String): Option[BoxClass] = {
     try {
       val in = new FileInputStream(f)
       try {
-        val d = ProtoModel.readDefinition(in)
+        val d = ProtoModel.readDefinition(in,className)
         println("discovered zaluum " + f.getName + " " + d)
         Some(d)
       } finally { in.close() }
@@ -103,7 +110,7 @@ class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends Simple
   private def scanZaluums() {
     if (zaluumDir.isDirectory) {
       for (f ← zaluumDir.listFiles if f.getName.endsWith(".zaluum")) {
-        addCache(readZaluum(f)) 
+        addCache(readZaluum(f,"nono")) // FIXME
       }
     }
   }

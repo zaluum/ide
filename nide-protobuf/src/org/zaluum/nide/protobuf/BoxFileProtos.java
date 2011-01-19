@@ -615,22 +615,15 @@ public final class BoxFileProtos {
       // @@protoc_insertion_point(class_scope:zaluum.Definition.Port)
     }
     
-    // required string class_name = 1;
-    public static final int CLASS_NAME_FIELD_NUMBER = 1;
-    private boolean hasClassName;
-    private java.lang.String className_ = "";
-    public boolean hasClassName() { return hasClassName; }
-    public java.lang.String getClassName() { return className_; }
-    
-    // required string image_name = 2;
-    public static final int IMAGE_NAME_FIELD_NUMBER = 2;
+    // optional string image_name = 1;
+    public static final int IMAGE_NAME_FIELD_NUMBER = 1;
     private boolean hasImageName;
     private java.lang.String imageName_ = "";
     public boolean hasImageName() { return hasImageName; }
     public java.lang.String getImageName() { return imageName_; }
     
-    // repeated .zaluum.Definition.Port port = 3;
-    public static final int PORT_FIELD_NUMBER = 3;
+    // repeated .zaluum.Definition.Port port = 2;
+    public static final int PORT_FIELD_NUMBER = 2;
     private java.util.List<org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port> port_ =
       java.util.Collections.emptyList();
     public java.util.List<org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port> getPortList() {
@@ -644,8 +637,6 @@ public final class BoxFileProtos {
     private void initFields() {
     }
     public final boolean isInitialized() {
-      if (!hasClassName) return false;
-      if (!hasImageName) return false;
       for (org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port element : getPortList()) {
         if (!element.isInitialized()) return false;
       }
@@ -655,14 +646,11 @@ public final class BoxFileProtos {
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      if (hasClassName()) {
-        output.writeString(1, getClassName());
-      }
       if (hasImageName()) {
-        output.writeString(2, getImageName());
+        output.writeString(1, getImageName());
       }
       for (org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port element : getPortList()) {
-        output.writeMessage(3, element);
+        output.writeMessage(2, element);
       }
       getUnknownFields().writeTo(output);
     }
@@ -673,17 +661,13 @@ public final class BoxFileProtos {
       if (size != -1) return size;
     
       size = 0;
-      if (hasClassName()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getClassName());
-      }
       if (hasImageName()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getImageName());
+          .computeStringSize(1, getImageName());
       }
       for (org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port element : getPortList()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, element);
+          .computeMessageSize(2, element);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -847,9 +831,6 @@ public final class BoxFileProtos {
       
       public Builder mergeFrom(org.zaluum.nide.protobuf.BoxFileProtos.Definition other) {
         if (other == org.zaluum.nide.protobuf.BoxFileProtos.Definition.getDefaultInstance()) return this;
-        if (other.hasClassName()) {
-          setClassName(other.getClassName());
-        }
         if (other.hasImageName()) {
           setImageName(other.getImageName());
         }
@@ -885,14 +866,10 @@ public final class BoxFileProtos {
               break;
             }
             case 10: {
-              setClassName(input.readString());
-              break;
-            }
-            case 18: {
               setImageName(input.readString());
               break;
             }
-            case 26: {
+            case 18: {
               org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port.newBuilder();
               input.readMessage(subBuilder, extensionRegistry);
               addPort(subBuilder.buildPartial());
@@ -903,28 +880,7 @@ public final class BoxFileProtos {
       }
       
       
-      // required string class_name = 1;
-      public boolean hasClassName() {
-        return result.hasClassName();
-      }
-      public java.lang.String getClassName() {
-        return result.getClassName();
-      }
-      public Builder setClassName(java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  result.hasClassName = true;
-        result.className_ = value;
-        return this;
-      }
-      public Builder clearClassName() {
-        result.hasClassName = false;
-        result.className_ = getDefaultInstance().getClassName();
-        return this;
-      }
-      
-      // required string image_name = 2;
+      // optional string image_name = 1;
       public boolean hasImageName() {
         return result.hasImageName();
       }
@@ -945,7 +901,7 @@ public final class BoxFileProtos {
         return this;
       }
       
-      // repeated .zaluum.Definition.Port port = 3;
+      // repeated .zaluum.Definition.Port port = 2;
       public java.util.List<org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port> getPortList() {
         return java.util.Collections.unmodifiableList(result.port_);
       }
@@ -3487,28 +3443,27 @@ public final class BoxFileProtos {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rBoxFile.proto\022\006zaluum\"\231\002\n\nDefinition\022\022" +
-      "\n\nclass_name\030\001 \002(\t\022\022\n\nimage_name\030\002 \002(\t\022%" +
-      "\n\004port\030\003 \003(\0132\027.zaluum.Definition.Port\032\235\001" +
-      "\n\004Port\022\014\n\004name\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022/\n\tdi" +
-      "rection\030\003 \002(\0162\034.zaluum.Definition.Direct" +
-      "ion\022#\n\014pos_internal\030\004 \002(\0132\r.zaluum.Point" +
-      "\022#\n\014pos_external\030\005 \002(\0132\r.zaluum.Point\"\034\n" +
-      "\tDirection\022\006\n\002IN\020\000\022\007\n\003OUT\020\001\"\334\003\n\010Contents" +
-      "\022+\n\010instance\030\001 \003(\0132\031.zaluum.Contents.Ins" +
-      "tance\022/\n\nconnection\030\002 \003(\0132\033.zaluum.Conte",
-      "nts.Connection\032\224\001\n\010Instance\022\014\n\004name\030\001 \002(" +
-      "\t\022\022\n\nclass_name\030\002 \002(\t\022\032\n\003pos\030\003 \002(\0132\r.zal" +
-      "uum.Point\022\033\n\004size\030\004 \001(\0132\r.zaluum.Point\022-" +
-      "\n\tparameter\030\005 \003(\0132\032.zaluum.Contents.Para" +
-      "meter\032\'\n\tParameter\022\013\n\003key\030\001 \002(\t\022\r\n\005value" +
-      "\030\002 \002(\t\032.\n\007PortRef\022\020\n\010box_name\030\001 \001(\t\022\021\n\tp" +
-      "ort_name\030\002 \002(\t\032\201\001\n\nConnection\022(\n\006source\030" +
-      "\001 \001(\0132\030.zaluum.Contents.PortRef\022(\n\006targe" +
-      "t\030\002 \001(\0132\030.zaluum.Contents.PortRef\022\037\n\010way" +
-      "point\030\003 \003(\0132\r.zaluum.Point\"\035\n\005Point\022\t\n\001x",
-      "\030\001 \002(\005\022\t\n\001y\030\002 \002(\005B)\n\030org.zaluum.nide.pro" +
-      "tobufB\rBoxFileProtos"
+      "\n\rBoxFile.proto\022\006zaluum\"\205\002\n\nDefinition\022\022" +
+      "\n\nimage_name\030\001 \001(\t\022%\n\004port\030\002 \003(\0132\027.zaluu" +
+      "m.Definition.Port\032\235\001\n\004Port\022\014\n\004name\030\001 \002(\t" +
+      "\022\014\n\004type\030\002 \002(\t\022/\n\tdirection\030\003 \002(\0162\034.zalu" +
+      "um.Definition.Direction\022#\n\014pos_internal\030" +
+      "\004 \002(\0132\r.zaluum.Point\022#\n\014pos_external\030\005 \002" +
+      "(\0132\r.zaluum.Point\"\034\n\tDirection\022\006\n\002IN\020\000\022\007" +
+      "\n\003OUT\020\001\"\334\003\n\010Contents\022+\n\010instance\030\001 \003(\0132\031" +
+      ".zaluum.Contents.Instance\022/\n\nconnection\030" +
+      "\002 \003(\0132\033.zaluum.Contents.Connection\032\224\001\n\010I",
+      "nstance\022\014\n\004name\030\001 \002(\t\022\022\n\nclass_name\030\002 \002(" +
+      "\t\022\032\n\003pos\030\003 \002(\0132\r.zaluum.Point\022\033\n\004size\030\004 " +
+      "\001(\0132\r.zaluum.Point\022-\n\tparameter\030\005 \003(\0132\032." +
+      "zaluum.Contents.Parameter\032\'\n\tParameter\022\013" +
+      "\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\032.\n\007PortRef\022\020\n" +
+      "\010box_name\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\032\201\001\n\nC" +
+      "onnection\022(\n\006source\030\001 \001(\0132\030.zaluum.Conte" +
+      "nts.PortRef\022(\n\006target\030\002 \001(\0132\030.zaluum.Con" +
+      "tents.PortRef\022\037\n\010waypoint\030\003 \003(\0132\r.zaluum" +
+      ".Point\"\035\n\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005B)\n",
+      "\030org.zaluum.nide.protobufB\rBoxFileProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -3520,7 +3475,7 @@ public final class BoxFileProtos {
           internal_static_zaluum_Definition_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Definition_descriptor,
-              new java.lang.String[] { "ClassName", "ImageName", "Port", },
+              new java.lang.String[] { "ImageName", "Port", },
               org.zaluum.nide.protobuf.BoxFileProtos.Definition.class,
               org.zaluum.nide.protobuf.BoxFileProtos.Definition.Builder.class);
           internal_static_zaluum_Definition_Port_descriptor =

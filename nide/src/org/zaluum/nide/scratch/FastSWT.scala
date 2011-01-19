@@ -49,7 +49,7 @@ object FastSWT {
     addReaction(buttonLoad) {
       val f = new FileInputStream("testOutput.zaluum")
         try {
-          val model = ProtoModel.read(f)
+          val model = ProtoModel.read(f,"org.zaluum.Test")
           createViewer(model)
         } finally { f.close() }
     }
