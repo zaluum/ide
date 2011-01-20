@@ -35,6 +35,7 @@ object Compiler {
     classname != null && checkParts
   }
 }
+class CompilationException(val compiler:Compiler) extends Exception 
 class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   object reporter {
     val errors = Buffer[String]()
@@ -45,7 +46,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
       if (!errors.isEmpty)
         fail
     }
-    def fail = throw new Exception("Compilation errors")
+    def fail = throw new CompilationException(Compiler.this)
 
     def fail(err: String, mark: Option[AnyRef] = None): Nothing = {
       report(err)

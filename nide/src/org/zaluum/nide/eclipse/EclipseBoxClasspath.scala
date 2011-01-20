@@ -1,5 +1,9 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.model.ProtoModel
+import org.eclipse.core.resources.IResource
+import org.eclipse.core.resources.IResourceVisitor
+import org.eclipse.core.runtime.IPath
 import org.eclipse.core.runtime.Path
 import org.eclipse.core.resources.IFile
 import org.eclipse.jdt.core.IClasspathEntry
@@ -11,8 +15,9 @@ import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequesto
 import org.eclipse.jdt.internal.core.JavaModelManager
 import org.zaluum.nide.compiler.ScannedBoxClassPath
 import org.zaluum.nide.model.{ BoxClass, TypedPort, Point }
+  import scala.util.control.Exception._
 
-class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
+class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils{
   var cache = Map[String, BoxClass]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
@@ -84,18 +89,19 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
         }
       }
     }
+    // WORK
     search.search(pattern, participants, searchScope, searchRequestor, null)
+    // FIND ZALUUMS IN SOURCE
+    visitSourceZaluums{ f=> 
+      toClassName(f) foreach { name =>
+        cache += (name -> ProtoModel.readDefinition(f.getContents,name))
+      }
+    }
   }
 
   def boxClasses: Set[BoxClass] = { cache.values.toSet }
   def find(str: String): Option[BoxClass] = cache.get(str)
-  def sourcePaths = {
-    val cpaths = jproject.getResolvedClasspath(true)
-    val res = for (c ← cpaths; if (c.getEntryKind == IClasspathEntry.CPE_SOURCE)) yield {
-      c.getPath
-    }
-    res.toList
-  }
+
   def toClassName(f: IFile) = {
     val path = f.getFullPath
     val oSourcePath = sourcePaths.find(_.isPrefixOf(path))
@@ -107,36 +113,39 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath {
         case None ⇒ result
       }
     }
-  } 
-  def root = project.getWorkspace.getRoot
-  def getResource(str: String): Option[URL] = {
-    val cpaths = jproject.getResolvedClasspath(true)
-    if (str == "") return None
-    for (c ← cpaths) {
-      val path = c.getPath
-      println("path " + path)
-      if (path.getFileExtension == "jar") {
-        val url = new URL("jar:" + path.toFile.toURI.toURL.toString + "!/" + str)
-        try {
+  }
+  def pathToURL(path: IPath): Option[URL] = {
+    Option(root.findMember(path)) map { p ⇒
+      p.getLocationURI.toURL
+    } orElse {
+      val f = path.toFile;
+      if (f.exists) Some(f.toURI.toURL) else None
+    }
+  }
+
+  def jarURL(jarPath: IPath, filePath: String): Option[URL] = filePath match {
+    case "" ⇒ None
+    case _ ⇒
+      pathToURL(jarPath) flatMap { jarURL ⇒
+        val url = new URL("jar:" + jarURL + "!/" + filePath)
+        catching(classOf[java.io.IOException]) opt {
           val c = url.openConnection.asInstanceOf[java.net.JarURLConnection]
           c.connect()
-          return Some(url)
-        } catch {
-          case e: java.io.IOException ⇒
-        }
-      } else {
-        val fullPath = path.append(new Path(str))
-        val res = root.findMember(fullPath);
-        if (res == null) {
-          val f = fullPath.toFile;
-          if (f.exists) {
-            return Some(f.toURI.toURL)
-          }
-        } else {
-          return Some(res.getLocationURI.toURL)
+          url
         }
       }
-    }
-    return None
+  }
+  def root = project.getWorkspace.getRoot
+  def pathFileToURL(path: IPath, file: String) = file match {
+    case "" ⇒ None
+    case _ ⇒
+      path.getFileExtension match {
+        case "jar" ⇒ jarURL(path, file)
+        case _ ⇒ pathToURL(path.append(new Path(file)))
+      }
+  }
+  def getResource(str: String): Option[URL] = {
+    val cpaths = jproject.getResolvedClasspath(true)
+    cpaths.view.flatMap { cp ⇒ pathFileToURL(cp.getPath, str) } headOption
   }
 }

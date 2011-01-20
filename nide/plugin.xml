@@ -245,7 +245,7 @@
                class="org.zaluum.nide.eclipse.ToggleNatureAction"
                enablesFor="+"
                id="org.zaluum.nide.addRemoveNatureAction"
-               label="Add/Remove Sample Nature"
+               label="Add/Remove Zaluum Nature"
                menubarPath="additions">
          </action>
       </objectContribution>
