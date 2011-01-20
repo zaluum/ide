@@ -13,7 +13,8 @@ object ByteCodeGen {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
     cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, internal(c.m.className), null, "java/lang/Object", null);
-
+    val av = cw.visitAnnotation("org.zaluum.nide.java.Box", true);
+    av.visitEnd();
     cw.visitSource(c.source, null);
     // FIELDS 
     {

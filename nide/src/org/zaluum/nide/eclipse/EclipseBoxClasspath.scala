@@ -35,10 +35,14 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
 
     def isAnnType(t: IType, a: IAnnotation, str: String) = {
       val names = t.resolveType(a.getElementName)
-      if (names == null)
+      if (names == null){
         false
+      }
       else {
-        names exists { posible ⇒ (posible(0) + "." + posible(1)) == str }
+        names exists { posible ⇒
+          val fullname=posible(0) + "." + posible(1)
+          fullname == str 
+        }
       }
     }
     def findAnnotations(t: IType, ann: IAnnotatable, str: String) = ann.getAnnotations find { a ⇒ isAnnType(t, a, str) }
@@ -55,8 +59,8 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     }
     def processType(t: IType) {
       val fqn = t.getFullyQualifiedName;
-      val img = findAnnotations(t, t, "org.zaluum.nide.java.Box").headOption flatMap { a ⇒
-        findStringValueOfAnnotation(a, "image")
+      val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
+        findStringValueOfAnnotation(a, "value")
       }
 
       val bc = new BoxClass(fqn, false, img.getOrElse(""))

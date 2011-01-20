@@ -1,10 +1,9 @@
 package graystone.zaluum;
 
-import org.zaluum.nide.java.Box;
-import org.zaluum.nide.java.In;
-import org.zaluum.nide.java.Out;
+import org.zaluum.nide.java.*;
 
-@Box(image="graystone/zaluum/op.png")
+@Box
+@BoxImage("graystone/zaluum/op.png")
 public class SumBox {
   @In (x =  0 ,y = 13) public double a = 0; 
   @In (x =  0 ,y = 36) public double b = 0;
