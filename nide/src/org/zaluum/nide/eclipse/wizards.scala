@@ -1,80 +1,71 @@
 package org.zaluum.nide.eclipse
-
-import org.zaluum.nide.model.ProtoModel
 import java.io.ByteArrayOutputStream
-import org.zaluum.nide.model.Model
-import org.eclipse.core.resources.IFile;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.ui.IWorkbench;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchWindow;
-import org.eclipse.ui.dialogs.WizardNewFileCreationPage;
-import org.eclipse.ui.ide.IDE;
+import org.eclipse.core.resources.IFile
+import org.eclipse.jface.viewers.{ IStructuredSelection }
+import org.eclipse.jface.wizard.Wizard
+import org.eclipse.swt.SWT
+import org.eclipse.swt.widgets.{ Label, Composite }
+import org.eclipse.ui.{ INewWizard, IWorkbenchWindow, IWorkbenchPage, IWorkbench }
+import org.eclipse.ui.dialogs.WizardNewFileCreationPage
+import org.eclipse.ui.ide.IDE
+import org.zaluum.nide.model.{ Model, ProtoModel }
+class BoxWizard extends Wizard with INewWizard {
 
-import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.jface.wizard.Wizard;
-import org.eclipse.ui.INewWizard;
-class BoxWizard extends Wizard with INewWizard{
+  var page: ZaluumWizardPage = null;
+  private var selection: IStructuredSelection = _
+  private var workbench: IWorkbench = _
 
-  var page : ZaluumWizardPage = null;
-  private var selection : IStructuredSelection = _
-  private var workbench : IWorkbench = _
-  
-  def init(workbench : IWorkbench,currentSelection : IStructuredSelection) {
+  def init(workbench: IWorkbench, currentSelection: IStructuredSelection) {
     this.workbench = workbench;
     selection = currentSelection;
   }
-  
+
   def performFinish = page.finish()
-  
+
   override def addPages() {
-    page = new BoxWizardPage(workbench,selection);
+    page = new BoxWizardPage(workbench, selection);
     addPage(page);
   }
-  
+
 }
 
-object ZaluumWizardPage{
+object ZaluumWizardPage {
   var fileCount = 1
 }
 abstract class ZaluumWizardPage(
-    pageName:String, 
-    selection:IStructuredSelection, 
-    val workbench:IWorkbench)
-  extends WizardNewFileCreationPage(pageName,selection) {
+  pageName: String,
+  selection: IStructuredSelection,
+  val workbench: IWorkbench)
+  extends WizardNewFileCreationPage(pageName, selection) {
   setDescription()
 
   def setDescription()
-  
-  def finish() : Boolean ={
+
+  def finish(): Boolean = {
     val newFile = createNewFile();
     if (newFile == null)
       false
-    else{
+    else {
       val dwindow = workbench.getActiveWorkbenchWindow();
       val page = dwindow.getActivePage();
       if (page != null)
-          IDE.openEditor(page, newFile, true);
-      ZaluumWizardPage.fileCount+=1
+        IDE.openEditor(page, newFile, true);
+      ZaluumWizardPage.fileCount += 1
       true
     }
   }
-  
+
 }
 
 class BoxWizardPage(
-    workbench:IWorkbench, 
-    selection:IStructuredSelection) 
-    extends ZaluumWizardPage("boxPage",selection,workbench) {
+  workbench: IWorkbench,
+  selection: IStructuredSelection)
+  extends ZaluumWizardPage("boxPage", selection, workbench) {
 
-  override def createControl(parent : Composite) {
+  override def createControl(parent: Composite) {
     super.createControl(parent);
     this.setFileName("emptyModel" + ZaluumWizardPage.fileCount + ".zaluum");
-    val composite =getControl().asInstanceOf[Composite];
+    val composite = getControl().asInstanceOf[Composite];
     new Label(composite, SWT.NONE);
     setPageComplete(validatePage());
   }
@@ -82,7 +73,7 @@ class BoxWizardPage(
   override protected def getInitialContents = {
     val model = Model.emptyModel(this.getFileName)
     val out = new ByteArrayOutputStream()
-    ProtoModel.writeTo(model,out)
+    ProtoModel.writeTo(model, out)
     new java.io.ByteArrayInputStream(out.toByteArray)
   }
 
@@ -90,7 +81,7 @@ class BoxWizardPage(
     this.setTitle("New Box TypedModel Wizard");
     this.setDescription("Creates a new box model file");
     //this.setImageDescriptor(ImageDescriptor.createFromFile(Icons.class,
-     //   "icons/banner_64.png")); //$NON-NLS-1$
+    //   "icons/banner_64.png")); //$NON-NLS-1$
   }
 
 }

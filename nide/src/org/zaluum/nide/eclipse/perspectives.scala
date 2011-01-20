@@ -1,13 +1,10 @@
 package org.zaluum.nide.eclipse
-
-import org.eclipse.ui.IFolderLayout
-import org.eclipse.ui.IPageLayout
-import org.eclipse.ui.IPerspectiveFactory
+import org.eclipse.ui.{ IPerspectiveFactory, IPageLayout, IFolderLayout }
 
 class BoxPerspective extends IPerspectiveFactory {
-  var factory : IPageLayout = _
+  var factory: IPageLayout = _
   val ID = "zaluum.BoxPerspective";
-  def createInitialLayout(factory : IPageLayout) = {
+  def createInitialLayout(factory: IPageLayout) = {
     this.factory = factory;
     addViews()
     addActionSets()
@@ -36,9 +33,9 @@ class BoxPerspective extends IPerspectiveFactory {
 }
 
 class DebugPerspective extends IPerspectiveFactory {
-  var factory : IPageLayout = _
+  var factory: IPageLayout = _
   val ID = "zaluum.DebugPerspective"
-  def createInitialLayout(factory : IPageLayout) = {
+  def createInitialLayout(factory: IPageLayout) = {
     this.factory = factory
     addViews()
     addActionSets()

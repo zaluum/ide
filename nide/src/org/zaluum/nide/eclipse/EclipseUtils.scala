@@ -1,15 +1,10 @@
 package org.zaluum.nide.eclipse
-
-import org.eclipse.core.resources.IContainer
-import org.eclipse.core.resources.IResource
-import org.eclipse.core.resources.IResourceVisitor
-import org.eclipse.core.resources.IFile
-import org.eclipse.jdt.core.IClasspathEntry
-import org.eclipse.jdt.core.IJavaProject
-trait EclipseUtils { 
-  def jproject : IJavaProject
+import org.eclipse.core.resources.{ IFile, IResourceVisitor, IResource, IContainer }
+import org.eclipse.jdt.core.{ IJavaProject, IClasspathEntry }
+trait EclipseUtils {
+  def jproject: IJavaProject
   def project = jproject.getProject
-  def visitSourceZaluums(body : IFile=> Unit) {
+  def visitSourceZaluums(body: IFile ⇒ Unit) {
     project.accept(
       new IResourceVisitor {
         def visit(resource: IResource) = resource match {

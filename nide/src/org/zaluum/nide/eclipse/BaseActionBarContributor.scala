@@ -1,8 +1,6 @@
 package org.zaluum.nide.eclipse
-
+import org.eclipse.jface.action.{ IMenuManager, IToolBarManager }
 import org.eclipse.ui.part.EditorActionBarContributor
-import org.eclipse.jface.action.IToolBarManager
-import org.eclipse.jface.action.IMenuManager
 
 class BaseActionBarContributor extends EditorActionBarContributor {
 

@@ -1,24 +1,9 @@
 package org.zaluum.nide.zge
-
-import org.eclipse.draw2d.Polyline
-import org.eclipse.swt.graphics.Image
-import org.eclipse.draw2d.ImageFigure
-import org.eclipse.draw2d.GridLayout
-import org.eclipse.draw2d.FreeformLayout
-import org.eclipse.draw2d.XYLayout
-import org.eclipse.draw2d.FlowLayout
-import scala.collection.mutable.Buffer
-import javax.swing.UIManager
-import javax.swing.JComponent
-import javax.swing.JButton
-import javax.swing.JPanel
+import draw2dConversions._
+import org.eclipse.draw2d.{FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline}
+import org.eclipse.draw2d.geometry.{Rectangle, Point => EPoint, Dimension => EDimension}
 import org.eclipse.swt.SWT
-import org.eclipse.draw2d.RectangleFigure
-import org.eclipse.draw2d.IFigure
-import org.eclipse.swt.graphics.Cursor
-import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, Ellipse, ColorConstants, Figure }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point => EPoint, Dimension=>EDimension }
-import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.graphics.Image
 import org.zaluum.nide.model._
 
 object draw2dConversions {
@@ -27,7 +12,6 @@ object draw2dConversions {
   implicit def rpoint(p:EPoint) : Point = Point(p.x,p.y)
   implicit def rdimension(d:EDimension) : Dimension = Dimension(d.width,d.height)
 }
-import draw2dConversions._
 trait CanShowFeedback extends Figure {
   def showFeedback()
   def hideFeedback()
@@ -158,12 +142,6 @@ class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: V
   setImage(viewer.imageFactory(boxClass))
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
 }
-/*class SwingBoxFigure(val viewer: Viewer, val box: Box, c: JComponent) extends SwingFigure(c) with BoxFigure {
-  def size = Dimension(50, 50) //FIXME
-  var boxClass: Option[BoxClass] = None // FIXME
-}*/
-
-import org.eclipse.draw2d.Polyline
 
 class LineFigure(l: Line, val pl: ConnectionFigure, modelView: ModelView) extends Polyline with CanShowUpdate with CanShowFeedback {
   //setAntialias(1)

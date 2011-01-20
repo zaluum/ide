@@ -1,15 +1,9 @@
 package org.zaluum.nide.zge
-
-import org.eclipse.draw2d.ColorConstants
-import org.eclipse.draw2d.Figure
-import org.eclipse.draw2d.{ IFigure, RectangleFigure, Cursors, Polyline }
-import org.eclipse.draw2d.geometry.{ Point, Rectangle, Dimension }
-import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.Cursor
-import scala.collection.JavaConversions._
-import org.zaluum.nide.model._
-import org.zaluum.nide.model.{ Point ⇒ MPoint }
 import draw2dConversions._
+import org.eclipse.draw2d.{ Cursors, Figure }
+import org.eclipse.draw2d.geometry.{ Point, Rectangle }
+import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
+import scala.collection.JavaConversions._
 
 class MoveTool(viewer: Viewer) extends Tool(viewer) {
   state = selecting
@@ -69,9 +63,9 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     }
     override def menu() {
       figureUnderMouse match {
-        case Some(p:PortDeclFigure) => new PortDeclPopup(viewer,p).show(swtMouseLocation) // TODO Dispose?
-        case Some(b:BoxFigure) =>
-        case _ => viewer.palette.show(swtMouseLocation)
+        case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p).show(swtMouseLocation) // TODO Dispose?
+        case Some(b: BoxFigure) ⇒
+        case _ ⇒ viewer.palette.show(swtMouseLocation)
       }
     }
     def abort {}

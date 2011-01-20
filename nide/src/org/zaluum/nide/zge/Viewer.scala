@@ -1,32 +1,13 @@
 package org.zaluum.nide.zge
-
-import org.eclipse.swt.widgets.MessageBox
-import org.eclipse.swt.widgets.Display
-import org.zaluum.nide.icons.Icons
-import org.eclipse.jface.resource.ImageDescriptor
-import org.eclipse.jface.resource.ImageRegistry
-import org.zaluum.nide.compiler.BoxClassPath
-import org.eclipse.draw2d.Polyline
-import org.eclipse.swt.graphics.Image
-import org.eclipse.draw2d.ImageFigure
-import org.eclipse.draw2d.GridLayout
-import org.eclipse.draw2d.FreeformLayout
-import org.eclipse.draw2d.XYLayout
-import org.eclipse.draw2d.FlowLayout
-import scala.collection.mutable.Buffer
 import javax.swing.UIManager
-import javax.swing.JComponent
-import javax.swing.JButton
-import javax.swing.JPanel
+import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, ColorConstants, Figure, IFigure, RectangleFigure }
+import org.eclipse.draw2d.geometry.{ Rectangle, Point }
+import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.swt.SWT
-import org.eclipse.draw2d.RectangleFigure
-import org.eclipse.draw2d.IFigure
 import org.eclipse.swt.graphics.Cursor
-import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, Ellipse, ColorConstants, Figure }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point, Dimension }
-import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.model._
-import org.zaluum.nide.model.{ Point ⇒ MPoint }
+import org.eclipse.swt.widgets.{ Composite, MessageBox }
+import org.zaluum.nide.compiler.BoxClassPath
+import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 
 class Viewer(parent: Composite, val controller: Controller) {
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
@@ -78,13 +59,15 @@ class Viewer(parent: Composite, val controller: Controller) {
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
   def hideMarquee() { feedbackLayer.remove(marquee) }
   UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
-  def executeOrNotify(cmd: Command) {
-    if (cmd.canExecute)
+  def executeOrNotify(cmd: Command) = {
+    if (cmd.canExecute) {
       controller.exec(cmd)
-    else {
+      true
+    } else {
       val msg = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK)
       msg.setMessage("Cannot be executed")
       msg.open
+      false
     }
 
   }

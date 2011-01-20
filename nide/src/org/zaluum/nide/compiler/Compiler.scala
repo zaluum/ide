@@ -1,12 +1,11 @@
 package org.zaluum.nide.compiler
 
-import scala.collection.mutable.Buffer
-import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
-import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.SimpleDirectedGraph;
-import org.jgrapht.traverse.TopologicalOrderIterator;
+import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException
+import org.jgrapht.experimental.dag.DirectedAcyclicGraph
+import org.jgrapht.graph.DefaultEdge
+import org.jgrapht.traverse.TopologicalOrderIterator
 import org.zaluum.nide.model._
+import scala.collection.mutable.Buffer
 
 class Compiled(val m: Model, val order: List[Box],
   val portType: Map[PortRef, TypedPort], val boxType: Map[Box, BoxClass], val source: String) {

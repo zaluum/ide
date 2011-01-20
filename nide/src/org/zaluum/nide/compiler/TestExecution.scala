@@ -1,5 +1,4 @@
 package org.zaluum.nide.compiler
-import graystone.zaluum.TestTest
 object TestExecution {
   def executeClass (s:String) {
     val o = Class.forName(s).newInstance

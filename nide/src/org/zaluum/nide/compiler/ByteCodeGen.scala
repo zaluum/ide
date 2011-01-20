@@ -1,15 +1,12 @@
 package org.zaluum.nide.compiler
-
-import org.zaluum.nide.model.Connection
-import org.objectweb.asm._;
-
+import org.objectweb.asm._
 import Opcodes._
-import org.zaluum.nide.model.{ Box, PortRef, ModelPortRef, BoxPortRef }
+import org.zaluum.nide.model.{ Box, PortRef, ModelPortRef, BoxPortRef, Connection }
 
 object ByteCodeGen {
   private def internal(classname: String) = classname.replace('.', '/')
   private def classDescriptor(classname: String) = 'L' + internal(classname) + ";"
-  def dump(c: Compiled) : Array[Byte] = {
+  def dump(c: Compiled): Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 
     cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, internal(c.m.className), null, "java/lang/Object", null);
@@ -97,21 +94,21 @@ object ByteCodeGen {
           case _ ⇒
         }
       }
-      def connectionsFrom(f:PortRef) = {
+      def connectionsFrom(f: PortRef) = {
         c.m.connections filter { _.from == Some(f) }
       }
-      def connectionsFromBox(b:Box) = {
-        c.m.connections filter { conn =>
-          (conn.from,conn.to) match { 
-            case (Some(f:BoxPortRef),Some(t)) => f.box == b
-            case _ => false
+      def connectionsFromBox(b: Box) = {
+        c.m.connections filter { conn ⇒
+          (conn.from, conn.to) match {
+            case (Some(f: BoxPortRef), Some(t)) ⇒ f.box == b
+            case _ ⇒ false
           }
         }
       }
       // propagate inputs
       for (portDecl ← c.portDeclInOrder) {
         val ref = ModelPortRef(portDecl.name)
-        if (c.portType(ref).in) connectionsFrom(ref) foreach {executeConnection(_)} 
+        if (c.portType(ref).in) connectionsFrom(ref) foreach { executeConnection(_) }
       }
       for (box ← c.order) {
         // invoke box
@@ -120,7 +117,7 @@ object ByteCodeGen {
         mv.visitMethodInsn(INVOKEVIRTUAL, internal(box.className), "apply", "()V");
         // propagate
         val connections = connectionsFromBox(box)
-        connections foreach {executeConnection(_)}
+        connections foreach { executeConnection(_) }
       }
       val lend = new Label();
       mv.visitInsn(RETURN);

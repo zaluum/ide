@@ -1,24 +1,13 @@
 package org.zaluum.nide.zge
-
-import org.eclipse.draw2d.Ellipse
+import HandleSizes._
+import org.eclipse.draw2d.{ Cursors, RectangleFigure, Figure, ColorConstants, Shape }
+import org.eclipse.draw2d.geometry.{ Rectangle, Point }
 import org.eclipse.swt.SWT
-import org.eclipse.draw2d.XYLayout
-import org.eclipse.draw2d.geometry.Point
-import org.eclipse.draw2d.Shape
-import org.eclipse.draw2d.geometry.Rectangle
-import org.eclipse.draw2d.ColorConstants
-import org.eclipse.draw2d.Graphics
-import org.eclipse.draw2d.Figure
-import org.eclipse.draw2d.RectangleFigure
-import org.eclipse.draw2d.IFigure
-import org.eclipse.draw2d.Cursors
-import org.zaluum.nide.model._ 
-
+import org.zaluum.nide.model._
 
 object HandleSizes {
   val expansion = 8
 }
-import HandleSizes._
 class FeedbackRectangle(val feed: BasicFeedbackFigure) extends RectangleFigure {
   def basicFigure = feed.bf
 }
@@ -27,16 +16,16 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeBasicFeedbackFigure) e
   setForegroundColor(ColorConstants.white)
   def resizeCursor = {
     (x, y) match {
-      case (0, 0) => Cursors.SIZENW
-      case (1, 0) => Cursors.SIZEN
-      case (2, 0) => Cursors.SIZENE
-      case (0, 1) => Cursors.SIZEW
-      case (1, 1) => Cursors.SIZEALL
-      case (2, 1) => Cursors.SIZEE
-      case (0, 2) => Cursors.SIZESW
-      case (1, 2) => Cursors.SIZES
-      case (2, 2) => Cursors.SIZESE
-      case _ => Cursors.SIZEALL
+      case (0, 0) ⇒ Cursors.SIZENW
+      case (1, 0) ⇒ Cursors.SIZEN
+      case (2, 0) ⇒ Cursors.SIZENE
+      case (0, 1) ⇒ Cursors.SIZEW
+      case (1, 1) ⇒ Cursors.SIZEALL
+      case (2, 1) ⇒ Cursors.SIZEE
+      case (0, 2) ⇒ Cursors.SIZESW
+      case (1, 2) ⇒ Cursors.SIZES
+      case (2, 2) ⇒ Cursors.SIZESE
+      case _ ⇒ Cursors.SIZEALL
     }
   }
   def deltaAdd(delta: Vector2, b: Rectangle) = {
@@ -55,49 +44,49 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeBasicFeedbackFigure) e
     } else if (y == 2) {
       res.height += dy
     }
-    res 
+    res
   }
   def doPosition(outside: Rectangle, inside: Rectangle) {
     setSize(expansion, expansion)
-    val posx = inside.x + (inside.width / 2.0) * x - (expansion/2.0)
-    val posy = inside.y + (inside.height / 2.0) * y - (expansion/2.0)
+    val posx = inside.x + (inside.width / 2.0) * x - (expansion / 2.0)
+    val posy = inside.y + (inside.height / 2.0) * y - (expansion / 2.0)
     setLocation(new Point(posx, posy))
   }
 }
 
-class BasicFeedbackFigure(val bf : BasicFigure) extends Figure {
+class BasicFeedbackFigure(val bf: BasicFigure) extends Figure {
   protected val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
   rectangle.setFill(false);
   add(rectangle)
   def innerLocation = innerBounds.getLocation
   var innerBounds = new Rectangle()
-  
+
   def setInnerLocation(innerp: Point) {
     val bounds = new Rectangle(innerBounds)
     bounds.setLocation(innerp)
     setInnerBounds(bounds)
   }
-  
+
   def setInnerBounds(inside: Rectangle) {
     innerBounds = inside
-    val rectBounds = new Rectangle(inside).expand(2,2)
+    val rectBounds = new Rectangle(inside).expand(2, 2)
     setBounds(rectBounds)
     rectangle.setBounds(rectBounds)
   }
-  
+
 }
 class ResizeBasicFeedbackFigure(bf: BasicFigure) extends BasicFeedbackFigure(bf) {
-  
+
   val handles =
     (for {
-      i <- 0 to 2;
-      j <- 0 to 2;
+      i ← 0 to 2;
+      j ← 0 to 2;
       if (!(i == 1 && j == 1))
     } yield new HandleRectangle(i, j, this)).toList
 
   handles foreach (add(_))
-  override def setInnerBounds(inside:Rectangle) {
+  override def setInnerBounds(inside: Rectangle) {
     innerBounds = inside
     val outside = new Rectangle(inside)
     outside.expand(expansion, expansion)

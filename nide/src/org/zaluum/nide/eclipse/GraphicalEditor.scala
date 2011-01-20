@@ -1,39 +1,25 @@
 package org.zaluum.nide.eclipse
-
-import org.eclipse.core.resources.IFile
-import org.eclipse.ui.IEditorPart
 import java.io.ByteArrayInputStream
-import org.zaluum.nide.model.ProtoModel
-import org.eclipse.ui.part.FileEditorInput
-import org.zaluum.nide.zge.Controller
-import org.zaluum.nide.zge.Viewer
-import org.zaluum.nide.model.Example
-import java.io.File
-import org.zaluum.nide.compiler.SimpleScannedBoxClassPath
-import org.eclipse.ui.IEditorInput
-import org.eclipse.ui.IWorkbenchPartSite
-import org.eclipse.ui.IWorkbenchPart
-import org.eclipse.ui.IEditorSite
-import org.eclipse.ui.IPropertyListener
+import org.eclipse.core.resources.IFile
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.swt.widgets.Composite
-import org.eclipse.ui.part.EditorPart
-import org.eclipse.ui.ISelectionListener
-import org.eclipse.swt.graphics.Image
-import org.eclipse.jface.viewers.ISelection
+import org.eclipse.ui.{ IEditorSite, IEditorInput, IEditorPart }
+import org.eclipse.ui.part.{ EditorPart, FileEditorInput }
+import org.zaluum.nide.model.ProtoModel
+import org.zaluum.nide.zge.{ Viewer, Controller }
 
 class GraphicalEditor extends EditorPart {
-  
-  var viewer : Viewer = _
+
+  var viewer: Viewer = _
   def controller = viewer.controller
   def doSave(monitor: IProgressMonitor) {
     val in = new ByteArrayInputStream(ProtoModel.toByteArray(viewer.model))
-    inputFile.setContents(in,true,true,monitor);
+    inputFile.setContents(in, true, true, monitor);
     controller.markSaved()
     firePropertyChange(IEditorPart.PROP_DIRTY)
   }
 
-  def doSaveAs() {  }
+  def doSaveAs() {}
 
   def init(site: IEditorSite, input: IEditorInput) {
     setSite(site)
@@ -44,22 +30,22 @@ class GraphicalEditor extends EditorPart {
   def isDirty(): Boolean = { controller.isDirty }
 
   def isSaveAsAllowed(): Boolean = { false }
-  
+
   def inputFile = getEditorInput.asInstanceOf[FileEditorInput].getFile
   def input = inputFile.getContents(true)
-  def createPartControl(parent: Composite){
+  def createPartControl(parent: Composite) {
     val bcp = new EclipseBoxClasspath(inputFile.getProject)
     bcp.update()
     val className = bcp.toClassName(inputFile).getOrElse { "NotFound" }
-    val model = ProtoModel.read(input,className)
+    val model = ProtoModel.read(input, className)
     input.close()
-    val controller = new Controller(model,bcp)
+    val controller = new Controller(model, bcp)
     controller.onExecute {
       firePropertyChange(IEditorPart.PROP_DIRTY)
     }
-    viewer = new Viewer(parent,controller) 
-  } 
+    viewer = new Viewer(parent, controller)
+  }
 
   def setFocus() { viewer.canvas.setFocus }
-  
+
 }

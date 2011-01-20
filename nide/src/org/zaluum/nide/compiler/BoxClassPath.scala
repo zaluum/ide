@@ -1,28 +1,25 @@
 package org.zaluum.nide.compiler
-
-import scala.reflect.ScalaSignature
-import org.zaluum.nide.java.{ In, Out, Box ⇒ BoxAnn, BoxImage }
-import org.objectweb.asm.ClassReader
-import java.net.URL
-import java.io.File
-import java.io.FileInputStream
-import org.zaluum.nide.model._
 import com.impetus.annovention._
 import com.impetus.annovention.listener._
+import java.io.{ FileInputStream, File }
+import java.net.URL
+import org.zaluum.nide.java.{ In, Out, Box ⇒ BoxAnn, BoxImage }
+import org.zaluum.nide.model._
+import scala.reflect.ScalaSignature
 import scala.util.control.Exception._
 
 trait BoxClassPath {
   def find(str: String): Option[BoxClass]
-  def getResource(str:String) : Option[URL]
+  def getResource(str: String): Option[URL]
 }
 trait ScannedBoxClassPath extends BoxClassPath {
-  def boxClasses : Set[BoxClass]
-  def update() 
+  def boxClasses: Set[BoxClass]
+  def update()
 }
 /**
  * ClassPath
  */
-class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxClassPath{
+class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxClassPath {
   var cache = Map[String, BoxClass]()
 
   if (!zaluumDir.isDirectory) throw new java.io.IOException()
@@ -35,16 +32,16 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
       findClass(className) orElse
       { println(className + " not found"); None }
   }
-  def zaluumSourceFile(className:String) : File = {
+  def zaluumSourceFile(className: String): File = {
     val fn = className.replace('.', '/')
     new File(zaluumDir.getAbsolutePath + "/" + fn + ".zaluum")
   }
-  def zaluumSourceURL(className:String) : Option[URL] = {
+  def zaluumSourceURL(className: String): Option[URL] = {
     val f = zaluumSourceFile(className)
     toURL(f)
   }
-  def toURL(f:File) : Option[URL] =  if (f.exists) Some(f.toURI.toURL) else None
-  def getResource(str:String) : Option[URL] = {
+  def toURL(f: File): Option[URL] = if (f.exists) Some(f.toURI.toURL) else None
+  def getResource(str: String): Option[URL] = {
     val f = new File(zaluumDir.getAbsolutePath + "/" + str)
     if (f.exists) Some(f.toURI.toURL)
     else {
@@ -52,7 +49,7 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
     }
   }
   def loadZaluum(className: String) = {
-    addCache(readZaluum(zaluumSourceFile(className),className))
+    addCache(readZaluum(zaluumSourceFile(className), className))
   }
 
   def findClass(str: String) = {
@@ -71,28 +68,28 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
 
   def classToBoxClass(cl: Class[_]): Option[BoxClass] = {
     cl.getAnnotations().find { a ⇒ a.isInstanceOf[BoxAnn] } map { ann ⇒
-      val bann = ann.asInstanceOf[BoxAnn] 
-      val imageAnn = cl.getAnnotations.view collect { case a:BoxImage => a.value} headOption 
-      val scala = cl.getAnnotation(classOf[ScalaSignature])!=null
-      val bc = new BoxClass(cl.getName,scala,imageAnn.getOrElse(""))
+      val bann = ann.asInstanceOf[BoxAnn]
+      val imageAnn = cl.getAnnotations.view collect { case a: BoxImage ⇒ a.value } headOption
+      val scala = cl.getAnnotation(classOf[ScalaSignature]) != null
+      val bc = new BoxClass(cl.getName, scala, imageAnn.getOrElse(""))
       for (f ← cl.getDeclaredFields()) {
         f.getAnnotations() foreach {
           _ match {
-            case in: In ⇒ 
-              bc.ports += TypedPort(f.getType.toString, true, f.getName, Point(in.x,in.y))
+            case in: In ⇒
+              bc.ports += TypedPort(f.getType.toString, true, f.getName, Point(in.x, in.y))
             case out: Out ⇒
-              bc.ports += TypedPort(f.getType.toString, false, f.getName, Point(out.x,out.y))
+              bc.ports += TypedPort(f.getType.toString, false, f.getName, Point(out.x, out.y))
           }
         }
       }
       bc
     }
   }
-  def readZaluum(f: File,className:String): Option[BoxClass] = {
+  def readZaluum(f: File, className: String): Option[BoxClass] = {
     try {
       val in = new FileInputStream(f)
       try {
-        val d = ProtoModel.readDefinition(in,className)
+        val d = ProtoModel.readDefinition(in, className)
         println("discovered zaluum " + f.getName + " " + d)
         Some(d)
       } finally { in.close() }
@@ -101,7 +98,7 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
     }
   }
 }
-class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends SimpleBoxClassPath(zaluumDir, cl) with ScannedBoxClassPath{
+class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends SimpleBoxClassPath(zaluumDir, cl) with ScannedBoxClassPath {
   def update() {
     cache = cache.empty
     scanZaluums()
@@ -111,7 +108,7 @@ class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends Simple
   private def scanZaluums() {
     if (zaluumDir.isDirectory) {
       for (f ← zaluumDir.listFiles if f.getName.endsWith(".zaluum")) {
-        addCache(readZaluum(f,"nono")) // FIXME
+        addCache(readZaluum(f, "nono")) // FIXME
       }
     }
   }
@@ -130,7 +127,7 @@ class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends Simple
     discoverer.addAnnotationListener(new ClassAnnotationDiscoveryListener() {
       def discovered(clazz: String, annotation: String) {
         println("Discovered Class(" + clazz + ") " + "with Annotation(" + annotation + ")");
-        val cl = new BoxClass(clazz,false,"null"); // FIXME
+        val cl = new BoxClass(clazz, false, "null"); // FIXME
         addCache(Some(cl))
       }
       def supportedAnnotations() = Array(classOf[Box].getName)
@@ -138,7 +135,7 @@ class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends Simple
     discoverer.addAnnotationListener(new FieldAnnotationDiscoveryListener() {
       def discovered(clazz: String, field: String, descriptor: String, annotation: String) {
         cache.get(clazz) foreach { bc ⇒
-          bc.ports += TypedPort(descriptor, annotation == inStr, field,Point(0,0)) // FIXME
+          bc.ports += TypedPort(descriptor, annotation == inStr, field, Point(0, 0)) // FIXME
         }
         println("clazz: " + clazz + " field " + field + " descriptor " + descriptor + " annotation " + annotation)
       }

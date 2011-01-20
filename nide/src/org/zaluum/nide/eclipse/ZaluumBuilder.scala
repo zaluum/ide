@@ -1,36 +1,11 @@
 package org.zaluum.nide.eclipse;
-
-import org.zaluum.nide.compiler.CompilationException
-import org.eclipse.core.runtime.IPath
-import java.io.InputStream
-import scala.collection.mutable.Buffer
-import org.eclipse.core.resources.IContainer
-import org.eclipse.jdt.core.IType
-import org.eclipse.jdt.core.search.SearchMatch
-import org.eclipse.jdt.core.search.SearchRequestor
-import org.eclipse.jdt.core.search.SearchPattern
-import org.eclipse.jdt.core.search.IJavaSearchConstants
-import org.eclipse.jdt.core.search.TypeNameMatch
-import org.eclipse.jdt.core.search.TypeNameMatchRequestor
-import org.eclipse.jdt.core.IJavaElement
-import org.eclipse.jdt.core.search.SearchEngine
-import org.eclipse.jdt.core.IClasspathEntry
-import org.eclipse.jdt.internal.core.JavaModelManager
-import org.eclipse.core.runtime.Path;
-import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IMarker;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IResourceDelta;
-import org.eclipse.core.resources.IResourceDeltaVisitor;
-import org.eclipse.core.resources.IResourceVisitor;
-import org.eclipse.core.resources.IncrementalProjectBuilder;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
-import java.util.{ Map ⇒ JMap }
 import java.io.ByteArrayInputStream
+import java.util.{ Map ⇒ JMap }
+import org.eclipse.core.resources.{ IncrementalProjectBuilder, IResourceDeltaVisitor, IResourceDelta, IResource, IProject, IMarker, IFile, IContainer }
+import org.eclipse.core.runtime.{ IProgressMonitor, Path, IPath }
+import org.eclipse.jdt.internal.core.JavaModelManager
+import org.zaluum.nide.compiler.{ Compiler, ByteCodeGen, CompilationException }
 import org.zaluum.nide.model.ProtoModel
-import org.zaluum.nide.compiler.{ Compiler, ByteCodeGen }
 
 object ZaluumBuilder {
   val BUILDER_ID = "org.zaluum.nide.zaluumBuilder";
@@ -114,7 +89,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
   protected def fullBuild(monitor: IProgressMonitor) {
     val cl = new EclipseBoxClasspath(getProject)
     cl.update()
-    visitSourceZaluums{ f=> compile(f,cl) }
+    visitSourceZaluums { f ⇒ compile(f, cl) }
   }
 
   protected def incrementalBuild(delta: IResourceDelta,

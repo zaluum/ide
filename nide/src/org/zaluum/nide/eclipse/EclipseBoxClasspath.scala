@@ -1,23 +1,15 @@
 package org.zaluum.nide.eclipse
-
-import org.zaluum.nide.model.ProtoModel
-import org.eclipse.core.resources.IResource
-import org.eclipse.core.resources.IResourceVisitor
-import org.eclipse.core.runtime.IPath
-import org.eclipse.core.runtime.Path
-import org.eclipse.core.resources.IFile
-import org.eclipse.jdt.core.IClasspathEntry
 import java.net.URL
-import org.eclipse.core.resources.IProject
-import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.jdt.core.{ IJavaElement, IType, IAnnotatable, IJavaProject, IAnnotation, IMemberValuePair }
+import org.eclipse.core.resources.{ IProject, IFile, IResource }
+import org.eclipse.core.runtime.{ Path, IPath }
+import org.eclipse.jdt.core.{ IJavaElement, IType, IAnnotatable, IJavaProject, IAnnotation, IMemberValuePair, IClasspathEntry }
 import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch }
 import org.eclipse.jdt.internal.core.JavaModelManager
 import org.zaluum.nide.compiler.ScannedBoxClassPath
-import org.zaluum.nide.model.{ BoxClass, TypedPort, Point }
-  import scala.util.control.Exception._
+import org.zaluum.nide.model.{ BoxClass, TypedPort, Point, ProtoModel }
+import scala.util.control.Exception._
 
-class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils{
+class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils {
   var cache = Map[String, BoxClass]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
@@ -35,13 +27,12 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
 
     def isAnnType(t: IType, a: IAnnotation, str: String) = {
       val names = t.resolveType(a.getElementName)
-      if (names == null){
+      if (names == null) {
         false
-      }
-      else {
+      } else {
         names exists { posible ⇒
-          val fullname=posible(0) + "." + posible(1)
-          fullname == str 
+          val fullname = posible(0) + "." + posible(1)
+          fullname == str
         }
       }
     }
@@ -96,9 +87,9 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     // WORK
     search.search(pattern, participants, searchScope, searchRequestor, null)
     // FIND ZALUUMS IN SOURCE
-    visitSourceZaluums{ f=> 
-      toClassName(f) foreach { name =>
-        cache += (name -> ProtoModel.readDefinition(f.getContents,name))
+    visitSourceZaluums { f ⇒
+      toClassName(f) foreach { name ⇒
+        cache += (name -> ProtoModel.readDefinition(f.getContents, name))
       }
     }
   }
