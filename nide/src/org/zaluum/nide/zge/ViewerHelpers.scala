@@ -1,5 +1,9 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.swt.SWT
+import org.eclipse.swt.graphics.Font
+import org.eclipse.swt.graphics.TextLayout
+import org.eclipse.swt.graphics.GC
 import org.zaluum.nide.icons.Icons
 import org.eclipse.swt.graphics.Image
 import org.zaluum.nide.model.BoxClass
@@ -24,7 +28,20 @@ class ImageFactory(val display:Display, bcp: BoxClassPath) {
     }
     def apply(boxClass : Option[BoxClass]) : Image= {
       def defaultImage(bc:BoxClass) = bc.className.replace('.','/') + ".png";
-      boxClass flatMap { c ⇒ get(c.image).orElse { get(defaultImage(c)) } } getOrElse notFound     
+      boxClass map { c ⇒ 
+        get(c.image).orElse { get(defaultImage(c)) } .getOrElse { generateImage(c) } // FIXME dispose generateImage 
+      } getOrElse { notFound } 
+    }
+    def generateImage(boxClass: BoxClass) : Image = {
+      val img = new Image(display,48,48);
+      val gc = new GC(img)
+      val font = new Font(display,"Arial",6, SWT.NONE );
+      gc.setFont(font)
+      gc.drawRectangle(0,0,47,47)
+      gc.drawText(boxClass.classNameWithoutPackage.getOrElse(boxClass.className),1,20);
+      gc.dispose
+      font.dispose
+      img
     }
 }
 class SelectionManager[T <: CanShowFeedback]{

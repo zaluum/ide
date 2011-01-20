@@ -1,7 +1,7 @@
 package org.zaluum.nide.compiler
 
 import scala.reflect.ScalaSignature
-import org.zaluum.nide.java.{ In, Out, Box ⇒ BoxAnn }
+import org.zaluum.nide.java.{ In, Out, Box ⇒ BoxAnn, BoxImage }
 import org.objectweb.asm.ClassReader
 import java.net.URL
 import java.io.File
@@ -72,8 +72,9 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
   def classToBoxClass(cl: Class[_]): Option[BoxClass] = {
     cl.getAnnotations().find { a ⇒ a.isInstanceOf[BoxAnn] } map { ann ⇒
       val bann = ann.asInstanceOf[BoxAnn] 
+      val imageAnn = cl.getAnnotations.view collect { case a:BoxImage => a.value} headOption 
       val scala = cl.getAnnotation(classOf[ScalaSignature])!=null
-      val bc = new BoxClass(cl.getName,scala,bann.image)
+      val bc = new BoxClass(cl.getName,scala,imageAnn.getOrElse(""))
       for (f ← cl.getDeclaredFields()) {
         f.getAnnotations() foreach {
           _ match {

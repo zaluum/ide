@@ -11,9 +11,17 @@ import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.JavaConversions._
 
 object ProtoModel {
+  
   def definitionToProtos(m: Model) = {
     val b = BoxFileProtos.Definition.newBuilder()
     b.setImageName(m.imageName)
+    def sortInOut(in:Boolean) {
+      val sorted = (m.portDecls filter { p:PortDecl=>p.in==in }).toList.sortBy (_.pos.y)
+      val x = if (in) 0 else 48
+      sorted.view.zipWithIndex foreach { case (p,i) => p.posExternal = Point(x,i*8)}
+    }
+    sortInOut(in=true)
+    sortInOut(in=false)
     for (portDecl ← m.portDecls) { b.addPort(portDecl.toProto) }
     b.build
   }
@@ -52,7 +60,10 @@ object ProtoModel {
     model.className = className
     model.imageName = if (definition.hasImageName) definition.getImageName() else ""
     for (port ← definition.getPortList) {
-      PortDecl(model, port.getName, port.getDirection == Direction.IN, fromPoint(port.getPosInternal)) // TODO type
+      PortDecl(model, port.getName, 
+          port.getDirection == Direction.IN, 
+          fromPoint(port.getPosInternal),
+          fromPoint(port.getPosExternal)) // TODO type
     }
 
     val contents = BoxFileProtos.Contents.parseDelimitedFrom(in)
