@@ -68,8 +68,11 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
       }
     }
     override def menu() {
-
-      viewer.palette.show(swtMouseLocation)
+      figureUnderMouse match {
+        case Some(p:PortDeclFigure) => new PortDeclPopup(viewer,p).show(swtMouseLocation) // TODO Dispose?
+        case Some(b:BoxFigure) =>
+        case _ => viewer.palette.show(swtMouseLocation)
+      }
     }
     def abort {}
     def exit {}

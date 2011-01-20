@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.swt.widgets.MessageBox
 import org.eclipse.swt.widgets.Display
 import org.zaluum.nide.icons.Icons
 import org.eclipse.jface.resource.ImageDescriptor
@@ -29,10 +30,10 @@ import org.zaluum.nide.model.{ Point ⇒ MPoint }
 
 class Viewer(parent: Composite, val controller: Controller) {
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
+  def shell = parent.getShell
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
   canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
-  
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
   val connectionsLayer = new FreeformLayer
@@ -55,7 +56,7 @@ class Viewer(parent: Composite, val controller: Controller) {
   def model = controller.model
   def dispose() {
     canvas.dispose()
-    imageFactory.reg .dispose
+    imageFactory.reg.dispose
   }
   def setCursor(cursor: Cursor) {
     canvas.setCursor(cursor)
@@ -77,7 +78,16 @@ class Viewer(parent: Composite, val controller: Controller) {
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
   def hideMarquee() { feedbackLayer.remove(marquee) }
   UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
- 
+  def executeOrNotify(cmd: Command) {
+    if (cmd.canExecute)
+      controller.exec(cmd)
+    else {
+      val msg = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK)
+      msg.setMessage("Cannot be executed")
+      msg.open
+    }
+
+  }
 }
 
 class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {

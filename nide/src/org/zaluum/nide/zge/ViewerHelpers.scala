@@ -1,5 +1,12 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.swt.layout.FillLayout
+import org.eclipse.jface.dialogs.PopupDialog
+import org.eclipse.swt.layout.GridLayout
+import org.eclipse.swt.custom.ScrolledComposite
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.graphics.Point
+import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Font
 import org.eclipse.swt.graphics.TextLayout
@@ -91,4 +98,45 @@ abstract class ModelViewMapper[M,V <: CanShowUpdate] {
   def values = viewMap.values
   def apply(m:M) = viewMap(m)
   def get(m:M) = viewMap.get(m)
+}
+abstract class ScrollPopup(mainShell:Shell) {
+  var loc: Point = _
+  def display = mainShell.getDisplay
+  def name :String
+  def columns : Int
+  def size = new Point(400,300)
+  def populate(content:Composite)
+  val popup = new PopupDialog(mainShell, SWT.ON_TOP, true,
+    true, true,
+    false, false,
+    null, name) {
+    override def createDialogArea(parent: Composite) = {
+      val composite = super.createDialogArea(parent).asInstanceOf[Composite]
+      composite.setBackground(display.getSystemColor(SWT.COLOR_BLACK))
+      composite.setLayout(new FillLayout)
+      val scroll = new ScrolledComposite(composite, SWT.H_SCROLL | SWT.V_SCROLL)
+      val content = new Composite(scroll, SWT.NONE);
+      scroll.setContent(content);
+      {
+        val layout = new GridLayout
+        layout.numColumns = columns
+        layout.verticalSpacing = 10;
+        layout.makeColumnsEqualWidth = true;
+        content.setLayout(layout)
+      }
+      populate(content)
+      content.setSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT))
+      composite
+    }
+    override def getDefaultLocation(iniSize: Point) = loc
+    override def getDefaultSize() = size
+  }
+  def show(loc: Point) {
+    this.loc = loc
+    popup.open;
+
+  }
+  def hide() {
+    popup.close
+  }
 }

@@ -21,29 +21,11 @@ object Palette {
   val w = 400
   val h = 300
 }
-class Palette(viewer: Viewer, mainShell: Shell) {
-  var loc: Point = _
-  def display = mainShell.getDisplay
-  val popup = new PopupDialog(mainShell, SWT.ON_TOP, true,
-    true, true,
-    false, false,
-    null, "palette") {
-    override def createDialogArea(parent: Composite) = {
-      
-      val composite = super.createDialogArea(parent).asInstanceOf[Composite]
-      composite.setBackground(display.getSystemColor(SWT.COLOR_BLACK))
-      composite.setLayout(new FillLayout)
-      val scroll = new ScrolledComposite(composite, SWT.H_SCROLL | SWT.V_SCROLL)
-      val content = new Composite(scroll, SWT.NONE);
-      scroll.setContent(content);
-      {
-        val layout = new GridLayout
-        layout.numColumns=4
-        layout.verticalSpacing = 10;
-        layout.makeColumnsEqualWidth=true;
-        content.setLayout(layout)
-      }
-      def portDecl(in:Boolean){
+class Palette(viewer: Viewer, mainShell: Shell) extends ScrollPopup(mainShell) {
+  def name = "Palette"
+  def columns = 4
+  def populate(content:Composite) {
+    def portDecl(in:Boolean){
         val b = new Button(content, SWT.PUSH)
         val data = new GridData
         data.horizontalAlignment = SWT.CENTER
@@ -79,24 +61,6 @@ class Palette(viewer: Viewer, mainShell: Shell) {
           hide()
         }
       }
-      content.setSize(content.computeSize(SWT.DEFAULT,SWT.DEFAULT))
-      composite
-    }
-    override def getDefaultLocation(iniSize: Point) = loc
-    override def getDefaultSize() = new Point(400, 300)
-  }
-  /* */
-  // shell.layout()
-  def show(loc: Point) {
-    this.loc = loc
-    popup.open;
-
-  }
-  def hide() {
-    popup.close
-  }
-  def dispose() {
-    //popup.dispose()
   }
   
 }
