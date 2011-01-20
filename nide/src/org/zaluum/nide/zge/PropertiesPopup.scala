@@ -21,6 +21,7 @@ class PortDeclPopup(
     txt.setLayoutData(data)
     val ok = new Button(content, SWT.PUSH)
     ok.setText("OK")
+    txt.setFocus
     def work {
       val port = pf.portDecl
       val before = port.descriptor

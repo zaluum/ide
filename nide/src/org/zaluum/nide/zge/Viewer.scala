@@ -90,7 +90,7 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
   }
   object portDeclMapper extends ModelViewMapper[PortDecl, PortDeclFigure] {
     def modelSet = model.portDecls
-    def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl, viewer) // FIXME types
+    def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl, viewer) 
   }
   def classOfB(b: Box) = bcp.find(b.className)
 

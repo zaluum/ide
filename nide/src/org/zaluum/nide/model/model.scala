@@ -83,15 +83,15 @@ class Box extends Positionable {
   override def toString = name
 }
 object PortDecl {
-  def apply(m: Model, name: String, in: Boolean, pos: Point, posExternal: Point): PortDecl = {
-    val p = new PortDecl(m, name, in)
+  def apply(m: Model, name: String, in: Boolean, pos: Point, posExternal: Point, desc:String): PortDecl = {
+    val p = new PortDecl(m, name, in,desc)
     p.pos = pos
     p.posExternal = posExternal
     m.portDecls += p
     p
   }
 }
-class PortDecl(var m: Model, var name: String, var in: Boolean, var descriptor: String = "D") extends Positionable {
+class PortDecl(var m: Model, var name: String, var in: Boolean, var descriptor: String) extends Positionable {
   var pos = Point(0, 10)
   var posExternal = Point(0, 0)
   override def toString = "portDecl(" + name + ")"
@@ -99,7 +99,7 @@ class PortDecl(var m: Model, var name: String, var in: Boolean, var descriptor: 
     val port = BoxFileProtos.Definition.Port.newBuilder()
     port.setDirection(if (in) Direction.IN else Direction.OUT)
     port.setPosInternal(ProtoModel.toPoint(pos));
-    port.setPosExternal(ProtoModel.toPoint(posExternal)) // FIXME
+    port.setPosExternal(ProtoModel.toPoint(posExternal)) 
     port.setName(name)
     port.setType(descriptor)
   }

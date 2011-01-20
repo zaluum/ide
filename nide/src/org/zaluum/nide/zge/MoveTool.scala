@@ -224,7 +224,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def enter(in: Boolean) {
       state = this
       val name = model.nextFreeName("port")
-      val portDecl = new PortDecl(model, name, in)
+      val portDecl = new PortDecl(model, name, in,"D")
       portDecl.pos = MPoint(1, 1)
       pf = new PortDeclFigure(portDecl, viewer)
       pf.update()

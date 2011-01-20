@@ -20,7 +20,7 @@ object ByteCodeGen {
         fv.visitEnd()
       }
       for (p ← c.portDeclInOrder) {
-        val fv = cw.visitField(ACC_PUBLIC, p.name, "D", null, null)
+        val fv = cw.visitField(ACC_PUBLIC, p.name, p.descriptor , null, null)
         fv.visitEnd
       }
       // generate init
@@ -62,31 +62,32 @@ object ByteCodeGen {
         mv.visitVarInsn(ALOAD, 0);
         mv.visitFieldInsn(GETFIELD, internal(c.m.className), b.name, classDescriptor(b.className));
       }
-      def getField(className: String, name: String, scala: Boolean) {
-        if (scala) mv.visitMethodInsn(INVOKEVIRTUAL, internal(className), name, "()D");
-        else mv.visitFieldInsn(GETFIELD, internal(className), name, "D");
+      def getField(className: String, name: String, desc:String, scala: Boolean) {
+        if (scala) mv.visitMethodInsn(INVOKEVIRTUAL, internal(className), name, "()"+desc);
+        else mv.visitFieldInsn(GETFIELD, internal(className), name, desc);
       }
-      def putField(className: String, name: String, scala: Boolean) {
-        if (scala) mv.visitMethodInsn(INVOKEVIRTUAL, internal(className), name + "_$eq", "(D)V");
-        else mv.visitFieldInsn(PUTFIELD, internal(className), name, "D");
+      def putField(className: String, name: String, desc: String, scala: Boolean) {
+        if (scala) mv.visitMethodInsn(INVOKEVIRTUAL, internal(className), name + "_$eq", "("+desc+")V");
+        else mv.visitFieldInsn(PUTFIELD, internal(className), name, desc);
       }
       def putRef(p: PortRef, get: ⇒ Unit) = p match {
         case b: BoxPortRef ⇒
           loadBox(b.box)
           get
-          putField(b.box.className, b.name, c.boxType(b.box).scala)
+          
+          putField(b.box.className, b.name, c.portType(b).descriptor,c.boxType(b.box).scala)
         case m: ModelPortRef ⇒
           mv.visitVarInsn(ALOAD, 0)
           get
-          putField(c.m.className, m.name, false)
+          putField(c.m.className, m.name,c.portType(m).descriptor, false)
       }
       def getRef(p: PortRef) = p match {
         case b: BoxPortRef ⇒
           loadBox(b.box)
-          getField(b.box.className, b.name, c.boxType(b.box).scala)
+          getField(b.box.className, b.name, c.portType(b).descriptor,c.boxType(b.box).scala)
         case m: ModelPortRef ⇒
           mv.visitVarInsn(ALOAD, 0)
-          getField(c.m.className, m.name, false)
+          getField(c.m.className, m.name, c.portType(m).descriptor, false)
       }
       def executeConnection(c: Connection) {
         (c.from, c.to) match {

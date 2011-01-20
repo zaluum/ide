@@ -65,10 +65,10 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       }
       for (f ← t.getFields) {
         findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { a ⇒
-          bc.ports += TypedPort(f.getTypeSignature, true, f.getElementName, pointOf(a)) // FIXME 
+          bc.ports += TypedPort(f.getTypeSignature, true, f.getElementName, pointOf(a)) 
         }
         findAnnotations(t, f, "org.zaluum.nide.java.Out") foreach { a ⇒
-          bc.ports += TypedPort(f.getTypeSignature, false, f.getElementName, pointOf(a)) // FIXME 
+          bc.ports += TypedPort(f.getTypeSignature, false, f.getElementName, pointOf(a)) 
         }
       }
       cache += (bc.className -> bc)

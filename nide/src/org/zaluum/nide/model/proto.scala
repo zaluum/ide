@@ -60,7 +60,8 @@ object ProtoModel {
       PortDecl(model, port.getName,
         port.getDirection == Direction.IN,
         fromPoint(port.getPosInternal),
-        fromPoint(port.getPosExternal)) // TODO type
+        fromPoint(port.getPosExternal),
+        port.getType) // TODO type
     }
 
     val contents = BoxFileProtos.Contents.parseDelimitedFrom(in)
@@ -79,7 +80,7 @@ object ProtoModel {
         def findBoxPortRef(box: Box, name: String) = {
           if (!portRefs.contains(box)) portRefs += (box -> Set())
           portRefs(box).find { _.name == name } getOrElse {
-            val newRef = BoxPortRef(box, name) // FIXME modelPortRef
+            val newRef = BoxPortRef(box, name) 
             portRefs += (box -> (portRefs(box) + newRef))
             newRef
           }
