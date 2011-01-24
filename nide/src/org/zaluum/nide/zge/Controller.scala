@@ -17,28 +17,42 @@ class Controller(val model: Model, val bcp :ScannedBoxClassPath) {
   var mark:Option[Command] = None
   def isDirty = undoStack.elems.headOption != mark 
   def markSaved() { mark = undoStack.elems.headOption}
-  var block :Option[()=>Unit] = None
-  def onExecute(block : => Unit) {this.block = Some({block _})}
   def exec(c:Command) {
     c.act()
     undoStack.push(c)
     redoStack.clear
     updateViewers
-    block.foreach { _() }
+    notifyListeners
   }
+  def canUndo = !undoStack.isEmpty
+  def canRedo = !redoStack.isEmpty
+  
   def undo(){
     if (!undoStack.isEmpty){
       val c = undoStack.pop
       redoStack.push(c)
       c.undo()
       updateViewers
+      notifyListeners
     }
   }
   def redo(){
     if(!redoStack.isEmpty) {
       val c = redoStack.pop
       undoStack.push(c)
+      c.redo()
       updateViewers
+      notifyListeners
     }
+  }
+  var listeners =  Set[()=>Unit]()
+  def addListener(action: ()=>Unit) {
+   listeners += action 
+  }
+  def removeListener(action: ()=>Unit) {
+    listeners -= action
+  }
+  def notifyListeners () {
+    listeners foreach { _.apply() }
   }
 }

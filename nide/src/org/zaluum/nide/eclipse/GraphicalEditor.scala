@@ -40,12 +40,12 @@ class GraphicalEditor extends EditorPart {
     val model = ProtoModel.read(input, className)
     input.close()
     val controller = new Controller(model, bcp)
-    controller.onExecute {
-      firePropertyChange(IEditorPart.PROP_DIRTY)
-    }
+    controller.addListener(fireDirty)
     viewer = new Viewer(parent, controller)
   }
-
+  val fireDirty :()=>Unit = () =>  firePropertyChange(IEditorPart.PROP_DIRTY) 
   def setFocus() { viewer.canvas.setFocus }
-
+  override def dispose() {
+    controller.removeListener(fireDirty)
+  }
 }
