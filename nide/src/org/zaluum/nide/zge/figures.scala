@@ -22,7 +22,7 @@ trait CanShowUpdate extends Figure {
   def update()
 }
 trait Selectable extends Figure with CanShowFeedback 
-trait ItemFigure extends Figure with Selectable with CanShowUpdate {
+trait ItemFigure extends Selectable with CanShowUpdate {
   def viewer: Viewer
   def positionable : Positionable
   def feed : ItemFeedbackFigure
@@ -59,7 +59,7 @@ trait ItemFigure extends Figure with Selectable with CanShowUpdate {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
 }
-trait FigureWithPorts extends ItemFigure {
+trait ItemFigureWithPorts extends ItemFigure {
   def portMapper : ModelViewMapper[TypedPort, PortFigure] ;
   def find(name: String) = portMapper.values.find { _.typ.name == name }
   override def show() {
@@ -75,7 +75,7 @@ trait FigureWithPorts extends ItemFigure {
     portMapper.update()
   }
 }
-trait BoxFigure extends FigureWithPorts{
+trait BoxFigure extends ItemFigureWithPorts{
   def box:Box
   var boxClass: Option[BoxClass]
   def positionable = box
@@ -88,7 +88,7 @@ trait BoxFigure extends FigureWithPorts{
 object PortDeclFigure {
   def img(in:Boolean) = "org/zaluum/nide/icons/portDecl" + (if(in) "In" else "Out") + ".png"
 }
-class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer) extends ImageFigure with FigureWithPorts {
+class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer) extends ImageFigure with ItemFigureWithPorts {
   def positionable = portDecl
   var size = Dimension(50,20)
   lazy val feed = new ItemFeedbackFigure(this)
@@ -106,7 +106,8 @@ class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer) extends ImageFigu
     super.update()
   }
 }
-class PortFigure(val bf: FigureWithPorts, val typ: TypedPort, val portRef: PortRef, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
+
+class PortFigure(val bf: ItemFigureWithPorts, val typ: TypedPort, val portRef: PortRef, viewer: Viewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)
@@ -143,7 +144,7 @@ class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: V
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
 }
 
-class LineFigure(l: Line, val cf: ConnectionFigure, modelView: ModelView) extends Polyline with CanShowUpdate with CanShowFeedback with Selectable{
+class LineFigure(l: Line, val cf: ConnectionFigure, modelView: ModelView) extends Polyline with CanShowUpdate with Selectable{
   //setAntialias(1)
   setForegroundColor(ColorConstants.gray)
   def hide() = modelView.viewer.connectionsLayer.remove(this)

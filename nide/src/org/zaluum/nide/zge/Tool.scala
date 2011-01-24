@@ -35,7 +35,7 @@ abstract class Tool(viewer: Viewer) {
     }
     def mouseEnter(me: MouseEvent) { updateMouse(me); state.move(); }
     def mouseExit(e: MouseEvent) {}
-    def mouseHover(e: MouseEvent) {} //println("hover" + e)}
+    def mouseHover(e: MouseEvent) {} 
     def mouseMove(me: MouseEvent) { updateMouse(me); state.move() }
     def mouseUp(me: MouseEvent) {
       updateMouse(me);

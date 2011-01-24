@@ -10,31 +10,54 @@ import org.zaluum.nide.compiler.BoxClassPath
 import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 
 class Viewer(parent: Composite, val controller: Controller) {
+  /*SWT*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
   def shell = parent.getShell
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
-  canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
   val connectionsLayer = new FreeformLayer
   val layer = new FreeformLayer
-  layer.setOpaque(true);
-  layer.setBackgroundColor(ColorConstants.white)
   //layer.setLayoutManager(new FreeformLayout)
   val viewport = new FreeformViewport();
-  val innerLayers = new ScalableFreeformLayeredPane();
-  innerLayers.add(layer)
-  innerLayers.add(portsLayer)
-  innerLayers.add(connectionsLayer)
-  innerLayers.add(feedbackLayer)
-  viewport.setContents(innerLayers);
-  canvas.setViewport(viewport)
-  // SHELL
+  val innerLayers = new ScalableFreeformLayeredPane()
+  val marquee = new RectangleFigure;
+  {
+    canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
+    layer.setOpaque(true);
+    layer.setBackgroundColor(ColorConstants.white)
+    innerLayers.add(layer)
+    innerLayers.add(portsLayer)
+    innerLayers.add(connectionsLayer)
+    innerLayers.add(feedbackLayer)
+    viewport.setContents(innerLayers);
+    canvas.setViewport(viewport)
+    marquee.setFill(false)
+    marquee.setLineStyle(SWT.LINE_DASH);
+    UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
+  }
+  /*TOOLS*/
   val palette = new Palette(this, parent.getShell)
   var tool = new MoveTool(this)
+  /*MODEL*/
   val modelView = controller.registerView(this)
   def model = controller.model
+  /*DEFS*/
+  def showMarquee() { feedbackLayer.add(marquee) }
+  def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
+  def hideMarquee() { feedbackLayer.remove(marquee) }
+  def executeOrNotify(cmd: Command) = {
+    if (cmd.canExecute) {
+      controller.exec(cmd)
+      true
+    } else {
+      val msg = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK)
+      msg.setMessage("Cannot be executed")
+      msg.open
+      false
+    }
+  }
   def dispose() {
     canvas.dispose()
     imageFactory.reg.dispose
@@ -52,25 +75,6 @@ class Viewer(parent: Composite, val controller: Controller) {
   def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: ItemFigure) ⇒ bf }
   def feedbackAt(p: Point) = findDeepAt(feedbackLayer, p)
   def lineAt(p: Point) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
-  val marquee = new RectangleFigure
-  marquee.setFill(false)
-  marquee.setLineStyle(SWT.LINE_DASH);
-  def showMarquee() { feedbackLayer.add(marquee) }
-  def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
-  def hideMarquee() { feedbackLayer.remove(marquee) }
-  UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
-  def executeOrNotify(cmd: Command) = {
-    if (cmd.canExecute) {
-      controller.exec(cmd)
-      true
-    } else {
-      val msg = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK)
-      msg.setMessage("Cannot be executed")
-      msg.open
-      false
-    }
-  }
-
 }
 
 class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
@@ -78,7 +82,7 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
   var selected = new SelectionManager()
   def selectedBoxes = selected.selected collect { case x: BoxFigure ⇒ x.box }
   def selectedPorts = selected.selected collect { case x: PortDeclFigure ⇒ x.portDecl }
-  def selectedConnections = selected.selected collect { case x : LineFigure =>  x.cf.c }
+  def selectedConnections = selected.selected collect { case x: LineFigure ⇒ x.cf.c }
 
   def createRemoveCommand: Command = {
     val boxes = selectedBoxes
@@ -136,7 +140,6 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
     def modelSet = model.portDecls
     def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl, viewer)
   }
-  def classOfB(b: Box) = bcp.find(b.className)
   def gotoMarker(l: Location) {
     model.locate(l) foreach {
       deselectAll()
