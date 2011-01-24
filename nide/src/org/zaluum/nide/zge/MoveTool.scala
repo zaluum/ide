@@ -9,7 +9,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   state = selecting
   // SELECTING
   object selecting extends ToolState {
-    var selected: Option[BasicFigure] = None
+    var selected: Option[ItemFigure] = None
     var lineSelected: Option[LineFigure] = None
     var handle: Option[HandleRectangle] = None
     var port: Option[PortFigure] = None
@@ -24,7 +24,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def buttonUp {
       (selected, lineSelected) match {
         case (Some(box), _) ⇒ modelView.selected.updateSelection(Set(box), shift)
-        case (None, Some(line)) ⇒ modelView.selectedLines.updateSelection(Set(line), shift)
+        case (None, Some(line)) ⇒ modelView.selected.updateSelection(Set(line), shift)
         case (None, None) ⇒ modelView.deselectAll()
       }
     }
@@ -127,7 +127,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   object moving extends MovingState {
     def doEnter {}
     def buttonUp {
-      val commands = modelView.selected.selected map { bf ⇒
+      val commands = modelView.selected.selected collect { case bf:ItemFigure ⇒
         val oldLoc = bf.getBounds.getLocation
         new MoveCommand(bf.positionable, oldLoc + delta)
       };
@@ -137,9 +137,9 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { modelView.selected.selected foreach { _.moveDeltaFeed(delta) } }
+    def move() { modelView.selected.selected collect {case bf:ItemFigure=>bf} foreach { _.moveDeltaFeed(delta) } }
     def abort() {
-      modelView.selected.selected foreach { _.moveDeltaFeed(Vector2(0, 0)) }
+      modelView.selected.selected collect {case bf:ItemFigure=>bf} foreach { _.moveDeltaFeed(Vector2(0, 0)) }
       exit()
     }
   }
@@ -166,7 +166,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
   // RESIZING
   object resizing extends MovingState {
     var handle: HandleRectangle = _
-    def bf = handle.basicFigure
+    def itf = handle.itemFigure
 
     def enter(initDrag: Point, handle: HandleRectangle) {
       super.enter(initDrag)
@@ -174,21 +174,21 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     }
     def doEnter {}
     def buttonUp {
-      val newBounds = handle.deltaAdd(delta, bf.getBounds);
+      val newBounds = handle.deltaAdd(delta, itf.getBounds);
       //val comm = new ResizeCommand(bf.box, (newBounds.x,newBounds.y), (newBounds.width,newBounds.height))
       //controller.exec(comm)
       exit()
     }
-    def move() { bf.resizeDeltaFeed(delta, handle) }
+    def move() {itf.resizeDeltaFeed(delta, handle) }
     def abort() {
-      bf.resizeDeltaFeed(Vector2(0, 0), handle)
+      itf.resizeDeltaFeed(Vector2(0, 0), handle)
       exit()
     }
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
   }
-  // CREATING 
+  // CREATING BOX
   object creating extends ToolState {
     var bf: BoxFigure = _
     def enter(boxClass: BoxClass) {
@@ -216,6 +216,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def buttonDown() {}
     def exit() { bf.hideFeedback; bf = null; selecting.enter() }
   }
+  // CREATING PORT
   object creatingPort extends ToolState {
     var pf: PortDeclFigure = _
     def enter(in: Boolean) {

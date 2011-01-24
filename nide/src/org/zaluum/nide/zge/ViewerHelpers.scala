@@ -41,27 +41,27 @@ class ImageFactory(val display: Display, bcp: BoxClassPath) {
     img
   }
 }
-class SelectionManager[T <: CanShowFeedback] {
-  var selected = Set[T]()
-  def apply(f: T) = selected(f)
-  def select(f: T) {
+class SelectionManager {
+  var selected = Set[Selectable]()
+  def apply(f: Selectable) = selected(f)
+  def select(f: Selectable) {
     if (!selected(f)) {
       selected += f
       f.showFeedback
     }
   }
-  def deselect(f: T) {
+  def deselect(f: Selectable) {
     if (selected(f)) {
       f.hideFeedback
       selected -= f
     }
   }
-  def toggleSelection(f: T) {
+  def toggleSelection(f: Selectable) {
     if (selected(f)) deselect(f)
     else select(f)
   }
   def deselectAll() { selected foreach (deselect(_)) }
-  def updateSelection(figs: Set[T], shift: Boolean) {
+  def updateSelection(figs: Set[Selectable], shift: Boolean) {
     if (shift) {
       figs foreach { toggleSelection(_) }
     } else {

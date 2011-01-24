@@ -8,10 +8,10 @@ import org.zaluum.nide.model._
 object HandleSizes {
   val expansion = 8
 }
-class FeedbackRectangle(val feed: BasicFeedbackFigure) extends RectangleFigure {
-  def basicFigure = feed.bf
+class FeedbackRectangle(val feed: ItemFeedbackFigure) extends RectangleFigure {
+  def itemFigure = feed.bf
 }
-class HandleRectangle(val x: Int, val y: Int, feed: ResizeBasicFeedbackFigure) extends FeedbackRectangle(feed) {
+class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) extends FeedbackRectangle(feed) {
   setBackgroundColor(ColorConstants.lightBlue)
   setForegroundColor(ColorConstants.white)
   def resizeCursor = {
@@ -54,7 +54,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeBasicFeedbackFigure) e
   }
 }
 
-class BasicFeedbackFigure(val bf: BasicFigure) extends Figure {
+class ItemFeedbackFigure(val bf: ItemFigure) extends Figure {
   protected val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
   rectangle.setFill(false);
@@ -76,7 +76,7 @@ class BasicFeedbackFigure(val bf: BasicFigure) extends Figure {
   }
 
 }
-class ResizeBasicFeedbackFigure(bf: BasicFigure) extends BasicFeedbackFigure(bf) {
+class ResizeItemFeedbackFigure(bf: ItemFigure) extends ItemFeedbackFigure(bf) {
 
   val handles =
     (for {

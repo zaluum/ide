@@ -49,7 +49,7 @@ class Viewer(parent: Composite, val controller: Controller) {
     import scala.collection.JavaConversions._
     container.getChildren.asInstanceOf[java.util.List[IFigure]] find { _.containsPoint(p) };
   }
-  def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: BasicFigure) ⇒ bf }
+  def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: ItemFigure) ⇒ bf }
   def feedbackAt(p: Point) = findDeepAt(feedbackLayer, p)
   def lineAt(p: Point) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
   val marquee = new RectangleFigure
@@ -75,11 +75,10 @@ class Viewer(parent: Composite, val controller: Controller) {
 
 class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
 
-  var selected = new SelectionManager[BasicFigure]()
-  var selectedLines = new SelectionManager[LineFigure]()
+  var selected = new SelectionManager()
   def selectedBoxes = selected.selected collect { case x: BoxFigure ⇒ x.box }
   def selectedPorts = selected.selected collect { case x: PortDeclFigure ⇒ x.portDecl }
-  def selectedConnections = selectedLines.selected map { x ⇒ x.cf.c }
+  def selectedConnections = selected.selected collect { case x : LineFigure =>  x.cf.c }
 
   def createRemoveCommand: Command = {
     val boxes = selectedBoxes
@@ -143,7 +142,7 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
       deselectAll()
       _ match {
         case p: PortRef ⇒ findPortFigure(p) foreach { _.showFeedback }
-        case c: Connection ⇒ findConnection(c) foreach { c ⇒ selectedLines.select(c.lines.values.head) }
+        case c: Connection ⇒ findConnection(c) foreach { c ⇒ selected.select(c.lines.values.head) }
         case b: Box ⇒ findBox(b) foreach { bf ⇒ selected.select(bf) }
         case p: PortDecl ⇒ findPortDecl(p) foreach { pf ⇒ selected.select(pf) }
         case _ ⇒
@@ -167,6 +166,5 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
   }
   def deselectAll() {
     selected.deselectAll
-    selectedLines.deselectAll
   }
 }
