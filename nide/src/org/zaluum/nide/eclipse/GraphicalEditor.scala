@@ -1,4 +1,8 @@
 package org.zaluum.nide.eclipse
+
+import org.zaluum.nide.model.Location
+import org.eclipse.ui.ide.IGotoMarker
+import org.eclipse.core.resources.IMarker
 import java.io.ByteArrayInputStream
 import org.eclipse.core.resources.IFile
 import org.eclipse.core.runtime.IProgressMonitor
@@ -8,10 +12,11 @@ import org.eclipse.ui.part.{ EditorPart, FileEditorInput }
 import org.zaluum.nide.model.ProtoModel
 import org.zaluum.nide.zge.{ Viewer, Controller }
 
-class GraphicalEditor extends EditorPart {
+class GraphicalEditor extends EditorPart with IGotoMarker {
 
   var viewer: Viewer = _
   def controller = viewer.controller
+  def modelView = viewer.modelView
   def doSave(monitor: IProgressMonitor) {
     val in = new ByteArrayInputStream(ProtoModel.toByteArray(viewer.model))
     inputFile.setContents(in, true, true, monitor);
@@ -43,9 +48,18 @@ class GraphicalEditor extends EditorPart {
     controller.addListener(fireDirty)
     viewer = new Viewer(parent, controller)
   }
-  val fireDirty :()=>Unit = () =>  firePropertyChange(IEditorPart.PROP_DIRTY) 
+  val fireDirty: () ⇒ Unit = () ⇒ firePropertyChange(IEditorPart.PROP_DIRTY)
   def setFocus() { viewer.canvas.setFocus }
   override def dispose() {
     controller.removeListener(fireDirty)
+  }
+  override def gotoMarker(marker: IMarker) {
+    val str = marker.getAttribute("BLAME").asInstanceOf[String]
+    modelView.gotoMarker(Location(str))
+    setFocus
+  }
+  override def getAdapter(cl: Class[_]) = {
+    if (cl == classOf[IGotoMarker]) this
+    else super.getAdapter(cl)
   }
 }

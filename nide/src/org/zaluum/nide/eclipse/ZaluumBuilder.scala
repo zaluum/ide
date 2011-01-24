@@ -1,4 +1,7 @@
 package org.zaluum.nide.eclipse;
+
+import org.zaluum.nide.model.Location
+import org.zaluum.nide.model.Locatable
 import java.io.ByteArrayInputStream
 import java.util.{ Map ⇒ JMap }
 import org.eclipse.core.resources.{ IncrementalProjectBuilder, IResourceDeltaVisitor, IResourceDelta, IResource, IProject, IMarker, IFile, IContainer }
@@ -30,16 +33,12 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
     }
   }
 
-  private def addMarker(file: IFile, message: String, lineNumber: Int,
+  private def addMarker(file: IFile, message: String, blame: Option[Location],
     severity: Int) {
-    var line = lineNumber
     val marker = file.createMarker(ZaluumBuilder.MARKER_TYPE);
     marker.setAttribute(IMarker.MESSAGE, message);
     marker.setAttribute(IMarker.SEVERITY, severity);
-    if (lineNumber == -1) {
-      line = 1;
-    }
-    marker.setAttribute(IMarker.LINE_NUMBER, line);
+    marker.setAttribute("BLAME", blame.map { _.str } getOrElse (""));
   }
 
   protected def build(kind: Int, args: JMap[_, _], monitor: IProgressMonitor): Array[IProject] = {
@@ -57,14 +56,15 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
     return null;
   }
 
-  private def deleteMarkers(file: IFile) {
+  /*private def deleteMarkers(file: IFile) {
     file.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_ZERO);
-  }
+  }*/
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(getProject);
   def defaultOutputFolder = { jproject.getOutputLocation }
   def toRelativePathClass(className: String) = new Path(className.replace(".", "/") + ".class")
   def root = getProject.getWorkspace.getRoot
+
   def compile(f: IFile, cl: EclipseBoxClasspath) = {
     try {
       cl.toClassName(f) foreach { className ⇒
@@ -75,7 +75,10 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
         writeFile(outputPath, ByteCodeGen.dump(compiled))
       }
     } catch {
-      case e: CompilationException ⇒ println(e.compiler.reporter.errors)
+      case e: CompilationException ⇒
+        for (err ← e.compiler.reporter.errors) {
+          addMarker(f, err.msg, err.mark, IMarker.SEVERITY_ERROR)
+        }
     }
   }
   def writeFile(path: IPath, bytes: Array[Byte]) {
@@ -87,6 +90,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
       outputFile.create(is, true, null)
   }
   protected def fullBuild(monitor: IProgressMonitor) {
+    getProject.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
     val cl = new EclipseBoxClasspath(getProject)
     cl.update()
     visitSourceZaluums { f ⇒ compile(f, cl) }

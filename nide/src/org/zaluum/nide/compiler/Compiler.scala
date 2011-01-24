@@ -37,9 +37,10 @@ object Compiler {
 class CompilationException(val compiler: Compiler) extends Exception
 class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   object reporter {
-    val errors = Buffer[String]()
-    def report(str: String, mark: Option[AnyRef] = None) {
-      errors += str
+    case class Error(msg: String, mark: Option[Location])
+    val errors = Buffer[Error]()
+    def report(str: String, mark: Option[Locatable] = None) {
+      errors += Error(str, mark map { _.location })
     }
     def check() {
       if (!errors.isEmpty)
@@ -47,11 +48,11 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
     }
     def fail = throw new CompilationException(Compiler.this)
 
-    def fail(err: String, mark: Option[AnyRef] = None): Nothing = {
+    def fail(err: String, mark: Option[Locatable] = None): Nothing = {
       report(err)
       fail
     }
-    def apply(assertion: Boolean, res: ⇒ String, mark: Option[AnyRef] = None, fail: Boolean = false) {
+    def apply(assertion: Boolean, res: ⇒ String, mark: Option[Locatable] = None, fail: Boolean = false) {
       if (!assertion) report(res) // TODO mark
       if (fail) check()
     }
@@ -77,7 +78,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
       portType += (ModelPortRef(name) -> TypedPort(portDecl.descriptor, portDecl.in, name, portDecl.pos))
     }
   }
-  def checkPortRef(portRef: PortRef, blame: AnyRef) = {
+  def checkPortRef(portRef: PortRef, blame: Locatable) = {
     portType.get(portRef) getOrElse {
       portRef match {
         case b: BoxPortRef ⇒
@@ -113,7 +114,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   def checkValidPort(port: PortRef) {
 
   }
- 
+
   def checkConnections() = {
     val acyclic = new DirectedAcyclicGraph[Box, DefaultEdge](classOf[DefaultEdge])
     m.boxes foreach { acyclic.addVertex(_) }
@@ -131,13 +132,13 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
       // auto connection
       reporter(p1 != p2, "Connection to itself", Some(c))
       // port type and direction
-      val dir : Option[(PortRef,PortRef)] = (portType(p1), portType(p2)) match {
+      val dir: Option[(PortRef, PortRef)] = (portType(p1), portType(p2)) match {
         case (TypedPort(a, p1In, _, _), TypedPort(b, p2In, _, _)) if (a == b) ⇒
-          c.connectionFlow(portType) orElse {reporter.report("Invalid connection"); None}
+          c.connectionFlow(portType) orElse { reporter.report("Invalid connection", Some(c)); None }
         case (a: TypedPort, b: TypedPort) ⇒ reporter.report("Incompatible port types " + a + " " + b, Some(c)); None
       }
       reporter.check()
-      val (from,to) =  dir.get
+      val (from, to) = dir.get
       // multiple connections to one input
       reporter(!portsUsed.contains(to), "Double connection to port " + to, Some(to), true)
       portsUsed += to // this check won't work with nested boxes

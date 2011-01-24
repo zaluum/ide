@@ -69,8 +69,8 @@ class Viewer(parent: Composite, val controller: Controller) {
       msg.open
       false
     }
-
   }
+
 }
 
 class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
@@ -138,7 +138,21 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
     def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl, viewer)
   }
   def classOfB(b: Box) = bcp.find(b.className)
-
+  def gotoMarker(l: Location) {
+    model.locate(l) foreach {
+      deselectAll()
+      _ match {
+        case p: PortRef ⇒ findPortFigure(p) foreach { _.showFeedback }
+        case c: Connection ⇒ findConnection(c) foreach { c ⇒ selectedLines.select(c.lines.values.head) }
+        case b: Box ⇒ findBox(b) foreach { bf ⇒ selected.select(bf) }
+        case p: PortDecl ⇒ findPortDecl(p) foreach { pf ⇒ selected.select(pf) }
+        case _ ⇒
+      }
+    }
+  }
+  def findConnection(conn: Connection): Option[ConnectionFigure] = connectionMapper.get(conn)
+  def findBox(b: Box): Option[BoxFigure] = boxMapper.get(b)
+  def findPortDecl(p: PortDecl): Option[PortDeclFigure] = portDeclMapper.get(p)
   def findPortFigure(portRef: PortRef): Option[PortFigure] = portRef match {
     case b: BoxPortRef ⇒
       boxMapper.get(b.box) flatMap { _.find(b.name) }
@@ -146,7 +160,6 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
       portDeclMapper.values find { _.portDecl.name == m.name } map
         { _.portMapper.values.head }
   }
-
   def update() {
     boxMapper.update()
     portDeclMapper.update()

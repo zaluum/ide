@@ -26,7 +26,7 @@ case class Line(val dir: OrtoDirection, var from: Point, var len: Int) {
     case V ⇒ Point(from.x, from.y + len)
   }
 }
-sealed trait PortRef {
+sealed trait PortRef extends Locatable {
   val name: String
   def protoAttach(proto: BoxFileProtos.Contents.PortRef.Builder): Unit
   def toProto = {
@@ -40,9 +40,11 @@ sealed case class BoxPortRef(val box: Box, val name: String) extends PortRef {
   def protoAttach(proto: BoxFileProtos.Contents.PortRef.Builder) {
     proto.setBoxName(box.name)
   }
+  def location = Location("$" + box.location.str + "#" + name)
 }
 sealed case class ModelPortRef(val name: String) extends PortRef {
   def protoAttach(proto: BoxFileProtos.Contents.PortRef.Builder) {}
+  def location = Location("$#" + name)
 }
 
 object Connection {
@@ -64,8 +66,9 @@ object Connection {
   }
 
 }
-class Connection(var from: Option[PortRef], var to: Option[PortRef]) {
+class Connection(var from: Option[PortRef], var to: Option[PortRef]) extends Locatable {
   var buf = Buffer[Line]()
+  def location = Location("(" + from.map(_.location.str).getOrElse("") + "," + to.map(_.location.str).getOrElse("") + ")")
   override def toString = "Connection(" + from + "->" + to + ")"
   def toProto = {
     val proto = BoxFileProtos.Contents.Connection.newBuilder

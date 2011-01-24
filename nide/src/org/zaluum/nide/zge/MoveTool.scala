@@ -99,10 +99,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def buttonUp {
       // execute model command
       val command = new ConnectCommand(modelView.model, con.get)
-      if (command.canExecute) {
-        println("can execute")
-        controller.exec(command)
-      }
+      controller.exec(command)
       exit()
     }
     def drag {}
@@ -224,7 +221,7 @@ class MoveTool(viewer: Viewer) extends Tool(viewer) {
     def enter(in: Boolean) {
       state = this
       val name = model.nextFreeName("port")
-      val portDecl = new PortDecl(model, name, in,"D")
+      val portDecl = new PortDecl(model, name, in, "D")
       portDecl.pos = MPoint(1, 1)
       pf = new PortDeclFigure(portDecl, viewer)
       pf.update()

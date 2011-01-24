@@ -10,8 +10,13 @@ object Model {
     m.className = name
     m
   }
-}
+  val ConnReg = """\((.*?),(.*?)\)""".r
 
+}
+case class Location(str: String)
+trait Locatable {
+  def location: Location
+}
 trait Tuple2 {
   val x: Int
   val y: Int
@@ -28,7 +33,7 @@ case class Dimension(w: Int, h: Int)
 trait Positionable {
   var pos: Point
 }
-class Model {
+class Model extends Locatable {
   var className = ""
   var imageName = ""
   var boxes = Set[Box]()
@@ -56,6 +61,31 @@ class Model {
     if (!isNameTaken(str)) str
     else nextFreeName(nextName(str))
   }
+  def location = Location("%")
+  def locate(l: Location): Option[Locatable] = {
+    l.str match {
+      case s if s.startsWith("(") ⇒ // Connection
+        val Model.ConnReg(from, to) = s
+        def locateRef(str: String) = locate(Location(str)).asInstanceOf[Option[PortRef]]
+        val f = Option(from) flatMap { locateRef(_) }
+        val t = Option(to) flatMap { locateRef(_) }
+        val res = connections.find { c ⇒ c.from == f && c.to == t }
+        res
+      case s if s.startsWith("$#") ⇒ // ModelPortRef
+        val v = s.substring(2)
+        portDecls.find(_.name == v) map { _ ⇒ ModelPortRef(v) }
+      case s if s.startsWith("$") ⇒ // BoxPortRef
+        val v = s.substring(1).split("#")
+        val boxName = v(0)
+        val portName = v(1)
+        boxes.find(_.name == boxName) map { b ⇒ BoxPortRef(b, portName) }
+      case s if s.startsWith("#") ⇒ // PortDecl
+        val v = s.substring(1)
+        portDecls.find(_.name == v)
+      case "%" ⇒ Some(this) // model
+      case s ⇒ boxes.find(_.name == s) // box
+    }
+  }
 }
 
 object Box {
@@ -69,7 +99,7 @@ object Box {
   }
 }
 
-class Box extends Positionable {
+class Box extends Positionable with Locatable {
   var className = ""
   var pos = Point(0, 0)
   var name = ""
@@ -80,18 +110,19 @@ class Box extends Positionable {
     instance.setPos(ProtoModel.toPoint(pos))
     instance.build
   }
+  def location = Location(name)
   override def toString = name
 }
 object PortDecl {
-  def apply(m: Model, name: String, in: Boolean, pos: Point, posExternal: Point, desc:String): PortDecl = {
-    val p = new PortDecl(m, name, in,desc)
+  def apply(m: Model, name: String, in: Boolean, pos: Point, posExternal: Point, desc: String): PortDecl = {
+    val p = new PortDecl(m, name, in, desc)
     p.pos = pos
     p.posExternal = posExternal
     m.portDecls += p
     p
   }
 }
-class PortDecl(var m: Model, var name: String, var in: Boolean, var descriptor: String) extends Positionable {
+class PortDecl(var m: Model, var name: String, var in: Boolean, var descriptor: String) extends Positionable with Locatable {
   var pos = Point(0, 10)
   var posExternal = Point(0, 0)
   override def toString = "portDecl(" + name + ")"
@@ -99,10 +130,11 @@ class PortDecl(var m: Model, var name: String, var in: Boolean, var descriptor: 
     val port = BoxFileProtos.Definition.Port.newBuilder()
     port.setDirection(if (in) Direction.IN else Direction.OUT)
     port.setPosInternal(ProtoModel.toPoint(pos));
-    port.setPosExternal(ProtoModel.toPoint(posExternal)) 
+    port.setPosExternal(ProtoModel.toPoint(posExternal))
     port.setName(name)
     port.setType(descriptor)
   }
+  def location = Location("#" + name)
 }
 class BoxClass(val className: String, val scala: Boolean = false, val image: String) {
   var ports = Set[TypedPort]()
