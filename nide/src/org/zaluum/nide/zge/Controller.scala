@@ -17,7 +17,9 @@ class Controller(val model: Model, val bcp :ScannedBoxClassPath) {
   var mark:Option[Command] = None
   def isDirty = undoStack.elems.headOption != mark 
   def markSaved() { mark = undoStack.elems.headOption}
+  def abortTools() {    viewModels foreach { _.viewer.tool.state.abort()}}
   def exec(c:Command) {
+    abortTools()
     c.act()
     undoStack.push(c)
     redoStack.clear
@@ -29,6 +31,7 @@ class Controller(val model: Model, val bcp :ScannedBoxClassPath) {
   
   def undo(){
     if (!undoStack.isEmpty){
+      abortTools()
       val c = undoStack.pop
       redoStack.push(c)
       c.undo()
@@ -38,8 +41,10 @@ class Controller(val model: Model, val bcp :ScannedBoxClassPath) {
   }
   def redo(){
     if(!redoStack.isEmpty) {
+      abortTools()
       val c = redoStack.pop
       undoStack.push(c)
+      // update tools
       c.redo()
       updateViewers
       notifyListeners

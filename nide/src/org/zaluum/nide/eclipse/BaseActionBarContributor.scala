@@ -34,10 +34,15 @@ class BaseActionBarContributor extends EditorActionBarContributor {
     override def run() { controller.redo } 
     def calcEnabled=controller.canRedo
   }
+  object DeleteAction extends EditorAction{
+    override def run() { controller.exec(editor.viewer.modelView.createRemoveCommand)}
+    def calcEnabled = true//editor.viewer.modelView.createRemoveCommand.canExecute
+  }
   override def init(bars: IActionBars, page: IWorkbenchPage) {
     super.init(bars, page)
     bars.setGlobalActionHandler(ActionFactory.UNDO.getId, UndoAction);
     bars.setGlobalActionHandler(ActionFactory.REDO.getId, RedoAction);
+    bars.setGlobalActionHandler(ActionFactory.DELETE.getId, DeleteAction);
     // remember to add to setActiveEditor
   }
   
@@ -52,5 +57,6 @@ class BaseActionBarContributor extends EditorActionBarContributor {
    val g = e.asInstanceOf[GraphicalEditor]
    UndoAction.setEditor(g)
    RedoAction.setEditor(g)
+   DeleteAction.setEditor(g)
   }
 }

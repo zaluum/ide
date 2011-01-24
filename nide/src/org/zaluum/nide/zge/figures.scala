@@ -143,7 +143,7 @@ class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: V
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
 }
 
-class LineFigure(l: Line, val pl: ConnectionFigure, modelView: ModelView) extends Polyline with CanShowUpdate with CanShowFeedback {
+class LineFigure(l: Line, val cf: ConnectionFigure, modelView: ModelView) extends Polyline with CanShowUpdate with CanShowFeedback {
   //setAntialias(1)
   setForegroundColor(ColorConstants.gray)
   def hide() = modelView.viewer.connectionsLayer.remove(this)
@@ -172,7 +172,7 @@ class LineFigure(l: Line, val pl: ConnectionFigure, modelView: ModelView) extend
     }
   }
 }
-class ConnectionFigure(c: Connection, modelView: ModelView) extends Figure with CanShowUpdate {
+class ConnectionFigure(val c: Connection, modelView: ModelView) extends Figure with CanShowUpdate {
   object lines extends ModelViewMapper[Line, LineFigure] {
     def buildFigure(l: Line) = new LineFigure(l, ConnectionFigure.this, modelView)
     def modelSet = c.buf.toSet

@@ -77,6 +77,51 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
 
   var selected = new SelectionManager[BasicFigure]()
   var selectedLines = new SelectionManager[LineFigure]()
+  def selectedBoxes = selected.selected collect { case x: BoxFigure ⇒ x.box }
+  def selectedPorts = selected.selected collect { case x: PortDeclFigure ⇒ x.portDecl }
+  def selectedConnections = selectedLines.selected map { x ⇒ x.cf.c }
+
+  def createRemoveCommand: Command = {
+    val boxes = selectedBoxes
+    val ports = selectedPorts
+    val connections = selectedConnections
+    new Command {
+      var disconnectedFrom = Map[Connection, PortRef]()
+      var disconnectedTo = Map[Connection, PortRef]()
+      def redo() {
+        model.boxes --= boxes
+        model.portDecls --= ports
+        model.connections --= connections
+        disconnectedFrom = Map.empty
+        disconnectedTo = Map.empty
+        for (c ← model.connections) {
+          def isDisconnected(pr: PortRef) = pr match {
+            case br: BoxPortRef if (boxes.contains(br.box)) ⇒ true
+            case mr: ModelPortRef if (ports exists (_.name == mr.name)) ⇒ true
+            case _ ⇒ false
+          }
+          c.from foreach (pr ⇒ if (isDisconnected(pr)) {
+            c.from = None
+            disconnectedFrom += (c -> pr)
+          })
+          c.to foreach (pr ⇒ if (isDisconnected(pr)) {
+            c.to = None
+            disconnectedTo += (c -> pr)
+          })
+        }
+        deselectAll
+      }
+      def canExecute = !(boxes.isEmpty && ports.isEmpty && connections.isEmpty)
+      def undo() {
+        model.boxes ++= boxes
+        model.portDecls ++= ports
+        model.connections ++= connections
+        disconnectedFrom foreach { case (c, portRef) ⇒ c.from = Some(portRef) }
+        disconnectedTo foreach { case (c, portRef) ⇒ c.to = Some(portRef) }
+        deselectAll
+      }
+    }
+  }
   object boxMapper extends ModelViewMapper[Box, BoxFigure] {
     def modelSet = model.boxes
     def buildFigure(box: Box) = {
@@ -90,7 +135,7 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
   }
   object portDeclMapper extends ModelViewMapper[PortDecl, PortDeclFigure] {
     def modelSet = model.portDecls
-    def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl, viewer) 
+    def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl, viewer)
   }
   def classOfB(b: Box) = bcp.find(b.className)
 
