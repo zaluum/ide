@@ -19,12 +19,14 @@ class Controller(val model: Model, val bcp :ScannedBoxClassPath) {
   def markSaved() { mark = undoStack.elems.headOption}
   def abortTools() {    viewModels foreach { _.viewer.tool.state.abort()}}
   def exec(c:Command) {
-    abortTools()
-    c.act()
-    undoStack.push(c)
-    redoStack.clear
-    updateViewers
-    notifyListeners
+    if (c.canExecute){
+      abortTools()
+      c.act()
+      undoStack.push(c)
+      redoStack.clear
+      updateViewers
+      notifyListeners
+    }
   }
   def canUndo = !undoStack.isEmpty
   def canRedo = !redoStack.isEmpty

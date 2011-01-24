@@ -89,11 +89,9 @@ object ByteCodeGen {
           mv.visitVarInsn(ALOAD, 0)
           getField(c.m.className, m.name, c.portType(m).descriptor, false)
       }
-      def executeConnection(c: Connection) {
-        (c.from, c.to) match {
-          case (Some(f), Some(t)) ⇒ putRef(t, getRef(f))
-          case _ ⇒
-        }
+      def executeConnection(con: Connection) {
+        val (from,to) = con.connectionFlow(c.portType).get
+        putRef(to, getRef(from))
       }
       def connectionsFrom(f: PortRef) = {
         c.m.connections filter { _.from == Some(f) }

@@ -34,7 +34,7 @@ object Compiler {
     classname != null && checkParts
   }
 }
-class CompilationException(val compiler:Compiler) extends Exception 
+class CompilationException(val compiler: Compiler) extends Exception
 class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   object reporter {
     val errors = Buffer[String]()
@@ -60,7 +60,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   }
   var boxTypes = Map[Box, BoxClass]()
   var portType = Map[PortRef, TypedPort]()
-  def getBoxClass(cl: String): Option[BoxClass] =  boxClassPath.find(cl)
+  def getBoxClass(cl: String): Option[BoxClass] = boxClassPath.find(cl)
   def checkValidClassname(classname: String) = {
     // check characters
     reporter(Compiler.isFullyQualifiedClassname(classname), "classname " + classname + " is not a valid class name")
@@ -74,7 +74,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
       reporter(Compiler.isValidJavaIdentifier(name), name + " is not a valid Java identifier", Some(portDecl))
       reporter(!names(name), "Port name " + name + " is already defined", Some(portDecl))
       names = names + name
-      portType += (ModelPortRef(name) -> TypedPort(portDecl.descriptor , portDecl.in, name, portDecl.pos))
+      portType += (ModelPortRef(name) -> TypedPort(portDecl.descriptor, portDecl.in, name, portDecl.pos))
     }
   }
   def checkPortRef(portRef: PortRef, blame: AnyRef) = {
@@ -84,20 +84,20 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
           boxTypes.get(b.box) match {
             case Some(typ) ⇒
               typ.ports find { _.name == b.name } match {
-                case Some(typedPort) ⇒ portType += (portRef -> typedPort); 
-                case None ⇒ reporter.report("port ref port not found", Some(blame)); 
+                case Some(typedPort) ⇒ portType += (portRef -> typedPort);
+                case None ⇒ reporter.report("port ref port not found", Some(blame));
               }
-            case None ⇒ reporter.report("port ref box not found", Some(blame)); 
+            case None ⇒ reporter.report("port ref box not found", Some(blame));
           }
-        case _: ModelPortRef ⇒ 
-          reporter.report("model port ref not found" , Some(blame))
+        case _: ModelPortRef ⇒
+          reporter.report("model port ref not found", Some(blame))
       }
     }
   }
   def checkBoxes() {
-    var names = (m.portDecls map {_.name} ).toSet
-    for (b<-m.boxes) {
-      reporter (!names(b.name),"Box name is repeated or the name of a declared port", Some(b))
+    var names = (m.portDecls map { _.name }).toSet
+    for (b ← m.boxes) {
+      reporter(!names(b.name), "Box name is repeated or the name of a declared port", Some(b))
       names = names + b.name
       boxTypes += (b -> checkBox(b))
     }
@@ -113,33 +113,31 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   def checkValidPort(port: PortRef) {
 
   }
+ 
   def checkConnections() = {
     val acyclic = new DirectedAcyclicGraph[Box, DefaultEdge](classOf[DefaultEdge])
     m.boxes foreach { acyclic.addVertex(_) }
     var portsUsed = Set[PortRef]()
-    def isModelPort(p: PortRef) = p.isInstanceOf[ModelPortRef] 
+    def isModelPort(p: PortRef) = p.isInstanceOf[ModelPortRef]
     def checkConnection(c: Connection) {
       // complete connection
       reporter(c.from.isDefined && c.to.isDefined, "Connection c is incomplete", Some(c), true)
-      val from = c.from.get
-      val to = c.to.get
-      checkPortRef(from,c)
-      checkPortRef(to,c)
+      reporter.check()
+      val p1 = c.from.get
+      val p2 = c.to.get
+      checkPortRef(p1, c)
+      checkPortRef(p2, c)
       reporter.check() // TODO fail better
       // auto connection
-      reporter(from != to, "Connection to itself", Some(c))
+      reporter(p1 != p2, "Connection to itself", Some(c))
       // port type and direction
-      (portType(from), portType(to)) match {
-        case (TypedPort(a, fromIn, _, _), TypedPort(b, toIn, _, _)) if (a == b) ⇒
-          (fromIn, toIn, isModelPort(from), isModelPort(to)) match {
-            case (true, true, true, false) ⇒ // in -> in model -> box
-            case (false, true, false, false) ⇒ // out -> in box->box 
-            case (false, false, false, true) ⇒ // out->out box->model
-            case (true, false, true, true) ⇒ // in -> out model model
-            case _ ⇒ reporter.report("Invalid connection")
-          }
-        case (a:TypedPort,b:TypedPort) ⇒ reporter.report("Incompatible port types " + a + " " + b, Some(c))
+      val dir : Option[(PortRef,PortRef)] = (portType(p1), portType(p2)) match {
+        case (TypedPort(a, p1In, _, _), TypedPort(b, p2In, _, _)) if (a == b) ⇒
+          c.connectionFlow(portType) orElse {reporter.report("Invalid connection"); None}
+        case (a: TypedPort, b: TypedPort) ⇒ reporter.report("Incompatible port types " + a + " " + b, Some(c)); None
       }
+      reporter.check()
+      val (from,to) =  dir.get
       // multiple connections to one input
       reporter(!portsUsed.contains(to), "Double connection to port " + to, Some(to), true)
       portsUsed += to // this check won't work with nested boxes

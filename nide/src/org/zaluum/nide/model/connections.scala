@@ -74,6 +74,22 @@ class Connection(var from: Option[PortRef], var to: Option[PortRef]) {
     proto.build
     // TODO waypoints
   }
+  def connectionFlow(typeMap: Map[PortRef, TypedPort]): Option[(PortRef, PortRef)] =
+    (from, to) match {
+      case (Some(p1), Some(p2)) ⇒
+        (p1, p2, typeMap(p1).in, typeMap(p2).in) match {
+          case (m1: ModelPortRef, m2: ModelPortRef, false, true) ⇒ Some((m2, m1))
+          case (m1: ModelPortRef, m2: ModelPortRef, true, false) ⇒ Some((m1, m2))
+          case (m1: ModelPortRef, b2: BoxPortRef, true, true) ⇒ Some((m1, b2))
+          case (m1: ModelPortRef, b2: BoxPortRef, false, false) ⇒ Some((b2, m1))
+          case (b1: BoxPortRef, m2: ModelPortRef, true, true) ⇒ Some((m2, b1))
+          case (b1: BoxPortRef, m2: ModelPortRef, false, false) ⇒ Some((b1, m2))
+          case (b1: BoxPortRef, b2: BoxPortRef, true, false) if (b1.box != b2.box) ⇒ Some((b2, b1))
+          case (b1: BoxPortRef, b2: BoxPortRef, false, true) if (b1.box != b2.box) ⇒ Some((b1, b2))
+          case _ ⇒ None
+        }
+      case _ ⇒ None
+    }
   def simpleConnect(src: Point, dst: Point) {
     buf = if (src == dst) {
       Buffer()
