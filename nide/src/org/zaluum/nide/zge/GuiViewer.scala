@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import javax.swing.JButton
 import javax.swing.JComponent
 import java.awt.{ Graphics ⇒ AG }
 import java.awt.image.BufferedImage
@@ -9,7 +11,7 @@ import scala.collection.mutable.Buffer
 
 class Widget(var component: JComponent, var pos: Point, var size: Dimension) extends Positionable with Resizable
 
-class SwingFigure(val viewer: Viewer, val widget: Widget) extends Figure with ResizableItemFigure {
+class SwingFigure(val viewer: GUIViewer, val widget: Widget) extends Figure with ResizableItemFigure {
   lazy val feed = new ResizeItemFeedbackFigure(this)
   def positionable = widget
   def resizable = widget
@@ -30,9 +32,27 @@ class SwingFigure(val viewer: Viewer, val widget: Widget) extends Figure with Re
   }
 }
 class GUIModelView(viewer: GUIViewer, val model: GUIModel) extends AbstractModelView[GUIModel](viewer) {
-  def update() {}
+  object widgetMapper extends ModelViewMapper[Widget, SwingFigure] {
+    def modelSet = model.widgets
+    def buildFigure(widget: Widget) = {
+      new SwingFigure(viewer, widget)
+    }
+  }
+  def update() {
+    widgetMapper.update()
+  }
 }
-class GUIModel
+object ExampleGUI {
+  def simpleModel = {
+    val m= new GUIModel
+    val button = new JButton("hola")
+    m.widgets += new Widget(button, Point(50,50), Dimension(60,60))
+    m
+  }
+}
+class GUIModel {
+  var widgets = Set[Widget]()
+}
 class GUIController(val model: GUIModel) extends AbstractController[GUIModel] {
   private var viewModels = Buffer[GUIModelView]()
   def registerView(viewer: GUIViewer) = {
@@ -52,6 +72,4 @@ class GUIViewer(parent: Composite, controller: GUIController) extends AbstractVi
   override val modelView = controller.registerView(this)
   def model = controller.model
 }
-class GUITool(val viewer: GUIViewer) extends AbstractTool(viewer) {
-
-}
+class GUITool(val viewer: GUIViewer) extends AbstractTool(viewer) 

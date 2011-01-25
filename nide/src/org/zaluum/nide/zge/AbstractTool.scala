@@ -115,7 +115,7 @@ abstract class AbstractTool[M](viewer: AbstractViewer[M]) extends Tool(viewer) {
   // RESIZING
   object resizing extends MovingState {
     var handle: HandleRectangle = _
-    def itf = handle.itemFigure
+    def itf = handle.resizeItemFigure
 
     def enter(initDrag: Point, handle: HandleRectangle) {
       super.enter(initDrag)
@@ -124,8 +124,9 @@ abstract class AbstractTool[M](viewer: AbstractViewer[M]) extends Tool(viewer) {
     def doEnter {}
     def buttonUp {
       val newBounds = handle.deltaAdd(delta, itf.getBounds);
-      //val comm = new ResizeCommand(bf.box, (newBounds.x,newBounds.y), (newBounds.width,newBounds.height))
-      //controller.exec(comm)
+      val dim = Geometry.maxDim(Dimension(newBounds.width,newBounds.height),Dimension(15,15))
+      val comm = new ResizeCommand(itf.resizable, MPoint(newBounds.x,newBounds.y), dim)
+      controller.exec(comm)
       exit()
     }
     def move() {itf.resizeDeltaFeed(delta, handle) }

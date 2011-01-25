@@ -7,7 +7,6 @@ import org.zaluum.nide.model._
 class Viewer(parent: Composite, controller: Controller) extends AbstractViewer[Model](parent, controller) {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
-
   val palette = new Palette(this, parent.getShell, controller.bcp)
   var tool = new BoxTool(this)
   /*MODEL*/

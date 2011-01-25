@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.zge.ResizableItemFigure
 import HandleSizes._
 import org.eclipse.draw2d.{ Cursors, RectangleFigure, Figure, ColorConstants, Shape }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point }
@@ -11,7 +13,10 @@ object HandleSizes {
 class FeedbackRectangle(val feed: ItemFeedbackFigure) extends RectangleFigure {
   def itemFigure = feed.bf
 }
-class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) extends FeedbackRectangle(feed) {
+class ResizeFeedbackRectangle(val feed: ResizeItemFeedbackFigure) extends RectangleFigure {
+  def resizeItemFigure = feed.bf
+}
+class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) extends ResizeFeedbackRectangle(feed) {
   setBackgroundColor(ColorConstants.lightBlue)
   setForegroundColor(ColorConstants.white)
   def resizeCursor = {
@@ -76,7 +81,7 @@ class ItemFeedbackFigure(val bf: ItemFigure) extends Figure {
   }
 
 }
-class ResizeItemFeedbackFigure(bf: ItemFigure) extends ItemFeedbackFigure(bf) {
+class ResizeItemFeedbackFigure(override val bf: ResizableItemFigure) extends ItemFeedbackFigure(bf) {
 
   val handles =
     (for {
