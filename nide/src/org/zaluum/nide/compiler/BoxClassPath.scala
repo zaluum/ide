@@ -1,4 +1,6 @@
 package org.zaluum.nide.compiler
+
+import org.zaluum.nide.java.Widget
 import com.impetus.annovention._
 import com.impetus.annovention.listener._
 import java.io.{ FileInputStream, File }
@@ -67,11 +69,12 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
   }
 
   def classToBoxClass(cl: Class[_]): Option[BoxClass] = {
-    cl.getAnnotations().find { a ⇒ a.isInstanceOf[BoxAnn] } map { ann ⇒
-      val bann = ann.asInstanceOf[BoxAnn]
+    cl.getAnnotations().view.collect { case a: BoxAnn => a }.map { bann:BoxAnn ⇒
       val imageAnn = cl.getAnnotations.view collect { case a: BoxImage ⇒ a.value } headOption
+      val guiAnn = cl.getAnnotations.view collect { case a: Widget => a.value } headOption
+      val guiClass = guiAnn flatMap { forName(_)}
       val scala = cl.getAnnotation(classOf[ScalaSignature]) != null
-      val bc = new BoxClass(cl.getName, scala, imageAnn.getOrElse(""))
+      val bc = new BoxClass(cl.getName, scala, imageAnn.getOrElse(""),guiClass)
       for (f ← cl.getDeclaredFields()) {
         f.getAnnotations() foreach {
           _ match {
@@ -83,7 +86,7 @@ class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxC
         }
       }
       bc
-    }
+    }.headOption;
   }
   def readZaluum(f: File, className: String): Option[BoxClass] = {
     try {
@@ -127,7 +130,7 @@ class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends Simple
     discoverer.addAnnotationListener(new ClassAnnotationDiscoveryListener() {
       def discovered(clazz: String, annotation: String) {
         println("Discovered Class(" + clazz + ") " + "with Annotation(" + annotation + ")");
-        val cl = new BoxClass(clazz, false, "null"); // FIXME
+        val cl = new BoxClass(clazz, false, "null", None); // FIXME
         addCache(Some(cl))
       }
       def supportedAnnotations() = Array(classOf[Box].getName)

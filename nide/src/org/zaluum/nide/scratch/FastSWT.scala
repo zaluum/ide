@@ -56,8 +56,9 @@ class FastSWT {
 class FastGUIViewer extends FastSWT {
   var viewer : GUIViewer = null
   
-  def createViewer(model: GUIModel) {
-    val controller = new GUIController(model)
+  def createViewer(model: Model) {
+    val bcp = new SimpleScannedBoxClassPath(new File("."), currentThread.getContextClassLoader)
+    val controller = new GUIController(new GUIModel,model,bcp)
     if (viewer != null)
       viewer.dispose()
     viewer = new GUIViewer(shell, controller)
@@ -67,7 +68,7 @@ class FastGUIViewer extends FastSWT {
   val buttonFromCode = new Button(buttons, SWT.PUSH)
   buttonFromCode.setText("ModelFromCode")
   addReaction(buttonFromCode) {
-    createViewer(ExampleGUI.simpleModel)
+    //createViewer(ExampleGUI.simpleModel)
   }
 }
 class FastViewer extends FastSWT {

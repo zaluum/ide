@@ -45,7 +45,7 @@ object ProtoModel {
   }
   def readDefinition(in: InputStream, className: String) = {
     val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
-    val boxClass = new BoxClass(className, false, definition.getImageName)
+    val boxClass = new BoxClass(className, false, definition.getImageName,None) // FIXME
     for (port ← definition.getPortList) {
       boxClass.ports += TypedPort(port.getType, port.getDirection == Direction.IN, port.getName, fromPoint(port.getPosExternal))
     }

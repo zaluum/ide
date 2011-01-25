@@ -1,5 +1,8 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.zge.GUIViewer
+import org.zaluum.nide.zge.GUIModel
+import org.zaluum.nide.zge.GUIController
 import org.zaluum.nide.model.Location
 import org.eclipse.ui.ide.IGotoMarker
 import org.eclipse.core.resources.IMarker
@@ -15,6 +18,7 @@ import org.zaluum.nide.zge.{ Viewer, Controller }
 class GraphicalEditor extends EditorPart with IGotoMarker {
 
   var viewer: Viewer = _
+  var guiViewer : GUIViewer = _
   def controller = viewer.controller
   def modelView = viewer.modelView
   def doSave(monitor: IProgressMonitor) {
@@ -47,11 +51,14 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     val controller = new Controller(model, bcp)
     controller.addListener(fireDirty)
     viewer = new Viewer(parent, controller)
+    val guiController = new GUIController(new GUIModel,model,bcp)
+    guiViewer= new GUIViewer(parent, guiController)
   }
   val fireDirty: () ⇒ Unit = () ⇒ firePropertyChange(IEditorPart.PROP_DIRTY)
   def setFocus() { viewer.canvas.setFocus }
   override def dispose() {
     controller.removeListener(fireDirty)
+    viewer.dispose()
   }
   override def gotoMarker(marker: IMarker) {
     val str = marker.getAttribute("BLAME").asInstanceOf[String]

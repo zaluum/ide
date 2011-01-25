@@ -1,6 +1,5 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.zge.ResizableItemFigure
 import HandleSizes._
 import org.eclipse.draw2d.{ Cursors, RectangleFigure, Figure, ColorConstants, Shape }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point }

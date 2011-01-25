@@ -1,4 +1,6 @@
 package org.zaluum.nide.eclipse
+
+import java.net.URLClassLoader
 import java.net.URL
 import org.eclipse.core.resources.{ IProject, IFile, IResource }
 import org.eclipse.core.runtime.{ Path, IPath }
@@ -13,7 +15,10 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
   var cache = Map[String, BoxClass]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
-
+  val classLoader = {
+    val urls = jproject.getResolvedClasspath(true) flatMap { e => pathToURL(e.getPath) }
+    new URLClassLoader(urls, currentThread.getContextClassLoader)
+  }
   def update() {
     cache = cache.empty
     val searchScope = SearchEngine.createJavaSearchScope(
@@ -48,13 +53,19 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         v.getMemberName == key && v.getValueKind == IMemberValuePair.K_INT
       } map { _.getValue.asInstanceOf[Int] }
     }
+    def forName(str: String): Option[Class[_]] = {
+      try { Some(classLoader.loadClass(str)) }
+      catch { case e: Exception ⇒ e.printStackTrace; None }
+    }
     def processType(t: IType) {
       val fqn = t.getFullyQualifiedName;
       val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       }
-
-      val bc = new BoxClass(fqn, false, img.getOrElse(""))
+      val clazz = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
+        findStringValueOfAnnotation(a, "value")
+      } flatMap { forName(_) }
+      val bc = new BoxClass(fqn, false, img.getOrElse(""), clazz)
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
         val oy = findIntegerValueOfAnnotation(a, "y")
@@ -65,10 +76,10 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       }
       for (f ← t.getFields) {
         findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { a ⇒
-          bc.ports += TypedPort(f.getTypeSignature, true, f.getElementName, pointOf(a)) 
+          bc.ports += TypedPort(f.getTypeSignature, true, f.getElementName, pointOf(a))
         }
         findAnnotations(t, f, "org.zaluum.nide.java.Out") foreach { a ⇒
-          bc.ports += TypedPort(f.getTypeSignature, false, f.getElementName, pointOf(a)) 
+          bc.ports += TypedPort(f.getTypeSignature, false, f.getElementName, pointOf(a))
         }
       }
       cache += (bc.className -> bc)

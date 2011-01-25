@@ -1,5 +1,6 @@
 package org.zaluum.nide.model
 
+import javax.swing.JComponent
 import org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.annotation.tailrec
@@ -119,6 +120,10 @@ class Box extends Positionable with Locatable {
   }
   def location = Location(name)
   override def toString = name
+  var guiPos :Resizable = new Resizable{
+    var pos = Point(0,0)
+    var size = Dimension(50,50)
+  }
 }
 object PortDecl {
   def apply(m: Model, name: String, in: Boolean, pos: Point, posExternal: Point, desc: String): PortDecl = {
@@ -143,7 +148,7 @@ class PortDecl(var m: Model, var name: String, var in: Boolean, var descriptor: 
   }
   def location = Location("#" + name)
 }
-class BoxClass(val className: String, val scala: Boolean = false, val image: String) {
+class BoxClass(val className: String, val scala: Boolean = false, val image: String, val guiClass:Option[Class[_]]) {
   var ports = Set[TypedPort]()
   def classNameWithoutPackage = className.split('.').lastOption
   def port(s: String) = ports find { _.name == s }
