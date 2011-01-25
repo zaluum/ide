@@ -6,7 +6,7 @@ import org.eclipse.swt.events._
 import org.zaluum.nide.model.Vector2
 import scala.reflect.Manifest._
 
-abstract class Tool[M](viewer: AbstractViewer[M]) {
+abstract class Tool(viewer: AbstractViewer) {
   def viewport = viewer.viewport
   def canvas = viewer.canvas
   def controller = viewer.controller

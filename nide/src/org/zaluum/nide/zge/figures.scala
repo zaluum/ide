@@ -23,7 +23,7 @@ trait CanShowUpdate extends Figure {
 }
 trait Selectable extends Figure with CanShowFeedback
 trait ItemFigure extends Selectable with CanShowUpdate {
-  def viewer: AbstractViewer[_]
+  def viewer: AbstractViewer
   def positionable: Positionable
   def feed: ItemFeedbackFigure
   def size: Dimension
@@ -111,7 +111,7 @@ class PortDeclFigure(val portDecl: PortDecl, val viewer: Viewer) extends ImageFi
   }
 }
 
-class PortFigure(val bf: ItemFigureWithPorts, val typ: TypedPort, val portRef: PortRef, viewer: AbstractViewer[_]) extends Ellipse with CanShowFeedback with CanShowUpdate {
+class PortFigure(val bf: ItemFigureWithPorts, val typ: TypedPort, val portRef: PortRef, viewer: AbstractViewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)

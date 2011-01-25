@@ -6,7 +6,6 @@ import org.eclipse.swt.widgets.Shell
 import org.eclipse.jface.dialogs.Dialog
 import org.zaluum.nide.zge.GUIViewer
 import org.zaluum.nide.zge.GUIModel
-import org.zaluum.nide.zge.GUIController
 import org.zaluum.nide.model.Location
 import org.eclipse.ui.ide.IGotoMarker
 import org.eclipse.core.resources.IMarker
@@ -23,7 +22,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
 
   var viewer: Viewer = _
   var guiViewer : GUIViewer = _
-  var dialog : Dialog = _ 
+  var shell : Shell = _ 
   def controller = viewer.controller
   def modelView = viewer.modelView
   def doSave(monitor: IProgressMonitor) {
@@ -56,21 +55,21 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     val controller = new Controller(model, bcp)
     controller.addListener(fireDirty)
     viewer = new Viewer(parent, controller)
-    var shell = new Shell(parent.getShell, SWT.MODELESS | SWT.SHELL_TRIM)
+    shell = new Shell(parent.getShell, SWT.MODELESS | SWT.SHELL_TRIM)
     shell.setLayout(new FillLayout)
-    val guiController = new GUIController(new GUIModel,model,bcp)
-    guiViewer= new GUIViewer(shell, guiController)
+    guiViewer= new GUIViewer(shell, controller)
     shell.setSize(400, 300)
     shell.layout()
     shell.open()
-//    dialog.setBlockOnOpen(false)
-  //  dialog.open
+    // TODO reopen
   }
   val fireDirty: () ⇒ Unit = () ⇒ firePropertyChange(IEditorPart.PROP_DIRTY)
   def setFocus() { viewer.canvas.setFocus }
   override def dispose() {
     controller.removeListener(fireDirty)
     viewer.dispose()
+    if (!shell.isDisposed)
+      shell.dispose()
   }
   override def gotoMarker(marker: IMarker) {
     val str = marker.getAttribute("BLAME").asInstanceOf[String]

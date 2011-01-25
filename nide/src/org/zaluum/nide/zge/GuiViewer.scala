@@ -33,7 +33,7 @@ class SwingFigure(val viewer: GUIViewer, val box: Box, val component:JComponent)
     image.dispose()
   }
 }
-class GUIModelView(viewer: GUIViewer, val model: Model, val bcp:BoxClassPath) extends AbstractModelView[GUIModel](viewer) {
+class GUIModelView(viewer: GUIViewer, val model: Model, val bcp:BoxClassPath) extends AbstractModelView(viewer) {
   object widgetMapper extends ModelViewMapper[Box, SwingFigure] {
     def guiClass(box:Box) = bcp.find(box.className) flatMap {_.guiClass}
     def modelSet = {
@@ -59,23 +59,13 @@ object ExampleGUI {
   }
 }
 class GUIModel
-class GUIController(val model: GUIModel, val boxmodel:Model, bcp:BoxClassPath) extends AbstractController[GUIModel] {
-  private var viewModels = Buffer[GUIModelView]()
-  def registerView(viewer: GUIViewer) = {
-    val viewModel = new GUIModelView(viewer, boxmodel,bcp)
-    viewModels += viewModel
-    viewModel.update()
-    viewModel
-  }
-  def updateViewers { viewModels foreach { _.update() } }
-  def abortTools() { viewModels foreach { _.viewer.tool.state.abort() } }
-}
-class GUIViewer(parent: Composite, controller: GUIController) extends AbstractViewer(parent, controller) {
+class GUIViewer(parent: Composite, controller: Controller) extends AbstractViewer(parent, controller) {
   /*TOOLS*/
   //val palette = new Palette(this, parent.getShell)
   var tool = new GUITool(this)
   /*MODEL*/
-  override val modelView = controller.registerView(this)
+  override val modelView = new GUIModelView(this, controller.model, controller.bcp)
+  controller.registerView(modelView)
   def model = controller.model
 }
 class GUITool(val viewer: GUIViewer) extends AbstractTool(viewer) 

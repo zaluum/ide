@@ -2,7 +2,6 @@ package org.zaluum.nide.scratch
 
 import org.zaluum.nide.zge.ExampleGUI
 import org.zaluum.nide.zge.GUIViewer
-import org.zaluum.nide.zge.GUIController
 import org.zaluum.nide.zge.GUIModel
 import org.zaluum.nide.zge.AbstractViewer
 import org.zaluum.nide.compiler.SimpleScannedBoxClassPath
@@ -58,7 +57,7 @@ class FastGUIViewer extends FastSWT {
   
   def createViewer(model: Model) {
     val bcp = new SimpleScannedBoxClassPath(new File("."), currentThread.getContextClassLoader)
-    val controller = new GUIController(new GUIModel,model,bcp)
+    val controller = new Controller(new Model,bcp)
     if (viewer != null)
       viewer.dispose()
     viewer = new GUIViewer(shell, controller)

@@ -5,7 +5,7 @@ import org.eclipse.draw2d.geometry.{Point, Rectangle}
 import org.zaluum.nide.model.{Point => MPoint, _}
 import scala.collection.JavaConversions._
 
-abstract class AbstractTool[M](viewer: AbstractViewer[M]) extends Tool(viewer) {
+abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
   def modelView = viewer.modelView
   
   lazy val selecting = new Selecting

@@ -4,13 +4,14 @@ import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.compiler.BoxClassPath
 import org.zaluum.nide.model._
 
-class Viewer(parent: Composite, controller: Controller) extends AbstractViewer[Model](parent, controller) {
+class Viewer(parent: Composite, controller: Controller) extends AbstractViewer(parent, controller) {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
   val palette = new Palette(this, parent.getShell, controller.bcp)
   var tool = new BoxTool(this)
   /*MODEL*/
-  val modelView = controller.registerView(this)
+  val modelView = new ModelView(this,controller.model,controller.bcp)
+  controller.registerView(modelView)
   def model = controller.model
   override def dispose() {
     super.dispose()
@@ -18,7 +19,7 @@ class Viewer(parent: Composite, controller: Controller) extends AbstractViewer[M
   }
 }
 
-class ModelView(viewer: Viewer, val model: Model, val bcp: BoxClassPath) extends AbstractModelView[Model](viewer) {
+class ModelView(viewer: Viewer, val model: Model, val bcp: BoxClassPath) extends AbstractModelView(viewer) {
 
   def selectedBoxes = selected.selected collect { case x: BoxFigure ⇒ x.box }
   def selectedPorts = selected.selected collect { case x: PortDeclFigure ⇒ x.portDecl }

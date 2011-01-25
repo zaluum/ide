@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import scala.collection.mutable.Buffer
 import draw2dConversions._
 import javax.swing.UIManager
 import org.eclipse.draw2d.{ Figure, FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, ColorConstants, IFigure, RectangleFigure }
@@ -10,7 +12,7 @@ import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 import scala.collection.JavaConversions._
 import scala.collection.mutable.Stack
 
-abstract class AbstractViewer[M](parent: Composite, val controller: AbstractController[M]) {
+abstract class AbstractViewer(parent: Composite, val controller: Controller) {
   /*SWT*/
   def shell = parent.getShell
   val light = new LightweightSystem()
@@ -69,65 +71,11 @@ abstract class AbstractViewer[M](parent: Composite, val controller: AbstractCont
   def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: ItemFigure) ⇒ bf }
   def feedbackAt(p: Point) = findDeepAt(feedbackLayer, p)
   def lineAt(p: Point) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
-  def modelView: AbstractModelView[M]
-  def tool: AbstractTool[M]
+  def modelView: AbstractModelView
+  def tool: AbstractTool
 }
-abstract class AbstractModelView[M](val viewer: AbstractViewer[M]) {
+abstract class AbstractModelView(val viewer: AbstractViewer) {
   val selected = new SelectionManager()
   def deselectAll() { selected.deselectAll }
   def update()
-}
-abstract class AbstractController[M] {
-  val model: M
-  var undoStack = Stack[Command]()
-  var redoStack = Stack[Command]()
-  var mark: Option[Command] = None
-  def isDirty = undoStack.elems.headOption != mark
-  def markSaved() { mark = undoStack.elems.headOption }
-  def updateViewers
-  def abortTools()
-  def exec(c: Command) {
-    if (c.canExecute) {
-      abortTools()
-      c.act()
-      undoStack.push(c)
-      redoStack.clear
-      updateViewers
-      notifyListeners
-    }
-  }
-  def canUndo = !undoStack.isEmpty
-  def canRedo = !redoStack.isEmpty
-
-  def undo() {
-    if (!undoStack.isEmpty) {
-      abortTools()
-      val c = undoStack.pop
-      redoStack.push(c)
-      c.undo()
-      updateViewers
-      notifyListeners
-    }
-  }
-  def redo() {
-    if (!redoStack.isEmpty) {
-      abortTools()
-      val c = redoStack.pop
-      undoStack.push(c)
-      // update tools
-      c.redo()
-      updateViewers
-      notifyListeners
-    }
-  }
-  var listeners = Set[() ⇒ Unit]()
-  def addListener(action: () ⇒ Unit) {
-    listeners += action
-  }
-  def removeListener(action: () ⇒ Unit) {
-    listeners -= action
-  }
-  def notifyListeners() {
-    listeners foreach { _() }
-  }
 }
