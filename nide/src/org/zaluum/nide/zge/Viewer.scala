@@ -1,4 +1,5 @@
 package org.zaluum.nide.zge
+
 import javax.swing.UIManager
 import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, ColorConstants, Figure, IFigure, RectangleFigure }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point }
@@ -9,77 +10,24 @@ import org.eclipse.swt.widgets.{ Composite, MessageBox }
 import org.zaluum.nide.compiler.BoxClassPath
 import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 
-class Viewer(parent: Composite, val controller: Controller) {
-  /*SWT*/
-  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
-  def shell = parent.getShell
-  val light = new LightweightSystem()
-  val canvas = new FigureCanvas(parent, light)
-  val feedbackLayer = new FreeformLayer
-  val portsLayer = new FreeformLayer
-  val connectionsLayer = new FreeformLayer
-  val layer = new FreeformLayer
-  //layer.setLayoutManager(new FreeformLayout)
-  val viewport = new FreeformViewport();
-  val innerLayers = new ScalableFreeformLayeredPane()
-  val marquee = new RectangleFigure;
-  {
-    canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
-    layer.setOpaque(true);
-    layer.setBackgroundColor(ColorConstants.white)
-    innerLayers.add(layer)
-    innerLayers.add(portsLayer)
-    innerLayers.add(connectionsLayer)
-    innerLayers.add(feedbackLayer)
-    viewport.setContents(innerLayers);
-    canvas.setViewport(viewport)
-    marquee.setFill(false)
-    marquee.setLineStyle(SWT.LINE_DASH);
-    UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
-  }
+
+class Viewer(parent:Composite, controller:Controller) extends AbstractViewer[Model](parent,controller){
   /*TOOLS*/
-  val palette = new Palette(this, parent.getShell)
-  var tool = new MoveTool(this)
+    lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
+
+  val palette = new Palette(this, parent.getShell, controller.bcp)
+  var tool = new BoxTool(this)
   /*MODEL*/
   val modelView = controller.registerView(this)
   def model = controller.model
-  /*DEFS*/
-  def showMarquee() { feedbackLayer.add(marquee) }
-  def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
-  def hideMarquee() { feedbackLayer.remove(marquee) }
-  def executeOrNotify(cmd: Command) = {
-    if (cmd.canExecute) {
-      controller.exec(cmd)
-      true
-    } else {
-      val msg = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK)
-      msg.setMessage("Cannot be executed")
-      msg.open
-      false
+  override def dispose(){
+      super.dispose()
+       imageFactory.reg.dispose
     }
-  }
-  def dispose() {
-    canvas.dispose()
-    imageFactory.reg.dispose
-  }
-  def setCursor(cursor: Cursor) {
-    canvas.setCursor(cursor)
-  }
-  def findDeepAt(container: IFigure, p: Point) = {
-    Option(container.findFigureAt(p.x, p.y)) filter (_ != container)
-  }
-  def findShallowAt(container: IFigure, p: Point) = {
-    import scala.collection.JavaConversions._
-    container.getChildren.asInstanceOf[java.util.List[IFigure]] find { _.containsPoint(p) };
-  }
-  def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: ItemFigure) ⇒ bf }
-  def feedbackAt(p: Point) = findDeepAt(feedbackLayer, p)
-  def lineAt(p: Point) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
 }
 
-class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
+class ModelView(viewer: Viewer, val model: Model, val bcp: BoxClassPath) extends AbstractModelView[Model](viewer){
 
-  var selected = new SelectionManager()
   def selectedBoxes = selected.selected collect { case x: BoxFigure ⇒ x.box }
   def selectedPorts = selected.selected collect { case x: PortDeclFigure ⇒ x.portDecl }
   def selectedConnections = selected.selected collect { case x: LineFigure ⇒ x.cf.c }
@@ -166,8 +114,5 @@ class ModelView(val viewer: Viewer, val model: Model, val bcp: BoxClassPath) {
     boxMapper.update()
     portDeclMapper.update()
     connectionMapper.update()
-  }
-  def deselectAll() {
-    selected.deselectAll
   }
 }

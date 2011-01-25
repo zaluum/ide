@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.compiler.ScannedBoxClassPath
 import SWTScala._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
@@ -8,7 +10,7 @@ object Palette {
   val w = 400
   val h = 300
 }
-class Palette(viewer: Viewer, mainShell: Shell) extends ScrollPopup(mainShell) {
+class Palette(viewer: Viewer, mainShell: Shell, bcp : ScannedBoxClassPath) extends ScrollPopup(mainShell) {
   def name = "Palette"
   def columns = 4
   def populate(content: Composite) {
@@ -31,7 +33,7 @@ class Palette(viewer: Viewer, mainShell: Shell) extends ScrollPopup(mainShell) {
     }
     portDecl(in = true)
     portDecl(in = false)
-    val classes = viewer.controller.bcp.boxClasses.toBuffer.sortWith(_.className < _.className)
+    val classes = bcp.boxClasses.toBuffer.sortWith(_.className < _.className)
     for (bc ← classes) {
       val b = new Button(content, SWT.PUSH)
       val data = new GridData

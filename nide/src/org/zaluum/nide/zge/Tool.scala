@@ -6,12 +6,10 @@ import org.eclipse.swt.events._
 import org.zaluum.nide.model.Vector2
 import scala.reflect.Manifest._
 
-abstract class Tool(viewer: Viewer) {
+abstract class Tool[M](viewer: AbstractViewer[M]) {
   def viewport = viewer.viewport
   def canvas = viewer.canvas
   def controller = viewer.controller
-  def modelView = viewer.modelView
-  def model = viewer.modelView.model
   def figureUnderMouse = viewer.figureAt(mouseLocation)
   def lineUnderMouse = viewer.lineAt(mouseLocation)
   def feedbackUnderMouse = viewer.feedbackAt(mouseLocation)

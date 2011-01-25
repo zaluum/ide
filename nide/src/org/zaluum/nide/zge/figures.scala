@@ -59,6 +59,10 @@ trait ItemFigure extends Selectable with CanShowUpdate {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
 }
+trait ResizableItemFigure extends ItemFigure {
+  def feed : ResizeItemFeedbackFigure
+  def resizable : Resizable
+}
 trait ItemFigureWithPorts extends ItemFigure {
   def portMapper : ModelViewMapper[TypedPort, PortFigure] ;
   def find(name: String) = portMapper.values.find { _.typ.name == name }

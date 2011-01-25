@@ -4,15 +4,7 @@ import org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.annotation.tailrec
 
-object Model {
-  def emptyModel(name: String) = {
-    val m = new Model()
-    m.className = name
-    m
-  }
-  val ConnReg = """\((.*?),(.*?)\)""".r
 
-}
 case class Location(str: String)
 trait Locatable {
   def location: Location
@@ -32,6 +24,18 @@ case class Vector2(x: Int, y: Int) extends Tuple2 {
 case class Dimension(w: Int, h: Int)
 trait Positionable {
   var pos: Point
+}
+trait Resizable extends Positionable{
+  var size: Dimension
+}
+object Model {
+  def emptyModel(name: String) = {
+    val m = new Model()
+    m.className = name
+    m
+  }
+  val ConnReg = """\((.*?),(.*?)\)""".r
+
 }
 class Model extends Locatable {
   var className = ""
@@ -144,46 +148,3 @@ class BoxClass(val className: String, val scala: Boolean = false, val image: Str
 }
 case class TypedPort(val descriptor: String, val in: Boolean, val name: String, val pos: Point)
 
-abstract class Command {
-  def act() = redo()
-  def redo()
-  def undo()
-  def canExecute: Boolean
-}
-class ChainCommand(val commands: List[Command]) extends Command {
-  override def act() { commands.foreach { _.act() } }
-  def redo() { commands.foreach { _.redo() } }
-  def undo() { commands.reverse.foreach { _.undo() } }
-  def canExecute = commands.forall(_.canExecute)
-}
-class MoveCommand(positionable: Positionable, pos: Point) extends Command {
-  var old = positionable.pos
-  def redo() { positionable.pos = pos }
-  def undo() { positionable.pos = old }
-  def canExecute = true
-}
-class ConnectCommand(m: Model, c: Connection) extends Command {
-  def redo() { m.connections += c }
-  def undo() { m.connections -= c }
-  def canExecute = {
-    c.from.isDefined && c.to.isDefined &&
-      // not repeated 
-      !m.connections.exists(other ⇒ other.from == c.from && other.to == c.to)
-  }
-}
-/*class ResizeCommand(box: Box, pos:(Int,Int),size: (Int,Int)) extends Command{
-  val oldSize = box.size
-  val oldPos = box.pos
-  def redo() { box.size = size; box.pos = pos }
-  def undo() { box.size = oldSize; box.pos = oldPos }
-}*/
-class CreateCommand(box: Box, model: Model) extends Command {
-  def redo { model.boxes += box }
-  def undo { model.boxes -= box }
-  def canExecute = true
-}
-class CreatePortDeclCommand(portDecl: PortDecl, model: Model) extends Command {
-  def redo { model.portDecls += portDecl }
-  def undo { model.portDecls -= portDecl }
-  def canExecute = true
-}
