@@ -1,5 +1,9 @@
 package org.zaluum.nide.eclipse
 
+import org.eclipse.swt.layout.FillLayout
+import org.eclipse.swt.SWT
+import org.eclipse.swt.widgets.Shell
+import org.eclipse.jface.dialogs.Dialog
 import org.zaluum.nide.zge.GUIViewer
 import org.zaluum.nide.zge.GUIModel
 import org.zaluum.nide.zge.GUIController
@@ -19,6 +23,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
 
   var viewer: Viewer = _
   var guiViewer : GUIViewer = _
+  var dialog : Dialog = _ 
   def controller = viewer.controller
   def modelView = viewer.modelView
   def doSave(monitor: IProgressMonitor) {
@@ -51,8 +56,15 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     val controller = new Controller(model, bcp)
     controller.addListener(fireDirty)
     viewer = new Viewer(parent, controller)
+    var shell = new Shell(parent.getShell, SWT.MODELESS | SWT.SHELL_TRIM)
+    shell.setLayout(new FillLayout)
     val guiController = new GUIController(new GUIModel,model,bcp)
-    guiViewer= new GUIViewer(parent, guiController)
+    guiViewer= new GUIViewer(shell, guiController)
+    shell.setSize(400, 300)
+    shell.layout()
+    shell.open()
+//    dialog.setBlockOnOpen(false)
+  //  dialog.open
   }
   val fireDirty: () ⇒ Unit = () ⇒ firePropertyChange(IEditorPart.PROP_DIRTY)
   def setFocus() { viewer.canvas.setFocus }

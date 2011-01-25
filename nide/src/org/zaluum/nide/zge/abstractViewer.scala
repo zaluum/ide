@@ -35,7 +35,7 @@ abstract class AbstractViewer[M](parent: Composite, val controller: AbstractCont
     canvas.setViewport(viewport)
     marquee.setFill(false)
     marquee.setLineStyle(SWT.LINE_DASH);
-    UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
+    //UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
   }
 
   /*DEFS*/
