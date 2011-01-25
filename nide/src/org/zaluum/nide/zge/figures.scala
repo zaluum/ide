@@ -1,16 +1,16 @@
 package org.zaluum.nide.zge
 import draw2dConversions._
-import org.eclipse.draw2d.{FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline}
-import org.eclipse.draw2d.geometry.{Rectangle, Point => EPoint, Dimension => EDimension}
+import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline }
+import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
 import org.zaluum.nide.model._
 
 object draw2dConversions {
-  implicit def point(p:Point) : EPoint = new EPoint(p.x,p.y)
-  implicit def dimension(d:Dimension) : EDimension = new EDimension(d.w,d.h)
-  implicit def rpoint(p:EPoint) : Point = Point(p.x,p.y)
-  implicit def rdimension(d:EDimension) : Dimension = Dimension(d.width,d.height)
+  implicit def point(p: Point): EPoint = new EPoint(p.x, p.y)
+  implicit def dimension(d: Dimension): EDimension = new EDimension(d.w, d.h)
+  implicit def rpoint(p: EPoint): Point = Point(p.x, p.y)
+  implicit def rdimension(d: EDimension): Dimension = Dimension(d.width, d.height)
 }
 trait CanShowFeedback extends Figure {
   def showFeedback()
@@ -21,11 +21,11 @@ trait CanShowUpdate extends Figure {
   def hide()
   def update()
 }
-trait Selectable extends Figure with CanShowFeedback 
+trait Selectable extends Figure with CanShowFeedback
 trait ItemFigure extends Selectable with CanShowUpdate {
   def viewer: Viewer
-  def positionable : Positionable
-  def feed : ItemFeedbackFigure
+  def positionable: Positionable
+  def feed: ItemFeedbackFigure
   def size: Dimension
   def showFeedback() {
     viewer.feedbackLayer.add(feed)
@@ -48,11 +48,11 @@ trait ItemFigure extends Selectable with CanShowUpdate {
     setBounds(rect)
     feed.setInnerBounds(rect)
   }
-  def moveFeed(loc : Point) {
+  def moveFeed(loc: Point) {
     feed.setInnerLocation(loc)
   }
   def moveDeltaFeed(delta: Vector2) {
-    val loc = positionable.pos + delta 
+    val loc = positionable.pos + delta
     feed.setInnerLocation(loc)
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
@@ -60,11 +60,11 @@ trait ItemFigure extends Selectable with CanShowUpdate {
   }
 }
 trait ResizableItemFigure extends ItemFigure {
-  def feed : ResizeItemFeedbackFigure
-  def resizable : Resizable
+  def feed: ResizeItemFeedbackFigure
+  def resizable: Resizable
 }
 trait ItemFigureWithPorts extends ItemFigure {
-  def portMapper : ModelViewMapper[TypedPort, PortFigure] ;
+  def portMapper: ModelViewMapper[TypedPort, PortFigure];
   def find(name: String) = portMapper.values.find { _.typ.name == name }
   override def show() {
     super.show()
@@ -79,8 +79,8 @@ trait ItemFigureWithPorts extends ItemFigure {
     portMapper.update()
   }
 }
-trait BoxFigure extends ItemFigureWithPorts{
-  def box:Box
+trait BoxFigure extends ItemFigureWithPorts {
+  def box: Box
   var boxClass: Option[BoxClass]
   def positionable = box
   lazy val feed = new ItemFeedbackFigure(this)
@@ -90,20 +90,20 @@ trait BoxFigure extends ItemFigureWithPorts{
   }
 }
 object PortDeclFigure {
-  def img(in:Boolean) = "org/zaluum/nide/icons/portDecl" + (if(in) "In" else "Out") + ".png"
+  def img(in: Boolean) = "org/zaluum/nide/icons/portDecl" + (if (in) "In" else "Out") + ".png"
 }
-class PortDeclFigure(val portDecl:PortDecl, val viewer:Viewer) extends ImageFigure with ItemFigureWithPorts {
+class PortDeclFigure(val portDecl: PortDecl, val viewer: Viewer) extends ImageFigure with ItemFigureWithPorts {
   def positionable = portDecl
-  var size = Dimension(50,20)
+  var size = Dimension(50, 20)
   lazy val feed = new ItemFeedbackFigure(this)
-  def position = if (portDecl.in) Point(48,8) else Point(0,8) 
-  def typedPort = TypedPort(portDecl.descriptor,portDecl.in,portDecl.name,position)
+  def position = if (portDecl.in) Point(48, 8) else Point(0, 8)
+  def typedPort = TypedPort(portDecl.descriptor, portDecl.in, portDecl.name, position)
 
   object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
     def modelSet = Set(typedPort)
     def buildFigure(p: TypedPort) = new PortFigure(PortDeclFigure.this, p, ModelPortRef(p.name), viewer)
   }
-  override def update(){
+  override def update() {
     val image = viewer.imageFactory.get(PortDeclFigure.img(portDecl.in)).get
     setImage(image)
     size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
@@ -137,8 +137,8 @@ class PortFigure(val bf: ItemFigureWithPorts, val typ: TypedPort, val portRef: P
     setSize(10, 10)
     val dx = typ.pos.x
     val dy = typ.pos.y
-    val x = bf.getBounds.x + dx - getBounds.width/2
-    val y = bf.getBounds.y + dy - getBounds.height/2
+    val x = bf.getBounds.x + dx - getBounds.width / 2
+    val y = bf.getBounds.y + dy - getBounds.height / 2
     setLocation(Point(x, y))
   }
 }
@@ -148,7 +148,7 @@ class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: V
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
 }
 
-class LineFigure(l: Line, val cf: ConnectionFigure, modelView: ModelView) extends Polyline with CanShowUpdate with Selectable{
+class LineFigure(l: Line, val cf: ConnectionFigure, modelView: ModelView) extends Polyline with CanShowUpdate with Selectable {
   //setAntialias(1)
   setForegroundColor(ColorConstants.gray)
   def hide() = modelView.viewer.connectionsLayer.remove(this)
@@ -199,7 +199,7 @@ class ConnectionFigure(val c: Connection, modelView: ModelView) extends Figure w
       }
     } else {
       withFullConnection { (fromFig, toFig) ⇒
-        if (rpoint(fromFig.anchor) != c.buf.head.from || rpoint(toFig.anchor) != c.buf.last.end){
+        if (rpoint(fromFig.anchor) != c.buf.head.from || rpoint(toFig.anchor) != c.buf.last.end) {
           c.simpleConnect(fromFig.anchor, toFig.anchor) // TODO only move
         }
       }

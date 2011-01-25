@@ -1,16 +1,15 @@
 package org.zaluum.nide.zge
-
-import org.zaluum.nide.compiler.ScannedBoxClassPath
 import SWTScala._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Shell, Composite, Button }
+import org.zaluum.nide.compiler.ScannedBoxClassPath
 
 object Palette {
   val w = 400
   val h = 300
 }
-class Palette(viewer: Viewer, mainShell: Shell, bcp : ScannedBoxClassPath) extends ScrollPopup(mainShell) {
+class Palette(viewer: Viewer, mainShell: Shell, bcp: ScannedBoxClassPath) extends ScrollPopup(mainShell) {
   def name = "Palette"
   def columns = 4
   def populate(content: Composite) {

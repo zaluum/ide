@@ -1,32 +1,25 @@
 package org.zaluum.nide.zge
-
-import javax.swing.UIManager
-import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, ColorConstants, Figure, IFigure, RectangleFigure }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point }
 import org.eclipse.jface.resource.ImageRegistry
-import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.Cursor
-import org.eclipse.swt.widgets.{ Composite, MessageBox }
+import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.compiler.BoxClassPath
-import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
+import org.zaluum.nide.model._
 
-
-class Viewer(parent:Composite, controller:Controller) extends AbstractViewer[Model](parent,controller){
+class Viewer(parent: Composite, controller: Controller) extends AbstractViewer[Model](parent, controller) {
   /*TOOLS*/
-    lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
+  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.bcp)
 
   val palette = new Palette(this, parent.getShell, controller.bcp)
   var tool = new BoxTool(this)
   /*MODEL*/
   val modelView = controller.registerView(this)
   def model = controller.model
-  override def dispose(){
-      super.dispose()
-       imageFactory.reg.dispose
-    }
+  override def dispose() {
+    super.dispose()
+    imageFactory.reg.dispose
+  }
 }
 
-class ModelView(viewer: Viewer, val model: Model, val bcp: BoxClassPath) extends AbstractModelView[Model](viewer){
+class ModelView(viewer: Viewer, val model: Model, val bcp: BoxClassPath) extends AbstractModelView[Model](viewer) {
 
   def selectedBoxes = selected.selected collect { case x: BoxFigure ⇒ x.box }
   def selectedPorts = selected.selected collect { case x: PortDeclFigure ⇒ x.portDecl }

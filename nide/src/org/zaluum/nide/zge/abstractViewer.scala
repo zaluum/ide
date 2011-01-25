@@ -1,22 +1,14 @@
 package org.zaluum.nide.zge
-
+import draw2dConversions._
 import javax.swing.UIManager
-import org.eclipse.draw2d.{ FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, ColorConstants, Figure, IFigure, RectangleFigure }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point }
-import org.eclipse.jface.resource.ImageRegistry
+import org.eclipse.draw2d.{ Figure, FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, ColorConstants, IFigure, RectangleFigure }
+import org.eclipse.draw2d.geometry.{ Point, Rectangle }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Cursor
 import org.eclipse.swt.widgets.{ Composite, MessageBox }
-import org.zaluum.nide.compiler.BoxClassPath
-import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
-import org.zaluum.nide.compiler.ScannedBoxClassPath
-import org.zaluum.nide.model._
-import scala.collection.mutable.{ Buffer, Stack }
-import draw2dConversions._
-import org.eclipse.draw2d.{ Cursors, Figure }
-import org.eclipse.draw2d.geometry.{ Point, Rectangle }
 import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 import scala.collection.JavaConversions._
+import scala.collection.mutable.Stack
 
 abstract class AbstractViewer[M](parent: Composite, val controller: AbstractController[M]) {
   /*SWT*/
@@ -45,7 +37,7 @@ abstract class AbstractViewer[M](parent: Composite, val controller: AbstractCont
     marquee.setLineStyle(SWT.LINE_DASH);
     UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
   }
-  
+
   /*DEFS*/
   def showMarquee() { feedbackLayer.add(marquee) }
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
@@ -77,16 +69,16 @@ abstract class AbstractViewer[M](parent: Composite, val controller: AbstractCont
   def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: ItemFigure) ⇒ bf }
   def feedbackAt(p: Point) = findDeepAt(feedbackLayer, p)
   def lineAt(p: Point) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
-  def modelView : AbstractModelView[M]
-  def tool : AbstractTool[M]
+  def modelView: AbstractModelView[M]
+  def tool: AbstractTool[M]
 }
-abstract class AbstractModelView[M](val viewer:AbstractViewer[M]) {
+abstract class AbstractModelView[M](val viewer: AbstractViewer[M]) {
   val selected = new SelectionManager()
-  def deselectAll() {selected.deselectAll}
+  def deselectAll() { selected.deselectAll }
   def update()
 }
 abstract class AbstractController[M] {
-  val model:M
+  val model: M
   var undoStack = Stack[Command]()
   var redoStack = Stack[Command]()
   var mark: Option[Command] = None
