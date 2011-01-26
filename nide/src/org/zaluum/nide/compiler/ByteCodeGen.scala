@@ -4,14 +4,13 @@ import Opcodes._
 import org.zaluum.nide.model.{ Box, PortRef, ModelPortRef, BoxPortRef, Connection }
 
 object ByteCodeGen {
-  private def internal(classname: String) = classname.replace('.', '/')
-  private def classDescriptor(classname: String) = 'L' + internal(classname) + ";"
+  def internal(classname: String) = classname.replace('.', '/')
+  def classDescriptor(classname: String) = 'L' + internal(classname) + ";"
   def dump(c: Compiled): Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-
     cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, internal(c.m.className), null, "java/lang/Object", null);
-    val av = cw.visitAnnotation("org.zaluum.nide.java.Box", true);
-    av.visitEnd();
+    //val av = cw.visitAnnotation("org/zaluum/nide/java/Box", true);
+    //av.visitEnd();
     cw.visitSource(c.source, null);
     // FIELDS 
     {
@@ -23,6 +22,7 @@ object ByteCodeGen {
         val fv = cw.visitField(ACC_PUBLIC, p.name, p.descriptor , null, null)
         fv.visitEnd
       }
+      WidgetTemplateDump.createWidgetField(cw)
       // generate init
       val mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
       mv.visitCode();
@@ -42,6 +42,9 @@ object ByteCodeGen {
       for (p ← c.portDeclInOrder) {
         // TODO init values
       }
+      // Create widget
+      WidgetTemplateDump.attachInitCode(mv,c)
+      
       mv.visitInsn(RETURN);
       val l5 = new Label();
       mv.visitLabel(l5);
@@ -125,6 +128,7 @@ object ByteCodeGen {
       mv.visitMaxs(-1, -1);
       mv.visitEnd();
     }
+    
     cw.visitEnd();
     cw.toByteArray();
   }
