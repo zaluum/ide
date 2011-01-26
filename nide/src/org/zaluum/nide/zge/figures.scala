@@ -40,6 +40,7 @@ trait ItemFigure extends Selectable with CanShowUpdate {
     update()
   }
   def hide() {
+    hideFeedback
     if (viewer.layer.getChildren.contains(this))
       viewer.layer.remove(this)
   }
@@ -81,27 +82,29 @@ trait ItemFigureWithPorts extends ItemFigure {
 }
 trait BoxFigure extends ItemFigureWithPorts {
   def box: Box
+  def modelView : AbstractModelView
   var boxClass: Option[BoxClass]
   def positionable = box
   lazy val feed = new ItemFeedbackFigure(this)
-  object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
+  object portMapper extends ModelViewMapper[TypedPort, PortFigure](modelView) {
     def modelSet = boxClass.map { _.ports } getOrElse Set()
-    def buildFigure(p: TypedPort) = new PortFigure(BoxFigure.this, p, BoxPortRef(box, p.name), viewer)
+    def buildFigure(p: TypedPort) = new PortFigure(BoxFigure.this, p, BoxPortRef(box, p.name), modelView)
   }
 }
 object PortDeclFigure {
   def img(in: Boolean) = "org/zaluum/nide/icons/portDecl" + (if (in) "In" else "Out") + ".png"
 }
-class PortDeclFigure(val portDecl: PortDecl, val viewer: Viewer) extends ImageFigure with ItemFigureWithPorts {
+class PortDeclFigure(val portDecl: PortDecl, val modelView: ModelView) extends ImageFigure with ItemFigureWithPorts {
   def positionable = portDecl
+  override def viewer = modelView.viewer
   var size = Dimension(50, 20)
   lazy val feed = new ItemFeedbackFigure(this)
   def position = if (portDecl.in) Point(48, 8) else Point(0, 8)
   def typedPort = TypedPort(portDecl.descriptor, portDecl.in, portDecl.name, position)
 
-  object portMapper extends ModelViewMapper[TypedPort, PortFigure] {
+  object portMapper extends ModelViewMapper[TypedPort, PortFigure](modelView) {
     def modelSet = Set(typedPort)
-    def buildFigure(p: TypedPort) = new PortFigure(PortDeclFigure.this, p, ModelPortRef(p.name), viewer)
+    def buildFigure(p: TypedPort) = new PortFigure(PortDeclFigure.this, p, ModelPortRef(p.name), modelView)
   }
   override def update() {
     val image = viewer.imageFactory.get(PortDeclFigure.img(portDecl.in)).get
@@ -111,13 +114,14 @@ class PortDeclFigure(val portDecl: PortDecl, val viewer: Viewer) extends ImageFi
   }
 }
 
-class PortFigure(val bf: ItemFigureWithPorts, val typ: TypedPort, val portRef: PortRef, viewer: AbstractViewer) extends Ellipse with CanShowFeedback with CanShowUpdate {
+class PortFigure(val bf: ItemFigureWithPorts, val typ: TypedPort, val portRef: PortRef, modelView: AbstractModelView) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)
   val highlight = ColorConstants.blue
   val normal = ColorConstants.gray
   setBackgroundColor(normal)
+  def viewer = modelView.viewer
   def show() {
     viewer.portsLayer.add(this)
     update()
@@ -143,7 +147,8 @@ class PortFigure(val bf: ItemFigureWithPorts, val typ: TypedPort, val portRef: P
   }
 }
 
-class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val viewer: Viewer) extends ImageFigure with BoxFigure {
+class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val modelView: ModelView) extends ImageFigure with BoxFigure {
+  override def viewer = modelView.viewer
   setImage(viewer.imageFactory(boxClass))
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
 }
@@ -178,7 +183,7 @@ class LineFigure(l: Line, val cf: ConnectionFigure, modelView: ModelView) extend
   }
 }
 class ConnectionFigure(val c: Connection, modelView: ModelView) extends Figure with CanShowUpdate {
-  object lines extends ModelViewMapper[Line, LineFigure] {
+  object lines extends ModelViewMapper[Line, LineFigure](modelView) {
     def buildFigure(l: Line) = new LineFigure(l, ConnectionFigure.this, modelView)
     def modelSet = c.buf.toSet
   }

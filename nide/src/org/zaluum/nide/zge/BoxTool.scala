@@ -30,7 +30,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       box.className = boxClass.className
       box.name = name
       box.pos = MPoint(1, 1)
-      bf = new ImageBoxFigure(box, Some(boxClass), viewer)
+      bf = new ImageBoxFigure(box, Some(boxClass), modelView)
       bf.update()
       bf.hide()
       bf.showFeedback()
@@ -56,7 +56,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       val name = model.nextFreeName("port")
       val portDecl = new PortDecl(model, name, in, "D")
       portDecl.pos = MPoint(1, 1)
-      pf = new PortDeclFigure(portDecl, viewer)
+      pf = new PortDeclFigure(portDecl, modelView)
       pf.update()
       pf.hide()
       pf.showFeedback()

@@ -70,14 +70,22 @@ class SelectionManager {
     }
   }
 }
-abstract class ModelViewMapper[M, V <: CanShowUpdate] {
+abstract class ModelViewMapper[M, V <: CanShowUpdate](modelView:AbstractModelView) {
   var viewMap = Map[M, V]()
   def modelSet: Set[M]
   def buildFigure(m: M): V
   def update() {
     val removed = viewMap.keySet -- modelSet
     val added = modelSet -- viewMap.keys
-    removed foreach { m ⇒ viewMap(m).hide; viewMap -= m }
+    removed foreach { m ⇒ 
+      val f = viewMap(m); 
+      f.hide;
+      f match {
+        case s : Selectable => modelView.selected.deselect(s)
+        case _ =>
+      }
+      viewMap -= m 
+    }
     for (m ← added) {
       val f = buildFigure(m)
       viewMap += (m -> f)

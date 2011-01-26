@@ -19,7 +19,7 @@ class Viewer(parent: Composite, controller: Controller) extends AbstractViewer(p
   }
 }
 
-class ModelView(viewer: Viewer, val model: Model, val bcp: BoxClassPath) extends AbstractModelView(viewer) {
+class ModelView(override val viewer: Viewer, val model: Model, val bcp: BoxClassPath) extends AbstractModelView(viewer) {
 
   def selectedBoxes = selected.selected collect { case x: BoxFigure ⇒ x.box }
   def selectedPorts = selected.selected collect { case x: PortDeclFigure ⇒ x.portDecl }
@@ -66,20 +66,20 @@ class ModelView(viewer: Viewer, val model: Model, val bcp: BoxClassPath) extends
       }
     }
   }
-  object boxMapper extends ModelViewMapper[Box, BoxFigure] {
+  object boxMapper extends ModelViewMapper[Box, BoxFigure](this) {
     def modelSet = model.boxes
     def buildFigure(box: Box) = {
       val cl = bcp.find(box.className)
-      new ImageBoxFigure(box, cl, viewer)
+      new ImageBoxFigure(box, cl, ModelView.this)
     }
   }
-  object connectionMapper extends ModelViewMapper[Connection, ConnectionFigure] {
+  object connectionMapper extends ModelViewMapper[Connection, ConnectionFigure](this) {
     def modelSet = model.connections
     def buildFigure(conn: Connection) = new ConnectionFigure(conn, ModelView.this)
   }
-  object portDeclMapper extends ModelViewMapper[PortDecl, PortDeclFigure] {
+  object portDeclMapper extends ModelViewMapper[PortDecl, PortDeclFigure](this) {
     def modelSet = model.portDecls
-    def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl, viewer)
+    def buildFigure(portDecl: PortDecl) = new PortDeclFigure(portDecl, ModelView.this)
   }
   def gotoMarker(l: Location) {
     model.locate(l) foreach {
