@@ -28,6 +28,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   var shell : Option[Shell] = None 
   def controller = viewer.controller
   def modelView = viewer.modelView
+  def model = modelView.model 
   def doSave(monitor: IProgressMonitor) {
     val in = new ByteArrayInputStream(ProtoModel.toByteArray(viewer.model))
     inputFile.setContents(in, true, true, monitor);
@@ -66,13 +67,13 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def setFocus() { viewer.canvas.setFocus }
   def openGUI() {
     if (!shell.isDefined) {
-      val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE)
+      val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE | SWT.RESIZE )
       newshell.setLayout(new FillLayout)
       newshell.setText(getTitle + " GUI");
       guiViewer= new GUIViewer(newshell, controller)
-      newshell.setSize(400, 300)
       newshell.layout()
       newshell.open()
+      
       newshell.addDisposeListener(new DisposeListener(){
         override def widgetDisposed(e:DisposeEvent) {
           guiViewer.dispose()

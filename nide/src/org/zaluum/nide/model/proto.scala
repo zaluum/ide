@@ -78,15 +78,15 @@ object ProtoModel {
     val model = new Model()
     val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
     model.className = className
-    if (definition.hasGuiSize)
-      model.guiSize = Dimension(definition.getGuiSize.getX,definition.getGuiSize.getY)      
+    model.guiSize = Dimension(definition.getGuiSize.getX,definition.getGuiSize.getY)
+    model.visual = definition.getVisual  
     model.imageName = if (definition.hasImageName) definition.getImageName() else ""
     for (port ← definition.getPortList) {
       PortDecl(model, port.getName,
         port.getDirection == Direction.IN,
         fromPoint(port.getPosInternal),
         fromPoint(port.getPosExternal),
-        port.getType) // TODO type
+        port.getType) 
     }
 
     val contents = BoxFileProtos.Contents.parseDelimitedFrom(in)

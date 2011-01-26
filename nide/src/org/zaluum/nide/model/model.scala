@@ -44,7 +44,7 @@ object Model {
 class Model extends Locatable {
   var className = ""
   var imageName = ""
-  var guiSize = Dimension(50,50)
+  var guiSize = Dimension(300,400)
   var visual = true
   var boxes = Set[Box]()
   var portDecls = Set[PortDecl]()
