@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.Graphics
 import scala.collection.mutable.Buffer
 import draw2dConversions._
 import javax.swing.UIManager
@@ -15,20 +16,28 @@ import scala.collection.mutable.Stack
 abstract class AbstractViewer(parent: Composite, val controller: Controller) {
   /*SWT*/
   def shell = parent.getShell
+  def display = shell.getDisplay
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
   val connectionsLayer = new FreeformLayer
-  val layer = new FreeformLayer
+  val layer = new FreeformLayer {
+    override def paintFigure(graphics:Graphics) {
+      graphics.fillRectangle(getBounds());
+      for (i<- 0 to getBounds.width by 15; j<- 0 to getBounds.height by 15) {
+        graphics.drawPoint(i, j);
+      }
+    }
+  }
   //layer.setLayoutManager(new FreeformLayout)
   val viewport = new FreeformViewport();
   val innerLayers = new ScalableFreeformLayeredPane()
   val marquee = new RectangleFigure;
   {
     canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
-    layer.setOpaque(true);
     layer.setBackgroundColor(ColorConstants.white)
+    layer.setForegroundColor(ColorConstants.blue)
     innerLayers.add(layer)
     innerLayers.add(portsLayer)
     innerLayers.add(connectionsLayer)
