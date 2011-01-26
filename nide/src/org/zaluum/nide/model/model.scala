@@ -116,14 +116,15 @@ class Box extends Positionable with Locatable {
     instance.setName(name)
     instance.setClassName(className)
     instance.setPos(ProtoModel.toPoint(pos))
+    guiPos foreach { gp=>
+      instance.setGuiPos(ProtoModel.toPoint(gp.pos))
+      instance.setGuiSize(ProtoModel.toPoint(gp.size))
+    }
     instance.build
   }
   def location = Location(name)
   override def toString = name
-  var guiPos :Resizable = new Resizable{
-    var pos = Point(0,0)
-    var size = Dimension(50,50)
-  }
+  var guiPos : Option[Resizable] = None 
 }
 object PortDecl {
   def apply(m: Model, name: String, in: Boolean, pos: Point, posExternal: Point, desc: String): PortDecl = {

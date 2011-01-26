@@ -28,7 +28,7 @@ message Contents {
 	optional Point size = 4;
 	repeated Parameter parameter =5;
 	optional Point gui_pos = 6;
-	optional Point gui_size = 7
+	optional Point gui_size = 7;
   }
   message Parameter {
     required string key =1;

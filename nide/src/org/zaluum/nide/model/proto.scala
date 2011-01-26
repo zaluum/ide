@@ -66,11 +66,18 @@ object ProtoModel {
 
     val contents = BoxFileProtos.Contents.parseDelimitedFrom(in)
     for (instance ← contents.getInstanceList) {
-      val box = new Box
       if (model.boxNamed(instance.getName))
         throw new Exception("Box name repeated" + instance.getName)
-      Box(model, name = instance.getName, pos = Point(instance.getPos.getX, instance.getPos.getY),
+      val box = Box(model,
+          name = instance.getName, 
+          pos = Point(instance.getPos.getX, instance.getPos.getY),
         className = instance.getClassName)
+      if (instance.hasGuiPos && instance.hasGuiSize) {
+        box.guiPos = Some(new Resizable {
+          var pos = Point(instance.getGuiPos.getX,instance.getGuiPos.getY)
+          var size = Dimension(instance.getGuiSize.getX,instance.getGuiSize.getY)
+        })
+      }
       // ports
     }
     var portRefs = Map[Box, Set[PortRef]]()
@@ -106,6 +113,12 @@ object ProtoModel {
     val p = BoxFileProtos.Point.newBuilder
     p.setX(i.x)
     p.setY(i.y)
+    p.build
+  }
+  def toPoint(i: Dimension) = {
+    val p = BoxFileProtos.Point.newBuilder
+    p.setX(i.w)
+    p.setY(i.h)
     p.build
   }
   def fromPoint(p: BoxFileProtos.Point) = Point(p.getX, p.getY)

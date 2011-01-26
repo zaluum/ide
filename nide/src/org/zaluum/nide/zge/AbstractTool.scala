@@ -17,7 +17,7 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
     var handle: Option[HandleRectangle] = None
     var port: Option[PortFigure] = None
     var initDrag: Point = _
-    def enter() { state = this }
+    def enter() { state = this; println("state =  Selecting") }
     def buttonDown {
       selected = figureUnderMouse
       if (selected.isEmpty) lineSelected = lineUnderMouse
@@ -68,10 +68,6 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
     def abort {}
     def exit {}
   }
-  /*trait ConnectState extends MovingState {
-    def enter(initdrag: Point, initPort: PortFigure)
-  }
-  val connect : ConnectState*/
   // MOVE
   object moving extends MovingState {
     def doEnter {}
@@ -81,7 +77,6 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
         new MoveCommand(bf.positionable, oldLoc + delta)
       };
       controller.exec(new ChainCommand(commands.toList))
-      exit()
     }
     def drag {}
     def buttonDown {}
@@ -127,7 +122,6 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
       val dim = Geometry.maxDim(Dimension(newBounds.width,newBounds.height),Dimension(15,15))
       val comm = new ResizeCommand(itf.resizable, MPoint(newBounds.x,newBounds.y), dim)
       controller.exec(comm)
-      exit()
     }
     def move() {itf.resizeDeltaFeed(delta, handle) }
     def abort() {

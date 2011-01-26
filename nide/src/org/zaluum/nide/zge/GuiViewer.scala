@@ -15,9 +15,9 @@ import scala.collection.mutable.Buffer
 
 class SwingFigure(val viewer: GUIViewer, val box: Box, val component:JComponent) extends Figure with ResizableItemFigure {
   lazy val feed = new ResizeItemFeedbackFigure(this)
-  def positionable = box.guiPos 
-  def resizable = box.guiPos
-  def size = box.guiPos.size
+  def positionable = box.guiPos.get // TODO better way? 
+  def resizable = box.guiPos.get
+  def size = box.guiPos.get.size
   setOpaque(true)
   override def paintFigure(g: Graphics) {
     val rect = getClientArea()
@@ -41,6 +41,12 @@ class GUIModelView(viewer: GUIViewer, val model: Model, val bcp:BoxClassPath) ex
     }
     def buildFigure(guiBox: Box) = {
       val component = guiClass(guiBox) map { _.newInstance.asInstanceOf[JComponent] } getOrElse { new JButton("Not found") }
+      if (!guiBox.guiPos.isDefined) {
+        guiBox.guiPos = Some(new Resizable { // TODO command?
+          var pos = Point(0,0)
+          var size = Dimension(50,50)
+        })
+      }
       // TODO catch exceptions 
       new SwingFigure(viewer, guiBox, component)
     }
