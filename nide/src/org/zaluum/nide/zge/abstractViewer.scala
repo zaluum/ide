@@ -57,6 +57,7 @@ abstract class AbstractViewer(parent: Composite, val controller: Controller) {
   }
   def dispose() {
     canvas.dispose()
+    controller.unregisterView(modelView)
   }
   def setCursor(cursor: Cursor) {
     canvas.setCursor(cursor)
@@ -73,6 +74,7 @@ abstract class AbstractViewer(parent: Composite, val controller: Controller) {
   def lineAt(p: Point) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
   def modelView: AbstractModelView
   def tool: AbstractTool
+  controller.registerView(modelView)
 }
 abstract class AbstractModelView(val viewer: AbstractViewer) {
   val selected = new SelectionManager()

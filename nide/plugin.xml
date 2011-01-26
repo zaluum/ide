@@ -261,6 +261,86 @@
             value="true">
       </persistent>
    </extension>
-   
-   
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="menu:org.eclipse.ui.main.menu?after=additions">
+         <menu
+               id="org.zaluum.nide.menus.zaluumMenu"
+               label="Zaluum"
+               mnemonic="M">
+            <command
+                  commandId="org.zaluum.nide.commands.openGUICommand"
+                  id="org.zaluum.nide.menus.openGUICommand"
+                  mnemonic="S">
+               <visibleWhen
+                     checkEnabled="false">
+                  <with
+                        variable="activeEditorId">
+                     <equals
+                           value="org.zaluum.nide.editor">
+                     </equals>
+                  </with>
+               </visibleWhen>
+            </command>
+         </menu>
+      </menuContribution>
+      <menuContribution
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
+         <toolbar
+               id="org.zaluum.nide.toolbars.zaluumToolbar">
+            <command
+                  commandId="org.zaluum.nide.commands.openGUICommand"
+                  icon="icons/16.gif"
+                  id="org.zaluum.nide.toolbars.openGUICommand"
+                  tooltip="Open GUI">
+               <visibleWhen
+                     checkEnabled="false">
+                  <with
+                        variable="activeEditorId">
+                     <equals
+                           value="org.zaluum.nide.editor">
+                     </equals>
+                  </with>
+               </visibleWhen>
+            </command>
+         </toolbar>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="org.zaluum.nide.commands.openGUICommand"
+            contextId="org.zaluum.nide.context"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="F6">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            id="org.zaluum.nide.commands.category"
+            name="Zaluum Editor Commands">
+      </category>
+      <command
+            categoryId="org.zaluum.nide.commands.category"
+            id="org.zaluum.nide.commands.openGUICommand"
+            name="Open GUI View">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="org.zaluum.nide.eclipse.OpenGUIHandler"
+            commandId="org.zaluum.nide.commands.openGUICommand">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.contexts">
+      <context
+            description="Zaluum Edit Context"
+            id="org.zaluum.nide.context"
+            name="Zaluum Editing">
+      </context>
+   </extension>
 </plugin>

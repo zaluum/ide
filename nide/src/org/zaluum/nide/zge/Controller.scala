@@ -12,6 +12,9 @@ class Controller(val model: Model,val bcp:ScannedBoxClassPath) {
     viewModels += modelView
     modelView.update()
   }
+  def unregisterView(modelView : AbstractModelView) {
+    viewModels -= modelView
+  }
   def updateViewers { viewModels foreach { _.update() } }
   def abortTools() { viewModels foreach { _.viewer.tool.state.abort() } }
   

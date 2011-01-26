@@ -10,8 +10,8 @@ class Viewer(parent: Composite, controller: Controller) extends AbstractViewer(p
   val palette = new Palette(this, parent.getShell, controller.bcp)
   var tool = new BoxTool(this)
   /*MODEL*/
-  val modelView = new ModelView(this,controller.model,controller.bcp)
-  controller.registerView(modelView)
+  lazy val modelView = new ModelView(this,controller.model,controller.bcp)
+
   def model = controller.model
   override def dispose() {
     super.dispose()

@@ -42,7 +42,6 @@ class GUIModelView(viewer: GUIViewer, val model: Model, val bcp:BoxClassPath) ex
     def buildFigure(guiBox: Box) = {
       val component = guiClass(guiBox) map { _.newInstance.asInstanceOf[JComponent] } getOrElse { new JButton("Not found") }
       // TODO catch exceptions 
-      println ("component " + component)
       new SwingFigure(viewer, guiBox, component)
     }
   }
@@ -61,11 +60,9 @@ object ExampleGUI {
 class GUIModel
 class GUIViewer(parent: Composite, controller: Controller) extends AbstractViewer(parent, controller) {
   /*TOOLS*/
-  //val palette = new Palette(this, parent.getShell)
   var tool = new GUITool(this)
   /*MODEL*/
-  override val modelView = new GUIModelView(this, controller.model, controller.bcp)
-  controller.registerView(modelView)
+  lazy val modelView = new GUIModelView(this, controller.model, controller.bcp)
   def model = controller.model
 }
 class GUITool(val viewer: GUIViewer) extends AbstractTool(viewer) 
