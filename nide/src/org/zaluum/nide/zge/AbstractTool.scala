@@ -17,7 +17,7 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
     var handle: Option[HandleRectangle] = None
     var port: Option[PortFigure] = None
     var initDrag: Point = _
-    def enter() { state = this; println("state =  Selecting") }
+    def enter() { state = this; }
     def buttonDown {
       selected = figureUnderMouse
       if (selected.isEmpty) lineSelected = lineUnderMouse

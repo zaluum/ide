@@ -4,8 +4,8 @@ import org.zaluum.nide.zge.ExampleGUI
 import org.zaluum.nide.zge.GUIViewer
 import org.zaluum.nide.zge.GUIModel
 import org.zaluum.nide.zge.AbstractViewer
-import org.zaluum.nide.compiler.SimpleScannedBoxClassPath
-import org.zaluum.nide.compiler.SimpleBoxClassPath
+//import org.zaluum.nide.compiler.SimpleScannedBoxClassPath
+//import org.zaluum.nide.compiler.SimpleBoxClassPath
 import org.zaluum.nide.zge.SWTScala
 import org.zaluum.nide.zge.Viewer
 import org.zaluum.nide.zge.Controller
@@ -26,7 +26,7 @@ import org.eclipse.swt.widgets.Display
 import org.eclipse.swt.layout.FillLayout
 import org.zaluum.nide.model._
 import SWTScala._
-
+/*
 object FastSWT {
 
   def main(args: Array[String]) {
@@ -117,3 +117,4 @@ class FastViewer extends FastSWT {
     }
   }
 }
+*/

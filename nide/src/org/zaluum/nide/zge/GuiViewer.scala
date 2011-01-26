@@ -35,12 +35,12 @@ class SwingFigure(val viewer: GUIViewer, val box: Box, val component:JComponent)
 }
 class GUIModelView(viewer: GUIViewer, val model: Model, val bcp:BoxClassPath) extends AbstractModelView(viewer) {
   object widgetMapper extends ModelViewMapper[Box, SwingFigure](this) {
-    def guiClass(box:Box) = bcp.find(box.className) flatMap {_.guiClass}
+    def guiCreator(box:Box) = bcp.find(box.className) filter {_.visual} flatMap {_.guiCreator}
     def modelSet = {
-      model.boxes filter {guiClass(_).isDefined }
+      model.boxes filter {guiCreator(_).isDefined }
     }
     def buildFigure(guiBox: Box) = {
-      val component = guiClass(guiBox) map { _.newInstance.asInstanceOf[JComponent] } getOrElse { new JButton("Not found") }
+      val component = guiCreator(guiBox) map { _() } getOrElse { new JButton("Not found") }
       if (!guiBox.guiPos.isDefined) {
         guiBox.guiPos = Some(new Resizable { // TODO command?
           var pos = Point(0,0)

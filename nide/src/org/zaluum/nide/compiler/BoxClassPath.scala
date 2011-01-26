@@ -20,7 +20,7 @@ trait ScannedBoxClassPath extends BoxClassPath {
 }
 /**
  * ClassPath
- */
+ *
 class SimpleBoxClassPath(zaluumDir: File, classLoader: ClassLoader) extends BoxClassPath {
   var cache = Map[String, BoxClass]()
 
@@ -150,4 +150,4 @@ class SimpleScannedBoxClassPath(zaluumDir: File, cl: ClassLoader) extends Simple
     println("end")
   }
 
-}
+}*/

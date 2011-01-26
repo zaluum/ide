@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse
 
+import javax.swing.JComponent
 import java.net.URLClassLoader
 import java.net.URL
 import org.eclipse.core.resources.{ IProject, IFile, IResource }
@@ -65,7 +66,8 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       val clazz = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       } flatMap { forName(_) }
-      val bc = new BoxClass(fqn, false, img.getOrElse(""), clazz)
+      val creator = clazz map {c => ()=>c.newInstance.asInstanceOf[JComponent]}
+      val bc = new BoxClass(fqn, false, img.getOrElse(""), creator, creator.isDefined)
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
         val oy = findIntegerValueOfAnnotation(a, "y")
@@ -100,7 +102,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     // FIND ZALUUMS IN SOURCE
     visitSourceZaluums { f ⇒
       toClassName(f) foreach { name ⇒
-        cache += (name -> ProtoModel.readDefinition(f.getContents, name))
+        cache += (name -> ProtoModel.readClass(f.getContents, name,this))
       }
     }
   }

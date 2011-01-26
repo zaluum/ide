@@ -44,6 +44,8 @@ object Model {
 class Model extends Locatable {
   var className = ""
   var imageName = ""
+  var guiSize = Dimension(50,50)
+  var visual = true
   var boxes = Set[Box]()
   var portDecls = Set[PortDecl]()
   def boxNamed(str: String) = boxes.exists { _.name == str }
@@ -149,7 +151,7 @@ class PortDecl(var m: Model, var name: String, var in: Boolean, var descriptor: 
   }
   def location = Location("#" + name)
 }
-class BoxClass(val className: String, val scala: Boolean = false, val image: String, val guiClass:Option[Class[_]]) {
+class BoxClass(val className: String, val scala: Boolean = false, val image: String,var guiCreator : Option[()=>JComponent] = None, var visual:Boolean) {
   var ports = Set[TypedPort]()
   def classNameWithoutPackage = className.split('.').lastOption
   def port(s: String) = ports find { _.name == s }

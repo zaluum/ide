@@ -6,6 +6,7 @@ import com.google.protobuf.TextFormat
 import java.io.{ OutputStream, OutputStreamWriter, InputStream, ByteArrayOutputStream }
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.JavaConversions._
+import org.zaluum.nide.compiler.BoxClassPath
 
 object ProtoModel {
 
@@ -17,6 +18,8 @@ object ProtoModel {
       val x = if (in) 0 else 48
       sorted.view.zipWithIndex foreach { case (p, i) ⇒ p.posExternal = Point(x, i * 8) }
     }
+    b.setGuiSize(toPoint(m.guiSize))
+    b.setVisual(m.visual)
     sortInOut(in = true)
     sortInOut(in = false)
     for (portDecl ← m.portDecls) { b.addPort(portDecl.toProto) }
@@ -43,9 +46,29 @@ object ProtoModel {
     TextFormat.print(contentsToProtos(m), o)
     o.flush
   }
-  def readDefinition(in: InputStream, className: String) = {
+  def readClass(in: InputStream, className: String, bcp:BoxClassPath) = {
     val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
-    val boxClass = new BoxClass(className, false, definition.getImageName,None) // FIXME
+    val contents = BoxFileProtos.Contents.parseDelimitedFrom(in)
+    def creator() = {
+      import javax.swing.JPanel
+      val component = new JPanel(null)
+      component.setSize(definition.getGuiSize.getX,definition.getGuiSize.getY)
+      for (i <- contents.getInstanceList) {
+        if (i.getClassName!=className){ // check cycles!
+          
+          val c = bcp.find(i.getClassName) filter { _.visual } flatMap { _.guiCreator } map { _() }
+          c foreach {child =>
+            val pos = i.getGuiPos;
+            val size =i .getGuiSize;
+            child.setBounds(pos.getX, pos.getY, size.getX, size.getY);
+            component.add(child)
+          }
+        }
+      }
+      component
+    }
+    val visual = definition.getVisual
+    val boxClass = new BoxClass(className, false, definition.getImageName,Some(creator _),visual) // FIXME
     for (port ← definition.getPortList) {
       boxClass.ports += TypedPort(port.getType, port.getDirection == Direction.IN, port.getName, fromPoint(port.getPosExternal))
     }
@@ -55,6 +78,8 @@ object ProtoModel {
     val model = new Model()
     val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
     model.className = className
+    if (definition.hasGuiSize)
+      model.guiSize = Dimension(definition.getGuiSize.getX,definition.getGuiSize.getY)      
     model.imageName = if (definition.hasImageName) definition.getImageName() else ""
     for (port ← definition.getPortList) {
       PortDecl(model, port.getName,

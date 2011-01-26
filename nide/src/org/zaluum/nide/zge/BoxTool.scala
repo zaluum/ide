@@ -25,7 +25,6 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
     var bf: BoxFigure = _
     def enter(boxClass: BoxClass) {
       state = this
-      println("creating")
       val name = model.nextFreeName("box")
       val box = new Box()
       box.className = boxClass.className
@@ -40,17 +39,16 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
     def abort() { exit() }
     def drag() {}
     def buttonUp() {
-      // execute
       bf.box.pos = MPoint(mouseLocation.x, mouseLocation.y)
       val com = new CreateCommand(bf.box, model)
-      controller.exec(com) // no need to exit controller aborts all tools
+      controller.exec(com) // no need to exit. controller aborts all tools
     }
     def buttonDown() {}
     def exit() { 
-      println("exit");
       bf.hideFeedback; 
       bf = null; 
-      selecting.enter() }
+      selecting.enter() 
+    }
   }
   // CREATING PORT
   object creatingPort extends ToolState {

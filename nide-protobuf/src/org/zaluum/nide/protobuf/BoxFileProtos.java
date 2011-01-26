@@ -634,11 +634,29 @@ public final class BoxFileProtos {
       return port_.get(index);
     }
     
+    // optional .zaluum.Point gui_size = 3;
+    public static final int GUI_SIZE_FIELD_NUMBER = 3;
+    private boolean hasGuiSize;
+    private org.zaluum.nide.protobuf.BoxFileProtos.Point guiSize_;
+    public boolean hasGuiSize() { return hasGuiSize; }
+    public org.zaluum.nide.protobuf.BoxFileProtos.Point getGuiSize() { return guiSize_; }
+    
+    // optional bool visual = 4;
+    public static final int VISUAL_FIELD_NUMBER = 4;
+    private boolean hasVisual;
+    private boolean visual_ = false;
+    public boolean hasVisual() { return hasVisual; }
+    public boolean getVisual() { return visual_; }
+    
     private void initFields() {
+      guiSize_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
     }
     public final boolean isInitialized() {
       for (org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port element : getPortList()) {
         if (!element.isInitialized()) return false;
+      }
+      if (hasGuiSize()) {
+        if (!getGuiSize().isInitialized()) return false;
       }
       return true;
     }
@@ -651,6 +669,12 @@ public final class BoxFileProtos {
       }
       for (org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port element : getPortList()) {
         output.writeMessage(2, element);
+      }
+      if (hasGuiSize()) {
+        output.writeMessage(3, getGuiSize());
+      }
+      if (hasVisual()) {
+        output.writeBool(4, getVisual());
       }
       getUnknownFields().writeTo(output);
     }
@@ -668,6 +692,14 @@ public final class BoxFileProtos {
       for (org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port element : getPortList()) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(2, element);
+      }
+      if (hasGuiSize()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(3, getGuiSize());
+      }
+      if (hasVisual()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(4, getVisual());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -840,6 +872,12 @@ public final class BoxFileProtos {
           }
           result.port_.addAll(other.port_);
         }
+        if (other.hasGuiSize()) {
+          mergeGuiSize(other.getGuiSize());
+        }
+        if (other.hasVisual()) {
+          setVisual(other.getVisual());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -873,6 +911,19 @@ public final class BoxFileProtos {
               org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Definition.Port.newBuilder();
               input.readMessage(subBuilder, extensionRegistry);
               addPort(subBuilder.buildPartial());
+              break;
+            }
+            case 26: {
+              org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder();
+              if (hasGuiSize()) {
+                subBuilder.mergeFrom(getGuiSize());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setGuiSize(subBuilder.buildPartial());
+              break;
+            }
+            case 32: {
+              setVisual(input.readBool());
               break;
             }
           }
@@ -949,6 +1000,61 @@ public final class BoxFileProtos {
       }
       public Builder clearPort() {
         result.port_ = java.util.Collections.emptyList();
+        return this;
+      }
+      
+      // optional .zaluum.Point gui_size = 3;
+      public boolean hasGuiSize() {
+        return result.hasGuiSize();
+      }
+      public org.zaluum.nide.protobuf.BoxFileProtos.Point getGuiSize() {
+        return result.getGuiSize();
+      }
+      public Builder setGuiSize(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        result.hasGuiSize = true;
+        result.guiSize_ = value;
+        return this;
+      }
+      public Builder setGuiSize(org.zaluum.nide.protobuf.BoxFileProtos.Point.Builder builderForValue) {
+        result.hasGuiSize = true;
+        result.guiSize_ = builderForValue.build();
+        return this;
+      }
+      public Builder mergeGuiSize(org.zaluum.nide.protobuf.BoxFileProtos.Point value) {
+        if (result.hasGuiSize() &&
+            result.guiSize_ != org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance()) {
+          result.guiSize_ =
+            org.zaluum.nide.protobuf.BoxFileProtos.Point.newBuilder(result.guiSize_).mergeFrom(value).buildPartial();
+        } else {
+          result.guiSize_ = value;
+        }
+        result.hasGuiSize = true;
+        return this;
+      }
+      public Builder clearGuiSize() {
+        result.hasGuiSize = false;
+        result.guiSize_ = org.zaluum.nide.protobuf.BoxFileProtos.Point.getDefaultInstance();
+        return this;
+      }
+      
+      // optional bool visual = 4;
+      public boolean hasVisual() {
+        return result.hasVisual();
+      }
+      public boolean getVisual() {
+        return result.getVisual();
+      }
+      public Builder setVisual(boolean value) {
+        result.hasVisual = true;
+        result.visual_ = value;
+        return this;
+      }
+      public Builder clearVisual() {
+        result.hasVisual = false;
+        result.visual_ = false;
         return this;
       }
       
@@ -3577,29 +3683,30 @@ public final class BoxFileProtos {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rBoxFile.proto\022\006zaluum\"\205\002\n\nDefinition\022\022" +
+      "\n\rBoxFile.proto\022\006zaluum\"\266\002\n\nDefinition\022\022" +
       "\n\nimage_name\030\001 \001(\t\022%\n\004port\030\002 \003(\0132\027.zaluu" +
-      "m.Definition.Port\032\235\001\n\004Port\022\014\n\004name\030\001 \002(\t" +
-      "\022\014\n\004type\030\002 \002(\t\022/\n\tdirection\030\003 \002(\0162\034.zalu" +
-      "um.Definition.Direction\022#\n\014pos_internal\030" +
-      "\004 \002(\0132\r.zaluum.Point\022#\n\014pos_external\030\005 \002" +
-      "(\0132\r.zaluum.Point\"\034\n\tDirection\022\006\n\002IN\020\000\022\007" +
-      "\n\003OUT\020\001\"\235\004\n\010Contents\022+\n\010instance\030\001 \003(\0132\031" +
-      ".zaluum.Contents.Instance\022/\n\nconnection\030" +
-      "\002 \003(\0132\033.zaluum.Contents.Connection\032\325\001\n\010I",
-      "nstance\022\014\n\004name\030\001 \002(\t\022\022\n\nclass_name\030\002 \002(" +
-      "\t\022\032\n\003pos\030\003 \002(\0132\r.zaluum.Point\022\033\n\004size\030\004 " +
-      "\001(\0132\r.zaluum.Point\022-\n\tparameter\030\005 \003(\0132\032." +
-      "zaluum.Contents.Parameter\022\036\n\007gui_pos\030\006 \001" +
-      "(\0132\r.zaluum.Point\022\037\n\010gui_size\030\007 \001(\0132\r.za" +
-      "luum.Point\032\'\n\tParameter\022\013\n\003key\030\001 \002(\t\022\r\n\005" +
-      "value\030\002 \002(\t\032.\n\007PortRef\022\020\n\010box_name\030\001 \001(\t" +
-      "\022\021\n\tport_name\030\002 \002(\t\032\201\001\n\nConnection\022(\n\006so" +
-      "urce\030\001 \001(\0132\030.zaluum.Contents.PortRef\022(\n\006" +
-      "target\030\002 \001(\0132\030.zaluum.Contents.PortRef\022\037",
-      "\n\010waypoint\030\003 \003(\0132\r.zaluum.Point\"\035\n\005Point" +
-      "\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005B)\n\030org.zaluum.nid" +
-      "e.protobufB\rBoxFileProtos"
+      "m.Definition.Port\022\037\n\010gui_size\030\003 \001(\0132\r.za" +
+      "luum.Point\022\016\n\006visual\030\004 \001(\010\032\235\001\n\004Port\022\014\n\004n" +
+      "ame\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022/\n\tdirection\030\003 \002" +
+      "(\0162\034.zaluum.Definition.Direction\022#\n\014pos_" +
+      "internal\030\004 \002(\0132\r.zaluum.Point\022#\n\014pos_ext" +
+      "ernal\030\005 \002(\0132\r.zaluum.Point\"\034\n\tDirection\022" +
+      "\006\n\002IN\020\000\022\007\n\003OUT\020\001\"\235\004\n\010Contents\022+\n\010instanc" +
+      "e\030\001 \003(\0132\031.zaluum.Contents.Instance\022/\n\nco",
+      "nnection\030\002 \003(\0132\033.zaluum.Contents.Connect" +
+      "ion\032\325\001\n\010Instance\022\014\n\004name\030\001 \002(\t\022\022\n\nclass_" +
+      "name\030\002 \002(\t\022\032\n\003pos\030\003 \002(\0132\r.zaluum.Point\022\033" +
+      "\n\004size\030\004 \001(\0132\r.zaluum.Point\022-\n\tparameter" +
+      "\030\005 \003(\0132\032.zaluum.Contents.Parameter\022\036\n\007gu" +
+      "i_pos\030\006 \001(\0132\r.zaluum.Point\022\037\n\010gui_size\030\007" +
+      " \001(\0132\r.zaluum.Point\032\'\n\tParameter\022\013\n\003key\030" +
+      "\001 \002(\t\022\r\n\005value\030\002 \002(\t\032.\n\007PortRef\022\020\n\010box_n" +
+      "ame\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\032\201\001\n\nConnect" +
+      "ion\022(\n\006source\030\001 \001(\0132\030.zaluum.Contents.Po",
+      "rtRef\022(\n\006target\030\002 \001(\0132\030.zaluum.Contents." +
+      "PortRef\022\037\n\010waypoint\030\003 \003(\0132\r.zaluum.Point" +
+      "\"\035\n\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005B)\n\030org.z" +
+      "aluum.nide.protobufB\rBoxFileProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -3611,7 +3718,7 @@ public final class BoxFileProtos {
           internal_static_zaluum_Definition_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Definition_descriptor,
-              new java.lang.String[] { "ImageName", "Port", },
+              new java.lang.String[] { "ImageName", "Port", "GuiSize", "Visual", },
               org.zaluum.nide.protobuf.BoxFileProtos.Definition.class,
               org.zaluum.nide.protobuf.BoxFileProtos.Definition.Builder.class);
           internal_static_zaluum_Definition_Port_descriptor =

@@ -1,7 +1,7 @@
 package org.zaluum.nide.compiler
 import java.io.{ File, FileOutputStream }
 import org.zaluum.nide.model.{ Example, Model, ProtoModel }
-
+/*
 object TestCompiler {
   val path = new SimpleBoxClassPath(new File("./src"), currentThread.getContextClassLoader())
   val outDir = "classes/"
@@ -40,4 +40,4 @@ object TestCompiler {
     compile(Example.printModel)
     compile(Example.encapsulatePrint)
   }
-}
+}*/
