@@ -1,7 +1,7 @@
 package org.zaluum.nide.model
 
 import javax.swing.JComponent
-import org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction
+import org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Direction
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.annotation.tailrec
 class BoxClassDecl(var className: String , var imageName: Option[String], var visual: Boolean, var guiSize:Dimension) extends Namer with BoxClassDeclLocator {
@@ -21,7 +21,7 @@ class BoxClassDecl(var className: String , var imageName: Option[String], var vi
     } //empty waypoints
   }
   def toProtoDefinition = {
-    val b = BoxFileProtos.Definition.newBuilder()
+    val b = BoxFileProtos.BoxClassDef.newBuilder()
     b.setImageName(imageName.getOrElse(""))
     def sortInOut(in: Boolean) {
       val sorted = (portDecls filter { p: PortDecl ⇒ p.in == in }).toList.sortBy(_.pos.y)
@@ -36,7 +36,7 @@ class BoxClassDecl(var className: String , var imageName: Option[String], var vi
     b.build
   }
   def toProtoContents = {
-    val c = BoxFileProtos.Contents.newBuilder()
+    val c = BoxFileProtos.BoxClassDef.newBuilder()
     // TODO internal class decls
     for (b ← boxes) { c.addInstance(b.toProto) }
     for (con ← connections) { c.addConnection(con.toProto) }
@@ -53,7 +53,7 @@ class Box(
   def location = Location(name)
   override def toString = name
   def toProto = {
-    val instance = BoxFileProtos.Contents.Instance.newBuilder()
+    val instance = BoxFileProtos.BoxClassDef.Instance.newBuilder()
     instance.setName(name)
     instance.setClassName(boxClassRef.toString)
     instance.setPos(pos.toProto)
@@ -75,7 +75,7 @@ class PortDecl(
   def location = Location("#" + name)
   override def toString = "portDecl(" + name + ")"
   def toProto = {
-    val port = BoxFileProtos.Definition.Port.newBuilder()
+    val port = BoxFileProtos.BoxClassDef.Port.newBuilder()
     port.setDirection(if (in) Direction.IN else Direction.OUT)
     port.setPosInternal(pos.toProto)
     port.setPosExternal(posExternal.toProto)
@@ -84,9 +84,9 @@ class PortDecl(
   }
 }
 sealed trait BoxClassRef 
-case class ExtBoxClassRef(classname:String) extends BoxClassRef{
-  override def toString = classname
+case class ExtBoxClassRef(className:String) extends BoxClassRef{
+  override def toString = className
 }
-case class IntBoxClassRef(boxClassDecl:BoxClassDecl) extends BoxClassRef{
-  override def toString = "$" + boxClassDecl.className 
+case class IntBoxClassRef(boxClassDecl:BoxClassRef, className:String) extends BoxClassRef{
+  override def toString = boxClassDecl + "$" + className 
 }

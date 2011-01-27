@@ -3,26 +3,16 @@ package zaluum;
 option java_package = "org.zaluum.nide.protobuf";
 option java_outer_classname = "BoxFileProtos";
 
-message Definition {
-  enum Direction {
-    IN = 0;
-    OUT = 1;
-  }
-  message Port {
-    required string name = 1;
-    required string type = 2;
-    required Direction direction = 3;
-    required Point pos_internal = 4;
-    required Point pos_external = 5; 
-  }
-  optional string image_name = 1;
-  repeated Port port = 2;
-  optional Point gui_size = 3; // convert to required
-  optional bool visual = 4; // convert to required
-}
-message Contents {
-  repeated Instance instance = 1;
-  repeated Connection connection =2; 
+message BoxClassDef {
+  optional string class_name = 1;
+  optional string image_name = 2;
+  required Point gui_size = 3; 
+  required bool visual = 4; 
+  repeated Port port = 5;
+  repeated BoxClassDef inner_class = 6;
+  repeated Instance instance = 7;
+  repeated Connection connection =8; 
+
   message Instance {
 	required string name = 1;
 	required string class_name = 2;
@@ -40,13 +30,24 @@ message Contents {
   	optional string box_name =1;
   	required string port_name =2;
   }
+  message Port {
+    required string name = 1;
+    required string type = 2;
+    required Direction direction = 3;
+    required Point pos_internal = 4;
+    required Point pos_external = 5; 
+  }
   message Connection {
     optional PortRef source = 1;
     optional PortRef target = 2;
    	repeated Point waypoint = 3; 
   }
-}
-message Point {
+  message Point {
  	required int32 x =1;
   	required int32 y =2;
+  }
+  enum Direction {
+    IN = 0;
+    OUT = 1;
+  }  
 }

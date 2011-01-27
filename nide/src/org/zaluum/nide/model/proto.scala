@@ -1,6 +1,6 @@
 package org.zaluum.nide.model
 
-import org.zaluum.nide.protobuf.BoxFileProtos.Definition.Direction
+import org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Direction
 import com.google.common.base.Charsets
 import com.google.protobuf.TextFormat
 import java.io.{ OutputStream, OutputStreamWriter, InputStream, ByteArrayOutputStream }
@@ -10,12 +10,11 @@ import org.zaluum.nide.compiler.BoxClassPath
 
 object ProtoBuffers {
   def readBoxClass(in: InputStream, className: String, bcp: BoxClassPath): BoxClass = {
-    val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
-    val contents = BoxFileProtos.Contents.parseDelimitedFrom(in)
+    val contents = BoxFileProtos.BoxClassDef.parseDelimitedFrom(in)
     def creator() = {
       import javax.swing.JPanel
       val component = new JPanel(null)
-      component.setSize(definition.getGuiSize.getX, definition.getGuiSize.getY)
+      component.setSize(contents.getGuiSize.getX, contents.getGuiSize.getY)
       for (i ← contents.getInstanceList) {
         if (i.getClassName != className) { // check cycles!
 
@@ -30,9 +29,9 @@ object ProtoBuffers {
       }
       component
     }
-    val visual = definition.getVisual
-    val boxClass = new BoxClass(className, false, definition.getImageName, Some(creator _), visual) // FIXME
-    for (port ← definition.getPortList) {
+    val visual = contents.getVisual
+    val boxClass = new BoxClass(className, false, contents.getImageName, Some(creator _), visual) // FIXME
+    for (port ← contents.getPortList) {
       boxClass.ports += TypedPort(
         port.getType,
         port.getDirection == Direction.IN,
@@ -43,7 +42,7 @@ object ProtoBuffers {
   }
   def readBoxClassRef(str: String) = ExtBoxClassRef(str) // FIXME
   def readBoxClassDecl(in: InputStream, className: String): BoxClassDecl = {
-    val definition = BoxFileProtos.Definition.parseDelimitedFrom(in)
+    val definition = BoxFileProtos.BoxClassDef.parseDelimitedFrom(in)
     val bcd = new BoxClassDecl(className,
       imageName = if (definition.hasImageName) Some(definition.getImageName()) else None,
       guiSize = Dimension(definition.getGuiSize.getX, definition.getGuiSize.getY),
@@ -56,8 +55,7 @@ object ProtoBuffers {
         pos = readPoint(port.getPosInternal),
         posExternal = readPoint(port.getPosExternal))
     }
-    val contents = BoxFileProtos.Contents.parseDelimitedFrom(in)
-    for (instance ← contents.getInstanceList) {
+    for (instance ← definition.getInstanceList) {
       if (bcd.boxNamed(instance.getName)) throw new Exception("Box name repeated" + instance.getName)
       bcd.boxes += new Box(
         name = instance.getName,
@@ -71,7 +69,7 @@ object ProtoBuffers {
         } else None)
     }
     var portRefs = Map[Box, Set[PortRef]]()
-    for (connection ← contents.getConnectionList) {
+    for (connection ← definition.getConnectionList) {
       if (connection.hasSource && connection.hasTarget) {
         def findBox(str: String) = bcd.boxes find { _.name == str }
         def findBoxPortRef(box: Box, name: String) = {
@@ -83,7 +81,7 @@ object ProtoBuffers {
           }
         }
         def findModelPortRef(str: String) = bcd.findPortDecl(str) map { _ ⇒ ModelPortRef(str) }
-        def portOf(proto: BoxFileProtos.Contents.PortRef) = {
+        def portOf(proto: BoxFileProtos.BoxClassDef.PortRef) = {
           if (proto.hasBoxName)
             findBox(proto.getBoxName) map { b ⇒ findBoxPortRef(b, proto.getPortName) }
           else
@@ -99,7 +97,7 @@ object ProtoBuffers {
     bcd.cleanUp
     bcd
   }
-  def readPoint(p: BoxFileProtos.Point) = Point(p.getX, p.getY)
+  def readPoint(p: BoxFileProtos.BoxClassDef.Point) = Point(p.getX, p.getY)
   def writeTo(bc: BoxClassDecl, out: OutputStream) {
     bc.toProtoDefinition.writeDelimitedTo(out)
     bc.toProtoContents.writeDelimitedTo(out)

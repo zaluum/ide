@@ -28,22 +28,22 @@ case class Line(val dir: OrtoDirection, var from: Point, var len: Int) {
 }
 sealed trait PortRef extends Locatable {
   val name: String
-  def protoAttach(proto: BoxFileProtos.Contents.PortRef.Builder): Unit
+  def protoAttach(proto: BoxFileProtos.BoxClassDef.PortRef.Builder): Unit
   def toProto = {
-    val proto = BoxFileProtos.Contents.PortRef.newBuilder()
+    val proto = BoxFileProtos.BoxClassDef.PortRef.newBuilder()
     proto.setPortName(name)
     protoAttach(proto)
     proto.build
   }
 }
 sealed case class BoxPortRef(val box: Box, val name: String) extends PortRef {
-  def protoAttach(proto: BoxFileProtos.Contents.PortRef.Builder) {
+  def protoAttach(proto: BoxFileProtos.BoxClassDef.PortRef.Builder) {
     proto.setBoxName(box.name)
   }
   def location = Location("$" + box.location.str + "#" + name)
 }
 sealed case class ModelPortRef(val name: String) extends PortRef {
-  def protoAttach(proto: BoxFileProtos.Contents.PortRef.Builder) {}
+  def protoAttach(proto: BoxFileProtos.BoxClassDef.PortRef.Builder) {}
   def location = Location("$#" + name)
 }
 
@@ -71,7 +71,7 @@ class Connection(var from: Option[PortRef], var to: Option[PortRef]) extends Loc
   def location = Location("(" + from.map(_.location.str).getOrElse("") + "," + to.map(_.location.str).getOrElse("") + ")")
   override def toString = "Connection(" + from + "->" + to + ")"
   def toProto = {
-    val proto = BoxFileProtos.Contents.Connection.newBuilder
+    val proto = BoxFileProtos.BoxClassDef.Connection.newBuilder
     from foreach { port ⇒ proto.setSource(port.toProto) }
     to foreach { port ⇒ proto.setTarget(port.toProto) }
     proto.build

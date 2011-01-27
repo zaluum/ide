@@ -16,7 +16,7 @@ case class Point(x: Int, y: Int) extends Tuple2 {
   def -(o: Point) = Vector2(x - o.x, y - o.y)
   def >>(despl: Int) = Point(x + despl, y)
   def toProto  = {
-    val p =BoxFileProtos.Point.newBuilder
+    val p =BoxFileProtos.BoxClassDef.Point.newBuilder
     p.setX(x)
     p.setY(y)
     p.build
@@ -30,7 +30,7 @@ object Geometry {
 }
 case class Dimension(w: Int, h: Int) {
   def toProto  = {
-    val p =BoxFileProtos.Point.newBuilder
+    val p =BoxFileProtos.BoxClassDef.Point.newBuilder
     p.setX(w)
     p.setY(h)
     p.build
