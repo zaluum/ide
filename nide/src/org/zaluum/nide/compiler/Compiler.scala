@@ -7,7 +7,7 @@ import org.jgrapht.traverse.TopologicalOrderIterator
 import org.zaluum.nide.model._
 import scala.collection.mutable.Buffer
 
-class Compiled(val bcd: BoxClassDecl, val order: List[Box],
+case class Compiled(val bcd: BoxClassDecl, val innerCompiled:Set[Compiled],  val order: List[Box],
   val portType: Map[PortRef, TypedPort], val boxType: Map[Box, BoxClass], val source: String) {
   lazy val boxesInOrder = bcd.boxes.toList.sortWith(_.name < _.name)
   lazy val portDeclInOrder = bcd.portDecls.toList.sortWith(_.name < _.name)
@@ -20,9 +20,8 @@ object Compiler {
       s.view(1, s.length).forall { Character.isJavaIdentifierPart(_) }
   }
 }
-class CompilationException(val compiler: Compiler) extends Exception
-class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
-  object reporter {
+class CompilationException() extends Exception
+class Reporter {
     case class Error(msg: String, mark: Option[Location])
     val errors = Buffer[Error]()
     def report(str: String, mark: Option[Locatable] = None) {
@@ -32,7 +31,7 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
       if (!errors.isEmpty)
         fail
     }
-    def fail = throw new CompilationException(Compiler.this)
+    def fail = throw new CompilationException()
 
     def fail(err: String, mark: Option[Locatable] = None): Nothing = {
       report(err)
@@ -45,6 +44,8 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
     def apply() = check()
     override def toString = errors.toString
   }
+class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath, val reporter:Reporter) {
+  
   var boxTypes = Map[Box, BoxClass]()
   var portType = Map[PortRef, TypedPort]()
   def getBoxClass(cl: BoxClassName): Option[BoxClass] = boxClassPath.find(cl) 
@@ -145,10 +146,18 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
     reporter(className.isFullyQualifiedClassname, "class name " + className + " is not a valid class name")
     // TODO check already defined
   }
+  def compileInnerClasses():Set[Compiled] = {
+    for (inner <- bcd.innerClassDecls) yield{
+      val compiler = new Compiler(bcd, boxClassPath, reporter)
+      reporter.check()
+      compiler.compile()
+    }
+  }
   def compile() = {
     // check definition
     checkValidClassname(bcd.className)
     checkModelPorts()
+    val innerCompiled = compileInnerClasses()
     reporter.check()
     //checkValidPorts(m.ports)
     // check all boxes recursive
@@ -157,6 +166,6 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
     // check connections
     val order = checkConnections
     reporter.check()
-    new Compiled(bcd, order, portType, boxTypes, "source.zaluum")
+    Compiled(bcd, innerCompiled, order, portType, boxTypes, "source.zaluum")
   }
 }

@@ -11,7 +11,7 @@ class BoxClass(
   var innerClasses = Set[BoxClass]()
   var ports = Set[TypedPort]()
   def port(s: String) = ports find { _.name == s }
-  //def classNameWithoutPackage = className.split('.').lastOption
+  def isInner = className.isInstanceOf[InnerBoxClassName]
   override def toString = "boxClass[" + className + "]"
 }
 case class TypedPort(val descriptor: String, val in: Boolean, val name: String, val pos: Point)

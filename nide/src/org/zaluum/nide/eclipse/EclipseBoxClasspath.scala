@@ -20,7 +20,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
   val classLoader = {
-    val urls = jproject.getResolvedClasspath(true) flatMap { e => pathToURL(e.getPath) }
+    val urls = jproject.getResolvedClasspath(true) flatMap { e ⇒ pathToURL(e.getPath) }
     new URLClassLoader(urls, currentThread.getContextClassLoader)
   }
   def update() {
@@ -62,14 +62,14 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       catch { case e: Exception ⇒ e.printStackTrace; None }
     }
     def processType(t: IType) {
-      val fqn = BoxClassName.parse( t.getFullyQualifiedName) 
+      val fqn = BoxClassName.parse(t.getFullyQualifiedName)
       val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       }
       val clazz = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       } flatMap { forName(_) }
-      val creator = clazz map {c => ()=>c.newInstance.asInstanceOf[JComponent]}
+      val creator = clazz map { c ⇒ () ⇒ c.newInstance.asInstanceOf[JComponent] }
       val bc = new BoxClass(fqn, false, img.getOrElse(""), creator, creator.isDefined)
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
@@ -103,17 +103,22 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     // WORK
     search.search(pattern, participants, searchScope, searchRequestor, null)
     // FIND ZALUUMS IN SOURCE
-    visitSourceZaluums { f ⇒
-      toClassName(f) foreach { name ⇒
-        cache += (name -> ProtoBuffers.readBoxClass(f.getContents, name,this))
-      }
-    }
+    visitSourceZaluums { loadZaluum(_) }
   }
 
+  def loadZaluum(f: IFile) {
+    def addCache(cl:BoxClass) {
+      cache += (cl.className -> cl)
+      cl.innerClasses foreach { addCache(_) } 
+    }
+    toClassName(f) foreach { name ⇒
+      addCache(ProtoBuffers.readBoxClass(f.getContents, name, this))
+    }
+  }
   def boxClasses: Set[BoxClass] = { cache.values.toSet }
   def find(name: BoxClassName): Option[BoxClass] = cache.get(name)
 
-  def toClassName(f: IFile) : Option[BoxClassName]= {
+  def toClassName(f: IFile): Option[BoxClassName] = {
     val path = f.getFullPath
     val oSourcePath = sourcePaths.find(_.isPrefixOf(path))
     oSourcePath map { sourcePath ⇒
@@ -123,7 +128,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         case Some(str: String) ⇒ result.dropRight(str.length + 1)
         case None ⇒ result
       }
-    } map { ExtBoxClassName(_)}
+    } map { ExtBoxClassName(_) }
   }
   def pathToURL(path: IPath): Option[URL] = {
     Option(root.findMember(path)) map { p ⇒
