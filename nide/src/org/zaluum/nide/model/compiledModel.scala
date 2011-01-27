@@ -8,6 +8,7 @@ class BoxClass(
     val image: String, 
     var guiCreator: Option[() ⇒ JComponent] = None, 
     var visual: Boolean) {
+  var innerClasses = Set[BoxClass]()
   var ports = Set[TypedPort]()
   def port(s: String) = ports find { _.name == s }
   def classNameWithoutPackage = className.split('.').lastOption

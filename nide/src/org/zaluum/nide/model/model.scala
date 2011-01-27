@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 class BoxClassDecl(var className: String , var imageName: Option[String], var visual: Boolean, var guiSize:Dimension) extends Namer with BoxClassDeclLocator {
   var boxes = Set[Box]()
   var portDecls = Set[PortDecl]()
-  var classDecls = Set[BoxClassDecl]()  
+  var innerClassDecls = Set[BoxClassDecl]()  
   var connections = Set[Connection]()
   
   def usedNames = boxes.map { _.name } ++ portDecls.map { _.name }

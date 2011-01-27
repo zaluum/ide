@@ -11,6 +11,9 @@ import org.zaluum.nide.compiler.BoxClassPath
 object ProtoBuffers {
   def readBoxClass(in: InputStream, className: String, bcp: BoxClassPath): BoxClass = {
     val contents = BoxFileProtos.BoxClassDef.parseDelimitedFrom(in)
+    toBoxClass(contents, className,bcp)
+  }
+  def toBoxClass(contents : BoxFileProtos.BoxClassDef, className:String, bcp:BoxClassPath):BoxClass={
     def creator() = {
       import javax.swing.JPanel
       val component = new JPanel(null)
@@ -38,11 +41,14 @@ object ProtoBuffers {
         port.getName,
         readPoint(port.getPosExternal))
     }
+    for (inner <- contents.getInnerClassList){
+      boxClass.innerClasses += toBoxClass(inner,className + "$" + inner.getClassName, bcp)
+    }
     boxClass
   }
   def readBoxClassRef(str: String) = ExtBoxClassRef(str) // FIXME
-  def readBoxClassDecl(in: InputStream, className: String): BoxClassDecl = {
-    val definition = BoxFileProtos.BoxClassDef.parseDelimitedFrom(in)
+  
+  def toBoxClassDecl(definition:BoxFileProtos.BoxClassDef, className:String):BoxClassDecl = {
     val bcd = new BoxClassDecl(className,
       imageName = if (definition.hasImageName) Some(definition.getImageName()) else None,
       guiSize = Dimension(definition.getGuiSize.getX, definition.getGuiSize.getY),
@@ -55,6 +61,9 @@ object ProtoBuffers {
         pos = readPoint(port.getPosInternal),
         posExternal = readPoint(port.getPosExternal))
     }
+    for (pbcd <- definition.getInnerClassList) {
+      bcd.innerClassDecls += toBoxClassDecl(pbcd, className + "$" + pbcd.getClassName)
+    }    
     for (instance ← definition.getInstanceList) {
       if (bcd.boxNamed(instance.getName)) throw new Exception("Box name repeated" + instance.getName)
       bcd.boxes += new Box(
@@ -96,6 +105,11 @@ object ProtoBuffers {
     }
     bcd.cleanUp
     bcd
+    
+  }
+  def readBoxClassDecl(in: InputStream, className: String): BoxClassDecl = {
+    val definition = BoxFileProtos.BoxClassDef.parseDelimitedFrom(in)
+    toBoxClassDecl(definition,className)
   }
   def readPoint(p: BoxFileProtos.BoxClassDef.Point) = Point(p.getX, p.getY)
   def writeTo(bc: BoxClassDecl, out: OutputStream) {
