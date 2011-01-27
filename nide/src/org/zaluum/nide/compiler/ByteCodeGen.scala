@@ -1,4 +1,6 @@
 package org.zaluum.nide.compiler
+
+import org.zaluum.nide.model.BoxClassName
 import org.objectweb.asm._
 import Opcodes._
 import org.zaluum.nide.model.{ Box, PortRef, ModelPortRef, BoxPortRef, Connection }
@@ -6,7 +8,8 @@ import org.zaluum.nide.model.{ Box, PortRef, ModelPortRef, BoxPortRef, Connectio
 object ByteCodeGen {
   def internal(className: String) = className.replace('.', '/')
   def classDescriptor(className: String) = 'L' + internal(className) + ";"
-  def className(b:Box) = b.boxClassRef .toString // FIXME
+  def className(b:Box) = b.boxClassName.toString // FIXME
+  implicit def boxClassName2String (b:BoxClassName) = b.toString
   def dump(c: Compiled): Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
     cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, internal(c.bcd.className), null, "java/lang/Object", null);

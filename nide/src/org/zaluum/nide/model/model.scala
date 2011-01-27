@@ -4,12 +4,12 @@ import javax.swing.JComponent
 import org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Direction
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.annotation.tailrec
-class BoxClassDecl(var className: String , var imageName: Option[String], var visual: Boolean, var guiSize:Dimension) extends Namer with BoxClassDeclLocator {
+class BoxClassDecl(var className: BoxClassName, var imageName: Option[String], var visual: Boolean, var guiSize: Dimension) extends Namer with BoxClassDeclLocator {
   var boxes = Set[Box]()
   var portDecls = Set[PortDecl]()
-  var innerClassDecls = Set[BoxClassDecl]()  
+  var innerClassDecls = Set[BoxClassDecl]()
   var connections = Set[Connection]()
-  
+
   def usedNames = boxes.map { _.name } ++ portDecls.map { _.name }
   def boxNamed(str: String) = boxes.exists { _.name == str }
   def findBox(str: String) = boxes find { _.name == str }
@@ -17,7 +17,7 @@ class BoxClassDecl(var className: String , var imageName: Option[String], var vi
   def cleanUp {
     connections = connections.filterNot { c ⇒
       c.from == c.to || // loop
-      (c.buf.isEmpty && !(c.from.isDefined && c.from.isDefined))
+        (c.buf.isEmpty && !(c.from.isDefined && c.from.isDefined))
     } //empty waypoints
   }
   def toProtoDefinition = {
@@ -45,17 +45,17 @@ class BoxClassDecl(var className: String , var imageName: Option[String], var vi
 }
 
 class Box(
-    //var boxClassDecl:BoxClassDecl,
-    var boxClassRef:BoxClassRef,
-    var name :String, 
-    var pos:Point,
-    var guiPos: Option[Resizable] = None)  extends Positionable with Locatable {
+  //var boxClassDecl:BoxClassDecl,
+  var boxClassName: BoxClassName,
+  var name: String,
+  var pos: Point,
+  var guiPos: Option[Resizable] = None) extends Positionable with Locatable {
   def location = Location(name)
   override def toString = name
   def toProto = {
     val instance = BoxFileProtos.BoxClassDef.Instance.newBuilder()
     instance.setName(name)
-    instance.setClassName(boxClassRef.toString)
+    instance.setClassName(boxClassName.toString)
     instance.setPos(pos.toProto)
     guiPos foreach { gp ⇒
       instance.setGuiPos(gp.pos.toProto)
@@ -65,13 +65,13 @@ class Box(
   }
 }
 
-class PortDecl( 
-    var bcd: BoxClassDecl,
-    var name: String, 
-    var in: Boolean, 
-    var descriptor: String,
-    var pos :Point = Point(0, 10),
-    var posExternal : Point = Point(0,0)) extends Positionable with Locatable {
+class PortDecl(
+  var bcd: BoxClassDecl,
+  var name: String,
+  var in: Boolean,
+  var descriptor: String,
+  var pos: Point = Point(0, 10),
+  var posExternal: Point = Point(0, 0)) extends Positionable with Locatable {
   def location = Location("#" + name)
   override def toString = "portDecl(" + name + ")"
   def toProto = {
@@ -83,10 +83,40 @@ class PortDecl(
     port.setType(descriptor)
   }
 }
-sealed trait BoxClassRef 
-case class ExtBoxClassRef(className:String) extends BoxClassRef{
-  override def toString = className
+object BoxClassName {
+  def parse(str:String) : BoxClassName = {
+    ExtBoxClassName(str) // FIXME
+  }
 }
-case class IntBoxClassRef(boxClassDecl:BoxClassRef, className:String) extends BoxClassRef{
-  override def toString = boxClassDecl + "$" + className 
+sealed trait BoxClassName {
+  def isFullyQualifiedClassname: Boolean
+  protected def checkCharStart(c: Char) = Character.isJavaIdentifierStart(c) || Character.isIdentifierIgnorable(c)
+  protected def checkCharPart(c: Char) = Character.isJavaIdentifierPart(c) || Character.isIdentifierIgnorable(c)
+  protected def partOk(part: String) = {
+    !part.isEmpty &&
+      checkCharStart(part(0)) &&
+      part.view(1, part.length).forall { checkCharPart(_) }
+  }
+  def toRelativePathClass = toRelativePath + ".class"
+  def toRelativePath = toString.replace(".", "/") 
+  def classNameWithoutPackage = toString.split(".").lastOption
+
+}
+case class ExtBoxClassName(className: String) extends BoxClassName {
+  override def toString = className
+  private def partClassname = className.split("[\\.]").toList;
+  def isFullyQualifiedClassname = {
+    def checkParts = {
+      val parts = partClassname
+      parts.length != 0 && parts.forall {partOk(_)}
+    }
+    className != null && checkParts
+  }
+}
+case class InnerBoxClassName(parent: BoxClassName, className: String) extends BoxClassName {
+  override def toString = parent + "$" + className
+  def isFullyQualifiedClassname = {
+    parent.isFullyQualifiedClassname && partOk(className)
+  }
+
 }

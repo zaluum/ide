@@ -24,7 +24,7 @@ class ImageFactory(val display: Display, bcp: BoxClassPath) {
     }
   }
   def apply(boxClass: Option[BoxClass]): Image = {
-    def defaultImage(bc: BoxClass) = bc.className.replace('.', '/') + ".png";
+    def defaultImage(bc: BoxClass) = bc.className.toRelativePath + ".png";
     boxClass map { c ⇒
       get(c.image).orElse { get(defaultImage(c)) }.getOrElse { generateImage(c) } // FIXME dispose generateImage 
     } getOrElse { notFound }
@@ -35,7 +35,7 @@ class ImageFactory(val display: Display, bcp: BoxClassPath) {
     val font = new Font(display, "Arial", 6, SWT.NONE);
     gc.setFont(font)
     gc.drawRectangle(0, 0, 47, 47)
-    gc.drawText(boxClass.classNameWithoutPackage.getOrElse(boxClass.className), 1, 20);
+    gc.drawText(boxClass.className.classNameWithoutPackage.getOrElse(boxClass.className.toString), 1, 20);
     gc.dispose
     font.dispose
     img

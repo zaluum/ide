@@ -1,5 +1,7 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.model.BoxClassName
+import org.zaluum.nide.model.ExtBoxClassName
 import org.zaluum.nide.model.Dimension
 import java.io.ByteArrayOutputStream
 import org.eclipse.core.resources.IFile
@@ -72,8 +74,9 @@ class BoxWizardPage(
     setPageComplete(validatePage());
   }
   import com.google.common.base.Charsets
+  def className = BoxClassName.parse(this.getFileName) // FIXME
   override protected def getInitialContents = {
-    val model = new BoxClassDecl(this.getFileName, None, true, Dimension(400,300))
+    val model = new BoxClassDecl(className, None, true, Dimension(400,300))
     new java.io.ByteArrayInputStream(ProtoBuffers.toByteArray(model))
   }
 

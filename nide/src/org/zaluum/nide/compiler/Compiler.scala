@@ -19,20 +19,6 @@ object Compiler {
       Character.isJavaIdentifierStart(s(0)) &&
       s.view(1, s.length).forall { Character.isJavaIdentifierPart(_) }
   }
-  def partClassname(classname: String) = classname.split("[\\.]").toList;
-  def isFullyQualifiedClassname(classname: String) = {
-    def checkCharStart(c: Char) = Character.isJavaIdentifierStart(c) || Character.isIdentifierIgnorable(c)
-    def checkCharPart(c: Char) = Character.isJavaIdentifierPart(c) || Character.isIdentifierIgnorable(c)
-    def checkParts = {
-      val parts = partClassname(classname)
-      parts.length != 0 && parts.forall { part ⇒
-        !part.isEmpty &&
-          checkCharStart(part(0)) &&
-          part.view(1, part.length).forall { checkCharPart(_) }
-      }
-    }
-    classname != null && checkParts
-  }
 }
 class CompilationException(val compiler: Compiler) extends Exception
 class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
@@ -61,13 +47,8 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
   }
   var boxTypes = Map[Box, BoxClass]()
   var portType = Map[PortRef, TypedPort]()
-  def getBoxClass(cl: BoxClassRef): Option[BoxClass] = boxClassPath.find(cl) // FIXME
-  def checkValidClassname(classname: String) = {
-    // check characters
-    reporter(Compiler.isFullyQualifiedClassname(classname), "classname " + classname + " is not a valid class name")
-    // TODO check already defined
+  def getBoxClass(cl: BoxClassName): Option[BoxClass] = boxClassPath.find(cl) 
 
-  }
   def checkModelPorts() {
     var names = Set[String]()
     for (portDecl ← bcd.portDecls) {
@@ -107,7 +88,7 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
     // check name
     reporter(Compiler.isValidJavaIdentifier(b.name), b.name + " is not a valid Java identifier", Some(b))
     // check className is a box class
-    val boxClass = getBoxClass(b.boxClassRef).getOrElse { reporter.fail(b.boxClassRef + " is not a valid box class", Some(b)) }
+    val boxClass = getBoxClass(b.boxClassName).getOrElse { reporter.fail(b.boxClassName + " is not a valid box class", Some(b)) }
     // check box signature is compatible
     boxClass
   }
@@ -159,6 +140,10 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
     val topo = new TopologicalOrderIterator[Box, DefaultEdge](acyclic);
     import scala.collection.JavaConversions._
     topo.toList
+  }
+  def checkValidClassname(className:BoxClassName) {
+    reporter(className.isFullyQualifiedClassname, "class name " + className + " is not a valid class name")
+    // TODO check already defined
   }
   def compile() = {
     // check definition

@@ -1,8 +1,8 @@
 package org.zaluum.nide.eclipse
 
-import org.zaluum.nide.model.IntBoxClassRef
-import org.zaluum.nide.model.ExtBoxClassRef
-import org.zaluum.nide.model.BoxClassRef
+import org.zaluum.nide.model.InnerBoxClassName
+import org.zaluum.nide.model.ExtBoxClassName
+import org.zaluum.nide.model.BoxClassName
 import javax.swing.JComponent
 import java.net.URLClassLoader
 import java.net.URL
@@ -16,7 +16,7 @@ import org.zaluum.nide.model.{ BoxClass, TypedPort, Point, ProtoBuffers }
 import scala.util.control.Exception._
 
 class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils {
-  var cache = Map[String, BoxClass]()
+  var cache = Map[BoxClassName, BoxClass]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
   val classLoader = {
@@ -62,7 +62,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       catch { case e: Exception ⇒ e.printStackTrace; None }
     }
     def processType(t: IType) {
-      val fqn = t.getFullyQualifiedName;
+      val fqn = BoxClassName.parse( t.getFullyQualifiedName) 
       val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       }
@@ -111,12 +111,9 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
   }
 
   def boxClasses: Set[BoxClass] = { cache.values.toSet }
-  def find(ref: BoxClassRef): Option[BoxClass] = ref match {
-    case ExtBoxClassRef(str) => cache.get(str)
-    case _ => None
-  }
+  def find(name: BoxClassName): Option[BoxClass] = cache.get(name)
 
-  def toClassName(f: IFile) = {
+  def toClassName(f: IFile) : Option[BoxClassName]= {
     val path = f.getFullPath
     val oSourcePath = sourcePaths.find(_.isPrefixOf(path))
     oSourcePath map { sourcePath ⇒
@@ -126,7 +123,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         case Some(str: String) ⇒ result.dropRight(str.length + 1)
         case None ⇒ result
       }
-    }
+    } map { ExtBoxClassName(_)}
   }
   def pathToURL(path: IPath): Option[URL] = {
     Option(root.findMember(path)) map { p ⇒

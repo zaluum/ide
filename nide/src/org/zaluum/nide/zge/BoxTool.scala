@@ -26,7 +26,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
     def enter(boxClass: BoxClass) {
       state = this
       val box = new Box(
-          boxClassRef = ExtBoxClassRef(boxClass.className),  
+          boxClassName = boxClass.className,  
           name = model.nextFreeName("box"),
           pos = MPoint(1,1),
           guiPos = None // FIXME ? 

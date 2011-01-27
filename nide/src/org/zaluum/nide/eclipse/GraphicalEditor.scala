@@ -55,7 +55,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def createPartControl(parent: Composite) {
     val bcp = new EclipseBoxClasspath(inputFile.getProject)
     bcp.update()
-    val className = bcp.toClassName(inputFile).getOrElse { "NotFound" }
+    val className = bcp.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
     val model = ProtoBuffers.readBoxClassDecl(input, className)
     input.close()
     val controller = new Controller(model, bcp)

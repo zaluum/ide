@@ -9,11 +9,11 @@ import scala.collection.JavaConversions._
 import org.zaluum.nide.compiler.BoxClassPath
 
 object ProtoBuffers {
-  def readBoxClass(in: InputStream, className: String, bcp: BoxClassPath): BoxClass = {
+  def readBoxClass(in: InputStream, className: BoxClassName, bcp: BoxClassPath): BoxClass = {
     val contents = BoxFileProtos.BoxClassDef.parseDelimitedFrom(in)
-    toBoxClass(contents, className,bcp)
+    toBoxClass(contents, className, bcp)
   }
-  def toBoxClass(contents : BoxFileProtos.BoxClassDef, className:String, bcp:BoxClassPath):BoxClass={
+  def toBoxClass(contents: BoxFileProtos.BoxClassDef, className: BoxClassName, bcp: BoxClassPath): BoxClass = {
     def creator() = {
       import javax.swing.JPanel
       val component = new JPanel(null)
@@ -21,7 +21,7 @@ object ProtoBuffers {
       for (i ← contents.getInstanceList) {
         if (i.getClassName != className) { // check cycles!
 
-          val c = bcp.find(readBoxClassRef(i.getClassName)) filter { _.visual } flatMap { _.guiCreator } map { _() }
+          val c = bcp.find(BoxClassName.parse(i.getClassName)) filter { _.visual } flatMap { _.guiCreator } map { _() }
           c foreach { child ⇒
             val pos = i.getGuiPos;
             val size = i.getGuiSize;
@@ -41,14 +41,13 @@ object ProtoBuffers {
         port.getName,
         readPoint(port.getPosExternal))
     }
-    for (inner <- contents.getInnerClassList){
-      boxClass.innerClasses += toBoxClass(inner,className + "$" + inner.getClassName, bcp)
+    for (inner ← contents.getInnerClassList) {
+      boxClass.innerClasses += toBoxClass(inner, InnerBoxClassName(className, inner.getClassName), bcp)
     }
     boxClass
   }
-  def readBoxClassRef(str: String) = ExtBoxClassRef(str) // FIXME
-  
-  def toBoxClassDecl(definition:BoxFileProtos.BoxClassDef, className:String):BoxClassDecl = {
+
+  def toBoxClassDecl(definition: BoxFileProtos.BoxClassDef, className: BoxClassName): BoxClassDecl = {
     val bcd = new BoxClassDecl(className,
       imageName = if (definition.hasImageName) Some(definition.getImageName()) else None,
       guiSize = Dimension(definition.getGuiSize.getX, definition.getGuiSize.getY),
@@ -61,15 +60,15 @@ object ProtoBuffers {
         pos = readPoint(port.getPosInternal),
         posExternal = readPoint(port.getPosExternal))
     }
-    for (pbcd <- definition.getInnerClassList) {
-      bcd.innerClassDecls += toBoxClassDecl(pbcd, className + "$" + pbcd.getClassName)
-    }    
+    for (pbcd ← definition.getInnerClassList) {
+      bcd.innerClassDecls += toBoxClassDecl(pbcd, InnerBoxClassName(className, pbcd.getClassName))
+    }
     for (instance ← definition.getInstanceList) {
       if (bcd.boxNamed(instance.getName)) throw new Exception("Box name repeated" + instance.getName)
       bcd.boxes += new Box(
         name = instance.getName,
         pos = Point(instance.getPos.getX, instance.getPos.getY),
-        boxClassRef = readBoxClassRef(instance.getClassName),
+        boxClassName = BoxClassName.parse(instance.getClassName),
         guiPos = if (instance.hasGuiPos && instance.hasGuiSize) {
           Some(new Resizable {
             var pos = Point(instance.getGuiPos.getX, instance.getGuiPos.getY)
@@ -105,11 +104,11 @@ object ProtoBuffers {
     }
     bcd.cleanUp
     bcd
-    
+
   }
-  def readBoxClassDecl(in: InputStream, className: String): BoxClassDecl = {
+  def readBoxClassDecl(in: InputStream, className: BoxClassName): BoxClassDecl = {
     val definition = BoxFileProtos.BoxClassDef.parseDelimitedFrom(in)
-    toBoxClassDecl(definition,className)
+    toBoxClassDecl(definition, className)
   }
   def readPoint(p: BoxFileProtos.BoxClassDef.Point) = Point(p.getX, p.getY)
   def writeTo(bc: BoxClassDecl, out: OutputStream) {

@@ -69,7 +69,7 @@ class ModelView(override val viewer: Viewer, val model: BoxClassDecl, val bcp: B
   object boxMapper extends ModelViewMapper[Box, BoxFigure](this) {
     def modelSet = model.boxes
     def buildFigure(box: Box) = {
-      val cl = bcp.find(box.boxClassRef)
+      val cl = bcp.find(box.boxClassName)
       new ImageBoxFigure(box, cl, ModelView.this)
     }
   }

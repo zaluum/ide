@@ -32,13 +32,13 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: ScannedBoxClassPath) extend
     }
     portDecl(in = true)
     portDecl(in = false)
-    val classes = bcp.boxClasses.toBuffer.sortWith(_.className < _.className)
+    val classes = bcp.boxClasses.toBuffer.sortWith(_.className.toString < _.className.toString)
     for (bc ← classes) {
       val b = new Button(content, SWT.PUSH)
       val data = new GridData
       data.horizontalAlignment = SWT.CENTER
       b.setLayoutData(data)
-      b.setToolTipText(bc.className)
+      b.setToolTipText(bc.className.toString)
       val image = viewer.imageFactory(Some(bc))
       b.setImage(image)
       b.setSize(48, 48)

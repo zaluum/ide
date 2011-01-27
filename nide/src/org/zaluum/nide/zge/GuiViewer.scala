@@ -34,7 +34,7 @@ class SwingFigure(val viewer: GUIViewer, val box: Box, val component: JComponent
 }
 class GUIModelView(viewer: GUIViewer, val model: BoxClassDecl, val bcp: BoxClassPath) extends AbstractModelView(viewer) {
   object widgetMapper extends ModelViewMapper[Box, SwingFigure](this) {
-    def guiCreator(box: Box) = bcp.find(box.boxClassRef) filter { _.visual } flatMap { _.guiCreator }
+    def guiCreator(box: Box) = bcp.find(box.boxClassName) filter { _.visual } flatMap { _.guiCreator }
     def modelSet = {
       model.boxes filter { guiCreator(_).isDefined }
     }
