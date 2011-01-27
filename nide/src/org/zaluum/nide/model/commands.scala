@@ -18,13 +18,13 @@ class MoveCommand(positionable: Positionable, pos: Point) extends Command {
   def undo() { positionable.pos = old }
   def canExecute = true
 }
-class ConnectCommand(m: Model, c: Connection) extends Command {
-  def redo() { m.connections += c }
-  def undo() { m.connections -= c }
+class ConnectCommand(c: Connection, bcd: BoxClassDecl) extends Command {
+  def redo() { bcd.connections += c }
+  def undo() { bcd.connections -= c }
   def canExecute = {
     c.from.isDefined && c.to.isDefined &&
       // not repeated 
-      !m.connections.exists(other ⇒ other.from == c.from && other.to == c.to)
+      !bcd.connections.exists(other ⇒ other.from == c.from && other.to == c.to)
   }
 }
 class ResizeCommand(resizable: Resizable, pos:Point,size: Dimension) extends Command{
@@ -34,13 +34,13 @@ class ResizeCommand(resizable: Resizable, pos:Point,size: Dimension) extends Com
   def undo() { resizable.size = oldSize; resizable.pos = oldPos }
   def canExecute = true
 }
-class CreateCommand(box: Box, model: Model) extends Command {
-  def redo { model.boxes += box }
-  def undo { model.boxes -= box }
+class CreateCommand(box: Box, bcd: BoxClassDecl) extends Command {
+  def redo { bcd.boxes += box }
+  def undo { bcd.boxes -= box }
   def canExecute = true
 }
-class CreatePortDeclCommand(portDecl: PortDecl, model: Model) extends Command {
-  def redo { model.portDecls += portDecl }
-  def undo { model.portDecls -= portDecl }
+class CreatePortDeclCommand(portDecl: PortDecl, bcd: BoxClassDecl) extends Command {
+  def redo { bcd.portDecls += portDecl }
+  def undo { bcd.portDecls -= portDecl }
   def canExecute = true
 }

@@ -1,5 +1,8 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.model.IntBoxClassRef
+import org.zaluum.nide.model.ExtBoxClassRef
+import org.zaluum.nide.model.BoxClassRef
 import javax.swing.JComponent
 import java.net.URLClassLoader
 import java.net.URL
@@ -9,7 +12,7 @@ import org.eclipse.jdt.core.{ IJavaElement, IType, IAnnotatable, IJavaProject, I
 import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch }
 import org.eclipse.jdt.internal.core.JavaModelManager
 import org.zaluum.nide.compiler.ScannedBoxClassPath
-import org.zaluum.nide.model.{ BoxClass, TypedPort, Point, ProtoModel }
+import org.zaluum.nide.model.{ BoxClass, TypedPort, Point, ProtoBuffers }
 import scala.util.control.Exception._
 
 class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils {
@@ -102,13 +105,16 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     // FIND ZALUUMS IN SOURCE
     visitSourceZaluums { f ⇒
       toClassName(f) foreach { name ⇒
-        cache += (name -> ProtoModel.readClass(f.getContents, name,this))
+        cache += (name -> ProtoBuffers.readBoxClass(f.getContents, name,this))
       }
     }
   }
 
   def boxClasses: Set[BoxClass] = { cache.values.toSet }
-  def find(str: String): Option[BoxClass] = cache.get(str)
+  def find(ref: BoxClassRef): Option[BoxClass] = ref match {
+    case ExtBoxClassRef(str) => cache.get(str)
+    case _ => None
+  }
 
   def toClassName(f: IFile) = {
     val path = f.getFullPath

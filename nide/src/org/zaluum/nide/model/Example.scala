@@ -1,6 +1,6 @@
 package org.zaluum.nide.model
 import org.zaluum.nide.zge._
-object Example {
+/*object Example {
   def encapsulatePrint = {
     val model = new Model
     model.className = "graystone.zaluum.EncapsulatePrint"
@@ -29,4 +29,4 @@ object Example {
     Connection(model, a, "o", b, "a")
     model
   }
-}
+}*/

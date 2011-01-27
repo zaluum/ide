@@ -18,7 +18,7 @@ import org.eclipse.swt.widgets.{Composite, Shell}
 import org.eclipse.ui.{IEditorSite, IEditorInput, IEditorPart}
 import org.eclipse.ui.ide.IGotoMarker
 import org.eclipse.ui.part.{EditorPart, FileEditorInput}
-import org.zaluum.nide.model.{ProtoModel, Location}
+import org.zaluum.nide.model.{ProtoBuffers, Location}
 import org.zaluum.nide.zge.{Viewer, Controller, GUIViewer}
 
 class GraphicalEditor extends EditorPart with IGotoMarker {
@@ -30,7 +30,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def modelView = viewer.modelView
   def model = modelView.model 
   def doSave(monitor: IProgressMonitor) {
-    val in = new ByteArrayInputStream(ProtoModel.toByteArray(viewer.model))
+    val in = new ByteArrayInputStream(ProtoBuffers.toByteArray(viewer.model))
     inputFile.setContents(in, true, true, monitor);
     controller.markSaved()
     firePropertyChange(IEditorPart.PROP_DIRTY)
@@ -56,7 +56,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     val bcp = new EclipseBoxClasspath(inputFile.getProject)
     bcp.update()
     val className = bcp.toClassName(inputFile).getOrElse { "NotFound" }
-    val model = ProtoModel.read(input, className)
+    val model = ProtoBuffers.readBoxClassDecl(input, className)
     input.close()
     val controller = new Controller(model, bcp)
     controller.addListener(fireDirty)

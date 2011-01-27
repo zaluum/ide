@@ -1,4 +1,6 @@
 package org.zaluum.nide.eclipse
+
+import org.zaluum.nide.model.Dimension
 import java.io.ByteArrayOutputStream
 import org.eclipse.core.resources.IFile
 import org.eclipse.jface.viewers.{ IStructuredSelection }
@@ -8,7 +10,7 @@ import org.eclipse.swt.widgets.{ Label, Composite }
 import org.eclipse.ui.{ INewWizard, IWorkbenchWindow, IWorkbenchPage, IWorkbench }
 import org.eclipse.ui.dialogs.WizardNewFileCreationPage
 import org.eclipse.ui.ide.IDE
-import org.zaluum.nide.model.{ Model, ProtoModel }
+import org.zaluum.nide.model.{ BoxClassDecl, ProtoBuffers }
 class BoxWizard extends Wizard with INewWizard {
 
   var page: ZaluumWizardPage = null;
@@ -71,10 +73,8 @@ class BoxWizardPage(
   }
   import com.google.common.base.Charsets
   override protected def getInitialContents = {
-    val model = Model.emptyModel(this.getFileName)
-    val out = new ByteArrayOutputStream()
-    ProtoModel.writeTo(model, out)
-    new java.io.ByteArrayInputStream(out.toByteArray)
+    val model = new BoxClassDecl(this.getFileName, None, true, Dimension(400,300))
+    new java.io.ByteArrayInputStream(ProtoBuffers.toByteArray(model))
   }
 
   def setDescription() {

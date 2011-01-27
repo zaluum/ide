@@ -7,10 +7,10 @@ import org.jgrapht.traverse.TopologicalOrderIterator
 import org.zaluum.nide.model._
 import scala.collection.mutable.Buffer
 
-class Compiled(val m: Model, val order: List[Box],
+class Compiled(val bcd: BoxClassDecl, val order: List[Box],
   val portType: Map[PortRef, TypedPort], val boxType: Map[Box, BoxClass], val source: String) {
-  lazy val boxesInOrder = m.boxes.toList.sortWith(_.name < _.name)
-  lazy val portDeclInOrder = m.portDecls.toList.sortWith(_.name < _.name)
+  lazy val boxesInOrder = bcd.boxes.toList.sortWith(_.name < _.name)
+  lazy val portDeclInOrder = bcd.portDecls.toList.sortWith(_.name < _.name)
 }
 object Compiler {
   def isValidJavaIdentifier(s: String) = {
@@ -35,7 +35,7 @@ object Compiler {
   }
 }
 class CompilationException(val compiler: Compiler) extends Exception
-class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
+class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath) {
   object reporter {
     case class Error(msg: String, mark: Option[Location])
     val errors = Buffer[Error]()
@@ -61,7 +61,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   }
   var boxTypes = Map[Box, BoxClass]()
   var portType = Map[PortRef, TypedPort]()
-  def getBoxClass(cl: String): Option[BoxClass] = boxClassPath.find(cl)
+  def getBoxClass(cl: BoxClassRef): Option[BoxClass] = boxClassPath.find(cl) // FIXME
   def checkValidClassname(classname: String) = {
     // check characters
     reporter(Compiler.isFullyQualifiedClassname(classname), "classname " + classname + " is not a valid class name")
@@ -70,7 +70,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   }
   def checkModelPorts() {
     var names = Set[String]()
-    for (portDecl ← m.portDecls) {
+    for (portDecl ← bcd.portDecls) {
       val name = portDecl.name
       reporter(Compiler.isValidJavaIdentifier(name), name + " is not a valid Java identifier", Some(portDecl))
       reporter(!names(name), "Port name " + name + " is already defined", Some(portDecl))
@@ -96,8 +96,8 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
     }
   }
   def checkBoxes() {
-    var names = (m.portDecls map { _.name }).toSet
-    for (b ← m.boxes) {
+    var names = (bcd.portDecls map { _.name }).toSet
+    for (b ← bcd.boxes) {
       reporter(!names(b.name), "Box name is repeated or the name of a declared port", Some(b))
       names = names + b.name
       boxTypes += (b -> checkBox(b))
@@ -107,7 +107,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
     // check name
     reporter(Compiler.isValidJavaIdentifier(b.name), b.name + " is not a valid Java identifier", Some(b))
     // check className is a box class
-    val boxClass = getBoxClass(b.className).getOrElse { reporter.fail(b.className + " is not a valid box class", Some(b)) }
+    val boxClass = getBoxClass(b.boxClassRef).getOrElse { reporter.fail(b.boxClassRef + " is not a valid box class", Some(b)) }
     // check box signature is compatible
     boxClass
   }
@@ -117,7 +117,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
 
   def checkConnections() = {
     val acyclic = new DirectedAcyclicGraph[Box, DefaultEdge](classOf[DefaultEdge])
-    m.boxes foreach { acyclic.addVertex(_) }
+    bcd.boxes foreach { acyclic.addVertex(_) }
     var portsUsed = Set[PortRef]()
     def isModelPort(p: PortRef) = p.isInstanceOf[ModelPortRef]
     def checkConnection(c: Connection) {
@@ -153,7 +153,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
         case e: CycleFoundException ⇒ reporter.fail("Cycle detected", Some(c))
       }
     }
-    m.connections foreach { checkConnection(_) }
+    bcd.connections foreach { checkConnection(_) }
     reporter.check()
     // compute correct execution order
     val topo = new TopologicalOrderIterator[Box, DefaultEdge](acyclic);
@@ -162,7 +162,7 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
   }
   def compile() = {
     // check definition
-    checkValidClassname(m.className)
+    checkValidClassname(bcd.className)
     checkModelPorts()
     reporter.check()
     //checkValidPorts(m.ports)
@@ -172,6 +172,6 @@ class Compiler(val m: Model, val boxClassPath: BoxClassPath) {
     // check connections
     val order = checkConnections
     reporter.check()
-    new Compiled(m, order, portType, boxTypes, "source.zaluum")
+    new Compiled(bcd, order, portType, boxTypes, "source.zaluum")
   }
 }

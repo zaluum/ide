@@ -11,7 +11,8 @@ import scala.reflect.ScalaSignature
 import scala.util.control.Exception._
 
 trait BoxClassPath {
-  def find(str: String): Option[BoxClass]
+  def find(bcr : BoxClassRef) : Option[BoxClass]
+  //def find(str: String): Option[BoxClass]
   def getResource(str: String): Option[URL]
 }
 trait ScannedBoxClassPath extends BoxClassPath {

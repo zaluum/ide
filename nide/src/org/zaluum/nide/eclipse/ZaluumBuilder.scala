@@ -8,7 +8,7 @@ import org.eclipse.core.resources.{ IncrementalProjectBuilder, IResourceDeltaVis
 import org.eclipse.core.runtime.{ IProgressMonitor, Path, IPath }
 import org.eclipse.jdt.internal.core.JavaModelManager
 import org.zaluum.nide.compiler.{ Compiler, ByteCodeGen, CompilationException }
-import org.zaluum.nide.model.ProtoModel
+import org.zaluum.nide.model.ProtoBuffers
 
 object ZaluumBuilder {
   val BUILDER_ID = "org.zaluum.nide.zaluumBuilder";
@@ -68,7 +68,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
   def compile(f: IFile, cl: EclipseBoxClasspath) = {
     try {
       cl.toClassName(f) foreach { className ⇒
-        val model = ProtoModel.read(f.getContents, className)
+        val model = ProtoBuffers.readBoxClassDecl(f.getContents, className)
         val compiler = new Compiler(model, cl)
         val compiled = compiler.compile
         val outputPath = defaultOutputFolder.append(toRelativePathClass(className))

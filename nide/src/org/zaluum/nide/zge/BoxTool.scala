@@ -25,11 +25,12 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
     var bf: BoxFigure = _
     def enter(boxClass: BoxClass) {
       state = this
-      val name = model.nextFreeName("box")
-      val box = new Box()
-      box.className = boxClass.className
-      box.name = name
-      box.pos = MPoint(1, 1)
+      val box = new Box(
+          boxClassRef = ExtBoxClassRef(boxClass.className),  
+          name = model.nextFreeName("box"),
+          pos = MPoint(1,1),
+          guiPos = None // FIXME ? 
+          )
       bf = new ImageBoxFigure(box, Some(boxClass), modelView)
       bf.update()
       bf.hide()
@@ -102,7 +103,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
     def doEnter {}
     def buttonUp {
       // execute model command
-      val command = new ConnectCommand(modelView.model, con.get)
+      val command = new ConnectCommand(con.get, modelView.model)
       controller.exec(command)
     }
     def drag {}

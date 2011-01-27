@@ -19,7 +19,7 @@ class Viewer(parent: Composite, controller: Controller) extends AbstractViewer(p
   }
 }
 
-class ModelView(override val viewer: Viewer, val model: Model, val bcp: BoxClassPath) extends AbstractModelView(viewer) {
+class ModelView(override val viewer: Viewer, val model: BoxClassDecl, val bcp: BoxClassPath) extends AbstractModelView(viewer) {
 
   def selectedBoxes = selected.selected collect { case x: BoxFigure ⇒ x.box }
   def selectedPorts = selected.selected collect { case x: PortDeclFigure ⇒ x.portDecl }
@@ -69,7 +69,7 @@ class ModelView(override val viewer: Viewer, val model: Model, val bcp: BoxClass
   object boxMapper extends ModelViewMapper[Box, BoxFigure](this) {
     def modelSet = model.boxes
     def buildFigure(box: Box) = {
-      val cl = bcp.find(box.className)
+      val cl = bcp.find(box.boxClassRef)
       new ImageBoxFigure(box, cl, ModelView.this)
     }
   }

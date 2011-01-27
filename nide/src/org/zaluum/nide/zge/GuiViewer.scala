@@ -8,7 +8,7 @@ import java.awt.image.BufferedImage
 import org.eclipse.draw2d.{ Figure, Graphics }
 import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
 import org.eclipse.swt.SWT
-import org.zaluum.nide.model.{ Resizable, Dimension, Positionable, Point, Model, Command }
+import org.zaluum.nide.model.{ Resizable, Dimension, Positionable, Point, BoxClassDecl, Command }
 import org.zaluum.nide.compiler.BoxClassPath
 import scala.collection.mutable.Buffer
 
@@ -32,9 +32,9 @@ class SwingFigure(val viewer: GUIViewer, val box: Box, val component: JComponent
     image.dispose()
   }
 }
-class GUIModelView(viewer: GUIViewer, val model: Model, val bcp: BoxClassPath) extends AbstractModelView(viewer) {
+class GUIModelView(viewer: GUIViewer, val model: BoxClassDecl, val bcp: BoxClassPath) extends AbstractModelView(viewer) {
   object widgetMapper extends ModelViewMapper[Box, SwingFigure](this) {
-    def guiCreator(box: Box) = bcp.find(box.className) filter { _.visual } flatMap { _.guiCreator }
+    def guiCreator(box: Box) = bcp.find(box.boxClassRef) filter { _.visual } flatMap { _.guiCreator }
     def modelSet = {
       model.boxes filter { guiCreator(_).isDefined }
     }

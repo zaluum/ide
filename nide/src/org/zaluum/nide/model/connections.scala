@@ -48,21 +48,21 @@ sealed case class ModelPortRef(val name: String) extends PortRef {
 }
 
 object Connection {
-  def apply(model: Model, from: Box, fromP: String, to: Box, toP: String) {
+  def apply(bcd: BoxClassDecl, from: Box, fromP: String, to: Box, toP: String) {
     val c = new Connection(Some(BoxPortRef(from, fromP)), Some(BoxPortRef(to, toP)))
-    model.connections += c
+    bcd.connections += c
   }
-  def apply(model: Model, from: PortDecl, to: Box, toP: String) {
+  def apply(bcd: BoxClassDecl, from: PortDecl, to: Box, toP: String) {
     val c = new Connection(Some(ModelPortRef(from.name)), Some(BoxPortRef(to, toP)))
-    model.connections += c
+    bcd.connections += c
   }
-  def apply(model: Model, from: Box, fromP: String, to: PortDecl) {
+  def apply(bcd: BoxClassDecl, from: Box, fromP: String, to: PortDecl) {
     val c = new Connection(Some(BoxPortRef(from, fromP)), Some(ModelPortRef(to.name)))
-    model.connections += c
+    bcd.connections += c
   }
-  def apply(model: Model, from: PortDecl, to: PortDecl) {
+  def apply(bcd: BoxClassDecl, from: PortDecl, to: PortDecl) {
     val c = new Connection(Some(ModelPortRef(from.name)), Some(ModelPortRef(to.name)))
-    model.connections += c
+    bcd.connections += c
   }
 
 }

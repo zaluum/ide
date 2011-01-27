@@ -5,7 +5,7 @@ import org.zaluum.nide.compiler.ScannedBoxClassPath
 import org.zaluum.nide.model._
 import scala.collection.mutable.{ Buffer, Stack }
 
-class Controller(val model: Model,val bcp:ScannedBoxClassPath) {
+class Controller(val model: BoxClassDecl,val bcp:ScannedBoxClassPath) {
   private var viewModels = Buffer[AbstractModelView]()
   def registerView(modelView: AbstractModelView) {
     //val viewModel = new ModelView(viewer, model, bcp)
