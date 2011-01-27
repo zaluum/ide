@@ -27,10 +27,10 @@ object WidgetTemplateDump {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, internal(className), box.name , classDescriptor(box.className));
       mv.visitFieldInsn(GETFIELD, internal(box.className), "widget", "Ljavax/swing/JComponent;");
-      mv.visitIntInsn(SIPUSH, box.guiPos.get.pos.x);
-      mv.visitIntInsn(SIPUSH, box.guiPos.get.pos.y);
-      mv.visitIntInsn(SIPUSH, box.guiPos.get.size.w);
-      mv.visitIntInsn(SIPUSH, box.guiPos.get.size.h);
+      mv.visitIntInsn(SIPUSH, box.guiPos.map(_.pos.x).getOrElse(0)) // TODO hardcoded
+      mv.visitIntInsn(SIPUSH, box.guiPos.map(_.pos.y).getOrElse(0))
+      mv.visitIntInsn(SIPUSH, box.guiPos.map(_.size.w).getOrElse(50))
+      mv.visitIntInsn(SIPUSH, box.guiPos.map(_.size.h).getOrElse(50))
       mv.visitMethodInsn(INVOKEVIRTUAL, "javax/swing/JComponent", "setBounds", "(IIII)V");
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, internal(className), "widget", "Ljavax/swing/JComponent;");
