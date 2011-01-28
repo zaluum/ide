@@ -20,6 +20,55 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       }
     } 
   }
+  object innercreating extends ToolState { // inherit
+    var bf: BoxFigure = _
+    var boxClassDecl : BoxClassDecl = _
+    def enter() {
+      state = this
+      val name = model.nextFreeName("C");
+      println("next name " + name)
+      boxClassDecl = new BoxClassDecl(
+          InnerBoxClassName(model.className,name),
+              imageName= None,visual=false,guiSize=Dimension(10,10))
+      
+      val box = new Box(
+          boxClassName = boxClassDecl.className,  
+          name = model.nextFreeName("box"),
+          pos = MPoint(1,1),
+          guiPos = None // FIXME ? 
+          )
+      bf = new ImageBoxFigure(box, None, modelView)
+      bf.update()
+      bf.hide()
+      bf.showFeedback()
+    }
+    def move() { bf.moveFeed(mouseLocation) }
+    def abort() { exit() }
+    def drag() {}
+    def buttonUp() {
+      bf.box.pos = MPoint(mouseLocation.x, mouseLocation.y)
+      val com = new Command {
+        val decl =boxClassDecl
+        val box = bf.box
+        def undo() {
+          model.boxes -= box
+          model.innerClassDecls -=decl
+        }
+        def redo() { 
+          model.boxes += box
+          model.innerClassDecls += decl
+        }
+        def canExecute = true
+      }
+      controller.exec(com) // no need to exit. controller aborts all tools
+    }
+    def buttonDown() {}
+    def exit() { 
+      bf.hideFeedback; 
+      bf = null; 
+      selecting.enter() 
+    }
+  }
   // CREATING BOX 
   object creating extends ToolState {
     var bf: BoxFigure = _

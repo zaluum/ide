@@ -148,7 +148,7 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath, val report
   }
   def compileInnerClasses():Set[Compiled] = {
     for (inner <- bcd.innerClassDecls) yield{
-      val compiler = new Compiler(bcd, boxClassPath, reporter)
+      val compiler = new Compiler(inner, boxClassPath, reporter)
       reporter.check()
       compiler.compile()
     }

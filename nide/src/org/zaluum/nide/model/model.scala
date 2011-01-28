@@ -9,8 +9,8 @@ class BoxClassDecl(var className: BoxClassName, var imageName: Option[String], v
   var portDecls = Set[PortDecl]()
   var innerClassDecls = Set[BoxClassDecl]()
   var connections = Set[Connection]()
-
-  def usedNames = boxes.map { _.name } ++ portDecls.map { _.name }
+  def innerClassesNames = innerClassDecls.map {_.className } collect { case InnerBoxClassName(_,name) => name }
+  def usedNames = boxes.map { _.name } ++ portDecls.map { _.name } ++ innerClassesNames
   def boxNamed(str: String) = boxes.exists { _.name == str }
   def findBox(str: String) = boxes find { _.name == str }
   def findPortDecl(str: String) = portDecls find { _.name == str }
@@ -20,8 +20,12 @@ class BoxClassDecl(var className: BoxClassName, var imageName: Option[String], v
         (c.buf.isEmpty && !(c.from.isDefined && c.from.isDefined))
     } //empty waypoints
   }
-  def toProtoDefinition = {
+  def toProto : BoxFileProtos.BoxClassDef = {
     val b = BoxFileProtos.BoxClassDef.newBuilder()
+    className match {
+      case InnerBoxClassName(_,name) => b.setClassName(name)
+      case _ =>
+    }
     b.setImageName(imageName.getOrElse(""))
     def sortInOut(in: Boolean) {
       val sorted = (portDecls filter { p: PortDecl ⇒ p.in == in }).toList.sortBy(_.pos.y)
@@ -33,14 +37,10 @@ class BoxClassDecl(var className: BoxClassName, var imageName: Option[String], v
     sortInOut(in = true)
     sortInOut(in = false)
     for (portDecl ← portDecls) { b.addPort(portDecl.toProto) }
+    for (inner <- innerClassDecls) { b.addInnerClass(inner.toProto)}
+    for (box ← boxes) { b.addInstance(box.toProto) }
+    for (con ← connections) { b.addConnection(con.toProto) }
     b.build
-  }
-  def toProtoContents = {
-    val c = BoxFileProtos.BoxClassDef.newBuilder()
-    // TODO internal class decls
-    for (b ← boxes) { c.addInstance(b.toProto) }
-    for (con ← connections) { c.addConnection(con.toProto) }
-    c.build
   }
 }
 
@@ -114,6 +114,7 @@ case class ExtBoxClassName(className: String) extends BoxClassName {
   }
 }
 case class InnerBoxClassName(parent: BoxClassName, className: String) extends BoxClassName {
+  if (className==null || className == "") throw new Exception
   override def toString = parent + "$" + className
   def isFullyQualifiedClassname = {
     parent.isFullyQualifiedClassname && partOk(className)

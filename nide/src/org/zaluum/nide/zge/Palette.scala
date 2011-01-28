@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import org.eclipse.swt.graphics.Image
 import SWTScala._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
@@ -32,16 +34,26 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: ScannedBoxClassPath) extend
     }
     portDecl(in = true)
     portDecl(in = false)
-    val classes = bcp.boxClasses.toBuffer.sortWith(_.className.toString < _.className.toString)
-    for (bc ← classes) {
+    def createButton(name:String, image:Image) = {
       val b = new Button(content, SWT.PUSH)
       val data = new GridData
       data.horizontalAlignment = SWT.CENTER
       b.setLayoutData(data)
-      b.setToolTipText(bc.className.toString)
-      val image = viewer.imageFactory(Some(bc))
+      b.setToolTipText(name)
       b.setImage(image)
       b.setSize(48, 48)
+      b
+    }
+    val innerb = createButton("INNER",viewer.imageFactory .notFound)
+    addReaction(innerb) {
+      viewer.tool.state.abort()
+      viewer.tool .innercreating.enter()
+      viewer.canvas.setFocus()
+      hide()
+    }
+    val classes = bcp.boxClasses.toBuffer.sortWith(_.className.toString < _.className.toString)
+    for (bc ← classes) {
+      val b = createButton(bc.className.toString,viewer.imageFactory(Some(bc))) 
       addReaction(b) {
         viewer.tool.state.abort()
         viewer.tool.creating.enter(bc)
@@ -50,7 +62,6 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: ScannedBoxClassPath) extend
       }
     }
   }
-
 }
 /*
 val bar = new ExpandBar (shell, SWT.V_SCROLL);

@@ -60,6 +60,8 @@ object ProtoBuffers {
         pos = readPoint(port.getPosInternal),
         posExternal = readPoint(port.getPosExternal))
     }
+    if (className.isInstanceOf[InnerBoxClassName] && !definition.hasClassName)
+      throw new Exception("No name for inner class")
     for (pbcd ← definition.getInnerClassList) {
       bcd.innerClassDecls += toBoxClassDecl(pbcd, InnerBoxClassName(className, pbcd.getClassName))
     }
@@ -112,8 +114,7 @@ object ProtoBuffers {
   }
   def readPoint(p: BoxFileProtos.BoxClassDef.Point) = Point(p.getX, p.getY)
   def writeTo(bc: BoxClassDecl, out: OutputStream) {
-    bc.toProtoDefinition.writeDelimitedTo(out)
-    bc.toProtoContents.writeDelimitedTo(out)
+    bc.toProto.writeDelimitedTo(out)
   }
   def toByteArray(bc: BoxClassDecl) = {
     val out = new ByteArrayOutputStream()
