@@ -1,5 +1,8 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.compiler.TypedPort
+import org.zaluum.nide.compiler.BoxClass
+import org.zaluum.nide.compiler.PresentationCompiler
 import org.zaluum.nide.model.InnerBoxClassName
 import org.zaluum.nide.model.ExtBoxClassName
 import org.zaluum.nide.model.BoxClassName
@@ -12,11 +15,12 @@ import org.eclipse.jdt.core.{ IJavaElement, IType, IAnnotatable, IJavaProject, I
 import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch }
 import org.eclipse.jdt.internal.core.JavaModelManager
 import org.zaluum.nide.compiler.ScannedBoxClassPath
-import org.zaluum.nide.model.{ BoxClass, TypedPort, Point, ProtoBuffers }
+import org.zaluum.nide.model.{ Point, ProtoBuffers, BoxClassDecl , Dimension}
 import scala.util.control.Exception._
 
 class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils {
   var cache = Map[BoxClassName, BoxClass]()
+  var creatorCache = Map[BoxClassName, () ⇒ JComponent]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
   val classLoader = {
@@ -25,6 +29,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
   }
   def update() {
     cache = cache.empty
+    creatorCache = creatorCache.empty
     val searchScope = SearchEngine.createJavaSearchScope(
       Array[IJavaElement](jproject))
     val search = new SearchEngine()
@@ -66,11 +71,10 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       }
-      val clazz = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
+      val creatorClass = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       } flatMap { forName(_) }
-      val creator = clazz map { c ⇒ () ⇒ c.newInstance.asInstanceOf[JComponent] }
-      val bc = new BoxClass(fqn, false, img.getOrElse(""), creator, creator.isDefined)
+      val bc = new BoxClass(fqn, false, img.getOrElse(""), creatorClass.isDefined)
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
         val oy = findIntegerValueOfAnnotation(a, "y")
@@ -88,6 +92,8 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         }
       }
       cache += (bc.className -> bc)
+      creatorClass foreach { c ⇒ creatorCache += (bc.className, () ⇒ c.newInstance.asInstanceOf[JComponent]) }
+
     }
     val searchRequestor = new SearchRequestor() {
       def acceptSearchMatch(matchh: SearchMatch) {
@@ -105,18 +111,24 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     // FIND ZALUUMS IN SOURCE
     visitSourceZaluums { loadZaluum(_) }
   }
-
+  
   def loadZaluum(f: IFile) {
-    def addCache(cl:BoxClass) {
+    def addCache(cl: BoxClass) {
       cache += (cl.className -> cl)
-      cl.innerClasses foreach { addCache(_) } 
+      cl.innerClasses foreach { addCache(_) }
     }
+    
     toClassName(f) foreach { name ⇒
-      addCache(ProtoBuffers.readBoxClass(f.getContents, name, this))
+      val decl = ProtoBuffers.readBoxClassDecl(f.getContents, name)
+      val boxClass =PresentationCompiler.toBoxClass(decl)
+      addCache(boxClass)
+      if (boxClass.visual) // FIXME inner classes visualizations
+        creatorCache += ( name -> (()=>PresentationCompiler.createGUI(decl,this)))
     }
   }
   def boxClasses: Set[BoxClass] = { cache.values.toSet }
   def find(name: BoxClassName): Option[BoxClass] = cache.get(name)
+  def findGuiCreator(name: BoxClassName): Option[() ⇒ JComponent] = creatorCache.get(name)
 
   def toClassName(f: IFile): Option[BoxClassName] = {
     val path = f.getFullPath

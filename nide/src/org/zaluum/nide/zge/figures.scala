@@ -1,4 +1,7 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.compiler.TypedPort
+import org.zaluum.nide.compiler.BoxClass
 import draw2dConversions._
 import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }

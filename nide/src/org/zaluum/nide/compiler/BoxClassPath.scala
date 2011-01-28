@@ -1,18 +1,12 @@
 package org.zaluum.nide.compiler
 
-import org.zaluum.nide.java.Widget
-import com.impetus.annovention._
-import com.impetus.annovention.listener._
-import java.io.{ FileInputStream, File }
+import javax.swing.JComponent
 import java.net.URL
-import org.zaluum.nide.java.{ In, Out, Box ⇒ BoxAnn, BoxImage }
 import org.zaluum.nide.model._
-import scala.reflect.ScalaSignature
-import scala.util.control.Exception._
 
 trait BoxClassPath {
-  def find(bcr : BoxClassName) : Option[BoxClass]
-  //def find(str: String): Option[BoxClass]
+  def find(name : BoxClassName) : Option[BoxClass]
+  def findGuiCreator(name : BoxClassName) : Option[()=>JComponent]
   def getResource(str: String): Option[URL]
 }
 trait ScannedBoxClassPath extends BoxClassPath {
@@ -20,13 +14,16 @@ trait ScannedBoxClassPath extends BoxClassPath {
   def update()
 }
 abstract class ChainedBoxClassPath(parent:BoxClassPath) extends BoxClassPath {
-  protected def classes : Set[BoxClass]
-  def find(bcn : BoxClassName) = classes.find(_.className == bcn) orElse parent.find(bcn)
+  protected def classFor(b:BoxClassName) : Option[BoxClass]
+  protected def guiFor(b:BoxClassName) : Option[()=>JComponent]
+  def find(bcn : BoxClassName) = classFor(bcn) orElse parent.find(bcn)
+  def findGuiCreator(bcn : BoxClassName) = guiFor(bcn) orElse parent.findGuiCreator(bcn)
   def getResource(str:String) = parent.getResource(str)
 }
 
 abstract class ChainedScannedBoxClassPath(parent:ScannedBoxClassPath) 
   extends ChainedBoxClassPath(parent) with ScannedBoxClassPath {
+ protected def classes : Set[BoxClass]
  def boxClasses = parent.boxClasses ++ classes 
  def update() = parent.update()
 }

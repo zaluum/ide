@@ -7,15 +7,15 @@ import org.jgrapht.traverse.TopologicalOrderIterator
 import org.zaluum.nide.model._
 import scala.collection.mutable.Buffer
 
-case class Compiled(val bcd: BoxClassDecl, val innerCompiled:Set[Compiled],  val order: List[Box],
-  val portType: Map[PortRef, TypedPort], val boxType: Map[Box, BoxClass], val source: String) {
+case class Compiled(val bcd: BoxClassDecl,
+  val innerCompiled: Set[Compiled],
+  val order: List[Box],
+  val portType: Map[PortRef, TypedPort],
+  val boxType: Map[Box, BoxClass],
+  val source: String,
+  val boxClass: BoxClass) {
   lazy val boxesInOrder = bcd.boxes.toList.sortWith(_.name < _.name)
   lazy val portDeclInOrder = bcd.portDecls.toList.sortWith(_.name < _.name)
-  lazy val boxClass =  {
-    val bc = BoxClass(bcd.className, scala=false, image="",guiCreator=None,visual=false)
-    bc.ports = bcd.portDecls map {_.toTypedPort}
-    bc
-  }
 }
 object Compiler {
   def isValidJavaIdentifier(s: String) = {
@@ -27,40 +27,41 @@ object Compiler {
 }
 class CompilationException() extends Exception
 class Reporter {
-    case class Error(msg: String, mark: Option[Location])
-    val errors = Buffer[Error]()
-    def report(str: String, mark: Option[Locatable] = None) {
-      errors += Error(str, mark map { _.location })
-    }
-    def check() {
-      if (!errors.isEmpty)
-        fail
-    }
-    def fail = throw new CompilationException()
-
-    def fail(err: String, mark: Option[Locatable] = None): Nothing = {
-      report(err)
-      fail
-    }
-    def apply(assertion: Boolean, res: ⇒ String, mark: Option[Locatable] = None, fail: Boolean = false) {
-      if (!assertion) report(res) // TODO mark
-      if (fail) check()
-    }
-    def apply() = check()
-    override def toString = errors.toString
+  case class Error(msg: String, mark: Option[Location])
+  val errors = Buffer[Error]()
+  def report(str: String, mark: Option[Locatable] = None) {
+    errors += Error(str, mark map { _.location })
   }
-class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath, val reporter:Reporter) {
-  
+  def check() {
+    if (!errors.isEmpty)
+      fail
+  }
+  def fail = throw new CompilationException()
+
+  def fail(err: String, mark: Option[Locatable] = None): Nothing = {
+    report(err)
+    fail
+  }
+  def apply(assertion: Boolean, res: ⇒ String, mark: Option[Locatable] = None, fail: Boolean = false) {
+    if (!assertion) report(res) // TODO mark
+    if (fail) check()
+  }
+  def apply() = check()
+  override def toString = errors.toString
+}
+
+class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath, val reporter: Reporter) {
+
   var boxTypes = Map[Box, BoxClass]()
   var portType = Map[PortRef, TypedPort]()
-  var innerCompiled :Set[Compiled] = _
+  var innerCompiled: Set[Compiled] = _
   def getBoxClass(cl: BoxClassName): Option[BoxClass] = {
-    def searchInnerCompiled(inners : Set[Compiled]) : Option[BoxClass] = {
-      inners map {_.boxClass} find { _.className == cl } orElse {
-        inners.view.flatMap {i => searchInnerCompiled(i.innerCompiled)}.headOption
+    def searchInnerCompiled(inners: Set[Compiled]): Option[BoxClass] = {
+      inners map { _.boxClass } find { _.className == cl } orElse {
+        inners.view.flatMap { i ⇒ searchInnerCompiled(i.innerCompiled) }.headOption
       }
     }
-    searchInnerCompiled(innerCompiled) orElse boxClassPath.find(cl) 
+    searchInnerCompiled(innerCompiled) orElse boxClassPath.find(cl)
   }
 
   def checkModelPorts() {
@@ -79,7 +80,6 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath, val report
         case b: BoxPortRef ⇒
           boxTypes.get(b.box) match {
             case Some(typ) ⇒
-              println(typ.ports)
               typ.ports find { _.name == b.name } match {
                 case Some(typedPort) ⇒ portType += (portRef -> typedPort);
                 case None ⇒ reporter.report("port ref port not found " + portRef, Some(blame));
@@ -156,33 +156,34 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath, val report
     import scala.collection.JavaConversions._
     topo.toList
   }
-  def checkValidClassname(className:BoxClassName) {
+  def checkValidClassname(className: BoxClassName) {
     reporter(className.isFullyQualifiedClassname, "class name " + className + " is not a valid class name")
     // TODO check already defined
   }
-  def compileInnerClasses():Set[Compiled] = {
-    for (inner <- bcd.innerClassDecls) yield{
-      println ("compiling inner class " + inner.className)
+  def compileInnerClasses(): Set[Compiled] = {
+    for (inner ← bcd.innerClassDecls) yield {
       val compiler = new Compiler(inner, boxClassPath, reporter)
       reporter.check()
       compiler.compile()
     }
   }
-  
 
   def compile() = {
+    val boxClass = boxClassPath.find(bcd.className).getOrElse {
+      reporter.fail("Compilation unit is not in the class path")
+    }
     // check definition
     checkValidClassname(bcd.className)
     checkModelPorts()
     innerCompiled = compileInnerClasses()
     reporter.check()
     //checkValidPorts(m.ports)
-    // check all boxes recursive
+    // check all boxes recursive 
     checkBoxes()
     reporter.check()
     // check connections
     val order = checkConnections
     reporter.check()
-    Compiled(bcd, innerCompiled, order, portType, boxTypes, "source.zaluum")
+    Compiled(bcd, innerCompiled, order, portType, boxTypes, "source.zaluum",boxClass)
   }
 }

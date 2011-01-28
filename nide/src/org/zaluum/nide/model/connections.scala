@@ -1,4 +1,6 @@
 package org.zaluum.nide.model
+
+import org.zaluum.nide.compiler.TypedPort
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.mutable.Buffer
 
@@ -77,6 +79,7 @@ class Connection(var from: Option[PortRef], var to: Option[PortRef]) extends Loc
     proto.build
     // TODO waypoints
   }
+  // FIXME no references to TypedPort from model package
   def connectionFlow(typeMap: Map[PortRef, TypedPort]): Option[(PortRef, PortRef)] =
     (from, to) match {
       case (Some(p1), Some(p2)) ⇒

@@ -83,7 +83,6 @@ class PortDecl(
     port.setName(name)
     port.setType(descriptor)
   }
-  def toTypedPort = TypedPort(descriptor, in, name, pos)
 }
 object BoxClassName {
   def parse(str:String) : BoxClassName = {

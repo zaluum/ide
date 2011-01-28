@@ -1,6 +1,8 @@
 package org.zaluum.nide.eclipse
 
-import org.zaluum.nide.model.BoxClass
+import org.zaluum.nide.model.BoxClassName
+import org.zaluum.nide.compiler.PresentationCompiler
+import org.zaluum.nide.compiler.BoxClass
 import org.zaluum.nide.model.BoxClassDecl
 import org.zaluum.nide.compiler.ChainedScannedBoxClassPath
 import org.eclipse.swt.events.DisposeEvent
@@ -60,17 +62,10 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     val className = ebcp.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
     val model = ProtoBuffers.readBoxClassDecl(input, className)
     val bcp = new ChainedScannedBoxClassPath(ebcp) {
-      def presentationBoxClass(bcd:BoxClassDecl) = { // TODO Move to presentation compiler?
-         val bc = BoxClass(
-             bcd.className, 
-             scala=false, 
-             image = bcd.imageName.getOrElse(""), 
-             None, false); // FIXME
-         bc.ports = bcd.portDecls map {_.toTypedPort}
-         println("presentation ports=" + bc.ports)
-         bc
-      }
-      def classes = model.innerClassDecls map {presentationBoxClass(_)} 
+      def guiFor(b:BoxClassName) = None // FIXME
+      def declFor(bcn:BoxClassName) = model.innerClassDecls find {_.className == bcn }
+      def classFor(bcn:BoxClassName) = declFor(bcn) map {PresentationCompiler.toBoxClass(_)}
+      def classes = model.innerClassDecls map {PresentationCompiler.toBoxClass(_)} 
     }
     bcp.update()
     input.close()

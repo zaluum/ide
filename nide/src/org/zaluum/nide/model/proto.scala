@@ -1,5 +1,7 @@
 package org.zaluum.nide.model
 
+import org.zaluum.nide.compiler.TypedPort
+import org.zaluum.nide.compiler.BoxClass
 import org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Direction
 import com.google.common.base.Charsets
 import com.google.protobuf.TextFormat
@@ -9,44 +11,7 @@ import scala.collection.JavaConversions._
 import org.zaluum.nide.compiler.BoxClassPath
 
 object ProtoBuffers {
-  def readBoxClass(in: InputStream, className: BoxClassName, bcp: BoxClassPath): BoxClass = {
-    val contents = BoxFileProtos.BoxClassDef.parseDelimitedFrom(in)
-    toBoxClass(contents, className, bcp)
-  }
-  def toBoxClass(contents: BoxFileProtos.BoxClassDef, className: BoxClassName, bcp: BoxClassPath): BoxClass = {
-    def creator() = {
-      import javax.swing.JPanel
-      val component = new JPanel(null)
-      component.setSize(contents.getGuiSize.getX, contents.getGuiSize.getY)
-      for (i ← contents.getInstanceList) {
-        if (i.getClassName != className) { // check cycles!
-
-          val c = bcp.find(BoxClassName.parse(i.getClassName)) filter { _.visual } flatMap { _.guiCreator } map { _() }
-          c foreach { child ⇒
-            val pos = i.getGuiPos;
-            val size = i.getGuiSize;
-            child.setBounds(pos.getX, pos.getY, size.getX, size.getY);
-            component.add(child)
-          }
-        }
-      }
-      component
-    }
-    val visual = contents.getVisual
-    val boxClass = new BoxClass(className, false, contents.getImageName, Some(creator _), visual) // FIXME
-    for (port ← contents.getPortList) {
-      boxClass.ports += TypedPort(
-        port.getType,
-        port.getDirection == Direction.IN,
-        port.getName,
-        readPoint(port.getPosExternal))
-    }
-    for (inner ← contents.getInnerClassList) {
-      boxClass.innerClasses += toBoxClass(inner, InnerBoxClassName(className, inner.getClassName), bcp)
-    }
-    boxClass
-  }
-
+  
   def toBoxClassDecl(definition: BoxFileProtos.BoxClassDef, className: BoxClassName): BoxClassDecl = {
     val bcd = new BoxClassDecl(className,
       imageName = if (definition.hasImageName) Some(definition.getImageName()) else None,
