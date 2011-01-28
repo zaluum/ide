@@ -6,20 +6,16 @@ import Opcodes._
 import org.zaluum.nide.model.{ Box, PortRef, ModelPortRef, BoxPortRef, Connection }
 
 object ByteCodeGen {
-  def internal(className: String) = className.replace('.', '/')
-  def classDescriptor(className: String) = 'L' + internal(className) + ";"
-  def className(b:Box) = b.boxClassName.toString // FIXME
-  implicit def boxClassName2String (b:BoxClassName) = b.toString
   def dump(c: Compiled): Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, internal(c.bcd.className), null, "java/lang/Object", null);
+    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, c.bcd.className.internal, null, "java/lang/Object", null);
     //val av = cw.visitAnnotation("org/zaluum/nide/java/Box", true);
     //av.visitEnd();
     cw.visitSource(c.source, null);
     // FIELDS 
     {
       for (b ← c.boxesInOrder) {
-        val fv = cw.visitField(ACC_PUBLIC, b.name, classDescriptor(className(b)), null, null)
+        val fv = cw.visitField(ACC_PUBLIC, b.name, b.boxClassName.descriptor, null, null)
         fv.visitEnd()
       }
       for (p ← c.portDeclInOrder) {
@@ -38,10 +34,10 @@ object ByteCodeGen {
       // INIT 
       for (b ← c.boxesInOrder) {
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitTypeInsn(NEW, internal(className(b)));
+        mv.visitTypeInsn(NEW, b.boxClassName.internal);
         mv.visitInsn(DUP);
-        mv.visitMethodInsn(INVOKESPECIAL, internal(className(b)), "<init>", "()V");
-        mv.visitFieldInsn(PUTFIELD, internal(c.bcd.className), b.name, classDescriptor(className(b)));
+        mv.visitMethodInsn(INVOKESPECIAL, b.boxClassName.internal, "<init>", "()V");
+        mv.visitFieldInsn(PUTFIELD, c.bcd.className.internal, b.name, b.boxClassName.descriptor);
       }
       for (p ← c.portDeclInOrder) {
         // TODO init values
@@ -52,7 +48,7 @@ object ByteCodeGen {
       mv.visitInsn(RETURN);
       val l5 = new Label();
       mv.visitLabel(l5);
-      mv.visitLocalVariable("this", classDescriptor(c.bcd.className), null, l0, l5, 0);
+      mv.visitLocalVariable("this", c.bcd.className.descriptor, null, l0, l5, 0);
       mv.visitMaxs(-1, -1); // autocompute
       mv.visitEnd();
     }
@@ -67,22 +63,22 @@ object ByteCodeGen {
       // Utility methods
       def loadBox(b: Box): Unit = {
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, internal(c.bcd.className), b.name, classDescriptor(className(b)));
+        mv.visitFieldInsn(GETFIELD, c.bcd.className.internal, b.name, b.boxClassName.descriptor);
       }
-      def getField(className: String, name: String, desc:String, scala: Boolean) {
-        if (scala) mv.visitMethodInsn(INVOKEVIRTUAL, internal(className), name, "()"+desc);
-        else mv.visitFieldInsn(GETFIELD, internal(className), name, desc);
+      def getField(className: BoxClassName, name: String, desc:String, scala: Boolean) {
+        if (scala) mv.visitMethodInsn(INVOKEVIRTUAL, className.internal, name, "()"+desc);
+        else mv.visitFieldInsn(GETFIELD, className.internal, name, desc);
       }
-      def putField(className: String, name: String, desc: String, scala: Boolean) {
-        if (scala) mv.visitMethodInsn(INVOKEVIRTUAL, internal(className), name + "_$eq", "("+desc+")V");
-        else mv.visitFieldInsn(PUTFIELD, internal(className), name, desc);
+      def putField(className: BoxClassName, name: String, desc: String, scala: Boolean) {
+        if (scala) mv.visitMethodInsn(INVOKEVIRTUAL, className.internal, name + "_$eq", "("+desc+")V");
+        else mv.visitFieldInsn(PUTFIELD, className.internal, name, desc);
       }
       def putRef(p: PortRef, get: ⇒ Unit) = p match {
         case b: BoxPortRef ⇒
           loadBox(b.box)
           get
           
-          putField(className(b.box), b.name, c.portType(b).descriptor,c.boxType(b.box).scala)
+          putField(b.box.boxClassName, b.name, c.portType(b).descriptor,c.boxType(b.box).scala)
         case m: ModelPortRef ⇒
           mv.visitVarInsn(ALOAD, 0)
           get
@@ -91,7 +87,7 @@ object ByteCodeGen {
       def getRef(p: PortRef) = p match {
         case b: BoxPortRef ⇒
           loadBox(b.box)
-          getField(className(b.box), b.name, c.portType(b).descriptor,c.boxType(b.box).scala)
+          getField(b.box.boxClassName, b.name, c.portType(b).descriptor,c.boxType(b.box).scala)
         case m: ModelPortRef ⇒
           mv.visitVarInsn(ALOAD, 0)
           getField(c.bcd.className, m.name, c.portType(m).descriptor, false)
@@ -119,8 +115,8 @@ object ByteCodeGen {
       for (box ← c.order) {
         // invoke box
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, internal(c.bcd.className), box.name, classDescriptor(className(box)));
-        mv.visitMethodInsn(INVOKEVIRTUAL, internal(className(box)), "apply", "()V");
+        mv.visitFieldInsn(GETFIELD, c.bcd.className.internal, box.name, box.boxClassName.descriptor);
+        mv.visitMethodInsn(INVOKEVIRTUAL, box.boxClassName.internal, "apply", "()V");
         // propagate
         val connections = connectionsFromBox(box)
         connections foreach { executeConnection(_) }
@@ -128,7 +124,7 @@ object ByteCodeGen {
       val lend = new Label();
       mv.visitInsn(RETURN);
       mv.visitLabel(lend);
-      mv.visitLocalVariable("this", classDescriptor(c.bcd.className), null, l0, lend, 0);
+      mv.visitLocalVariable("this", c.bcd.className.descriptor, null, l0, lend, 0);
       mv.visitMaxs(-1, -1);
       mv.visitEnd();
     }

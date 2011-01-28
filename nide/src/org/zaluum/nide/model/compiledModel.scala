@@ -2,7 +2,7 @@ package org.zaluum.nide.model
 
 import javax.swing.JComponent
 
-class BoxClass(
+case class BoxClass(
     val className: BoxClassName, 
     val scala: Boolean = false, 
     val image: String, 

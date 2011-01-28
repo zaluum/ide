@@ -24,11 +24,13 @@ class ModelView(override val viewer: Viewer, val model: BoxClassDecl, val bcp: B
   def selectedBoxes = selected.selected collect { case x: BoxFigure ⇒ x.box }
   def selectedPorts = selected.selected collect { case x: PortDeclFigure ⇒ x.portDecl }
   def selectedConnections = selected.selected collect { case x: LineFigure ⇒ x.cf.c }
-
+  def selectedInnerClassNames = selectedBoxes map {_.boxClassName} collect {case i:InnerBoxClassName => i }
+  def selectedInnerClasses = selectedInnerClassNames flatMap {iname => model.innerClassDecls find {_.className==iname} }
   def createRemoveCommand: Command = {
     val boxes = selectedBoxes
     val ports = selectedPorts
     val connections = selectedConnections
+    val innerClasses = selectedInnerClasses
     new Command {
       var disconnectedFrom = Map[Connection, PortRef]()
       var disconnectedTo = Map[Connection, PortRef]()
@@ -36,6 +38,7 @@ class ModelView(override val viewer: Viewer, val model: BoxClassDecl, val bcp: B
         model.boxes --= boxes
         model.portDecls --= ports
         model.connections --= connections
+        model.innerClassDecls --= innerClasses
         disconnectedFrom = Map.empty
         disconnectedTo = Map.empty
         for (c ← model.connections) {
@@ -60,6 +63,7 @@ class ModelView(override val viewer: Viewer, val model: BoxClassDecl, val bcp: B
         model.boxes ++= boxes
         model.portDecls ++= ports
         model.connections ++= connections
+        model.innerClassDecls ++= innerClasses
         disconnectedFrom foreach { case (c, portRef) ⇒ c.from = Some(portRef) }
         disconnectedTo foreach { case (c, portRef) ⇒ c.to = Some(portRef) }
         deselectAll

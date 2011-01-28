@@ -11,6 +11,7 @@ case class Compiled(val bcd: BoxClassDecl, val innerCompiled:Set[Compiled],  val
   val portType: Map[PortRef, TypedPort], val boxType: Map[Box, BoxClass], val source: String) {
   lazy val boxesInOrder = bcd.boxes.toList.sortWith(_.name < _.name)
   lazy val portDeclInOrder = bcd.portDecls.toList.sortWith(_.name < _.name)
+  lazy val boxClass = BoxClass(bcd.className, scala=false, image="",guiCreator=None,visual=false)
 }
 object Compiler {
   def isValidJavaIdentifier(s: String) = {
@@ -48,7 +49,15 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath, val report
   
   var boxTypes = Map[Box, BoxClass]()
   var portType = Map[PortRef, TypedPort]()
-  def getBoxClass(cl: BoxClassName): Option[BoxClass] = boxClassPath.find(cl) 
+  var innerCompiled :Set[Compiled] = _
+  def getBoxClass(cl: BoxClassName): Option[BoxClass] = {
+    def searchInnerCompiled(inners : Set[Compiled]) : Option[BoxClass] = {
+      inners map {_.boxClass} find { _.className == cl } orElse {
+        inners.view.flatMap {i => searchInnerCompiled(i.innerCompiled)}.headOption
+      }
+    }
+    searchInnerCompiled(innerCompiled) orElse boxClassPath.find(cl) 
+  }
 
   def checkModelPorts() {
     var names = Set[String]()
@@ -148,16 +157,19 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath, val report
   }
   def compileInnerClasses():Set[Compiled] = {
     for (inner <- bcd.innerClassDecls) yield{
+      println ("compiling inner class " + inner.className)
       val compiler = new Compiler(inner, boxClassPath, reporter)
       reporter.check()
       compiler.compile()
     }
   }
+  
+
   def compile() = {
     // check definition
     checkValidClassname(bcd.className)
     checkModelPorts()
-    val innerCompiled = compileInnerClasses()
+    innerCompiled = compileInnerClasses()
     reporter.check()
     //checkValidPorts(m.ports)
     // check all boxes recursive

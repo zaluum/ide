@@ -25,7 +25,7 @@ public class Run {
 			NoSuchMethodException, IllegalArgumentException,
 			InvocationTargetException, NoSuchFieldException {
 		Class<?> c = Thread.currentThread().getContextClassLoader().loadClass(
-				"org.zaluum.example.TestModel");
+				"org.zaluum.example.testInner");
 		// Class<?> c =
 		// Class.forName("org.zaluum.example.TestModel",true,Thread.currentThread().getContextClassLoader());
 		final Object instance = c.newInstance();

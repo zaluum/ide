@@ -85,7 +85,16 @@ class PortDecl(
 }
 object BoxClassName {
   def parse(str:String) : BoxClassName = {
-    ExtBoxClassName(str) // FIXME
+    if (str.contains('$')) {
+      def fullName(name:BoxClassName, names : List[String]):BoxClassName = {
+        if (names.isEmpty) name 
+        else fullName(InnerBoxClassName(name,names(0)),names.drop(1))
+      }
+      val names = str.split('$').toList
+      fullName (ExtBoxClassName(names(0)), names.drop(1))
+    }else{
+      ExtBoxClassName(str) 
+    }
   }
 }
 sealed trait BoxClassName {
@@ -100,7 +109,8 @@ sealed trait BoxClassName {
   def toRelativePathClass = toRelativePath + ".class"
   def toRelativePath = toString.replace(".", "/") 
   def classNameWithoutPackage = toString.split(".").lastOption
-
+  def internal = toString.replace('.','/')
+  def descriptor = "L" + internal + ";"
 }
 case class ExtBoxClassName(className: String) extends BoxClassName {
   override def toString = className

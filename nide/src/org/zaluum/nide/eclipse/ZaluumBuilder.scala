@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse;
 
+import org.zaluum.nide.compiler.Compiled
 import org.zaluum.nide.compiler.Reporter
 import org.zaluum.nide.model.BoxClassName
 import org.zaluum.nide.model.Location
@@ -69,12 +70,15 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
   def compile(f: IFile, cl: EclipseBoxClasspath) = {
     val reporter = new Reporter
     try {
+      def generate(compiled:Compiled) {
+        val outputPath = defaultOutputFolder.append(new Path(compiled.bcd.className.toRelativePathClass))
+        writeFile(outputPath, ByteCodeGen.dump(compiled))
+        compiled.innerCompiled foreach { generate(_) }
+      }
       cl.toClassName(f) foreach { className ⇒
         val model = ProtoBuffers.readBoxClassDecl(f.getContents, className)
         val compiler = new Compiler(model, cl,reporter)
-        val compiled = compiler.compile
-        val outputPath = defaultOutputFolder.append(new Path(className.toRelativePathClass))
-        writeFile(outputPath, ByteCodeGen.dump(compiled))
+        generate(compiler.compile)
       }
     } catch {
       case e: CompilationException ⇒
