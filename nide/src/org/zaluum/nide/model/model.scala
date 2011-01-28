@@ -20,6 +20,7 @@ class BoxClassDecl(var className: BoxClassName, var imageName: Option[String], v
         (c.buf.isEmpty && !(c.from.isDefined && c.from.isDefined))
     } //empty waypoints
   }
+    
   def toProto : BoxFileProtos.BoxClassDef = {
     val b = BoxFileProtos.BoxClassDef.newBuilder()
     className match {
@@ -82,6 +83,7 @@ class PortDecl(
     port.setName(name)
     port.setType(descriptor)
   }
+  def toTypedPort = TypedPort(descriptor, in, name, pos)
 }
 object BoxClassName {
   def parse(str:String) : BoxClassName = {

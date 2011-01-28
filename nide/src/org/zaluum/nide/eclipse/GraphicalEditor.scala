@@ -1,5 +1,8 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.model.BoxClass
+import org.zaluum.nide.model.BoxClassDecl
+import org.zaluum.nide.compiler.ChainedScannedBoxClassPath
 import org.eclipse.swt.events.DisposeEvent
 import org.eclipse.ui.contexts.IContextService
 import org.eclipse.swt.events.ShellEvent
@@ -53,10 +56,23 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def inputFile = getEditorInput.asInstanceOf[FileEditorInput].getFile
   def input = inputFile.getContents(true)
   def createPartControl(parent: Composite) {
-    val bcp = new EclipseBoxClasspath(inputFile.getProject)
-    bcp.update()
-    val className = bcp.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
+    val ebcp = new EclipseBoxClasspath(inputFile.getProject)
+    val className = ebcp.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
     val model = ProtoBuffers.readBoxClassDecl(input, className)
+    val bcp = new ChainedScannedBoxClassPath(ebcp) {
+      def presentationBoxClass(bcd:BoxClassDecl) = { // TODO Move to presentation compiler?
+         val bc = BoxClass(
+             bcd.className, 
+             scala=false, 
+             image = bcd.imageName.getOrElse(""), 
+             None, false); // FIXME
+         bc.ports = bcd.portDecls map {_.toTypedPort}
+         println("presentation ports=" + bc.ports)
+         bc
+      }
+      def classes = model.innerClassDecls map {presentationBoxClass(_)} 
+    }
+    bcp.update()
     input.close()
     val controller = new Controller(model, bcp)
     controller.addListener(fireDirty)

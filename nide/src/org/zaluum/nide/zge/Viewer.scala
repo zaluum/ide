@@ -74,6 +74,7 @@ class ModelView(override val viewer: Viewer, val model: BoxClassDecl, val bcp: B
     def modelSet = model.boxes
     def buildFigure(box: Box) = {
       val cl = bcp.find(box.boxClassName)
+      println("building figure for " + box.boxClassName + " class= " + cl)
       new ImageBoxFigure(box, cl, ModelView.this)
     }
   }

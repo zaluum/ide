@@ -30,7 +30,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       boxClassDecl = new BoxClassDecl(
           InnerBoxClassName(model.className,name),
               imageName= None,visual=false,guiSize=Dimension(10,10))
-      
+      boxClassDecl.portDecls += new PortDecl(boxClassDecl, "a", true, "D")
       val box = new Box(
           boxClassName = boxClassDecl.className,  
           name = model.nextFreeName("box"),

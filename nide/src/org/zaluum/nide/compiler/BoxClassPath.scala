@@ -19,6 +19,17 @@ trait ScannedBoxClassPath extends BoxClassPath {
   def boxClasses: Set[BoxClass]
   def update()
 }
+abstract class ChainedBoxClassPath(parent:BoxClassPath) extends BoxClassPath {
+  protected def classes : Set[BoxClass]
+  def find(bcn : BoxClassName) = classes.find(_.className == bcn) orElse parent.find(bcn)
+  def getResource(str:String) = parent.getResource(str)
+}
+
+abstract class ChainedScannedBoxClassPath(parent:ScannedBoxClassPath) 
+  extends ChainedBoxClassPath(parent) with ScannedBoxClassPath {
+ def boxClasses = parent.boxClasses ++ classes 
+ def update() = parent.update()
+}
 /**
  * ClassPath
  *

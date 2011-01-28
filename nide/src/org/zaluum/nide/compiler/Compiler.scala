@@ -11,7 +11,11 @@ case class Compiled(val bcd: BoxClassDecl, val innerCompiled:Set[Compiled],  val
   val portType: Map[PortRef, TypedPort], val boxType: Map[Box, BoxClass], val source: String) {
   lazy val boxesInOrder = bcd.boxes.toList.sortWith(_.name < _.name)
   lazy val portDeclInOrder = bcd.portDecls.toList.sortWith(_.name < _.name)
-  lazy val boxClass = BoxClass(bcd.className, scala=false, image="",guiCreator=None,visual=false)
+  lazy val boxClass =  {
+    val bc = BoxClass(bcd.className, scala=false, image="",guiCreator=None,visual=false)
+    bc.ports = bcd.portDecls map {_.toTypedPort}
+    bc
+  }
 }
 object Compiler {
   def isValidJavaIdentifier(s: String) = {
@@ -75,11 +79,12 @@ class Compiler(val bcd: BoxClassDecl, val boxClassPath: BoxClassPath, val report
         case b: BoxPortRef ⇒
           boxTypes.get(b.box) match {
             case Some(typ) ⇒
+              println(typ.ports)
               typ.ports find { _.name == b.name } match {
                 case Some(typedPort) ⇒ portType += (portRef -> typedPort);
-                case None ⇒ reporter.report("port ref port not found", Some(blame));
+                case None ⇒ reporter.report("port ref port not found " + portRef, Some(blame));
               }
-            case None ⇒ reporter.report("port ref box not found", Some(blame));
+            case None ⇒ reporter.report("port box type not found", Some(blame));
           }
         case _: ModelPortRef ⇒
           reporter.report("model port ref not found", Some(blame))
