@@ -1,5 +1,6 @@
 package org.zaluum.nide.compiler
 
+import org.zaluum.nide.newcompiler.Name
 import javax.swing.JComponent
 import java.net.URL
 import org.zaluum.nide.model._

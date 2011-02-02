@@ -1,5 +1,12 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.newcompiler.PrimitiveJavaType
+import org.zaluum.nide.newcompiler.Type
+import org.zaluum.nide.newcompiler.Scope
+import org.zaluum.nide.newcompiler.PortSymbol
+import org.zaluum.nide.newcompiler.BoxTypeSymbol
+import org.zaluum.nide.newcompiler.{GlobalScope,Symbol,NoSymbol}
+import org.zaluum.nide.newcompiler.Name
 import org.zaluum.nide.compiler.TypedPort
 import org.zaluum.nide.compiler.BoxClass
 import org.zaluum.nide.compiler.PresentationCompiler
@@ -18,8 +25,9 @@ import org.zaluum.nide.compiler.ScannedBoxClassPath
 import org.zaluum.nide.model.{ Point, ProtoBuffers, BoxClassDecl , Dimension}
 import scala.util.control.Exception._
 
-class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils {
+class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils with Scope{
   var cache = Map[BoxClassName, BoxClass]()
+  var cacheType = Map[Name,Type]()
   var creatorCache = Map[BoxClassName, () ⇒ JComponent]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
@@ -27,8 +35,24 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     val urls = jproject.getResolvedClasspath(true) flatMap { e ⇒ pathToURL(e.getPath) }
     new URLClassLoader(urls, currentThread.getContextClassLoader)
   }
+  case object RootSymbol extends Symbol {
+    val owner = NoSymbol
+    val name = null
+    scope = EclipseBoxClasspath.this
+  }
+  private def newJavaType(str: String) =
+    (Name(str) -> new PrimitiveJavaType(RootSymbol,Name(str)))
+  var types = Map[Name, Type](newJavaType("double"))
+  
+  def lookupPort(name: Name): Option[Symbol] = None
+  def lookupVal(name: Name): Option[Symbol] = None
+  def lookupType(name: Name): Option[Type] = types.get(name)
+  def lookupBoxType(name: Name): Option[Type] = cacheType.get(name)
+  
+  def enter(sym: Symbol): Symbol = throw new Exception("cannot enter")
   def update() {
     cache = cache.empty
+    cacheType = cacheType.empty
     creatorCache = creatorCache.empty
     val searchScope = SearchEngine.createJavaSearchScope(
       Array[IJavaElement](jproject))
@@ -65,6 +89,37 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     def forName(str: String): Option[Class[_]] = {
       try { Some(classLoader.loadClass(str)) }
       catch { case e: Exception ⇒ e.printStackTrace; None }
+    }
+    def processTypeSym(t:IType) {
+      val fqn = Name(t.getFullyQualifiedName)
+      val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
+        findStringValueOfAnnotation(a, "value")
+      }
+      val creatorClass = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
+        findStringValueOfAnnotation(a, "value")
+      } flatMap { forName(_) }
+      val bs = new BoxTypeSymbol(RootSymbol, fqn) // TODO image
+      //val bc = new BoxClass(fqn, false, img.getOrElse(""), creatorClass.isDefined)
+      def pointOf(a: IAnnotation) = {
+        val ox = findIntegerValueOfAnnotation(a, "x")
+        val oy = findIntegerValueOfAnnotation(a, "y")
+        (ox, oy) match {
+          case (Some(x), Some(y)) ⇒ Point(x, y)
+          case _ ⇒ Point(0, 0)
+        }
+      }
+      for (f ← t.getFields) {
+        def port(in:Boolean,a:IAnnotation) {
+          val port = new PortSymbol(bs,Name(f.getElementName)) // in out point 
+          port.tpe = lookupType(Name(f.getTypeSignature)) getOrElse {NoSymbol}
+          bs.scope.enter(port)           
+        }
+        findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { port(true,_) }
+        findAnnotations(t, f, "org.zaluum.nide.java.Out") foreach { port(false,_) }
+      }
+      cacheType += (bs.name -> bs)
+      //creatorClass foreach { c ⇒ creatorCache += (bc.className, () ⇒ c.newInstance.asInstanceOf[JComponent]) }
+      
     }
     def processType(t: IType) {
       val fqn = BoxClassName.parse(t.getFullyQualifiedName)
