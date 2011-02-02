@@ -13,7 +13,7 @@ object ProtoParser {
   }
   def parse(i: BoxFileProtos.BoxClassDef.Instance): ValDef = {
     // TODO gui, parameters
-    ValDef(Name(i.getName), Name(i.getClassName))
+    ValDef(Name(i.getName), Name(i.getClassName), parse(i.getPos))
   }
   def parse(c: BoxFileProtos.BoxClassDef.Connection): ConnectionDef = {
     ConnectionDef(

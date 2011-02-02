@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.newcompiler._
 import org.eclipse.jface.dialogs.PopupDialog
 import org.eclipse.jface.resource.{ ImageRegistry, ImageDescriptor }
 import org.eclipse.swt.SWT
@@ -22,19 +24,23 @@ class ImageFactory(val display: Display, bcp: BoxClassPath) {
       }
     }
   }
-  def apply(boxClass: Option[BoxClass]): Image = {
-    def defaultImage(bc: BoxClass) = bc.className.toRelativePath + ".png";
-    boxClass map { c ⇒
-      get(c.image).orElse { get(defaultImage(c)) }.getOrElse { generateImage(c) } // FIXME dispose generateImage 
-    } getOrElse { notFound }
+  def apply(typeTree: Tree): Image = {
+    def defaultImage(bc: BoxDef) = bc.name.toRelativePath + ".png";
+    typeTree match {
+      case b:BoxDef =>
+      //TODO b.image
+        get("b.image").orElse { get(defaultImage(b)) }.getOrElse { generateImage("TODO") } // FIXME dispose generateImage 
+      case _ => notFound
+    }
+    generateImage("hola") // TODO
   }
-  def generateImage(boxClass: BoxClass): Image = {
+  def generateImage(txt:String): Image = {
     val img = new Image(display, 48, 48);
     val gc = new GC(img)
     val font = new Font(display, "Arial", 6, SWT.NONE);
     gc.setFont(font)
     gc.drawRectangle(0, 0, 47, 47)
-    gc.drawText(boxClass.className.classNameWithoutPackage.getOrElse(boxClass.className.toString), 1, 20);
+    gc.drawText(txt, 1, 20);
     gc.dispose
     font.dispose
     img
@@ -69,33 +75,7 @@ class SelectionManager {
     }
   }
 }
-abstract class ModelViewMapper[M, V <: CanShowUpdate](modelView:AbstractModelView) {
-  var viewMap = Map[M, V]()
-  def modelSet: Set[M]
-  def buildFigure(m: M): V
-  def update() {
-    val removed = viewMap.keySet -- modelSet
-    val added = modelSet -- viewMap.keys
-    removed foreach { m ⇒ 
-      val f = viewMap(m); 
-      f.hide;
-      f match {
-        case s : Selectable => modelView.selected.deselect(s)
-        case _ =>
-      }
-      viewMap -= m 
-    }
-    for (m ← added) {
-      val f = buildFigure(m)
-      viewMap += (m -> f)
-      f.show
-    }
-    viewMap.values foreach { _.update() }
-  }
-  def values = viewMap.values
-  def apply(m: M) = viewMap(m)
-  def get(m: M) = viewMap.get(m)
-}
+
 abstract class ScrollPopup(mainShell: Shell) {
   var loc: Point = _
   def display = mainShell.getDisplay

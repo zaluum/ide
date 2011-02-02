@@ -1,5 +1,7 @@
 package org.zaluum.nide.newcompiler
 
+import org.zaluum.nide.model.Point
+import org.zaluum.nide.model.Positionable
 trait Symbol {
   def owner: Symbol
   def name: Name
@@ -15,11 +17,10 @@ case object NoSymbol extends Symbol with Type {
 class PrimitiveJavaType(val owner:Symbol, val name:Name) extends Symbol with Type{
   scope=owner.scope
 }
+class BoxTypeSymbol(val owner: Symbol, val name: Name) extends LocalScope(Some(owner.scope)) with Symbol with Type {
+}
 
-
-class BoxTypeSymbol(val owner: Symbol, val name: Name) extends LocalScope(Some(owner.scope)) with Symbol with Type
-
-class PortSymbol(val owner: Symbol, val name: Name) extends Symbol{
+class PortSymbol(val owner: Symbol, val name: Name) extends Symbol {
   def box = owner.asInstanceOf[BoxTypeSymbol]
 }
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol

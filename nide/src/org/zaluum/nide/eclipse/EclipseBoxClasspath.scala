@@ -1,11 +1,12 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.newcompiler.LocalScope
 import org.zaluum.nide.newcompiler.PrimitiveJavaType
 import org.zaluum.nide.newcompiler.Type
 import org.zaluum.nide.newcompiler.Scope
 import org.zaluum.nide.newcompiler.PortSymbol
 import org.zaluum.nide.newcompiler.BoxTypeSymbol
-import org.zaluum.nide.newcompiler.{GlobalScope,Symbol,NoSymbol}
+import org.zaluum.nide.newcompiler.{Scope,Symbol,NoSymbol}
 import org.zaluum.nide.newcompiler.Name
 import org.zaluum.nide.compiler.TypedPort
 import org.zaluum.nide.compiler.BoxClass
@@ -42,14 +43,14 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
   }
   private def newJavaType(str: String) =
     (Name(str) -> new PrimitiveJavaType(RootSymbol,Name(str)))
-  var types = Map[Name, Type](newJavaType("double"))
+  var types = Map[Name, Type](newJavaType("D"))//TODO
   
   def lookupPort(name: Name): Option[Symbol] = None
   def lookupVal(name: Name): Option[Symbol] = None
   def lookupType(name: Name): Option[Type] = types.get(name)
   def lookupBoxType(name: Name): Option[Type] = cacheType.get(name)
   
-  def enter(sym: Symbol): Symbol = throw new Exception("cannot enter")
+  def enter(sym: Symbol): Symbol = { cacheType += (sym.name->sym.asInstanceOf[Type]);sym}//throw new Exception("cannot enter")
   def update() {
     cache = cache.empty
     cacheType = cacheType.empty
@@ -99,6 +100,8 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         findStringValueOfAnnotation(a, "value")
       } flatMap { forName(_) }
       val bs = new BoxTypeSymbol(RootSymbol, fqn) // TODO image
+      bs.scope = this
+      //bs.scope = new LocalScope(Some(this))
       //val bc = new BoxClass(fqn, false, img.getOrElse(""), creatorClass.isDefined)
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
@@ -112,7 +115,8 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         def port(in:Boolean,a:IAnnotation) {
           val port = new PortSymbol(bs,Name(f.getElementName)) // in out point 
           port.tpe = lookupType(Name(f.getTypeSignature)) getOrElse {NoSymbol}
-          bs.scope.enter(port)           
+          println("entering port in scope " + f.getElementName + " " )
+          bs.enter(port)           
         }
         findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { port(true,_) }
         findAnnotations(t, f, "org.zaluum.nide.java.Out") foreach { port(false,_) }
@@ -155,7 +159,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         matchh match {
           case t: TypeReferenceMatch ⇒
             t.getElement match {
-              case t: IType ⇒ processType(t)
+              case t: IType ⇒ processTypeSym(t)
               case other ⇒ println("ohter match " + other + " " + other.getClass)
             }
         }

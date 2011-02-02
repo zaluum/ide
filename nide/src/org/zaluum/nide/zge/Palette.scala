@@ -27,7 +27,7 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: ScannedBoxClassPath) extend
       b.setSize(48, 48)
       addReaction(b) {
         viewer.tool.state.abort()
-        viewer.tool.creatingPort.enter(in)
+        // TODO viewer.tool.creatingPort.enter(in)
         viewer.canvas.setFocus()
         hide()
       }
@@ -47,19 +47,19 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: ScannedBoxClassPath) extend
     val innerb = createButton("INNER",viewer.imageFactory .notFound)
     addReaction(innerb) {
       viewer.tool.state.abort()
-      viewer.tool .innercreating.enter()
+      // TODO viewer.tool .innercreating.enter()
       viewer.canvas.setFocus()
       hide()
     }
     val classes = bcp.boxClasses.toBuffer.sortWith(_.className.toString < _.className.toString)
     for (bc ← classes) {
-      val b = createButton(bc.className.toString,viewer.imageFactory(Some(bc))) 
+     /* TODO val b = createButton(bc.className.toString,viewer.imageFactory(Some(bc))) 
       addReaction(b) {
         viewer.tool.state.abort()
         viewer.tool.creating.enter(bc)
         viewer.canvas.setFocus()
         hide()
-      }
+      }*/
     }
   }
 }

@@ -1,9 +1,10 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.newcompiler.EmptyTree
 import SWTScala._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Composite, Button, Label, Text }
-import org.zaluum.nide.model.Command
 
 class PortDeclPopup(
   viewer: Viewer,
@@ -14,7 +15,7 @@ class PortDeclPopup(
     val lbl = new Label(content, SWT.NONE)
     lbl.setText("Type descriptor")
     val txt = new Text(content, SWT.BORDER)
-    txt.setText(pf.portDecl.descriptor)
+    txt.setText(pf.tree.typeName.str)
     val data = new GridData
     data.grabExcessHorizontalSpace = true;
     data.minimumWidth = 100;
@@ -23,13 +24,11 @@ class PortDeclPopup(
     ok.setText("OK")
     txt.setFocus
     def work {
-      val port = pf.portDecl
-      val before = port.descriptor
+      val port = pf.tree
       val now = txt.getText
-      viewer.executeOrNotify(new Command {
-        def redo = port.descriptor = now
-        def undo = port.descriptor = before
+      viewer.executeOrNotify(new TreeCommand {
         def canExecute = now != ""
+        def execute()= EmptyTree // TODO
       })
       hide
     }

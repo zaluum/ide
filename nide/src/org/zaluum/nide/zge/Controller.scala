@@ -1,11 +1,17 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.compiler.Reporter
+import org.zaluum.nide.newcompiler.{Tree,Analyzer}
+import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.compiler.BoxClassPath
 import org.zaluum.nide.compiler.ScannedBoxClassPath
 import org.zaluum.nide.model._
 import scala.collection.mutable.{ Buffer, Stack }
-
-class Controller(val model: BoxClassDecl,val bcp:ScannedBoxClassPath) {
+trait TreeCommand {
+  def execute() : Tree
+  def canExecute : Boolean
+}
+class Controller(private var treep: Tree,val global:EclipseBoxClasspath) {
   private var viewModels = Buffer[AbstractModelView]()
   def registerView(modelView: AbstractModelView) {
     //val viewModel = new ModelView(viewer, model, bcp)
@@ -17,18 +23,22 @@ class Controller(val model: BoxClassDecl,val bcp:ScannedBoxClassPath) {
   }
   def updateViewers { viewModels foreach { _.update() } }
   def abortTools() { viewModels foreach { _.viewer.tool.state.abort() } }
-  
-  
-  var undoStack = Stack[Command]()
-  var redoStack = Stack[Command]()
-  var mark: Option[Command] = None
+  def tree = treep
+  val reporter = new Reporter()
+  def compile() = {
+    treep = new Analyzer(reporter,tree,global).compile()
+  }
+  var undoStack = Stack[Tree]()
+  var redoStack = Stack[Tree]()
+  var mark: Option[Tree] = None
   def isDirty = undoStack.elems.headOption != mark
   def markSaved() { mark = undoStack.elems.headOption }
-  def exec(c: Command) {
+  def exec(c: TreeCommand) {
     if (c.canExecute) {
       abortTools()
-      c.act()
-      undoStack.push(c)
+      undoStack.push(tree)
+      treep = c.execute()
+      compile()
       redoStack.clear
       updateViewers
       notifyListeners
@@ -36,13 +46,12 @@ class Controller(val model: BoxClassDecl,val bcp:ScannedBoxClassPath) {
   }
   def canUndo = !undoStack.isEmpty
   def canRedo = !redoStack.isEmpty
-
   def undo() {
     if (!undoStack.isEmpty) {
       abortTools()
-      val c = undoStack.pop
-      redoStack.push(c)
-      c.undo()
+      redoStack.push(tree)
+      treep = undoStack.pop
+      compile()
       updateViewers
       notifyListeners
     }
@@ -50,10 +59,9 @@ class Controller(val model: BoxClassDecl,val bcp:ScannedBoxClassPath) {
   def redo() {
     if (!redoStack.isEmpty) {
       abortTools()
-      val c = redoStack.pop
-      undoStack.push(c)
-      // update tools
-      c.redo()
+      undoStack.push(tree)
+      treep = redoStack.pop
+      compile()
       updateViewers
       notifyListeners
     }
@@ -68,6 +76,7 @@ class Controller(val model: BoxClassDecl,val bcp:ScannedBoxClassPath) {
   def notifyListeners() {
     listeners foreach { _() }
   }
+  compile()
 }
 
 

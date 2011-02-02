@@ -37,10 +37,10 @@ case class Dimension(w: Int, h: Int) {
   }
 }
 trait Positionable {
-  var pos: Point
+  def pos: Point
 }
 trait Resizable extends Positionable {
-  var size: Dimension
+  def size: Dimension
 }
 trait Namer {
   def usedNames: Set[String]

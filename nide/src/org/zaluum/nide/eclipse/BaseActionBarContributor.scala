@@ -35,7 +35,7 @@ class BaseActionBarContributor extends EditorActionBarContributor {
     def calcEnabled=controller.canRedo
   }
   object DeleteAction extends EditorAction{
-    override def run() { controller.exec(editor.viewer.modelView.createRemoveCommand)}
+    override def run() { /*TODO controller.exec(editor.viewer.modelView.createRemoveCommand)*/}
     def calcEnabled = true//editor.viewer.modelView.createRemoveCommand.canExecute
   }
   override def init(bars: IActionBars, page: IWorkbenchPage) {

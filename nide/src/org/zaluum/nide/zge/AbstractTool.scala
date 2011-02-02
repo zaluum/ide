@@ -74,9 +74,9 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
     def buttonUp {
       val commands = modelView.selected.selected collect { case bf:ItemFigure ⇒
         val oldLoc = bf.getBounds.getLocation
-        new MoveCommand(bf.positionable, oldLoc + delta)
+        // TODO new MoveCommand(bf.positionable, oldLoc + delta)
       };
-      controller.exec(new ChainCommand(commands.toList))
+      // TODO controller.exec(new ChainCommand(commands.toList))
     }
     def drag {}
     def buttonDown {}
@@ -120,8 +120,8 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
     def buttonUp {
       val newBounds = handle.deltaAdd(delta, itf.getBounds);
       val dim = Geometry.maxDim(Dimension(newBounds.width,newBounds.height),Dimension(15,15))
-      val comm = new ResizeCommand(itf.resizable, MPoint(newBounds.x,newBounds.y), dim)
-      controller.exec(comm)
+      // TODO val comm = new ResizeCommand(itf.resizable, MPoint(newBounds.x,newBounds.y), dim)
+      // TODO controller.exec(comm)
     }
     def move() {itf.resizeDeltaFeed(delta, handle) }
     def abort() {

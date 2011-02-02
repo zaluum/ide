@@ -8,10 +8,10 @@ import java.awt.image.BufferedImage
 import org.eclipse.draw2d.{ Figure, Graphics }
 import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
 import org.eclipse.swt.SWT
-import org.zaluum.nide.model.{ Resizable, Dimension, Positionable, Point, BoxClassDecl, Command }
+import org.zaluum.nide.model.{ Resizable, Dimension, Positionable, Point, BoxClassDecl }
 import org.zaluum.nide.compiler.BoxClassPath
 import scala.collection.mutable.Buffer
-
+/*
 class SwingFigure(val viewer: GUIViewer, val box: Box, val component: JComponent) extends Figure with ResizableItemFigure {
   lazy val feed = new ResizeItemFeedbackFigure(this)
   def positionable = box.guiPos.get // TODO better way? 
@@ -87,3 +87,4 @@ class GUIViewer(override val shell: Shell, controller: Controller) extends Abstr
   })
 }
 class GUITool(val viewer: GUIViewer) extends AbstractTool(viewer)
+*/

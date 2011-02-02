@@ -1,13 +1,24 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.compiler.TypedPort
-import org.zaluum.nide.compiler.BoxClass
+import org.zaluum.nide.newcompiler.NoSymbol
+import org.zaluum.nide.newcompiler.BoxTypeSymbol
+import org.zaluum.nide.newcompiler.ValDef
+import org.zaluum.nide.model.Positionable
+import org.zaluum.nide.newcompiler.ValSymbol
+import org.zaluum.nide.newcompiler.ConnectionDef
+import org.zaluum.nide.model.Line
+import org.zaluum.nide.newcompiler.PortDef
+import org.zaluum.nide.newcompiler.PortSymbol
+import org.zaluum.nide.model.Resizable
+import org.zaluum.nide.model.Vector2
+import org.zaluum.nide.model.Dimension
+import org.zaluum.nide.model.Point
+import org.zaluum.nide.newcompiler.{Tree}
 import draw2dConversions._
 import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.model._
 
 object draw2dConversions {
   implicit def point(p: Point): EPoint = new EPoint(p.x, p.y)
@@ -20,8 +31,6 @@ trait CanShowFeedback extends Figure {
   def hideFeedback()
 }
 trait CanShowUpdate extends Figure {
-  def show()
-  def hide()
   def update()
 }
 trait Selectable extends Figure with CanShowFeedback
@@ -38,15 +47,6 @@ trait ItemFigure extends Selectable with CanShowUpdate {
     if (viewer.feedbackLayer.getChildren.contains(feed))
       viewer.feedbackLayer.remove(feed)
   }
-  def show() {
-    viewer.layer.add(this)
-    update()
-  }
-  def hide() {
-    hideFeedback
-    if (viewer.layer.getChildren.contains(this))
-      viewer.layer.remove(this)
-  }
   def update() {
     val rect = new Rectangle(positionable.pos.x, positionable.pos.y, size.w, size.h)
     setBounds(rect)
@@ -62,77 +62,71 @@ trait ItemFigure extends Selectable with CanShowUpdate {
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
+  def show() {
+    update()
+    viewer.layer.add(this)
+  }
+  show()
 }
+
 trait ResizableItemFigure extends ItemFigure {
   def feed: ResizeItemFeedbackFigure
   def resizable: Resizable
 }
-trait ItemFigureWithPorts extends ItemFigure {
-  def portMapper: ModelViewMapper[TypedPort, PortFigure];
-  def find(name: String) = portMapper.values.find { _.typ.name == name }
-  override def show() {
-    super.show()
-    portMapper.viewMap.values foreach { _.show() }
+
+trait BoxFigure extends ItemFigure {
+  def tree: ValDef
+  def sym = tree.symbol match {
+    case v:ValSymbol => Some(v)
+    case NoSymbol => None
   }
-  override def hide() {
-    super.hide()
-    portMapper.viewMap.values foreach { _.hide() }
-  }
+  def treeView : TreeView
+  def positionable = tree
+  lazy val feed = new ItemFeedbackFigure(this)
   override def update() {
     super.update()
-    portMapper.update()
-  }
-}
-trait BoxFigure extends ItemFigureWithPorts {
-  def box: Box
-  def modelView : AbstractModelView
-  var boxClass: Option[BoxClass]
-  def positionable = box
-  lazy val feed = new ItemFeedbackFigure(this)
-  object portMapper extends ModelViewMapper[TypedPort, PortFigure](modelView) {
-    def modelSet = boxClass.map { _.ports } getOrElse Set()
-    def buildFigure(p: TypedPort) = new PortFigure(BoxFigure.this, p, BoxPortRef(box, p.name), modelView)
+    sym.map {_.tpe match {
+        case b:BoxTypeSymbol =>
+          b.ports.values foreach { case s:PortSymbol =>
+            new PortFigure(this,s,treeView)
+          }
+        case _ =>
+      }
+    }
   }
 }
 object PortDeclFigure {
   def img(in: Boolean) = "org/zaluum/nide/icons/portDecl" + (if (in) "In" else "Out") + ".png"
 }
-class PortDeclFigure(val portDecl: PortDecl, val modelView: ModelView) extends ImageFigure with ItemFigureWithPorts {
-  def positionable = portDecl
-  override def viewer = modelView.viewer
+
+class PortDeclFigure(val tree: PortDef, val treeView: TreeView) extends ImageFigure with ItemFigure {
+  def sym = tree.symbol match {
+    case NoSymbol=> None 
+    case p:PortSymbol => Some(p)
+  }
+  def positionable = tree
+  override def viewer = treeView.viewer
   var size = Dimension(50, 20)
   lazy val feed = new ItemFeedbackFigure(this)
-  def position = if (portDecl.in) Point(48, 8) else Point(0, 8)
-  def typedPort = TypedPort(portDecl.descriptor, portDecl.in, portDecl.name, position)
+  def position = if (tree.in) Point(48, 8) else Point(0, 8)
 
-  object portMapper extends ModelViewMapper[TypedPort, PortFigure](modelView) {
-    def modelSet = Set(typedPort)
-    def buildFigure(p: TypedPort) = new PortFigure(PortDeclFigure.this, p, ModelPortRef(p.name), modelView)
-  }
   override def update() {
-    val image = viewer.imageFactory.get(PortDeclFigure.img(portDecl.in)).get
+    val image = viewer.imageFactory.get(PortDeclFigure.img(tree.in)).get
     setImage(image)
     size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
+    sym foreach { new PortFigure(this, _, treeView) }
     super.update()
   }
 }
 
-class PortFigure(val bf: ItemFigureWithPorts, val typ: TypedPort, val portRef: PortRef, modelView: AbstractModelView) extends Ellipse with CanShowFeedback with CanShowUpdate {
+class PortFigure(val pf:Figure, val sym:PortSymbol, treeView: AbstractModelView) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)
   val highlight = ColorConstants.blue
   val normal = ColorConstants.gray
   setBackgroundColor(normal)
-  def viewer = modelView.viewer
-  def show() {
-    viewer.portsLayer.add(this)
-    update()
-  }
-  def hide() {
-    if (viewer.portsLayer.getChildren.contains(this))
-      viewer.portsLayer.remove(this)
-  }
+  def viewer = treeView.viewer
   def showFeedback() {
     setBackgroundColor(highlight)
   }
@@ -142,25 +136,32 @@ class PortFigure(val bf: ItemFigureWithPorts, val typ: TypedPort, val portRef: P
   def anchor = getBounds.getCenter
   def update() {
     setSize(10, 10)
-    val dx = typ.pos.x
-    val dy = typ.pos.y
-    val x = bf.getBounds.x + dx - getBounds.width / 2
-    val y = bf.getBounds.y + dy - getBounds.height / 2
+    val dx = 0//TODO typ.pos.x
+    val dy = 0//TODO typ.pos.y
+    val x = pf.getBounds.x + dx - getBounds.width / 2
+    val y = pf.getBounds.y + dy - getBounds.height / 2
     setLocation(Point(x, y))
+  }
+  def show() {
+    update()
+    viewer.portsLayer.add(this)
+  }
+  show()
+}
+
+class ImageBoxFigure(val tree: ValDef, val treeView: TreeView) extends ImageFigure with BoxFigure {
+  override def viewer = treeView.viewer
+  def size =  Dimension(getImage.getBounds.width, getImage.getBounds.height)
+  
+  override def update() {
+    setImage(viewer.imageFactory(tree))
+    super.update()
   }
 }
 
-class ImageBoxFigure(val box: Box, var boxClass: Option[BoxClass], val modelView: ModelView) extends ImageFigure with BoxFigure {
-  override def viewer = modelView.viewer
-  setImage(viewer.imageFactory(boxClass))
-  def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
-}
-
-class LineFigure(l: Line, val cf: ConnectionFigure, modelView: ModelView) extends Polyline with CanShowUpdate with Selectable {
+class LineFigure(l: Line, val cf: ConnectionFigure, treeView: TreeView) extends Polyline with CanShowUpdate with Selectable {
   //setAntialias(1)
   setForegroundColor(ColorConstants.gray)
-  def hide() = modelView.viewer.connectionsLayer.remove(this)
-  def show() = modelView.viewer.connectionsLayer.add(this)
   var complete = false
   var feedback = false
   def update() {
@@ -185,22 +186,20 @@ class LineFigure(l: Line, val cf: ConnectionFigure, modelView: ModelView) extend
     }
   }
 }
-class ConnectionFigure(val c: Connection, modelView: ModelView) extends Figure with CanShowUpdate {
-  object lines extends ModelViewMapper[Line, LineFigure](modelView) {
-    def buildFigure(l: Line) = new LineFigure(l, ConnectionFigure.this, modelView)
-    def modelSet = c.buf.toSet
-  }
-  def show() = lines.viewMap.values foreach { _.show() }
-  def hide() = lines.viewMap.values foreach { _.hide() }
-  def fromFig = c.from flatMap { f ⇒ modelView.findPortFigure(f) }
-  def toFig = c.to flatMap { t ⇒ modelView.findPortFigure(t) }
-  def withFullConnection(body: (PortFigure, PortFigure) ⇒ Unit) {
-    (fromFig, toFig) match {
-      case (Some(f), Some(t)) ⇒ body(f, t)
-      case _ ⇒
-    }
-  }
-  def updateStarts() { // FIXME move to command?
+class ConnectionFigure(val tree: ConnectionDef, treeView: TreeView) extends Figure with CanShowUpdate {
+  /*object lines extends ModelViewMapper[Line, LineFigure](treeView) {
+    def buildFigure(l: Line) = new LineFigure(l, ConnectionFigure.this, treeView)
+    def modelSet = Set()//FIXME c.buf.toSet
+  }*/
+  //def fromFig = treeView.findPortFigure(tree.a) 
+  //def toFig =  treeView.findPortFigure(tree.b) 
+  //def withFullConnection(body: (PortFigure, PortFigure) ⇒ Unit) {
+   // (fromFig, toFig) match {
+    //  case (Some(f), Some(t)) ⇒ body(f, t)
+    //  case _ ⇒
+    //}
+  //}
+  /*FIXME def updateStarts() { // FIXME move to command?
     if (c.buf.isEmpty) {
       withFullConnection { (fromFig, toFig) ⇒
         c.simpleConnect(fromFig.anchor, toFig.anchor)
@@ -212,14 +211,14 @@ class ConnectionFigure(val c: Connection, modelView: ModelView) extends Figure w
         }
       }
     }
-  }
+  }*/
   def update() = {
-    updateStarts()
+    /*updateStarts()
     lines.update()
     if (c.from.isDefined && c.to.isDefined)
       lines.values.foreach { _.showComplete }
     else
-      lines.values.foreach { _.showIncomplete }
+      lines.values.foreach { _.showIncomplete }*/
   }
 
 }

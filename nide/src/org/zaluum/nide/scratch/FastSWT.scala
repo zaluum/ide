@@ -1,8 +1,5 @@
 package org.zaluum.nide.scratch
 
-import org.zaluum.nide.zge.ExampleGUI
-import org.zaluum.nide.zge.GUIViewer
-import org.zaluum.nide.zge.GUIModel
 import org.zaluum.nide.zge.AbstractViewer
 //import org.zaluum.nide.compiler.SimpleScannedBoxClassPath
 //import org.zaluum.nide.compiler.SimpleBoxClassPath

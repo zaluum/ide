@@ -8,11 +8,11 @@ import org.zaluum.nide.compiler.BoxClass
 import scala.collection.JavaConversions._
 
 class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
-  def model =viewer.model
+  def tree =viewer.tree
   override def modelView = viewer.modelView
   override lazy val selecting  = new  Selecting { 
     override def connect(port : PortFigure ) {
-      connecting.enter(initDrag, port)
+      // TODO connecting.enter(initDrag, port)
     }
     override def menu() {
       figureUnderMouse match {
@@ -22,7 +22,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       }
     } 
   }
-  object innercreating extends ToolState { // inherit
+  /*object innercreating extends ToolState { // inherit
     var bf: BoxFigure = _
     var boxClassDecl : BoxClassDecl = _
     def enter() {
@@ -39,7 +39,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
           pos = MPoint(1,1),
           guiPos = None // FIXME ? 
           )
-      bf = new ImageBoxFigure(box, None, modelView)
+      bf = new ImageBoxFigure(box, modelView)
       bf.update()
       bf.hide()
       bf.showFeedback()
@@ -70,11 +70,11 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       bf = null; 
       selecting.enter() 
     }
-  }
+  }*/
   // CREATING BOX 
-  object creating extends ToolState {
+  /*object creating extends ToolState {
     var bf: BoxFigure = _
-    def enter(boxClass: BoxClass) {
+    def enter(boxClass: BoxTypeSymbol) {
       state = this
       val box = new Box(
           boxClassName = boxClass.className,  
@@ -101,9 +101,9 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       bf = null; 
       selecting.enter() 
     }
-  }
+  }*/
   // CREATING PORT
-  object creatingPort extends ToolState {
+/*  object creatingPort extends ToolState {
     var pf: PortDeclFigure = _
     def enter(in: Boolean) {
       state = this
@@ -112,7 +112,6 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       portDecl.pos = MPoint(1, 1)
       pf = new PortDeclFigure(portDecl, modelView)
       pf.update()
-      pf.hide()
       pf.showFeedback()
     }
     def move() { pf.moveFeed(mouseLocation) }
@@ -177,6 +176,6 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       portsTrack.update()
     }
     def abort() { exit() }
-  }
+  }*/
 }
 

@@ -53,7 +53,7 @@ abstract class AbstractViewer(parent: Composite, val controller: Controller) {
   def showMarquee() { feedbackLayer.add(marquee) }
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
   def hideMarquee() { feedbackLayer.remove(marquee) }
-  def executeOrNotify(cmd: Command) = {
+  def executeOrNotify(cmd: TreeCommand) = {
     if (cmd.canExecute) {
       controller.exec(cmd)
       true

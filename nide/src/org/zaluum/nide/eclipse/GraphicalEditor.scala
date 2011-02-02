@@ -1,5 +1,7 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.protobuf.BoxFileProtos
+import org.zaluum.nide.newcompiler.ProtoParser
 import org.zaluum.nide.model.BoxClassName
 import org.zaluum.nide.compiler.PresentationCompiler
 import org.zaluum.nide.compiler.BoxClass
@@ -24,19 +26,20 @@ import org.eclipse.ui.{IEditorSite, IEditorInput, IEditorPart}
 import org.eclipse.ui.ide.IGotoMarker
 import org.eclipse.ui.part.{EditorPart, FileEditorInput}
 import org.zaluum.nide.model.{ProtoBuffers, Location}
-import org.zaluum.nide.zge.{Viewer, Controller, GUIViewer}
+import org.zaluum.nide.zge.{Viewer, Controller}
 
 class GraphicalEditor extends EditorPart with IGotoMarker {
 
   var viewer: Viewer = _
-  var guiViewer : GUIViewer = _
+  //var guiViewer : GUIViewer = _
   var shell : Option[Shell] = None 
   def controller = viewer.controller
   def modelView = viewer.modelView
-  def model = modelView.model 
+  def tree = modelView.tree 
+
   def doSave(monitor: IProgressMonitor) {
-    val in = new ByteArrayInputStream(ProtoBuffers.toByteArray(viewer.model))
-    inputFile.setContents(in, true, true, monitor);
+    /* TODO val in = new ByteArrayInputStream(ProtoBuffers.toByteArray(viewer.tree))
+    inputFile.setContents(in, true, true, monitor);*/
     controller.markSaved()
     firePropertyChange(IEditorPart.PROP_DIRTY)
   }
@@ -57,19 +60,15 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
 
   def inputFile = getEditorInput.asInstanceOf[FileEditorInput].getFile
   def input = inputFile.getContents(true)
+
   def createPartControl(parent: Composite) {
-    val ebcp = new EclipseBoxClasspath(inputFile.getProject)
-    val className = ebcp.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
-    val model = ProtoBuffers.readBoxClassDecl(input, className)
-    val bcp = new ChainedScannedBoxClassPath(ebcp) {
-      def guiFor(b:BoxClassName) = None // FIXME
-      def declFor(bcn:BoxClassName) = model.innerClassDecls find {_.className == bcn }
-      def classFor(bcn:BoxClassName) = declFor(bcn) map {PresentationCompiler.toBoxClass(_)}
-      def classes = model.innerClassDecls map {PresentationCompiler.toBoxClass(_)} 
-    }
-    bcp.update()
+    val globalScope = new EclipseBoxClasspath(inputFile.getProject)
+    val className = globalScope.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
+    val proto = BoxFileProtos.BoxClassDef.parseDelimitedFrom(input)
+    val tree = ProtoParser.parse(proto) // TODO pass class name
+    globalScope.update()
     input.close()
-    val controller = new Controller(model, bcp)
+    val controller = new Controller(tree, globalScope)
     controller.addListener(fireDirty)
     viewer = new Viewer(parent, controller)
     // TODO reopen
@@ -81,13 +80,13 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
       val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE | SWT.RESIZE )
       newshell.setLayout(new FillLayout)
       newshell.setText(getTitle + " GUI");
-      guiViewer= new GUIViewer(newshell, controller)
+      //guiViewer= new GUIViewer(newshell, controller)
       newshell.layout()
       newshell.open()
       
       newshell.addDisposeListener(new DisposeListener(){
         override def widgetDisposed(e:DisposeEvent) {
-          guiViewer.dispose()
+          //guiViewer.dispose()
           shell = None
         }
       });
