@@ -1,7 +1,5 @@
-package org.zaluum.nide.compiler
+package org.zaluum.nide.newcompiler
 
-import org.zaluum.nide.newcompiler.BoxTypeSymbol
-import org.zaluum.nide.newcompiler.BoxDef
 import org.objectweb.asm._
 
 import Opcodes._

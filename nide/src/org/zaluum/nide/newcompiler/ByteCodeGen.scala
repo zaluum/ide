@@ -1,16 +1,5 @@
-package org.zaluum.nide.compiler
+package org.zaluum.nide.newcompiler
 
-import org.zaluum.nide.newcompiler.ConnectionSymbol
-import org.zaluum.nide.newcompiler.ConnectionDef
-import org.zaluum.nide.newcompiler.EmptyTree
-import org.zaluum.nide.newcompiler.PortSymbol
-import org.zaluum.nide.newcompiler.BoxRef
-import org.zaluum.nide.newcompiler.PortRef
-import org.zaluum.nide.newcompiler.ValSymbol
-import org.zaluum.nide.newcompiler.Name
-import org.zaluum.nide.newcompiler.BoxTypeSymbol
-import org.zaluum.nide.newcompiler.BoxDef
-import org.zaluum.nide.newcompiler.Tree
 import org.objectweb.asm._
 import Opcodes._
 
