@@ -1,6 +1,5 @@
 package org.zaluum.nide.newcompiler
 
-import org.zaluum.nide.compiler.Reporter
 import java.io.FileInputStream
 import java.io.File
 import org.zaluum.nide.protobuf.BoxFileProtos

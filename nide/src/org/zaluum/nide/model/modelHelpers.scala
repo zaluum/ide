@@ -56,7 +56,7 @@ trait Namer {
     else nextFreeName(nextName(str))
   }
 }
-object BoxClassDeclLocator {
+/*object BoxClassDeclLocator {
   val ConnReg = """\((.*?),(.*?)\)""".r
 }
 trait BoxClassDeclLocator extends Locatable {
@@ -86,4 +86,4 @@ trait BoxClassDeclLocator extends Locatable {
       case s ⇒ boxes.find(_.name == s) // box
     }
   }
-}
+}*/

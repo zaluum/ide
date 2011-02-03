@@ -1,7 +1,5 @@
 package org.zaluum.nide.eclipse
 
-import org.zaluum.nide.model.BoxClassName
-import org.zaluum.nide.model.ExtBoxClassName
 import org.zaluum.nide.model.Dimension
 import java.io.ByteArrayOutputStream
 import org.eclipse.core.resources.IFile
@@ -12,7 +10,6 @@ import org.eclipse.swt.widgets.{ Label, Composite }
 import org.eclipse.ui.{ INewWizard, IWorkbenchWindow, IWorkbenchPage, IWorkbench }
 import org.eclipse.ui.dialogs.WizardNewFileCreationPage
 import org.eclipse.ui.ide.IDE
-import org.zaluum.nide.model.{ BoxClassDecl, ProtoBuffers }
 class BoxWizard extends Wizard with INewWizard {
 
   var page: ZaluumWizardPage = null;
@@ -74,11 +71,11 @@ class BoxWizardPage(
     setPageComplete(validatePage());
   }
   import com.google.common.base.Charsets
-  def className = BoxClassName.parse(this.getFileName) // FIXME
+  /*TODO def className = BoxClassName.parse(this.getFileName) // FIXME
   override protected def getInitialContents = {
     val model = new BoxClassDecl(className, None, true, Dimension(400,300))
     new java.io.ByteArrayInputStream(ProtoBuffers.toByteArray(model))
-  }
+  }*/
 
   def setDescription() {
     this.setTitle("New Box TypedModel Wizard");

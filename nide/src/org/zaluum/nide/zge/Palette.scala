@@ -5,13 +5,12 @@ import SWTScala._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Shell, Composite, Button }
-import org.zaluum.nide.compiler.ScannedBoxClassPath
-
+import org.zaluum.nide.eclipse.EclipseBoxClasspath
 object Palette {
   val w = 400
   val h = 300
 }
-class Palette(viewer: Viewer, mainShell: Shell, bcp: ScannedBoxClassPath) extends ScrollPopup(mainShell) {
+class Palette(viewer: Viewer, mainShell: Shell, bcp: EclipseBoxClasspath) extends ScrollPopup(mainShell) {
   def name = "Palette"
   def columns = 4
   def populate(content: Composite) {
@@ -51,16 +50,16 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: ScannedBoxClassPath) extend
       viewer.canvas.setFocus()
       hide()
     }
-    val classes = bcp.boxClasses.toBuffer.sortWith(_.className.toString < _.className.toString)
+    /* TODO val classes = bcp.boxClasses.toBuffer.sortWith(_.className.toString < _.className.toString)
     for (bc ← classes) {
-     /* TODO val b = createButton(bc.className.toString,viewer.imageFactory(Some(bc))) 
+      //TODO val b = createButton(bc.className.toString,viewer.imageFactory(Some(bc))) 
       addReaction(b) {
         viewer.tool.state.abort()
         viewer.tool.creating.enter(bc)
         viewer.canvas.setFocus()
         hide()
-      }*/
-    }
+      }
+    }*/
   }
 }
 /*

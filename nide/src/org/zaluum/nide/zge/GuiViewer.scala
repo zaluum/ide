@@ -1,6 +1,5 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.model.Box
 import javax.swing.JButton
 import javax.swing.JComponent
 import java.awt.{ Graphics ⇒ AG }
@@ -8,8 +7,6 @@ import java.awt.image.BufferedImage
 import org.eclipse.draw2d.{ Figure, Graphics }
 import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
 import org.eclipse.swt.SWT
-import org.zaluum.nide.model.{ Resizable, Dimension, Positionable, Point, BoxClassDecl }
-import org.zaluum.nide.compiler.BoxClassPath
 import scala.collection.mutable.Buffer
 /*
 class SwingFigure(val viewer: GUIViewer, val box: Box, val component: JComponent) extends Figure with ResizableItemFigure {

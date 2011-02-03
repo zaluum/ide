@@ -1,8 +1,5 @@
 package org.zaluum.nide.eclipse;
 
-import org.zaluum.nide.compiler.Compiled
-import org.zaluum.nide.compiler.Reporter
-import org.zaluum.nide.model.BoxClassName
 import org.zaluum.nide.model.Location
 import org.zaluum.nide.model.Locatable
 import java.io.ByteArrayInputStream
@@ -10,8 +7,6 @@ import java.util.{ Map ⇒ JMap }
 import org.eclipse.core.resources.{ IncrementalProjectBuilder, IResourceDeltaVisitor, IResourceDelta, IResource, IProject, IMarker, IFile, IContainer }
 import org.eclipse.core.runtime.{ IProgressMonitor, Path, IPath }
 import org.eclipse.jdt.internal.core.JavaModelManager
-import org.zaluum.nide.compiler.{ Compiler, ByteCodeGen, CompilationException }
-import org.zaluum.nide.model.ProtoBuffers
 
 object ZaluumBuilder {
   val BUILDER_ID = "org.zaluum.nide.zaluumBuilder";

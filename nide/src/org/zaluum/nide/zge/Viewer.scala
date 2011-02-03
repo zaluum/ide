@@ -1,7 +1,6 @@
 package org.zaluum.nide.zge
 import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.compiler.BoxClassPath
 import org.zaluum.nide.model._
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.newcompiler._
@@ -21,24 +20,47 @@ class Viewer(parent: Composite, controller: Controller) extends AbstractViewer(p
 }
 
 class TreeView(override val viewer: Viewer, global:EclipseBoxClasspath) extends AbstractModelView(viewer) {
-  object figureCreator extends Traverser(global.root) {
-    override def traverse(tree:Tree) {
-      super.traverse(tree)
-      tree match {
-         case EmptyTree ⇒
-         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-           new PortDeclFigure(p, TreeView.this)
-         case v@ValDef(name, typeName,pos,guiSize) ⇒
-           new ImageBoxFigure(v,TreeView.this) 
-         case ConnectionDef(a, b) ⇒
-         case _ =>
-      }
-    }
-  }
+  
   def tree = viewer.controller.tree
   def update() {
     viewer.clear()
-    figureCreator.traverse(tree)
+    // Create Figures
+    new Traverser(global.root) {
+      override def traverse(tree:Tree) {
+        super.traverse(tree)
+        tree match {
+        case EmptyTree ⇒
+        case p@PortDef(name, typeName, in, inPos, extPos) ⇒
+        new PortDeclFigure(p, TreeView.this)
+        case v@ValDef(name, typeName,pos,guiSize) ⇒
+        new ImageBoxFigure(v,TreeView.this) 
+        case _ =>
+        }
+      }
+    }.traverse(tree)
+    // create connections (need to find figures positions)
+    new Traverser(global.root) {
+      override def traverse(tree:Tree) {
+        super.traverse(tree)
+        tree match {
+        case c@ConnectionDef(a, b) ⇒
+           new ConnectionFigure(c,TreeView.this)
+        case _ =>
+        }
+      }
+    }.traverse(tree)
   }
+  import scala.collection.JavaConversions._
+  private def portFigures = viewer.portsLayer.getChildren.collect { case p:PortFigure => p } 
+  def findPortFigure(boxName:Name,portName:Name) : Option[PortFigure] =
+    portFigures find {
+      p=>p.valSym match {
+        case Some(valSym) => (valSym.name==boxName && p.sym.name==portName)
+        case None => false
+      }
+    }
+  def findPortFigure(portName:Name) : Option[PortFigure] = 
+    portFigures find { p =>  p.valSym.isEmpty && p.sym.name == portName }
+    
   def gotoMarker(l: Location) {} // TODO
 }

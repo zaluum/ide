@@ -3,10 +3,6 @@ package org.zaluum.nide.eclipse
 import org.zaluum.nide.newcompiler.Name
 import org.zaluum.nide.protobuf.BoxFileProtos
 import org.zaluum.nide.newcompiler.ProtoParser
-import org.zaluum.nide.model.BoxClassName
-import org.zaluum.nide.compiler.PresentationCompiler
-import org.zaluum.nide.compiler.BoxClass
-import org.zaluum.nide.model.BoxClassDecl
 import org.eclipse.swt.events.DisposeEvent
 import org.eclipse.ui.contexts.IContextService
 import org.eclipse.swt.events.ShellEvent
@@ -25,7 +21,7 @@ import org.eclipse.swt.widgets.{Composite, Shell}
 import org.eclipse.ui.{IEditorSite, IEditorInput, IEditorPart}
 import org.eclipse.ui.ide.IGotoMarker
 import org.eclipse.ui.part.{EditorPart, FileEditorInput}
-import org.zaluum.nide.model.{ProtoBuffers, Location}
+import org.zaluum.nide.model.Location
 import org.zaluum.nide.zge.{Viewer, Controller}
 
 class GraphicalEditor extends EditorPart with IGotoMarker {

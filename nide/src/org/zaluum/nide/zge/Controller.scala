@@ -1,15 +1,14 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.Reporter
 import org.zaluum.nide.newcompiler.FakeGlobalScope
 import org.zaluum.nide.newcompiler.LocalScope
 import org.zaluum.nide.newcompiler.Transformer
-import org.zaluum.nide.compiler.Reporter
 import org.zaluum.nide.newcompiler.{Tree,Analyzer}
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
-import org.zaluum.nide.compiler.BoxClassPath
-import org.zaluum.nide.compiler.ScannedBoxClassPath
 import org.zaluum.nide.model._
 import scala.collection.mutable.{ Buffer, Stack }
+
 trait TreeCommand {
   def execute(tree:Tree) : Tree
   def canExecute : Boolean

@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.eclipse.ClassPath
 import org.zaluum.nide.newcompiler._
 import org.eclipse.jface.dialogs.PopupDialog
 import org.eclipse.jface.resource.{ ImageRegistry, ImageDescriptor }
@@ -8,10 +9,9 @@ import org.eclipse.swt.custom.ScrolledComposite
 import org.eclipse.swt.graphics.{ Image, GC, Font, Point }
 import org.eclipse.swt.layout.{ GridLayout, FillLayout }
 import org.eclipse.swt.widgets.{ Display, Shell, Composite }
-import org.zaluum.nide.compiler.{BoxClass,BoxClassPath}
 import org.zaluum.nide.icons.Icons
 
-class ImageFactory(val display: Display, bcp: BoxClassPath) {
+class ImageFactory(val display: Display, bcp: ClassPath) {
   val reg = new ImageRegistry
   reg.put("*", ImageDescriptor.createFromFile(classOf[Icons], "notFound.png"))
   def notFound = reg.get("*")

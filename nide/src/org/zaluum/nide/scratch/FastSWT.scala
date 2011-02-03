@@ -6,7 +6,6 @@ import org.zaluum.nide.zge.AbstractViewer
 import org.zaluum.nide.zge.SWTScala
 import org.zaluum.nide.zge.Viewer
 import org.zaluum.nide.zge.Controller
-import org.zaluum.nide.compiler.BoxClassPath
 import org.eclipse.swt.widgets.Widget
 import java.io.FileInputStream
 import org.eclipse.swt.events.SelectionEvent

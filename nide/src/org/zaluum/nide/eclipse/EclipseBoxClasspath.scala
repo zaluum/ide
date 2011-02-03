@@ -8,12 +8,6 @@ import org.zaluum.nide.newcompiler.PortSymbol
 import org.zaluum.nide.newcompiler.BoxTypeSymbol
 import org.zaluum.nide.newcompiler.{Scope,Symbol,NoSymbol}
 import org.zaluum.nide.newcompiler.Name
-import org.zaluum.nide.compiler.TypedPort
-import org.zaluum.nide.compiler.BoxClass
-import org.zaluum.nide.compiler.PresentationCompiler
-import org.zaluum.nide.model.InnerBoxClassName
-import org.zaluum.nide.model.ExtBoxClassName
-import org.zaluum.nide.model.BoxClassName
 import javax.swing.JComponent
 import java.net.URLClassLoader
 import java.net.URL
@@ -22,12 +16,13 @@ import org.eclipse.core.runtime.{ Path, IPath }
 import org.eclipse.jdt.core.{ IJavaElement, IType, IAnnotatable, IJavaProject, IAnnotation, IMemberValuePair, IClasspathEntry }
 import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch }
 import org.eclipse.jdt.internal.core.JavaModelManager
-import org.zaluum.nide.compiler.ScannedBoxClassPath
-import org.zaluum.nide.model.{ Point, ProtoBuffers, BoxClassDecl , Dimension}
+import org.zaluum.nide.model.{ Point , Dimension}
 import scala.util.control.Exception._
 
-class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils with Scope{
-  var cache = Map[BoxClassName, BoxClass]()
+trait ClassPath {
+  def getResource(str:String):Option[URL]
+}
+class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath with Scope{
   var cacheType = Map[Name,Type]()
   var creatorCache = Map[Name, () ⇒ JComponent]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
@@ -53,7 +48,6 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
   def enter(sym: Symbol): Symbol = { throw new Exception("cannot enter new symbols to global scope") } 
   // cacheType += (sym.name->sym.asInstanceOf[Type]);sym}//throw new Exception("cannot enter")
   def update() {
-    cache = cache.empty
     cacheType = cacheType.empty
     creatorCache = creatorCache.empty
     val searchScope = SearchEngine.createJavaSearchScope(
@@ -125,35 +119,6 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       //creatorClass foreach { c ⇒ creatorCache += (bc.className, () ⇒ c.newInstance.asInstanceOf[JComponent]) }
       
     }
-    def processType(t: IType) {
-      val fqn = BoxClassName.parse(t.getFullyQualifiedName)
-      val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
-        findStringValueOfAnnotation(a, "value")
-      }
-      val creatorClass = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
-        findStringValueOfAnnotation(a, "value")
-      } flatMap { forName(_) }
-      val bc = new BoxClass(fqn, false, img.getOrElse(""), creatorClass.isDefined)
-      def pointOf(a: IAnnotation) = {
-        val ox = findIntegerValueOfAnnotation(a, "x")
-        val oy = findIntegerValueOfAnnotation(a, "y")
-        (ox, oy) match {
-          case (Some(x), Some(y)) ⇒ Point(x, y)
-          case _ ⇒ Point(0, 0)
-        }
-      }
-      for (f ← t.getFields) {
-        findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { a ⇒
-          bc.ports += TypedPort(f.getTypeSignature, true, f.getElementName, pointOf(a))
-        }
-        findAnnotations(t, f, "org.zaluum.nide.java.Out") foreach { a ⇒
-          bc.ports += TypedPort(f.getTypeSignature, false, f.getElementName, pointOf(a))
-        }
-      }
-      cache += (bc.className -> bc)
-      // FIXME creatorClass foreach { c ⇒ creatorCache += (bc.className  () ⇒ c.newInstance.asInstanceOf[JComponent]) }
-
-    }
     val searchRequestor = new SearchRequestor() {
       def acceptSearchMatch(matchh: SearchMatch) {
         matchh match {
@@ -185,54 +150,6 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         creatorCache += ( name -> (()=>PresentationCompiler.createGUI(decl,this)))
     }*/
   }
-  def boxClasses: Set[BoxClass] = { cache.values.toSet }
-  def find(name: BoxClassName): Option[BoxClass] = cache.get(name)
   def findGuiCreator(name: Name): Option[() ⇒ JComponent] = creatorCache.get(name)
-  
-  def toClassName(f: IFile): Option[Name] = {
-    val path = f.getFullPath
-    val oSourcePath = sourcePaths.find(_.isPrefixOf(path))
-    oSourcePath map { sourcePath ⇒
-      val relativePath = path.removeFirstSegments(sourcePath.segmentCount)
-      val result = relativePath.segments.reduceLeft(_ + "." + _)
-      Option(relativePath.getFileExtension) match {
-        case Some(str: String) ⇒ result.dropRight(str.length + 1)
-        case None ⇒ result
-      }
-    } map { Name(_) }
-  }
-  def pathToURL(path: IPath): Option[URL] = {
-    Option(workspaceRoot.findMember(path)) map { p ⇒
-      p.getLocationURI.toURL
-    } orElse {
-      val f = path.toFile;
-      if (f.exists) Some(f.toURI.toURL) else None
-    }
-  }
-
-  def jarURL(jarPath: IPath, filePath: String): Option[URL] = filePath match {
-    case "" ⇒ None
-    case _ ⇒
-      pathToURL(jarPath) flatMap { jarURL ⇒
-        val url = new URL("jar:" + jarURL + "!/" + filePath)
-        catching(classOf[java.io.IOException]) opt {
-          val c = url.openConnection.asInstanceOf[java.net.JarURLConnection]
-          c.connect()
-          url
-        }
-      }
-  }
-  def workspaceRoot = project.getWorkspace.getRoot
-  def pathFileToURL(path: IPath, file: String) = file match {
-    case "" ⇒ None
-    case _ ⇒
-      path.getFileExtension match {
-        case "jar" ⇒ jarURL(path, file)
-        case _ ⇒ pathToURL(path.append(new Path(file)))
-      }
-  }
-  def getResource(str: String): Option[URL] = {
-    val cpaths = jproject.getResolvedClasspath(true)
-    cpaths.view.flatMap { cp ⇒ pathFileToURL(cp.getPath, str) } headOption
-  }
 }
+

@@ -3,7 +3,6 @@ import draw2dConversions._
 import org.eclipse.draw2d.{ Cursors, Figure }
 import org.eclipse.draw2d.geometry.{ Point, Rectangle }
 import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
-import org.zaluum.nide.compiler.BoxClass
 
 import scala.collection.JavaConversions._
 

@@ -1,5 +1,9 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.model.Route
+import org.zaluum.nide.newcompiler.EmptyTree
+import org.zaluum.nide.newcompiler.BoxRef
+import org.zaluum.nide.newcompiler.PortRef
 import org.zaluum.nide.newcompiler.NoSymbol
 import org.zaluum.nide.newcompiler.BoxTypeSymbol
 import org.zaluum.nide.newcompiler.ValDef
@@ -13,7 +17,7 @@ import org.zaluum.nide.model.Resizable
 import org.zaluum.nide.model.Vector2
 import org.zaluum.nide.model.Dimension
 import org.zaluum.nide.model.Point
-import org.zaluum.nide.newcompiler.{Tree}
+import org.zaluum.nide.newcompiler.{ Tree }
 import draw2dConversions._
 import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
@@ -78,20 +82,22 @@ trait ResizableItemFigure extends ItemFigure {
 trait BoxFigure extends ItemFigure {
   def tree: ValDef
   def sym = tree.symbol match {
-    case v:ValSymbol => Some(v)
-    case NoSymbol => None
+    case v: ValSymbol ⇒ Some(v)
+    case NoSymbol ⇒ None
   }
-  def treeView : TreeView
+  def treeView: TreeView
   def positionable = tree
   lazy val feed = new ItemFeedbackFigure(this)
   override def update() {
     super.update()
-    sym.map {_.tpe match {
-        case b:BoxTypeSymbol =>
-          b.ports.values foreach { case s:PortSymbol =>
-            new PortFigure(s.extPos + Vector2(getBounds.x,getBounds.y),s,treeView)
+    sym.map {
+      _.tpe match {
+        case b: BoxTypeSymbol ⇒
+          b.ports.values foreach {
+            case s: PortSymbol ⇒
+              new PortFigure(s.extPos + Vector2(getBounds.x, getBounds.y), s, sym, treeView)
           }
-        case _ =>
+        case _ ⇒
       }
     }
   }
@@ -102,25 +108,25 @@ object PortDeclFigure {
 
 class PortDeclFigure(val tree: PortDef, val treeView: TreeView) extends ImageFigure with ItemFigure {
   def sym = tree.symbol match {
-    case NoSymbol=> None 
-    case p:PortSymbol => Some(p)
+    case NoSymbol ⇒ None
+    case p: PortSymbol ⇒ Some(p)
   }
   def positionable = tree
   override def viewer = treeView.viewer
   var size = Dimension(50, 20)
   lazy val feed = new ItemFeedbackFigure(this)
-  def position = Point(getBounds.x,getBounds.y) + (if (tree.in) Vector2(48, 8) else Vector2(0, 8))
+  def position = Point(getBounds.x, getBounds.y) + (if (tree.in) Vector2(48, 8) else Vector2(0, 8))
 
   override def update() {
     val image = viewer.imageFactory.get(PortDeclFigure.img(tree.in)).get
     setImage(image)
     size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
-    sym foreach { new PortFigure(position, _, treeView) }
+    sym foreach { new PortFigure(position, _, None, treeView) }
     super.update()
   }
 }
 
-class PortFigure(val pos : Point, val sym:PortSymbol, treeView: AbstractModelView) extends Ellipse with CanShowFeedback with CanShowUpdate {
+class PortFigure(val pos: Point, val sym: PortSymbol, val valSym: Option[ValSymbol], treeView: AbstractModelView) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)
@@ -150,8 +156,8 @@ class PortFigure(val pos : Point, val sym:PortSymbol, treeView: AbstractModelVie
 
 class ImageBoxFigure(val tree: ValDef, val treeView: TreeView) extends ImageFigure with BoxFigure {
   override def viewer = treeView.viewer
-  def size =  Dimension(getImage.getBounds.width, getImage.getBounds.height)
-  
+  def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
+
   override def update() {
     setImage(viewer.imageFactory(tree))
     super.update()
@@ -160,13 +166,14 @@ class ImageBoxFigure(val tree: ValDef, val treeView: TreeView) extends ImageFigu
 
 class LineFigure(l: Line, val cf: ConnectionFigure, treeView: TreeView) extends Polyline with CanShowUpdate with Selectable {
   //setAntialias(1)
+  def viewer = treeView.viewer
   setForegroundColor(ColorConstants.gray)
   var complete = false
   var feedback = false
-  def update() {
-    setStart(new Point(l.from.x, l.from.y))
-    setEnd(new Point(l.end.x, l.end.y))
-  }
+  setStart(new Point(l.from.x, l.from.y))
+  setEnd(new Point(l.end.x, l.end.y))
+  viewer.connectionsLayer.add(this)
+  showComplete
   def showFeedback { feedback = true; calcStyle }
   def hideFeedback { feedback = false; calcStyle }
   def showComplete { complete = true; calcStyle }
@@ -184,40 +191,24 @@ class LineFigure(l: Line, val cf: ConnectionFigure, treeView: TreeView) extends 
       }
     }
   }
+  def update() {}
 }
+// TODO not really a figure right now... no children
 class ConnectionFigure(val tree: ConnectionDef, treeView: TreeView) extends Figure with CanShowUpdate {
-  /*object lines extends ModelViewMapper[Line, LineFigure](treeView) {
-    def buildFigure(l: Line) = new LineFigure(l, ConnectionFigure.this, treeView)
-    def modelSet = Set()//FIXME c.buf.toSet
-  }*/
-  //def fromFig = treeView.findPortFigure(tree.a) 
-  //def toFig =  treeView.findPortFigure(tree.b) 
-  //def withFullConnection(body: (PortFigure, PortFigure) ⇒ Unit) {
-   // (fromFig, toFig) match {
-    //  case (Some(f), Some(t)) ⇒ body(f, t)
-    //  case _ ⇒
-    //}
-  //}
-  /*FIXME def updateStarts() { // FIXME move to command?
-    if (c.buf.isEmpty) {
-      withFullConnection { (fromFig, toFig) ⇒
-        c.simpleConnect(fromFig.anchor, toFig.anchor)
-      }
-    } else {
-      withFullConnection { (fromFig, toFig) ⇒
-        if (rpoint(fromFig.anchor) != c.buf.head.from || rpoint(toFig.anchor) != c.buf.last.end) {
-          c.simpleConnect(fromFig.anchor, toFig.anchor) // TODO only move
-        }
-      }
+  {
+    def portFigure(tree: Tree): Option[PortFigure] = tree match {
+      case PortRef(portName, BoxRef(boxName)) ⇒ treeView.findPortFigure(boxName, portName)
+      case PortRef(portName, EmptyTree) ⇒ treeView.findPortFigure(portName)
+      case _ ⇒ None
     }
-  }*/
-  def update() = {
-    /*updateStarts()
-    lines.update()
-    if (c.from.isDefined && c.to.isDefined)
-      lines.values.foreach { _.showComplete }
-    else
-      lines.values.foreach { _.showIncomplete }*/
+    def position(tree:Tree) : Option[Point] = portFigure(tree) map { p => p.anchor}
+    val route = (position(tree.a), position(tree.b)) match {
+      case (Some(a), Some(b)) ⇒ Some(Route(a, b))
+      case _ ⇒ None
+    }
+    println("connection from " +  tree.a + " " + portFigure(tree.a))
+    println("connection to " + tree.b + " " + portFigure(tree.b))
+    route foreach { _.lines foreach { l ⇒ new LineFigure(l, this, treeView) } }
   }
-
+  def update() {}
 }
