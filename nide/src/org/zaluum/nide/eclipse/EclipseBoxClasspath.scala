@@ -36,13 +36,13 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     val urls = jproject.getResolvedClasspath(true) flatMap { e ⇒ pathToURL(e.getPath) }
     new URLClassLoader(urls, currentThread.getContextClassLoader)
   }
-  case object RootSymbol extends Symbol {
+  case object root extends Symbol {
     val owner = NoSymbol
     val name = null
     scope = EclipseBoxClasspath.this
   }
   private def newJavaType(str: String) =
-    (Name(str) -> new PrimitiveJavaType(RootSymbol,Name(str)))
+    (Name(str) -> new PrimitiveJavaType(root,Name(str)))
   var types = Map[Name, Type](newJavaType("D"))//TODO
   
   def lookupPort(name: Name): Option[Symbol] = None
@@ -50,7 +50,8 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
   def lookupType(name: Name): Option[Type] = types.get(name)
   def lookupBoxType(name: Name): Option[Type] = cacheType.get(name)
   
-  def enter(sym: Symbol): Symbol = { cacheType += (sym.name->sym.asInstanceOf[Type]);sym}//throw new Exception("cannot enter")
+  def enter(sym: Symbol): Symbol = { throw new Exception("cannot enter new symbols to global scope") } 
+  // cacheType += (sym.name->sym.asInstanceOf[Type]);sym}//throw new Exception("cannot enter")
   def update() {
     cache = cache.empty
     cacheType = cacheType.empty
@@ -99,7 +100,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       val creatorClass = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       } flatMap { forName(_) }
-      val bs = new BoxTypeSymbol(RootSymbol, fqn) // TODO image
+      val bs = new BoxTypeSymbol(root, fqn) // TODO image
       bs.scope = this
       //val bc = new BoxClass(fqn, false, img.getOrElse(""), creatorClass.isDefined)
       def pointOf(a: IAnnotation) = {
@@ -201,7 +202,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
     } map { ExtBoxClassName(_) }
   }
   def pathToURL(path: IPath): Option[URL] = {
-    Option(root.findMember(path)) map { p ⇒
+    Option(workspaceRoot.findMember(path)) map { p ⇒
       p.getLocationURI.toURL
     } orElse {
       val f = path.toFile;
@@ -221,7 +222,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         }
       }
   }
-  def root = project.getWorkspace.getRoot
+  def workspaceRoot = project.getWorkspace.getRoot
   def pathFileToURL(path: IPath, file: String) = file match {
     case "" ⇒ None
     case _ ⇒

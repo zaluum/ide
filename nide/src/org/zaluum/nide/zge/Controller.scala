@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.FakeGlobalScope
+import org.zaluum.nide.newcompiler.LocalScope
 import org.zaluum.nide.newcompiler.Transformer
 import org.zaluum.nide.compiler.Reporter
 import org.zaluum.nide.newcompiler.{Tree,Analyzer}
@@ -32,7 +34,8 @@ class Controller(private var treep: Tree,val global:EclipseBoxClasspath) {
   def tree = treep
   val reporter = new Reporter()
   def compile() = {
-    treep = new Analyzer(reporter,tree,global).compile()
+    val scope = new FakeGlobalScope(global)
+    treep = new Analyzer(reporter,tree,scope).compile()
   }
   var undoStack = Stack[Tree]()
   var redoStack = Stack[Tree]()

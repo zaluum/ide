@@ -21,7 +21,7 @@ class Viewer(parent: Composite, controller: Controller) extends AbstractViewer(p
 }
 
 class TreeView(override val viewer: Viewer, global:EclipseBoxClasspath) extends AbstractModelView(viewer) {
-  object figureCreator extends Traverser(global.RootSymbol) {
+  object figureCreator extends Traverser(global.root) {
     override def traverse(tree:Tree) {
       super.traverse(tree)
       tree match {

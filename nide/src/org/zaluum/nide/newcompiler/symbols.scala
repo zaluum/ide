@@ -17,7 +17,7 @@ case object NoSymbol extends Symbol with Type {
 class PrimitiveJavaType(val owner:Symbol, val name:Name) extends Symbol with Type{
   scope=owner.scope
 }
-class BoxTypeSymbol(val owner: Symbol, val name: Name) extends LocalScope(Some(owner.scope)) with Symbol with Type 
+class BoxTypeSymbol(val owner: Symbol, val name: Name) extends LocalScope(owner.scope) with Symbol with Type 
 
  
 // TODO make two classes one that has values from the declaring tree and the other directly from symbol 

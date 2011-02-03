@@ -16,18 +16,28 @@ trait Scope {
   def lookupType(name: Name): Option[Type]
   def lookupBoxType(name: Name): Option[Type]
   def enter(sym: Symbol): Symbol
+  def root : Symbol
 }
-class LocalScope(val enclosingScope: Option[Scope]) extends Scope {
+
+class FakeGlobalScope(realGlobal:Scope) extends LocalScope(realGlobal) { // for presentation compiler
+  case object fakeRoot extends Symbol {
+    val owner = NoSymbol
+    scope = FakeGlobalScope.this
+    override val name = null
+  }
+  override val root = fakeRoot
+}
+class LocalScope(val enclosingScope: Scope) extends Scope {
   var ports = Map[Name, Symbol]()
   var vals = Map[Name, Symbol]()
   var boxes = Map[Name, Type]()
   def lookupPort(name: Name): Option[Symbol] =
-    ports.get(name) orElse { enclosingScope flatMap { _.lookupPort(name) } }
+    ports.get(name) orElse { enclosingScope.lookupPort(name) } 
   def lookupVal(name: Name): Option[Symbol] =
-    vals.get(name) orElse { enclosingScope flatMap { _.lookupVal(name) } }
-  def lookupType(name: Name): Option[Type] = enclosingScope flatMap { _.lookupType(name) }
+    vals.get(name) orElse { enclosingScope.lookupVal(name) } 
+  def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name) 
   def lookupBoxType(name: Name): Option[Type] =
-    boxes.get(name) orElse { enclosingScope flatMap { _.lookupBoxType(name) } }
+    boxes.get(name) orElse { enclosingScope.lookupBoxType(name) } 
   def enter(sym: Symbol): Symbol = {
     val entry = (sym.name -> sym)
     sym match {
@@ -37,8 +47,9 @@ class LocalScope(val enclosingScope: Option[Scope]) extends Scope {
     }
     sym
   }
+  def root = enclosingScope.root
 }
-class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: EclipseBoxClasspath) {
+class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
   def error(str: String)(implicit tree: Tree) { println(str + " " + tree) }
 
   class Namer(initOwner: Symbol) extends Traverser(initOwner) {
@@ -135,7 +146,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: EclipseB
     }
   }
   def compile(): Tree = {
-    val root = global.RootSymbol
+    val root = global.root
     new Namer(root).traverse(toCompile)
     new Resolver(root).traverse(toCompile)
     new Checker(root).traverse(toCompile)
