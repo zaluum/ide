@@ -48,7 +48,12 @@ abstract class AbstractViewer(parent: Composite, val controller: Controller) {
     marquee.setLineStyle(SWT.LINE_DASH);
     //UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
   }
-
+  def clear() {
+    layer.removeAll()
+    feedbackLayer.removeAll()
+    portsLayer.removeAll()
+    connectionsLayer.removeAll()
+  }
   /*DEFS*/
   def showMarquee() { feedbackLayer.add(marquee) }
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }

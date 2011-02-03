@@ -1,13 +1,18 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.newcompiler.CopyTransformer
+import org.zaluum.nide.newcompiler.ValDef
+import org.zaluum.nide.newcompiler.Tree
+import org.zaluum.nide.newcompiler.Transformer
 import draw2dConversions._
-import org.eclipse.draw2d.{Cursors, Figure}
-import org.eclipse.draw2d.geometry.{Point, Rectangle}
-import org.zaluum.nide.model.{Point => MPoint, _}
+import org.eclipse.draw2d.{ Cursors, Figure }
+import org.eclipse.draw2d.geometry.{ Point, Rectangle }
+import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 import scala.collection.JavaConversions._
 
 abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
   def modelView = viewer.modelView
-  
+
   lazy val selecting = new Selecting
   state = selecting
   // SELECTING 
@@ -64,7 +69,7 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
         case (None, None, None) ⇒ marqueeing.enter(initDrag) // marquee
       }
     }
-    def connect(port : PortFigure ){}
+    def connect(port: PortFigure) {}
     def abort {}
     def exit {}
   }
@@ -72,18 +77,25 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
   object moving extends MovingState {
     def doEnter {}
     def buttonUp {
-      val commands = modelView.selected.selected collect { case bf:ItemFigure ⇒
-        val oldLoc = bf.getBounds.getLocation
-        // TODO new MoveCommand(bf.positionable, oldLoc + delta)
-      };
-      // TODO controller.exec(new ChainCommand(commands.toList))
+      val positions = modelView.selected.selected.collect {
+        case bf: ItemFigure ⇒
+          val oldLoc = bf.getBounds.getLocation
+          (bf.tree -> (MPoint(oldLoc.x, oldLoc.y) + delta))
+      }.toMap
+      val command = TreeCommand(new CopyTransformer {
+        val trans: PartialFunction[Tree, Tree] = {
+          case v@ValDef(name, typeName, pos, guiSize) if (positions.contains(v)) ⇒
+            ValDef(name, typeName, positions(v), transform(guiSize))
+        }
+      })
+      controller.exec(command)
     }
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { modelView.selected.selected collect {case bf:ItemFigure=>bf} foreach { _.moveDeltaFeed(delta) } }
+    def move() { modelView.selected.selected collect { case bf: ItemFigure ⇒ bf } foreach { _.moveDeltaFeed(delta) } }
     def abort() {
-      modelView.selected.selected collect {case bf:ItemFigure=>bf} foreach { _.moveDeltaFeed(Vector2(0, 0)) }
+      modelView.selected.selected collect { case bf: ItemFigure ⇒ bf } foreach { _.moveDeltaFeed(Vector2(0, 0)) }
       exit()
     }
   }
@@ -119,11 +131,11 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
     def doEnter {}
     def buttonUp {
       val newBounds = handle.deltaAdd(delta, itf.getBounds);
-      val dim = Geometry.maxDim(Dimension(newBounds.width,newBounds.height),Dimension(15,15))
+      val dim = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(15, 15))
       // TODO val comm = new ResizeCommand(itf.resizable, MPoint(newBounds.x,newBounds.y), dim)
       // TODO controller.exec(comm)
     }
-    def move() {itf.resizeDeltaFeed(delta, handle) }
+    def move() { itf.resizeDeltaFeed(delta, handle) }
     def abort() {
       itf.resizeDeltaFeed(Vector2(0, 0), handle)
       exit()
@@ -132,5 +144,5 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
     def buttonDown {}
     def exit() { selecting.enter() }
   }
-  
+
 }

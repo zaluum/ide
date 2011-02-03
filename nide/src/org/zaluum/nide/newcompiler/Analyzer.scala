@@ -6,9 +6,9 @@ import org.zaluum.nide.eclipse.EclipseBoxClasspath
 
 case class Name(str: String) {
   //TODO
-  def classNameWithoutPackage =Some(str) // TODO
-  def toRelativePath : String = str.replace('.', '/')
-  
+  def classNameWithoutPackage = Some(str) // TODO
+  def toRelativePath: String = str.replace('.', '/')
+
 }
 trait Scope {
   def lookupPort(name: Name): Option[Symbol]
@@ -17,7 +17,7 @@ trait Scope {
   def lookupBoxType(name: Name): Option[Type]
   def enter(sym: Symbol): Symbol
 }
-class LocalScope(val enclosingScope: Option[Scope]) extends Scope{
+class LocalScope(val enclosingScope: Option[Scope]) extends Scope {
   var ports = Map[Name, Symbol]()
   var vals = Map[Name, Symbol]()
   var boxes = Map[Name, Type]()
@@ -38,8 +38,8 @@ class LocalScope(val enclosingScope: Option[Scope]) extends Scope{
     sym
   }
 }
-class Analyzer(val reporter: Reporter, val toCompile:Tree, val global:EclipseBoxClasspath) {
-  def error(str:String)(implicit tree:Tree) { println(str + " " + tree) }
+class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: EclipseBoxClasspath) {
+  def error(str: String)(implicit tree: Tree) { println(str + " " + tree) }
 
   class Namer(initOwner: Symbol) extends Traverser(initOwner) {
     def defineBox(symbol: Symbol)(implicit tree: Tree): Symbol = {
@@ -47,8 +47,8 @@ class Analyzer(val reporter: Reporter, val toCompile:Tree, val global:EclipseBox
     }
     def defineVal(symbol: Symbol)(implicit tree: Tree): Symbol =
       define(symbol, currentScope, currentScope.lookupVal(symbol.name).isDefined)
-    def definePort(symbol: Symbol)(implicit tree: Tree): Symbol ={
-      println ("defining port symbol " +  symbol + " " + tree )
+    def definePort(symbol: Symbol)(implicit tree: Tree): Symbol = {
+      println("defining port symbol " + symbol + " " + tree)
       define(symbol, currentScope, currentScope.lookupPort(symbol.name).isDefined)
     }
     def define(symbol: Symbol, scope: Scope, dupl: Boolean)(implicit tree: Tree): Symbol = {
@@ -64,11 +64,11 @@ class Analyzer(val reporter: Reporter, val toCompile:Tree, val global:EclipseBox
       implicit val tree = tree1
       tree match {
         case BoxDef(name, defs, vals, ports, connections) ⇒
-           // TODO inner class names $ if currentOwner is BoxTypeSymbol? 
+          // TODO inner class names $ if currentOwner is BoxTypeSymbol? 
           defineBox(new BoxTypeSymbol(currentOwner, name))
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-          definePort(new PortSymbol(currentOwner, name))
-        case v@ValDef(name, typeName,_) ⇒
+          definePort(new PortSymbol(currentOwner, name,extPos,in))
+        case v@ValDef(name, typeName, pos, guiTree) ⇒
           defineVal(new ValSymbol(currentOwner, name))
         case _ ⇒
           tree.scope = currentScope
@@ -85,7 +85,7 @@ class Analyzer(val reporter: Reporter, val toCompile:Tree, val global:EclipseBox
           tree.symbol.tpe = currentScope.lookupType(typeName) getOrElse {
             error("Port type not found " + typeName); NoSymbol
           }
-        case v@ValDef(name, typeName,_) ⇒
+        case v@ValDef(name, typeName, pos, guiSize) ⇒
           tree.symbol.tpe = currentScope.lookupBoxType(typeName) getOrElse {
             error("Box class " + typeName + " not found"); NoSymbol
           }
@@ -96,23 +96,24 @@ class Analyzer(val reporter: Reporter, val toCompile:Tree, val global:EclipseBox
           tree.tpe = tree.symbol.tpe
         case PortRef(name, box) ⇒
           tree.symbol = box match {
-            case EmptyTree ⇒
+            case BoxRef(boxName) ⇒
+              val res: Option[Symbol] = currentScope.lookupVal(boxName) flatMap {
+                _.tpe match {
+                  case bt: BoxTypeSymbol ⇒
+                    println("box found " + boxName + " ports " + bt.ports);
+                    bt.lookupPort(name)
+                  case _ ⇒
+                    println("box not found " + boxName); None
+                }
+              }
+              res.getOrElse {
+                error("Box port not found  " + name + " in box " + boxName); NoSymbol
+              }
+            case _ ⇒
               currentScope.lookupPort(name) getOrElse {
                 error("Model port not found " + name); NoSymbol
               }
-            case BoxRef(boxName) ⇒
-             val res : Option[Symbol] = currentScope.lookupVal(boxName) flatMap  {
-                _.tpe match {
-                  case bt : BoxTypeSymbol => 
-                    println("box found " + boxName + " ports " + bt.ports);
-                    bt.lookupPort(name)
-                  case _ => 
-                    println("box not found " + boxName);None
-                }
-               } 
-            res.getOrElse {
-                error("Box port not found  " + name + " in box " + boxName); NoSymbol
-              }
+
           }
           tree.tpe = tree.symbol.tpe
         case _ ⇒
@@ -133,12 +134,12 @@ class Analyzer(val reporter: Reporter, val toCompile:Tree, val global:EclipseBox
       super.traverse(tree)
     }
   }
-  def compile() : Tree = {
+  def compile(): Tree = {
     val root = global.RootSymbol
     new Namer(root).traverse(toCompile)
     new Resolver(root).traverse(toCompile)
     new Checker(root).traverse(toCompile)
-    println (toCompile)
+    println(toCompile)
     toCompile
   }
 }

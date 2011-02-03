@@ -39,6 +39,7 @@ trait ItemFigure extends Selectable with CanShowUpdate {
   def positionable: Positionable
   def feed: ItemFeedbackFigure
   def size: Dimension
+  def tree: Tree
   def showFeedback() {
     viewer.feedbackLayer.add(feed)
     update()
@@ -88,7 +89,7 @@ trait BoxFigure extends ItemFigure {
     sym.map {_.tpe match {
         case b:BoxTypeSymbol =>
           b.ports.values foreach { case s:PortSymbol =>
-            new PortFigure(this,s,treeView)
+            new PortFigure(s.extPos + Vector2(getBounds.x,getBounds.y),s,treeView)
           }
         case _ =>
       }
@@ -108,18 +109,18 @@ class PortDeclFigure(val tree: PortDef, val treeView: TreeView) extends ImageFig
   override def viewer = treeView.viewer
   var size = Dimension(50, 20)
   lazy val feed = new ItemFeedbackFigure(this)
-  def position = if (tree.in) Point(48, 8) else Point(0, 8)
+  def position = Point(getBounds.x,getBounds.y) + (if (tree.in) Vector2(48, 8) else Vector2(0, 8))
 
   override def update() {
     val image = viewer.imageFactory.get(PortDeclFigure.img(tree.in)).get
     setImage(image)
     size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
-    sym foreach { new PortFigure(this, _, treeView) }
+    sym foreach { new PortFigure(position, _, treeView) }
     super.update()
   }
 }
 
-class PortFigure(val pf:Figure, val sym:PortSymbol, treeView: AbstractModelView) extends Ellipse with CanShowFeedback with CanShowUpdate {
+class PortFigure(val pos : Point, val sym:PortSymbol, treeView: AbstractModelView) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)
@@ -136,10 +137,8 @@ class PortFigure(val pf:Figure, val sym:PortSymbol, treeView: AbstractModelView)
   def anchor = getBounds.getCenter
   def update() {
     setSize(10, 10)
-    val dx = 0//TODO typ.pos.x
-    val dy = 0//TODO typ.pos.y
-    val x = pf.getBounds.x + dx - getBounds.width / 2
-    val y = pf.getBounds.y + dy - getBounds.height / 2
+    val x = pos.x - getBounds.width / 2
+    val y = pos.y - getBounds.height / 2
     setLocation(Point(x, y))
   }
   def show() {

@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.Tree
 import org.zaluum.nide.newcompiler.EmptyTree
 import SWTScala._
 import org.eclipse.swt.SWT
@@ -28,7 +29,7 @@ class PortDeclPopup(
       val now = txt.getText
       viewer.executeOrNotify(new TreeCommand {
         def canExecute = now != ""
-        def execute()= EmptyTree // TODO
+        def execute(tree:Tree)= EmptyTree // TODO
       })
       hide
     }

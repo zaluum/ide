@@ -1,9 +1,10 @@
 package org.zaluum.nide.newcompiler
 
+import org.zaluum.nide.model.Dimension
 import java.io.StringWriter
-import org.zaluum.nide.model.{Point,Positionable}
+import org.zaluum.nide.model.{ Point, Positionable }
 
-abstract class Tree extends Product {
+sealed abstract class Tree extends Product {
   //var pos : Position = NoPosition
   var tpe: Type = null
   var symbol: Symbol = null
@@ -54,77 +55,66 @@ trait RefTree extends SymTree {
 trait TermTree extends Tree
 
 trait TypTree extends Tree
-//
-class StrictTreeCopier {
-  def BoxDef(tree: Tree, name: Name, defs: List[Tree], vals: List[Tree], ports: List[Tree], connections: List[Tree]) =
-    new BoxDef(name, defs, vals, ports, connections).copyAttrs(tree)
-  def PortDef(tree: Tree, name: Name, typeName: Name, in: Boolean, inPos: Point, extPos: Point) =
-    new PortDef(name, typeName, in, inPos, extPos).copyAttrs(tree)
-  def ValDef(tree: Tree, name: Name, typeName: Name, pos:Point) =
-    new ValDef(name, typeName,pos).copyAttrs(tree)
-  def ConnectionDef(tree: Tree, a: Tree, b: Tree) =
-    new ConnectionDef(a, b).copyAttrs(tree)
-  def PortRef(tree:Tree,name:Name,box:Tree) = 
-    new PortRef(name,box).copyAttrs(tree)
-  def BoxRef(tree:Tree,name:Name) = 
-    new BoxRef(name).copyAttrs(tree)
-}
 /*
     case EmptyTree ⇒
     case BoxDef(name, defs, vals, ports, connections) ⇒
     case PortDef(name, typeName, in, inPos, extPos) ⇒
-    case ValDef(name, typeName) ⇒
+    case ValDef(name, typeName,pos,guiSize) ⇒
     case ConnectionDef(a, b) ⇒
     case PortRef(name, from) =>
     case BoxRef(name) =>
    */
 // Transformer
-abstract class Transformer {
-  val treeCopy: StrictTreeCopier = new StrictTreeCopier
-  protected var currentOwner: Symbol = NoSymbol; //definitions.RootClass
-  def transform(tree: Tree): Tree = tree match {
-    case EmptyTree ⇒
-      tree
-    case BoxDef(name, defs, vals, ports, connections) ⇒
-      atOwner(tree.symbol) {
-        treeCopy.BoxDef(tree, name,
+abstract class CopySymbolTransformer extends CopyTransformer {
+  override protected def transform(tree: Tree): Tree = 
+    super.transform(tree).copyAttrs(tree)
+}
+abstract class CopyTransformer extends Transformer {
+  val defaultTransform:PartialFunction[Tree,Tree] = {  
+    case e@EmptyTree ⇒ e
+    case b@BoxDef(name, defs, vals, ports, connections) ⇒
+      atOwner(b.symbol) {
+        BoxDef(name,
           transformTrees(defs),
           transformTrees(vals),
           transformTrees(ports),
           transformTrees(connections))
       }
     case PortDef(name, typeName, in, inPos, extPos) ⇒
-      treeCopy.PortDef(tree, name, typeName, in, inPos, extPos)
-    case ValDef(name, typeName, pos) ⇒
-      treeCopy.ValDef(tree, name, typeName,pos)
-    case ConnectionDef(a, b) ⇒
-      atOwner(tree.symbol) {
-        treeCopy.ConnectionDef(tree, transform(a), transform(b))
+      PortDef(name, typeName, in, inPos, extPos)
+    case ValDef(name, typeName, pos, guiSize) ⇒
+      ValDef(name, typeName, pos, transform(guiSize))
+    case c@ConnectionDef(a, b) ⇒
+      atOwner(c.symbol) {
+        ConnectionDef(transform(a), transform(b))
       }
-    case PortRef(name, from) =>
-      treeCopy.PortRef(tree,name,transform(from))
-    case BoxRef(name) =>
-      treeCopy.BoxRef(tree,name)
-  }
-
-  def transformTrees(trees: List[Tree]): List[Tree] =
-    trees mapConserve (transform(_))
-
-  def atOwner[A](owner: Symbol)(trans: ⇒ A): A = {
-    val prevOwner = currentOwner
-    currentOwner = owner
-    val result = trans
-    currentOwner = prevOwner
-    result
+    case PortRef(name, from) ⇒
+      PortRef(name, transform(from))
+    case BoxRef(name) ⇒
+      BoxRef(name)
+    case s@SizeDef(pos, size) ⇒
+      s.copy()
   }
 }
+abstract class Transformer extends OwnerHelper[Tree]{
+  protected val defaultTransform: PartialFunction[Tree, Tree]
+  protected val trans: PartialFunction[Tree, Tree]
+  protected lazy val finalTrans = trans.orElse(defaultTransform)
+  def apply(tree: Tree, initOwner: Symbol = NoSymbol): Tree = {
+    currentOwner = initOwner
+    currentScope = initOwner.scope 
+    transform(tree)
+  }
+  protected def transform(tree: Tree): Tree = finalTrans.apply(tree)
+  protected def transformTrees(trees: List[Tree]): List[Tree] =
+    trees mapConserve (transform(_))
+}
 // Traverser
-abstract class Traverser(initSymbol : Symbol) {
-  protected var currentOwner: Symbol = initSymbol;
-  protected var currentScope: Scope = initSymbol.scope;
-
+abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit]{
+  currentOwner = initSymbol
+  currentScope = initSymbol.scope
   def traverse(tree: Tree): Unit = tree match {
-    case EmptyTree ⇒ 
+    case EmptyTree ⇒
       ;
     case b@BoxDef(name, defs, vals, ports, connections) ⇒
       atOwner(tree.symbol) {
@@ -133,32 +123,40 @@ abstract class Traverser(initSymbol : Symbol) {
         traverseTrees(ports)
         traverseTrees(connections)
       }
-    case ValDef(_, _,_) ⇒      
-      
+    case ValDef(_, _, _, guiSize) ⇒
+      traverse(guiSize)
     case ConnectionDef(a, b) ⇒
-      atOwner(tree.symbol){
+      atOwner(tree.symbol) {
         traverse(a)
         traverse(b)
       }
-    case PortDef(_, _, _, _, _) ⇒ 
-    case PortRef(_,tree) => 
+    case PortDef(_, _, _, _, _) ⇒
+    case PortRef(_, tree) ⇒
       traverse(tree)
-    case BoxRef(_) =>
+    case BoxRef(_) ⇒
+    case SizeDef(_, _) ⇒
   }
   def traverseTrees(trees: List[Tree]) {
     trees foreach traverse
   }
-  def atOwner(owner: Symbol)(traverse: ⇒ Unit) {
+  
+}
+abstract class OwnerHelper[A] {
+  protected var currentOwner: Symbol = null
+  protected var currentScope: Scope = null
+  
+  def atOwner(owner: Symbol)(traverse: ⇒ A) : A = {
     val prevOwner = currentOwner
     val prevScope = currentScope
     currentOwner = owner
     currentScope = owner match {
-      case s: Scope ⇒ s 
+      case s: Scope ⇒ s
       case _ ⇒ currentScope
     }
-    traverse
+    val result = traverse
     currentOwner = prevOwner
     currentScope = prevScope
+    result
   }
 }
 // ----- tree node alternatives --------------------------------------
@@ -174,10 +172,11 @@ case class BoxDef(name: Name,
   vals: List[Tree],
   ports: List[Tree],
   connections: List[Tree]) extends DefTree
-case class PortDef(name: Name, typeName: Name, in: Boolean, inPos: Point, extPos: Point) extends DefTree with Positionable{
+case class PortDef(name: Name, typeName: Name, in: Boolean, inPos: Point, extPos: Point) extends DefTree with Positionable {
   def pos = extPos
 }
 case class BoxRef(name: Name) extends RefTree
 case class PortRef(name: Name, from: Tree) extends RefTree
-case class ValDef(name: Name, typeName: Name, pos:Point) extends DefTree with Positionable
+case class ValDef(name: Name, typeName: Name, pos: Point, guiSize: Tree) extends DefTree with Positionable
+case class SizeDef(pos: Point, size: Dimension) extends Tree
 case class ConnectionDef(a: Tree, b: Tree) extends Tree

@@ -17,10 +17,11 @@ case object NoSymbol extends Symbol with Type {
 class PrimitiveJavaType(val owner:Symbol, val name:Name) extends Symbol with Type{
   scope=owner.scope
 }
-class BoxTypeSymbol(val owner: Symbol, val name: Name) extends LocalScope(Some(owner.scope)) with Symbol with Type {
-}
+class BoxTypeSymbol(val owner: Symbol, val name: Name) extends LocalScope(Some(owner.scope)) with Symbol with Type 
 
-class PortSymbol(val owner: Symbol, val name: Name) extends Symbol {
+ 
+// TODO make two classes one that has values from the declaring tree and the other directly from symbol 
+class PortSymbol(val owner: Symbol, val name: Name, val extPos:Point, val in:Boolean) extends Symbol {  
   def box = owner.asInstanceOf[BoxTypeSymbol]
 }
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol

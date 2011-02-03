@@ -1,5 +1,6 @@
 package org.zaluum.nide.newcompiler
 
+import org.zaluum.nide.model.Dimension
 import org.zaluum.nide.model.Point
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.JavaConversions._
@@ -12,8 +13,12 @@ object ProtoParser {
       connections = b.getConnectionList.map { parse(_) }.toList)
   }
   def parse(i: BoxFileProtos.BoxClassDef.Instance): ValDef = {
-    // TODO gui, parameters
-    ValDef(Name(i.getName), Name(i.getClassName), parse(i.getPos))
+    // TODO parameters
+    val guitree= if (i.hasGuiPos && i.hasGuiSize) 
+        SizeDef(parse(i.getGuiPos),parseDim(i.getGuiSize)) 
+      else
+        EmptyTree  
+    ValDef(Name(i.getName), Name(i.getClassName), parse(i.getPos), guitree)
   }
   def parse(c: BoxFileProtos.BoxClassDef.Connection): ConnectionDef = {
     ConnectionDef(
@@ -31,4 +36,5 @@ object ProtoParser {
       extPos = parse(p.getPosExternal))
   }
   def parse(p: BoxFileProtos.BoxClassDef.Point) = Point(p.getX, p.getY)
+  def parseDim(p: BoxFileProtos.BoxClassDef.Point) = Dimension(p.getX,p.getY)
 }

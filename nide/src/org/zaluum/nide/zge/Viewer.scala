@@ -11,7 +11,7 @@ class Viewer(parent: Composite, controller: Controller) extends AbstractViewer(p
   val palette = new Palette(this, parent.getShell, controller.global)
   var tool = new BoxTool(this)
   /*MODEL*/
-  lazy val modelView = new TreeView(this,controller.tree,controller.global)
+  lazy val modelView = new TreeView(this,controller.global)
 
   def tree = controller.tree
   override def dispose() {
@@ -20,7 +20,7 @@ class Viewer(parent: Composite, controller: Controller) extends AbstractViewer(p
   }
 }
 
-class TreeView(override val viewer: Viewer, var tree:Tree, global:EclipseBoxClasspath) extends AbstractModelView(viewer) {
+class TreeView(override val viewer: Viewer, global:EclipseBoxClasspath) extends AbstractModelView(viewer) {
   object figureCreator extends Traverser(global.RootSymbol) {
     override def traverse(tree:Tree) {
       super.traverse(tree)
@@ -28,16 +28,16 @@ class TreeView(override val viewer: Viewer, var tree:Tree, global:EclipseBoxClas
          case EmptyTree ⇒
          case p@PortDef(name, typeName, in, inPos, extPos) ⇒
            new PortDeclFigure(p, TreeView.this)
-         case v@ValDef(name, typeName,_) ⇒
+         case v@ValDef(name, typeName,pos,guiSize) ⇒
            new ImageBoxFigure(v,TreeView.this) 
          case ConnectionDef(a, b) ⇒
          case _ =>
       }
     }
   }
-  def clear(){} // TODO
+  def tree = viewer.controller.tree
   def update() {
-    clear()
+    viewer.clear()
     figureCreator.traverse(tree)
   }
   def gotoMarker(l: Location) {} // TODO

@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.Transformer
 import org.zaluum.nide.compiler.Reporter
 import org.zaluum.nide.newcompiler.{Tree,Analyzer}
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
@@ -8,13 +9,18 @@ import org.zaluum.nide.compiler.ScannedBoxClassPath
 import org.zaluum.nide.model._
 import scala.collection.mutable.{ Buffer, Stack }
 trait TreeCommand {
-  def execute() : Tree
+  def execute(tree:Tree) : Tree
   def canExecute : Boolean
+}
+object TreeCommand {
+  def apply(t:Transformer) = new TreeCommand{
+    def execute(tree:Tree) = t(tree)
+    def canExecute = true
+  }
 }
 class Controller(private var treep: Tree,val global:EclipseBoxClasspath) {
   private var viewModels = Buffer[AbstractModelView]()
   def registerView(modelView: AbstractModelView) {
-    //val viewModel = new ModelView(viewer, model, bcp)
     viewModels += modelView
     modelView.update()
   }
@@ -37,7 +43,7 @@ class Controller(private var treep: Tree,val global:EclipseBoxClasspath) {
     if (c.canExecute) {
       abortTools()
       undoStack.push(tree)
-      treep = c.execute()
+      treep = c.execute(tree)
       compile()
       redoStack.clear
       updateViewers

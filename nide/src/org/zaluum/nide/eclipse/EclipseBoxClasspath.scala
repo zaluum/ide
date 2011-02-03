@@ -101,7 +101,6 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       } flatMap { forName(_) }
       val bs = new BoxTypeSymbol(RootSymbol, fqn) // TODO image
       bs.scope = this
-      //bs.scope = new LocalScope(Some(this))
       //val bc = new BoxClass(fqn, false, img.getOrElse(""), creatorClass.isDefined)
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
@@ -113,7 +112,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       }
       for (f ← t.getFields) {
         def port(in:Boolean,a:IAnnotation) {
-          val port = new PortSymbol(bs,Name(f.getElementName)) // in out point 
+          val port = new PortSymbol(bs,Name(f.getElementName),pointOf(a),in) 
           port.tpe = lookupType(Name(f.getTypeSignature)) getOrElse {NoSymbol}
           println("entering port in scope " + f.getElementName + " " )
           bs.enter(port)           
