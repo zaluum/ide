@@ -29,7 +29,7 @@ import scala.util.control.Exception._
 class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with EclipseUtils with Scope{
   var cache = Map[BoxClassName, BoxClass]()
   var cacheType = Map[Name,Type]()
-  var creatorCache = Map[BoxClassName, () ⇒ JComponent]()
+  var creatorCache = Map[Name, () ⇒ JComponent]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
   val classLoader = {
@@ -151,7 +151,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         }
       }
       cache += (bc.className -> bc)
-      creatorClass foreach { c ⇒ creatorCache += (bc.className, () ⇒ c.newInstance.asInstanceOf[JComponent]) }
+      // FIXME creatorClass foreach { c ⇒ creatorCache += (bc.className  () ⇒ c.newInstance.asInstanceOf[JComponent]) }
 
     }
     val searchRequestor = new SearchRequestor() {
@@ -172,7 +172,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
   }
   
   def loadZaluum(f: IFile) {
-    def addCache(cl: BoxClass) {
+    /*def addCache(cl: BoxClass) {
       cache += (cl.className -> cl)
       cl.innerClasses foreach { addCache(_) }
     }
@@ -183,13 +183,13 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
       addCache(boxClass)
       if (boxClass.visual) // FIXME inner classes visualizations
         creatorCache += ( name -> (()=>PresentationCompiler.createGUI(decl,this)))
-    }
+    }*/
   }
   def boxClasses: Set[BoxClass] = { cache.values.toSet }
   def find(name: BoxClassName): Option[BoxClass] = cache.get(name)
-  def findGuiCreator(name: BoxClassName): Option[() ⇒ JComponent] = creatorCache.get(name)
-
-  def toClassName(f: IFile): Option[BoxClassName] = {
+  def findGuiCreator(name: Name): Option[() ⇒ JComponent] = creatorCache.get(name)
+  
+  def toClassName(f: IFile): Option[Name] = {
     val path = f.getFullPath
     val oSourcePath = sourcePaths.find(_.isPrefixOf(path))
     oSourcePath map { sourcePath ⇒
@@ -199,7 +199,7 @@ class EclipseBoxClasspath(project: IProject) extends ScannedBoxClassPath with Ec
         case Some(str: String) ⇒ result.dropRight(str.length + 1)
         case None ⇒ result
       }
-    } map { ExtBoxClassName(_) }
+    } map { Name(_) }
   }
   def pathToURL(path: IPath): Option[URL] = {
     Option(workspaceRoot.findMember(path)) map { p ⇒

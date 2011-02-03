@@ -7,26 +7,12 @@ import org.zaluum.nide.model._
 
 trait BoxClassPath {
   def find(name : BoxClassName) : Option[BoxClass]
-  def findGuiCreator(name : BoxClassName) : Option[()=>JComponent]
+  def findGuiCreator(name : Name) : Option[()=>JComponent]
   def getResource(str: String): Option[URL]
 }
 trait ScannedBoxClassPath extends BoxClassPath {
   def boxClasses: Set[BoxClass]
   def update()
-}
-abstract class ChainedBoxClassPath(parent:BoxClassPath) extends BoxClassPath {
-  protected def classFor(b:BoxClassName) : Option[BoxClass]
-  protected def guiFor(b:BoxClassName) : Option[()=>JComponent]
-  def find(bcn : BoxClassName) = classFor(bcn) orElse parent.find(bcn)
-  def findGuiCreator(bcn : BoxClassName) = guiFor(bcn) orElse parent.findGuiCreator(bcn)
-  def getResource(str:String) = parent.getResource(str)
-}
-
-abstract class ChainedScannedBoxClassPath(parent:ScannedBoxClassPath) 
-  extends ChainedBoxClassPath(parent) with ScannedBoxClassPath {
- protected def classes : Set[BoxClass]
- def boxClasses = parent.boxClasses ++ classes 
- def update() = parent.update()
 }
 /**
  * ClassPath

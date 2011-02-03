@@ -68,7 +68,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
   def root = getProject.getWorkspace.getRoot
 
   def compile(f: IFile, cl: EclipseBoxClasspath) = {
-    val reporter = new Reporter
+    /* TODO val reporter = new Reporter
     try {
       def generate(compiled:Compiled) {
         val outputPath = defaultOutputFolder.append(new Path(compiled.bcd.className.toRelativePathClass))
@@ -85,7 +85,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
         for (err ← reporter.errors) {
           addMarker(f, err.msg, err.mark, IMarker.SEVERITY_ERROR)
         }
-    }
+    }*/
   }
   def writeFile(path: IPath, bytes: Array[Byte]) {
     val is = new ByteArrayInputStream(bytes)
