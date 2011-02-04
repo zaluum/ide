@@ -74,8 +74,8 @@ object ByteCodeGen {
       }
       def putRef(pref: PortRef, get: ⇒ Unit) = {
         val portSym = pref.symbol.asInstanceOf[PortSymbol]
-        pref.from match {
-          case bref: BoxRef ⇒
+        pref.fromRef match {
+          case bref: ValRef ⇒
             val boxSym = bref.symbol.asInstanceOf[ValSymbol]
             loadBox(boxSym)
             get
@@ -88,8 +88,8 @@ object ByteCodeGen {
       }
       def getRef(pref: PortRef) = {
         val portSym = pref.symbol.asInstanceOf[PortSymbol]
-        pref.from match {
-          case b: BoxRef ⇒
+        pref.fromRef match {
+          case b: ValRef ⇒
             val boxSym = b.symbol.asInstanceOf[ValSymbol]
             loadBox(boxSym)
             getField(boxSym.tpe.name, portSym.name.str, portSym.tpe.name.descriptor, false) // TODO scala
@@ -110,7 +110,7 @@ object ByteCodeGen {
       def connectionsFromBox(b: ValSymbol) = {
         sym.connections filter { conn ⇒
           conn.from match {
-            case f: PortRef ⇒ f.from == b
+            case f: PortRef ⇒ f.fromRef == b
             case _ ⇒ false
           }
         }

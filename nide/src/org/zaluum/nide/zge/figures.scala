@@ -1,8 +1,10 @@
 package org.zaluum.nide.zge
 
+import scala.collection.mutable.Buffer
+import org.zaluum.nide.newcompiler.ThisRef
 import org.zaluum.nide.model.Route
 import org.zaluum.nide.newcompiler.EmptyTree
-import org.zaluum.nide.newcompiler.BoxRef
+import org.zaluum.nide.newcompiler.ValRef
 import org.zaluum.nide.newcompiler.PortRef
 import org.zaluum.nide.newcompiler.NoSymbol
 import org.zaluum.nide.newcompiler.BoxTypeSymbol
@@ -164,7 +166,7 @@ class ImageBoxFigure(val tree: ValDef, val treeView: TreeView) extends ImageFigu
   }
 }
 
-class LineFigure(l: Line, val cf: ConnectionFigure, treeView: TreeView) extends Polyline with CanShowUpdate with Selectable {
+class LineFigure(l: Line, treeView: TreeView) extends Polyline with CanShowUpdate with Selectable {
   //setAntialias(1)
   def viewer = treeView.viewer
   setForegroundColor(ColorConstants.gray)
@@ -174,6 +176,7 @@ class LineFigure(l: Line, val cf: ConnectionFigure, treeView: TreeView) extends 
   setEnd(new Point(l.end.x, l.end.y))
   viewer.connectionsLayer.add(this)
   showComplete
+  def hide() = viewer.connectionsLayer.remove(this)
   def showFeedback { feedback = true; calcStyle }
   def hideFeedback { feedback = false; calcStyle }
   def showComplete { complete = true; calcStyle }
@@ -193,12 +196,23 @@ class LineFigure(l: Line, val cf: ConnectionFigure, treeView: TreeView) extends 
   }
   def update() {}
 }
+class ConnectionPainter(treeView : TreeView) {
+  val lines = Buffer[LineFigure]()
+  def paintRoute(route:Route) {
+    clear()
+    route.lines foreach { l ⇒ lines += new LineFigure(l, treeView) } 
+  }
+  def clear() {
+    lines.foreach {_.hide}
+    lines.clear
+  }
+}
 // TODO not really a figure right now... no children
 class ConnectionFigure(val tree: ConnectionDef, treeView: TreeView) extends Figure with CanShowUpdate {
   {
     def portFigure(tree: Tree): Option[PortFigure] = tree match {
-      case PortRef(portName, BoxRef(boxName)) ⇒ treeView.findPortFigure(boxName, portName)
-      case PortRef(portName, EmptyTree) ⇒ treeView.findPortFigure(portName)
+      case PortRef(v@ValRef(_), portName) ⇒ treeView.findPortFigure(v.symbol.name, portName)
+      case PortRef(ThisRef, portName) ⇒ treeView.findPortFigure(portName)
       case _ ⇒ None
     }
     def position(tree:Tree) : Option[Point] = portFigure(tree) map { p => p.anchor}
@@ -208,7 +222,7 @@ class ConnectionFigure(val tree: ConnectionDef, treeView: TreeView) extends Figu
     }
     println("connection from " +  tree.a + " " + portFigure(tree.a))
     println("connection to " + tree.b + " " + portFigure(tree.b))
-    route foreach { _.lines foreach { l ⇒ new LineFigure(l, this, treeView) } }
+    route foreach { _.lines foreach { l ⇒ new LineFigure(l, treeView) } }
   }
   def update() {}
 }

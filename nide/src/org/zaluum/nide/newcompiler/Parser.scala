@@ -26,8 +26,8 @@ object ProtoParser {
       if (c.hasTarget) parse(c.getTarget) else EmptyTree)
   }
   def parse(p: BoxFileProtos.BoxClassDef.PortRef): PortRef = {
-    PortRef(Name(p.getPortName),
-      if (p.hasBoxName) BoxRef(Name(p.getBoxName)) else EmptyTree)
+    PortRef(if (p.hasBoxName) ValRef(Name(p.getBoxName)) else ThisRef,
+      Name(p.getPortName))
   }
   def parse(p: BoxFileProtos.BoxClassDef.Port): PortDef = {
     PortDef(name = Name(p.getName), typeName = Name(p.getType),

@@ -1,5 +1,9 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.PortRef
+import org.zaluum.nide.newcompiler.ConnectionDef
+import org.zaluum.nide.newcompiler.ThisRef
+import org.zaluum.nide.newcompiler.ValRef
 import org.zaluum.nide.newcompiler.CopyTransformer
 import org.zaluum.nide.newcompiler.BoxDef
 import org.zaluum.nide.newcompiler.PortDef
@@ -21,7 +25,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
   override def modelView = viewer.modelView
   override lazy val selecting  = new  Selecting { 
     override def connect(port : PortFigure ) {
-      // TODO connecting.enter(initDrag, port)
+      connecting.enter(initDrag, port)
     }
     override def menu() {
       figureUnderMouse match {
@@ -145,55 +149,64 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
     def exit() { feed.hide(); feed = null; selecting.enter() }
   }
   // CONNECT
-  /*object connecting extends MovingState {
+  object connecting extends MovingState {
     var dst: Option[PortFigure] = None
-    var initPort: Option[PortFigure] = None
-    var con: Option[Connection] = None
-    var conf: Option[ConnectionFigure] = None
+    var src: Option[PortFigure] = None
+    val painter = new ConnectionPainter(modelView)
+    //var con: Option[Connection] = None
     val portsTrack = new OverTrack[PortFigure](viewer.portsLayer) {
-      def onEnter(p: PortFigure) {
-        dst = Some(p);
-        con.get.to = Some(p.portRef);
-        p.showFeedback
-      }
-      def onExit(p: PortFigure) { dst = None; con.get.to = None; p.hideFeedback }
+      def onEnter(p: PortFigure) {dst = Some(p); p.showFeedback }
+      def onExit(p: PortFigure) { dst = None;  p.hideFeedback }
     }
     def enter(initdrag: Point, initPort: PortFigure) {
       super.enter(initdrag)
-      this.initPort = Some(initPort)
-      con = Some(new Connection(Some(initPort.portRef), None))
-      conf = Some(new ConnectionFigure(con.get, modelView))
-      con.get.simpleConnect(initPort.getBounds.getCenter, mouseLocation)
-      conf.get.show
-      conf.get.update
+      src = Some(initPort)
       viewer.setCursor(Cursors.HAND)
+      move()
     }
     def doEnter {}
     def buttonUp {
       // execute model command
-      val command = new ConnectCommand(con.get, modelView.model)
-      controller.exec(command)
+      if (dst.isDefined) {
+        def toRef(pf:PortFigure) = pf.valSym.map {s=>ValRef(s.name)} getOrElse {ThisRef}
+        val srcPortName = src.get.sym.name
+        val dstPortName = dst.get.sym.name
+        val srcRef = toRef(src.get)
+        val dstRef = toRef(dst.get)
+        if (srcRef!=dstRef && srcPortName!=dstPortName){
+        val condef = ConnectionDef(
+            PortRef(srcRef,srcPortName),
+            PortRef(dstRef,dstPortName))
+        controller.exec(TreeCommand(
+          new CopyTransformer { 
+            val trans : PartialFunction[Tree,Tree] = {
+              case b:BoxDef if (b==tree) => b.copy(connections = condef :: b.connections)
+            }
+          }))
+        }else exit()
+      }else{
+        exit()
+      }
     }
     def drag {}
     def buttonDown {}
     def exit() {
+      painter.clear
       dst foreach { _.hideFeedback }
-      conf.foreach { _.hide }
-      con = None
-      conf = None
+      dst = None
       viewer.setCursor(null)
       selecting.enter()
     }
     def move() {
+      val start = src.get.anchor
       val end = dst match {
-        case Some(df) ⇒ df.getBounds.getCenter
+        case Some(df) ⇒ df.anchor
         case None ⇒ mouseLocation
       }
-      con.get.simpleConnect(initPort.get.getBounds.getCenter, end)
-      conf.get.update
+      painter.paintRoute(Route(start,end))
       portsTrack.update()
     }
     def abort() { exit() }
-  }*/
+  }
 }
 

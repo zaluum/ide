@@ -13,9 +13,6 @@ sealed abstract class Tree extends Product {
   def isDef = false
   def isEmpty = false
 
-  /** The direct child trees of this tree
-   *  EmptyTrees are always omitted. Lists are collapsed.
-   */
   def children: List[Tree] = {
     def subtrees(x: Any): List[Tree] = x match {
       case EmptyTree ⇒ List()
@@ -52,8 +49,6 @@ abstract class DefTree extends SymTree {
 trait RefTree extends SymTree {
   def name: Name
 }
-trait TermTree extends Tree
-
 trait TypTree extends Tree
 /*
     case EmptyTree ⇒
@@ -80,7 +75,7 @@ abstract class CopyTransformer extends Transformer {
           transformTrees(ports),
           transformTrees(connections))
       }
-    case PortDef(name, typeName, in, inPos, extPos) ⇒
+    case PortDef(name, typeName, in, inPos, extPos) ⇒ 
       PortDef(name, typeName, in, inPos, extPos)
     case ValDef(name, typeName, pos, guiSize) ⇒
       ValDef(name, typeName, pos, transform(guiSize))
@@ -88,12 +83,11 @@ abstract class CopyTransformer extends Transformer {
       atOwner(c.symbol) {
         ConnectionDef(transform(a), transform(b))
       }
-    case PortRef(name, from) ⇒
-      PortRef(name, transform(from))
-    case BoxRef(name) ⇒
-      BoxRef(name)
-    case s@SizeDef(pos, size) ⇒
-      s.copy()
+    case PortRef(from,name) ⇒
+      PortRef(transform(from),name)
+    case ValRef(name) ⇒  ValRef(name)
+    case t@ThisRef => t  
+    case s@SizeDef(pos, size) ⇒ s.copy()
   }
 }
 abstract class Transformer extends OwnerHelper[Tree]{
@@ -126,14 +120,13 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit]{
     case ValDef(_, _, _, guiSize) ⇒
       traverse(guiSize)
     case ConnectionDef(a, b) ⇒
-      atOwner(tree.symbol) {
         traverse(a)
         traverse(b)
-      }
     case PortDef(_, _, _, _, _) ⇒
-    case PortRef(_, tree) ⇒
+    case PortRef(tree, _) ⇒
       traverse(tree)
-    case BoxRef(_) ⇒
+    case ValRef(_) ⇒
+    case ThisRef =>
     case SizeDef(_, _) ⇒
   }
   def traverseTrees(trees: List[Tree]) {
@@ -162,7 +155,7 @@ abstract class OwnerHelper[A] {
 // ----- tree node alternatives --------------------------------------
 
 /** The empty tree */
-case object EmptyTree extends TermTree {
+case object EmptyTree extends Tree {
   override def isEmpty = true
 }
 
@@ -175,8 +168,10 @@ case class BoxDef(name: Name,
 case class PortDef(name: Name, typeName: Name, in: Boolean, inPos: Point, extPos: Point) extends DefTree with Positionable {
   def pos = inPos
 }
-case class BoxRef(name: Name) extends RefTree
-case class PortRef(name: Name, from: Tree) extends RefTree
+
+case class ValRef(name: Name) extends RefTree
+case object ThisRef extends Tree
+case class PortRef(fromRef:Tree, name: Name) extends RefTree
 case class ValDef(name: Name, typeName: Name, pos: Point, guiSize: Tree) extends DefTree with Positionable
 case class SizeDef(pos: Point, size: Dimension) extends Tree
-case class ConnectionDef(a: Tree, b: Tree) extends Tree
+case class ConnectionDef(a: Tree, b: Tree) extends SymTree

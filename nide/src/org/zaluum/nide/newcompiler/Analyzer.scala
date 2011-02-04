@@ -185,32 +185,24 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           tree.symbol.tpe = currentScope.lookupBoxType(typeName) getOrElse {
             error("Box class " + typeName + " not found"); NoSymbol
           }
-        case BoxRef(name) ⇒
+        case ValRef(name) ⇒
+          println("valref " + tree)
           tree.symbol = currentScope.lookupVal(name) getOrElse {
             error("Box not found " + name); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case PortRef(name, box) ⇒
-          tree.symbol = box match {
-            case BoxRef(boxName) ⇒
-              val res: Option[Symbol] = currentScope.lookupVal(boxName) flatMap {
-                _.tpe match {
-                  case bt: BoxTypeSymbol ⇒
-                    println("box found " + boxName + " ports " + bt.ports);
-                    bt.lookupPort(name)
-                  case _ ⇒
-                    println("box not found " + boxName); None
-                }
-              }
-              res.getOrElse {
-                error("Box port not found  " + name + " in box " + boxName); NoSymbol
-              }
-            case _ ⇒
-              currentScope.lookupPort(name) getOrElse {
-                error("Model port not found " + name); NoSymbol
-              }
-
+        case PortRef(fromTree, name) ⇒
+          println("portref " + tree)
+          tree.symbol = fromTree.symbol.tpe match {
+            case b:BoxTypeSymbol => b.lookupPort(name).getOrElse{
+                println("Port not found " + name);
+                NoSymbol
+            }
+            case _ => NoSymbol
           }
+          tree.tpe = tree.symbol.tpe
+        case ThisRef => 
+          tree.symbol = currentOwner
           tree.tpe = tree.symbol.tpe
         case _ ⇒
       }
