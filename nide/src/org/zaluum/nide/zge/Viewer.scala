@@ -31,9 +31,9 @@ class TreeView(override val viewer: Viewer, global:EclipseBoxClasspath) extends 
         tree match {
         case EmptyTree ⇒
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-        new PortDeclFigure(p, TreeView.this)
+          new PortDeclFigure(p, TreeView.this).show()
         case v@ValDef(name, typeName,pos,guiSize) ⇒
-        new ImageBoxFigure(v,TreeView.this) 
+          new ImageBoxFigure(v,TreeView.this).show()
         case _ =>
         }
       }
@@ -44,7 +44,7 @@ class TreeView(override val viewer: Viewer, global:EclipseBoxClasspath) extends 
         super.traverse(tree)
         tree match {
         case c@ConnectionDef(a, b) ⇒
-           new ConnectionFigure(c,TreeView.this)
+           new ConnectionFigure(c,TreeView.this).show()
         case _ =>
         }
       }
