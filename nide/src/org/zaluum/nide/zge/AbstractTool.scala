@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.PortDef
 import org.zaluum.nide.newcompiler.CopyTransformer
 import org.zaluum.nide.newcompiler.ValDef
 import org.zaluum.nide.newcompiler.Tree
@@ -86,6 +87,8 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
         val trans: PartialFunction[Tree, Tree] = {
           case v@ValDef(name, typeName, pos, guiSize) if (positions.contains(v)) ⇒
             ValDef(name, typeName, positions(v), transform(guiSize))
+          case p:PortDef if(positions.contains(p)) =>
+            p.copy(inPos = positions(p))
         }
       })
       controller.exec(command)

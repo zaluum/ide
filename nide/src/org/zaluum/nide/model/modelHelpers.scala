@@ -51,9 +51,9 @@ trait Namer {
     str.slice(0, str.length - digits.length) + nextValue
   }
   @tailrec
-  final def nextFreeName(str: String): String = {
+  final def freshName(str: String): String = {
     if (!isNameTaken(str)) str
-    else nextFreeName(nextName(str))
+    else freshName(nextName(str))
   }
 }
 /*object BoxClassDeclLocator {

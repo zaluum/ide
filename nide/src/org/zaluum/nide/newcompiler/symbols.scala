@@ -1,5 +1,6 @@
 package org.zaluum.nide.newcompiler
 
+import org.zaluum.nide.model.Namer
 import org.zaluum.nide.model.Point
 import org.zaluum.nide.model.Positionable
 trait Symbol {

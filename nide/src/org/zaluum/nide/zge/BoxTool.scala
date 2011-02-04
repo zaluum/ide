@@ -2,6 +2,7 @@ package org.zaluum.nide.zge
 
 import org.zaluum.nide.newcompiler.CopyTransformer
 import org.zaluum.nide.newcompiler.BoxDef
+import org.zaluum.nide.newcompiler.PortDef
 import org.zaluum.nide.newcompiler.EmptyTree
 import org.zaluum.nide.newcompiler.Name
 import org.zaluum.nide.newcompiler.ValDef
@@ -99,12 +100,11 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       val tr = new CopyTransformer() {
         val trans : PartialFunction[Tree,Tree] = {
           case b:BoxDef if b==tree => 
-            b.copy(vals = ValDef(Name("fresh"),tpe.name,dst,EmptyTree) :: b.vals)
+            val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
+            b.copy(vals = ValDef(name,tpe.name,dst,EmptyTree) :: b.vals)
         }
       }
       controller.exec(TreeCommand(tr))
-      //val com = new CreateCommand(bf.box, model)
-      //controller.exec(com) // no need to exit. controller aborts all tools
     }
     def buttonDown() {}
     def exit() { 
@@ -114,31 +114,38 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
     }
   }
   // CREATING PORT
-/*  object creatingPort extends ToolState {
-    var pf: PortDeclFigure = _
+  object creatingPort extends ToolState {
+    var feed: ItemFeedbackFigure = _
+    var in:Boolean = _
     def enter(in: Boolean) {
       state = this
-      val name = model.nextFreeName("port")
-      val portDecl = new PortDecl(model, name, in, "D")
-      portDecl.pos = MPoint(1, 1)
-      pf = new PortDeclFigure(portDecl, modelView)
-      pf.update()
-      pf.showFeedback()
+      this.in =in
+      val img = viewer.imageFactory.get(PortDeclFigure.img(in)).get
+      feed = new ItemFeedbackFigure(viewer)
+      feed.setInnerBounds(new Rectangle(0,0,img.getBounds.width,img.getBounds.height));
+      feed.show()
     }
-    def move() { pf.moveFeed(mouseLocation) }
+    def move() { feed.setInnerLocation(mouseLocation) }
     def abort() { exit() }
     def drag() {}
     def buttonUp() {
       // execute
-      pf.portDecl.pos = MPoint(mouseLocation.x, mouseLocation.y)
-      val com = new CreatePortDeclCommand(pf.portDecl, model)
-      controller.exec(com)
+      val pos = MPoint(mouseLocation.x, mouseLocation.y)
+      val tr = new CopyTransformer() {
+        val trans : PartialFunction[Tree,Tree] = {
+          case b:BoxDef if b==tree => 
+            val name = Name(tree.symbol.asInstanceOf[BoxTypeSymbol].freshName("port"))
+            val p = PortDef(name,Name("D"),in,pos,MPoint(0,0))
+            b.copy(ports = p :: b.ports)
+        }
+      }
+      controller.exec(TreeCommand(tr))
     }
     def buttonDown() {}
-    def exit() { pf.hideFeedback; pf = null; selecting.enter() }
+    def exit() { feed.hide(); feed = null; selecting.enter() }
   }
   // CONNECT
-  object connecting extends MovingState {
+  /*object connecting extends MovingState {
     var dst: Option[PortFigure] = None
     var initPort: Option[PortFigure] = None
     var con: Option[Connection] = None

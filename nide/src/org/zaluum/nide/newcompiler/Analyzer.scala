@@ -1,5 +1,6 @@
 package org.zaluum.nide.newcompiler
 
+import org.zaluum.nide.model.Namer
 import scala.collection.mutable.Buffer
 import org.zaluum.nide.model.Locatable
 import org.zaluum.nide.model.Location
@@ -109,7 +110,7 @@ class FakeGlobalScope(realGlobal:Scope) extends LocalScope(realGlobal) { // for 
   }
   override val root = fakeRoot
 }
-class LocalScope(val enclosingScope: Scope) extends Scope {
+class LocalScope(val enclosingScope: Scope) extends Scope with Namer{
   var ports = Map[Name, Symbol]()
   var vals = Map[Name, Symbol]()
   var boxes = Map[Name, Type]()
@@ -130,6 +131,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope {
     }
     sym
   }
+  def usedNames = (vals.keySet.map {_.str} ++ ports.keySet.map{_.str}).toSet
   def root = enclosingScope.root
 }
 class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {

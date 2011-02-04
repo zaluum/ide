@@ -27,7 +27,7 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: EclipseBoxClasspath) extend
       b.setSize(48, 48)
       addReaction(b) {
         viewer.tool.state.abort()
-        // TODO viewer.tool.creatingPort.enter(in)
+        viewer.tool.creatingPort.enter(in)
         viewer.canvas.setFocus()
         hide()
       }

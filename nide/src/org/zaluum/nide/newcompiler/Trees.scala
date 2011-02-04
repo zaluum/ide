@@ -173,7 +173,7 @@ case class BoxDef(name: Name,
   ports: List[Tree],
   connections: List[Tree]) extends DefTree
 case class PortDef(name: Name, typeName: Name, in: Boolean, inPos: Point, extPos: Point) extends DefTree with Positionable {
-  def pos = extPos
+  def pos = inPos
 }
 case class BoxRef(name: Name) extends RefTree
 case class PortRef(name: Name, from: Tree) extends RefTree
