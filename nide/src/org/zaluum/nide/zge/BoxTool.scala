@@ -1,4 +1,13 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.newcompiler.CopyTransformer
+import org.zaluum.nide.newcompiler.BoxDef
+import org.zaluum.nide.newcompiler.EmptyTree
+import org.zaluum.nide.newcompiler.Name
+import org.zaluum.nide.newcompiler.ValDef
+import org.zaluum.nide.newcompiler.BoxTypeSymbol
+import org.zaluum.nide.newcompiler.Tree
+
 import draw2dConversions._
 import org.eclipse.draw2d.{ Cursors, Figure }
 import org.eclipse.draw2d.geometry.{ Point, Rectangle }
@@ -71,36 +80,39 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
     }
   }*/
   // CREATING BOX 
-  /*object creating extends ToolState {
-    var bf: BoxFigure = _
-    def enter(boxClass: BoxTypeSymbol) {
+  object creating extends ToolState {
+    var feed: ItemFeedbackFigure = _
+    var tpe: BoxTypeSymbol = _
+    def enter(tpe: BoxTypeSymbol) {
+      this.tpe =tpe
       state = this
-      val box = new Box(
-          boxClassName = boxClass.className,  
-          name = model.nextFreeName("box"),
-          pos = MPoint(1,1),
-          guiPos = None // FIXME ? 
-          )
-      bf = new ImageBoxFigure(box, Some(boxClass), modelView)
-      bf.update()
-      bf.hide()
-      bf.showFeedback()
+      val img = viewer.imageFactory(tpe.decl);
+      feed = new ItemFeedbackFigure(viewer)
+      feed.setInnerBounds(new Rectangle(0,0,img.getBounds.width,img.getBounds.height));
+      feed.show()
     }
-    def move() { bf.moveFeed(mouseLocation) }
+    def move() { feed.setInnerLocation(mouseLocation) }
     def abort() { exit() }
     def drag() {}
     def buttonUp() {
-      bf.box.pos = MPoint(mouseLocation.x, mouseLocation.y)
-      val com = new CreateCommand(bf.box, model)
-      controller.exec(com) // no need to exit. controller aborts all tools
+      val dst = MPoint(mouseLocation.x,mouseLocation.y)
+      val tr = new CopyTransformer() {
+        val trans : PartialFunction[Tree,Tree] = {
+          case b:BoxDef if b==tree => 
+            b.copy(vals = ValDef(Name("fresh"),tpe.name,dst,EmptyTree) :: b.vals)
+        }
+      }
+      controller.exec(TreeCommand(tr))
+      //val com = new CreateCommand(bf.box, model)
+      //controller.exec(com) // no need to exit. controller aborts all tools
     }
     def buttonDown() {}
     def exit() { 
-      bf.hideFeedback; 
-      bf = null; 
+      feed.hide(); 
+      feed = null; 
       selecting.enter() 
     }
-  }*/
+  }
   // CREATING PORT
 /*  object creatingPort extends ToolState {
     var pf: PortDeclFigure = _

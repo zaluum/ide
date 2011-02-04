@@ -24,6 +24,9 @@ class ImageFactory(val display: Display, bcp: ClassPath) {
       }
     }
   }
+  def apply(sym : Symbol) : Image = {
+    generateImage("hola") // TODO    
+  }
   def apply(typeTree: Tree): Image = {
     def defaultImage(bc: BoxDef) = bc.name.toRelativePath + ".png";
     typeTree match {

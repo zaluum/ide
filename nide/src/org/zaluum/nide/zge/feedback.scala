@@ -10,7 +10,6 @@ object HandleSizes {
   val expansion = 8
 }
 class FeedbackRectangle(val feed: ItemFeedbackFigure) extends RectangleFigure {
-  def itemFigure = feed.bf
 }
 class ResizeFeedbackRectangle(val feed: ResizeItemFeedbackFigure) extends RectangleFigure {
   def resizeItemFigure = feed.bf
@@ -58,7 +57,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) ex
   }
 }
 
-class ItemFeedbackFigure(val bf: ItemFigure) extends Figure {
+class ItemFeedbackFigure(viewer:AbstractViewer) extends Figure {
   protected val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
   rectangle.setFill(false);
@@ -78,9 +77,15 @@ class ItemFeedbackFigure(val bf: ItemFigure) extends Figure {
     setBounds(rectBounds)
     rectangle.setBounds(rectBounds)
   }
+  def show() {
+    viewer.feedbackLayer .add(this)
+  }
+  def hide() {
+    viewer.feedbackLayer .remove(this)
+  }
 
 }
-class ResizeItemFeedbackFigure(override val bf: ResizableItemFigure) extends ItemFeedbackFigure(bf) {
+class ResizeItemFeedbackFigure(val bf: ResizableItemFigure, viewer:AbstractViewer) extends ItemFeedbackFigure(viewer) {
 
   val handles =
     (for {

@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.BoxTypeSymbol
 import org.eclipse.swt.graphics.Image
 import SWTScala._
 import org.eclipse.swt.SWT
@@ -50,16 +51,17 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: EclipseBoxClasspath) extend
       viewer.canvas.setFocus()
       hide()
     }
-    /* TODO val classes = bcp.boxClasses.toBuffer.sortWith(_.className.toString < _.className.toString)
-    for (bc ← classes) {
-      //TODO val b = createButton(bc.className.toString,viewer.imageFactory(Some(bc))) 
+    val classes = bcp.boxes.toBuffer.sortWith(_.name.toString < _.name.toString)
+    for (tpe ← classes) {
+      val bc = tpe.asInstanceOf[BoxTypeSymbol]
+      val b = createButton(bc.name.str,viewer.imageFactory(bc)) 
       addReaction(b) {
         viewer.tool.state.abort()
         viewer.tool.creating.enter(bc)
         viewer.canvas.setFocus()
         hide()
       }
-    }*/
+    }
   }
 }
 /*

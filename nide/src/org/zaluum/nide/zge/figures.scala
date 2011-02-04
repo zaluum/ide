@@ -87,7 +87,7 @@ trait BoxFigure extends ItemFigure {
   }
   def treeView: TreeView
   def positionable = tree
-  lazy val feed = new ItemFeedbackFigure(this)
+  lazy val feed = new ItemFeedbackFigure(treeView.viewer)
   override def update() {
     super.update()
     sym.map {
@@ -114,12 +114,13 @@ class PortDeclFigure(val tree: PortDef, val treeView: TreeView) extends ImageFig
   def positionable = tree
   override def viewer = treeView.viewer
   var size = Dimension(50, 20)
-  lazy val feed = new ItemFeedbackFigure(this)
+  lazy val feed = new ItemFeedbackFigure(treeView.viewer)
   def position = Point(getBounds.x, getBounds.y) + (if (tree.in) Vector2(48, 8) else Vector2(0, 8))
 
   override def update() {
     val image = viewer.imageFactory.get(PortDeclFigure.img(tree.in)).get
     setImage(image)
+    
     size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
     sym foreach { new PortFigure(position, _, None, treeView) }
     super.update()
