@@ -7,6 +7,7 @@ import scala.collection.JavaConversions._
 object ProtoParser {
   def parse(b: BoxFileProtos.BoxClassDef,name:Option[Name]=None): BoxDef = {
     BoxDef(name.getOrElse(Name(b.getClassName)),
+      image = if (b.hasImageName) Some(b.getImageName) else None,
       defs = b.getInnerClassList.map { parse(_) }.toList,
       vals = b.getInstanceList.map { parse(_) }.toList,
       ports = b.getPortList.map { parse(_) }.toList,

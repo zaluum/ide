@@ -67,9 +67,9 @@ abstract class CopySymbolTransformer extends CopyTransformer {
 abstract class CopyTransformer extends Transformer {
   val defaultTransform:PartialFunction[Tree,Tree] = {  
     case e@EmptyTree ⇒ e
-    case b@BoxDef(name, defs, vals, ports, connections) ⇒
+    case b@BoxDef(name, image, defs, vals, ports, connections) ⇒
       atOwner(b.symbol) {
-        BoxDef(name,
+        BoxDef(name, image,
           transformTrees(defs),
           transformTrees(vals),
           transformTrees(ports),
@@ -110,7 +110,7 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit]{
   def traverse(tree: Tree): Unit = tree match {
     case EmptyTree ⇒
       ;
-    case b@BoxDef(name, defs, vals, ports, connections) ⇒
+    case b@BoxDef(name, image, defs, vals, ports, connections) ⇒
       atOwner(tree.symbol) {
         traverseTrees(defs)
         traverseTrees(vals)
@@ -160,7 +160,8 @@ case object EmptyTree extends Tree {
 }
 
 /* Zaluum */
-case class BoxDef(name: Name,
+case class BoxDef(name: Name, 
+  image:Option[String],
   defs: List[Tree],
   vals: List[Tree],
   ports: List[Tree],

@@ -32,17 +32,17 @@ object draw2dConversions {
   implicit def rpoint(p: EPoint): Point = Point(p.x, p.y)
   implicit def rdimension(d: EDimension): Dimension = Dimension(d.width, d.height)
 }
-trait CanShowFeedback extends Figure {
+trait CanShowFeedback  {
   def showFeedback()
   def hideFeedback()
 }
-trait CanShowUpdate extends Figure {
+trait CanShowUpdate {
   def show()
   def hide()
   def update()
 }
 trait Selectable extends Figure with CanShowFeedback
-trait ItemFigure extends Selectable with CanShowUpdate {
+trait ItemFigure extends Figure with Selectable with CanShowUpdate {
   def viewer: AbstractViewer
   def positionable: Positionable
   def feed: ItemFeedbackFigure
@@ -179,7 +179,7 @@ class ImageBoxFigure(val tree: ValDef, val treeView: TreeView) extends ImageFigu
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
 
   override def update() {
-    setImage(viewer.imageFactory(tree))
+    setImage(viewer.imageFactory(tree.tpe))
     super.update()
   }
 }
@@ -235,6 +235,7 @@ class ConnectionPainter(treeView: TreeView) {
 class ConnectionFigure(val tree: ConnectionDef, treeView: TreeView) extends Figure with CanShowUpdate {
   val painter = new ConnectionPainter(treeView)
   def calcRoute = {
+    // TODO paint incomplete connections gracefully
     def portFigure(tree: Tree): Option[PortFigure] = tree match {
       case PortRef(v@ValRef(_), portName) ⇒ treeView.findPortFigure(v.symbol.name, portName)
       case PortRef(ThisRef, portName) ⇒ treeView.findPortFigure(portName)

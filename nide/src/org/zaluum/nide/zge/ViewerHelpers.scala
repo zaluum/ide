@@ -24,18 +24,23 @@ class ImageFactory(val display: Display, bcp: ClassPath) {
       }
     }
   }
-  def apply(sym : Symbol) : Image = {
-    generateImage("hola") // TODO    
-  }
-  def apply(typeTree: Tree): Image = {
-    def defaultImage(bc: BoxDef) = bc.name.toRelativePath + ".png";
-    typeTree match {
-      case b:BoxDef =>
-      //TODO b.image
-        get("b.image").orElse { get(defaultImage(b)) }.getOrElse { generateImage("TODO") } // FIXME dispose generateImage 
+  def apply(tpe : Type) : Image = {
+    tpe match {
+      case b:BoxTypeSymbol => imageFor(b.image,b.name)
+      // TODO port case?
       case _ => notFound
     }
-    generateImage("hola") // TODO
+  }
+  private def imageFor(image:Option[String],name:Name) = {
+    def defaultImage(name: Name) = name.toRelativePath + ".png";
+    def fallbackImage(name:Name) = get(defaultImage(name)).getOrElse {generateImage(name.str)}
+    image.flatMap {get(_)}.getOrElse(fallbackImage(name))
+  }
+  def apply(typeTree: Tree): Image = {
+    typeTree match {
+      case b:BoxDef => imageFor(b.image,b.name)
+      case _ => notFound
+    }
   }
   def generateImage(txt:String): Image = {
     val img = new Image(display, 48, 48);

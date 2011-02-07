@@ -50,6 +50,7 @@ class TreeView(override val viewer: Viewer, global:EclipseBoxClasspath) extends 
       }
     }.traverse(tree)
   }
+  // finders
   import scala.collection.JavaConversions._
   private def portFigures = viewer.portsLayer.getChildren.collect { case p:PortFigure => p } 
   def findPortFigure(boxName:Name,portName:Name) : Option[PortFigure] =

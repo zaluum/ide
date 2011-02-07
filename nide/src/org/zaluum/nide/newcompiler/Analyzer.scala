@@ -159,9 +159,9 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
     override def traverse(tree1: Tree) {
       implicit val tree = tree1
       tree match {
-        case BoxDef(name, defs, vals, ports, connections) ⇒
+        case BoxDef(name, image, defs, vals, ports, connections) ⇒
           // TODO inner class names $ if currentOwner is BoxTypeSymbol? 
-          defineBox(new BoxTypeSymbol(currentOwner, name))
+          defineBox(new BoxTypeSymbol(currentOwner, name, image))
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
           definePort(new PortSymbol(currentOwner, name,extPos,in))
         case v@ValDef(name, typeName, pos, guiTree) ⇒
@@ -181,10 +181,12 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           tree.symbol.tpe = currentScope.lookupType(typeName) getOrElse {
             error("Port type not found " + typeName); NoSymbol
           }
+          tree.tpe = tree.symbol.tpe
         case v@ValDef(name, typeName, pos, guiSize) ⇒
           tree.symbol.tpe = currentScope.lookupBoxType(typeName) getOrElse {
             error("Box class " + typeName + " not found"); NoSymbol
           }
+          tree.tpe = tree.symbol.tpe
         case ValRef(name) ⇒
           println("valref " + tree)
           tree.symbol = currentScope.lookupVal(name) getOrElse {
@@ -203,7 +205,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           tree.tpe = tree.symbol.tpe
         case ThisRef => 
           tree.symbol = currentOwner
-          tree.tpe = tree.symbol.tpe
+          tree.tpe = currentOwner.tpe
         case _ ⇒
       }
 
