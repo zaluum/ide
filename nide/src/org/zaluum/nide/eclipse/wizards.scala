@@ -1,5 +1,8 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.newcompiler.Serializer
+import org.zaluum.nide.newcompiler.Name
+import org.zaluum.nide.newcompiler.BoxDef
 import org.zaluum.nide.model.Dimension
 import java.io.ByteArrayOutputStream
 import org.eclipse.core.resources.IFile
@@ -71,11 +74,11 @@ class BoxWizardPage(
     setPageComplete(validatePage());
   }
   import com.google.common.base.Charsets
-  /*TODO def className = BoxClassName.parse(this.getFileName) // FIXME
+  //TODO def className = BoxClassName.parse(this.getFileName) // FIXME
   override protected def getInitialContents = {
-    val model = new BoxClassDecl(className, None, true, Dimension(400,300))
-    new java.io.ByteArrayInputStream(ProtoBuffers.toByteArray(model))
-  }*/
+    val model = BoxDef(Name(""), None, List(),List(),List(),List())
+    new java.io.ByteArrayInputStream(Serializer.proto(model).toByteArray)
+  }
 
   def setDescription() {
     this.setTitle("New Box TypedModel Wizard");

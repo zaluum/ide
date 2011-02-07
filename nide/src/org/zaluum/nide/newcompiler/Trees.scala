@@ -75,16 +75,16 @@ abstract class CopyTransformer extends Transformer {
           transformTrees(ports),
           transformTrees(connections))
       }
-    case PortDef(name, typeName, in, inPos, extPos) ⇒ 
-      PortDef(name, typeName, in, inPos, extPos)
+    case PortDef(name, typeName, dir, inPos, extPos) ⇒ 
+      PortDef(name, typeName, dir, inPos, extPos)
     case ValDef(name, typeName, pos, guiSize) ⇒
       ValDef(name, typeName, pos, transform(guiSize))
     case c@ConnectionDef(a, b) ⇒
       atOwner(c.symbol) {
         ConnectionDef(transform(a), transform(b))
       }
-    case PortRef(from,name) ⇒
-      PortRef(transform(from),name)
+    case PortRef(from,name,in) ⇒
+      PortRef(transform(from),name,in)
     case ValRef(name) ⇒  ValRef(name)
     case t@ThisRef => t  
     case s@SizeDef(pos, size) ⇒ s.copy()
@@ -123,7 +123,7 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit]{
         traverse(a)
         traverse(b)
     case PortDef(_, _, _, _, _) ⇒
-    case PortRef(tree, _) ⇒
+    case PortRef(tree, _,_) ⇒
       traverse(tree)
     case ValRef(_) ⇒
     case ThisRef =>
@@ -166,13 +166,16 @@ case class BoxDef(name: Name,
   vals: List[Tree],
   ports: List[Tree],
   connections: List[Tree]) extends DefTree
-case class PortDef(name: Name, typeName: Name, in: Boolean, inPos: Point, extPos: Point) extends DefTree with Positionable {
+sealed trait PortDir
+case object In extends PortDir
+case object Out extends PortDir
+case object Shift extends PortDir
+case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPos: Point) extends DefTree with Positionable {
   def pos = inPos
 }
-
 case class ValRef(name: Name) extends RefTree
 case object ThisRef extends Tree
-case class PortRef(fromRef:Tree, name: Name) extends RefTree
+case class PortRef(fromRef:Tree, name: Name, in:Boolean) extends RefTree
 case class ValDef(name: Name, typeName: Name, pos: Point, guiSize: Tree) extends DefTree with Positionable
 case class SizeDef(pos: Point, size: Dimension) extends Tree
 case class ConnectionDef(a: Tree, b: Tree) extends SymTree

@@ -39,6 +39,7 @@ public final class BoxFileProtos {
         implements com.google.protobuf.ProtocolMessageEnum {
       IN(0, 0),
       OUT(1, 1),
+      SHIFT(2, 2),
       ;
       
       
@@ -48,6 +49,7 @@ public final class BoxFileProtos {
         switch (value) {
           case 0: return IN;
           case 1: return OUT;
+          case 2: return SHIFT;
           default: return null;
         }
       }
@@ -78,7 +80,7 @@ public final class BoxFileProtos {
       }
       
       private static final Direction[] VALUES = {
-        IN, OUT, 
+        IN, OUT, SHIFT, 
       };
       public static Direction valueOf(
           com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
@@ -1161,6 +1163,13 @@ public final class BoxFileProtos {
       public boolean hasPortName() { return hasPortName; }
       public java.lang.String getPortName() { return portName_; }
       
+      // optional bool in = 3;
+      public static final int IN_FIELD_NUMBER = 3;
+      private boolean hasIn;
+      private boolean in_ = false;
+      public boolean hasIn() { return hasIn; }
+      public boolean getIn() { return in_; }
+      
       private void initFields() {
       }
       public final boolean isInitialized() {
@@ -1176,6 +1185,9 @@ public final class BoxFileProtos {
         }
         if (hasPortName()) {
           output.writeString(2, getPortName());
+        }
+        if (hasIn()) {
+          output.writeBool(3, getIn());
         }
         getUnknownFields().writeTo(output);
       }
@@ -1193,6 +1205,10 @@ public final class BoxFileProtos {
         if (hasPortName()) {
           size += com.google.protobuf.CodedOutputStream
             .computeStringSize(2, getPortName());
+        }
+        if (hasIn()) {
+          size += com.google.protobuf.CodedOutputStream
+            .computeBoolSize(3, getIn());
         }
         size += getUnknownFields().getSerializedSize();
         memoizedSerializedSize = size;
@@ -1358,6 +1374,9 @@ public final class BoxFileProtos {
           if (other.hasPortName()) {
             setPortName(other.getPortName());
           }
+          if (other.hasIn()) {
+            setIn(other.getIn());
+          }
           this.mergeUnknownFields(other.getUnknownFields());
           return this;
         }
@@ -1389,6 +1408,10 @@ public final class BoxFileProtos {
               }
               case 18: {
                 setPortName(input.readString());
+                break;
+              }
+              case 24: {
+                setIn(input.readBool());
                 break;
               }
             }
@@ -1435,6 +1458,24 @@ public final class BoxFileProtos {
         public Builder clearPortName() {
           result.hasPortName = false;
           result.portName_ = getDefaultInstance().getPortName();
+          return this;
+        }
+        
+        // optional bool in = 3;
+        public boolean hasIn() {
+          return result.hasIn();
+        }
+        public boolean getIn() {
+          return result.getIn();
+        }
+        public Builder setIn(boolean value) {
+          result.hasIn = true;
+          result.in_ = value;
+          return this;
+        }
+        public Builder clearIn() {
+          result.hasIn = false;
+          result.in_ = false;
           return this;
         }
         
@@ -3564,7 +3605,7 @@ public final class BoxFileProtos {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rBoxFile.proto\022\006zaluum\"\230\010\n\013BoxClassDef\022" +
+      "\n\rBoxFile.proto\022\006zaluum\"\257\010\n\013BoxClassDef\022" +
       "\022\n\nclass_name\030\001 \001(\t\022\022\n\nimage_name\030\002 \001(\t\022" +
       "+\n\010gui_size\030\003 \002(\0132\031.zaluum.BoxClassDef.P" +
       "oint\022\016\n\006visual\030\004 \002(\010\022&\n\004port\030\005 \003(\0132\030.zal" +
@@ -3579,19 +3620,20 @@ public final class BoxFileProtos {
       "oxClassDef.Parameter\022*\n\007gui_pos\030\006 \001(\0132\031." +
       "zaluum.BoxClassDef.Point\022+\n\010gui_size\030\007 \001" +
       "(\0132\031.zaluum.BoxClassDef.Point\032\'\n\tParamet" +
-      "er\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\032.\n\007PortRe" +
-      "f\022\020\n\010box_name\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\032\266" +
-      "\001\n\004Port\022\014\n\004name\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\0220\n\td" +
-      "irection\030\003 \002(\0162\035.zaluum.BoxClassDef.Dire" +
-      "ction\022/\n\014pos_internal\030\004 \002(\0132\031.zaluum.Box",
-      "ClassDef.Point\022/\n\014pos_external\030\005 \002(\0132\031.z" +
-      "aluum.BoxClassDef.Point\032\223\001\n\nConnection\022+" +
-      "\n\006source\030\001 \001(\0132\033.zaluum.BoxClassDef.Port" +
-      "Ref\022+\n\006target\030\002 \001(\0132\033.zaluum.BoxClassDef" +
-      ".PortRef\022+\n\010waypoint\030\003 \003(\0132\031.zaluum.BoxC" +
-      "lassDef.Point\032\035\n\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002" +
-      " \002(\005\"\034\n\tDirection\022\006\n\002IN\020\000\022\007\n\003OUT\020\001B)\n\030or" +
-      "g.zaluum.nide.protobufB\rBoxFileProtos"
+      "er\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\032:\n\007PortRe" +
+      "f\022\020\n\010box_name\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\022\n" +
+      "\n\002in\030\003 \001(\010\032\266\001\n\004Port\022\014\n\004name\030\001 \002(\t\022\014\n\004typ" +
+      "e\030\002 \002(\t\0220\n\tdirection\030\003 \002(\0162\035.zaluum.BoxC" +
+      "lassDef.Direction\022/\n\014pos_internal\030\004 \002(\0132",
+      "\031.zaluum.BoxClassDef.Point\022/\n\014pos_extern" +
+      "al\030\005 \002(\0132\031.zaluum.BoxClassDef.Point\032\223\001\n\n" +
+      "Connection\022+\n\006source\030\001 \001(\0132\033.zaluum.BoxC" +
+      "lassDef.PortRef\022+\n\006target\030\002 \001(\0132\033.zaluum" +
+      ".BoxClassDef.PortRef\022+\n\010waypoint\030\003 \003(\0132\031" +
+      ".zaluum.BoxClassDef.Point\032\035\n\005Point\022\t\n\001x\030" +
+      "\001 \002(\005\022\t\n\001y\030\002 \002(\005\"\'\n\tDirection\022\006\n\002IN\020\000\022\007\n" +
+      "\003OUT\020\001\022\t\n\005SHIFT\020\002B)\n\030org.zaluum.nide.pro" +
+      "tobufB\rBoxFileProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -3627,7 +3669,7 @@ public final class BoxFileProtos {
           internal_static_zaluum_BoxClassDef_PortRef_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_BoxClassDef_PortRef_descriptor,
-              new java.lang.String[] { "BoxName", "PortName", },
+              new java.lang.String[] { "BoxName", "PortName", "In", },
               org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.PortRef.class,
               org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.PortRef.Builder.class);
           internal_static_zaluum_BoxClassDef_Port_descriptor =

@@ -1,5 +1,9 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.Shift
+import org.zaluum.nide.newcompiler.Out
+import org.zaluum.nide.newcompiler.PortDir
+import org.zaluum.nide.newcompiler.In
 import scala.collection.mutable.Buffer
 import org.zaluum.nide.newcompiler.ThisRef
 import org.zaluum.nide.model.Route
@@ -106,14 +110,19 @@ trait BoxFigure extends ItemFigure {
       case b: BoxTypeSymbol ⇒
         b.ports.values.collect {
           case s: PortSymbol ⇒
-            new PortFigure(s.extPos + Vector2(getBounds.x, getBounds.y), s, Some(sym), treeView)
+            new PortFigure(s.extPos + Vector2(getBounds.x, getBounds.y), s, s.dir==In,Some(sym),treeView)
         }.toList
       case _ ⇒ List()
     }
   }
 }
 object PortDeclFigure {
-  def img(in: Boolean) = "org/zaluum/nide/icons/portDecl" + (if (in) "In" else "Out") + ".png"
+  private def str(dir:PortDir) = dir match {
+    case In => "In"
+    case Out => "Out"
+    case Shift => "Shift"
+  }
+  def img(dir: PortDir) = "org/zaluum/nide/icons/portDecl" + str(dir) + ".png"
 }
 
 class PortDeclFigure(val tree: PortDef, val treeView: TreeView) extends ImageFigure with ItemFigure {
@@ -125,11 +134,11 @@ class PortDeclFigure(val tree: PortDef, val treeView: TreeView) extends ImageFig
   override def viewer = treeView.viewer
   var size = Dimension(50, 20)
   lazy val feed = new ItemFeedbackFigure(treeView.viewer)
-  def position = tree.inPos + (if (tree.in) Vector2(48, 8) else Vector2(0, 8))
-  val portFig = sym map { new PortFigure(position, _, None, treeView) }
+  def position = tree.inPos + (if (tree == In) Vector2(48, 8) else Vector2(0, 8))
+  val portFig = sym map { new PortFigure(position, _, tree.dir==In, None, treeView) }
 
   override def update() {
-    val image = viewer.imageFactory.get(PortDeclFigure.img(tree.in)).get
+    val image = viewer.imageFactory.get(PortDeclFigure.img(tree.dir)).get
     setImage(image)
     size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
     super.update()
@@ -144,7 +153,7 @@ class PortDeclFigure(val tree: PortDef, val treeView: TreeView) extends ImageFig
   }
 }
 
-class PortFigure(val pos: Point, val sym: PortSymbol, val valSym: Option[ValSymbol], treeView: AbstractModelView) extends Ellipse with CanShowFeedback with CanShowUpdate {
+class PortFigure(val pos: Point, val sym: PortSymbol, val in: Boolean, val valSym: Option[ValSymbol], treeView: AbstractModelView) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)
@@ -237,8 +246,8 @@ class ConnectionFigure(val tree: ConnectionDef, treeView: TreeView) extends Figu
   def calcRoute = {
     // TODO paint incomplete connections gracefully
     def portFigure(tree: Tree): Option[PortFigure] = tree match {
-      case PortRef(v@ValRef(_), portName) ⇒ treeView.findPortFigure(v.symbol.name, portName)
-      case PortRef(ThisRef, portName) ⇒ treeView.findPortFigure(portName)
+      case PortRef(v@ValRef(_), portName, in) ⇒ treeView.findPortFigure(v.symbol.name, portName,in)
+      case PortRef(ThisRef, portName,in) ⇒ treeView.findPortFigure(portName,in)
       case _ ⇒ None
     }
     def position(tree: Tree): Option[Point] = portFigure(tree) map { p ⇒ p.anchor }
@@ -246,8 +255,6 @@ class ConnectionFigure(val tree: ConnectionDef, treeView: TreeView) extends Figu
       case (Some(a), Some(b)) ⇒ Some(Route(a, b))
       case _ ⇒ None
     }
-    println("connection from " + tree.a + " " + portFigure(tree.a))
-    println("connection to " + tree.b + " " + portFigure(tree.b))
     route
   }
   def update() {

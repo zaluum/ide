@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.Out
+import org.zaluum.nide.newcompiler.In
 import org.zaluum.nide.newcompiler.BoxTypeSymbol
 import org.eclipse.swt.graphics.Image
 import SWTScala._
@@ -21,13 +23,14 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: EclipseBoxClasspath) extend
       data.horizontalAlignment = SWT.CENTER
       b.setLayoutData(data)
       val desc = if (in) "in" else "out"
+      val dir = if (in) In else Out
       b.setToolTipText("Port " + desc)
-      val image = viewer.imageFactory.get(PortDeclFigure.img(in)).get
+      val image = viewer.imageFactory.get(PortDeclFigure.img(dir)).get
       b.setImage(image)
       b.setSize(48, 48)
       addReaction(b) {
         viewer.tool.state.abort()
-        viewer.tool.creatingPort.enter(in)
+        viewer.tool.creatingPort.enter(dir)
         viewer.canvas.setFocus()
         hide()
       }

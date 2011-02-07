@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.PortDir
+import org.zaluum.nide.newcompiler.In
 import org.zaluum.nide.newcompiler.PortRef
 import org.zaluum.nide.newcompiler.ConnectionDef
 import org.zaluum.nide.newcompiler.ThisRef
@@ -120,11 +122,11 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
   // CREATING PORT
   object creatingPort extends ToolState {
     var feed: ItemFeedbackFigure = _
-    var in:Boolean = _
-    def enter(in: Boolean) {
+    var dir : PortDir = In
+    def enter(dir: PortDir) {
       state = this
-      this.in =in
-      val img = viewer.imageFactory.get(PortDeclFigure.img(in)).get
+      this.dir =dir
+      val img = viewer.imageFactory.get(PortDeclFigure.img(dir)).get
       feed = new ItemFeedbackFigure(viewer)
       feed.setInnerBounds(new Rectangle(0,0,img.getBounds.width,img.getBounds.height));
       feed.show()
@@ -139,7 +141,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
         val trans : PartialFunction[Tree,Tree] = {
           case b:BoxDef if b==tree => 
             val name = Name(tree.symbol.asInstanceOf[BoxTypeSymbol].freshName("port"))
-            val p = PortDef(name,Name("D"),in,pos,MPoint(0,0))
+            val p = PortDef(name,Name("D"),dir,pos,MPoint(0,0))
             b.copy(ports = p :: b.ports)
         }
       }
@@ -175,8 +177,8 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
         val dstRef = toRef(dst.get)
         if (srcRef!=dstRef && srcPortName!=dstPortName){
         val condef = ConnectionDef(
-            PortRef(srcRef,srcPortName),
-            PortRef(dstRef,dstPortName))
+            PortRef(srcRef,srcPortName, src.get.in),
+            PortRef(dstRef,dstPortName, dst.get.in))
         controller.exec(TreeCommand(
           new CopyTransformer { 
             val trans : PartialFunction[Tree,Tree] = {

@@ -144,7 +144,6 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
     def defineVal(symbol: Symbol)(implicit tree: Tree): Symbol =
       define(symbol, currentScope, currentScope.lookupVal(symbol.name).isDefined)
     def definePort(symbol: Symbol)(implicit tree: Tree): Symbol = {
-      println("defining port symbol " + symbol + " " + tree)
       define(symbol, currentScope, currentScope.lookupPort(symbol.name).isDefined)
     }
     def define(symbol: Symbol, scope: Scope, dupl: Boolean)(implicit tree: Tree): Symbol = {
@@ -162,8 +161,8 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
         case BoxDef(name, image, defs, vals, ports, connections) ⇒
           // TODO inner class names $ if currentOwner is BoxTypeSymbol? 
           defineBox(new BoxTypeSymbol(currentOwner, name, image))
-        case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-          definePort(new PortSymbol(currentOwner, name,extPos,in))
+        case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
+          definePort(new PortSymbol(currentOwner, name,extPos,dir))
         case v@ValDef(name, typeName, pos, guiTree) ⇒
           defineVal(new ValSymbol(currentOwner, name))
         case _ ⇒
@@ -188,16 +187,14 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           }
           tree.tpe = tree.symbol.tpe
         case ValRef(name) ⇒
-          println("valref " + tree)
           tree.symbol = currentScope.lookupVal(name) getOrElse {
             error("Box not found " + name); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case PortRef(fromTree, name) ⇒
-          println("portref " + tree)
+        case PortRef(fromTree, name,in) ⇒ // TODO filter in?
           tree.symbol = fromTree.symbol.tpe match {
             case b:BoxTypeSymbol => b.lookupPort(name).getOrElse{
-                println("Port not found " + name);
+                error("Port not found " + name);
                 NoSymbol
             }
             case _ => NoSymbol
@@ -219,6 +216,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           if (a.symbol == NoSymbol || b.symbol == NoSymbol)
             error("incomplete connection " + a + "<->" + b)
           if (a.tpe != b.tpe) error("connection " + a + "<->" + b + " is not type compatible")
+          tree.tpe = a.tpe
         case _ ⇒
       }
       super.traverse(tree)
@@ -229,7 +227,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
     new Namer(root).traverse(toCompile)
     new Resolver(root).traverse(toCompile)
     new Checker(root).traverse(toCompile)
-    println(toCompile)
+    //println(toCompile)
     toCompile
   }
 }

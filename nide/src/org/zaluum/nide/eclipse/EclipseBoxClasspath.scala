@@ -1,5 +1,7 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.newcompiler.Out
+import org.zaluum.nide.newcompiler.In
 import org.zaluum.nide.newcompiler.LocalScope
 import org.zaluum.nide.newcompiler.PrimitiveJavaType
 import org.zaluum.nide.newcompiler.Type
@@ -106,9 +108,8 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
       }
       for (f ← t.getFields) {
         def port(in:Boolean,a:IAnnotation) {
-          val port = new PortSymbol(bs,Name(f.getElementName),pointOf(a),in) 
+          val port = new PortSymbol(bs,Name(f.getElementName),pointOf(a),if (in) In else Out) 
           port.tpe = lookupType(Name(f.getTypeSignature)) getOrElse {NoSymbol}
-          println("entering port in scope " + f.getElementName + " " )
           bs.enter(port)           
         }
         findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { port(true,_) }

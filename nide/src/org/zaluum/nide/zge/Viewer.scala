@@ -53,15 +53,15 @@ class TreeView(override val viewer: Viewer, global:EclipseBoxClasspath) extends 
   // finders
   import scala.collection.JavaConversions._
   private def portFigures = viewer.portsLayer.getChildren.collect { case p:PortFigure => p } 
-  def findPortFigure(boxName:Name,portName:Name) : Option[PortFigure] =
+  def findPortFigure(boxName:Name,portName:Name, in:Boolean) : Option[PortFigure] =
     portFigures find {
       p=>p.valSym match {
-        case Some(valSym) => (valSym.name==boxName && p.sym.name==portName)
+        case Some(valSym) => (valSym.name==boxName && p.sym.name==portName && p.in == in)
         case None => false
       }
     }
-  def findPortFigure(portName:Name) : Option[PortFigure] = 
-    portFigures find { p =>  p.valSym.isEmpty && p.sym.name == portName }
+  def findPortFigure(portName:Name, in:Boolean) : Option[PortFigure] = 
+    portFigures find { p =>  p.valSym.isEmpty && p.sym.name == portName && p.in == in }
     
   def gotoMarker(l: Location) {} // TODO
 }

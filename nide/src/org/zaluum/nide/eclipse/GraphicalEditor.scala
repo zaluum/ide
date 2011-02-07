@@ -1,5 +1,7 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.newcompiler.BoxDef
+import org.zaluum.nide.newcompiler.Serializer
 import org.zaluum.nide.newcompiler.Name
 import org.zaluum.nide.protobuf.BoxFileProtos
 import org.zaluum.nide.newcompiler.ProtoParser
@@ -34,8 +36,9 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def tree = modelView.tree 
 
   def doSave(monitor: IProgressMonitor) {
-    /* TODO val in = new ByteArrayInputStream(ProtoBuffers.toByteArray(viewer.tree))
-    inputFile.setContents(in, true, true, monitor);*/
+    val proto = Serializer.proto(viewer.tree.asInstanceOf[BoxDef])
+    val in = new ByteArrayInputStream(proto.toByteArray)
+    inputFile.setContents(in, true, true, monitor);
     controller.markSaved()
     firePropertyChange(IEditorPart.PROP_DIRTY)
   }
@@ -60,7 +63,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def createPartControl(parent: Composite) {
     val globalScope = new EclipseBoxClasspath(inputFile.getProject)
     val className = globalScope.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
-    val proto = BoxFileProtos.BoxClassDef.parseDelimitedFrom(input)
+    val proto = BoxFileProtos.BoxClassDef.parseFrom(input)
     val tree = ProtoParser.parse(proto,Some(className)) 
     globalScope.update()
     input.close()

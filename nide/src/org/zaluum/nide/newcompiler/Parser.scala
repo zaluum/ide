@@ -28,13 +28,18 @@ object ProtoParser {
   }
   def parse(p: BoxFileProtos.BoxClassDef.PortRef): PortRef = {
     PortRef(if (p.hasBoxName) ValRef(Name(p.getBoxName)) else ThisRef,
-      Name(p.getPortName))
+      Name(p.getPortName),if (p.hasIn) p.getIn else true)
   }
   def parse(p: BoxFileProtos.BoxClassDef.Port): PortDef = {
     PortDef(name = Name(p.getName), typeName = Name(p.getType),
-      in = (p.getDirection == BoxFileProtos.BoxClassDef.Direction.IN),
+      dir = parseDir(p.getDirection),
       inPos = parse(p.getPosInternal),
       extPos = parse(p.getPosExternal))
+  }
+  def parseDir (dir : BoxFileProtos.BoxClassDef.Direction) = dir match {
+    case BoxFileProtos.BoxClassDef.Direction.IN => In
+    case BoxFileProtos.BoxClassDef.Direction.OUT => Out
+    case BoxFileProtos.BoxClassDef.Direction.SHIFT => Shift   
   }
   def parse(p: BoxFileProtos.BoxClassDef.Point) = Point(p.getX, p.getY)
   def parseDim(p: BoxFileProtos.BoxClassDef.Point) = Dimension(p.getX,p.getY)
