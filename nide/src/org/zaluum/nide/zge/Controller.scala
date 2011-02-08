@@ -1,32 +1,27 @@
 package org.zaluum.nide.zge
-
-import org.zaluum.nide.newcompiler.Reporter
-import org.zaluum.nide.newcompiler.FakeGlobalScope
-import org.zaluum.nide.newcompiler.LocalScope
-import org.zaluum.nide.newcompiler.Transformer
-import org.zaluum.nide.newcompiler.{Tree,Analyzer}
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.model._
+import org.zaluum.nide.newcompiler.{ Tree, Analyzer, Transformer, FakeGlobalScope, Reporter }
 import scala.collection.mutable.{ Buffer, Stack }
 
 trait TreeCommand {
-  def execute(tree:Tree) : Tree
-  def canExecute : Boolean
+  def execute(tree: Tree): Tree
+  def canExecute: Boolean
 }
 object TreeCommand {
-  def apply(t:Transformer) = new TreeCommand{
-    def execute(tree:Tree) = t(tree)
+  def apply(t: Transformer) = new TreeCommand {
+    def execute(tree: Tree) = t(tree)
     def canExecute = true
   }
 }
-class Controller(private var treep: Tree,val global:EclipseBoxClasspath) {
-  private var viewers = Buffer[AbstractViewer]()
-  def registerViewer(viewer: AbstractViewer) {
+class Controller(private var treep: Tree, val global: EclipseBoxClasspath) {
+  private var viewers = Buffer[Viewer]()
+  def registerViewer(viewer: Viewer) {
     println("registering viewer " + viewer)
     viewers += viewer
     viewer.update()
   }
-  def unregisterViewer(viewer : AbstractViewer) {
+  def unregisterViewer(viewer: Viewer) {
     viewers -= viewer
   }
   def updateViewers { viewers foreach { _.update() } }
@@ -35,7 +30,7 @@ class Controller(private var treep: Tree,val global:EclipseBoxClasspath) {
   val reporter = new Reporter()
   def compile() = {
     val scope = new FakeGlobalScope(global)
-    treep = new Analyzer(reporter,tree,scope).compile()
+    treep = new Analyzer(reporter, tree, scope).compile()
   }
   var undoStack = Stack[Tree]()
   var redoStack = Stack[Tree]()
@@ -87,5 +82,4 @@ class Controller(private var treep: Tree,val global:EclipseBoxClasspath) {
   }
   compile()
 }
-
 

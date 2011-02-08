@@ -1,6 +1,5 @@
 package org.zaluum.nide.scratch
 
-import org.zaluum.nide.zge.AbstractViewer
 //import org.zaluum.nide.compiler.SimpleScannedBoxClassPath
 //import org.zaluum.nide.compiler.SimpleBoxClassPath
 import org.zaluum.nide.zge.SWTScala

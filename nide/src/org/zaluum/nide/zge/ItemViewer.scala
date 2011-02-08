@@ -1,36 +1,26 @@
 package org.zaluum.nide.zge
-
-import org.eclipse.draw2d.Graphics
-import scala.collection.mutable.Buffer
 import draw2dConversions._
-import javax.swing.UIManager
-import org.eclipse.draw2d.{ Figure, FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, FreeformViewport, LightweightSystem, ColorConstants, IFigure, RectangleFigure }
-import org.eclipse.draw2d.geometry.{ Point, Rectangle }
+import org.eclipse.draw2d.{ Figure, FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, ColorConstants, RectangleFigure, Graphics }
+import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.Cursor
 import org.eclipse.swt.widgets.{ Composite, MessageBox }
-import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
+import org.zaluum.nide.model._
 import scala.collection.JavaConversions._
-import scala.collection.mutable.Stack
 
-abstract class AbstractViewer(parent: Composite, val controller: Controller) {
+abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) {
   /*SWT*/
-  def shell = parent.getShell
-  def display = shell.getDisplay
-  val light = new LightweightSystem()
-  val canvas = new FigureCanvas(parent, light)
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
   val connectionsLayer = new FreeformLayer
   val layer = new FreeformLayer {
-    override def paintFigure(graphics:Graphics) {
+    override def paintFigure(graphics: Graphics) {
       graphics.fillRectangle(getBounds());
-      for (i<- 0 to getBounds.width by 15; j<- 0 to getBounds.height by 15) {
+      for (i ← 0 to getBounds.width by 15; j ← 0 to getBounds.height by 15) {
         graphics.drawPoint(i, j);
       }
     }
   }
-  val viewport = new FreeformViewport();
+
   val innerLayers = new ScalableFreeformLayeredPane()
   val marquee = new RectangleFigure;
   {
@@ -68,18 +58,8 @@ abstract class AbstractViewer(parent: Composite, val controller: Controller) {
       false
     }
   }
-  def dispose() {
-    canvas.dispose()
-  //  controller.unregisterView(modelView)
-  }
-  def setCursor(cursor: Cursor) {
-    canvas.setCursor(cursor)
-  }
- // def modelView: AbstractModelView
- // def tool: AbstractTool
- // controller.registerView(modelView)
+
   val selected = new SelectionManager()
-  def tool : Tool
+
   def deselectAll() { selected.deselectAll }
-  def update()
 }

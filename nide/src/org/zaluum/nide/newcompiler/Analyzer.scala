@@ -1,10 +1,6 @@
 package org.zaluum.nide.newcompiler
-
-import org.zaluum.nide.model.Namer
+import org.zaluum.nide.model.{ Location, Locatable, Namer }
 import scala.collection.mutable.Buffer
-import org.zaluum.nide.model.Locatable
-import org.zaluum.nide.model.Location
-import org.zaluum.nide.eclipse.EclipseBoxClasspath
 /*
    def isValidJavaIdentifier(s: String) = {
     s != null &&
@@ -89,7 +85,7 @@ case class Name(str: String) {
   //TODO
   def classNameWithoutPackage = Some(str) // TODO
   def toRelativePath: String = str.replace('.', '/')
-  def internal = str.replace('.','/')
+  def internal = str.replace('.', '/')
   def descriptor = "L" + internal + ";"
 
 }
@@ -99,10 +95,10 @@ trait Scope {
   def lookupType(name: Name): Option[Type]
   def lookupBoxType(name: Name): Option[Type]
   def enter(sym: Symbol): Symbol
-  def root : Symbol
+  def root: Symbol
 }
 
-class FakeGlobalScope(realGlobal:Scope) extends LocalScope(realGlobal) { // for presentation compiler
+class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for presentation compiler
   case object fakeRoot extends Symbol {
     val owner = NoSymbol
     scope = FakeGlobalScope.this
@@ -110,18 +106,18 @@ class FakeGlobalScope(realGlobal:Scope) extends LocalScope(realGlobal) { // for 
   }
   override val root = fakeRoot
 }
-class LocalScope(val enclosingScope: Scope) extends Scope with Namer{
+class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   var ports = Map[Name, Symbol]()
   var vals = Map[Name, Symbol]()
   var boxes = Map[Name, Type]()
   var connections = Set[ConnectionSymbol]()
   def lookupPort(name: Name): Option[Symbol] =
-    ports.get(name) orElse { enclosingScope.lookupPort(name) } 
+    ports.get(name) orElse { enclosingScope.lookupPort(name) }
   def lookupVal(name: Name): Option[Symbol] =
-    vals.get(name) orElse { enclosingScope.lookupVal(name) } 
-  def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name) 
+    vals.get(name) orElse { enclosingScope.lookupVal(name) }
+  def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name)
   def lookupBoxType(name: Name): Option[Type] =
-    boxes.get(name) orElse { enclosingScope.lookupBoxType(name) } 
+    boxes.get(name) orElse { enclosingScope.lookupBoxType(name) }
   def enter(sym: Symbol): Symbol = {
     val entry = (sym.name -> sym)
     sym match {
@@ -131,7 +127,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer{
     }
     sym
   }
-  def usedNames = (vals.keySet.map {_.str} ++ ports.keySet.map{_.str}).toSet
+  def usedNames = (vals.keySet.map { _.str } ++ ports.keySet.map { _.str }).toSet
   def root = enclosingScope.root
 }
 class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
@@ -162,7 +158,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           // TODO inner class names $ if currentOwner is BoxTypeSymbol? 
           defineBox(new BoxTypeSymbol(currentOwner, name, image))
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
-          definePort(new PortSymbol(currentOwner, name,extPos,dir))
+          definePort(new PortSymbol(currentOwner, name, extPos, dir))
         case v@ValDef(name, typeName, pos, guiTree) ⇒
           defineVal(new ValSymbol(currentOwner, name))
         case _ ⇒
@@ -191,16 +187,17 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             error("Box not found " + name); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case PortRef(fromTree, name,in) ⇒ // TODO filter in?
+        case PortRef(fromTree, name, in) ⇒ // TODO filter in?
           tree.symbol = fromTree.symbol.tpe match {
-            case b:BoxTypeSymbol => b.lookupPort(name).getOrElse{
+            case b: BoxTypeSymbol ⇒
+              b.lookupPort(name).getOrElse {
                 error("Port not found " + name);
                 NoSymbol
-            }
-            case _ => NoSymbol
+              }
+            case _ ⇒ NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case ThisRef => 
+        case ThisRef ⇒
           tree.symbol = currentOwner
           tree.tpe = currentOwner.tpe
         case _ ⇒

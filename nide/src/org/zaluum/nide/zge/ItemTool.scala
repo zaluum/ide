@@ -1,18 +1,17 @@
 package org.zaluum.nide.zge
-
-import org.zaluum.nide.newcompiler.PortDef
-import org.zaluum.nide.newcompiler.CopyTransformer
-import org.zaluum.nide.newcompiler.ValDef
-import org.zaluum.nide.newcompiler.Tree
-import org.zaluum.nide.newcompiler.Transformer
 import draw2dConversions._
 import org.eclipse.draw2d.{ Cursors, Figure }
 import org.eclipse.draw2d.geometry.{ Point, Rectangle }
 import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
+import org.zaluum.nide.newcompiler.{ Transformer, Tree, ValDef, CopyTransformer, PortDef }
 import scala.collection.JavaConversions._
-
-abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer ) {
-  def current : Layers
+/**
+ * Implements basic selecting, marquee and resizing of ItemFigures
+ * @author frede
+ *
+ */
+abstract class ItemTool(viewer: ItemViewer) extends Tool(viewer) {
+  def current: Layers
   lazy val selecting = new Selecting
   state = selecting
   // SELECTING 
@@ -86,7 +85,7 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer ) {
         val trans: PartialFunction[Tree, Tree] = {
           case v@ValDef(name, typeName, pos, guiSize) if (positions.contains(v)) ⇒
             ValDef(name, typeName, positions(v), transform(guiSize))
-          case p:PortDef if(positions.contains(p)) =>
+          case p: PortDef if (positions.contains(p)) ⇒
             p.copy(inPos = positions(p))
         }
       })

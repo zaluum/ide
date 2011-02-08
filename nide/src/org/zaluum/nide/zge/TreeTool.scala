@@ -22,7 +22,7 @@ import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 
 import scala.collection.JavaConversions._
 
-class BoxTool(val viewer:TreeViewer) extends AbstractTool(viewer) {
+class TreeTool(val viewer:TreeViewer) extends ItemTool(viewer) {
   def tree =viewer.tree
   var current: BoxDefLayers = viewer  // TODO better init?
   //override def modelView = viewer.modelView

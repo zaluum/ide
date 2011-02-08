@@ -6,7 +6,7 @@ import org.eclipse.swt.events._
 import org.zaluum.nide.model.Vector2
 import scala.reflect.Manifest._
 
-abstract class Tool(viewer: AbstractViewer) {
+abstract class Tool(viewer: Viewer) { 
   def viewport = viewer.viewport
   def current : Layers
   def canvas = viewer.canvas

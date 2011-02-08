@@ -1,11 +1,9 @@
 package org.zaluum.nide.zge
-
-import org.zaluum.nide.newcompiler.Tree
-import org.zaluum.nide.newcompiler.EmptyTree
 import SWTScala._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Composite, Button, Label, Text }
+import org.zaluum.nide.newcompiler.{ EmptyTree, Tree }
 
 class PortDeclPopup(
   viewer: TreeViewer,
@@ -29,7 +27,7 @@ class PortDeclPopup(
       val now = txt.getText
       viewer.executeOrNotify(new TreeCommand {
         def canExecute = now != ""
-        def execute(tree:Tree)= EmptyTree // TODO
+        def execute(tree: Tree) = EmptyTree // TODO
       })
       hide
     }

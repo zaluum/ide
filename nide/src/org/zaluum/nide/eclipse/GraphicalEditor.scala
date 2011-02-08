@@ -69,6 +69,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     val controller = new Controller(tree, globalScope)
     controller.addListener(fireDirty)
     viewer = new TreeViewer(parent, controller, globalScope)
+    controller.registerViewer(viewer)
     // TODO reopen
   }
   val fireDirty: () ⇒ Unit = () ⇒ firePropertyChange(IEditorPart.PROP_DIRTY)

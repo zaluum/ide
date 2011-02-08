@@ -1,41 +1,12 @@
 package org.zaluum.nide.zge
-
-import org.eclipse.draw2d.IFigure
-import org.zaluum.nide.newcompiler.Name
-import org.zaluum.nide.newcompiler.Scope
-import org.zaluum.nide.newcompiler.Symbol
-import org.zaluum.nide.newcompiler.Traverser
-import org.eclipse.draw2d.ScalableFreeformLayeredPane
-import org.zaluum.nide.newcompiler.BoxDef
-import org.zaluum.nide.newcompiler.Shift
-import org.zaluum.nide.newcompiler.Out
-import org.zaluum.nide.newcompiler.PortDir
-import org.zaluum.nide.newcompiler.In
-import scala.collection.mutable.Buffer
-import org.zaluum.nide.newcompiler.ThisRef
-import org.zaluum.nide.model.Route
-import org.zaluum.nide.newcompiler.EmptyTree
-import org.zaluum.nide.newcompiler.ValRef
-import org.zaluum.nide.newcompiler.PortRef
-import org.zaluum.nide.newcompiler.NoSymbol
-import org.zaluum.nide.newcompiler.BoxTypeSymbol
-import org.zaluum.nide.newcompiler.ValDef
-import org.zaluum.nide.model.Positionable
-import org.zaluum.nide.newcompiler.ValSymbol
-import org.zaluum.nide.newcompiler.ConnectionDef
-import org.zaluum.nide.model.Line
-import org.zaluum.nide.newcompiler.PortDef
-import org.zaluum.nide.newcompiler.PortSymbol
-import org.zaluum.nide.model.Resizable
-import org.zaluum.nide.model.Vector2
-import org.zaluum.nide.model.Dimension
-import org.zaluum.nide.model.{ Point => MPoint}
-import org.zaluum.nide.newcompiler.{ Tree }
 import draw2dConversions._
-import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline }
+import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline, ScalableFreeformLayeredPane, IFigure }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
+import org.zaluum.nide.model.{ Point ⇒ MPoint, Dimension, Vector2, Resizable, Line, Positionable, Route }
+import org.zaluum.nide.newcompiler.{ Tree, PortSymbol, PortDef, ConnectionDef, ValSymbol, ValDef, BoxTypeSymbol, NoSymbol, PortRef, ValRef, EmptyTree, ThisRef, In, PortDir, Out, Shift, BoxDef, Traverser, Symbol, Name }
+import scala.collection.mutable.Buffer
 
 object draw2dConversions {
   implicit def point(p: MPoint): EPoint = new EPoint(p.x, p.y)
@@ -43,7 +14,7 @@ object draw2dConversions {
   implicit def rpoint(p: EPoint): MPoint = MPoint(p.x, p.y)
   implicit def rdimension(d: EDimension): Dimension = Dimension(d.width, d.height)
 }
-trait CanShowFeedback  {
+trait CanShowFeedback {
   def showFeedback()
   def hideFeedback()
 }
@@ -117,17 +88,17 @@ trait BoxFigure extends ItemFigure {
       case b: BoxTypeSymbol ⇒
         b.ports.values.collect {
           case s: PortSymbol ⇒
-            new PortFigure(s.extPos + Vector2(getBounds.x, getBounds.y), s, s.dir==In,Some(sym),bdf)
+            new PortFigure(s.extPos + Vector2(getBounds.x, getBounds.y), s, s.dir == In, Some(sym), bdf)
         }.toList
       case _ ⇒ List()
     }
   }
 }
 object PortDeclFigure {
-  private def str(dir:PortDir) = dir match {
-    case In => "In"
-    case Out => "Out"
-    case Shift => "Shift"
+  private def str(dir: PortDir) = dir match {
+    case In ⇒ "In"
+    case Out ⇒ "Out"
+    case Shift ⇒ "Shift"
   }
   def img(dir: PortDir) = "org/zaluum/nide/icons/portDecl" + str(dir) + ".png"
 }
@@ -141,7 +112,7 @@ class PortDeclFigure(val tree: PortDef, val bdf: BoxDefLayers) extends ImageFigu
   var size = Dimension(50, 20)
   lazy val feed = new ItemFeedbackFigure(bdf)
   def position = tree.inPos + (if (tree == In) Vector2(48, 8) else Vector2(0, 8))
-  val portFig = sym map { new PortFigure(position, _, tree.dir==In, None, bdf) }
+  val portFig = sym map { new PortFigure(position, _, tree.dir == In, None, bdf) }
 
   override def update() {
     val image = bdf.viewer.imageFactory.get(PortDeclFigure.img(tree.dir)).get
@@ -196,11 +167,11 @@ class ImageBoxFigure(val tree: ValDef, val bdf: BoxDefLayers) extends ImageFigur
     super.update()
   }
 }
-trait Layers extends CanShowUpdate{
-  def viewer : TreeViewer
-  def layer : Figure
-  def feedbackLayer : Figure
-  def connectionsLayer : Figure
+trait Layers extends CanShowUpdate {
+  def viewer: TreeViewer // TODO only for image factory... remove?
+  def layer: Figure
+  def feedbackLayer: Figure
+  def connectionsLayer: Figure
   def findDeepAt(container: IFigure, p: EPoint) = {
     Option(container.findFigureAt(p.x, p.y)) filter (_ != container)
   }
@@ -212,76 +183,67 @@ trait Layers extends CanShowUpdate{
   def feedbackAt(p: EPoint) = findDeepAt(feedbackLayer, p)
   def lineAt(p: EPoint) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
 }
-trait BoxDefLayers extends Layers{
-  def portsLayer : Figure
-  def connectionsLayer : Figure 
-  //def viewer : TreeViewer
-  def owner : Symbol
-  def boxDef : BoxDef
+trait BoxDefLayers extends Layers {
+  def portsLayer: Figure
+  def connectionsLayer: Figure
+  def owner: Symbol
+  def boxDef: BoxDef
   import scala.collection.JavaConversions._
-  private def portFigures = portsLayer.getChildren.collect { case p:PortFigure => p } 
-  def findPortFigure(boxName:Name,portName:Name, in:Boolean) : Option[PortFigure] =
-    portFigures find {
-      p=>p.valSym match {
-        case Some(valSym) => (valSym.name==boxName && p.sym.name==portName && p.in == in)
-        case None => false
+  private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
+  def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] =
+    portFigures find { p ⇒
+      p.valSym match {
+        case Some(valSym) ⇒ (valSym.name == boxName && p.sym.name == portName && p.in == in)
+        case None ⇒ false
       }
     }
-  def findPortFigure(portName:Name, in:Boolean) : Option[PortFigure] = 
-    portFigures find { p =>  p.valSym.isEmpty && p.sym.name == portName && p.in == in }
+  def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] =
+    portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in }
   def clear()
-  
+
   def update() {
     clear()
     new Traverser(owner) {
-      override def traverse(tree:Tree) {
+      override def traverse(tree: Tree) {
         super.traverse(tree)
         tree match {
-        case EmptyTree ⇒
-        case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-          new PortDeclFigure(p, BoxDefLayers.this).show()
-        case v@ValDef(name, typeName,pos,guiSize) ⇒
-          new ImageBoxFigure(v,BoxDefLayers.this).show()
-        case _ =>
+          case EmptyTree ⇒
+          case p@PortDef(name, typeName, in, inPos, extPos) ⇒
+            new PortDeclFigure(p, BoxDefLayers.this).show()
+          case v@ValDef(name, typeName, pos, guiSize) ⇒
+            new ImageBoxFigure(v, BoxDefLayers.this).show()
+          case _ ⇒
         }
       }
     }.traverse(boxDef)
     // create connections (need to find figures positions)
     new Traverser(owner) {
-      override def traverse(tree:Tree) {
+      override def traverse(tree: Tree) {
         super.traverse(tree)
         tree match {
-        case c@ConnectionDef(a, b) ⇒
-           new ConnectionFigure(c,BoxDefLayers.this).show()
-        case _ =>
+          case c@ConnectionDef(a, b) ⇒
+            new ConnectionFigure(c, BoxDefLayers.this).show()
+          case _ ⇒
         }
       }
     }.traverse(boxDef)
-   }
+  }
 }
-/*class RootLayers(val boxDef:BoxDef, val viewer:TreeViewer, val owner:Symbol) extends BoxDefLayers {
-  def layer = viewer.layer // Move them from viewer?
-  def portsLayer = viewer.portsLayer
-  def connectionsLayer = viewer.connectionsLayer
-  def feedbackLayer = viewer.feedbackLayer
-  def clear() { viewer.clear() }
-  def show() = { update()}
-  def hide() = clear()
-}*/
-class OpenBoxFigure(val valTree:ValDef, val boxDef:BoxDef, val viewer:TreeViewer, val owner:Symbol, val parentFig:Figure ) extends Figure with BoxDefLayers {
-   val layer = new FreeformLayer
-   val portsLayer = new FreeformLayer
-   val connectionsLayer = new FreeformLayer
-   val feedbackLayer = new FreeformLayer
-   val inners = new ScalableFreeformLayeredPane
-   inners.add(layer)
-   inners.add(portsLayer)
-   inners.add(connectionsLayer)
-   inners.add(feedbackLayer)
-   add(inners)
-   def clear { inners.removeAll }
-   def show = {update(); parentFig.add(this)}
-   def hide = parentFig.remove(this)
+
+class OpenBoxFigure(val valTree: ValDef, val boxDef: BoxDef, val viewer: TreeViewer, val owner: Symbol, val parentFig: Figure) extends Figure with BoxDefLayers {
+  val layer = new FreeformLayer
+  val portsLayer = new FreeformLayer
+  val connectionsLayer = new FreeformLayer
+  val feedbackLayer = new FreeformLayer
+  val inners = new ScalableFreeformLayeredPane
+  inners.add(layer)
+  inners.add(portsLayer)
+  inners.add(connectionsLayer)
+  inners.add(feedbackLayer)
+  add(inners)
+  def clear { inners.removeAll }
+  def show = { update(); parentFig.add(this) }
+  def hide = parentFig.remove(this)
 }
 class LineFigure(l: Line, bdf: BoxDefLayers, val con: Option[ConnectionDef] = None) extends Polyline with CanShowUpdate with Selectable {
   //setAntialias(1)
@@ -335,8 +297,8 @@ class ConnectionFigure(val tree: ConnectionDef, bdf: BoxDefLayers) extends Figur
   def calcRoute = {
     // TODO paint incomplete connections gracefully
     def portFigure(tree: Tree): Option[PortFigure] = tree match {
-      case PortRef(v@ValRef(_), portName, in) ⇒ bdf.findPortFigure(v.symbol.name, portName,in)
-      case PortRef(ThisRef, portName,in) ⇒ bdf.findPortFigure(portName,in)
+      case PortRef(v@ValRef(_), portName, in) ⇒ bdf.findPortFigure(v.symbol.name, portName, in)
+      case PortRef(ThisRef, portName, in) ⇒ bdf.findPortFigure(portName, in)
       case _ ⇒ None
     }
     def position(tree: Tree): Option[MPoint] = portFigure(tree) map { p ⇒ p.anchor }

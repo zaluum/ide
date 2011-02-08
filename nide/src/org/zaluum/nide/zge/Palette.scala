@@ -1,14 +1,11 @@
 package org.zaluum.nide.zge
-
-import org.zaluum.nide.newcompiler.Out
-import org.zaluum.nide.newcompiler.In
-import org.zaluum.nide.newcompiler.BoxTypeSymbol
-import org.eclipse.swt.graphics.Image
 import SWTScala._
 import org.eclipse.swt.SWT
+import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Shell, Composite, Button }
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
+import org.zaluum.nide.newcompiler.{ BoxTypeSymbol, In, Out }
 object Palette {
   val w = 400
   val h = 300
@@ -37,7 +34,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
     }
     portDecl(in = true)
     portDecl(in = false)
-    def createButton(name:String, image:Image) = {
+    def createButton(name: String, image: Image) = {
       val b = new Button(content, SWT.PUSH)
       val data = new GridData
       data.horizontalAlignment = SWT.CENTER
@@ -47,7 +44,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
       b.setSize(48, 48)
       b
     }
-    val innerb = createButton("INNER",viewer.imageFactory.notFound)
+    val innerb = createButton("INNER", viewer.imageFactory.notFound)
     addReaction(innerb) {
       viewer.tool.state.abort()
       // TODO viewer.tool .innercreating.enter()
@@ -57,7 +54,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
     val classes = bcp.boxes.toBuffer.sortWith(_.name.toString < _.name.toString)
     for (tpe ← classes) {
       val bc = tpe.asInstanceOf[BoxTypeSymbol]
-      val b = createButton(bc.name.str, viewer.imageFactory(bc)) 
+      val b = createButton(bc.name.str, viewer.imageFactory(bc))
       addReaction(b) {
         viewer.tool.state.abort()
         viewer.tool.creating.enter(bc)

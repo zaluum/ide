@@ -1,5 +1,4 @@
 package org.zaluum.nide.zge
-
 import HandleSizes._
 import org.eclipse.draw2d.{ Cursors, RectangleFigure, Figure, ColorConstants, Shape }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point }
@@ -57,7 +56,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) ex
   }
 }
 
-class ItemFeedbackFigure(parent:Layers) extends Figure {
+class ItemFeedbackFigure(parent: Layers) extends Figure {
   protected val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
   rectangle.setFill(false);
@@ -78,14 +77,14 @@ class ItemFeedbackFigure(parent:Layers) extends Figure {
     rectangle.setBounds(rectBounds)
   }
   def show() {
-    parent.feedbackLayer .add(this)
+    parent.feedbackLayer.add(this)
   }
   def hide() {
-    parent.feedbackLayer .remove(this)
+    parent.feedbackLayer.remove(this)
   }
 
 }
-class ResizeItemFeedbackFigure(val bf: ResizableItemFigure, parent:Layers) extends ItemFeedbackFigure(parent) {
+class ResizeItemFeedbackFigure(val bf: ResizableItemFigure, parent: Layers) extends ItemFeedbackFigure(parent) {
 
   val handles =
     (for {
