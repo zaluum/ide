@@ -22,9 +22,10 @@ import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 
 import scala.collection.JavaConversions._
 
-class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
+class BoxTool(val viewer:TreeViewer) extends AbstractTool(viewer) {
   def tree =viewer.tree
-  override def modelView = viewer.modelView
+  var current: BoxDefLayers = viewer  // TODO better init?
+  //override def modelView = viewer.modelView
   override lazy val selecting  = new  Selecting { 
     override def connect(port : PortFigure ) {
       connecting.enter(initDrag, port)
@@ -94,7 +95,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       this.tpe =tpe
       state = this
       val img = viewer.imageFactory(tpe.decl);
-      feed = new ItemFeedbackFigure(viewer)
+      feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0,0,img.getBounds.width,img.getBounds.height));
       feed.show()
     }
@@ -127,7 +128,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
       state = this
       this.dir =dir
       val img = viewer.imageFactory.get(PortDeclFigure.img(dir)).get
-      feed = new ItemFeedbackFigure(viewer)
+      feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0,0,img.getBounds.width,img.getBounds.height));
       feed.show()
     }
@@ -154,7 +155,7 @@ class BoxTool(val viewer:Viewer) extends AbstractTool(viewer) {
   object connecting extends MovingState {
     var dst: Option[PortFigure] = None
     var src: Option[PortFigure] = None
-    val painter = new ConnectionPainter(modelView)
+    val painter = new ConnectionPainter(current)
     //var con: Option[Connection] = None
     val portsTrack = new OverTrack[PortFigure](viewer.portsLayer) {
       def onEnter(p: PortFigure) {dst = Some(p); p.showFeedback }

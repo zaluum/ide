@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.zge.TreeViewer
 import org.zaluum.nide.newcompiler.BoxDef
 import org.zaluum.nide.newcompiler.Serializer
 import org.zaluum.nide.newcompiler.Name
@@ -28,12 +29,10 @@ import org.zaluum.nide.zge.{Viewer, Controller}
 
 class GraphicalEditor extends EditorPart with IGotoMarker {
 
-  var viewer: Viewer = _
+  var viewer: TreeViewer = _
   //var guiViewer : GUIViewer = _
   var shell : Option[Shell] = None 
   def controller = viewer.controller
-  def modelView = viewer.modelView
-  def tree = modelView.tree 
 
   def doSave(monitor: IProgressMonitor) {
     val proto = Serializer.proto(viewer.tree.asInstanceOf[BoxDef])
@@ -69,7 +68,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     input.close()
     val controller = new Controller(tree, globalScope)
     controller.addListener(fireDirty)
-    viewer = new Viewer(parent, controller)
+    viewer = new TreeViewer(parent, controller, globalScope)
     // TODO reopen
   }
   val fireDirty: () ⇒ Unit = () ⇒ firePropertyChange(IEditorPart.PROP_DIRTY)
@@ -99,7 +98,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   }
   override def gotoMarker(marker: IMarker) {
     val str = marker.getAttribute("BLAME").asInstanceOf[String]
-    modelView.gotoMarker(Location(str))
+    viewer.gotoMarker(Location(str))
     setFocus
   }
   override def getAdapter(cl: Class[_]) = {

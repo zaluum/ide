@@ -30,7 +30,6 @@ abstract class AbstractViewer(parent: Composite, val controller: Controller) {
       }
     }
   }
-  //layer.setLayoutManager(new FreeformLayout)
   val viewport = new FreeformViewport();
   val innerLayers = new ScalableFreeformLayeredPane()
   val marquee = new RectangleFigure;
@@ -71,27 +70,16 @@ abstract class AbstractViewer(parent: Composite, val controller: Controller) {
   }
   def dispose() {
     canvas.dispose()
-    controller.unregisterView(modelView)
+  //  controller.unregisterView(modelView)
   }
   def setCursor(cursor: Cursor) {
     canvas.setCursor(cursor)
   }
-  def findDeepAt(container: IFigure, p: Point) = {
-    Option(container.findFigureAt(p.x, p.y)) filter (_ != container)
-  }
-  def findShallowAt(container: IFigure, p: Point) = {
-    import scala.collection.JavaConversions._
-    container.getChildren.asInstanceOf[java.util.List[IFigure]] find { _.containsPoint(p) };
-  }
-  def figureAt(p: Point) = findShallowAt(layer, p) map { case (bf: ItemFigure) ⇒ bf }
-  def feedbackAt(p: Point) = findDeepAt(feedbackLayer, p)
-  def lineAt(p: Point) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
-  def modelView: AbstractModelView
-  def tool: AbstractTool
-  controller.registerView(modelView)
-}
-abstract class AbstractModelView(val viewer: AbstractViewer) {
+ // def modelView: AbstractModelView
+ // def tool: AbstractTool
+ // controller.registerView(modelView)
   val selected = new SelectionManager()
+  def tool : Tool
   def deselectAll() { selected.deselectAll }
   def update()
 }

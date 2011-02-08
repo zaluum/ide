@@ -8,11 +8,13 @@ import scala.reflect.Manifest._
 
 abstract class Tool(viewer: AbstractViewer) {
   def viewport = viewer.viewport
+  def current : Layers
   def canvas = viewer.canvas
   def controller = viewer.controller
-  def figureUnderMouse = viewer.figureAt(mouseLocation)
-  def lineUnderMouse = viewer.lineAt(mouseLocation)
-  def feedbackUnderMouse = viewer.feedbackAt(mouseLocation)
+  
+  def figureUnderMouse = current.figureAt(mouseLocation)
+  def lineUnderMouse = current.lineAt(mouseLocation)
+  def feedbackUnderMouse = current.feedbackAt(mouseLocation)
   val listener = new MouseMoveListener() with MouseListener with KeyListener with FocusListener with DragDetectListener with MenuDetectListener with MouseTrackListener with MouseWheelListener with TraverseListener {
     def dragDetected(e: DragDetectEvent) { updateMouse(e); state.drag() }
     def focusGained(e: FocusEvent) {}
@@ -108,7 +110,7 @@ abstract class Tool(viewer: AbstractViewer) {
       }
     }
     def update() {
-      val under: Option[F] = filterManifest(viewer.findDeepAt(container, mouseLocation))
+      val under: Option[F] = filterManifest(current.findDeepAt(container, mouseLocation))
       if (under == last) return ;
       last foreach { f ⇒ onExit(f); last = None }
       under foreach { f ⇒ onEnter(f); last = Some(f) }

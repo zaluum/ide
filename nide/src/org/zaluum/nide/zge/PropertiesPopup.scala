@@ -8,7 +8,7 @@ import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Composite, Button, Label, Text }
 
 class PortDeclPopup(
-  viewer: Viewer,
+  viewer: TreeViewer,
   pf: PortDeclFigure) extends ScrollPopup(viewer.shell) {
   def name = "Properties"
   def columns = 2

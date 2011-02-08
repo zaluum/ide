@@ -20,16 +20,17 @@ object TreeCommand {
   }
 }
 class Controller(private var treep: Tree,val global:EclipseBoxClasspath) {
-  private var viewModels = Buffer[AbstractModelView]()
-  def registerView(modelView: AbstractModelView) {
-    viewModels += modelView
-    modelView.update()
+  private var viewers = Buffer[AbstractViewer]()
+  def registerViewer(viewer: AbstractViewer) {
+    println("registering viewer " + viewer)
+    viewers += viewer
+    viewer.update()
   }
-  def unregisterView(modelView : AbstractModelView) {
-    viewModels -= modelView
+  def unregisterViewer(viewer : AbstractViewer) {
+    viewers -= viewer
   }
-  def updateViewers { viewModels foreach { _.update() } }
-  def abortTools() { viewModels foreach { _.viewer.tool.state.abort() } }
+  def updateViewers { viewers foreach { _.update() } }
+  def abortTools() { viewers foreach { _.tool.state.abort() } }
   def tree = treep
   val reporter = new Reporter()
   def compile() = {

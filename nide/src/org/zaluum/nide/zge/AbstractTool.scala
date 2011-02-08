@@ -11,9 +11,8 @@ import org.eclipse.draw2d.geometry.{ Point, Rectangle }
 import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 import scala.collection.JavaConversions._
 
-abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
-  def modelView = viewer.modelView
-
+abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer ) {
+  def current : Layers
   lazy val selecting = new Selecting
   state = selecting
   // SELECTING 
@@ -32,9 +31,9 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
 
     def buttonUp {
       (selected, lineSelected) match {
-        case (Some(box), _) ⇒ modelView.selected.updateSelection(Set(box), shift)
-        case (None, Some(line)) ⇒ modelView.selected.updateSelection(Set(line), shift)
-        case (None, None) ⇒ modelView.deselectAll()
+        case (Some(box), _) ⇒ viewer.selected.updateSelection(Set(box), shift)
+        case (None, Some(line)) ⇒ viewer.selected.updateSelection(Set(line), shift)
+        case (None, None) ⇒ viewer.deselectAll()
       }
     }
     val handleTrack = new OverTrack[HandleRectangle](viewer.feedbackLayer) {
@@ -64,8 +63,8 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
         case (None, _, Some(port)) ⇒ // connect
           connect(port)
         case (None, Some(fig), _) ⇒ // select and move
-          if (!modelView.selected(fig))
-            modelView.selected.updateSelection(Set(fig), shift)
+          if (!viewer.selected(fig))
+            viewer.selected.updateSelection(Set(fig), shift)
           moving.enter(initDrag)
         case (None, None, None) ⇒ marqueeing.enter(initDrag) // marquee
       }
@@ -78,7 +77,7 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
   object moving extends MovingState {
     def doEnter {}
     def buttonUp {
-      val positions = modelView.selected.selected.collect {
+      val positions = viewer.selected.selected.collect {
         case bf: ItemFigure ⇒
           val oldLoc = bf.getBounds.getLocation
           (bf.tree -> (MPoint(oldLoc.x, oldLoc.y) + delta))
@@ -96,9 +95,9 @@ abstract class AbstractTool(viewer: AbstractViewer) extends Tool(viewer) {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { modelView.selected.selected collect { case bf: ItemFigure ⇒ bf } foreach { _.moveDeltaFeed(delta) } }
+    def move() { viewer.selected.selected collect { case bf: ItemFigure ⇒ bf } foreach { _.moveDeltaFeed(delta) } }
     def abort() {
-      modelView.selected.selected collect { case bf: ItemFigure ⇒ bf } foreach { _.moveDeltaFeed(Vector2(0, 0)) }
+      viewer.selected.selected collect { case bf: ItemFigure ⇒ bf } foreach { _.moveDeltaFeed(Vector2(0, 0)) }
       exit()
     }
   }

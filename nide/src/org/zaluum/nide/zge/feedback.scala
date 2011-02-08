@@ -57,7 +57,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) ex
   }
 }
 
-class ItemFeedbackFigure(viewer:AbstractViewer) extends Figure {
+class ItemFeedbackFigure(parent:Layers) extends Figure {
   protected val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
   rectangle.setFill(false);
@@ -78,14 +78,14 @@ class ItemFeedbackFigure(viewer:AbstractViewer) extends Figure {
     rectangle.setBounds(rectBounds)
   }
   def show() {
-    viewer.feedbackLayer .add(this)
+    parent.feedbackLayer .add(this)
   }
   def hide() {
-    viewer.feedbackLayer .remove(this)
+    parent.feedbackLayer .remove(this)
   }
 
 }
-class ResizeItemFeedbackFigure(val bf: ResizableItemFigure, viewer:AbstractViewer) extends ItemFeedbackFigure(viewer) {
+class ResizeItemFeedbackFigure(val bf: ResizableItemFigure, parent:Layers) extends ItemFeedbackFigure(parent) {
 
   val handles =
     (for {

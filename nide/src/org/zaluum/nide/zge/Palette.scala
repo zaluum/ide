@@ -13,7 +13,7 @@ object Palette {
   val w = 400
   val h = 300
 }
-class Palette(viewer: Viewer, mainShell: Shell, bcp: EclipseBoxClasspath) extends ScrollPopup(mainShell) {
+class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) extends ScrollPopup(mainShell) {
   def name = "Palette"
   def columns = 4
   def populate(content: Composite) {
@@ -47,7 +47,7 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: EclipseBoxClasspath) extend
       b.setSize(48, 48)
       b
     }
-    val innerb = createButton("INNER",viewer.imageFactory .notFound)
+    val innerb = createButton("INNER",viewer.imageFactory.notFound)
     addReaction(innerb) {
       viewer.tool.state.abort()
       // TODO viewer.tool .innercreating.enter()
@@ -57,7 +57,7 @@ class Palette(viewer: Viewer, mainShell: Shell, bcp: EclipseBoxClasspath) extend
     val classes = bcp.boxes.toBuffer.sortWith(_.name.toString < _.name.toString)
     for (tpe ← classes) {
       val bc = tpe.asInstanceOf[BoxTypeSymbol]
-      val b = createButton(bc.name.str,viewer.imageFactory(bc)) 
+      val b = createButton(bc.name.str, viewer.imageFactory(bc)) 
       addReaction(b) {
         viewer.tool.state.abort()
         viewer.tool.creating.enter(bc)
