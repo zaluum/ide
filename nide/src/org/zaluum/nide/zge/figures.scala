@@ -1,4 +1,7 @@
 package org.zaluum.nide.zge
+
+import org.eclipse.draw2d.LineBorder
+import org.eclipse.draw2d.FocusBorder
 import draw2dConversions._
 import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline, ScalableFreeformLayeredPane, IFigure }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
@@ -167,7 +170,7 @@ class ImageBoxFigure(val tree: ValDef, val bdf: BoxDefLayers) extends ImageFigur
     super.update()
   }
 }
-trait Layers extends CanShowUpdate {
+trait Layers {
   def viewer: TreeViewer // TODO only for image factory... remove?
   def layer: Figure
   def feedbackLayer: Figure
@@ -182,6 +185,7 @@ trait Layers extends CanShowUpdate {
   def figureAt(p: EPoint) = findShallowAt(layer, p) map { case (bf: ItemFigure) ⇒ bf }
   def feedbackAt(p: EPoint) = findDeepAt(feedbackLayer, p)
   def lineAt(p: EPoint) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
+  def populate()
 }
 trait BoxDefLayers extends Layers {
   def portsLayer: Figure
@@ -201,7 +205,7 @@ trait BoxDefLayers extends Layers {
     portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in }
   def clear()
 
-  def update() {
+  def populate() {
     clear()
     new Traverser(owner) {
       override def traverse(tree: Tree) {
@@ -211,7 +215,16 @@ trait BoxDefLayers extends Layers {
           case p@PortDef(name, typeName, in, inPos, extPos) ⇒
             new PortDeclFigure(p, BoxDefLayers.this).show()
           case v@ValDef(name, typeName, pos, guiSize) ⇒
-            new ImageBoxFigure(v, BoxDefLayers.this).show()
+            v.scope.lookupBoxTypeLocal(typeName) match {
+              case Some(tpe) => 
+                new OpenBoxFigure(v,
+                    tpe.decl.asInstanceOf[BoxDef], 
+                    v.symbol.owner, 
+                    BoxDefLayers.this,
+                    viewer).show()
+              case None => 
+                new ImageBoxFigure(v, BoxDefLayers.this).show()
+            }
           case _ ⇒
         }
       }
@@ -229,21 +242,37 @@ trait BoxDefLayers extends Layers {
     }.traverse(boxDef)
   }
 }
-
-class OpenBoxFigure(val valTree: ValDef, val boxDef: BoxDef, val viewer: TreeViewer, val owner: Symbol, val parentFig: Figure) extends Figure with BoxDefLayers {
+trait BoxDefLayersItem extends BoxDefLayers 
+class OpenBoxFigure(
+    val valTree: ValDef, 
+    val boxDef: BoxDef, 
+    val owner: Symbol, 
+    val bdf: BoxDefLayers,
+    val viewer:TreeViewer) extends Figure with ResizableItemFigure with BoxDefLayers {
+  def tree= valTree
+  val feed = new ResizeItemFeedbackFigure(this,this)
+  def positionable = tree
+  def resizable = new Resizable {
+    def pos = tree.pos
+    var size = OpenBoxFigure.this.size
+  }
+  def size = Dimension(200,100)
   val layer = new FreeformLayer
   val portsLayer = new FreeformLayer
   val connectionsLayer = new FreeformLayer
   val feedbackLayer = new FreeformLayer
+  def clear { inners.removeAll }
   val inners = new ScalableFreeformLayeredPane
   inners.add(layer)
   inners.add(portsLayer)
   inners.add(connectionsLayer)
   inners.add(feedbackLayer)
   add(inners)
-  def clear { inners.removeAll }
-  def show = { update(); parentFig.add(this) }
-  def hide = parentFig.remove(this)
+  setBorder(new LineBorder)
+  override def update() {
+    super.update()
+    populate()
+  }
 }
 class LineFigure(l: Line, bdf: BoxDefLayers, val con: Option[ConnectionDef] = None) extends Polyline with CanShowUpdate with Selectable {
   //setAntialias(1)

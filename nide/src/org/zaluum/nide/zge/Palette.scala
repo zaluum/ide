@@ -47,7 +47,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
     val innerb = createButton("INNER", viewer.imageFactory.notFound)
     addReaction(innerb) {
       viewer.tool.state.abort()
-      // TODO viewer.tool .innercreating.enter()
+      viewer.tool.innercreating.enter()
       viewer.canvas.setFocus()
       hide()
     }

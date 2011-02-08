@@ -94,6 +94,7 @@ trait Scope {
   def lookupVal(name: Name): Option[Symbol]
   def lookupType(name: Name): Option[Type]
   def lookupBoxType(name: Name): Option[Type]
+  def lookupBoxTypeLocal(name : Name) : Option[Type]
   def enter(sym: Symbol): Symbol
   def root: Symbol
 }
@@ -118,6 +119,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name)
   def lookupBoxType(name: Name): Option[Type] =
     boxes.get(name) orElse { enclosingScope.lookupBoxType(name) }
+  def lookupBoxTypeLocal(name: Name) : Option[Type] = boxes.get(name)
   def enter(sym: Symbol): Symbol = {
     val entry = (sym.name -> sym)
     sym match {

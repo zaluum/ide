@@ -46,6 +46,8 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
   def lookupVal(name: Name): Option[Symbol] = None
   def lookupType(name: Name): Option[Type] = types.get(name)
   def lookupBoxType(name: Name): Option[Type] = cacheType.get(name)
+  def lookupBoxTypeLocal(name: Name): Option[Type] = lookupBoxType(name)
+  
   def boxes = cacheType.values
   def enter(sym: Symbol): Symbol = { throw new Exception("cannot enter new symbols to global scope") } 
   // cacheType += (sym.name->sym.asInstanceOf[Type]);sym}//throw new Exception("cannot enter")

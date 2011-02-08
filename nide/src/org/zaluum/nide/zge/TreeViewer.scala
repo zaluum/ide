@@ -24,4 +24,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     super.dispose()
     imageFactory.reg.dispose
   }
+  def update() {
+    populate()
+  }
 }
