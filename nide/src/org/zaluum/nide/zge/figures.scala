@@ -1,7 +1,8 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.LayeredPane
+import org.eclipse.draw2d.Layer
 import org.eclipse.draw2d.LineBorder
-import org.eclipse.draw2d.FocusBorder
 import draw2dConversions._
 import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline, ScalableFreeformLayeredPane, IFigure }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
@@ -207,70 +208,67 @@ trait BoxDefLayers extends Layers {
 
   def populate() {
     clear()
-    new Traverser(owner) {
-      override def traverse(tree: Tree) {
-        super.traverse(tree)
-        tree match {
-          case EmptyTree ⇒
-          case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-            new PortDeclFigure(p, BoxDefLayers.this).show()
-          case v@ValDef(name, typeName, pos, guiSize) ⇒
-            v.scope.lookupBoxTypeLocal(typeName) match {
-              case Some(tpe) => 
-                new OpenBoxFigure(v,
-                    tpe.decl.asInstanceOf[BoxDef], 
-                    v.symbol.owner, 
-                    BoxDefLayers.this,
-                    viewer).show()
-              case None => 
-                new ImageBoxFigure(v, BoxDefLayers.this).show()
-            }
-          case _ ⇒
-        }
+    boxDef.children foreach {
+      _ match {
+        case EmptyTree ⇒
+        case p@PortDef(name, typeName, in, inPos, extPos) ⇒
+          new PortDeclFigure(p, BoxDefLayers.this).show()
+        case v@ValDef(name, typeName, pos, guiSize) ⇒
+          v.scope.lookupBoxTypeLocal(typeName) match {
+            case Some(tpe) ⇒
+              new OpenBoxFigure(v,
+                tpe.decl.asInstanceOf[BoxDef],
+                v.symbol.owner,
+                BoxDefLayers.this,
+                viewer).show()
+            case None ⇒
+              new ImageBoxFigure(v, BoxDefLayers.this).show()
+          }
+        case _ ⇒
       }
-    }.traverse(boxDef)
+    }
     // create connections (need to find figures positions)
-    new Traverser(owner) {
-      override def traverse(tree: Tree) {
-        super.traverse(tree)
-        tree match {
-          case c@ConnectionDef(a, b) ⇒
-            new ConnectionFigure(c, BoxDefLayers.this).show()
-          case _ ⇒
-        }
+    boxDef.connections foreach {
+      _ match {
+        case c@ConnectionDef(a, b) ⇒
+          new ConnectionFigure(c, BoxDefLayers.this).show()
+        case _ ⇒
       }
-    }.traverse(boxDef)
+    }
   }
 }
-trait BoxDefLayersItem extends BoxDefLayers 
+trait BoxDefLayersItem extends BoxDefLayers
 class OpenBoxFigure(
-    val valTree: ValDef, 
-    val boxDef: BoxDef, 
-    val owner: Symbol, 
-    val bdf: BoxDefLayers,
-    val viewer:TreeViewer) extends Figure with ResizableItemFigure with BoxDefLayers {
-  def tree= valTree
-  val feed = new ResizeItemFeedbackFigure(this,this)
+  val valTree: ValDef,
+  val boxDef: BoxDef,
+  val owner: Symbol,
+  val bdf: BoxDefLayers,
+  val viewer: TreeViewer) extends Figure with ResizableItemFigure with BoxDefLayers {
+  def tree = valTree
+  val feed = new ResizeItemFeedbackFigure(this, this)
   def positionable = tree
   def resizable = new Resizable {
     def pos = tree.pos
     var size = OpenBoxFigure.this.size
   }
-  def size = Dimension(200,100)
-  val layer = new FreeformLayer
-  val portsLayer = new FreeformLayer
-  val connectionsLayer = new FreeformLayer
-  val feedbackLayer = new FreeformLayer
-  def clear { inners.removeAll }
-  val inners = new ScalableFreeformLayeredPane
+  def size = Dimension(200, 100)
+  val layer = new Layer
+  val portsLayer = new Layer
+  val connectionsLayer = new Layer
+  val feedbackLayer = new Layer
+  def clear { layer.removeAll } // FIXME
+  override def useLocalCoordinates = true
+  val inners = new LayeredPane
   inners.add(layer)
   inners.add(portsLayer)
   inners.add(connectionsLayer)
   inners.add(feedbackLayer)
+ // inners.setSize(600,600) // TODO fix
   add(inners)
   setBorder(new LineBorder)
   override def update() {
     super.update()
+    inners.setSize(this.getSize)
     populate()
   }
 }

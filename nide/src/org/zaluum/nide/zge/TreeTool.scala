@@ -57,7 +57,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
             val sym = b.symbol.asInstanceOf[BoxTypeSymbol]
             val name = Name(sym.freshName("box"))
             val className = Name(sym.freshName("C"))
-            b.copy(defs = BoxDef(className,None,List(),List(),List(),List()) :: b.defs,
+            val testVal = ValDef(Name("hola"),Name("fail"),MPoint(10,10),EmptyTree)
+            b.copy(defs = BoxDef(className,None,List(),
+                            vals=List(testVal),
+                            List(),List()) :: b.defs,
                 vals = ValDef(name, className, dst, EmptyTree) :: b.vals)
         }
       }
