@@ -1,6 +1,6 @@
 package org.zaluum.nide.zge
 import draw2dConversions._
-import org.eclipse.draw2d.{ Cursors, Figure }
+import org.eclipse.draw2d.{ Cursors, Figure, IFigure }
 import org.eclipse.draw2d.geometry.{ Point, Rectangle }
 import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 import org.zaluum.nide.newcompiler.{ Transformer, Tree, ValDef, CopyTransformer, PortDef }
@@ -11,7 +11,7 @@ import scala.collection.JavaConversions._
  *
  */
 abstract class ItemTool(viewer: ItemViewer) extends Tool(viewer) {
-  def current: Layers
+  var current: Layers = viewer
   lazy val selecting = new Selecting
   state = selecting
   // SELECTING 
@@ -35,7 +35,19 @@ abstract class ItemTool(viewer: ItemViewer) extends Tool(viewer) {
         case (None, None) ⇒ viewer.deselectAll()
       }
     }
-    val handleTrack = new OverTrack[HandleRectangle](viewer.feedbackLayer) {
+    val currentTrack = new OverTrack2[BoxDefLayers] {
+      val partial:PartialFunction[IFigure,BoxDefLayers] = {case (f:OpenBoxFigure) => f} 
+      def container = current.layer
+      def onEnter(o: BoxDefLayers) {
+        //current = o
+        println ("enter open box " + o )
+      }
+      def onExit(o: BoxDefLayers) {
+        println ("exit open box " + o )        
+      }
+    }
+    val handleTrack = new OverTrack[HandleRectangle] {
+      def container = current.feedbackLayer
       def onEnter(h: HandleRectangle) {
         handle = Some(h)
         h.setXOR(true);
@@ -47,11 +59,13 @@ abstract class ItemTool(viewer: ItemViewer) extends Tool(viewer) {
         viewer.setCursor(null)
       }
     }
-    val portsTrack = new OverTrack[PortFigure](viewer.portsLayer) {
+    val portsTrack = new OverTrack[PortFigure] {
+      def container = current.portsLayer
       def onEnter(p: PortFigure) { port = Some(p); p.showFeedback }
       def onExit(p: PortFigure) { port = None; p.hideFeedback }
     }
     def move {
+      currentTrack.update()
       handleTrack.update()
       portsTrack.update()
     }

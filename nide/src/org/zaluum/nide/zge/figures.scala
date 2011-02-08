@@ -171,14 +171,38 @@ class ImageBoxFigure(val tree: ValDef, val bdf: BoxDefLayers) extends ImageFigur
     super.update()
   }
 }
+object FiguresHelper {
+  import scala.collection.JavaConversions._
+  def findDeepAt[A](container:IFigure, p:EPoint)(partial:PartialFunction[IFigure,A]):Option[A] = {
+    val list =container.getChildren.toBuffer.asInstanceOf[Buffer[IFigure]]
+    var candidate : Option[A] = partial.lift(container)
+    for (c <- list){
+      val tp = p.getCopy;
+      if (c.isVisible && c.containsPoint(p)) {
+        c.translateFromParent(tp)
+        // candidate
+        if (partial.isDefinedAt(c)) {
+          candidate=Some(partial(c))
+        }
+        findDeepAt(c,tp)(partial) match {
+          case Some(cc) => return Some(cc)
+          case None =>  // FIXME not correct?
+        }
+      }
+    }
+    return candidate
+  }
+}
 trait Layers {
   def viewer: TreeViewer // TODO only for image factory... remove?
   def layer: Figure
   def feedbackLayer: Figure
   def connectionsLayer: Figure
+  def portsLayer: Figure
   def findDeepAt(container: IFigure, p: EPoint) = {
     Option(container.findFigureAt(p.x, p.y)) filter (_ != container)
   }
+  import scala.collection.JavaConversions._
   private def findShallowAt(container: IFigure, p: EPoint) = {
     import scala.collection.JavaConversions._
     container.getChildren.asInstanceOf[java.util.List[IFigure]] find { _.containsPoint(p) };
@@ -186,14 +210,6 @@ trait Layers {
   def figureAt(p: EPoint) = findShallowAt(layer, p) map { case (bf: ItemFigure) ⇒ bf }
   def feedbackAt(p: EPoint) = findDeepAt(feedbackLayer, p)
   def lineAt(p: EPoint) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
-  def populate()
-}
-trait BoxDefLayers extends Layers {
-  def portsLayer: Figure
-  def connectionsLayer: Figure
-  def owner: Symbol
-  def boxDef: BoxDef
-  import scala.collection.JavaConversions._
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] =
     portFigures find { p ⇒
@@ -204,6 +220,15 @@ trait BoxDefLayers extends Layers {
     }
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] =
     portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in }
+
+  
+  def populate()
+}
+trait BoxDefLayers extends Layers {
+ 
+  def owner: Symbol
+  def boxDef: BoxDef
+  
   def clear()
 
   def populate() {
@@ -237,7 +262,6 @@ trait BoxDefLayers extends Layers {
     }
   }
 }
-trait BoxDefLayersItem extends BoxDefLayers
 class OpenBoxFigure(
   val valTree: ValDef,
   val boxDef: BoxDef,

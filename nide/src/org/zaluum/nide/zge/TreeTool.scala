@@ -24,7 +24,8 @@ import scala.collection.JavaConversions._
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   def tree = viewer.tree
-  var current: BoxDefLayers = viewer // TODO better init?
+  def currentBoxDefLayers = current.asInstanceOf[BoxDefLayers] // FIXME
+  //override var current: BoxDefLayers = viewer // TODO better init?
   //override def modelView = viewer.modelView
   override lazy val selecting = new Selecting {
     override def connect(port: PortFigure) {
@@ -140,9 +141,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   object connecting extends MovingState {
     var dst: Option[PortFigure] = None
     var src: Option[PortFigure] = None
-    val painter = new ConnectionPainter(current)
+    val painter = new ConnectionPainter(currentBoxDefLayers)
     //var con: Option[Connection] = None
-    val portsTrack = new OverTrack[PortFigure](viewer.portsLayer) {
+    val portsTrack = new OverTrack[PortFigure] {
+      def container = current.portsLayer
       def onEnter(p: PortFigure) { dst = Some(p); p.showFeedback }
       def onExit(p: PortFigure) { dst = None; p.hideFeedback }
     }

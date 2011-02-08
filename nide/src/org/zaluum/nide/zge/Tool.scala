@@ -97,7 +97,24 @@ abstract class Tool(viewer: Viewer) {
   def shift = (stateMask & SWT.SHIFT) != 0
   def handleAbort() { state.abort() }
   // Over track
-  abstract class OverTrack[F <: Figure](container: IFigure)(implicit m: Manifest[F]) {
+  abstract class OverTrack2[A]() {
+    val partial : PartialFunction[IFigure,A]
+    def container : IFigure
+    var last: Option[A] = None
+    def update() {
+      val under: Option[A] = FiguresHelper.findDeepAt(container, mouseLocation)(partial)
+      if (under != last){
+        println(under + " " + last)
+        last foreach { f ⇒ onExit(f); last = None }
+        under foreach { f ⇒ onEnter(f); last = Some(f) }
+      }
+    }
+    def onEnter(f: A)
+    def onExit(f: A)
+    
+  }
+  abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
+    def container : IFigure
     var last: Option[F] = None
     def filterManifest[F](o: Option[AnyRef]) = {
       o match {

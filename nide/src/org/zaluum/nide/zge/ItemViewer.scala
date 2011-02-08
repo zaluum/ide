@@ -7,7 +7,7 @@ import org.eclipse.swt.widgets.{ Composite, MessageBox }
 import org.zaluum.nide.model._
 import scala.collection.JavaConversions._
 
-abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) {
+abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with Layers{
   /*SWT*/
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
