@@ -5,7 +5,7 @@ import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.model._
 import org.zaluum.nide.newcompiler._
 class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
-  extends ItemViewer(parent, controller) with BoxDefLayers {
+  extends ItemViewer(parent, controller) with BoxDefContainer {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
   val palette = new Palette(this, parent.getShell, controller.global)

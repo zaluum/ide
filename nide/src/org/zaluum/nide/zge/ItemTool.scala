@@ -62,7 +62,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var handle: Option[HandleRectangle] = None
     var port: Option[PortFigure] = None
     var initDrag: Point = _
-    var initContainer: Layers = _
+    var initContainer: BoxDefContainer = _
     def enter() { state = this; }
     def buttonDown {
       selected = figureUnderMouse
@@ -168,8 +168,8 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def doButtonUp()
   }
   trait SingleContainerState extends AllowerState {
-    var initContainer: Layers = _
-    def enter(initContainer: Layers) {
+    var initContainer: BoxDefContainer = _
+    def enter(initContainer: BoxDefContainer) {
       this.initContainer = initContainer
     }
     def currentMouseLocation = translate(initContainer,absMouseLocation)
@@ -177,7 +177,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   }
   trait MovingState extends SingleContainerState {
     var initDrag: Point = _
-    def enter(initDrag: Point, initContainer: Layers) {
+    def enter(initDrag: Point, initContainer: BoxDefContainer) {
       super.enter(initContainer)
       state = this
       this.initContainer = initContainer
@@ -215,7 +215,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var handle: HandleRectangle = _
     def itf = handle.resizeItemFigure
 
-    def enter(initDrag: Point, initContainer: Layers, handle: HandleRectangle) {
+    def enter(initDrag: Point, initContainer: BoxDefContainer, handle: HandleRectangle) {
       super.enter(initDrag, initContainer)
       this.handle = handle
     }

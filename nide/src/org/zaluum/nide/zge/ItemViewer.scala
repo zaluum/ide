@@ -7,7 +7,7 @@ import org.eclipse.swt.widgets.{ Composite, MessageBox }
 import org.zaluum.nide.model._
 import scala.collection.JavaConversions._
 
-abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with Layers{
+abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with BoxDefContainer{
   /*SWT*/
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
@@ -36,12 +36,6 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
     marquee.setFill(false)
     marquee.setLineStyle(SWT.LINE_DASH);
     //UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
-  }
-  def clear() {
-    layer.removeAll()
-    feedbackLayer.removeAll()
-    portsLayer.removeAll()
-    connectionsLayer.removeAll()
   }
   /*DEFS*/
   def showMarquee() { feedbackLayer.add(marquee) }

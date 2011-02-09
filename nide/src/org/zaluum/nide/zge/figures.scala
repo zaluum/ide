@@ -29,7 +29,7 @@ trait CanShowUpdate {
 }
 trait Selectable extends Figure with CanShowFeedback
 trait ItemFigure extends Figure with Selectable with CanShowUpdate {
-  def bdf: BoxDefLayers
+  def bdf: BoxDefContainer
   def positionable: Positionable
   def feed: ItemFeedbackFigure
   def size: Dimension
@@ -74,7 +74,7 @@ trait ResizableItemFigure extends ItemFigure {
 trait BoxFigure extends ItemFigure {
   def tree: ValDef
   def sym = tree.symbol.asInstanceOf[ValSymbol]
-  def bdf: BoxDefLayers
+  def bdf: BoxDefContainer
   def positionable = tree
   var ports = List[PortFigure]()
   lazy val feed = new ItemFeedbackFigure(bdf)
@@ -107,7 +107,7 @@ object PortDeclFigure {
   def img(dir: PortDir) = "org/zaluum/nide/icons/portDecl" + str(dir) + ".png"
 }
 
-class PortDeclFigure(val tree: PortDef, val bdf: BoxDefLayers) extends ImageFigure with ItemFigure {
+class PortDeclFigure(val tree: PortDef, val bdf: BoxDefContainer) extends ImageFigure with ItemFigure {
   def sym = tree.symbol match {
     case NoSymbol ⇒ None
     case p: PortSymbol ⇒ Some(p)
@@ -134,7 +134,7 @@ class PortDeclFigure(val tree: PortDef, val bdf: BoxDefLayers) extends ImageFigu
   }
 }
 
-class PortFigure(val pos: MPoint, val sym: PortSymbol, val in: Boolean, val valSym: Option[ValSymbol], bdf: BoxDefLayers) extends Ellipse with CanShowFeedback with CanShowUpdate {
+class PortFigure(val pos: MPoint, val sym: PortSymbol, val in: Boolean, val valSym: Option[ValSymbol], bdf: BoxDefContainer) extends Ellipse with CanShowFeedback with CanShowUpdate {
   setAntialias(1)
   setAlpha(50)
   setOutline(false)
@@ -163,7 +163,7 @@ class PortFigure(val pos: MPoint, val sym: PortSymbol, val in: Boolean, val valS
   }
 }
 
-class ImageBoxFigure(val tree: ValDef, val bdf: BoxDefLayers) extends ImageFigure with BoxFigure {
+class ImageBoxFigure(val tree: ValDef, val bdf: BoxDefContainer) extends ImageFigure with BoxFigure {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
 
   override def update() {
@@ -193,7 +193,7 @@ object FiguresHelper {
     return candidate
   }
 }
-trait Layers extends IFigure {
+trait BoxDefContainer extends IFigure {
   def boxDef: BoxDef
   def viewer: TreeViewer // TODO only for image factory... remove?
   def layer: Figure
@@ -222,12 +222,13 @@ trait Layers extends IFigure {
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] =
     portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in }
 
-  def populate()
-}
-trait BoxDefLayers extends Layers {
-
   def owner: Symbol
-  def clear()
+  def clear() {
+    layer.removeAll()
+    feedbackLayer.removeAll()
+    connectionsLayer.removeAll()
+    portsLayer.removeAll()
+  }
 
   def populate() {
     clear()
@@ -235,17 +236,17 @@ trait BoxDefLayers extends Layers {
       _ match {
         case EmptyTree ⇒
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-          new PortDeclFigure(p, BoxDefLayers.this).show()
+          new PortDeclFigure(p, BoxDefContainer.this).show()
         case v@ValDef(name, typeName, pos, guiSize) ⇒
           v.scope.lookupBoxTypeLocal(typeName) match {
             case Some(tpe) ⇒
               new OpenBoxFigure(v,
                 tpe.decl.asInstanceOf[BoxDef],
                 v.symbol.owner,
-                BoxDefLayers.this,
+                BoxDefContainer.this,
                 viewer).show()
             case None ⇒
-              new ImageBoxFigure(v, BoxDefLayers.this).show()
+              new ImageBoxFigure(v, BoxDefContainer.this).show()
           }
         case _ ⇒
       }
@@ -254,7 +255,7 @@ trait BoxDefLayers extends Layers {
     boxDef.connections foreach {
       _ match {
         case c@ConnectionDef(a, b) ⇒
-          new ConnectionFigure(c, BoxDefLayers.this).show()
+          new ConnectionFigure(c, BoxDefContainer.this).show()
         case _ ⇒
       }
     }
@@ -264,8 +265,8 @@ class OpenBoxFigure(
   val valTree: ValDef,
   val boxDef: BoxDef,
   val owner: Symbol,
-  val bdf: BoxDefLayers,
-  val viewer: TreeViewer) extends Figure with ResizableItemFigure with BoxDefLayers {
+  val bdf: BoxDefContainer,
+  val viewer: TreeViewer) extends Figure with ResizableItemFigure with BoxDefContainer {
   def tree = valTree
   val feed = new ResizeItemFeedbackFigure(this, this)
   def positionable = tree
@@ -278,7 +279,7 @@ class OpenBoxFigure(
   val portsLayer = new Layer
   val connectionsLayer = new Layer
   val feedbackLayer = new Layer
-  def clear { layer.removeAll } // FIXME
+  //def clear { layer.removeAll } // FIXME
   override def useLocalCoordinates = true
   val inners = new LayeredPane
   inners.add(layer)
@@ -295,7 +296,7 @@ class OpenBoxFigure(
     populate()
   }
 }
-class LineFigure(l: Line, bdf: BoxDefLayers, val con: Option[ConnectionDef] = None) extends Polyline with CanShowUpdate with Selectable {
+class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] = None) extends Polyline with CanShowUpdate with Selectable {
   //setAntialias(1)
   setForegroundColor(ColorConstants.gray)
   var complete = false
@@ -332,7 +333,7 @@ class LineFigure(l: Line, bdf: BoxDefLayers, val con: Option[ConnectionDef] = No
     calcStyle
   }
 }
-class ConnectionPainter(bdf: BoxDefLayers) {
+class ConnectionPainter(bdf: BoxDefContainer) {
   val lines = Buffer[LineFigure]()
   def paintRoute(route: Route, con: Option[ConnectionDef] = None) {
     clear()
@@ -345,7 +346,7 @@ class ConnectionPainter(bdf: BoxDefLayers) {
   }
 }
 // TODO not really a figure right now... no children
-class ConnectionFigure(val tree: ConnectionDef, bdf: BoxDefLayers) extends Figure with CanShowUpdate {
+class ConnectionFigure(val tree: ConnectionDef, bdf: BoxDefContainer) extends Figure with CanShowUpdate {
   val painter = new ConnectionPainter(bdf)
   def calcRoute = {
     // TODO paint incomplete connections gracefully

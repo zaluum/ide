@@ -24,7 +24,7 @@ import scala.collection.JavaConversions._
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   def tree = viewer.tree
-  def currentBoxDefLayers = current.asInstanceOf[BoxDefLayers] // FIXME
+  def currentBoxDefLayers = current.asInstanceOf[BoxDefContainer] // FIXME
 
   override lazy val selecting = new Selecting {
     override def connect(port: PortFigure) {
@@ -40,7 +40,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   }
   object innercreating extends SingleContainerState { // inherit
     var feed: ItemFeedbackFigure = _
-    override def enter(initContainer: Layers) {
+    override def enter(initContainer: BoxDefContainer) {
       super.enter(initContainer)
       state = this
       feed = new ItemFeedbackFigure(current)
@@ -77,7 +77,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   object creating extends SingleContainerState {
     var feed: ItemFeedbackFigure = _
     var tpe: BoxTypeSymbol = _
-    def enter(tpe: BoxTypeSymbol, initContainer: Layers) {
+    def enter(tpe: BoxTypeSymbol, initContainer: BoxDefContainer) {
       super.enter(initContainer)
       this.tpe = tpe
       state = this
@@ -111,7 +111,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   object creatingPort extends SingleContainerState {
     var feed: ItemFeedbackFigure = _
     var dir: PortDir = In
-    def enter(dir: PortDir, initContainer: Layers) {
+    def enter(dir: PortDir, initContainer: BoxDefContainer) {
       super.enter(initContainer)
       state = this
       this.dir = dir
@@ -150,7 +150,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       def onEnter(p: PortFigure) { dst = Some(p); p.showFeedback }
       def onExit(p: PortFigure) { dst = None; p.hideFeedback }
     }
-    def enter(initdrag: Point, initContainer: Layers, initPort: PortFigure) {
+    def enter(initdrag: Point, initContainer: BoxDefContainer, initPort: PortFigure) {
       super.enter(initdrag, initContainer)
       src = Some(initPort)
       viewer.setCursor(Cursors.HAND)
