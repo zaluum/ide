@@ -25,44 +25,44 @@ import scala.collection.JavaConversions._
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   def tree = viewer.tree
   def currentBoxDefLayers = current.asInstanceOf[BoxDefLayers] // FIXME
-  //override var current: BoxDefLayers = viewer // TODO better init?
-  //override def modelView = viewer.modelView
+
   override lazy val selecting = new Selecting {
     override def connect(port: PortFigure) {
-      connecting.enter(initDrag, port)
+      connecting.enter(initDrag, initContainer, port)
     }
     override def menu() {
       figureUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p).show(swtMouseLocation) // TODO Dispose?
         case Some(b: BoxFigure) ⇒
-        case _ ⇒ viewer.palette.show(swtMouseLocation)
+        case _ ⇒ viewer.palette.show(swtMouseLocation, current)
       }
     }
   }
-  object innercreating extends ToolState { // inherit
+  object innercreating extends SingleContainerState { // inherit
     var feed: ItemFeedbackFigure = _
-    def enter() {
+    override def enter(initContainer: Layers) {
+      super.enter(initContainer)
       state = this
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, 48, 48))
       feed.show()
     }
-    def move() { feed.setInnerLocation(mouseLocation) }
-    def abort() { exit() }
-    def drag() {}
-    def buttonUp() {
-      val dst = MPoint(mouseLocation.x, mouseLocation.y)
+    override def move() { super.move();feed.setInnerLocation(currentMouseLocation) }
+    override def abort() { super.abort(); exit() }
+    override def drag() {}
+    override def doButtonUp() {
+      val dst = MPoint(currentMouseLocation.x, currentMouseLocation.y)
       val tr = new CopyTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == tree ⇒
             val sym = b.symbol.asInstanceOf[BoxTypeSymbol]
             val name = Name(sym.freshName("box"))
             val className = Name(sym.freshName("C"))
-            val testVal = ValDef(Name("hola"),Name("fail"),MPoint(10,10),EmptyTree)
-            b.copy(defs = BoxDef(className,None,List(),
-                            vals=List(testVal),
-                            List(),List()) :: b.defs,
-                vals = ValDef(name, className, dst, EmptyTree) :: b.vals)
+            val testVal = ValDef(Name("hola"), Name("fail"), MPoint(10, 10), EmptyTree)
+            b.copy(defs = BoxDef(className, None, List(),
+              vals = List(testVal),
+              List(), List()) :: b.defs,
+              vals = ValDef(name, className, dst, EmptyTree) :: b.vals)
         }
       }
       controller.exec(TreeCommand(tr))
@@ -74,10 +74,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
   }
   // CREATING BOX 
-  object creating extends ToolState {
+  object creating extends SingleContainerState {
     var feed: ItemFeedbackFigure = _
     var tpe: BoxTypeSymbol = _
-    def enter(tpe: BoxTypeSymbol) {
+    def enter(tpe: BoxTypeSymbol, initContainer: Layers) {
+      super.enter(initContainer)
       this.tpe = tpe
       state = this
       val img = viewer.imageFactory(tpe.decl);
@@ -85,14 +86,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
       feed.show()
     }
-    def move() { feed.setInnerLocation(mouseLocation) }
-    def abort() { exit() }
+    override def move() { super.move(); feed.setInnerLocation(currentMouseLocation) }
+    override def abort() { super.abort(); exit() }
     def drag() {}
-    def buttonUp() {
-      val dst = MPoint(mouseLocation.x, mouseLocation.y)
+    def doButtonUp() {
+      val dst = MPoint(currentMouseLocation.x, currentMouseLocation.y)
       val tr = new CopyTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
-          case b: BoxDef if b == tree ⇒
+          case b: BoxDef if b == initContainer.boxDef ⇒
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
             b.copy(vals = ValDef(name, tpe.name, dst, EmptyTree) :: b.vals)
         }
@@ -107,10 +108,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
   }
   // CREATING PORT
-  object creatingPort extends ToolState {
+  object creatingPort extends SingleContainerState {
     var feed: ItemFeedbackFigure = _
     var dir: PortDir = In
-    def enter(dir: PortDir) {
+    def enter(dir: PortDir, initContainer: Layers) {
+      super.enter(initContainer)
       state = this
       this.dir = dir
       val img = viewer.imageFactory.get(PortDeclFigure.img(dir)).get
@@ -118,15 +120,15 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
       feed.show()
     }
-    def move() { feed.setInnerLocation(mouseLocation) }
-    def abort() { exit() }
+    override def move() { super.move(); feed.setInnerLocation(currentMouseLocation) }
+    override def abort() { super.abort(); exit() }
     def drag() {}
-    def buttonUp() {
+    def doButtonUp() {
       // execute
-      val pos = MPoint(mouseLocation.x, mouseLocation.y)
+      val pos = MPoint(currentMouseLocation.x, currentMouseLocation.y)
       val tr = new CopyTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
-          case b: BoxDef if b == tree ⇒
+          case b: BoxDef if b == initContainer.boxDef ⇒
             val name = Name(tree.symbol.asInstanceOf[BoxTypeSymbol].freshName("port"))
             val p = PortDef(name, Name("D"), dir, pos, MPoint(0, 0))
             b.copy(ports = p :: b.ports)
@@ -148,14 +150,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       def onEnter(p: PortFigure) { dst = Some(p); p.showFeedback }
       def onExit(p: PortFigure) { dst = None; p.hideFeedback }
     }
-    def enter(initdrag: Point, initPort: PortFigure) {
-      super.enter(initdrag)
+    def enter(initdrag: Point, initContainer: Layers, initPort: PortFigure) {
+      super.enter(initdrag, initContainer)
       src = Some(initPort)
       viewer.setCursor(Cursors.HAND)
       move()
     }
     def doEnter {}
-    def buttonUp {
+    def doButtonUp {
       // execute model command
       if (dst.isDefined) {
         def toRef(pf: PortFigure) = pf.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef }
@@ -170,7 +172,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
           controller.exec(TreeCommand(
             new CopyTransformer {
               val trans: PartialFunction[Tree, Tree] = {
-                case b: BoxDef if (b == tree) ⇒ b.copy(connections = condef :: b.connections)
+                case b: BoxDef if (b == initContainer.boxDef) ⇒ b.copy(connections = condef :: b.connections)
               }
             }))
         } else exit()
@@ -187,16 +189,17 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       viewer.setCursor(null)
       selecting.enter()
     }
-    def move() {
+    override def move() {
+      super.move
       val start = src.get.anchor
       val end = dst match {
         case Some(df) ⇒ df.anchor
-        case None ⇒ mouseLocation
+        case None ⇒ currentMouseLocation
       }
       painter.paintRoute(Route(start, end))
       portsTrack.update()
     }
-    def abort() { exit() }
+    override def abort() { super.abort(); exit() }
   }
 }
 

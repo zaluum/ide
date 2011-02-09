@@ -80,7 +80,8 @@ class ItemFeedbackFigure(parent: Layers) extends Figure {
     parent.feedbackLayer.add(this)
   }
   def hide() {
-    parent.feedbackLayer.remove(this)
+    if (parent.feedbackLayer.getChildren.contains(this))
+      parent.feedbackLayer.remove(this)
   }
 
 }

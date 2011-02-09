@@ -173,27 +173,28 @@ class ImageBoxFigure(val tree: ValDef, val bdf: BoxDefLayers) extends ImageFigur
 }
 object FiguresHelper {
   import scala.collection.JavaConversions._
-  def findDeepAt[A](container:IFigure, p:EPoint)(partial:PartialFunction[IFigure,A]):Option[A] = {
-    val list =container.getChildren.toBuffer.asInstanceOf[Buffer[IFigure]]
-    var candidate : Option[A] = partial.lift(container)
-    for (c <- list){
-      val tp = p.getCopy;
-      if (c.isVisible && c.containsPoint(p)) {
-        c.translateFromParent(tp)
-        // candidate
-        if (partial.isDefinedAt(c)) {
-          candidate=Some(partial(c))
-        }
-        findDeepAt(c,tp)(partial) match {
-          case Some(cc) => return Some(cc)
-          case None =>  // FIXME not correct?
+  def findDeepAt[A](container: IFigure, myCoordinates: EPoint)(partial: PartialFunction[IFigure, A]): Option[A] = {
+    var candidate: Option[A] = None
+    val rel = myCoordinates.getCopy
+    container.translateFromParent(myCoordinates)
+    if (container.isVisible && container.getClientArea.contains(rel)) {      
+      candidate = partial.lift(container)
+      // search children 
+      val list = container.getChildren.toBuffer.asInstanceOf[Buffer[IFigure]]
+      for (c ← list) {
+        val childCoord = myCoordinates.getCopy
+        c.translateFromParent(childCoord)
+        findDeepAt(c, childCoord)(partial) match {
+          case Some(cc) ⇒ return Some(cc)
+          case None ⇒
         }
       }
     }
     return candidate
   }
 }
-trait Layers {
+trait Layers extends IFigure {
+  def boxDef: BoxDef
   def viewer: TreeViewer // TODO only for image factory... remove?
   def layer: Figure
   def feedbackLayer: Figure
@@ -221,14 +222,11 @@ trait Layers {
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] =
     portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in }
 
-  
   def populate()
 }
 trait BoxDefLayers extends Layers {
- 
+
   def owner: Symbol
-  def boxDef: BoxDef
-  
   def clear()
 
   def populate() {
@@ -287,9 +285,10 @@ class OpenBoxFigure(
   inners.add(portsLayer)
   inners.add(connectionsLayer)
   inners.add(feedbackLayer)
- // inners.setSize(600,600) // TODO fix
+  // inners.setSize(600,600) // TODO fix
   add(inners)
-  setBorder(new LineBorder)
+  setBorder(new LineBorder(5))
+  
   override def update() {
     super.update()
     inners.setSize(this.getSize)
@@ -323,7 +322,10 @@ class LineFigure(l: Line, bdf: BoxDefLayers, val con: Option[ConnectionDef] = No
     update()
     bdf.connectionsLayer.add(this)
   }
-  def hide() { bdf.connectionsLayer.remove(this) }
+  def hide() {
+    if (bdf.connectionsLayer.getChildren.contains(this))
+      bdf.connectionsLayer.remove(this) 
+  }
   def update() {
     setStart(new EPoint(l.from.x, l.from.y))
     setEnd(new EPoint(l.end.x, l.end.y))

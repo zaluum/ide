@@ -31,8 +31,8 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
     innerLayers.add(portsLayer)
     innerLayers.add(connectionsLayer)
     innerLayers.add(feedbackLayer)
-    viewport.setContents(innerLayers);
-    canvas.setViewport(viewport)
+    this.setContents(innerLayers);
+    canvas.setViewport(this)
     marquee.setFill(false)
     marquee.setLineStyle(SWT.LINE_DASH);
     //UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");

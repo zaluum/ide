@@ -1,20 +1,17 @@
 package org.zaluum.nide.zge
+
+import scala.annotation.tailrec
 import org.eclipse.draw2d.{ Figure, IFigure }
 import org.eclipse.draw2d.geometry.Point
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events._
 import org.zaluum.nide.model.Vector2
-import scala.reflect.Manifest._
 
 abstract class Tool(viewer: Viewer) { 
-  def viewport = viewer.viewport
-  def current : Layers
+  def viewport = viewer
   def canvas = viewer.canvas
   def controller = viewer.controller
   
-  def figureUnderMouse = current.figureAt(mouseLocation)
-  def lineUnderMouse = current.lineAt(mouseLocation)
-  def feedbackUnderMouse = current.feedbackAt(mouseLocation)
   val listener = new MouseMoveListener() with MouseListener with KeyListener with FocusListener with DragDetectListener with MenuDetectListener with MouseTrackListener with MouseWheelListener with TraverseListener {
     def dragDetected(e: DragDetectEvent) { updateMouse(e); state.drag() }
     def focusGained(e: FocusEvent) {}
@@ -55,7 +52,10 @@ abstract class Tool(viewer: Viewer) {
   canvas.addMouseTrackListener(listener);
   canvas.addMouseWheelListener(listener);
   canvas.addTraverseListener(listener);
-
+  def refresh() {
+    state.abort()
+    state.move() // TODO some kind of refresh?
+  }
   trait ToolState {
     def exit()
     def buttonDown()
@@ -66,74 +66,25 @@ abstract class Tool(viewer: Viewer) {
     def abort()
   }
 
-  trait MovingState extends ToolState {
-    var initDrag: Point = _
-    def enter(initDrag: Point) {
-      state = this
-      this.initDrag = initDrag
-      doEnter()
-    }
-    def doEnter()
-    def delta = {
-      val now = mouseLocation
-      Vector2(now.x - initDrag.x, now.y - initDrag.y)
-    }
-  }
+  
   var down = false
   var state: ToolState = _
   var stateMask = 0
-  var mouseLocation = new Point
+  var absMouseLocation = new Point
   var swtMouseLocation = new org.eclipse.swt.graphics.Point(0, 0)
   def updateMouse(me: MouseEvent) {
     stateMask = me.stateMask
     swtMouseLocation.x = me.x
     swtMouseLocation.y = me.y
     swtMouseLocation = canvas.getDisplay.map(canvas, null, swtMouseLocation)
-    mouseLocation.x = me.x
-    mouseLocation.y = me.y
-    viewport.translateFromParent(mouseLocation);
+    absMouseLocation.x = me.x
+    absMouseLocation.y = me.y
+    viewport.translateFromParent(absMouseLocation);
   }
+  
   def leftButton(me: MouseEvent) = me.button == 1
   def shift = (stateMask & SWT.SHIFT) != 0
   def handleAbort() { state.abort() }
   // Over track
-  abstract class OverTrack2[A]() {
-    val partial : PartialFunction[IFigure,A]
-    def container : IFigure
-    var last: Option[A] = None
-    def update() {
-      val under: Option[A] = FiguresHelper.findDeepAt(container, mouseLocation)(partial)
-      if (under != last){
-        println(under + " " + last)
-        last foreach { f ⇒ onExit(f); last = None }
-        under foreach { f ⇒ onEnter(f); last = Some(f) }
-      }
-    }
-    def onEnter(f: A)
-    def onExit(f: A)
-    
-  }
-  abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
-    def container : IFigure
-    var last: Option[F] = None
-    def filterManifest[F](o: Option[AnyRef]) = {
-      o match {
-        case Some(s) ⇒
-          if (singleType(s) <:< m)
-            Some(s.asInstanceOf[F])
-          else
-            None
-        case None ⇒ None
-      }
-    }
-    def update() {
-      val under: Option[F] = filterManifest(current.findDeepAt(container, mouseLocation))
-      if (under == last) return ;
-      last foreach { f ⇒ onExit(f); last = None }
-      under foreach { f ⇒ onEnter(f); last = Some(f) }
-    }
-    def onEnter(f: F)
-    def onExit(f: F)
-  }
 
 }

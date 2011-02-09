@@ -6,15 +6,11 @@ import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.model._
 import scala.collection.JavaConversions._
 
-abstract class Viewer(parent: Composite, val controller: Controller) {
+abstract class Viewer(parent: Composite, val controller: Controller) extends FreeformViewport {
   def shell = parent.getShell
   def display = shell.getDisplay
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
-  val viewport = new FreeformViewport();
-  def setCursor(cursor: Cursor) {
-    canvas.setCursor(cursor)
-  }
   def tool: Tool
   def update()
   def dispose() {

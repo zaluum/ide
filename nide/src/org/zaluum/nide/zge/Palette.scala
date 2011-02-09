@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import org.eclipse.swt.graphics.Point
 import SWTScala._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
@@ -13,6 +15,11 @@ object Palette {
 class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) extends ScrollPopup(mainShell) {
   def name = "Palette"
   def columns = 4
+  var container : Layers = _
+  def show(p:Point, container:Layers) {
+    this.container = container
+    show(p)
+  }
   def populate(content: Composite) {
     def portDecl(in: Boolean) {
       val b = new Button(content, SWT.PUSH)
@@ -27,7 +34,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
       b.setSize(48, 48)
       addReaction(b) {
         viewer.tool.state.abort()
-        viewer.tool.creatingPort.enter(dir)
+        viewer.tool.creatingPort.enter(dir,container)
         viewer.canvas.setFocus()
         hide()
       }
@@ -47,7 +54,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
     val innerb = createButton("INNER", viewer.imageFactory.notFound)
     addReaction(innerb) {
       viewer.tool.state.abort()
-      viewer.tool.innercreating.enter()
+      viewer.tool.innercreating.enter(container)
       viewer.canvas.setFocus()
       hide()
     }
@@ -57,7 +64,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
       val b = createButton(bc.name.str, viewer.imageFactory(bc))
       addReaction(b) {
         viewer.tool.state.abort()
-        viewer.tool.creating.enter(bc)
+        viewer.tool.creating.enter(bc,container)
         viewer.canvas.setFocus()
         hide()
       }

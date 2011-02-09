@@ -25,7 +25,7 @@ class Controller(private var treep: Tree, val global: EclipseBoxClasspath) {
     viewers -= viewer
   }
   def updateViewers { viewers foreach { _.update() } }
-  def abortTools() { viewers foreach { _.tool.state.abort() } }
+  def refreshTools() { viewers foreach { _.tool.refresh() } }
   def tree = treep
   val reporter = new Reporter()
   def compile() = {
@@ -39,35 +39,35 @@ class Controller(private var treep: Tree, val global: EclipseBoxClasspath) {
   def markSaved() { mark = undoStack.elems.headOption }
   def exec(c: TreeCommand) {
     if (c.canExecute) {
-      abortTools()
       undoStack.push(tree)
       treep = c.execute(tree)
       compile()
       redoStack.clear
       updateViewers
       notifyListeners
+      refreshTools
     }
   }
   def canUndo = !undoStack.isEmpty
   def canRedo = !redoStack.isEmpty
   def undo() {
     if (!undoStack.isEmpty) {
-      abortTools()
       redoStack.push(tree)
       treep = undoStack.pop
       compile()
       updateViewers
       notifyListeners
+      refreshTools
     }
   }
   def redo() {
     if (!redoStack.isEmpty) {
-      abortTools()
       undoStack.push(tree)
       treep = redoStack.pop
       compile()
       updateViewers
       notifyListeners
+      refreshTools
     }
   }
   var listeners = Set[() ⇒ Unit]()
