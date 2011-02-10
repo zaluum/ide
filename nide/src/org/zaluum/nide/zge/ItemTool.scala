@@ -71,7 +71,10 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
         case (None, Some(fig), _) ⇒ // select and move
           if (!viewer.selected(fig))
             viewer.selected.updateSelection(Set(fig), shift)
-          moving.enter(initDrag, initContainer)
+          fig match {
+            case oPort : OpenPortDeclFigure => movingOpenPort.enter(initDrag,initContainer,oPort)
+            case _ => moving.enter(initDrag, initContainer)
+          }
         case (None, None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
@@ -113,6 +116,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
   }
   object moving extends Moving with DeltaMove with SingleContainer with Allower
+  def movingOpenPort : { def enter(initDrag:Point, initContainer:BoxDefContainer, fig:OpenPortDeclFigure )}
 
   /// MARQUEE
   object marqueeing extends DeltaMove with SingleContainer {

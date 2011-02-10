@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.GroupBoxBorder
 import org.eclipse.draw2d.RectangleFigure
 import org.eclipse.draw2d.Graphics
 import org.eclipse.draw2d.LayeredPane
@@ -74,7 +75,7 @@ trait BoxDefContainer extends IFigure {
   }
   def populate() {
     populateFigures()
-    // create connections (need to find figures positions)
+    // create connections (requires figures)
     populateConnections()
   }
 }
@@ -130,11 +131,12 @@ class OpenBoxFigure(
     inners.setSize(this.getSize)
   }
 
-  inners.add(portsLayer)
   inners.add(layer)
+  inners.add(portsLayer)
   inners.add(connectionsLayer)
   inners.add(feedbackLayer)
-  add(inners)
-  setBorder(new LineBorder(5))
+  add(inners);
+  setBorder(new LineBorder(ColorConstants.gray,5))
+  
 
 }

@@ -149,6 +149,48 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     def exit() { feed.hide(); feed = null; selecting.enter() }
   }
   object creatingPort extends CreatingPort with SingleContainer with Allower
+  // MOVING OPEN PORT
+  trait MovingOpenPort {
+    self : ToolState with DeltaMove with SingleContainer =>
+    var fig : OpenPortDeclFigure = _
+    def enter(initDrag: Point, initContainer: BoxDefContainer, fig : OpenPortDeclFigure) {
+      this.fig=fig
+      enterMoving(initDrag)
+      enterSingle(initContainer)
+      state = this
+    }
+    def minY = fig.openBox.pos.y;
+    def maxY = minY + fig.openBox.size.height
+    //def filterPos = MPoint(fig.pos.x, math.min(math.max(fig.pos.y + delta.y, minY),maxY))
+    def minDelta = minY-fig.pos.y
+    def maxDelta = maxY-fig.pos.y-fig.size.height
+    def clamp(low:Int,i:Int,high:Int) = math.max(low, math.min(i,high))
+    def clampDelta = Vector2(0, clamp(minDelta,delta.y,maxDelta) )
+    def buttonUp {
+      def internalPos(p:MPoint) = MPoint(p.x-fig.openBox.pos.x,p.y-fig.openBox.pos.y)
+      val oldPos = internalPos(fig.pos) 
+      val newPos = oldPos + clampDelta
+      println("oldPos=" + oldPos)
+      println("newPos=" + newPos)
+      val command = TreeCommand(new CopyTransformer {
+        val trans: PartialFunction[Tree, Tree] = {
+          case p: PortDef if (fig.tree==p) ⇒
+            println("old ext pos = " + p.extPos)
+            p.copy(extPos = newPos)
+        }
+      })
+      controller.exec(command)
+    }
+    def drag {}
+    def buttonDown {}
+    def exit() { selecting.enter() }
+    def move() { fig.moveDeltaFeed(clampDelta) } 
+    def abort() {
+      fig.moveDeltaFeed(Vector2(0, 0)) 
+      exit()
+    }
+  }
+  object movingOpenPort extends MovingOpenPort with DeltaMove with SingleContainer
   // CONNECT
   object connecting extends DeltaMove with SingleContainer{
     var dst: Option[PortFigure] = None
