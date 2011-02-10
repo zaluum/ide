@@ -63,7 +63,7 @@ abstract class Tool(viewer: Viewer) {
     def buttonUp()
     def drag()
     def menu() {}
-    def abort()
+    def abort() 
   }
 
   

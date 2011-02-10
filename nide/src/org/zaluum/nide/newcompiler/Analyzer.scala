@@ -161,7 +161,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           defineBox(new BoxTypeSymbol(currentOwner, name, image))
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
           definePort(new PortSymbol(currentOwner, name, extPos, dir))
-        case v@ValDef(name, typeName, pos, guiTree) ⇒
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
           defineVal(new ValSymbol(currentOwner, name))
         case _ ⇒
           tree.scope = currentScope
@@ -179,7 +179,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             error("Port type not found " + typeName); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case v@ValDef(name, typeName, pos, guiSize) ⇒
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
           tree.symbol.tpe = currentScope.lookupBoxType(typeName) getOrElse {
             error("Box class " + typeName + " not found"); NoSymbol
           }

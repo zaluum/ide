@@ -15,11 +15,10 @@ object ProtoParser {
   }
   def parse(i: BoxFileProtos.BoxClassDef.Instance): ValDef = {
     // TODO parameters
-    val guitree= if (i.hasGuiPos && i.hasGuiSize) 
-        SizeDef(parse(i.getGuiPos),parseDim(i.getGuiSize)) 
-      else
-        EmptyTree  
-    ValDef(Name(i.getName), Name(i.getClassName), parse(i.getPos), guitree)
+    val guiPos = if (i.hasGuiPos) Some(parse(i.getGuiPos)) else None
+    val guiSize = if (i.hasGuiSize) Some(parseDim(i.getGuiSize)) else None
+    val size = if (i.hasSize) Some(parseDim(i.getSize)) else None
+    ValDef(Name(i.getName), Name(i.getClassName), parse(i.getPos), size, guiPos, guiSize)
   }
   def parse(c: BoxFileProtos.BoxClassDef.Connection): ConnectionDef = {
     ConnectionDef(

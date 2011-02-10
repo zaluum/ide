@@ -13,6 +13,7 @@ trait Tuple2 {
 }
 case class Point(x: Int, y: Int) extends Tuple2 {
   def +(v: Vector2) = Point(x + v.x, y + v.y)
+  def +(p: Point) = Point(x + p.x,y+ p.y )
   def -(o: Point) = Vector2(x - o.x, y - o.y)
   def >>(despl: Int) = Point(x + despl, y)
   def toProto  = {

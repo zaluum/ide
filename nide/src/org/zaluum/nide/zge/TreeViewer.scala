@@ -20,6 +20,16 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   def show {} // TODO?
   val tool: TreeTool = new TreeTool(this)
   def gotoMarker(l: Location) {} // TODO
+  override def populateFigures() {
+    super.populateFigures()
+    boxDef.children foreach {
+      _ match {
+        case p@PortDef(name, typeName, in, inPos, extPos) ⇒
+          new PortDeclFigure(p, TreeViewer.this).show()
+        case _ ⇒
+      }
+    }
+  }
   override def dispose() {
     super.dispose()
     imageFactory.reg.dispose

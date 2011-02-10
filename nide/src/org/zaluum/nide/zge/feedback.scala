@@ -85,7 +85,7 @@ class ItemFeedbackFigure(parent: BoxDefContainer) extends Figure {
   }
 
 }
-class ResizeItemFeedbackFigure(val bf: ResizableItemFigure, parent: BoxDefContainer) extends ItemFeedbackFigure(parent) {
+class ResizeItemFeedbackFigure(val bf: Item, parent: BoxDefContainer) extends ItemFeedbackFigure(parent) {
 
   val handles =
     (for {
