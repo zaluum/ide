@@ -1,17 +1,9 @@
 package org.zaluum.nide.zge
-
-import org.eclipse.draw2d.RectangleFigure
-import org.eclipse.draw2d.Graphics
-import org.eclipse.draw2d.LayeredPane
-import org.eclipse.draw2d.Layer
-import org.eclipse.draw2d.LineBorder
 import draw2dConversions._
-import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline, ScalableFreeformLayeredPane, IFigure }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
-import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.model.{ Point ⇒ MPoint, Dimension, Vector2, Resizable, Line, Positionable, Route }
-import org.zaluum.nide.newcompiler.{ Tree, PortSymbol, PortDef, ConnectionDef, ValSymbol, ValDef, BoxTypeSymbol, NoSymbol, PortRef, ValRef, EmptyTree, ThisRef, In, PortDir, Out, Shift, BoxDef, Traverser, Symbol, Name }
+import org.eclipse.draw2d.{Figure, IFigure}
+import org.eclipse.draw2d.geometry.{Rectangle, Point => EPoint, Dimension => EDimension}
+import org.zaluum.nide.model.{Point => MPoint, Dimension, Vector2}
+import org.zaluum.nide.newcompiler.Tree
 import scala.collection.mutable.Buffer
 
 object draw2dConversions {
@@ -20,20 +12,52 @@ object draw2dConversions {
   implicit def rpoint(p: EPoint): MPoint = MPoint(p.x, p.y)
   implicit def rdimension(d: EDimension): Dimension = Dimension(d.width, d.height)
 }
-object FiguresHelper {
+object RichFigure {
+  implicit def richFigure(f:IFigure) = new RichFigure(f)
+}
+import RichFigure._
+class RichFigure(container:IFigure) {
   import scala.collection.JavaConversions._
-  def findDeepAt[A](container: IFigure, myCoordinates: EPoint)(partial: PartialFunction[IFigure, A]): Option[A] = {
+  def findDeepAt[A](internalCoords: EPoint,deep:Int = 0, debug:Boolean=false)(partial: PartialFunction[IFigure, A]): Option[A] = {
+    // bounds in parent coordinates
+    // client area in relative coordinates
+    val spaces = new String( Array.fill(deep)(' '))
+    def println2(str:String) = {if (debug) println(spaces + str)} 
     var candidate: Option[A] = None
-    val rel = myCoordinates.getCopy
-    container.translateFromParent(myCoordinates)
-    if (container.isVisible && container.getClientArea.contains(rel)) {
+    val parentCoords = internalCoords.getCopy
+    container.translateToParent(parentCoords)
+    println2("findDeep " + parentCoords + "bounds " + container.getBounds + " visible=" + container.isVisible)
+    if (container.isVisible && container.containsPoint(parentCoords)) {
+      candidate = partial.lift(container)
+      println2 ("contains point. Client area= " + container.getClientArea + " relative point=" + internalCoords)
+      if (container.getClientArea.contains(internalCoords)){
+        println2("checking children")
+        // search children 
+        val list = container.getChildren.toBuffer.asInstanceOf[Buffer[IFigure]]
+        for (c ← list.reverse) {
+          val childCoords = internalCoords.getCopy
+          c.translateFromParent(childCoords)
+          println2 ("checking child " +c + " with coordinates " + childCoords)
+          c.findDeepAt(childCoords,deep+1,debug)(partial) match {
+            case Some(cc) ⇒ return Some(cc)
+            case None ⇒
+          }
+        }
+      }
+    }
+    return candidate
+  }
+
+  def findDeepContainerAt[A](internalCoords: EPoint)(partial: PartialFunction[IFigure, A]): Option[A] = {
+    var candidate: Option[A] = None
+    if (container.isVisible && container.getClientArea.contains(internalCoords)) {
       candidate = partial.lift(container)
       // search children 
       val list = container.getChildren.toBuffer.asInstanceOf[Buffer[IFigure]]
-      for (c ← list) {
-        val childCoord = myCoordinates.getCopy
-        c.translateFromParent(childCoord)
-        findDeepAt(c, childCoord)(partial) match {
+      for (c ← list.reverse) {
+        val childInternalCoords = internalCoords.getCopy
+        c.translateFromParent(childInternalCoords) 
+        c.findDeepContainerAt(childInternalCoords)(partial) match {
           case Some(cc) ⇒ return Some(cc)
           case None ⇒
         }
@@ -43,10 +67,14 @@ object FiguresHelper {
   }
 }
 
-trait Selectable extends Figure with Feedback
+trait Selectable extends Figure with Feedback with ShowHide
 trait Feedback {
   def showFeedback()
   def hideFeedback()
+}
+trait ShowHide {
+  def show()
+  def hide()
 }
 trait Item extends Selectable {
   type T <: Tree
@@ -56,6 +84,7 @@ trait Item extends Selectable {
   def pos: MPoint
   def size: Dimension
   val feed: ItemFeedbackFigure
+  val helpers = Buffer[ShowHide]()
   def showFeedback() {
     container.feedbackLayer.add(feed)
     update()
@@ -65,20 +94,19 @@ trait Item extends Selectable {
       container.feedbackLayer.remove(feed)
   }
   def update() {
-    items.clear
+    helpers.clear
     val rect = new Rectangle(pos.x, pos.y, size.w, size.h)
     setBounds(rect)
     feed.setInnerBounds(rect)
   }
-  val items = Buffer[Item]()
   def show() {
     update()
-    items.foreach { _.show() }
+    helpers.foreach { _.show() }
     myLayer.add(this)
   }
   def hide() {
     myLayer.remove(this)
-    items.foreach { _.hide() }
+    helpers.foreach { _.hide() }
   }
   def moveFeed(loc: MPoint) {
     feed.setInnerLocation(loc)

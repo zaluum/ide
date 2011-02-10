@@ -1,26 +1,18 @@
 package org.zaluum.nide.zge
-
-import org.eclipse.draw2d.RectangleFigure
-import org.eclipse.draw2d.Graphics
-import org.eclipse.draw2d.LayeredPane
-import org.eclipse.draw2d.Layer
-import org.eclipse.draw2d.LineBorder
 import draw2dConversions._
-import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline, ScalableFreeformLayeredPane, IFigure }
+import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.model.{ Point ⇒ MPoint, Dimension, Vector2, Resizable, Line, Positionable, Route }
-import org.zaluum.nide.newcompiler.{ Tree, PortSymbol, PortDef, ConnectionDef, ValSymbol, ValDef, BoxTypeSymbol, NoSymbol, PortRef, ValRef, EmptyTree, ThisRef, In, PortDir, Out, Shift, BoxDef, Traverser, Symbol, Name }
+import org.zaluum.nide.model.{ Point ⇒ MPoint, Dimension, Vector2, Line, Route }
+import org.zaluum.nide.newcompiler._
 import scala.collection.mutable.Buffer
 
 // TREE SPECIFIC FIGURES
-trait ValFigure extends Item with RectFeedback {
+
+class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with Item with RectFeedback {
   type T = ValDef
   def sym = tree.symbol.asInstanceOf[ValSymbol]
-}
-
-class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with RectFeedback with ValFigure {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def pos = tree.pos
   def myLayer = container.layer
@@ -36,7 +28,7 @@ class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends I
         }.toList
       case _ ⇒ List()
     }
-    items.appendAll(l);
+    helpers.appendAll(l);
   }
 }
 
@@ -64,17 +56,14 @@ class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] =
     }
   }
   def show() {
-    update()
+    setStart(new EPoint(l.from.x, l.from.y))
+    setEnd(new EPoint(l.end.x, l.end.y))
+    calcStyle
     bdf.connectionsLayer.add(this)
   }
   def hide() {
     if (bdf.connectionsLayer.getChildren.contains(this))
       bdf.connectionsLayer.remove(this)
-  }
-  def update() {
-    setStart(new EPoint(l.from.x, l.from.y))
-    setEnd(new EPoint(l.end.x, l.end.y))
-    calcStyle
   }
 }
 class ConnectionPainter(bdf: BoxDefContainer) {
@@ -91,7 +80,7 @@ class ConnectionPainter(bdf: BoxDefContainer) {
 }
 // TODO not really a figure right now... no children
 class ConnectionFigure(val tree: ConnectionDef, bdf: BoxDefContainer)
-  extends Figure {
+  extends Figure with ShowHide{
   val painter = new ConnectionPainter(bdf)
   def calcRoute = {
     // TODO paint incomplete connections gracefully
@@ -107,15 +96,11 @@ class ConnectionFigure(val tree: ConnectionDef, bdf: BoxDefContainer)
     }
     route
   }
-  def update() {
+  def show() =
     calcRoute match {
       case Some(r) ⇒ painter.paintRoute(r, Some(tree))
       case None ⇒ painter.clear()
     }
-  }
-  def show() {
-    update()
-  }
   def hide() {
     painter.clear()
   }

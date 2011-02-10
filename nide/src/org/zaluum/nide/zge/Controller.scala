@@ -19,12 +19,12 @@ class Controller(private var treep: Tree, val global: EclipseBoxClasspath) {
   def registerViewer(viewer: Viewer) {
     println("registering viewer " + viewer)
     viewers += viewer
-    viewer.update()
+    viewer.refresh()
   }
   def unregisterViewer(viewer: Viewer) {
     viewers -= viewer
   }
-  def updateViewers { viewers foreach { _.update() } }
+  def updateViewers { viewers foreach { _.refresh() } }
   def refreshTools() { viewers foreach { _.tool.refresh() } }
   def tree = treep
   val reporter = new Reporter()

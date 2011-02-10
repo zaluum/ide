@@ -13,25 +13,19 @@ import org.eclipse.swt.graphics.Image
 import org.zaluum.nide.model.{ Point ⇒ MPoint, Dimension, Vector2, Resizable, Line, Positionable, Route }
 import org.zaluum.nide.newcompiler.{ Tree, PortSymbol, PortDef, ConnectionDef, ValSymbol, ValDef, BoxTypeSymbol, NoSymbol, PortRef, ValRef, EmptyTree, ThisRef, In, PortDir, Out, Shift, BoxDef, Traverser, Symbol, Name }
 import scala.collection.mutable.Buffer
+import scala.collection.JavaConversions._
+import RichFigure._
 
 trait BoxDefContainer extends IFigure {
   def boxDef: BoxDef
   def viewer: TreeViewer // TODO only for image factory... remove?
   def layer: Figure
+  val helpers : Buffer[ShowHide]
   def feedbackLayer: Figure
   def connectionsLayer: Figure
   def portsLayer: Figure
-  def findDeepAt(container: IFigure, p: EPoint) = {
-    Option(container.findFigureAt(p.x, p.y)) filter (_ != container)
-  }
-  import scala.collection.JavaConversions._
-  private def findShallowAt(container: IFigure, p: EPoint) = {
-    import scala.collection.JavaConversions._
-    container.getChildren.asInstanceOf[java.util.List[IFigure]] find { _.containsPoint(p) };
-  }
-  def figureAt(p: EPoint) = findShallowAt(layer, p) map { case (bf: Item) ⇒ bf }
-  def feedbackAt(p: EPoint) = findDeepAt(feedbackLayer, p)
-  def lineAt(p: EPoint) = findDeepAt(connectionsLayer, p) map { case l: LineFigure ⇒ l }
+  def itemAt(p: EPoint, debug:Boolean=false) = this.findDeepAt(p) { case bf: Item ⇒ bf }
+  def lineAt(p: EPoint) = this.findDeepAt(p){ case l: LineFigure ⇒ l }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] =
     portFigures find { p ⇒
@@ -57,13 +51,13 @@ trait BoxDefContainer extends IFigure {
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
           v.scope.lookupBoxTypeLocal(typeName) match {
             case Some(tpe) ⇒
-              new OpenBoxFigure(v,
+              helpers += new OpenBoxFigure(v,
                 tpe.decl.asInstanceOf[BoxDef],
                 v.symbol.owner,
                 BoxDefContainer.this,
-                viewer).show()
+                viewer)
             case None ⇒
-              new ImageValFigure(v, BoxDefContainer.this).show()
+              helpers += new ImageValFigure(v, BoxDefContainer.this)
           }
         case _ ⇒
       }
@@ -73,13 +67,12 @@ trait BoxDefContainer extends IFigure {
     boxDef.connections foreach {
       _ match {
         case c@ConnectionDef(a, b) ⇒
-          new ConnectionFigure(c, BoxDefContainer.this).show()
+          helpers += new ConnectionFigure(c, BoxDefContainer.this)
         case _ ⇒
       }
     }
   }
   def populate() {
-    clear()
     populateFigures()
     // create connections (need to find figures positions)
     populateConnections()
@@ -91,21 +84,26 @@ class OpenBoxFigure(
   val owner: Symbol,
   val container: BoxDefContainer,
   val viewer: TreeViewer) extends Item with ResizableFeedback with BoxDefContainer {
+  // Item
   type T = ValDef
-  def myLayer = container.layer
   def tree = valTree
+  def myLayer = container.layer
   def pos = tree.pos
   def size = valTree.size getOrElse Dimension(100, 100)
+  // layers
+  val inners = new LayeredPane
   val layer = new Layer
   val portsLayer = new Layer
   val connectionsLayer = new Layer
   val feedbackLayer = new Layer
+  // BoxDefContainer
+  override def useLocalCoordinates = true
   override def populateFigures() {
     super.populateFigures()
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-          new OpenPortDeclFigure(p, OpenBoxFigure.this).show()
+          helpers += new OpenPortDeclFigure(p, OpenBoxFigure.this)
         case _ ⇒
       }
     }
@@ -126,21 +124,17 @@ class OpenBoxFigure(
     graphics.restoreState();
     super.paintClientArea(graphics)
   }
-  //def clear { layer.removeAll } // FIXME
-  override def useLocalCoordinates = true
-  val inners = new LayeredPane
-  inners.add(layer)
+  override def update() {
+    super.update()
+    populate()
+    inners.setSize(this.getSize)
+  }
+
   inners.add(portsLayer)
+  inners.add(layer)
   inners.add(connectionsLayer)
   inners.add(feedbackLayer)
-  // inners.setSize(600,600) // TODO fix
   add(inners)
   setBorder(new LineBorder(5))
 
-  override def update() {
-    super.update()
-    inners.setSize(this.getSize)
-
-    populate()
-  }
 }

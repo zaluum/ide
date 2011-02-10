@@ -34,7 +34,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       figureUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p).show(swtMouseLocation) // TODO Dispose?
         case Some(o: OpenBoxFigure) => println("openbox")
-        case Some(b: ValFigure) ⇒
+        case Some(b: ImageValFigure) ⇒
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)
       }
     }

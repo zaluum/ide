@@ -7,13 +7,12 @@ import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 import org.zaluum.nide.newcompiler.{ Transformer, Tree, ValDef, CopyTransformer, PortDef }
 import scala.collection.JavaConversions._
 import scala.reflect.Manifest._
-
+import RichFigure._
 abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
-  def figureUnderMouse = current.figureAt(currentMouseLocation)
+  def figureUnderMouse = current.itemAt(currentMouseLocation,true)
   def lineUnderMouse = current.lineAt(currentMouseLocation)
-  def feedbackUnderMouse = current.feedbackAt(currentMouseLocation)
   def currentMouseLocation = translate(current, absMouseLocation)
-  def current = FiguresHelper.findDeepAt(viewer.layer, absMouseLocation) {
+  def current = viewer.findDeepContainerAt(absMouseLocation) {
     case (f: OpenBoxFigure) ⇒ f
   } getOrElse { viewer }
   def translate(me: IFigure, p: Point): Point = {
@@ -27,18 +26,9 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
     def container: IFigure
     var last: Option[F] = None
-    def filterManifest[F](o: Option[AnyRef]) = {
-      o match {
-        case Some(s) ⇒
-          if (singleType(s) <:< m)
-            Some(s.asInstanceOf[F])
-          else
-            None
-        case None ⇒ None
-      }
-    }
+    val partial : PartialFunction[AnyRef,F] = { case s if singleType(s)<:<m => s.asInstanceOf[F]}
     def update() {
-      val under: Option[F] = filterManifest(viewer.findDeepAt(container, currentMouseLocation))
+      val under: Option[F] = viewer.findDeepAt(absMouseLocation)(partial)
       if (under == last) return ;
       last foreach { f ⇒ onExit(f); last = None }
       under foreach { f ⇒ onEnter(f); last = Some(f) }

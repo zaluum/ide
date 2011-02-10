@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import scala.collection.mutable.Buffer
 import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
@@ -9,15 +11,13 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
   val palette = new Palette(this, parent.getShell, controller.global)
-
+  val helpers = Buffer[ShowHide]()
   /*MODEL*/
   def tree = controller.tree.asInstanceOf[BoxDef]
   def boxDef = tree
   def owner = global.root
   /*LAYERS*/
   def viewer = this
-  def hide = clear
-  def show {} // TODO?
   val tool: TreeTool = new TreeTool(this)
   def gotoMarker(l: Location) {} // TODO
   override def populateFigures() {
@@ -25,7 +25,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-          new PortDeclFigure(p, TreeViewer.this).show()
+          helpers += new PortDeclFigure(p, TreeViewer.this)
         case _ ⇒
       }
     }
@@ -34,7 +34,10 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     super.dispose()
     imageFactory.reg.dispose
   }
-  def update() {
+  def refresh() {
+    helpers.clear
+    clear
     populate()
+    helpers.foreach{_.show}
   }
 }

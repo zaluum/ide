@@ -12,7 +12,7 @@ abstract class Viewer(parent: Composite, val controller: Controller) extends Fre
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
   def tool: Tool
-  def update()
+  def refresh()
   def dispose() {
     canvas.dispose()
     controller.unregisterViewer(this)
