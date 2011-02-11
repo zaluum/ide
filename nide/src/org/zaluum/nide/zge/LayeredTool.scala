@@ -24,7 +24,6 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     }
   }
   abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
-    def container: IFigure
     var last: Option[F] = None
     val partial : PartialFunction[AnyRef,F] = { case s if singleType(s)<:<m => s.asInstanceOf[F]}
     def update() {

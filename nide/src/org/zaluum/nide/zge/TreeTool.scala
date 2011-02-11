@@ -28,7 +28,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
 
   override lazy val selecting = new Selecting {
     override def connect(port: PortFigure) {
-      connecting.enter(initDrag, initContainer, port)
+      connecting.enter(initContainer, port)
     }
     override def menu() {
       figureUnderMouse match {
@@ -161,7 +161,6 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
     def minY = fig.openBox.pos.y;
     def maxY = minY + fig.openBox.size.height
-    //def filterPos = MPoint(fig.pos.x, math.min(math.max(fig.pos.y + delta.y, minY),maxY))
     def minDelta = minY-fig.pos.y
     def maxDelta = maxY-fig.pos.y-fig.size.height
     def clamp(low:Int,i:Int,high:Int) = math.max(low, math.min(i,high))
@@ -192,20 +191,26 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   }
   object movingOpenPort extends MovingOpenPort with DeltaMove with SingleContainer
   // CONNECT
-  object connecting extends DeltaMove with SingleContainer{
+  trait Connecting extends ToolState {
+    self : SingleContainer =>
     var dst: Option[PortFigure] = None
     var src: Option[PortFigure] = None
-    val painter = new ConnectionPainter(currentBoxDefLayers)
+    var painter : ConnectionPainter = _ 
     //var con: Option[Connection] = None
     val portsTrack = new OverTrack[PortFigure] {
-      def container = current.portsLayer
-      def onEnter(p: PortFigure) { dst = Some(p); p.showFeedback }
+      def onEnter(p: PortFigure) { 
+        if (p.container == initContainer) {
+          dst = Some(p); p.showFeedback 
+        }
+      }
       def onExit(p: PortFigure) { dst = None; p.hideFeedback }
     }
-    def enter(initdrag: Point, initContainer: BoxDefContainer, initPort: PortFigure) {
-      super.enterMoving(initdrag)
-      super.enterSingle(initContainer)
+    def enter(initContainer: BoxDefContainer, initPort: PortFigure) {
+      state=this
+      enterSingle(initContainer)
+      painter = new ConnectionPainter(initContainer)
       src = Some(initPort)
+      
       viewer.setCursor(Cursors.HAND)
       move()
     }
@@ -243,14 +248,17 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       selecting.enter()
     }
     def move() {
+      portsTrack.update()
       val start = src.get.anchor
       val end = dst match {
         case Some(df) ⇒ df.anchor
         case None ⇒ currentMouseLocation
       }
       painter.paintRoute(Route(start, end))
-      portsTrack.update()
     }
     def abort() { exit() }
+    
   }
+  object connecting extends Connecting with SingleContainer
+  
 }
