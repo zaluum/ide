@@ -77,7 +77,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       selecting.enter()
     }
   }
-  object innercreating extends InnerCreating with SingleContainer with Allower // inherit
+  object innercreating extends InnerCreating with SingleContainerAllower with Allower // inherit
   abstract class Creating extends ToolState {
     self: SingleContainer =>
     var feed: ItemFeedbackFigure = _
@@ -113,7 +113,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
   }
   // CREATING BOX 
-  object creating extends Creating with SingleContainer with Allower
+  object creating extends Creating with SingleContainerAllower
   // CREATING PORT
   class CreatingPort extends ToolState {
     self : SingleContainer =>
@@ -148,7 +148,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     def buttonDown() {}
     def exit() { feed.hide(); feed = null; selecting.enter() }
   }
-  object creatingPort extends CreatingPort with SingleContainer with Allower
+  object creatingPort extends CreatingPort with SingleContainerAllower
   // MOVING OPEN PORT
   trait MovingOpenPort {
     self : ToolState with DeltaMove with SingleContainer =>

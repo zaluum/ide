@@ -59,13 +59,15 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
       super.abort()
     }
   }
+  trait SingleContainerAllower extends SingleContainer with Allower {
+    def allowed = initContainer eq current
+  }
   trait SingleContainer extends ToolState {
     var initContainer: BoxDefContainer = _
     def enterSingle(initContainer: BoxDefContainer) {
       this.initContainer = initContainer
     }
     def currentMouseLocation = translate(initContainer, absMouseLocation)
-    def allowed = initContainer eq current
   }
   trait DeltaMove extends ToolState {
     var initDrag: Point = _

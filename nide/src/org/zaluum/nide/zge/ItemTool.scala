@@ -7,6 +7,7 @@ import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
 import org.zaluum.nide.newcompiler.{ Transformer, Tree, ValDef, CopyTransformer, PortDef }
 import scala.collection.JavaConversions._
 import scala.reflect.Manifest._
+import FigureHelper._
 
 /**
  * Implements basic selecting, marquee and resizing of ItemFigures
@@ -72,8 +73,8 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
           if (!viewer.selected(fig))
             viewer.selected.updateSelection(Set(fig), shift)
           fig match {
-            case oPort : OpenPortDeclFigure => movingOpenPort.enter(initDrag,initContainer,oPort)
-            case _ => moving.enter(initDrag, initContainer)
+            case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
+            case _ ⇒ moving.enter(initDrag, initContainer)
           }
         case (None, None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
@@ -84,17 +85,21 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   }
   // MOVE
   trait Moving extends ToolState {
-    self : DeltaMove with SingleContainer=>
-     def enter(initDrag: Point, initContainer: BoxDefContainer) {
+    self: DeltaMove with SingleContainer ⇒
+    def enter(initDrag: Point, initContainer: BoxDefContainer) {
       enterMoving(initDrag)
       enterSingle(initContainer)
       state = this
     }
+
+    def allowed = (current eq initContainer) || (movables.exists { isOrHas(_, current) })
+    def movables = viewer.selected.selected.collect {
+      case item: Item if item.container == initContainer ⇒ item
+    }
     def buttonUp {
-      val positions = viewer.selected.selected.collect {
-        case bf: Item ⇒
-          val oldLoc = bf.getBounds.getLocation
-          (bf.tree.asInstanceOf[Tree] -> (MPoint(oldLoc.x, oldLoc.y) + delta))
+      val positions = movables.map { item ⇒
+        val oldLoc = item.getBounds.getLocation
+        (item.tree.asInstanceOf[Tree] -> (MPoint(oldLoc.x, oldLoc.y) + delta))
       }.toMap
       val command = TreeCommand(new CopyTransformer {
         val trans: PartialFunction[Tree, Tree] = {
@@ -116,7 +121,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
   }
   object moving extends Moving with DeltaMove with SingleContainer with Allower
-  def movingOpenPort : { def enter(initDrag:Point, initContainer:BoxDefContainer, fig:OpenPortDeclFigure )}
+  def movingOpenPort: { def enter(initDrag: Point, initContainer: BoxDefContainer, fig: OpenPortDeclFigure) }
 
   /// MARQUEE
   object marqueeing extends DeltaMove with SingleContainer {
