@@ -9,7 +9,7 @@ import scala.collection.JavaConversions._
 import scala.reflect.Manifest._
 import RichFigure._
 abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
-  def figureUnderMouse = current.itemAt(currentMouseLocation,true)
+  def figureUnderMouse = current.itemAt(currentMouseLocation)
   def lineUnderMouse = current.lineAt(currentMouseLocation)
   def currentMouseLocation = translate(current, absMouseLocation)
   def current = viewer.findDeepContainerAt(absMouseLocation) {

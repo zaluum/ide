@@ -26,8 +26,9 @@ class RichFigure(container:IFigure) {
     var candidate: Option[A] = None
     val parentCoords = internalCoords.getCopy
     container.translateToParent(parentCoords)
-    println2("findDeep " + parentCoords + "bounds " + container.getBounds + " visible=" + container.isVisible)
+    println2("findDeep " + container + " "  + parentCoords + "bounds " + container.getBounds + " visible=" + container.isVisible + "opaque=" + container.isOpaque )
     if (container.isVisible && container.containsPoint(parentCoords)) {
+      //if (container.isOpaque) 
       candidate = partial.lift(container)
       println2 ("contains point. Client area= " + container.getClientArea + " relative point=" + internalCoords)
       if (container.getClientArea.contains(internalCoords)){

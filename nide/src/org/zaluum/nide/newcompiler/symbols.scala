@@ -29,5 +29,8 @@ class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tr
 // TODO make two classes one that has values from the declaring tree and the other directly from symbol 
 class PortSymbol(val owner: Symbol, val name: Name, val extPos:Point, val dir:PortDir) extends Symbol {  
   def box = owner.asInstanceOf[BoxTypeSymbol]
+  override def toString = "PortSymbol(" + name + ")"
 }
-class ValSymbol(val owner: Symbol, val name: Name) extends Symbol
+class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
+  override def toString = "ValSymbol(" + name + ")"
+}

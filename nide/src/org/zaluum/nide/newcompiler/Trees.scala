@@ -162,7 +162,7 @@ case class BoxDef(name: Name,
   defs: List[Tree],
   vals: List[Tree],
   ports: List[Tree],
-  connections: List[Tree]) extends DefTree
+  connections: List[Tree]) extends DefTree 
 sealed trait PortDir
 case object In extends PortDir
 case object Out extends PortDir

@@ -169,12 +169,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       def internalPos(p:MPoint) = MPoint(p.x-fig.openBox.pos.x,p.y-fig.openBox.pos.y)
       val oldPos = internalPos(fig.pos) 
       val newPos = oldPos + clampDelta
-      println("oldPos=" + oldPos)
-      println("newPos=" + newPos)
       val command = TreeCommand(new CopyTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case p: PortDef if (fig.tree==p) ⇒
-            println("old ext pos = " + p.extPos)
             p.copy(extPos = newPos)
         }
       })
@@ -196,7 +193,6 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     var dst: Option[PortFigure] = None
     var src: Option[PortFigure] = None
     var painter : ConnectionPainter = _ 
-    //var con: Option[Connection] = None
     val portsTrack = new OverTrack[PortFigure] {
       def onEnter(p: PortFigure) { 
         if (p.container == initContainer) {
@@ -218,12 +214,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     def buttonUp {
       // execute model command
       if (dst.isDefined) {
-        def toRef(pf: PortFigure) = pf.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef }
+        def toRef(pf: PortFigure) = {
+          pf.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef }
+        }
         val srcPortName = src.get.sym.name
         val dstPortName = dst.get.sym.name
         val srcRef = toRef(src.get)
         val dstRef = toRef(dst.get)
-        if (srcRef != dstRef && srcPortName != dstPortName) {
+        if (srcRef != dstRef) { // MORE checks?
           val condef = ConnectionDef(
             PortRef(srcRef, srcPortName, src.get.in),
             PortRef(dstRef, dstPortName, dst.get.in))

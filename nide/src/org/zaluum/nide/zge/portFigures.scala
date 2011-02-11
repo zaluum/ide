@@ -27,6 +27,8 @@ class PortFigure(val ipos: MPoint,
   override def hideFeedback() {
     setBackgroundColor(normal)
   }
+  override def toString() = 
+    "PortFigure(" + sym + " " + valSym + ")" 
   setBackgroundColor(normal)
   setAntialias(1)
   setAlpha(50)
@@ -43,7 +45,7 @@ class OpenPortDeclFigure(val tree: PortDef, val openBox: OpenBoxFigure) extends 
     val sym = tree.symbol.asInstanceOf[PortSymbol]
     val valsym = openBox.valTree.symbol.asInstanceOf[ValSymbol]
     helpers += new PortFigure(getBounds.getCenter + Vector2(-10, 0), sym, tree.dir == In, Some(valsym), openBox.container)
-    helpers += new PortFigure(tree.extPos + Vector2(10, 0), sym, tree.dir == In, Some(valsym), openBox)
+    helpers += new PortFigure(tree.extPos + Vector2(10, 0), sym, tree.dir == In, None, openBox)
   }
   setBackgroundColor(ColorConstants.yellow)
   this.setOpaque(true);

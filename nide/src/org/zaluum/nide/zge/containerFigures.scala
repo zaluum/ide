@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.geometry.Point
 import org.eclipse.draw2d.GroupBoxBorder
 import org.eclipse.draw2d.RectangleFigure
 import org.eclipse.draw2d.Graphics
@@ -25,19 +26,20 @@ trait BoxDefContainer extends IFigure {
   def feedbackLayer: Figure
   def connectionsLayer: Figure
   def portsLayer: Figure
-  def itemAt(p: EPoint, debug:Boolean=false) = this.findDeepAt(p) { case bf: Item ⇒ bf }
+  def itemAt(p: EPoint, debug:Boolean=false) = this.findDeepAt(p,0,debug) { case bf: Item ⇒ bf }
   def lineAt(p: EPoint) = this.findDeepAt(p){ case l: LineFigure ⇒ l }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
-  def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] =
+  def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒
       p.valSym match {
         case Some(valSym) ⇒ (valSym.name == boxName && p.sym.name == portName && p.in == in)
         case None ⇒ false
       }
     }
-  def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] =
+  }
+  def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in }
-
+  }
   def owner: Symbol
   def clear() {
     layer.removeAll()
@@ -79,12 +81,24 @@ trait BoxDefContainer extends IFigure {
     populateConnections()
   }
 }
+import scala.collection.JavaConversions._
+trait Transparent extends Figure{
+  override def containsPoint(x:Int,y:Int) = {
+    val pt = new Point(x,y)
+    translateFromParent(pt);
+    if (getClientArea.contains(pt)) {
+      getChildren.asInstanceOf[java.util.List[IFigure]].reverse exists (_.containsPoint(pt.x,pt.y))
+    }else{
+      getBounds.contains(x,y)
+    }
+  }
+}
 class OpenBoxFigure(
   val valTree: ValDef,
   val boxDef: BoxDef,
   val owner: Symbol,
   val container: BoxDefContainer,
-  val viewer: TreeViewer) extends Item with ResizableFeedback with BoxDefContainer {
+  val viewer: TreeViewer) extends Item with ResizableFeedback with BoxDefContainer with Transparent{
   // Item
   type T = ValDef
   def tree = valTree
