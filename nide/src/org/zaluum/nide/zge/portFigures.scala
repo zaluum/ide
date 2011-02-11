@@ -71,11 +71,11 @@ class PortDeclFigure(val tree: PortDef, val container: BoxDefContainer) extends 
   var size = Dimension(50, 20)
 
   override def update() {
-    val position = tree.inPos + (if (tree == In) Vector2(48, 8) else Vector2(0, 8))
+    val position = tree.inPos + (if (tree.dir == In) Vector2(48, 8) else Vector2(0, 8))
     val image = container.viewer.imageFactory.get(PortDeclFigure.img(tree.dir)).get
     setImage(image)
     size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
-    sym foreach { helpers += new PortFigure(position, _, tree.dir == In, None, container) }
     super.update()
+    sym foreach { helpers += new PortFigure(position, _, tree.dir == In, None, container) }
   }
 }

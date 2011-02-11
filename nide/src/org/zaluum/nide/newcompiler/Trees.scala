@@ -102,6 +102,7 @@ abstract class Transformer extends OwnerHelper[Tree]{
   protected def transformTrees(trees: List[Tree]): List[Tree] =
     trees mapConserve (transform(_))
 }
+
 // Traverser
 abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit]{
   currentOwner = initSymbol
@@ -130,6 +131,39 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit]{
     trees foreach traverse
   }
   
+}
+object PrettyPrinter  {
+  def print(str:String, deep:Int) {
+    println(new String(Array.fill(deep){' '}) + str)
+  }
+  def print(trees: List[Tree],deep:Int) {
+    trees.foreach { print(_,deep)}
+  }
+  def print(tree:Tree,deep:Int):Unit  = tree match {
+    case EmptyTree ⇒ print("EmptyTree",deep)
+    case b@BoxDef(name, image, defs, vals, ports, connections) ⇒
+      print ("BoxDef(" + name + ", " + image,deep)
+        print(defs,deep+1)
+        print(vals,deep+1)
+        print(ports,deep+1)
+        print(connections,deep+1)
+      print (")",deep)  
+    case v:ValDef ⇒ print(v.toString,deep)
+    case ConnectionDef(a, b) ⇒
+      print("ConnectionDef(", deep)
+        print(a,deep+1)
+        print(b,deep+1)
+      print(")",deep)
+    case p@PortDef(_, _, _, _, _) ⇒
+      print(p.toString,deep)
+    case PortRef(tree, a,b) ⇒
+      print("PortRef(", deep )
+        print(tree,deep+1)
+        print(a +", "+ b,deep+1)
+      print(")",deep)
+    case v@ValRef(_) ⇒ print(v.toString,deep)
+    case ThisRef => print(ThisRef.toString,deep)
+  }
 }
 abstract class OwnerHelper[A] {
   protected var currentOwner: Symbol = null

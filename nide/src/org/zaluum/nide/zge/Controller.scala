@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.PrettyPrinter
 import org.zaluum.nide.newcompiler.BoxDef
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.model._
@@ -48,6 +49,7 @@ class Controller(private var treep: Tree, val global: EclipseBoxClasspath) {
       updateViewers
       notifyListeners
       refreshTools
+      PrettyPrinter.print(treep,0)
     }
   }
   def canUndo = !undoStack.isEmpty
