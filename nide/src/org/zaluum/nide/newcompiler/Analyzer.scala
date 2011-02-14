@@ -129,7 +129,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
     }
     sym
   }
-  def usedNames = (vals.keySet.map { _.str } ++ ports.keySet.map { _.str }).toSet
+  def usedNames = (boxes.keySet.map {_.str} ++ vals.keySet.map { _.str } ++ ports.keySet.map { _.str }).toSet
   def root = enclosingScope.root
 }
 class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {

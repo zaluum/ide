@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import org.eclipse.draw2d.RectangleFigure
 import draw2dConversions._
 import org.eclipse.draw2d.{Ellipse, ColorConstants, Figure, ImageFigure}
 import org.eclipse.draw2d.geometry.{Rectangle, Point => EPoint, Dimension => EDimension}
@@ -34,20 +36,21 @@ class PortFigure(val ipos: MPoint,
   setAlpha(50)
   setOutline(false)
 }
-class OpenPortDeclFigure(val tree: PortDef, val openBox: OpenBoxFigure) extends Item with RectFeedback {
+class OpenPortDeclFigure(val tree: PortDef, val openBox: OpenBoxFigure) extends RectangleFigure with Item with RectFeedback {
   type T = PortDef
   def container = openBox.container
   def myLayer = container.portsLayer
   val size = Dimension(10, 10)
-  def pos = openBox.pos + tree.extPos
-    override def update() {
+  def pos = openBox.pos + tree.extPos 
+  override def update() {
     super.update()
     val sym = tree.symbol.asInstanceOf[PortSymbol]
     val valsym = openBox.valTree.symbol.asInstanceOf[ValSymbol]
     helpers += new PortFigure(getBounds.getCenter + Vector2(-10, 0), sym, tree.dir == In, Some(valsym), openBox.container)
     helpers += new PortFigure(tree.extPos + Vector2(10, 0), sym, tree.dir == In, None, openBox)
   }
-  setBackgroundColor(ColorConstants.yellow)
+  setForegroundColor(ColorConstants.white)
+  setBackgroundColor(ColorConstants.gray)
   this.setOpaque(true);
 }
 
