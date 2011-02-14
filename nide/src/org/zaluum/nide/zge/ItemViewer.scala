@@ -41,7 +41,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   def showMarquee() { feedbackLayer.add(marquee) }
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
   def hideMarquee() { feedbackLayer.remove(marquee) }
-  def executeOrNotify(cmd: TreeCommand) = {
+  /*def executeOrNotify(cmd: TreeCommand) = {
     if (cmd.canExecute) {
       controller.exec(cmd)
       true
@@ -51,9 +51,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
       msg.open
       false
     }
-  }
-
-  val selected = new SelectionManager()
-
-  def deselectAll() { selected.deselectAll }
+  }*/
+  def selectedItems : Set[Item]
+  val selection = new SelectionManager()
 }

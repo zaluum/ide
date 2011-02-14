@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.EditTransformer
 import org.zaluum.nide.newcompiler.PortDir
 import org.zaluum.nide.newcompiler.In
 import org.zaluum.nide.newcompiler.PortRef
@@ -54,7 +55,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     def drag() {}
     def buttonUp() {
       val dst = MPoint(currentMouseLocation.x, currentMouseLocation.y)
-      val tr = new CopyTransformer() {
+      val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
             val sym = b.symbol.asInstanceOf[BoxTypeSymbol]
@@ -64,11 +65,15 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
               vals = List(),
               ports = List(), 
               connections = List())
-            val newVal = ValDef(name, className, dst, Some(Dimension(200,200)), None,None)   
-            b.copy(defs =  newDef :: b.defs, vals = newVal :: b.vals)
+            val newVal = ValDef(name, className, dst, Some(Dimension(200,200)), None,None)
+            BoxDef(b.name, b.image,
+                 newDef :: transformTrees(b.defs),
+                 newVal :: transformTrees(b.vals),
+                 transformTrees(b.ports),
+                 transformTrees(b.connections))
         }
       }
-      controller.exec(TreeCommand(tr))
+      controller.exec(tr)
     }
     def buttonDown() {}
     def exit() {
@@ -95,14 +100,18 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     def drag() {}
     def buttonUp() {
       val dst = MPoint(currentMouseLocation.x, currentMouseLocation.y)
-      val tr = new CopyTransformer() {
+      val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
-            b.copy(vals = ValDef(name, tpe.name, dst, None,None,None) :: b.vals)
+             BoxDef(b.name, b.image,
+                 transformTrees(b.defs),
+                 ValDef(name, tpe.name, dst, None,None,None) :: transformTrees(b.vals),
+                 transformTrees(b.ports),
+                 transformTrees(b.connections))
         }
       }
-      controller.exec(TreeCommand(tr))
+      controller.exec(tr)
     }
     def buttonDown() {}
     def exit() {
@@ -134,15 +143,19 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     def buttonUp() {
       // execute
       val pos = MPoint(currentMouseLocation.x, currentMouseLocation.y)
-      val tr = new CopyTransformer() {
+      val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
             val name = Name(tree.symbol.asInstanceOf[BoxTypeSymbol].freshName("port"))
             val p = PortDef(name, Name("D"), dir, pos, MPoint(0, 0))
-            b.copy(ports = p :: b.ports)
+            BoxDef(b.name, b.image,
+                 transformTrees(b.defs),
+                 transformTrees(b.vals),
+                 p::transformTrees(b.ports),
+                 transformTrees(b.connections))
         }
       }
-      controller.exec(TreeCommand(tr))
+      controller.exec(tr)
     }
     def buttonDown() {}
     def exit() { feed.hide(); feed = null; selecting.enter() }
@@ -168,12 +181,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       def internalPos(p:MPoint) = MPoint(p.x-fig.openBox.pos.x,p.y-fig.openBox.pos.y)
       val oldPos = internalPos(fig.pos) 
       val newPos = oldPos + clampDelta
-      val command = TreeCommand(new CopyTransformer {
+      val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case p: PortDef if (fig.tree==p) ⇒
             p.copy(extPos = newPos)
         }
-      })
+      }
       controller.exec(command)
     }
     def drag {}
@@ -224,12 +237,17 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
           val condef = ConnectionDef(
             PortRef(srcRef, srcPortName, src.get.in),
             PortRef(dstRef, dstPortName, dst.get.in))
-          controller.exec(TreeCommand(
-            new CopyTransformer {
+          controller.exec(
+            new EditTransformer {
               val trans: PartialFunction[Tree, Tree] = {
-                case b: BoxDef if (b == initContainer.boxDef) ⇒ b.copy(connections = condef :: b.connections)
+                case b: BoxDef if (b == initContainer.boxDef) ⇒
+                BoxDef(b.name, b.image,
+                 transformTrees(b.defs),
+                 transformTrees(b.vals),
+                 transformTrees(b.ports),
+                 condef :: transformTrees(b.connections))
               }
-            }))
+            })
         } else exit()
       } else {
         exit()

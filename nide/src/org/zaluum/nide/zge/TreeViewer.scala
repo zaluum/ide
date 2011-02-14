@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.IFigure
 import scala.collection.mutable.Buffer
 import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.swt.widgets.Composite
@@ -34,10 +35,20 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     super.dispose()
     imageFactory.reg.dispose
   }
+  import RichFigure._
+  def remapSelection(m : Map[Tree,Tree]){
+    selection.refresh(m);
+  }
   def refresh() {
     helpers.clear
     clear
     populate()
     helpers.foreach{_.show}
+    this.deepChildren foreach  { _ match {
+      case i : Item if selection(i.tree)=> i.showFeedback();
+      case _ => 
+      }
+    }
   }
+  def selectedItems = this.deepChildren.collect { case i:Item if selection(i.tree) => i}.toSet 
 }

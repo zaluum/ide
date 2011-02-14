@@ -60,11 +60,21 @@ trait TypTree extends Tree
     case BoxRef(name) =>
    */
 // Transformer
-abstract class CopySymbolTransformer extends CopyTransformer {
-  override protected def transform(tree: Tree): Tree = 
+abstract class EditTransformer extends CopyTransformer with MapTransformer 
+
+trait MapTransformer extends Transformer {
+  var map = Map[Tree,Tree]()
+  abstract override protected def transform(tree:Tree):Tree = {
+    val transformed  = super.transform(tree)
+    map += (tree -> transformed)
+    transformed
+  }
+}
+trait CopySymbolTransformer extends Transformer {
+  abstract override protected def transform(tree: Tree): Tree = 
     super.transform(tree).copyAttrs(tree)
 }
-abstract class CopyTransformer extends Transformer {
+trait CopyTransformer extends Transformer {
   val defaultTransform:PartialFunction[Tree,Tree] = {  
     case e@EmptyTree ⇒ e
     case b@BoxDef(name, image, defs, vals, ports, connections) ⇒

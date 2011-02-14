@@ -55,31 +55,25 @@ class ImageFactory(val display: Display, bcp: ClassPath) {
   }
 }
 class SelectionManager {
-  var selected = Set[Selectable]()
-  def apply(f: Selectable) = selected(f)
-  def select(f: Selectable) {
-    if (!selected(f)) {
-      selected += f
-      f.showFeedback
-    }
+  protected var selected = Set[Tree]()
+  override def toString= selected.toString
+  def refresh(map : Map[Tree,Tree]) {
+    selected = selected flatMap { map.get(_) }
   }
-  def deselect(f: Selectable) {
-    if (selected(f)) {
-      f.hideFeedback
-      selected -= f
-    }
+  def apply(t:Tree) = selected(t)
+  def select(t: Tree) { selected += t }
+  def deselect(t: Tree) { selected -= t }
+  def toggleSelection(f: Tree) {
+    if (selected(f)) selected -= f
+    else selected += f
   }
-  def toggleSelection(f: Selectable) {
-    if (selected(f)) deselect(f)
-    else select(f)
-  }
-  def deselectAll() { selected foreach (deselect(_)) }
-  def updateSelection(figs: Set[Selectable], shift: Boolean) {
+  def deselectAll() { selected = selected.empty }
+  def updateSelection(trees: Set[Tree], shift: Boolean) {
     if (shift) {
-      figs foreach { toggleSelection(_) }
+      trees foreach { toggleSelection(_) }
     } else {
       deselectAll()
-      figs foreach { select(_) }
+      trees foreach { select(_) }
     }
   }
 }

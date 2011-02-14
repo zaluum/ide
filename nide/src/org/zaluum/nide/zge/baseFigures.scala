@@ -28,6 +28,11 @@ object RichFigure {
 import RichFigure._
 class RichFigure(container: IFigure) {
   import scala.collection.JavaConversions._
+  def deepChildren : List[IFigure] = {
+    val immediateChildren = container.getChildren.asInstanceOf[java.util.List[IFigure]].toList
+    val deepChildren:List[IFigure] = immediateChildren.flatMap { _.deepChildren }.toList
+    immediateChildren ++ deepChildren 
+  }
   def findDeepAt[A](internalCoords: EPoint, deep: Int = 0, debug: Boolean = false)(partial: PartialFunction[IFigure, A]): Option[A] = {
     // bounds in parent coordinates
     // client area in relative coordinates

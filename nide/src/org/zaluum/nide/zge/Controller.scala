@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.MapTransformer
 import org.zaluum.nide.newcompiler.PrettyPrinter
 import org.zaluum.nide.newcompiler.BoxDef
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
@@ -7,17 +8,7 @@ import org.zaluum.nide.model._
 import org.zaluum.nide.newcompiler.{ Tree, Analyzer, Transformer, FakeGlobalScope, Reporter }
 import scala.collection.mutable.{ Buffer, Stack }
 
-trait TreeCommand {
-  def execute(tree: Tree): Tree
-  def canExecute: Boolean
-}
-object TreeCommand {
-  def apply(t: Transformer) = new TreeCommand {
-    def execute(tree: Tree) = t(tree)
-    def canExecute = true
-  }
-}
-class Controller(private var treep: Tree, val global: EclipseBoxClasspath) {
+class Controller(private var nowTree: Tree, val global: EclipseBoxClasspath) {
   private var viewers = Buffer[Viewer]()
   def registerViewer(viewer: Viewer) {
     println("registering viewer " + viewer)
@@ -27,51 +18,53 @@ class Controller(private var treep: Tree, val global: EclipseBoxClasspath) {
   def unregisterViewer(viewer: Viewer) {
     viewers -= viewer
   }
-  def updateViewers { viewers foreach { _.refresh() } }
+  def updateViewers(map: Map[Tree, Tree]) {
+    viewers foreach { v ⇒ v.remapSelection(map); v.refresh() }
+  }
   def refreshTools() { viewers foreach { _.tool.refresh() } }
-  def tree = treep
+  def tree = nowTree
   val reporter = new Reporter()
   def compile() = {
     val scope = new FakeGlobalScope(global)
-    treep = new Analyzer(reporter, tree, scope).compile()
+    nowTree = new Analyzer(reporter, tree, scope).compile()
   }
-  var undoStack = Stack[Tree]()
-  var redoStack = Stack[Tree]()
-  var mark: Option[Tree] = None
+  type DMap = Map[Tree, Tree]
+  case class Mutation(before: Tree, d: DMap, now: Tree)
+  var undoStack = Stack[Mutation]()
+  var redoStack = Stack[Mutation]()
+  var mark: Option[Mutation] = None
   def isDirty = undoStack.elems.headOption != mark
   def markSaved() { mark = undoStack.elems.headOption }
-  def exec(c: TreeCommand) {
-    if (c.canExecute) {
-      undoStack.push(tree)
-      treep = c.execute(tree)
-      compile()
-      redoStack.clear
-      updateViewers
-      notifyListeners
-      refreshTools
-      PrettyPrinter.print(treep,0)
-    }
+  def exec(c: MapTransformer) {
+    val before = nowTree
+    nowTree = c(tree)
+    undoStack.push(Mutation(before, c.map, nowTree))
+    redoStack.clear
+    update(c.map)
+    PrettyPrinter.print(nowTree, 0)
+  }
+  private def update(m: DMap) {
+    compile()
+    updateViewers(m)
+    notifyListeners
+    refreshTools
   }
   def canUndo = !undoStack.isEmpty
   def canRedo = !redoStack.isEmpty
   def undo() {
     if (!undoStack.isEmpty) {
-      redoStack.push(tree)
-      treep = undoStack.pop
-      compile()
-      updateViewers
-      notifyListeners
-      refreshTools
+      val mutation = undoStack.pop
+      nowTree = mutation.before
+      redoStack.push(mutation)
+      update(mutation.d map { _.swap })
     }
   }
   def redo() {
     if (!redoStack.isEmpty) {
-      undoStack.push(tree)
-      treep = redoStack.pop
-      compile()
-      updateViewers
-      notifyListeners
-      refreshTools
+      val mutation = redoStack.pop;
+      undoStack.push(mutation)
+      nowTree = mutation.now
+      update(mutation.d)
     }
   }
   var listeners = Set[() ⇒ Unit]()

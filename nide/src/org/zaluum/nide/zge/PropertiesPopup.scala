@@ -25,10 +25,10 @@ class PortDeclPopup(
     def work {
       val port = pf.tree
       val now = txt.getText
-      viewer.executeOrNotify(new TreeCommand {
+      /*viewer.executeOrNotify(new TreeCommand {
         def canExecute = now != ""
         def execute(tree: Tree) = EmptyTree // TODO
-      })
+      })*/
       hide
     }
     addReaction(txt) { work }

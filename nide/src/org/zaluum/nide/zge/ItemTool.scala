@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.newcompiler.EditTransformer
 import draw2dConversions._
 import org.eclipse.swt.graphics.Cursor
 import org.eclipse.draw2d.{ Cursors, Figure, IFigure }
@@ -35,10 +37,11 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
 
     def buttonUp {
       (selected, lineSelected) match {
-        case (Some(box), _) ⇒ viewer.selected.updateSelection(Set(box), shift)
-        case (None, Some(line)) ⇒ viewer.selected.updateSelection(Set(line), shift)
-        case (None, None) ⇒ viewer.deselectAll()
+        case (Some(box), _) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
+        case (None, Some(line)) ⇒ //viewer.selected.updateSelection(Set(line), shift)
+        case (None, None) ⇒ viewer.selection.deselectAll()
       }
+      viewer.refresh()
     }
 
     val handleTrack = new OverTrack[HandleRectangle] {
@@ -70,8 +73,8 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
         case (None, _, Some(port)) ⇒ // connect
           connect(port)
         case (None, Some(fig), _) ⇒ // select and move
-          if (!viewer.selected(fig))
-            viewer.selected.updateSelection(Set(fig), shift)
+          if (!viewer.selection(fig.tree))
+            viewer.selection.updateSelection(Set(fig.tree), shift)
           fig match {
             case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
             case _ ⇒ moving.enter(initDrag, initContainer)
@@ -93,30 +96,30 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
 
     def allowed = (current eq initContainer) || (movables.exists { isOrHas(_, current) })
-    def movables = viewer.selected.selected.collect {
-      case item: Item if item.container == initContainer ⇒ item
+    def movables = viewer.selectedItems.collect {
+      case item if item.container == initContainer ⇒ item
     }
     def buttonUp {
       val positions = movables.map { item ⇒
         val oldLoc = item.getBounds.getLocation
         (item.tree.asInstanceOf[Tree] -> (MPoint(oldLoc.x, oldLoc.y) + delta))
       }.toMap
-      val command = TreeCommand(new CopyTransformer {
+      val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (positions.contains(v)) ⇒
             ValDef(name, typeName, positions(v), size, guiPos, guiSize)
           case p: PortDef if (positions.contains(p)) ⇒
             p.copy(inPos = positions(p))
         }
-      })
+      }
       controller.exec(command)
     }
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { viewer.selected.selected collect { case bf: Item ⇒ bf } foreach { _.moveDeltaFeed(delta) } }
+    def move() { viewer.selectedItems foreach { _.moveDeltaFeed(delta) } }
     def abort() {
-      viewer.selected.selected collect { case bf: Item ⇒ bf } foreach { _.moveDeltaFeed(Vector2(0, 0)) }
+      viewer.selectedItems foreach { _.moveDeltaFeed(Vector2(0, 0)) }
       exit()
     }
   }
@@ -160,12 +163,12 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       val newBounds = handle.deltaAdd(delta, itf.getBounds);
       val newPos = newBounds.getLocation
       val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(15, 15))
-      val command = TreeCommand(new CopyTransformer {
+      val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == itf.tree) ⇒
             ValDef(name, typeName, newPos, Some(newSize), guiPos, guiSize)
         }
-      })
+      }
       controller.exec(command)
     }
     def move() { itf.resizeDeltaFeed(delta, handle) }
