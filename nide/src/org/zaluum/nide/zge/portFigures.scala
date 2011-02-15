@@ -36,13 +36,13 @@ class PortFigure(val ipos: MPoint,
   setAlpha(50)
   setOutline(false)
 }
-class OpenPortDeclFigure(val tree: PortDef, val openBox: OpenBoxFigure) extends RectangleFigure with SimpleItem with RectFeedback {
+class OpenPortDeclFigure(val tree: PortDef, val in:Boolean, val openBox: OpenBoxFigure) extends RectangleFigure with SimpleItem with RectFeedback {
   type T = PortDef
   def container = openBox.container
   def myLayer = container.portsLayer
   val size = Dimension(10, 10)
   // tree.extPos must be (0,relY)
-  def xDisplacement = if (tree.dir==In) Vector2(0,0) else Vector2(openBox.size.w -10,0)
+  def xDisplacement = if (in) Vector2(0,0) else Vector2(openBox.size.w -10,0)
   def absDisplacement = Vector2(openBox.pos.x,openBox.pos.y)
   def relPos = tree.extPos + xDisplacement
   def pos = tree.extPos + xDisplacement + absDisplacement // abs coordinates
@@ -51,11 +51,11 @@ class OpenPortDeclFigure(val tree: PortDef, val openBox: OpenBoxFigure) extends 
     val sym = tree.symbol.asInstanceOf[PortSymbol]
     val valsym = openBox.valTree.symbol.asInstanceOf[ValSymbol]
     // external
-    val extDisplacement = if (tree.dir == In) Vector2(-10,0) else Vector2(10,0)
-    helpers += new PortFigure(getBounds.getCenter + extDisplacement, sym, tree.dir == In, Some(valsym), openBox.container)
+    val extDisplacement = if (in) Vector2(-10,0) else Vector2(10,0)
+    helpers += new PortFigure(getBounds.getCenter + extDisplacement, sym, in, Some(valsym), openBox.container)
     // internal
-    def inDisplacement = if (tree.dir == In) Vector2(10,0) else Vector2(-10,0)
-    helpers += new PortFigure(relPos + inDisplacement, sym, tree.dir == In, None, openBox)
+    def inDisplacement = if (in) Vector2(10,0) else Vector2(-10,0)
+    helpers += new PortFigure(relPos + inDisplacement, sym, !in, None, openBox)
   }
   setForegroundColor(ColorConstants.white)
   setBackgroundColor(ColorConstants.gray)

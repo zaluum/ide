@@ -25,7 +25,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     super.populateFigures()
     boxDef.children foreach {
       _ match {
-        case p@PortDef(name, typeName, in, inPos, extPos) ⇒
+        case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
           helpers += new PortDeclFigure(p, TreeViewer.this)
         case _ ⇒
       }

@@ -31,16 +31,16 @@ trait BoxDefContainer extends IFigure {
     case l:LineFigure=>l
   }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
-  def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
+  def findPortFigure(boxName: Name, portName: Name, in:Boolean): Option[PortFigure] = {
     portFigures find { p ⇒
       p.valSym match {
-        case Some(valSym) ⇒ (valSym.name == boxName && p.sym.name == portName && p.in == in)
+        case Some(valSym) ⇒ (valSym.name == boxName && p.sym.name == portName && p.in==in)
         case None ⇒ false
       }
     }
   }
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] = {
-    portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in }
+    portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in}
   }
   def owner: Symbol
   def clear() {
@@ -120,7 +120,12 @@ class OpenBoxFigure(
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-          helpers += new OpenPortDeclFigure(p, OpenBoxFigure.this)
+        def newFig(left:Boolean) = helpers += new OpenPortDeclFigure(p, left, OpenBoxFigure.this) 
+          in match {
+          case In => newFig(true)         
+          case Out=> newFig(false)
+          case Shift=> newFig(true); newFig(false)
+          }
         case _ ⇒
       }
     }

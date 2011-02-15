@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.newcompiler.Shift
+import org.zaluum.nide.newcompiler.PortDir
 import org.eclipse.swt.graphics.Point
 import SWTScala._
 import org.eclipse.swt.SWT
@@ -21,13 +23,11 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
     show(p)
   }
   def populate(content: Composite) {
-    def portDecl(in: Boolean) {
+    def portDecl(dir : PortDir, desc:String) {
       val b = new Button(content, SWT.PUSH)
       val data = new GridData
       data.horizontalAlignment = SWT.CENTER
       b.setLayoutData(data)
-      val desc = if (in) "in" else "out"
-      val dir = if (in) In else Out
       b.setToolTipText("Port " + desc)
       val image = viewer.imageFactory.get(PortDeclFigure.img(dir)).get
       b.setImage(image)
@@ -39,8 +39,10 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
         hide()
       }
     }
-    portDecl(in = true)
-    portDecl(in = false)
+    portDecl(In,"Input port")
+    portDecl(Out, "Output port")
+    if (container.isInstanceOf[OpenBoxFigure]) 
+      portDecl(Shift, "Shift port")
     def createButton(name: String, image: Image) = {
       val b = new Button(content, SWT.PUSH)
       val data = new GridData

@@ -139,7 +139,6 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
     var feed: ItemFeedbackFigure = _
     var dir: PortDir = In
-    //def initContainer : BoxDefContainer
     def move() { feed.setInnerLocation(currentMouseLocation) }
     def abort() { exit() }
     def drag() {}
@@ -151,7 +150,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
           case b: BoxDef if b == initContainer.boxDef ⇒
             val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
             val name = Name(tpe.freshName("port"))
-            val p = PortDef(name, Name("D"), dir, pos, MPoint(0, 0))
+            val p = PortDef(name, Name("D"), dir, pos, MPoint(0, pos.y))
             BoxDef(b.name, b.image,
               transformTrees(b.defs),
               transformTrees(b.vals),
