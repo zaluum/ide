@@ -149,7 +149,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
-            val name = Name(tree.symbol.asInstanceOf[BoxTypeSymbol].freshName("port"))
+            val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
+            val name = Name(tpe.freshName("port"))
             val p = PortDef(name, Name("D"), dir, pos, MPoint(0, 0))
             BoxDef(b.name, b.image,
               transformTrees(b.defs),
@@ -174,15 +175,15 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       enterSingle(initContainer)
       state = this
     }
-    def minY = fig.openBox.pos.y;
-    def maxY = minY + fig.openBox.size.height
-    def minDelta = minY - fig.pos.y
-    def maxDelta = maxY - fig.pos.y - fig.size.height
+    def minY = 0
+    def maxY = fig.openBox.size.height
+    def posY = fig.relPos.y 
+    def minDelta = minY - posY
+    def maxDelta = maxY - posY - fig.size.height
     def clamp(low: Int, i: Int, high: Int) = math.max(low, math.min(i, high))
     def clampDelta = Vector2(0, clamp(minDelta, delta.y, maxDelta))
     def buttonUp {
-      def internalPos(p: MPoint) = MPoint(p.x - fig.openBox.pos.x, p.y - fig.openBox.pos.y)
-      val oldPos = internalPos(fig.pos)
+      val oldPos = fig.tree.extPos
       val newPos = oldPos + clampDelta
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {

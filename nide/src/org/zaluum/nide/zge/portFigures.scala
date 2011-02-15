@@ -41,13 +41,21 @@ class OpenPortDeclFigure(val tree: PortDef, val openBox: OpenBoxFigure) extends 
   def container = openBox.container
   def myLayer = container.portsLayer
   val size = Dimension(10, 10)
-  def pos = openBox.pos + tree.extPos 
+  // tree.extPos must be (0,relY)
+  def xDisplacement = if (tree.dir==In) Vector2(0,0) else Vector2(openBox.size.w -10,0)
+  def absDisplacement = Vector2(openBox.pos.x,openBox.pos.y)
+  def relPos = tree.extPos + xDisplacement
+  def pos = tree.extPos + xDisplacement + absDisplacement // abs coordinates
   override def update() {
     super.update()
     val sym = tree.symbol.asInstanceOf[PortSymbol]
     val valsym = openBox.valTree.symbol.asInstanceOf[ValSymbol]
-    helpers += new PortFigure(getBounds.getCenter + Vector2(-10, 0), sym, tree.dir == In, Some(valsym), openBox.container)
-    helpers += new PortFigure(tree.extPos + Vector2(10, 0), sym, tree.dir == In, None, openBox)
+    // external
+    val extDisplacement = if (tree.dir == In) Vector2(-10,0) else Vector2(10,0)
+    helpers += new PortFigure(getBounds.getCenter + extDisplacement, sym, tree.dir == In, Some(valsym), openBox.container)
+    // internal
+    def inDisplacement = if (tree.dir == In) Vector2(10,0) else Vector2(-10,0)
+    helpers += new PortFigure(relPos + inDisplacement, sym, tree.dir == In, None, openBox)
   }
   setForegroundColor(ColorConstants.white)
   setBackgroundColor(ColorConstants.gray)
