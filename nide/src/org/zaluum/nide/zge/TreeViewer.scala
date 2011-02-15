@@ -44,11 +44,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     clear
     populate()
     helpers.foreach{_.show}
-    this.deepChildren foreach  { _ match {
-      case i : Item if selection(i.tree)=> i.showFeedback();
-      case _ => 
-      }
-    }
+    selectedItems foreach { _.showFeedback() }
   }
   def selectedItems = this.deepChildren.collect { case i:Item if selection(i.tree) => i}.toSet 
 }

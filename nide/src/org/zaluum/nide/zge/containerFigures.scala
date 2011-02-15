@@ -98,7 +98,7 @@ class OpenBoxFigure(
   val boxDef: BoxDef,
   val owner: Symbol,
   val container: BoxDefContainer,
-  val viewer: TreeViewer) extends Item with ResizableFeedback with BoxDefContainer with Transparent{
+  val viewer: TreeViewer) extends SimpleItem with ResizableFeedback with BoxDefContainer with Transparent{
   // Item
   type T = ValDef
   def tree = valTree

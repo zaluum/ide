@@ -38,7 +38,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def buttonUp {
       (selected, lineSelected) match {
         case (Some(box), _) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
-        case (None, Some(line)) ⇒ //viewer.selected.updateSelection(Set(line), shift)
+        case (None, Some(line)) ⇒ line.con foreach { c=> viewer.selection.updateSelection(Set(c), shift) }
         case (None, None) ⇒ viewer.selection.deselectAll()
       }
       viewer.refresh()

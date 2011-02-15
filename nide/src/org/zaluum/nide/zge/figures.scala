@@ -10,7 +10,7 @@ import scala.collection.mutable.Buffer
 
 // TREE SPECIFIC FIGURES
 
-class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with Item with RectFeedback {
+class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with SimpleItem with RectFeedback {
   type T = ValDef
   def sym = tree.symbol.asInstanceOf[ValSymbol]
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
@@ -68,10 +68,10 @@ class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] =
 }
 class ConnectionPainter(bdf: BoxDefContainer) {
   val lines = Buffer[LineFigure]()
-  def paintRoute(route: Route, con: Option[ConnectionDef] = None) {
+  def paintRoute(route: Route, feedback: Boolean ,con: Option[ConnectionDef] = None) {
     clear()
     route.lines foreach { l ⇒ lines += new LineFigure(l, bdf, con) }
-    lines foreach { _.show }
+    lines foreach { l => if (feedback) l.showFeedback() else l.hideFeedback(); l.show }
   }
   def clear() {
     lines.foreach { _.hide }
@@ -79,14 +79,14 @@ class ConnectionPainter(bdf: BoxDefContainer) {
   }
 }
 // TODO not really a figure right now... no children
-class ConnectionFigure(val tree: ConnectionDef, bdf: BoxDefContainer)
-  extends Figure with ShowHide{
-  val painter = new ConnectionPainter(bdf)
+class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) extends Item {
+  type T = ConnectionDef
+  val painter = new ConnectionPainter(container)
   def calcRoute = {
     // TODO paint incomplete connections gracefully
     def portFigure(tree: Tree): Option[PortFigure] = tree match {
-      case PortRef(v@ValRef(_), portName, in) ⇒ bdf.findPortFigure(v.symbol.name, portName, in)
-      case PortRef(ThisRef, portName, in) ⇒ bdf.findPortFigure(portName, in)
+      case PortRef(v@ValRef(_), portName, in) ⇒ container.findPortFigure(v.symbol.name, portName, in)
+      case PortRef(ThisRef, portName, in) ⇒ container.findPortFigure(portName, in)
       case _ ⇒ None
     }
     def position(tree: Tree): Option[MPoint] = portFigure(tree) map { p ⇒ p.anchor }
@@ -96,12 +96,29 @@ class ConnectionFigure(val tree: ConnectionDef, bdf: BoxDefContainer)
     }
     route
   }
-  def show() =
-    calcRoute match {
-      case Some(r) ⇒ painter.paintRoute(r, Some(tree))
-      case None ⇒ painter.clear()
-    }
+  var feedback = false
+  def paint = calcRoute match {
+    case Some(r) ⇒ painter.paintRoute(r, feedback, Some(tree))
+    case None ⇒ painter.clear()
+  }
+  def show() = {
+    container.connectionsLayer.add(this);
+    paint 
+  }
   def hide() {
+    if (container.connectionsLayer.getChildren.contains(this))
+      container.connectionsLayer.remove(this)
     painter.clear()
   }
+  def showFeedback() {
+   feedback = true
+   paint
+  }
+  def hideFeedback() {
+   feedback = false
+   paint
+  }
+  def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {}
+  def moveDeltaFeed(delta: Vector2) {}
+  def moveFeed(p: MPoint) {}
 }

@@ -14,7 +14,7 @@ class PortFigure(val ipos: MPoint,
     val in: Boolean,
     val valSym: Option[ValSymbol], 
     val container: BoxDefContainer)
-    extends Ellipse with Item with RectFeedback{
+    extends Ellipse with SimpleItem with RectFeedback{
   type T = Null
   def tree = null // ugly
   def myLayer = container.portsLayer
@@ -36,7 +36,7 @@ class PortFigure(val ipos: MPoint,
   setAlpha(50)
   setOutline(false)
 }
-class OpenPortDeclFigure(val tree: PortDef, val openBox: OpenBoxFigure) extends RectangleFigure with Item with RectFeedback {
+class OpenPortDeclFigure(val tree: PortDef, val openBox: OpenBoxFigure) extends RectangleFigure with SimpleItem with RectFeedback {
   type T = PortDef
   def container = openBox.container
   def myLayer = container.portsLayer
@@ -63,7 +63,7 @@ object PortDeclFigure {
   def img(dir: PortDir) = "org/zaluum/nide/icons/portDecl" + str(dir) + ".png"
 }
 
-class PortDeclFigure(val tree: PortDef, val container: BoxDefContainer) extends ImageFigure with Item with RectFeedback {
+class PortDeclFigure(val tree: PortDef, val container: BoxDefContainer) extends ImageFigure with SimpleItem with RectFeedback {
   type T = PortDef
   def sym = tree.symbol match {
     case NoSymbol ⇒ None

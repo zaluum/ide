@@ -11,7 +11,6 @@ import scala.collection.mutable.{ Buffer, Stack }
 class Controller(private var nowTree: Tree, val global: EclipseBoxClasspath) {
   private var viewers = Buffer[Viewer]()
   def registerViewer(viewer: Viewer) {
-    println("registering viewer " + viewer)
     viewers += viewer
     viewer.refresh()
   }

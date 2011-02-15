@@ -34,14 +34,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     override def menu() {
       figureUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p).show(swtMouseLocation) // TODO Dispose?
-        case Some(o: OpenBoxFigure) => println("openbox")
+        case Some(o: OpenBoxFigure) ⇒
         case Some(b: ImageValFigure) ⇒
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)
       }
     }
   }
   abstract class InnerCreating extends ToolState {
-    self : SingleContainer =>
+    self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
     def enter(initContainer: BoxDefContainer) {
       enterSingle(initContainer)
@@ -63,14 +63,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
             val className = Name(sym.freshName("C"))
             val newDef = BoxDef(className, None, List(),
               vals = List(),
-              ports = List(), 
+              ports = List(),
               connections = List())
-            val newVal = ValDef(name, className, dst, Some(Dimension(200,200)), None,None)
+            val newVal = ValDef(name, className, dst, Some(Dimension(200, 200)), None, None)
             BoxDef(b.name, b.image,
-                 newDef :: transformTrees(b.defs),
-                 newVal :: transformTrees(b.vals),
-                 transformTrees(b.ports),
-                 transformTrees(b.connections))
+              newDef :: transformTrees(b.defs),
+              newVal :: transformTrees(b.vals),
+              transformTrees(b.ports),
+              transformTrees(b.connections))
         }
       }
       controller.exec(tr)
@@ -83,7 +83,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   }
   object innercreating extends InnerCreating with SingleContainerAllower with Allower // inherit
   abstract class Creating extends ToolState {
-    self: SingleContainer =>
+    self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
     var tpe: BoxTypeSymbol = _
     def enter(tpe: BoxTypeSymbol, initContainer: BoxDefContainer) {
@@ -104,11 +104,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
-             BoxDef(b.name, b.image,
-                 transformTrees(b.defs),
-                 ValDef(name, tpe.name, dst, None,None,None) :: transformTrees(b.vals),
-                 transformTrees(b.ports),
-                 transformTrees(b.connections))
+            BoxDef(b.name, b.image,
+              transformTrees(b.defs),
+              ValDef(name, tpe.name, dst, None, None, None) :: transformTrees(b.vals),
+              transformTrees(b.ports),
+              transformTrees(b.connections))
         }
       }
       controller.exec(tr)
@@ -124,7 +124,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   object creating extends Creating with SingleContainerAllower
   // CREATING PORT
   class CreatingPort extends ToolState {
-    self : SingleContainer =>
+    self: SingleContainer ⇒
     def enter(dir: PortDir, initContainer: BoxDefContainer) {
       enterSingle(initContainer)
       state = this
@@ -149,10 +149,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
             val name = Name(tree.symbol.asInstanceOf[BoxTypeSymbol].freshName("port"))
             val p = PortDef(name, Name("D"), dir, pos, MPoint(0, 0))
             BoxDef(b.name, b.image,
-                 transformTrees(b.defs),
-                 transformTrees(b.vals),
-                 p::transformTrees(b.ports),
-                 transformTrees(b.connections))
+              transformTrees(b.defs),
+              transformTrees(b.vals),
+              p :: transformTrees(b.ports),
+              transformTrees(b.connections))
         }
       }
       controller.exec(tr)
@@ -163,27 +163,27 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   object creatingPort extends CreatingPort with SingleContainerAllower
   // MOVING OPEN PORT
   trait MovingOpenPort {
-    self : ToolState with DeltaMove with SingleContainer =>
-    var fig : OpenPortDeclFigure = _
-    def enter(initDrag: Point, initContainer: BoxDefContainer, fig : OpenPortDeclFigure) {
-      this.fig=fig
+    self: ToolState with DeltaMove with SingleContainer ⇒
+    var fig: OpenPortDeclFigure = _
+    def enter(initDrag: Point, initContainer: BoxDefContainer, fig: OpenPortDeclFigure) {
+      this.fig = fig
       enterMoving(initDrag)
       enterSingle(initContainer)
       state = this
     }
     def minY = fig.openBox.pos.y;
     def maxY = minY + fig.openBox.size.height
-    def minDelta = minY-fig.pos.y
-    def maxDelta = maxY-fig.pos.y-fig.size.height
-    def clamp(low:Int,i:Int,high:Int) = math.max(low, math.min(i,high))
-    def clampDelta = Vector2(0, clamp(minDelta,delta.y,maxDelta) )
+    def minDelta = minY - fig.pos.y
+    def maxDelta = maxY - fig.pos.y - fig.size.height
+    def clamp(low: Int, i: Int, high: Int) = math.max(low, math.min(i, high))
+    def clampDelta = Vector2(0, clamp(minDelta, delta.y, maxDelta))
     def buttonUp {
-      def internalPos(p:MPoint) = MPoint(p.x-fig.openBox.pos.x,p.y-fig.openBox.pos.y)
-      val oldPos = internalPos(fig.pos) 
+      def internalPos(p: MPoint) = MPoint(p.x - fig.openBox.pos.x, p.y - fig.openBox.pos.y)
+      val oldPos = internalPos(fig.pos)
       val newPos = oldPos + clampDelta
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
-          case p: PortDef if (fig.tree==p) ⇒
+          case p: PortDef if (fig.tree == p) ⇒
             p.copy(extPos = newPos)
         }
       }
@@ -192,33 +192,33 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { fig.moveDeltaFeed(clampDelta) } 
+    def move() { fig.moveDeltaFeed(clampDelta) }
     def abort() {
-      fig.moveDeltaFeed(Vector2(0, 0)) 
+      fig.moveDeltaFeed(Vector2(0, 0))
       exit()
     }
   }
   object movingOpenPort extends MovingOpenPort with DeltaMove with SingleContainer
   // CONNECT
   trait Connecting extends ToolState {
-    self : SingleContainer =>
+    self: SingleContainer ⇒
     var dst: Option[PortFigure] = None
     var src: Option[PortFigure] = None
-    var painter : ConnectionPainter = _ 
+    var painter: ConnectionPainter = _
     val portsTrack = new OverTrack[PortFigure] {
-      def onEnter(p: PortFigure) { 
+      def onEnter(p: PortFigure) {
         if (p.container == initContainer) {
-          dst = Some(p); p.showFeedback 
+          dst = Some(p); p.showFeedback
         }
       }
       def onExit(p: PortFigure) { dst = None; p.hideFeedback }
     }
     def enter(initContainer: BoxDefContainer, initPort: PortFigure) {
-      state=this
+      state = this
       enterSingle(initContainer)
       painter = new ConnectionPainter(initContainer)
       src = Some(initPort)
-      
+
       viewer.setCursor(Cursors.HAND)
       move()
     }
@@ -241,11 +241,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
             new EditTransformer {
               val trans: PartialFunction[Tree, Tree] = {
                 case b: BoxDef if (b == initContainer.boxDef) ⇒
-                BoxDef(b.name, b.image,
-                 transformTrees(b.defs),
-                 transformTrees(b.vals),
-                 transformTrees(b.ports),
-                 condef :: transformTrees(b.connections))
+                  BoxDef(b.name, b.image,
+                    transformTrees(b.defs),
+                    transformTrees(b.vals),
+                    transformTrees(b.ports),
+                    condef :: transformTrees(b.connections))
               }
             })
         } else exit()
@@ -269,11 +269,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
         case Some(df) ⇒ df.anchor
         case None ⇒ currentMouseLocation
       }
-      painter.paintRoute(Route(start, end))
+      painter.paintRoute(Route(start, end), false)
     }
     def abort() { exit() }
-    
+
   }
   object connecting extends Connecting with SingleContainer
-  
+
 }
