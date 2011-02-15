@@ -31,8 +31,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     override def connect(port: PortFigure) {
       connecting.enter(initContainer, port)
     }
+    def delete() {
+      controller.exec(Delete.deleteSelection(viewer.selectedItems ))
+    }
     override def menu() {
-      figureUnderMouse match {
+      itemOrLineUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p).show(swtMouseLocation) // TODO Dispose?
         case Some(o: OpenBoxFigure) ⇒
         case Some(b: ImageValFigure) ⇒

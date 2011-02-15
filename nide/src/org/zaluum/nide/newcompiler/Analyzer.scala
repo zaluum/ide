@@ -190,18 +190,18 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           }
           tree.tpe = tree.symbol.tpe
         case PortRef(fromTree, name, in) ⇒ // TODO filter in?
-          tree.symbol = fromTree.symbol.tpe match {
+          tree.symbol = fromTree.tpe match {
             case b: BoxTypeSymbol ⇒
               b.lookupPort(name).getOrElse {
                 error("Port not found " + name);
                 NoSymbol
               }
-            case _ ⇒ NoSymbol
+            case tpe ⇒ NoSymbol
           }
           tree.tpe = tree.symbol.tpe
         case ThisRef ⇒
-          tree.symbol = currentOwner
-          tree.tpe = currentOwner.tpe
+          tree.symbol = currentOwner // TODO what symbol for this?
+          tree.tpe = currentOwner.asInstanceOf[BoxTypeSymbol]
         case _ ⇒
       }
 

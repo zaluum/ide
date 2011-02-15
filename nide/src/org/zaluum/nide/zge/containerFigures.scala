@@ -26,8 +26,10 @@ trait BoxDefContainer extends IFigure {
   def feedbackLayer: Figure
   def connectionsLayer: Figure
   def portsLayer: Figure
-  def itemAt(p: EPoint, debug:Boolean=false) = this.findDeepAt(p,0,debug) { case bf: Item ⇒ bf }
-  def lineAt(p: EPoint) = this.findDeepAt(p){ case l: LineFigure ⇒ l }
+  def itemOrLineAt(p: EPoint, debug:Boolean=false) = this.findDeepAt(p,0,debug) { 
+    case bf: Item ⇒ bf
+    case l:LineFigure=>l
+  }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒

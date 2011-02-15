@@ -43,8 +43,8 @@ class RichFigure(container: IFigure) {
     container.translateToParent(parentCoords)
     println2("findDeep " + container + " " + parentCoords + "bounds " + container.getBounds + " visible=" + container.isVisible + "opaque=" + container.isOpaque)
     if (container.isVisible && container.containsPoint(parentCoords)) {
-      //if (container.isOpaque) 
-      candidate = partial.lift(container)
+      candidate = partial.lift(container) 
+      println2("candidate = " + candidate)
       println2("contains point. Client area= " + container.getClientArea + " relative point=" + internalCoords)
       if (container.getClientArea.contains(internalCoords)) {
         println2("checking children")
@@ -55,12 +55,16 @@ class RichFigure(container: IFigure) {
           c.translateFromParent(childCoords)
           println2("checking child " + c + " with coordinates " + childCoords)
           c.findDeepAt(childCoords, deep + 1, debug)(partial) match {
-            case Some(cc) ⇒ return Some(cc)
+            case Some(cc) ⇒
+              println2("child found=" + cc)
+              return Some(cc)
             case None ⇒
+              println2("no child found")
           }
         }
       }
     }
+    println2("returning candidate=" + candidate)
     return candidate
   }
 

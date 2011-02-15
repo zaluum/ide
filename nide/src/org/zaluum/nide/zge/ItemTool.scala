@@ -29,8 +29,9 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var initContainer: BoxDefContainer = _
     def enter() { state = this; }
     def buttonDown {
-      selected = figureUnderMouse
-      if (selected.isEmpty) lineSelected = lineUnderMouse
+      val iol = itemOrLineUnderMouse
+      selected = iol collect { case i:Item => i}
+      lineSelected = iol collect {case l:LineFigure => l}
       initDrag = currentMouseLocation.getCopy
       initContainer = current
     }

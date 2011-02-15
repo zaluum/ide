@@ -18,6 +18,7 @@ abstract class Tool(viewer: Viewer) {
     def focusLost(e: FocusEvent) {}
     def keyPressed(e: KeyEvent) = {
       if (e.keyCode == SWT.ESC) handleAbort()
+      if (e.keyCode == SWT.DEL) handleDel()
     }
     def keyReleased(e: KeyEvent) {}
     def menuDetected(e: MenuDetectEvent) { state.menu() }
@@ -85,6 +86,11 @@ abstract class Tool(viewer: Viewer) {
   def leftButton(me: MouseEvent) = me.button == 1
   def shift = (stateMask & SWT.SHIFT) != 0
   def handleAbort() { state.abort() }
+  def handleDel() { state match {
+    case s:{def delete()} => s.delete()
+    case _ =>
+    }
+  }
   // Over track
 
 }
