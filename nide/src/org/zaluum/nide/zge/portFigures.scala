@@ -49,6 +49,8 @@ class OpenPortDeclFigure(val tree: PortDef, val in:Boolean, val openBox: OpenBox
   override def update() {
     super.update()
     val sym = tree.symbol.asInstanceOf[PortSymbol]
+    setBackgroundColor(Colorizer.color(sym.tpe))
+    setForegroundColor(if (tree.dir==Shift) ColorConstants.yellow else ColorConstants.white)
     val valsym = openBox.valTree.symbol.asInstanceOf[ValSymbol]
     // external
     val extDisplacement = if (in) Vector2(-10,0) else Vector2(10,0)
@@ -58,7 +60,7 @@ class OpenPortDeclFigure(val tree: PortDef, val in:Boolean, val openBox: OpenBox
     helpers += new PortFigure(relPos + inDisplacement, sym, !in, None, openBox)
   }
   setForegroundColor(ColorConstants.white)
-  setBackgroundColor(ColorConstants.gray)
+  //setBackgroundColor(ColorConstants.gray)
   this.setOpaque(true);
 }
 

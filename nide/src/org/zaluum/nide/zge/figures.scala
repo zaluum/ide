@@ -34,7 +34,7 @@ class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends I
 
 class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] = None) extends Polyline with Selectable {
   //setAntialias(1)
-  setForegroundColor(ColorConstants.gray)
+  //setForegroundColor(ColorConstants.gray)
   var complete = false
   var feedback = false
   showComplete
@@ -43,6 +43,7 @@ class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] =
   def showComplete { complete = true; calcStyle }
   def showIncomplete { complete = false; calcStyle }
   def calcStyle {
+    setForegroundColor(Colorizer.color(con map {_.tpe} getOrElse NoSymbol))
     if (feedback) {
       setLineStyle(SWT.LINE_DASH)
       setLineWidth(2)

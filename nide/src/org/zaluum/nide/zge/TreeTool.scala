@@ -1,33 +1,16 @@
 package org.zaluum.nide.zge
-
-import org.zaluum.nide.newcompiler.EditTransformer
-import org.zaluum.nide.newcompiler.PortDir
-import org.zaluum.nide.newcompiler.In
-import org.zaluum.nide.newcompiler.PortRef
-import org.zaluum.nide.newcompiler.ConnectionDef
-import org.zaluum.nide.newcompiler.ThisRef
-import org.zaluum.nide.newcompiler.ValRef
-import org.zaluum.nide.newcompiler.CopyTransformer
-import org.zaluum.nide.newcompiler.BoxDef
-import org.zaluum.nide.newcompiler.PortDef
-import org.zaluum.nide.newcompiler.EmptyTree
-import org.zaluum.nide.newcompiler.Name
-import org.zaluum.nide.newcompiler.ValDef
-import org.zaluum.nide.newcompiler.BoxTypeSymbol
-import org.zaluum.nide.newcompiler.Tree
-
 import draw2dConversions._
-import org.eclipse.draw2d.{ Cursors, Figure }
-import org.eclipse.draw2d.geometry.{ Point, Rectangle }
-import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
-
+import org.eclipse.draw2d.{Cursors, Figure}
+import org.eclipse.draw2d.geometry.{Point, Rectangle}
+import org.zaluum.nide.model.{Point => MPoint, _}
+import org.zaluum.nide.newcompiler._
 import scala.collection.JavaConversions._
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   def tree = viewer.tree
   def currentBoxDefLayers = current.asInstanceOf[BoxDefContainer] // FIXME
 
-  override lazy val selecting = new Selecting {
+  override lazy val selecting = new Selecting with DeleteState {
     override def connect(port: PortFigure) {
       connecting.enter(initContainer, port)
     }
@@ -36,7 +19,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
     override def menu() {
       itemOrLineUnderMouse match {
-        case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p).show(swtMouseLocation) // TODO Dispose?
+        case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
+        case Some(p: OpenPortDeclFigure) => new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
         case Some(o: OpenBoxFigure) ⇒
         case Some(b: ImageValFigure) ⇒
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)

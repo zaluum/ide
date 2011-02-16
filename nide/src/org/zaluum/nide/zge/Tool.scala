@@ -86,8 +86,11 @@ abstract class Tool(viewer: Viewer) {
   def leftButton(me: MouseEvent) = me.button == 1
   def shift = (stateMask & SWT.SHIFT) != 0
   def handleAbort() { state.abort() }
+  trait DeleteState {
+    def delete()
+  }
   def handleDel() { state match {
-    case s:{def delete()} => s.delete()
+    case d:DeleteState => d.delete()
     case _ =>
     }
   }
