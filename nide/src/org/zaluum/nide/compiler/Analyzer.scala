@@ -1,59 +1,18 @@
 package org.zaluum.nide.compiler
+
+import org.jgrapht.traverse.TopologicalOrderIterator
+import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException
+import org.jgrapht.graph.DefaultEdge
+import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import scala.collection.mutable.Buffer
-/*
-   def isValidJavaIdentifier(s: String) = {
+
+/*   def isValidJavaIdentifier(s: String) = {
     s != null &&
       s.length != 0 &&
       Character.isJavaIdentifierStart(s(0)) &&
       s.view(1, s.length).forall { Character.isJavaIdentifierPart(_) }
   }
-  lazy val boxesInOrder = bcd.boxes.toList.sortWith(_.name < _.name)
-  lazy val portDeclInOrder = bcd.portDecls.toList.sortWith(_.name < _.name)
-  def checkConnections() = {
-    val acyclic = new DirectedAcyclicGraph[Box, DefaultEdge](classOf[DefaultEdge])
-    bcd.boxes foreach { acyclic.addVertex(_) }
-    var portsUsed = Set[PortRef]()
-    def isModelPort(p: PortRef) = p.isInstanceOf[ModelPortRef]
-    def checkConnection(c: Connection) {
-      // complete connection
-      reporter(c.from.isDefined && c.to.isDefined, "Connection c is incomplete", Some(c), true)
-      reporter.check()
-      val p1 = c.from.get
-      val p2 = c.to.get
-      checkPortRef(p1, c)
-      checkPortRef(p2, c)
-      reporter.check() // TODO fail better
-      // auto connection
-      reporter(p1 != p2, "Connection to itself", Some(c))
-      // port type and direction
-      val dir: Option[(PortRef, PortRef)] = (portType(p1), portType(p2)) match {
-        case (TypedPort(a, p1In, _, _), TypedPort(b, p2In, _, _)) if (a == b) ⇒
-          c.connectionFlow(portType) orElse { reporter.report("Invalid connection", Some(c)); None }
-        case (a: TypedPort, b: TypedPort) ⇒ reporter.report("Incompatible port types " + a + " " + b, Some(c)); None
-      }
-      reporter.check()
-      val (from, to) = dir.get
-      // multiple connections to one input
-      reporter(!portsUsed.contains(to), "Double connection to port " + to, Some(to), true)
-      portsUsed += to // this check won't work with nested boxes
-      // check graph cycle
-      try {
-        (from, to) match {
-          case (f: BoxPortRef, t: BoxPortRef) ⇒
-            acyclic.addDagEdge(f.box, t.box)
-          case _ ⇒
-        }
-      } catch {
-        case e: CycleFoundException ⇒ reporter.fail("Cycle detected", Some(c))
-      }
-    }
-    bcd.connections foreach { checkConnection(_) }
-    reporter.check()
-    // compute correct execution order
-    val topo = new TopologicalOrderIterator[Box, DefaultEdge](acyclic);
-    import scala.collection.JavaConversions._
-    topo.toList
-  }*/
+  */
 
 class CompilationException extends Exception
 class Reporter {
@@ -93,7 +52,7 @@ trait Scope {
   def lookupVal(name: Name): Option[Symbol]
   def lookupType(name: Name): Option[Type]
   def lookupBoxType(name: Name): Option[Type]
-  def lookupBoxTypeLocal(name : Name) : Option[Type]
+  def lookupBoxTypeLocal(name: Name): Option[Type]
   def enter(sym: Symbol): Symbol
   def root: Symbol
 }
@@ -118,7 +77,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name)
   def lookupBoxType(name: Name): Option[Type] =
     boxes.get(name) orElse { enclosingScope.lookupBoxType(name) }
-  def lookupBoxTypeLocal(name: Name) : Option[Type] = boxes.get(name)
+  def lookupBoxTypeLocal(name: Name): Option[Type] = boxes.get(name)
   def enter(sym: Symbol): Symbol = {
     val entry = (sym.name -> sym)
     sym match {
@@ -128,7 +87,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
     }
     sym
   }
-  def usedNames = (boxes.keySet.map {_.str} ++ vals.keySet.map { _.str } ++ ports.keySet.map { _.str }).toSet
+  def usedNames = (boxes.keySet.map { _.str } ++ vals.keySet.map { _.str } ++ ports.keySet.map { _.str }).toSet
   def root = enclosingScope.root
 }
 class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
@@ -206,26 +165,97 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
 
     }
   }
-  class Checker(global: Symbol) extends Traverser(global) {
-    override def traverse(tree1: Tree) {
-      implicit val tree = tree1
-      tree match {
-        case ConnectionDef(a, b) ⇒
-          if (a.symbol == NoSymbol || b.symbol == NoSymbol)
-            error("incomplete connection " + a + "<->" + b)
-          if (a.tpe != b.tpe) error("connection " + a + "<->" + b + " is not type compatible")
-          tree.tpe = a.tpe
-        case _ ⇒
+  class CheckConnections(b: Tree, owner: Symbol) {
+    val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
+    var usedInputs = Set[PortRef]()
+    var connections = Buffer[(PortRef, PortRef)]()
+    object Checker extends Traverser(owner) {
+      override def traverse(tree1: Tree) {
+        implicit val tree = tree1
+        tree match {
+          case b: BoxDef ⇒
+            traverseTrees(b.vals)
+            traverseTrees(b.connections)
+            b.defs foreach {
+              _ match {
+                case bDef: BoxDef ⇒ new CheckConnections(bDef, b.symbol).check
+              }
+            }
+          case c@ConnectionDef(a, b) ⇒
+            if (a.symbol == NoSymbol || b.symbol == NoSymbol) {
+              error("incomplete connection " + a + "<->" + b)
+            } else if (a.tpe != b.tpe) {
+              error("connection " + a + "<->" + b + " is not type compatible")
+            } else {
+              // check direction
+              val connection = direction(c)
+              connections += connection
+              val (from, to) = connection
+              // check only one connection per input
+              if (usedInputs.contains(to))
+                error("input already used " + to)
+              usedInputs += to
+              // check graph consistency
+              (from.fromRef, to.fromRef) match {
+                case (va: ValDef, vb: ValDef) ⇒
+                  try {
+                    acyclic.addDagEdge(va.symbol.asInstanceOf[ValSymbol], vb.symbol.asInstanceOf[ValSymbol]);
+                  } catch {
+                    case e: CycleFoundException ⇒ error("cycle found ")
+                  }
+                case _ ⇒
+              }
+
+              tree.tpe = a.tpe
+            }
+          case v: ValDef ⇒ acyclic.addVertex(v.symbol.asInstanceOf[ValSymbol])
+          case _ ⇒
+        }
       }
-      super.traverse(tree)
+    }
+
+    def direction(c: ConnectionDef): (PortRef, PortRef) = {
+      implicit val tree:Tree = c
+      def isIn(ap: PortRef): Boolean = ap.symbol.asInstanceOf[PortSymbol].dir match {
+        case In ⇒ true
+        case Out ⇒ false
+        case Shift ⇒ ap.in
+      }
+      (c.a, c.b) match {
+        case (ap@PortRef(av: ValRef, _, ain), bp@PortRef(bv: ValRef, _, bin)) ⇒
+          (isIn(ap), isIn(bp)) match {
+            case (true, false) ⇒ (bp, ap)
+            case (false, true) ⇒ (ap, bp)
+            case _ ⇒ error("invalid connection"); (ap, bp)
+          }
+        case (ap@PortRef(av: ValRef, _, _), bp@PortRef(ThisRef, _, _)) ⇒
+          (isIn(ap), isIn(bp)) match {
+            case (true, true) ⇒ (bp, ap)
+            case (false, false) ⇒ (ap, bp)
+            case _ ⇒ error("invalid connection"); (ap, bp)
+          }
+        case (ap@PortRef(ThisRef, _, _), bp@PortRef(bv: ValRef, _, _)) ⇒
+          (isIn(ap), isIn(bp)) match {
+            case (true, true) ⇒ (ap, bp)
+            case (false, false) ⇒ (bp, ap)
+            case _ ⇒ error("invalid connection"); (ap, bp)
+          }
+        case (ap@PortRef(ThisRef, _, _), bp@PortRef(ThisRef, _, _)) ⇒
+          error("invalid throught connection. TODO fix this"); (ap, bp)
+      }
+    }
+    def check() {
+      import scala.collection.JavaConversions._
+      Checker.traverse(b)
+      val topo = new TopologicalOrderIterator(acyclic);
+      b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder =  topo.toList
     }
   }
   def compile(): Tree = {
     val root = global.root
     new Namer(root).traverse(toCompile)
     new Resolver(root).traverse(toCompile)
-    new Checker(root).traverse(toCompile)
-    //println(toCompile)
+    new CheckConnections(toCompile, root).check()
     toCompile
   }
 }

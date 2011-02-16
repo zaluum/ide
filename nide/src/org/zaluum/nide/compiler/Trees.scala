@@ -2,7 +2,7 @@ package org.zaluum.nide.compiler
 
 import java.io.StringWriter
 
-sealed abstract class Tree extends Product {
+abstract class Tree extends Product {
   //var pos : Position = NoPosition
   var tpe: Type = null
   var symbol: Symbol = null
@@ -198,7 +198,7 @@ case object EmptyTree extends Tree {
   override def isEmpty = true
 }
 
-/* Zaluum */
+/* Definition */
 case class BoxDef(name: Name, 
   image:Option[String],
   defs: List[Tree],
@@ -218,3 +218,4 @@ case class PortRef(fromRef:Tree, name: Name, in:Boolean) extends RefTree
 case class ValDef(name: Name, typeName: Name, pos: Point, size: Option[Dimension],guiPos: Option[Point], guiSize: Option[Dimension]) extends DefTree with Positionable
 //case class SizeDef(pos: Point, size: Dimension) extends Tree
 case class ConnectionDef(a: Tree, b: Tree) extends SymTree
+
