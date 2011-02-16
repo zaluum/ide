@@ -5,8 +5,7 @@ import draw2dConversions._
 import org.eclipse.draw2d.{Ellipse, ColorConstants, Figure, ImageFigure}
 import org.eclipse.draw2d.geometry.{Rectangle, Point => EPoint, Dimension => EDimension}
 import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.model.{Point => MPoint, Dimension, Vector2}
-import org.zaluum.nide.newcompiler._
+import org.zaluum.nide.compiler.{Point => MPoint,_}
 import scala.collection.mutable.Buffer
 
 class PortFigure(val ipos: MPoint,

@@ -1,7 +1,6 @@
 package org.zaluum.nide.eclipse;
 
-import org.zaluum.nide.model.Location
-import org.zaluum.nide.model.Locatable
+import org.zaluum.nide.compiler.Location
 import java.io.ByteArrayInputStream
 import java.util.{ Map ⇒ JMap }
 import org.eclipse.core.resources.{ IncrementalProjectBuilder, IResourceDeltaVisitor, IResourceDelta, IResource, IProject, IMarker, IFile, IContainer }

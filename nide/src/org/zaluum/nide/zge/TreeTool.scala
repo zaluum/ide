@@ -2,8 +2,7 @@ package org.zaluum.nide.zge
 import draw2dConversions._
 import org.eclipse.draw2d.{Cursors, Figure}
 import org.eclipse.draw2d.geometry.{Point, Rectangle}
-import org.zaluum.nide.model.{Point => MPoint, _}
-import org.zaluum.nide.newcompiler._
+import org.zaluum.nide.compiler.{Point => MPoint, _}
 import scala.collection.JavaConversions._
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {

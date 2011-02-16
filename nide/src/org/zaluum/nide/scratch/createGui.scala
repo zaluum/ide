@@ -1,7 +1,5 @@
 package org.zaluum.nide.compiler
 
-import org.zaluum.nide.model.Point
-import org.zaluum.nide.model.Dimension
 import javax.swing.JComponent
 
   

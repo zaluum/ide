@@ -1,4 +1,4 @@
-package org.zaluum.nide.newcompiler
+package org.zaluum.nide.compiler
 
 import org.objectweb.asm._
 import Opcodes._

@@ -5,7 +5,6 @@ import org.eclipse.draw2d.{ Figure, IFigure }
 import org.eclipse.draw2d.geometry.Point
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events._
-import org.zaluum.nide.model.Vector2
 
 abstract class Tool(viewer: Viewer) { 
   def viewport = viewer

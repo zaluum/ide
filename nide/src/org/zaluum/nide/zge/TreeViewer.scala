@@ -5,8 +5,8 @@ import scala.collection.mutable.Buffer
 import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
-import org.zaluum.nide.model._
-import org.zaluum.nide.newcompiler._
+import org.zaluum.nide.compiler._
+
 class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
   extends ItemViewer(parent, controller) with BoxDefContainer {
   /*TOOLS*/

@@ -1,7 +1,7 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.newcompiler.Shift
-import org.zaluum.nide.newcompiler.PortDir
+import org.zaluum.nide.compiler.Shift
+import org.zaluum.nide.compiler.PortDir
 import org.eclipse.swt.graphics.Point
 import SWTScala._
 import org.eclipse.swt.SWT
@@ -9,7 +9,7 @@ import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Shell, Composite, Button }
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
-import org.zaluum.nide.newcompiler.{ BoxTypeSymbol, In, Out }
+import org.zaluum.nide.compiler.{ BoxTypeSymbol, In, Out }
 object Palette {
   val w = 400
   val h = 300

@@ -1,6 +1,6 @@
 package org.zaluum.nide.eclipse
 
-import org.zaluum.nide.newcompiler.Name
+import org.zaluum.nide.compiler.Name
 import org.eclipse.core.runtime.Path
 import java.net.URL
 import org.eclipse.core.runtime.IPath

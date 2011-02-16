@@ -4,8 +4,7 @@ import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.model.{ Point ⇒ MPoint, Dimension, Vector2, Line, Route }
-import org.zaluum.nide.newcompiler._
+import org.zaluum.nide.compiler.{Point ⇒ MPoint,_}
 import scala.collection.mutable.Buffer
 
 // TREE SPECIFIC FIGURES

@@ -1,11 +1,10 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.newcompiler.Tree
+import org.zaluum.nide.compiler.Tree
 import draw2dConversions._
 import org.eclipse.draw2d.{FigureCanvas, FreeformViewport, LightweightSystem}
 import org.eclipse.swt.graphics.Cursor
 import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.model._
 import scala.collection.JavaConversions._
 
 abstract class Viewer(parent: Composite, val controller: Controller) extends FreeformViewport {

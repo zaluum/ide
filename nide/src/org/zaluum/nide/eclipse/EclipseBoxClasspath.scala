@@ -1,15 +1,7 @@
 package org.zaluum.nide.eclipse
 
-import org.zaluum.nide.newcompiler.Out
-import org.zaluum.nide.newcompiler.In
-import org.zaluum.nide.newcompiler.LocalScope
-import org.zaluum.nide.newcompiler.PrimitiveJavaType
-import org.zaluum.nide.newcompiler.Type
-import org.zaluum.nide.newcompiler.Scope
-import org.zaluum.nide.newcompiler.PortSymbol
-import org.zaluum.nide.newcompiler.BoxTypeSymbol
-import org.zaluum.nide.newcompiler.{Scope,Symbol,NoSymbol}
-import org.zaluum.nide.newcompiler.Name
+
+import org.zaluum.nide.compiler._
 import javax.swing.JComponent
 import java.net.URLClassLoader
 import java.net.URL
@@ -18,7 +10,6 @@ import org.eclipse.core.runtime.{ Path, IPath }
 import org.eclipse.jdt.core.{ IJavaElement, IType, IAnnotatable, IJavaProject, IAnnotation, IMemberValuePair, IClasspathEntry }
 import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch }
 import org.eclipse.jdt.internal.core.JavaModelManager
-import org.zaluum.nide.model.{ Point , Dimension}
 import scala.util.control.Exception._
 
 trait ClassPath {

@@ -1,4 +1,4 @@
-package org.zaluum.nide.newcompiler;
+package org.zaluum.nide.compiler;
 
 
 //

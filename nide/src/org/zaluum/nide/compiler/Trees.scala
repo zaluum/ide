@@ -1,8 +1,6 @@
-package org.zaluum.nide.newcompiler
+package org.zaluum.nide.compiler
 
-import org.zaluum.nide.model.Dimension
 import java.io.StringWriter
-import org.zaluum.nide.model.{ Point, Positionable }
 
 sealed abstract class Tree extends Product {
   //var pos : Position = NoPosition

@@ -1,4 +1,4 @@
-package org.zaluum.nide.model
+package org.zaluum.nide.compiler
 
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.annotation.tailrec

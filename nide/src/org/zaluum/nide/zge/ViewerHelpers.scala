@@ -1,7 +1,7 @@
 package org.zaluum.nide.zge
 
 import org.zaluum.nide.eclipse.ClassPath
-import org.zaluum.nide.newcompiler._
+import org.zaluum.nide.compiler._
 import org.eclipse.jface.dialogs.PopupDialog
 import org.eclipse.jface.resource.{ ImageRegistry, ImageDescriptor }
 import org.eclipse.swt.SWT

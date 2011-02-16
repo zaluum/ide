@@ -1,9 +1,9 @@
 package org.zaluum.nide.eclipse
 
-import org.zaluum.nide.newcompiler.Serializer
-import org.zaluum.nide.newcompiler.Name
-import org.zaluum.nide.newcompiler.BoxDef
-import org.zaluum.nide.model.Dimension
+import org.zaluum.nide.compiler.Serializer
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.BoxDef
+import org.zaluum.nide.compiler.Dimension
 import java.io.ByteArrayOutputStream
 import org.eclipse.core.resources.IFile
 import org.eclipse.jface.viewers.{ IStructuredSelection }

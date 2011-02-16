@@ -3,8 +3,7 @@ import draw2dConversions._
 import org.eclipse.swt.graphics.Cursor
 import org.eclipse.draw2d.{ Cursors, Figure, IFigure }
 import org.eclipse.draw2d.geometry.{ Point, Rectangle }
-import org.zaluum.nide.model.{ Point ⇒ MPoint, _ }
-import org.zaluum.nide.newcompiler.{ Transformer, Tree, ValDef, CopyTransformer, PortDef }
+import org.zaluum.nide.compiler.{Point ⇒ MPoint,_ }
 import scala.collection.JavaConversions._
 import scala.reflect.Manifest._
 import RichFigure._

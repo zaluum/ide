@@ -1,7 +1,5 @@
-package org.zaluum.nide.newcompiler
+package org.zaluum.nide.compiler
 
-import org.zaluum.nide.model.Dimension
-import org.zaluum.nide.model.Point
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.JavaConversions._
 object ProtoParser {

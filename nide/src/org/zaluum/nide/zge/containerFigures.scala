@@ -12,8 +12,7 @@ import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, Imag
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.model.{ Point ⇒ MPoint, Dimension, Vector2, Resizable, Line, Positionable, Route }
-import org.zaluum.nide.newcompiler.{ Tree, PortSymbol, PortDef, ConnectionDef, ValSymbol, ValDef, BoxTypeSymbol, NoSymbol, PortRef, ValRef, EmptyTree, ThisRef, In, PortDir, Out, Shift, BoxDef, Traverser, Symbol, Name }
+import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _}
 import scala.collection.mutable.Buffer
 import scala.collection.JavaConversions._
 import RichFigure._

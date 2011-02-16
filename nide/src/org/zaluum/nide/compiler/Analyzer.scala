@@ -1,5 +1,4 @@
-package org.zaluum.nide.newcompiler
-import org.zaluum.nide.model.{ Location, Locatable, Namer }
+package org.zaluum.nide.compiler
 import scala.collection.mutable.Buffer
 /*
    def isValidJavaIdentifier(s: String) = {

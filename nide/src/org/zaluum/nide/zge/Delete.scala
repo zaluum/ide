@@ -1,6 +1,6 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.newcompiler._
+import org.zaluum.nide.compiler._
 
 object Delete {
   def deleteSelection(selected: Set[Item]) = {

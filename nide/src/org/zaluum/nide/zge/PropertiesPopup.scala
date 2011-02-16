@@ -1,14 +1,14 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.newcompiler.EditTransformer
-import org.zaluum.nide.newcompiler.PortDef
-import org.zaluum.nide.newcompiler.Name
+import org.zaluum.nide.compiler.EditTransformer
+import org.zaluum.nide.compiler.PortDef
+import org.zaluum.nide.compiler.Name
 
 import SWTScala._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Composite, Button, Label, Text }
-import org.zaluum.nide.newcompiler.{ EmptyTree, Tree }
+import org.zaluum.nide.compiler.{ EmptyTree, Tree }
 
 class PortDeclPopup(
   viewer: TreeViewer,

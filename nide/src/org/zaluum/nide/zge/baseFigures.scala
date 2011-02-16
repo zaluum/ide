@@ -2,8 +2,7 @@ package org.zaluum.nide.zge
 import draw2dConversions._
 import org.eclipse.draw2d.{ Figure, IFigure }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
-import org.zaluum.nide.model.{ Point ⇒ MPoint, Dimension, Vector2 }
-import org.zaluum.nide.newcompiler.Tree
+import org.zaluum.nide.compiler.{Point ⇒ MPoint,_}
 import scala.collection.mutable.Buffer
 
 object draw2dConversions {

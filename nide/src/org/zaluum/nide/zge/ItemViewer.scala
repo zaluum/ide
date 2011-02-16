@@ -4,7 +4,6 @@ import org.eclipse.draw2d.{ Figure, FigureCanvas, ScalableFreeformLayeredPane, F
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.{ Composite, MessageBox }
-import org.zaluum.nide.model._
 import scala.collection.JavaConversions._
 
 abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with BoxDefContainer{

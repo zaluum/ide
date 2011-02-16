@@ -1,8 +1,5 @@
-package org.zaluum.nide.newcompiler
+package org.zaluum.nide.compiler
 
-import org.zaluum.nide.model.Namer
-import org.zaluum.nide.model.Point
-import org.zaluum.nide.model.Positionable
 trait Symbol {
   def owner: Symbol
   def name: Name

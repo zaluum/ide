@@ -1,9 +1,10 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.compiler.Vector2
 import HandleSizes._
 import org.eclipse.draw2d.{ Cursors, RectangleFigure, Figure, ColorConstants, Shape }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point }
 import org.eclipse.swt.SWT
-import org.zaluum.nide.model._
 
 object HandleSizes {
   val expansion = 8

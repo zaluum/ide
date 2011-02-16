@@ -1,7 +1,8 @@
-package org.zaluum.nide.model
+package org.zaluum.nide.zge
 
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.mutable.Buffer
+import org.zaluum.nide.compiler._
 
 sealed trait OrtoDirection {
   def const(p: Tuple2): Int
