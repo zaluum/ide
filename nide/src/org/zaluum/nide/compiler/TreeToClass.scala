@@ -11,8 +11,9 @@ case class RunBox(id: Name, typeName:Name) extends Tree
 case object This extends Tree
 case class FieldRef(id:Name, typeName:Name, fromClass:Name) extends Tree
 
-class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ErrorCollector {
-  def error(str: String)(implicit t: Tree) { throw new RuntimeException(str) }
+class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ReporterAdapter {
+  val reporter = new Reporter // TODO fail reporter
+  val location = Location(List(0))
   object swapConnections extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
       case c: ConnectionDef ⇒

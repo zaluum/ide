@@ -18,8 +18,8 @@ class CompilationException extends Exception
 class Reporter {
   case class Error(msg: String, mark: Option[Location])
   val errors = Buffer[Error]()
-  def report(str: String, mark: Option[Locatable] = None) {
-    errors += Error(str, mark map { _.location })
+  def report(str: String, mark: Option[Location] = None) {
+    errors += Error(str, mark)
   }
   def check() {
     if (!errors.isEmpty)
@@ -27,11 +27,11 @@ class Reporter {
   }
   def fail = throw new CompilationException()
 
-  def fail(err: String, mark: Option[Locatable] = None): Nothing = {
+  def fail(err: String, mark: Option[Location] = None): Nothing = {
     report(err)
     fail
   }
-  def apply(assertion: Boolean, res: ⇒ String, mark: Option[Locatable] = None, fail: Boolean = false) {
+  def apply(assertion: Boolean, res: ⇒ String, mark: Option[Location] = None, fail: Boolean = false) {
     if (!assertion) report(res) // TODO mark
     if (fail) check()
   }
@@ -91,10 +91,14 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   def usedNames = (boxes.keySet.map { _.str } ++ vals.keySet.map { _.str } ++ ports.keySet.map { _.str }).toSet
   def root = enclosingScope.root
 }
+trait ReporterAdapter {
+  def location:Location
+  def reporter:Reporter
+  def error(str:String) = reporter.report(str, Some(location))
+}
 class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
-  def error(str: String)(implicit tree: Tree) { println(str + " " + tree) }
-
-  class Namer(initOwner: Symbol) extends Traverser(initOwner) {
+  class Namer(initOwner: Symbol) extends Traverser(initOwner) with ReporterAdapter{
+    def reporter = Analyzer.this.reporter
     def defineBox(symbol: Symbol)(implicit tree: Tree): Symbol = {
       define(symbol, currentScope, currentScope.lookupBoxType(symbol.name).isDefined)
     }
@@ -113,6 +117,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
     }
 
     override def traverse(tree1: Tree) {
+      enter()
       implicit val tree = tree1
       tree match {
         case BoxDef(name, image, defs, vals, ports, connections) ⇒
@@ -125,13 +130,16 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
         case _ ⇒
           tree.scope = currentScope
       }
+      exit()
       super.traverse(tree)
     }
   }
-  class Resolver(global: Symbol) extends Traverser(global) {
+  class Resolver(global: Symbol) extends Traverser(global) with ReporterAdapter {
+    def reporter = Analyzer.this.reporter
     override def traverse(tree1: Tree) {
       implicit val tree = tree1
       super.traverse(tree)
+      enter()
       tree match {
         case PortDef(name, typeName, in, inPos, extPos) ⇒
           tree.symbol.tpe = currentScope.lookupType(typeName) getOrElse {
@@ -163,18 +171,20 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           tree.tpe = currentOwner.asInstanceOf[BoxTypeSymbol]
         case _ ⇒
       }
-
+      exit()
     }
   }
   
-  class CheckConnections(b: Tree, owner: Symbol) extends ConnectionHelper with ErrorCollector{
-    def error(str:String)(implicit t:Tree) { Analyzer.this.error(str)}
+  class CheckConnections(b: Tree, owner: Symbol)  {
+    //def error(str:String)(implicit t:Tree) { Analyzer.this.error(str)}
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
     var usedInputs = Set[PortRef]()
     var connections = Buffer[(PortRef, PortRef)]()
-    object Checker extends Traverser(owner) {
+    object Checker extends Traverser(owner) with ReporterAdapter with ConnectionHelper{
+      def reporter = Analyzer.this.reporter
       override def traverse(tree1: Tree) {
         implicit val tree = tree1
+        enter()
         tree match {
           case b: BoxDef ⇒
             traverseTrees(b.vals)
@@ -214,6 +224,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           case v: ValDef ⇒ acyclic.addVertex(v.symbol.asInstanceOf[ValSymbol])
           case _ ⇒
         }
+        exit()
       }
     }
 
@@ -232,11 +243,8 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
     toCompile
   }
 }
-trait ErrorCollector { 
-  def error(str:String)(implicit blame:Tree)
-}
-trait ConnectionHelper {
-  self : ErrorCollector =>
+trait ConnectionHelper extends ReporterAdapter{
+  implicit def reporter:Reporter
   def direction(c: ConnectionDef): (PortRef, PortRef) = {
       implicit val tree:Tree = c
       def isIn(ap: PortRef): Boolean = ap.symbol.asInstanceOf[PortSymbol].dir match {

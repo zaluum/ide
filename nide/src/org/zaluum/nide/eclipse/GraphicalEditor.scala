@@ -99,7 +99,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   }
   override def gotoMarker(marker: IMarker) {
     val str = marker.getAttribute("BLAME").asInstanceOf[String]
-    viewer.gotoMarker(Location(str))
+    // TODO viewer.gotoMarker(Location(str))
     setFocus
   }
   override def getAdapter(cl: Class[_]) = {

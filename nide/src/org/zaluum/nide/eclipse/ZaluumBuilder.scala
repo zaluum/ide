@@ -37,7 +37,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
     val marker = file.createMarker(ZaluumBuilder.MARKER_TYPE);
     marker.setAttribute(IMarker.MESSAGE, message);
     marker.setAttribute(IMarker.SEVERITY, severity);
-    marker.setAttribute("BLAME", blame.map { _.str } getOrElse (""));
+    marker.setAttribute("BLAME", blame.map { _.toString } getOrElse (Location(List()).toString));
   }
 
   protected def build(kind: Int, args: JMap[_, _], monitor: IProgressMonitor): Array[IProject] = {
@@ -55,9 +55,9 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
     return null;
   }
 
-  /*private def deleteMarkers(file: IFile) {
+  private def deleteMarkers(file: IFile) {
     file.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_ZERO);
-  }*/
+  }
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(getProject);
   def defaultOutputFolder = { jproject.getOutputLocation }
@@ -67,20 +67,21 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
     val reporter = new Reporter
     try {
       cl.toClassName(f) foreach { className ⇒
-        val proto = BoxFileProtos.BoxClassDef.parseFrom(f.getContents)
+        val proto = BoxFileProtos.BoxClassDef.parseFrom(f.getContents(true))
         val tree = Parser.parse(proto,Some(className))
         val scope = new FakeGlobalScope(cl)
         val analyzedTree = new Analyzer(reporter, tree, scope).compile()
+        reporter.check()
         val classTree = new TreeToClass(analyzedTree,scope).run()
         val outputPath = defaultOutputFolder.append(new Path(analyzedTree.symbol.name.toRelativePath))
         writeFile(outputPath,ByteCodeGen.dump(classTree))
       }
-    } /*catch {
-      case e: Exception ⇒
+    } catch {
+      case e: CompilationException ⇒
         for (err ← reporter.errors) {
           addMarker(f, err.msg, err.mark, IMarker.SEVERITY_ERROR)
         }
-    }*/
+    }
   }
   def writeFile(path: IPath, bytes: Array[Byte]) {
     val is = new ByteArrayInputStream(bytes)

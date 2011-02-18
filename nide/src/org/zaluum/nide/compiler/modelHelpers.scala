@@ -3,10 +3,6 @@ package org.zaluum.nide.compiler
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.annotation.tailrec
 
-case class Location(str: String)
-trait Locatable {
-  def location: Location
-}
 trait Tuple2 {
   val x: Int
   val y: Int
