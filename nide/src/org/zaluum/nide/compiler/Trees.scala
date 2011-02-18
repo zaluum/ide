@@ -171,6 +171,7 @@ object PrettyPrinter  {
       print(")",deep)
     case v@ValRef(_) ⇒ print(v.toString,deep)
     case ThisRef => print(ThisRef.toString,deep)
+    case _=> print(tree.toString,deep)
   }
 }
 abstract class OwnerHelper[A] {

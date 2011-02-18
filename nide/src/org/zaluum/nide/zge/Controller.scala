@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.compiler.TreeToClass
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.PrettyPrinter
 import org.zaluum.nide.compiler.BoxDef
@@ -25,6 +26,9 @@ class Controller(private var nowTree: Tree, val global: EclipseBoxClasspath) {
   def compile() = {
     val scope = new FakeGlobalScope(global)
     nowTree = new Analyzer(reporter, tree, scope).compile()
+    println("/** TreeToClass:")
+    PrettyPrinter.print(new TreeToClass(tree,scope).run(),0)
+    println("**/")
   }
   type DMap = Map[Tree, Tree]
   case class Mutation(before: Tree, d: DMap, now: Tree)

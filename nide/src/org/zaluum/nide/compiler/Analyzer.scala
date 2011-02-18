@@ -43,6 +43,7 @@ case class Name(str: String) {
   //TODO
   def classNameWithoutPackage = Some(str) // TODO
   def toRelativePath: String = str.replace('.', '/')
+  def toRelativePathClass = toRelativePath + ".class"
   def internal = str.replace('.', '/')
   def descriptor = "L" + internal + ";"
 
@@ -165,7 +166,9 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
 
     }
   }
-  class CheckConnections(b: Tree, owner: Symbol) {
+  
+  class CheckConnections(b: Tree, owner: Symbol) extends ConnectionHelper with ErrorCollector{
+    def error(str:String)(implicit t:Tree) { Analyzer.this.error(str)}
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
     var usedInputs = Set[PortRef]()
     var connections = Buffer[(PortRef, PortRef)]()
@@ -214,7 +217,27 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       }
     }
 
-    def direction(c: ConnectionDef): (PortRef, PortRef) = {
+    def check() {
+      import scala.collection.JavaConversions._
+      Checker.traverse(b)
+      val topo = new TopologicalOrderIterator(acyclic);
+      b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder =  topo.toList
+    }
+  }
+  def compile(): Tree = {
+    val root = global.root
+    new Namer(root).traverse(toCompile)
+    new Resolver(root).traverse(toCompile)
+    new CheckConnections(toCompile, root).check()
+    toCompile
+  }
+}
+trait ErrorCollector { 
+  def error(str:String)(implicit blame:Tree)
+}
+trait ConnectionHelper {
+  self : ErrorCollector =>
+  def direction(c: ConnectionDef): (PortRef, PortRef) = {
       implicit val tree:Tree = c
       def isIn(ap: PortRef): Boolean = ap.symbol.asInstanceOf[PortSymbol].dir match {
         case In ⇒ true
@@ -244,18 +267,4 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           error("invalid throught connection. TODO fix this"); (ap, bp)
       }
     }
-    def check() {
-      import scala.collection.JavaConversions._
-      Checker.traverse(b)
-      val topo = new TopologicalOrderIterator(acyclic);
-      b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder =  topo.toList
-    }
-  }
-  def compile(): Tree = {
-    val root = global.root
-    new Namer(root).traverse(toCompile)
-    new Resolver(root).traverse(toCompile)
-    new CheckConnections(toCompile, root).check()
-    toCompile
-  }
 }

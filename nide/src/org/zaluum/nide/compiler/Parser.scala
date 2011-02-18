@@ -2,7 +2,7 @@ package org.zaluum.nide.compiler
 
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.JavaConversions._
-object ProtoParser {
+object Parser {
   def parse(b: BoxFileProtos.BoxClassDef,name:Option[Name]=None): BoxDef = {
     BoxDef(name.getOrElse(Name(b.getClassName)),
       image = if (b.hasImageName) Some(b.getImageName) else None,

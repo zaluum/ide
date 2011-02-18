@@ -8,7 +8,7 @@ object TestAnalyzer {
     val f = new FileInputStream("../example/src/org/zaluum/example/testInner.zaluum")
     
     val bcd = BoxFileProtos.BoxClassDef.parseDelimitedFrom(f)
-    val tree = ProtoParser.parse(bcd)
+    val tree = Parser.parse(bcd)
     val reporter = new Reporter()
     new Analyzer(reporter, tree, null)
   }

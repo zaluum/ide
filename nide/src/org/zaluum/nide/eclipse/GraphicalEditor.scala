@@ -1,12 +1,12 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.compiler.Parser
 import org.zaluum.nide.zge.TreeViewer
 import org.zaluum.nide.compiler.BoxDef
 import org.zaluum.nide.compiler.Serializer
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Location
 import org.zaluum.nide.protobuf.BoxFileProtos
-import org.zaluum.nide.compiler.ProtoParser
 import org.eclipse.swt.events.DisposeEvent
 import org.eclipse.ui.contexts.IContextService
 import org.eclipse.swt.events.ShellEvent
@@ -63,7 +63,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     val globalScope = new EclipseBoxClasspath(inputFile.getProject)
     val className = globalScope.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
     val proto = BoxFileProtos.BoxClassDef.parseFrom(input)
-    val tree = ProtoParser.parse(proto,Some(className)) 
+    val tree = Parser.parse(proto,Some(className)) 
     globalScope.update()
     input.close()
     val controller = new Controller(tree, globalScope)

@@ -1,6 +1,8 @@
 package org.zaluum.nide.eclipse;
 
-import org.zaluum.nide.compiler.Location
+import org.zaluum.nide.compiler.Reporter
+import org.zaluum.nide.protobuf.BoxFileProtos
+import org.zaluum.nide.compiler._
 import java.io.ByteArrayInputStream
 import java.util.{ Map ⇒ JMap }
 import org.eclipse.core.resources.{ IncrementalProjectBuilder, IResourceDeltaVisitor, IResourceDelta, IResource, IProject, IMarker, IFile, IContainer }
@@ -62,20 +64,19 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
   def root = getProject.getWorkspace.getRoot
 
   def compile(f: IFile, cl: EclipseBoxClasspath) = {
-    /* TODO val reporter = new Reporter
+    val reporter = new Reporter
     try {
-      def generate(compiled:Compiled) {
-        val outputPath = defaultOutputFolder.append(new Path(compiled.bcd.className.toRelativePathClass))
-        writeFile(outputPath, ByteCodeGen.dump(compiled))
-        compiled.innerCompiled foreach { generate(_) }
-      }
       cl.toClassName(f) foreach { className ⇒
-        val model = ProtoBuffers.readBoxClassDecl(f.getContents, className)
-        val compiler = new Compiler(model, cl,reporter)
-        generate(compiler.compile)
+        val proto = BoxFileProtos.BoxClassDef.parseFrom(f.getContents)
+        val tree = Parser.parse(proto,Some(className))
+        val scope = new FakeGlobalScope(cl)
+        val analyzedTree = new Analyzer(reporter, tree, scope).compile()
+        val classTree = new TreeToClass(analyzedTree,scope).run()
+        val outputPath = defaultOutputFolder.append(new Path(analyzedTree.symbol.name.toRelativePath))
+        writeFile(outputPath,ByteCodeGen.dump(classTree))
       }
-    } catch {
-      case e: CompilationException ⇒
+    } /*catch {
+      case e: Exception ⇒
         for (err ← reporter.errors) {
           addMarker(f, err.msg, err.mark, IMarker.SEVERITY_ERROR)
         }
