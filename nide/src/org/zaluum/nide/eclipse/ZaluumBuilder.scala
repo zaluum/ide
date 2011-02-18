@@ -35,7 +35,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
   private def addMarker(file: IFile, message: String, blame: Option[Location],
     severity: Int) {
     val marker = file.createMarker(ZaluumBuilder.MARKER_TYPE);
-    marker.setAttribute(IMarker.MESSAGE, message);
+    marker.setAttribute(IMarker.MESSAGE, message + blame.toString);
     marker.setAttribute(IMarker.SEVERITY, severity);
     marker.setAttribute("BLAME", blame.map { _.toString } getOrElse (Location(List()).toString));
   }

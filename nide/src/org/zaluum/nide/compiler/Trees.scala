@@ -12,7 +12,15 @@ abstract class Tree extends Product {
   def hasSymbol = false
   def isDef = false
   def isEmpty = false
-
+  def findPath(l:List[Int]) : Option[Tree]= { 
+    if (l.isEmpty) Some(this) 
+    else children.lift(l.head).flatMap {_.findPath(l.tail)}
+  }
+  def pathOf(t: Tree): Option[List[Int]] = {
+    if (t == this) Some(List())
+    else children.view.map {_.pathOf(t)}.zipWithIndex.
+        collect{case (Some(p),i)=> i::p }.headOption
+  }
   def children: List[Tree] = {
     def subtrees(x: Any): List[Tree] = x match {
       case EmptyTree ⇒ List()
@@ -22,7 +30,6 @@ abstract class Tree extends Product {
     }
     productIterator.toList flatMap subtrees
   }
-
   private[zaluum] def copyAttrs(tree: Tree): this.type = {
     //pos = tree.pos
     tpe = tree.tpe
@@ -112,22 +119,18 @@ abstract class Transformer extends OwnerHelper[Tree] {
   protected def transformTrees(trees: List[Tree]): List[Tree] =
     trees mapConserve (transform(_))
 }
-case class Location(path:List[Int])
+object Location {
+  def parse(str:String) = Location(str.split("/").map { _.toInt }.toList)
+}
+case class Location(path: List[Int]) {
+  override def toString = path.mkString("/")
+}
+
 // Traverser
 abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
   currentOwner = initSymbol
   currentScope = initSymbol.scope
-  private var path = Buffer(0)
-  def location = Location(path.toList)
-  def enter() {
-    path(path.size-1) = path.last +1
-    path += 0
-  }
-  def exit() {
-    path.remove(path.size-1)
-  }
   def traverse(tree: Tree): Unit = {
-    enter()
     tree match {
       case EmptyTree ⇒
         ;
@@ -148,7 +151,6 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
       case ValRef(_) ⇒
       case ThisRef ⇒
     }
-    exit()
   }
   def traverseTrees(trees: List[Tree]) {
     trees foreach traverse

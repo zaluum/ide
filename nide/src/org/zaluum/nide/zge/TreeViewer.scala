@@ -20,7 +20,15 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   /*LAYERS*/
   def viewer = this
   val tool: TreeTool = new TreeTool(this)
-  def gotoMarker(l: Location) {} // TODO
+  def gotoMarker(l: Location) {
+    // IDEA look at controllers save mark and then transform the selection to get the current blame node
+    tree.findPath(l.path) foreach { t => 
+    selection.deselectAll
+      selection.select(t)
+      refresh()
+      focus
+    }
+  } 
   override def populateFigures() {
     super.populateFigures()
     boxDef.children foreach {

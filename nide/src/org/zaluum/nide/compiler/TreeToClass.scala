@@ -13,7 +13,7 @@ case class FieldRef(id:Name, typeName:Name, fromClass:Name) extends Tree
 
 class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
-  val location = Location(List(0))
+  def location(t:Tree) = Location(List(0))
   object swapConnections extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
       case c: ConnectionDef ⇒

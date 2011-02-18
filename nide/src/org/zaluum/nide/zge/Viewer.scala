@@ -12,6 +12,7 @@ abstract class Viewer(parent: Composite, val controller: Controller) extends Fre
   def display = shell.getDisplay
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
+  def focus = parent.setFocus
   def tool: Tool
   def refresh()
   def remapSelection(map :  Map[Tree,Tree]) // move to item?
