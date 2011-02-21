@@ -6,7 +6,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.{ Composite, MessageBox }
 import scala.collection.JavaConversions._
 
-abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with BoxDefContainer{
+abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with Container{
   /*SWT*/
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
@@ -40,17 +40,6 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   def showMarquee() { feedbackLayer.add(marquee) }
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
   def hideMarquee() { feedbackLayer.remove(marquee) }
-  /*def executeOrNotify(cmd: TreeCommand) = {
-    if (cmd.canExecute) {
-      controller.exec(cmd)
-      true
-    } else {
-      val msg = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK)
-      msg.setMessage("Cannot be executed")
-      msg.open
-      false
-    }
-  }*/
   def selectedItems : Set[Item]
   val selection = new SelectionManager()
 }

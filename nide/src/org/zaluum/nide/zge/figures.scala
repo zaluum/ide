@@ -16,7 +16,7 @@ class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends I
   def pos = tree.pos
   def myLayer = container.layer
   override def update() {
-    setImage(container.viewer.imageFactory(tree.tpe))
+    setImage(container.viewerResources.imageFactory(tree.tpe))
     super.update()
     val l = sym.tpe match {
       case b: BoxTypeSymbol ⇒

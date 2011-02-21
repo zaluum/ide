@@ -16,19 +16,25 @@ import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _}
 import scala.collection.mutable.Buffer
 import scala.collection.JavaConversions._
 import RichFigure._
-
-trait BoxDefContainer extends IFigure {
-  def boxDef: BoxDef
-  def viewer: TreeViewer // TODO only for image factory... remove?
+trait Container extends IFigure {
+  def viewerResources: ViewerResources 
   def layer: Figure
   val helpers : Buffer[ShowHide]
-  def feedbackLayer: Figure
-  def connectionsLayer: Figure
-  def portsLayer: Figure
+  def feedbackLayer: Figure  
   def itemOrLineAt(p: EPoint, debug:Boolean=false) = this.findDeepAt(p,0,debug) { 
     case bf: Item ⇒ bf
     case l:LineFigure=>l
   }
+  def clear() {
+    layer.removeAll()
+    feedbackLayer.removeAll()
+  }
+
+}
+trait BoxDefContainer extends Container {
+  def boxDef: BoxDef
+  def connectionsLayer: Figure
+  def portsLayer: Figure
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in:Boolean): Option[PortFigure] = {
     portFigures find { p ⇒
@@ -41,13 +47,12 @@ trait BoxDefContainer extends IFigure {
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in}
   }
-  def owner: Symbol
-  def clear() {
-    layer.removeAll()
-    feedbackLayer.removeAll()
+  override def clear() {
+    super.clear()
     connectionsLayer.removeAll()
     portsLayer.removeAll()
   }
+  def owner: Symbol
   def populateFigures() {
     boxDef.children foreach {
       _ match {
@@ -59,7 +64,7 @@ trait BoxDefContainer extends IFigure {
                 tpe.decl.asInstanceOf[BoxDef],
                 v.symbol.owner,
                 BoxDefContainer.this,
-                viewer)
+                viewerResources)
             case None ⇒
               helpers += new ImageValFigure(v, BoxDefContainer.this)
           }
@@ -99,7 +104,7 @@ class OpenBoxFigure(
   val boxDef: BoxDef,
   val owner: Symbol,
   val container: BoxDefContainer,
-  val viewer: TreeViewer) extends SimpleItem with ResizableFeedback with BoxDefContainer with Transparent{
+  val viewerResources: ViewerResources) extends SimpleItem with ResizableFeedback with BoxDefContainer with Transparent{
   // Item
   type T = ValDef
   def tree = valTree

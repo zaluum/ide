@@ -84,7 +84,7 @@ class PortDeclFigure(val tree: PortDef, val container: BoxDefContainer) extends 
 
   override def update() {
     val position = tree.inPos + (if (tree.dir == In) Vector2(48, 8) else Vector2(0, 8))
-    val image = container.viewer.imageFactory.get(PortDeclFigure.img(tree.dir)).get
+    val image = container.viewerResources.imageFactory.get(PortDeclFigure.img(tree.dir)).get
     setImage(image)
     size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
     super.update()

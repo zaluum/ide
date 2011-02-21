@@ -7,8 +7,11 @@ import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.compiler._
 
-class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
-  extends ItemViewer(parent, controller) with BoxDefContainer {
+trait ViewerResources {
+  def imageFactory  : ImageFactory 
+}
+class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath) 
+  extends ItemViewer(parent, controller) with BoxDefContainer with ViewerResources{
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
   val palette = new Palette(this, parent.getShell, controller.global)
@@ -18,7 +21,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   def boxDef = tree
   def owner = global.root
   /*LAYERS*/
-  def viewer = this
+  def viewerResources = this
   val tool: TreeTool = new TreeTool(this)
   def gotoMarker(l: Location) {
     // IDEA look at controllers save mark and then transform the selection to get the current blame node

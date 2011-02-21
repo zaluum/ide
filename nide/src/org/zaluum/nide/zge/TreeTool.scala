@@ -1,25 +1,61 @@
 package org.zaluum.nide.zge
 import draw2dConversions._
-import org.eclipse.draw2d.{Cursors, Figure}
-import org.eclipse.draw2d.geometry.{Point, Rectangle}
-import org.zaluum.nide.compiler.{Point => MPoint, _}
+import org.eclipse.draw2d.{ Cursors, Figure }
+import org.eclipse.draw2d.geometry.{ Point, Rectangle }
+import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
 import scala.collection.JavaConversions._
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   def tree = viewer.tree
-  def currentBoxDefLayers = current.asInstanceOf[BoxDefContainer] // FIXME
-
-  override lazy val selecting = new Selecting with DeleteState {
-    override def connect(port: PortFigure) {
-      connecting.enter(initContainer, port)
+  type C = BoxDefContainer
+  override lazy val selecting = new TreeSelecting
+  class TreeSelecting extends Selecting with DeleteState {
+    var port: Option[PortFigure] = None
+    var lineSelected: Option[LineFigure] = None
+    override def buttonDown {
+      super.buttonDown()
+      lineSelected = itemOrLineUnderMouse collect { case l: LineFigure ⇒ l }
+    }
+    override def buttonUp {
+      (selected, lineSelected) match {
+        case (Some(box), _) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
+        case (None, Some(line)) ⇒ line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c), shift) }
+        case (None, None) ⇒ viewer.selection.deselectAll()
+      }
+      viewer.refresh()
+    }
+    val portsTrack = new OverTrack[PortFigure] {
+      def container = viewer.portsLayer
+      def onEnter(p: PortFigure) { port = Some(p); p.showFeedback }
+      def onExit(p: PortFigure) { port = None; p.hideFeedback }
+    }
+    override def move() {
+      super.move()
+      portsTrack.update()
+    }
+    override def drag {
+      (handle, selected, port) match {
+        case (Some(h), _, _) ⇒ // resize
+          resizing.enter(initDrag, initContainer, h)
+        case (None, _, Some(port)) ⇒ // connect
+          connecting.enter(initContainer, port)
+        case (None, Some(fig), _) ⇒ // select and move
+          if (!viewer.selection(fig.tree))
+            viewer.selection.updateSelection(Set(fig.tree), shift)
+          fig match {
+            case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
+            case _ ⇒ moving.enter(initDrag, initContainer)
+          }
+        case (None, None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
+      }
     }
     def delete() {
-      controller.exec(Delete.deleteSelection(viewer.selectedItems ))
+      controller.exec(Delete.deleteSelection(viewer.selectedItems))
     }
     override def menu() {
       itemOrLineUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
-        case Some(p: OpenPortDeclFigure) => new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
+        case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
         case Some(o: OpenBoxFigure) ⇒
         case Some(b: ImageValFigure) ⇒
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)
@@ -159,7 +195,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
     def minY = 0
     def maxY = fig.openBox.size.height
-    def posY = fig.relPos.y 
+    def posY = fig.relPos.y
     def minDelta = minY - posY
     def maxDelta = maxY - posY - fig.size.height
     def clamp(low: Int, i: Int, high: Int) = math.max(low, math.min(i, high))
@@ -199,10 +235,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       }
       def onExit(p: PortFigure) { dst = None; p.hideFeedback }
     }
-    def enter(initContainer: BoxDefContainer, initPort: PortFigure) {
+    def enter(initContainer: C, initPort: PortFigure) {
       state = this
       enterSingle(initContainer)
-      painter = new ConnectionPainter(initContainer)
+      painter = new ConnectionPainter(initContainer.asInstanceOf[BoxDefContainer])
       src = Some(initPort)
 
       viewer.setCursor(Cursors.HAND)

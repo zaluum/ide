@@ -1,5 +1,8 @@
 package org.zaluum.nide.zge
 
+import javax.swing.JSlider
+import org.zaluum.nide.eclipse.EclipseBoxClasspath
+import org.zaluum.nide.compiler._
 import javax.swing.JButton
 import javax.swing.JComponent
 import java.awt.{ Graphics ⇒ AG }
@@ -8,13 +11,14 @@ import org.eclipse.draw2d.{ Figure, Graphics }
 import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
 import org.eclipse.swt.SWT
 import scala.collection.mutable.Buffer
-/*
-class SwingFigure(val viewer: GUIViewer, val box: Box, val component: JComponent) extends Figure with ResizableItemFigure {
-  lazy val feed = new ResizeItemFeedbackFigure(this)
-  def positionable = box.guiPos.get // TODO better way? 
-  def resizable = box.guiPos.get
-  def size = box.guiPos.get.size
+
+class SwingFigure(val container:Container, val box: ValDef, val component: JComponent) extends SimpleItem with ResizableFeedback {
   setOpaque(true)
+  type T = ValDef
+  def tree = box
+  def size = box.guiSize getOrElse { Dimension(15,15) }
+  def pos = box.guiPos  getOrElse {Point(0,0)}
+  def myLayer = container.layer
   override def paintFigure(g: Graphics) {
     val rect = getClientArea()
     component.setBounds(0, 0, rect.width, rect.height);
@@ -29,59 +33,69 @@ class SwingFigure(val viewer: GUIViewer, val box: Box, val component: JComponent
     image.dispose()
   }
 }
-class GUIModelView(viewer: GUIViewer, val model: BoxClassDecl, val bcp: BoxClassPath) extends AbstractModelView(viewer) {
-  object widgetMapper extends ModelViewMapper[Box, SwingFigure](this) {
-    def guiCreator(box: Box) = bcp.find(box.boxClassName).filter { _.visual }.
-      flatMap {_=> bcp.findGuiCreator(box.boxClassName) };
-    def modelSet =   model.boxes filter { guiCreator(_).isDefined }
-    def buildFigure(guiBox: Box) = {
-      val component = guiCreator(guiBox) map { _() } getOrElse { new JButton("Not found") }
-      if (!guiBox.guiPos.isDefined) {
-        guiBox.guiPos = Some(new Resizable { // TODO command?
-          var pos = Point(0, 0)
-          var size = Dimension(50, 50)
-        })
-      }
-      // TODO catch exceptions 
-      new SwingFigure(viewer, guiBox, component)
-    }
-  }
-  def shell = viewer.shell
-
-  def update() {
-    widgetMapper.update()
-    val s = shell.getSize
-    if (s.x != model.guiSize.w && s.y!=model.guiSize.h)
-      shell.setSize(model.guiSize.w, model.guiSize.h)
-  }
-}
-object ExampleGUI {
-  def simpleModel = {
-    val m = new GUIModel
-    // val button = new JButton("hola")
-    // m.widgets += new Widget(button, Point(50,50), Dimension(60,60))
-    m
-  }
-}
-class GUIModel
-class GUIViewer(override val shell: Shell, controller: Controller) extends AbstractViewer(shell, controller) {
+class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath) 
+  extends ItemViewer(parent, controller) with Container with ViewerResources{
   /*TOOLS*/
-  var tool = new GUITool(this)
+  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
+  val helpers = Buffer[ShowHide]()
   /*MODEL*/
-  lazy val modelView = new GUIModelView(this, controller.model, controller.bcp)
-  def model = controller.model
-  shell.addListener(SWT.Resize, new Listener {
-    def handleEvent(e: Event) {
-      val b = shell.getSize
-      val newd = Dimension(b.x, b.y)
-      val oldd = model.guiSize
-      controller.exec(new Command() {
-        def undo() { model.guiSize = oldd }
-        def redo() { model.guiSize = newd }
-        def canExecute = newd!=oldd
-      })
+  def tree = controller.tree.asInstanceOf[BoxDef]
+  def boxDef = tree
+  def owner = global.root
+  /*LAYERS*/
+  def viewerResources = this
+  val tool: Tool = new GuiTool(this); 
+  override def dispose() {
+    super.dispose()
+    imageFactory.reg.dispose
+  }
+  import RichFigure._
+  def remapSelection(m : Map[Tree,Tree]){
+    selection.refresh(m);
+  }
+  def populate() {
+    boxDef.children foreach {
+      _ match {
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
+          val sym = v.symbol.asInstanceOf[ValSymbol]
+          helpers += new SwingFigure(GuiViewer.this, v, new JSlider)
+        case _ ⇒
+      }
     }
-  })
+  }
+  def refresh() {
+    helpers.clear
+    clear
+    populate()
+    helpers.foreach{_.show}
+    selectedItems foreach { _.showFeedback() }
+  }
+  def selectedItems = this.deepChildren.collect { case i:Item if selection(i.tree) => i}.toSet
+  refresh()
 }
-class GUITool(val viewer: GUIViewer) extends AbstractTool(viewer)
-*/
+class GuiTool(guiViewer:GuiViewer) extends ItemTool(guiViewer) {
+  type C = Container
+  override val  resizing = new Resizing {
+    override def command(newPos: Point, newSize: Dimension) = new EditTransformer {
+      val trans: PartialFunction[Tree, Tree] = {
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == itf.tree) ⇒
+          ValDef(name, typeName, pos, size, Some(newPos), Some(newSize))
+      }
+    }
+  }
+  override val moving = new MovingItem {
+    override def buttonUp {
+      val positions = movables.map { item ⇒
+        val oldLoc = item.getBounds.getLocation
+        (item.tree.asInstanceOf[ValDef] -> (Point(oldLoc.x, oldLoc.y) + delta))
+      }.toMap
+      val command = new EditTransformer {
+        val trans: PartialFunction[Tree, Tree] = {
+          case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (positions.contains(v)) ⇒
+            ValDef(name, typeName, pos, size, Some(positions(v)), guiSize)
+        }
+      }
+      controller.exec(command)
+    }
+  }  
+}

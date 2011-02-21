@@ -8,11 +8,12 @@ import scala.collection.JavaConversions._
 import scala.reflect.Manifest._
 import RichFigure._
 abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
+  type C <: Container
   def itemOrLineUnderMouse = current.itemOrLineAt(currentMouseLocation)
   def currentMouseLocation = translate(current, absMouseLocation)
-  def current = viewer.findDeepContainerAt(absMouseLocation) {
-    case (f: OpenBoxFigure) ⇒ f
-  } getOrElse { viewer }
+  def current : C = viewer.findDeepContainerAt(absMouseLocation) {
+    case (f: OpenBoxFigure) ⇒ f.asInstanceOf[C]
+  } getOrElse { viewer.asInstanceOf[C] }
   def translate(me: IFigure, p: Point): Point = {
     if (me eq viewport) p
     else {
@@ -61,8 +62,8 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     def allowed = initContainer eq current
   }
   trait SingleContainer extends ToolState {
-    var initContainer: BoxDefContainer = _
-    def enterSingle(initContainer: BoxDefContainer) {
+    var initContainer: C = _
+    def enterSingle(initContainer: C) {
       this.initContainer = initContainer
     }
     def currentMouseLocation = translate(initContainer, absMouseLocation)

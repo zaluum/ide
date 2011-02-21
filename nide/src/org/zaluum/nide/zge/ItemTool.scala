@@ -17,29 +17,26 @@ import FigureHelper._
  */
 abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   lazy val selecting = new Selecting
+  type C <: Container
   state = selecting
   // SELECTING 
   class Selecting extends ToolState {
     var selected: Option[Item] = None
-    var lineSelected: Option[LineFigure] = None
     var handle: Option[HandleRectangle] = None
-    var port: Option[PortFigure] = None
     var initDrag: Point = _
-    var initContainer: BoxDefContainer = _
+    var initContainer: C = _
     def enter() { state = this; }
+
     def buttonDown {
-      val iol = itemOrLineUnderMouse
-      selected = iol collect { case i:Item => i}
-      lineSelected = iol collect {case l:LineFigure => l}
+      selected = itemOrLineUnderMouse collect { case i: Item ⇒ i }
       initDrag = currentMouseLocation.getCopy
       initContainer = current
     }
 
     def buttonUp {
-      (selected, lineSelected) match {
-        case (Some(box), _) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
-        case (None, Some(line)) ⇒ line.con foreach { c=> viewer.selection.updateSelection(Set(c), shift) }
-        case (None, None) ⇒ viewer.selection.deselectAll()
+      selected match {
+        case Some(box) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
+        case None ⇒ viewer.selection.deselectAll()
       }
       viewer.refresh()
     }
@@ -57,39 +54,27 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
         viewer.setCursor(null)
       }
     }
-    val portsTrack = new OverTrack[PortFigure] {
-      def container = viewer.portsLayer
-      def onEnter(p: PortFigure) { port = Some(p); p.showFeedback }
-      def onExit(p: PortFigure) { port = None; p.hideFeedback }
-    }
     def move {
       handleTrack.update()
-      portsTrack.update()
     }
     def drag {
-      (handle, selected, port) match {
-        case (Some(h), _, _) ⇒ // resize
+      (handle, selected) match {
+        case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
-        case (None, _, Some(port)) ⇒ // connect
-          connect(port)
-        case (None, Some(fig), _) ⇒ // select and move
+        case (None, Some(fig)) ⇒ // select and move
           if (!viewer.selection(fig.tree))
             viewer.selection.updateSelection(Set(fig.tree), shift)
-          fig match {
-            case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
-            case _ ⇒ moving.enter(initDrag, initContainer)
-          }
-        case (None, None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
+          moving.enter(initDrag, initContainer)
+        case (None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
-    def connect(port: PortFigure) {}
     def exit {}
     def abort {}
   }
   // MOVE
   trait Moving extends ToolState {
     self: DeltaMove with SingleContainer ⇒
-    def enter(initDrag: Point, initContainer: BoxDefContainer) {
+    def enter(initDrag: Point, initContainer: C) {
       enterMoving(initDrag)
       enterSingle(initContainer)
       state = this
@@ -123,12 +108,12 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       exit()
     }
   }
-  object moving extends Moving with DeltaMove with SingleContainer with Allower
-  def movingOpenPort: { def enter(initDrag: Point, initContainer: BoxDefContainer, fig: OpenPortDeclFigure) }
-
+  class MovingItem extends Moving with DeltaMove with SingleContainer with Allower 
+  val moving = new MovingItem
+  
   /// MARQUEE
   object marqueeing extends DeltaMove with SingleContainer {
-    def enter(p: Point, initContainer: BoxDefContainer) {
+    def enter(p: Point, initContainer: C) {
       enterSingle(initContainer)
       enterMoving(p)
       state = this
@@ -150,10 +135,11 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     override def move { viewer.moveMarquee(new Rectangle(currentMouseLocation, initDrag)) } // FIXME
   }
   // RESIZING
-  object resizing extends DeltaMove with SingleContainer {
+  val resizing  = new Resizing
+  class Resizing extends DeltaMove with SingleContainer {
     var handle: HandleRectangle = _
     def itf = handle.resizeItemFigure
-    def enter(initDrag: Point, initContainer: BoxDefContainer, handle: HandleRectangle) {
+    def enter(initDrag: Point, initContainer: C, handle: HandleRectangle) {
       enterMoving(initDrag)
       enterSingle(initContainer)
       this.handle = handle
@@ -163,13 +149,13 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       val newBounds = handle.deltaAdd(delta, itf.getBounds);
       val newPos = newBounds.getLocation
       val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(15, 15))
-      val command = new EditTransformer {
-        val trans: PartialFunction[Tree, Tree] = {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == itf.tree) ⇒
-            ValDef(name, typeName, newPos, Some(newSize), guiPos, guiSize)
-        }
+      controller.exec(command(newPos, newSize))
+    }
+    def command(newPos: MPoint, newSize: Dimension) = new EditTransformer {
+      val trans: PartialFunction[Tree, Tree] = {
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == itf.tree) ⇒
+          ValDef(name, typeName, newPos, Some(newSize), guiPos, guiSize)
       }
-      controller.exec(command)
     }
     def move() { itf.resizeDeltaFeed(delta, handle) }
     def abort() {

@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.nide.zge.GuiViewer
 import org.zaluum.nide.compiler.Parser
 import org.zaluum.nide.zge.TreeViewer
 import org.zaluum.nide.compiler.BoxDef
@@ -58,9 +59,9 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
 
   def inputFile = getEditorInput.asInstanceOf[FileEditorInput].getFile
   def input = inputFile.getContents(true)
-
+  var globalScope : EclipseBoxClasspath = _ 
   def createPartControl(parent: Composite) {
-    val globalScope = new EclipseBoxClasspath(inputFile.getProject)
+    globalScope = new EclipseBoxClasspath(inputFile.getProject)
     val className = globalScope.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
     val proto = BoxFileProtos.BoxClassDef.parseFrom(input)
     val tree = Parser.parse(proto,Some(className)) 
@@ -79,13 +80,15 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
       val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE | SWT.RESIZE )
       newshell.setLayout(new FillLayout)
       newshell.setText(getTitle + " GUI");
-      //guiViewer= new GUIViewer(newshell, controller)
+      val guiViewer= new GuiViewer(newshell, controller, globalScope)
+      controller.registerViewer(guiViewer)
       newshell.layout()
       newshell.open()
       
       newshell.addDisposeListener(new DisposeListener(){
         override def widgetDisposed(e:DisposeEvent) {
-          //guiViewer.dispose()
+          guiViewer.dispose()
+          controller.unregisterViewer(guiViewer);
           shell = None
         }
       });

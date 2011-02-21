@@ -57,7 +57,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) ex
   }
 }
 
-class ItemFeedbackFigure(parent: BoxDefContainer) extends Figure {
+class ItemFeedbackFigure(parent: Container) extends Figure {
   protected val rectangle = new FeedbackRectangle(this)
   rectangle.setLineStyle(SWT.LINE_DOT);
   rectangle.setFill(false);
@@ -86,7 +86,7 @@ class ItemFeedbackFigure(parent: BoxDefContainer) extends Figure {
   }
 
 }
-class ResizeItemFeedbackFigure(val bf: Item, parent: BoxDefContainer) extends ItemFeedbackFigure(parent) {
+class ResizeItemFeedbackFigure(val bf: Item, parent: Container) extends ItemFeedbackFigure(parent) {
 
   val handles =
     (for {

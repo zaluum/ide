@@ -98,7 +98,7 @@ trait ShowHide {
 trait Item extends Selectable {
   type T <: Tree
   def tree :T
-  def container :BoxDefContainer
+  def container :Container
   def moveFeed(loc: MPoint) 
   def moveDeltaFeed(delta: Vector2) 
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) 
