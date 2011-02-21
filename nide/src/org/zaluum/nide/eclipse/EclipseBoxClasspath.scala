@@ -29,9 +29,9 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
     val name = null
     scope = EclipseBoxClasspath.this
   }
-  private def newJavaType(str: String) =
+  private def newJavaType(str:String) =
     (Name(str) -> new PrimitiveJavaType(root,Name(str)))
-  var types = Map[Name, Type](newJavaType("D"))//TODO
+  var types = Map[Name, Type](newJavaType("double"))//TODO
   
   def lookupPort(name: Name): Option[Symbol] = None
   def lookupVal(name: Name): Option[Symbol] = None
@@ -99,10 +99,15 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
           case _ ⇒ Point(0, 0)
         }
       }
+      def typeSignatureToName(str:String ) = str match{
+        case "D" => Name("double")
+        case _ => Name(str.dropRight(1).drop(1).replace('.', '/')) 
+      }
       for (f ← t.getFields) {
         def port(in:Boolean,a:IAnnotation) {
-          val port = new PortSymbol(bs,Name(f.getElementName),pointOf(a),if (in) In else Out) 
-          port.tpe = lookupType(Name(f.getTypeSignature)) getOrElse {NoSymbol}
+          val port = new PortSymbol(bs,Name(f.getElementName),pointOf(a),if (in) In else Out)
+          val tpe = lookupType(typeSignatureToName(f.getTypeSignature)) getOrElse (throw new Exception("tpe not found"))
+          port.tpe = tpe
           bs.enter(port)           
         }
         findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { port(true,_) }

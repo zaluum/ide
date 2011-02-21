@@ -25,16 +25,16 @@ public class Run {
 			NoSuchMethodException, IllegalArgumentException,
 			InvocationTargetException, NoSuchFieldException {
 		Class<?> c = Thread.currentThread().getContextClassLoader().loadClass(
-				"org.zaluum.example.testInner");
+				"org.zaluum.example.a");
 		// Class<?> c =
 		// Class.forName("org.zaluum.example.TestModel",true,Thread.currentThread().getContextClassLoader());
 		final Object instance = c.newInstance();
-		Field f = c.getField("widget");
+		//Field f = c.getField("widget");
 		final Method m = c.getMethod("apply");
-		JComponent comp = (JComponent) f.get(instance);
+		/*JComponent comp = (JComponent) f.get(instance);
 		JFrame frame = new JFrame();
 		frame.add(comp);
-		frame.setSize(comp.getSize());
+		frame.setSize(comp.getSize());*/
 		new Thread(new Runnable() {
 			public void run() {
 				try {
@@ -47,6 +47,6 @@ public class Run {
 				}
 			}
 		}).start();
-		frame.setVisible(true);
+		//frame.setVisible(true);
 	}
 }

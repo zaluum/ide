@@ -45,8 +45,6 @@ case class Name(str: String) {
   def toRelativePath: String = str.replace('.', '/')
   def toRelativePathClass = toRelativePath + ".class"
   def internal = str.replace('.', '/')
-  def descriptor = "L" + internal + ";"
-
 }
 trait Scope {
   def lookupPort(name: Name): Option[Symbol]

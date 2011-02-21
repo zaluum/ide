@@ -24,7 +24,7 @@ object WidgetTemplateDump {
     mv.visitMethodInsn(INVOKEVIRTUAL, "javax/swing/JComponent", "setSize", "(II)V");
     for (box ← sym.valsInOrder; val typ = box.tpe.asInstanceOf[BoxTypeSymbol]; if (false)){ // TODO typ.visual)) {
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitFieldInsn(GETFIELD, sym.tpe.name.internal, box.name.str , box.tpe.name.descriptor);
+      mv.visitFieldInsn(GETFIELD, sym.tpe.name.internal, box.name.str , descriptor(box.tpe.name));
       mv.visitFieldInsn(GETFIELD, box.tpe.name.internal, "widget", "Ljavax/swing/JComponent;");
       /*TODO mv.visitIntInsn(SIPUSH, box.guiPos.map(_.pos.x).getOrElse(0)) // TODO hardcoded
       mv.visitIntInsn(SIPUSH, box.guiPos.map(_.pos.y).getOrElse(0))
@@ -34,7 +34,7 @@ object WidgetTemplateDump {
       mv.visitVarInsn(ALOAD, 0);
       mv.visitFieldInsn(GETFIELD, sym.tpe.name.internal, "widget", "Ljavax/swing/JComponent;");
       mv.visitVarInsn(ALOAD, 0);
-      mv.visitFieldInsn(GETFIELD, sym.tpe.name.internal, box.name.str, box.tpe.name.descriptor);
+      mv.visitFieldInsn(GETFIELD, sym.tpe.name.internal, box.name.str, descriptor(box.tpe.name));
       mv.visitFieldInsn(GETFIELD, box.tpe.name.internal, "widget", "Ljavax/swing/JComponent;");
       mv.visitMethodInsn(INVOKEVIRTUAL, "javax/swing/JComponent", "add", "(Ljava/awt/Component;)Ljava/awt/Component;");
       mv.visitInsn(POP);

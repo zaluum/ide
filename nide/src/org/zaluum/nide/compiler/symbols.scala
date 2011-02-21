@@ -20,6 +20,10 @@ class BoxTypeSymbol(val owner: Symbol, val name: Name, val image:Option[String])
   def valsInOrder = boxes.values.toList.sortWith(_.name.str< _.name.str).asInstanceOf[List[ValSymbol]]
   def portsInOrder = ports.values.toList.sortWith(_.name.str<_.name.str).asInstanceOf[List[PortSymbol]]
   var executionOrder = List[ValSymbol]() 
+  def fqName : Name = owner match {
+    case bown:BoxTypeSymbol => Name(bown.fqName.str + "$" + name.str)
+    case _ => name
+  }
 }
 
 class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 

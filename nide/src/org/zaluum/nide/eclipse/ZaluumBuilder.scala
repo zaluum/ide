@@ -68,13 +68,22 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
     try {
       cl.toClassName(f) foreach { className ⇒
         val proto = BoxFileProtos.BoxClassDef.parseFrom(f.getContents(true))
-        val tree = Parser.parse(proto,Some(className))
+        val tree = Parser.parse(proto, Some(className))
         val scope = new FakeGlobalScope(cl)
         val analyzedTree = new Analyzer(reporter, tree, scope).compile()
+        def generate(tree: Tree) {
+          val sym = tree.symbol.asInstanceOf[BoxTypeSymbol]
+          println("generating " + sym.fqName)
+          val classTree = new TreeToClass(tree, scope).run()
+          val outputPath = defaultOutputFolder.append(new Path(sym.fqName.toRelativePathClass))
+          writeFile(outputPath, ByteCodeGen.dump(classTree))
+          tree match {
+            case b: BoxDef ⇒ b.defs foreach { case c:BoxDef ⇒ generate(c) }
+          }
+        }
+        val bd = analyzedTree.asInstanceOf[BoxDef]
+        generate(analyzedTree)
         reporter.check()
-        val classTree = new TreeToClass(analyzedTree,scope).run()
-        val outputPath = defaultOutputFolder.append(new Path(analyzedTree.symbol.name.toRelativePath))
-        writeFile(outputPath,ByteCodeGen.dump(classTree))
       }
     } catch {
       case e: CompilationException ⇒
