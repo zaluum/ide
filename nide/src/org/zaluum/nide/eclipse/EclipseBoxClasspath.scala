@@ -35,7 +35,10 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
   
   def lookupPort(name: Name): Option[Symbol] = None
   def lookupVal(name: Name): Option[Symbol] = None
-  def lookupType(name: Name): Option[Type] = types.get(name)
+  def lookupType(name: Name): Option[Type] = {
+    // TODO seach classpath
+    types.get(name)
+  }
   def lookupBoxType(name: Name): Option[Type] = cacheType.get(name)
   def lookupBoxTypeLocal(name: Name): Option[Type] = lookupBoxType(name)
   
@@ -106,7 +109,10 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
       for (f ← t.getFields) {
         def port(in:Boolean,a:IAnnotation) {
           val port = new PortSymbol(bs,Name(f.getElementName),pointOf(a),if (in) In else Out)
-          val tpe = lookupType(typeSignatureToName(f.getTypeSignature)) getOrElse (throw new Exception("tpe not found"))
+          val name = typeSignatureToName(f.getTypeSignature)
+          val tpe = lookupType(name) getOrElse {
+            new ClassJavaType(root,name) // FIXME
+          }
           port.tpe = tpe
           bs.enter(port)           
         }

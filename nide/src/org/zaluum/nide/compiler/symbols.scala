@@ -15,6 +15,9 @@ case object NoSymbol extends Symbol with Type {
 class PrimitiveJavaType(val owner:Symbol, val name:Name) extends Symbol with Type{
   scope=owner.scope
 }
+class ClassJavaType(val owner:Symbol, val name:Name) extends Type {
+  scope=owner.scope
+}
 class BoxTypeSymbol(val owner: Symbol, val name: Name, val image:Option[String]) extends LocalScope(owner.scope) with Symbol with Type {
   var source : String = "" // TODO
   def valsInOrder = boxes.values.toList.sortWith(_.name.str< _.name.str).asInstanceOf[List[ValSymbol]]
