@@ -1,6 +1,5 @@
 package org.zaluum.nide.eclipse
 
-
 import org.zaluum.nide.compiler._
 import javax.swing.JComponent
 import java.net.URLClassLoader
@@ -13,10 +12,10 @@ import org.eclipse.jdt.internal.core.JavaModelManager
 import scala.util.control.Exception._
 
 trait ClassPath {
-  def getResource(str:String):Option[URL]
+  def getResource(str: String): Option[URL]
 }
-class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath with Scope{
-  var cacheType = Map[Name,Type]()
+class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath with Scope {
+  var cacheType = Map[Name, Type]()
   var creatorCache = Map[Name, () ⇒ JComponent]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
@@ -29,10 +28,10 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
     val name = null
     scope = EclipseBoxClasspath.this
   }
-  private def newJavaType(str:String) =
-    (Name(str) -> new PrimitiveJavaType(root,Name(str)))
-  var types = Map[Name, Type](newJavaType("double"))//TODO
-  
+  private def newJavaType(str: String) =
+    (Name(str) -> new PrimitiveJavaType(root, Name(str)))
+  var types = Map[Name, Type](newJavaType("double")) //TODO
+
   def lookupPort(name: Name): Option[Symbol] = None
   def lookupVal(name: Name): Option[Symbol] = None
   def lookupType(name: Name): Option[Type] = {
@@ -41,9 +40,9 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
   }
   def lookupBoxType(name: Name): Option[Type] = cacheType.get(name)
   def lookupBoxTypeLocal(name: Name): Option[Type] = lookupBoxType(name)
-  
+
   def boxes = cacheType.values
-  def enter(sym: Symbol): Symbol = { throw new Exception("cannot enter new symbols to global scope") } 
+  def enter(sym: Symbol): Symbol = { throw new Exception("cannot enter new symbols to global scope") }
   // cacheType += (sym.name->sym.asInstanceOf[Type]);sym}//throw new Exception("cannot enter")
   def update() {
     cacheType = cacheType.empty
@@ -80,18 +79,22 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
         v.getMemberName == key && v.getValueKind == IMemberValuePair.K_INT
       } map { _.getValue.asInstanceOf[Int] }
     }
-    def forName(str: String): Option[Class[_]] = {
-      try { Some(classLoader.loadClass(str)) }
-      catch { case e: Exception ⇒ e.printStackTrace; None }
+
+    def typeSignatureToName(str: String) = str match {
+      case "D" ⇒ Name("double")
+      case _ ⇒ Name(str.dropRight(1).drop(1).replace('.', '/'))
     }
-    def processTypeSym(t:IType) {
+
+    def processTypeSym(t: IType) {
       val fqn = Name(t.getFullyQualifiedName)
       val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       }
-      val guiClass = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
-        findStringValueOfAnnotation(a, "value")
-      } flatMap { forName(_) } 
+      val guiClass = t.getFields.find { f ⇒ f.getElementName == "_widget" }.flatMap { f ⇒
+        println("found widget " + f.getTypeSignature);
+        val res = t.resolveType(typeSignatureToName(f.getTypeSignature).str)
+        res.headOption map { arr => Name(arr.mkString(".")) }
+      }
       val bs = new BoxTypeSymbol(root, fqn, img, guiClass)
       bs.scope = this
       def pointOf(a: IAnnotation) = {
@@ -102,26 +105,22 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
           case _ ⇒ Point(0, 0)
         }
       }
-      def typeSignatureToName(str:String ) = str match{
-        case "D" => Name("double")
-        case _ => Name(str.dropRight(1).drop(1).replace('.', '/')) 
-      }
       for (f ← t.getFields) {
-        def port(in:Boolean,a:IAnnotation) {
-          val port = new PortSymbol(bs,Name(f.getElementName),pointOf(a),if (in) In else Out)
+        def port(in: Boolean, a: IAnnotation) {
+          val port = new PortSymbol(bs, Name(f.getElementName), pointOf(a), if (in) In else Out)
           val name = typeSignatureToName(f.getTypeSignature)
           val tpe = lookupType(name) getOrElse {
-            new ClassJavaType(root,name) // FIXME
+            new ClassJavaType(root, name) // FIXME
           }
           port.tpe = tpe
-          bs.enter(port)           
+          bs.enter(port)
         }
-        findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { port(true,_) }
-        findAnnotations(t, f, "org.zaluum.nide.java.Out") foreach { port(false,_) }
+        findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { port(true, _) }
+        findAnnotations(t, f, "org.zaluum.nide.java.Out") foreach { port(false, _) }
       }
       cacheType += (bs.name -> bs)
       //creatorClass foreach { c ⇒ creatorCache += (bc.className, () ⇒ c.newInstance.asInstanceOf[JComponent]) }
-      
+
     }
     val searchRequestor = new SearchRequestor() {
       def acceptSearchMatch(matchh: SearchMatch) {
@@ -139,7 +138,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
     // FIND ZALUUMS IN SOURCE
     visitSourceZaluums { loadZaluum(_) }
   }
-  
+
   def loadZaluum(f: IFile) {
     /*def addCache(cl: BoxClass) {
       cache += (cl.className -> cl)

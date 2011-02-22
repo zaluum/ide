@@ -13,7 +13,7 @@ object ByteCodeGen {
     cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, "java/lang/Object", null);
     var mv: MethodVisitor = null
     val thisDescriptor = descriptor(bc.name)
-    def emitMethod(name: String, signature:String, tree: Tree, constructor:Boolean) {
+    def emitMethod(name: String, signature: String, tree: Tree, constructor: Boolean) {
       mv = cw.visitMethod(ACC_PUBLIC, name, signature, null, null);
       mv.visitCode();
       if (constructor) {
@@ -32,45 +32,45 @@ object ByteCodeGen {
     }
     def emit(tree: Tree): Unit = {
       tree match {
-        case EmptyTree =>
+        case EmptyTree ⇒
         case FieldDef(name, tpe) ⇒
           cw.visitField(ACC_PUBLIC, name.str, descriptor(tpe), null, null).visitEnd()
         case ConstructorMethod(c) ⇒
-          emitMethod("<init>","()V", tree,true)
+          emitMethod("<init>", "()V", tree, true)
         case Method(name, stats) ⇒
-          emitMethod(name.str, "()V", tree,false)
-        case New(typeName, param, signature) => 
+          emitMethod(name.str, "()V", tree, false)
+        case New(typeName, param, signature) ⇒
           mv.visitTypeInsn(NEW, typeName.internal);
           mv.visitInsn(DUP);
           emit(param)
           mv.visitMethodInsn(INVOKESPECIAL, typeName.internal, "<init>", signature);
-        case NullConst => 
+        case NullConst ⇒
           mv.visitInsn(ACONST_NULL)
-        case Assign(lhs,rhs) =>
+        case Assign(lhs, rhs) ⇒
           lhs match {
-            case Select(a,FieldRef(id, typeName, fromClass) ) => 
+            case Select(a, FieldRef(id, typeName, fromClass)) ⇒
               emit(a)
               emit(rhs)
               mv.visitFieldInsn(PUTFIELD, fromClass.internal, id.str, descriptor(typeName))
           }
-        case Select(a,b) => 
+        case Select(a, b) ⇒
           emit(a)
           emit(b)
-        case FieldRef(id,typeName,fromClass) => 
+        case FieldRef(id, typeName, fromClass) ⇒
           mv.visitFieldInsn(GETFIELD, fromClass.internal, id.str, descriptor(typeName))
-        case This => 
+        case This ⇒
           mv.visitVarInsn(ALOAD, 0);
-        case Invoke(obj, meth, param, fromClass, descriptor) =>
+        case Invoke(obj, meth, param, fromClass, descriptor) ⇒
           emit(obj)
-          param foreach {emit(_)}
+          param foreach { emit(_) }
           mv.visitMethodInsn(INVOKEVIRTUAL, fromClass.internal, meth, descriptor)
-        case Pop => 
+        case Pop ⇒
           mv.visitInsn(POP)
-        case Const(i) =>
-          mv.visitIntInsn(SIPUSH,i)
+        case Const(i) ⇒
+          mv.visitIntInsn(SIPUSH, i)
       }
     }
-    bc.children foreach {emit(_)}
+    bc.children foreach { emit(_) }
     cw.visitEnd()
     cw.toByteArray
   }

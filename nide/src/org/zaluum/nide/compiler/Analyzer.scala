@@ -1,5 +1,6 @@
 package org.zaluum.nide.compiler
 
+import javax.swing.JPanel
 import org.jgrapht.traverse.TopologicalOrderIterator
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException
 import org.jgrapht.graph.DefaultEdge
@@ -119,8 +120,8 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
     override def traverse(tree: Tree) {
       tree match {
         case BoxDef(name, image, defs, vals, ports, connections) ⇒
-          // TODO inner class names $ if currentOwner is BoxTypeSymbol? 
-          defineBox(new BoxTypeSymbol(currentOwner, name, image,None), tree)
+          val cl = Some(Name(classOf[JPanel].getName)) 
+          defineBox(new BoxTypeSymbol(currentOwner, name, image,cl), tree)
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
           definePort(new PortSymbol(currentOwner, name, extPos, dir), tree)
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒

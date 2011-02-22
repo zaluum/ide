@@ -12,12 +12,12 @@ import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
 import org.eclipse.swt.SWT
 import scala.collection.mutable.Buffer
 
-class SwingFigure(val container:Container, val box: ValDef, val component: JComponent) extends SimpleItem with ResizableFeedback {
+class SwingFigure(val container: Container, val box: ValDef, val component: JComponent) extends SimpleItem with ResizableFeedback {
   setOpaque(true)
   type T = ValDef
   def tree = box
-  def size = box.guiSize getOrElse { Dimension(15,15) }
-  def pos = box.guiPos  getOrElse {Point(0,0)}
+  def size = box.guiSize getOrElse { Dimension(15, 15) }
+  def pos = box.guiPos getOrElse { Point(0, 0) }
   def myLayer = container.layer
   override def paintFigure(g: Graphics) {
     val rect = getClientArea()
@@ -33,8 +33,8 @@ class SwingFigure(val container:Container, val box: ValDef, val component: JComp
     image.dispose()
   }
 }
-class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath) 
-  extends ItemViewer(parent, controller) with Container with ViewerResources{
+class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
+  extends ItemViewer(parent, controller) with Container with ViewerResources {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
   val helpers = Buffer[ShowHide]()
@@ -44,23 +44,30 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
   def owner = global.root
   /*LAYERS*/
   def viewerResources = this
-  val tool: Tool = new GuiTool(this); 
+  val tool: Tool = new GuiTool(this);
   override def dispose() {
     super.dispose()
     imageFactory.reg.dispose
   }
   import RichFigure._
-  def remapSelection(m : Map[Tree,Tree]){
+  def remapSelection(m: Map[Tree, Tree]) {
     selection.refresh(m);
   }
+
+  def forName(str: String): Option[Class[_]] = {
+    try { Some(global.classLoader.loadClass(str)) }
+    catch { case e: Exception ⇒ e.printStackTrace; None }
+  }
+
   def populate() {
     boxDef.children foreach {
       _ match {
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
           val sym = v.symbol.asInstanceOf[ValSymbol]
           val tpe = sym.tpe.asInstanceOf[BoxTypeSymbol]
-          tpe.visualClass foreach { c  =>
-            helpers += new SwingFigure(GuiViewer.this, v, c.newInstance.asInstanceOf[JComponent])
+          for (c <- tpe.visualClass; cl <- forName(c.str)) {
+            helpers += new SwingFigure(GuiViewer.this, v,
+              cl.newInstance.asInstanceOf[JComponent])
           }
         case _ ⇒
       }
@@ -70,15 +77,15 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
     helpers.clear
     clear
     populate()
-    helpers.foreach{_.show}
+    helpers.foreach { _.show }
     selectedItems foreach { _.showFeedback() }
   }
-  def selectedItems = this.deepChildren.collect { case i:Item if selection(i.tree) => i}.toSet
+  def selectedItems = this.deepChildren.collect { case i: Item if selection(i.tree) ⇒ i }.toSet
   refresh()
 }
-class GuiTool(guiViewer:GuiViewer) extends ItemTool(guiViewer) {
+class GuiTool(guiViewer: GuiViewer) extends ItemTool(guiViewer) {
   type C = Container
-  override val  resizing = new Resizing {
+  override val resizing = new Resizing {
     override def command(newPos: Point, newSize: Dimension) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == itf.tree) ⇒
@@ -100,5 +107,5 @@ class GuiTool(guiViewer:GuiViewer) extends ItemTool(guiViewer) {
       }
       controller.exec(command)
     }
-  }  
+  }
 }

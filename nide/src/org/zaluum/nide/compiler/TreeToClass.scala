@@ -1,7 +1,7 @@
 package org.zaluum.nide.compiler
 case class BoxClass(name: Name, fields: List[FieldDef], cons: ConstructorMethod, apply: Method) extends Tree
 case class FieldDef(name: Name, typeName: Name) extends Tree
-case class New(typeName: Name, param : Tree, signature:String) extends Tree
+case class New(typeName: Name, param: Tree, signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
 case class Method(name: Name, stats: List[Tree]) extends Tree
 case class Assign(lhs: Tree, rhs: Tree) extends Tree
@@ -11,7 +11,7 @@ case object Pop extends Tree
 case object NullConst extends Tree
 case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Tree
 case class Invoke(obj: Tree, meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
-case class Const(i:Int) extends Tree
+case class Const(i: Int) extends Tree
 class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = Location(List(0))
@@ -37,11 +37,15 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     }
   }
   object rewrite {
+    def vClass(bd: BoxDef) : Option[Name]= {
+      bd.symbol.asInstanceOf[BoxTypeSymbol].visualClass
+    }
     def apply(t: Tree) = t match {
       case b@BoxDef(name, image, defs, vals, ports, connections) ⇒
         val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
-        val widgetField = FieldDef(Name("_widget"), Name("javax.swing.JComponent"))
-        val fields = widgetField :: (vals ++ ports).map { field(_) }
+        val baseFields = (vals ++ ports).map { field(_) }
+        val fields = vClass(b) map { vn =>
+          FieldDef(Name("_widget"), vn) :: baseFields} getOrElse { baseFields }
         BoxClass(
           tpe.fqName,
           fields,
@@ -57,44 +61,47 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     }
     def cons(b: BoxDef) = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
+      // boxes
       val boxCreation: List[Tree] = b.vals map {
         _ match {
           case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
             val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
-            Assign(Select(This, FieldRef(name, tpe.fqName, bs.fqName)), New(tpe.fqName,EmptyTree,"()V"))
+            Assign(Select(This, FieldRef(name, tpe.fqName, bs.fqName)), New(tpe.fqName, EmptyTree, "()V"))
         }
       }
-      val widgetName = Name("_widget")
-      val widgetTpe = Name("javax.swing.JComponent")
-      val widgetCreation: Tree = 
-        Assign(Select(This, FieldRef(widgetName, widgetTpe, bs.fqName)), 
-            New(Name("javax.swing.JPanel"), NullConst, "(Ljava/awt/LayoutManager;)V"))
-      val widgetInit = b.vals flatMap {
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
-          val tpe = v.tpe.asInstanceOf[BoxTypeSymbol];
-          tpe.visualClass map { cl ⇒
-            List[Tree](
-               Invoke(
-                   Select(Select(This, FieldRef(v.name,tpe.fqName,bs.fqName)),
-                       FieldRef(widgetName,widgetTpe,tpe.fqName)),
-                   "setBounds", 
-                   List(Const(guiPos.map(_.x).getOrElse(0)),
-                       Const( guiPos.map(_.y).getOrElse(0)),
-                       Const(guiSize.map(_.w).getOrElse(50)),
-                       Const(guiSize.map(_.h).getOrElse(50))),
-                   Name("javax.swing.JComponent"),
-                   "(IIII)V"
-                   ),
-              Invoke(
-                Select(This, FieldRef(widgetName, widgetTpe, bs.fqName)),
-                "add",
-                List(Select(Select(This, FieldRef(v.name,tpe.fqName,bs.fqName)),
-                       FieldRef(widgetName,widgetTpe,tpe.fqName))),
-                widgetTpe, "(Ljava/awt/Component;)Ljava/awt/Component;"),
-              Pop)
-          } getOrElse (List())
+      // widgets
+      val widgets = vClass(b) map { vn => 
+        val widgetName = Name("_widget")
+        val widgetCreation: Tree =
+          Assign(Select(This, FieldRef(widgetName, vn, bs.fqName)),
+            New(vn, NullConst, "(Ljava/awt/LayoutManager;)V"))
+        val widgetInit = b.vals flatMap {
+          case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
+            val tpe = v.tpe.asInstanceOf[BoxTypeSymbol];
+            tpe.visualClass map { cl ⇒
+              List[Tree](
+                Invoke(
+                  Select(Select(This, FieldRef(v.name, tpe.fqName, bs.fqName)),
+                    FieldRef(widgetName, cl, tpe.fqName)),
+                  "setBounds",
+                  List(Const(guiPos.map(_.x).getOrElse(0)),
+                    Const(guiPos.map(_.y).getOrElse(0)),
+                    Const(guiSize.map(_.w).getOrElse(50)),
+                    Const(guiSize.map(_.h).getOrElse(50))),
+                  Name("javax.swing.JComponent"),
+                  "(IIII)V"),
+                Invoke(
+                  Select(This, FieldRef(widgetName, vn, bs.fqName)),
+                  "add",
+                  List(Select(Select(This, FieldRef(v.name, tpe.fqName, bs.fqName)),
+                    FieldRef(widgetName, cl, tpe.fqName))),
+                  Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;"),
+                Pop)
+            } getOrElse (List())
+        }
+        widgetCreation :: widgetInit
       }
-      ConstructorMethod(boxCreation ++ (widgetCreation :: widgetInit))
+      ConstructorMethod(widgets map {w => boxCreation ++ w } getOrElse boxCreation)
     }
     def appl(b: BoxDef) = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
