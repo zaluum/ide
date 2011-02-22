@@ -10,20 +10,19 @@ object Serializer {
       b.ports collect  { case port:PortDef => port } sortBy {_.name.str} foreach {port => p.addPort(proto(port)) }
       b.vals collect { case va:ValDef => va } sortBy {_.name.str} foreach { va => p.addInstance(proto(va)) }
       b.connections collect { case c:ConnectionDef => p.addConnection(proto(c)) } // TODO sort
-      p.setGuiSize(proto(Dimension(50,50))) // TODO
+      p.setGuiSize(proto(Dimension(400,400))) // TODO
       p.setVisual(false) // TODO
       p.build
   }
   
   def proto (p:ValDef) : BoxFileProtos.BoxClassDef.Instance = {
-      //      b.setParameter(x$1, x$2)
-      // TODO .setSize(proto(p.))
       BoxFileProtos.BoxClassDef.Instance.newBuilder
-      .setGuiPos(proto(Point(0,0)))
-      .setGuiSize(proto(Dimension(50,50)))
+      .setGuiPos(proto(p.guiPos.getOrElse {Point(0,0)}))
+      .setGuiSize(proto(p.guiSize.getOrElse {Dimension(50,50)}))
       .setClassName(p.typeName.str )
       .setName(p.name.str)
       .setPos(proto(p.pos))
+      .setSize(proto(p.size.getOrElse(Dimension(50,50))))
       .build
   }
   def proto (c:ConnectionDef) : BoxFileProtos.BoxClassDef.Connection = {

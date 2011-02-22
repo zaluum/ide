@@ -11,8 +11,8 @@ import org.zaluum.nide.java.Widget;
 @Widget("javax.swing.JSlider")
 public class SliderWidget {
 	@Out(x=48,y=24) public double out = 0.0;
-	public JComponent widget = new JSlider();
+	public JComponent _widget = new JSlider();
 	void apply() {
-		out=((JSlider)widget).getValue();
+		out=((JSlider)_widget).getValue();
 	}
 }

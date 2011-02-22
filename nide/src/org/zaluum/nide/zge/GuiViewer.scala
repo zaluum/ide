@@ -58,7 +58,10 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
       _ match {
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
           val sym = v.symbol.asInstanceOf[ValSymbol]
-          helpers += new SwingFigure(GuiViewer.this, v, new JSlider)
+          val tpe = sym.tpe.asInstanceOf[BoxTypeSymbol]
+          tpe.visualClass foreach { c  =>
+            helpers += new SwingFigure(GuiViewer.this, v, c.newInstance.asInstanceOf[JComponent])
+          }
         case _ ⇒
       }
     }

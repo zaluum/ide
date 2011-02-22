@@ -120,7 +120,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       tree match {
         case BoxDef(name, image, defs, vals, ports, connections) ⇒
           // TODO inner class names $ if currentOwner is BoxTypeSymbol? 
-          defineBox(new BoxTypeSymbol(currentOwner, name, image), tree)
+          defineBox(new BoxTypeSymbol(currentOwner, name, image,None), tree)
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
           definePort(new PortSymbol(currentOwner, name, extPos, dir), tree)
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒

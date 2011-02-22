@@ -89,10 +89,10 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
       val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       }
-      val creatorClass = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
+      val guiClass = findAnnotations(t, t, "org.zaluum.nide.java.Widget").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
-      } flatMap { forName(_) }
-      val bs = new BoxTypeSymbol(root, fqn, img) 
+      } flatMap { forName(_) } 
+      val bs = new BoxTypeSymbol(root, fqn, img, guiClass)
       bs.scope = this
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
