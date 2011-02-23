@@ -33,7 +33,7 @@ class ImageFactory(val display: Display, bcp: ClassPath) {
   }
   private def imageFor(image:Option[String],name:Name) = {
     def defaultImage(name: Name) = name.toRelativePath + ".png";
-    def fallbackImage(name:Name) = get(defaultImage(name)).getOrElse {generateImage(name.str)}
+    def fallbackImage(name:Name) = get(defaultImage(name)).getOrElse {generateImage(name.classNameWithoutPackage)}
     image.flatMap {get(_)}.getOrElse(fallbackImage(name))
   }
   def apply(typeTree: Tree): Image = {

@@ -10,7 +10,7 @@ object ByteCodeGen {
   }
   def dump(bc: BoxClass): Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, "java/lang/Object", null);
+    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, bc.superName.internal, null);
     var mv: MethodVisitor = null
     val thisDescriptor = descriptor(bc.name)
     def emitMethod(name: String, signature: String, tree: Tree, constructor: Boolean) {
@@ -18,7 +18,7 @@ object ByteCodeGen {
       mv.visitCode();
       if (constructor) {
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
+        mv.visitMethodInsn(INVOKESPECIAL, bc.superName.internal, "<init>", "()V");
       }
       val l0 = new Label();
       mv.visitLabel(l0);
@@ -37,8 +37,8 @@ object ByteCodeGen {
           cw.visitField(ACC_PUBLIC, name.str, descriptor(tpe), null, null).visitEnd()
         case ConstructorMethod(c) ⇒
           emitMethod("<init>", "()V", tree, true)
-        case Method(name, stats) ⇒
-          emitMethod(name.str, "()V", tree, false)
+        case Method(name, signature, stats) ⇒
+          emitMethod(name.str, signature, tree, false)
         case New(typeName, param, signature) ⇒
           mv.visitTypeInsn(NEW, typeName.internal);
           mv.visitInsn(DUP);
@@ -68,6 +68,11 @@ object ByteCodeGen {
           mv.visitInsn(POP)
         case Const(i) ⇒
           mv.visitIntInsn(SIPUSH, i)
+        case Return(t) =>
+          emit(t)
+          mv.visitInsn(IRETURN)
+        case True => 
+          mv.visitInsn(ICONST_1)
       }
     }
     bc.children foreach { emit(_) }

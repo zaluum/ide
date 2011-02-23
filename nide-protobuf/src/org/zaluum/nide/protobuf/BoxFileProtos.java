@@ -2873,6 +2873,13 @@ public final class BoxFileProtos {
       return connection_.get(index);
     }
     
+    // optional string super = 9;
+    public static final int SUPER_FIELD_NUMBER = 9;
+    private boolean hasSuper;
+    private java.lang.String super_ = "";
+    public boolean hasSuper() { return hasSuper; }
+    public java.lang.String getSuper() { return super_; }
+    
     private void initFields() {
       guiSize_ = org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Point.getDefaultInstance();
     }
@@ -2922,6 +2929,9 @@ public final class BoxFileProtos {
       for (org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Connection element : getConnectionList()) {
         output.writeMessage(8, element);
       }
+      if (hasSuper()) {
+        output.writeString(9, getSuper());
+      }
       getUnknownFields().writeTo(output);
     }
     
@@ -2962,6 +2972,10 @@ public final class BoxFileProtos {
       for (org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Connection element : getConnectionList()) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(8, element);
+      }
+      if (hasSuper()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(9, getSuper());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -3173,6 +3187,9 @@ public final class BoxFileProtos {
           }
           result.connection_.addAll(other.connection_);
         }
+        if (other.hasSuper()) {
+          setSuper(other.getSuper());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -3241,6 +3258,10 @@ public final class BoxFileProtos {
               org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Connection.Builder subBuilder = org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Connection.newBuilder();
               input.readMessage(subBuilder, extensionRegistry);
               addConnection(subBuilder.buildPartial());
+              break;
+            }
+            case 74: {
+              setSuper(input.readString());
               break;
             }
           }
@@ -3549,6 +3570,27 @@ public final class BoxFileProtos {
         return this;
       }
       
+      // optional string super = 9;
+      public boolean hasSuper() {
+        return result.hasSuper();
+      }
+      public java.lang.String getSuper() {
+        return result.getSuper();
+      }
+      public Builder setSuper(java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  result.hasSuper = true;
+        result.super_ = value;
+        return this;
+      }
+      public Builder clearSuper() {
+        result.hasSuper = false;
+        result.super_ = getDefaultInstance().getSuper();
+        return this;
+      }
+      
       // @@protoc_insertion_point(builder_scope:zaluum.BoxClassDef)
     }
     
@@ -3605,7 +3647,7 @@ public final class BoxFileProtos {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rBoxFile.proto\022\006zaluum\"\257\010\n\013BoxClassDef\022" +
+      "\n\rBoxFile.proto\022\006zaluum\"\276\010\n\013BoxClassDef\022" +
       "\022\n\nclass_name\030\001 \001(\t\022\022\n\nimage_name\030\002 \001(\t\022" +
       "+\n\010gui_size\030\003 \002(\0132\031.zaluum.BoxClassDef.P" +
       "oint\022\016\n\006visual\030\004 \002(\010\022&\n\004port\030\005 \003(\0132\030.zal" +
@@ -3613,27 +3655,27 @@ public final class BoxFileProtos {
       "\0132\023.zaluum.BoxClassDef\022.\n\010instance\030\007 \003(\013" +
       "2\034.zaluum.BoxClassDef.Instance\0222\n\nconnec" +
       "tion\030\010 \003(\0132\036.zaluum.BoxClassDef.Connecti" +
-      "on\032\210\002\n\010Instance\022\014\n\004name\030\001 \002(\t\022\022\n\nclass_n" +
-      "ame\030\002 \002(\t\022&\n\003pos\030\003 \002(\0132\031.zaluum.BoxClass",
-      "Def.Point\022\'\n\004size\030\004 \001(\0132\031.zaluum.BoxClas" +
-      "sDef.Point\0220\n\tparameter\030\005 \003(\0132\035.zaluum.B" +
-      "oxClassDef.Parameter\022*\n\007gui_pos\030\006 \001(\0132\031." +
-      "zaluum.BoxClassDef.Point\022+\n\010gui_size\030\007 \001" +
-      "(\0132\031.zaluum.BoxClassDef.Point\032\'\n\tParamet" +
-      "er\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\032:\n\007PortRe" +
-      "f\022\020\n\010box_name\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\022\n" +
-      "\n\002in\030\003 \001(\010\032\266\001\n\004Port\022\014\n\004name\030\001 \002(\t\022\014\n\004typ" +
-      "e\030\002 \002(\t\0220\n\tdirection\030\003 \002(\0162\035.zaluum.BoxC" +
-      "lassDef.Direction\022/\n\014pos_internal\030\004 \002(\0132",
-      "\031.zaluum.BoxClassDef.Point\022/\n\014pos_extern" +
-      "al\030\005 \002(\0132\031.zaluum.BoxClassDef.Point\032\223\001\n\n" +
-      "Connection\022+\n\006source\030\001 \001(\0132\033.zaluum.BoxC" +
-      "lassDef.PortRef\022+\n\006target\030\002 \001(\0132\033.zaluum" +
-      ".BoxClassDef.PortRef\022+\n\010waypoint\030\003 \003(\0132\031" +
-      ".zaluum.BoxClassDef.Point\032\035\n\005Point\022\t\n\001x\030" +
-      "\001 \002(\005\022\t\n\001y\030\002 \002(\005\"\'\n\tDirection\022\006\n\002IN\020\000\022\007\n" +
-      "\003OUT\020\001\022\t\n\005SHIFT\020\002B)\n\030org.zaluum.nide.pro" +
-      "tobufB\rBoxFileProtos"
+      "on\022\r\n\005super\030\t \001(\t\032\210\002\n\010Instance\022\014\n\004name\030\001" +
+      " \002(\t\022\022\n\nclass_name\030\002 \002(\t\022&\n\003pos\030\003 \002(\0132\031.",
+      "zaluum.BoxClassDef.Point\022\'\n\004size\030\004 \001(\0132\031" +
+      ".zaluum.BoxClassDef.Point\0220\n\tparameter\030\005" +
+      " \003(\0132\035.zaluum.BoxClassDef.Parameter\022*\n\007g" +
+      "ui_pos\030\006 \001(\0132\031.zaluum.BoxClassDef.Point\022" +
+      "+\n\010gui_size\030\007 \001(\0132\031.zaluum.BoxClassDef.P" +
+      "oint\032\'\n\tParameter\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030" +
+      "\002 \002(\t\032:\n\007PortRef\022\020\n\010box_name\030\001 \001(\t\022\021\n\tpo" +
+      "rt_name\030\002 \002(\t\022\n\n\002in\030\003 \001(\010\032\266\001\n\004Port\022\014\n\004na" +
+      "me\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\0220\n\tdirection\030\003 \002(" +
+      "\0162\035.zaluum.BoxClassDef.Direction\022/\n\014pos_",
+      "internal\030\004 \002(\0132\031.zaluum.BoxClassDef.Poin" +
+      "t\022/\n\014pos_external\030\005 \002(\0132\031.zaluum.BoxClas" +
+      "sDef.Point\032\223\001\n\nConnection\022+\n\006source\030\001 \001(" +
+      "\0132\033.zaluum.BoxClassDef.PortRef\022+\n\006target" +
+      "\030\002 \001(\0132\033.zaluum.BoxClassDef.PortRef\022+\n\010w" +
+      "aypoint\030\003 \003(\0132\031.zaluum.BoxClassDef.Point" +
+      "\032\035\n\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005\"\'\n\tDirec" +
+      "tion\022\006\n\002IN\020\000\022\007\n\003OUT\020\001\022\t\n\005SHIFT\020\002B)\n\030org." +
+      "zaluum.nide.protobufB\rBoxFileProtos"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -3645,7 +3687,7 @@ public final class BoxFileProtos {
           internal_static_zaluum_BoxClassDef_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_BoxClassDef_descriptor,
-              new java.lang.String[] { "ClassName", "ImageName", "GuiSize", "Visual", "Port", "InnerClass", "Instance", "Connection", },
+              new java.lang.String[] { "ClassName", "ImageName", "GuiSize", "Visual", "Port", "InnerClass", "Instance", "Connection", "Super", },
               org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.class,
               org.zaluum.nide.protobuf.BoxFileProtos.BoxClassDef.Builder.class);
           internal_static_zaluum_BoxClassDef_Instance_descriptor =

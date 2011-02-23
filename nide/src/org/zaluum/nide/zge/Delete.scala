@@ -34,7 +34,7 @@ object Delete {
       }
       val trans: PartialFunction[Tree, Tree] = {
         case b: BoxDef ⇒
-          BoxDef(b.name, b.image,
+          BoxDef(b.name, b.superName, b.image,
             transformTrees(filterDefs(b.defs)),
             transformTrees(filter(b.vals)),
             transformTrees(filter(b.ports)),

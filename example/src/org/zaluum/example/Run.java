@@ -36,10 +36,8 @@ public class Run {
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					while (true) {
-						m.invoke(instance);
-						Thread.sleep(100);
-					}
+					m.invoke(instance);
+					Thread.sleep(100);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

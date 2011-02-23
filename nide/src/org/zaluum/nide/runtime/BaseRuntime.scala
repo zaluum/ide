@@ -1,15 +1,17 @@
 package org.zaluum.nide.runtime
 
-trait RunnableBox {
-  def apply()
+abstract class RunnableBox {
+  def contents()
+  def apply() {
+    contents()
+  }
 }
 
-abstract class Loop extends RunnableBox{
+abstract class LoopBox extends RunnableBox{
   def cond:Boolean
-  def apply() {
+  override def apply() {
     while (cond) {
-      oneLoop()
+      contents()
     }
   }
-  def oneLoop()
 }

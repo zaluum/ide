@@ -7,6 +7,7 @@ trait Symbol {
   var decl: Tree = EmptyTree
   var tpe: Type = NoSymbol
   var scope: Scope = null
+  override def toString = "Symbol("+ (if(name!=null) name.toString else "NoSymbol") +")"
 }
 trait Type extends Symbol
 case object NoSymbol extends Symbol with Type {
@@ -19,7 +20,7 @@ class PrimitiveJavaType(val owner:Symbol, val name:Name) extends Symbol with Typ
 class ClassJavaType(val owner:Symbol, val name:Name) extends Type {
   scope=owner.scope
 }
-class BoxTypeSymbol(val owner: Symbol, val name: Name, val image:Option[String], val visualClass:Option[Name]) extends LocalScope(owner.scope) with Symbol with Type {
+class BoxTypeSymbol(val owner: Symbol, val name: Name, val superName:Option[Name], val image:Option[String], val visualClass:Option[Name]) extends LocalScope(owner.scope) with Symbol with Type {
   var source : String = "" // TODO
   def valsInOrder = boxes.values.toList.sortWith(_.name.str< _.name.str).asInstanceOf[List[ValSymbol]]
   def portsInOrder = ports.values.toList.sortWith(_.name.str<_.name.str).asInstanceOf[List[PortSymbol]]

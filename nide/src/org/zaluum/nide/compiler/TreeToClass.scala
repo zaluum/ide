@@ -1,9 +1,12 @@
 package org.zaluum.nide.compiler
-case class BoxClass(name: Name, fields: List[FieldDef], cons: ConstructorMethod, apply: Method) extends Tree
+
+import org.zaluum.nide.runtime.RunnableBox
+
+case class BoxClass(name: Name, superName:Name, contents : List[Tree]) extends Tree
 case class FieldDef(name: Name, typeName: Name) extends Tree
 case class New(typeName: Name, param: Tree, signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
-case class Method(name: Name, stats: List[Tree]) extends Tree
+case class Method(name: Name, signature:String, stats: List[Tree]) extends Tree
 case class Assign(lhs: Tree, rhs: Tree) extends Tree
 case class Select(a: Tree, b: Tree) extends Tree
 case object This extends Tree
@@ -12,6 +15,9 @@ case object NullConst extends Tree
 case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Tree
 case class Invoke(obj: Tree, meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
 case class Const(i: Int) extends Tree
+case class Return(t:Tree) extends Tree
+case object True extends Tree
+
 class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = Location(List(0))
@@ -24,11 +30,10 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
   }
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
-      case b@BoxDef(name, image, defs, vals, ports, connections) ⇒
-        val orderVals = b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder.reverse map { _.decl }
-        println("execution order = " + orderVals)
+      case b@BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
+        val orderVals = b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder map { _.decl }
         atOwner(b.symbol) {
-          BoxDef(name, image,
+          BoxDef(name, superName, image,
             transformTrees(defs),
             transformTrees(orderVals),
             transformTrees(ports),
@@ -41,16 +46,18 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       bd.symbol.asInstanceOf[BoxTypeSymbol].visualClass
     }
     def apply(t: Tree) = t match {
-      case b@BoxDef(name, image, defs, vals, ports, connections) ⇒
+      case b@BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
         val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
         val baseFields = (vals ++ ports).map { field(_) }
         val fields = vClass(b) map { vn =>
           FieldDef(Name("_widget"), vn) :: baseFields} getOrElse { baseFields }
+        val baseMethods = List(cons(b), appl(b))
+        val methods = superName map { spr => condMethod() :: baseMethods } getOrElse { baseMethods }
         BoxClass(
           tpe.fqName,
-          fields,
-          cons(b),
-          appl(b))
+          // TODO check super-name
+          superName getOrElse {Name(classOf[RunnableBox].getName)},
+          methods++ fields)
     }
     def field(t: Tree) = t match {
       case PortDef(name, typeName, dir, inPos, extPos) ⇒
@@ -58,6 +65,9 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
         val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
         FieldDef(name, t.symbol.tpe.asInstanceOf[BoxTypeSymbol].fqName)
+    }
+    def condMethod() = {
+      Method(Name("cond"),"()Z", List(Return(True)))
     }
     def cons(b: BoxDef) = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
@@ -109,9 +119,9 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       def execConnection(c: ConnectionDef) = {
         def toRef(p: Tree): Tree = p match {
           case ThisRef ⇒ This
-          case v: ValRef ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, b.name))
+          case v: ValRef ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
           case p@PortRef(ref, _, _) ⇒
-            Select(toRef(ref), FieldRef(p.name, p.tpe.name, p.fromRef.tpe.name))
+            Select(toRef(ref), FieldRef(p.name, p.tpe.name, p.fromRef.tpe.asInstanceOf[BoxTypeSymbol].fqName))
         }
         Assign(toRef(c.b), toRef(c.a))
       }
@@ -138,7 +148,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         invoke :: outs
       }
 
-      Method(Name("apply"), propagateInitialInputs ++ b.vals flatMap { case v: ValDef ⇒ runOne(v) })
+      Method(Name("contents"), "()V",propagateInitialInputs ++ (b.vals flatMap { case v: ValDef ⇒ runOne(v) }))
 
     }
   }

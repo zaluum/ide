@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse
 
+import org.eclipse.jdt.core.search.TypeDeclarationMatch
 import org.zaluum.nide.compiler._
 import javax.swing.JComponent
 import java.net.URLClassLoader
@@ -35,8 +36,40 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
   def lookupPort(name: Name): Option[Symbol] = None
   def lookupVal(name: Name): Option[Symbol] = None
   def lookupType(name: Name): Option[Type] = {
-    // TODO seach classpath
-    types.get(name)
+    types.get(name) orElse {
+      val searchScope = SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject))
+      val search = new SearchEngine()
+      val pattern = SearchPattern.createPattern(name.str,
+        IJavaSearchConstants.CLASS_AND_INTERFACE,
+        IJavaSearchConstants.DECLARATIONS,
+        SearchPattern.R_EXACT_MATCH)
+      val participants = Array(SearchEngine.getDefaultSearchParticipant())
+      var found = false
+      val searchRequestor = new SearchRequestor() {
+        def acceptSearchMatch(matchh: SearchMatch) {
+          matchh match {
+            case t: TypeDeclarationMatch ⇒
+              t.getElement match {
+                case t: IType ⇒ println("found type" + t);found = true
+                case other ⇒ println("ohter match " + other + " " + other.getClass)
+              }
+          }
+        }
+      }
+      search.search(pattern, participants, searchScope, searchRequestor, null)
+      if (found) {
+        val tpe = newJavaType(name.str)
+        types += tpe
+        Some(tpe._2)
+      } else None
+      /*val cl = classLoader.loadClass(name.toString)
+        val tpe = newJavaType(name.toString)
+        types += tpe
+        Some(tpe._2)
+      } catch {
+        case e: ClassNotFoundException ⇒ None
+      }*/
+    }
   }
   def lookupBoxType(name: Name): Option[Type] = cacheType.get(name)
   def lookupBoxTypeLocal(name: Name): Option[Type] = lookupBoxType(name)
@@ -79,23 +112,24 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
         v.getMemberName == key && v.getValueKind == IMemberValuePair.K_INT
       } map { _.getValue.asInstanceOf[Int] }
     }
-
-    def typeSignatureToName(str: String) = str match {
-      case "D" ⇒ Name("double")
-      case _ ⇒ Name(str.dropRight(1).drop(1).replace('.', '/'))
-    }
-
+    
     def processTypeSym(t: IType) {
+      def resolveTypeName(signature:String) : Option[Name]= signature match { 
+        case "D" ⇒ Some(Name("double"))
+        case _ => 
+          val className = signature.dropRight(1).drop(1).replace('/', '.')
+          val res = t.resolveType(className)
+          res.headOption map { arr ⇒ Name(arr.mkString(".")) }
+      }
       val fqn = Name(t.getFullyQualifiedName)
       val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       }
       val guiClass = t.getFields.find { f ⇒ f.getElementName == "_widget" }.flatMap { f ⇒
         println("found widget " + f.getTypeSignature);
-        val res = t.resolveType(typeSignatureToName(f.getTypeSignature).str)
-        res.headOption map { arr => Name(arr.mkString(".")) }
+        resolveTypeName(f.getTypeSignature)
       }
-      val bs = new BoxTypeSymbol(root, fqn, img, guiClass)
+      val bs = new BoxTypeSymbol(root, fqn, None, img, guiClass)
       bs.scope = this
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
@@ -108,10 +142,8 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
       for (f ← t.getFields) {
         def port(in: Boolean, a: IAnnotation) {
           val port = new PortSymbol(bs, Name(f.getElementName), pointOf(a), if (in) In else Out)
-          val name = typeSignatureToName(f.getTypeSignature)
-          val tpe = lookupType(name) getOrElse {
-            new ClassJavaType(root, name) // FIXME
-          }
+          val name = resolveTypeName(f.getTypeSignature)
+          val tpe = name.flatMap {lookupType(_)}.getOrElse { NoSymbol }
           port.tpe = tpe
           bs.enter(port)
         }

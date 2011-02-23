@@ -12,7 +12,7 @@ message BoxClassDef {
   repeated BoxClassDef inner_class = 6;
   repeated Instance instance = 7;
   repeated Connection connection =8; 
-
+  optional string super = 9;
   message Instance {
 	required string name = 1;
 	required string class_name = 2;

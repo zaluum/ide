@@ -41,8 +41,7 @@ class Reporter {
 }
 
 case class Name(str: String) {
-  //TODO
-  def classNameWithoutPackage = Some(str) // TODO
+  def classNameWithoutPackage = str.split('.').last 
   def toRelativePath: String = str.replace('.', '/')
   def toRelativePathClass = toRelativePath + ".class"
   def internal = str.replace('.', '/')
@@ -119,9 +118,9 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
 
     override def traverse(tree: Tree) {
       tree match {
-        case BoxDef(name, image, defs, vals, ports, connections) ⇒
-          val cl = Some(Name(classOf[JPanel].getName)) 
-          defineBox(new BoxTypeSymbol(currentOwner, name, image,cl), tree)
+        case BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
+          val cl = Some(Name(classOf[JPanel].getName))
+          defineBox(new BoxTypeSymbol(currentOwner, name, superName,image, cl), tree)
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
           definePort(new PortSymbol(currentOwner, name, extPos, dir), tree)
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
@@ -192,7 +191,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             if (a.symbol == NoSymbol || b.symbol == NoSymbol) {
               error("incomplete connection " + a + "<->" + b, tree)
             } else if (a.tpe != b.tpe) {
-              error("connection " + a + "<->" + b + " is not type compatible", tree)
+              error("connection " + a.tpe + "<->" + b.tpe + " is not type compatible", tree)
             } else {
               // check direction
               val connection = direction(c)
@@ -204,13 +203,15 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
               usedInputs += to
               // check graph consistency
               (from.fromRef, to.fromRef) match {
-                case (va: ValDef, vb: ValDef) ⇒
+                case (va: ValRef, vb: ValRef) ⇒
                   try {
+                    println(va.symbol.name + "->" + vb.symbol.name)
                     acyclic.addDagEdge(va.symbol.asInstanceOf[ValSymbol], vb.symbol.asInstanceOf[ValSymbol]);
                   } catch {
                     case e: CycleFoundException ⇒ error("cycle found ", tree)
                   }
-                case _ ⇒
+                case (ThisRef, b) ⇒
+                case (a, ThisRef) ⇒
               }
 
               tree.tpe = a.tpe

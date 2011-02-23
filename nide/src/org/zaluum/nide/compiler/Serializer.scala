@@ -5,6 +5,7 @@ object Serializer {
   def proto(b:BoxDef) : BoxFileProtos.BoxClassDef = {
       val p = BoxFileProtos.BoxClassDef.newBuilder
       p.setClassName(b.name.str)
+      b.superName foreach { n=> p.setSuper(n.str)}
       b.image foreach { p.setImageName(_) }
       b.defs collect { case d:BoxDef => d} sortBy {_.name.str} foreach { d=>p.addInnerClass(proto(d)) }
       b.ports collect  { case port:PortDef => port } sortBy {_.name.str} foreach {port => p.addPort(proto(port)) }

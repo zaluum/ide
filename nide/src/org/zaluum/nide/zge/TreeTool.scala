@@ -4,6 +4,7 @@ import org.eclipse.draw2d.{ Cursors, Figure }
 import org.eclipse.draw2d.geometry.{ Point, Rectangle }
 import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
 import scala.collection.JavaConversions._
+import org.zaluum.nide.runtime.LoopBox
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   def tree = viewer.tree
@@ -83,12 +84,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
             val sym = b.symbol.asInstanceOf[BoxTypeSymbol]
             val name = Name(sym.freshName("box"))
             val className = Name(sym.freshName("C"))
-            val newDef = BoxDef(className, None, List(),
+            val newDef = BoxDef(className, Some(Name(classOf[LoopBox].getName)), None, List(),
               vals = List(),
               ports = List(),
               connections = List())
             val newVal = ValDef(name, className, dst, Some(Dimension(200, 200)), None, None)
-            BoxDef(b.name, b.image,
+            BoxDef(b.name, b.superName, b.image,
               newDef :: transformTrees(b.defs),
               newVal :: transformTrees(b.vals),
               transformTrees(b.ports),
@@ -126,7 +127,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
-            BoxDef(b.name, b.image,
+            BoxDef(b.name, b.superName, b.image,
               transformTrees(b.defs),
               ValDef(name, tpe.name, dst, None, None, None) :: transformTrees(b.vals),
               transformTrees(b.ports),
@@ -170,7 +171,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
             val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
             val name = Name(tpe.freshName("port"))
             val p = PortDef(name, Name("D"), dir, pos, MPoint(0, pos.y))
-            BoxDef(b.name, b.image,
+            BoxDef(b.name, b.superName, b.image,
               transformTrees(b.defs),
               transformTrees(b.vals),
               p :: transformTrees(b.ports),
@@ -263,7 +264,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
             new EditTransformer {
               val trans: PartialFunction[Tree, Tree] = {
                 case b: BoxDef if (b == initContainer.boxDef) ⇒
-                  BoxDef(b.name, b.image,
+                  BoxDef(b.name, b.superName, b.image,
                     transformTrees(b.defs),
                     transformTrees(b.vals),
                     transformTrees(b.ports),
