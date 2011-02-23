@@ -34,15 +34,17 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       super.move()
       portsTrack.update()
     }
-    override def drag {
+    override def drag { // TODO inherit item drag
       (handle, selected, port) match {
         case (Some(h), _, _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
         case (None, _, Some(port)) ⇒ // connect
           connecting.enter(initContainer, port)
         case (None, Some(fig), _) ⇒ // select and move
-          if (!viewer.selection(fig.tree))
+          if (!viewer.selection(fig.tree)){
             viewer.selection.updateSelection(Set(fig.tree), shift)
+            fig.showFeedback()
+          }
           fig match {
             case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
             case _ ⇒ moving.enter(initDrag, initContainer)

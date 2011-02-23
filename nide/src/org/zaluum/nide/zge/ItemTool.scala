@@ -62,8 +62,10 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
         case (None, Some(fig)) ⇒ // select and move
-          if (!viewer.selection(fig.tree))
+          if (!viewer.selection(fig.tree)){
             viewer.selection.updateSelection(Set(fig.tree), shift)
+            fig.showFeedback()
+          }
           moving.enter(initDrag, initContainer)
         case (None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
