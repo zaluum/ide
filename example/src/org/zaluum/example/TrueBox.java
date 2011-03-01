@@ -6,6 +6,6 @@ import org.zaluum.runtime.RunnableBox;
 
 @Box
 public class TrueBox extends RunnableBox{
-	@Out(x=48,y=24) public boolean out = true;
+	@Out(x=16,y=8) public boolean out = true;
 	public void contents(){}
 }
