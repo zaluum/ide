@@ -1,4 +1,4 @@
-package org.zaluum.nide.java;
+package org.zaluum.runtime;
 
 public class TestGen {
 	//public SliderWidget box1 = new SliderWidget();

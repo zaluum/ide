@@ -12,18 +12,18 @@ import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, Imag
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _}
+import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
 import scala.collection.mutable.Buffer
 import scala.collection.JavaConversions._
 import RichFigure._
 trait Container extends IFigure {
-  def viewerResources: ViewerResources 
+  def viewerResources: ViewerResources
   def layer: Figure
-  val helpers : Buffer[ShowHide]
-  def feedbackLayer: Figure  
-  def itemOrLineAt(p: EPoint, debug:Boolean=false) = this.findDeepAt(p,0,debug) { 
+  val helpers: Buffer[ShowHide]
+  def feedbackLayer: Figure
+  def itemOrLineAt(p: EPoint, debug: Boolean = false) = this.findDeepAt(p, 0, debug) {
     case bf: Item ⇒ bf
-    case l:LineFigure=>l
+    case l: LineFigure ⇒ l
   }
   def clear() {
     layer.removeAll()
@@ -36,16 +36,16 @@ trait BoxDefContainer extends Container {
   def connectionsLayer: Figure
   def portsLayer: Figure
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
-  def findPortFigure(boxName: Name, portName: Name, in:Boolean): Option[PortFigure] = {
+  def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒
       p.valSym match {
-        case Some(valSym) ⇒ (valSym.name == boxName && p.sym.name == portName && p.in==in)
+        case Some(valSym) ⇒ (valSym.name == boxName && p.sym.name == portName && p.in == in)
         case None ⇒ false
       }
     }
   }
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] = {
-    portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in}
+    portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in }
   }
   override def clear() {
     super.clear()
@@ -88,14 +88,14 @@ trait BoxDefContainer extends Container {
   }
 }
 import scala.collection.JavaConversions._
-trait Transparent extends Figure{
-  override def containsPoint(x:Int,y:Int) = {
-    val pt = new Point(x,y)
+trait Transparent extends Figure {
+  override def containsPoint(x: Int, y: Int) = {
+    val pt = new Point(x, y)
     translateFromParent(pt);
     if (getClientArea.contains(pt)) {
-      getChildren.asInstanceOf[java.util.List[IFigure]].reverse exists (_.containsPoint(pt.x,pt.y))
-    }else{
-      getBounds.contains(x,y)
+      getChildren.asInstanceOf[java.util.List[IFigure]].reverse exists (_.containsPoint(pt.x, pt.y))
+    } else {
+      getBounds.contains(x, y)
     }
   }
 }
@@ -104,7 +104,7 @@ class OpenBoxFigure(
   val boxDef: BoxDef,
   val owner: Symbol,
   val container: BoxDefContainer,
-  val viewerResources: ViewerResources) extends SimpleItem with ResizableFeedback with BoxDefContainer with Transparent{
+  val viewerResources: ViewerResources) extends SimpleItem with  TreeItem with ResizableFeedback with BoxDefContainer with Transparent {
   // Item
   type T = ValDef
   def tree = valTree
@@ -124,14 +124,24 @@ class OpenBoxFigure(
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-        def newFig(left:Boolean) = helpers += new OpenPortDeclFigure(p, left, OpenBoxFigure.this) 
+          def newFig(left: Boolean) = helpers += new OpenPortDeclFigure(p, left, OpenBoxFigure.this)
           in match {
-          case In => newFig(true)         
-          case Out=> newFig(false)
-          case Shift=> newFig(true); newFig(false)
+            case In ⇒ newFig(true)
+            case Out ⇒ newFig(false)
+            case Shift ⇒ newFig(true); newFig(false)
           }
         case _ ⇒
       }
+    }
+    boxDef.symbol match {
+      case s: BoxTypeSymbol ⇒
+        for (sup ← s.superSymbol; p ← sup.ports.values) {
+          p match {
+            case p: PortSymbol ⇒
+              def newFig(left:Boolean) = helpers += new OpenPortSymbolFigure(p,left,OpenBoxFigure.this)
+              if (p.dir == Out) newFig(false)
+          }
+        }
     }
   }
   override def paintClientArea(graphics: Graphics) {
@@ -161,7 +171,6 @@ class OpenBoxFigure(
   inners.add(connectionsLayer)
   inners.add(feedbackLayer)
   add(inners);
-  setBorder(new LineBorder(ColorConstants.gray,5))
-  
+  setBorder(new LineBorder(ColorConstants.gray, 5))
 
 }

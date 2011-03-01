@@ -2,8 +2,7 @@ package org.zaluum.example;
 
 import javax.swing.JSlider;
 
-import org.zaluum.nide.java.Box;
-import org.zaluum.nide.java.Out;
+import org.zaluum.runtime.*;
 
 @Box
 public class SliderWidget {

@@ -1,5 +1,7 @@
 package org.zaluum.nide.eclipse
 
+import org.zaluum.runtime.Box
+import org.zaluum.runtime.BoxImage
 import org.eclipse.jdt.core.search.TypeDeclarationMatch
 import org.zaluum.nide.compiler._
 import javax.swing.JComponent
@@ -7,7 +9,7 @@ import java.net.URLClassLoader
 import java.net.URL
 import org.eclipse.core.resources.{ IProject, IFile, IResource }
 import org.eclipse.core.runtime.{ Path, IPath }
-import org.eclipse.jdt.core.{ IJavaElement, IType, IAnnotatable, IJavaProject, IAnnotation, IMemberValuePair, IClasspathEntry }
+import org.eclipse.jdt.core.{ IJavaElement, IType, IAnnotatable, IJavaProject, IAnnotation, IMemberValuePair, IClasspathEntry, Flags }
 import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch }
 import org.eclipse.jdt.internal.core.JavaModelManager
 import scala.util.control.Exception._
@@ -16,7 +18,7 @@ trait ClassPath {
   def getResource(str: String): Option[URL]
 }
 class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath with Scope {
-  var cacheType = Map[Name, Type]()
+  var cacheType = Map[Name, BoxTypeSymbol]()
   var creatorCache = Map[Name, () ⇒ JComponent]()
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jproject = jmodel.getJavaProject(project);
@@ -31,7 +33,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
   }
   private def newJavaType(str: String) =
     (Name(str) -> new PrimitiveJavaType(root, Name(str)))
-  var types = Map[Name, Type](newJavaType("double")) //TODO
+  var types = Map[Name, Type](newJavaType("double"),newJavaType("boolean")) //TODO
 
   def lookupPort(name: Name): Option[Symbol] = None
   def lookupVal(name: Name): Option[Symbol] = None
@@ -75,7 +77,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
   def lookupBoxTypeLocal(name: Name): Option[Type] = lookupBoxType(name)
 
   def boxes = cacheType.values
-  def enter(sym: Symbol): Symbol = { throw new Exception("cannot enter new symbols to global scope") }
+  def enter[S<:Symbol](sym: S): S = { throw new Exception("cannot enter new symbols to global scope") }
   // cacheType += (sym.name->sym.asInstanceOf[Type]);sym}//throw new Exception("cannot enter")
   def update() {
     cacheType = cacheType.empty
@@ -83,7 +85,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
     val searchScope = SearchEngine.createJavaSearchScope(
       Array[IJavaElement](jproject))
     val search = new SearchEngine()
-    val pattern = SearchPattern.createPattern("org.zaluum.nide.java.Box",
+    val pattern = SearchPattern.createPattern(classOf[Box].getName,
       IJavaSearchConstants.ANNOTATION_TYPE,
       IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
       SearchPattern.R_EXACT_MATCH)
@@ -116,20 +118,27 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
     def processTypeSym(t: IType) {
       def resolveTypeName(signature:String) : Option[Name]= signature match { 
         case "D" ⇒ Some(Name("double"))
+        case "Z" => Some(Name("boolean"))
+        case "null" => None
+        case null => None
         case _ => 
           val className = signature.dropRight(1).drop(1).replace('/', '.')
-          val res = t.resolveType(className)
-          res.headOption map { arr ⇒ Name(arr.mkString(".")) }
+          val res = Option(t.resolveType(className))
+          res flatMap { 
+            _.headOption map { arr ⇒ Name(arr.mkString(".")) }
+          }
       }
       val fqn = Name(t.getFullyQualifiedName)
-      val img = findAnnotations(t, t, "org.zaluum.nide.java.BoxImage").headOption flatMap { a ⇒
+      println("processing box: " + fqn)
+      val img = findAnnotations(t, t, classOf[BoxImage].getName).headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       }
       val guiClass = t.getFields.find { f ⇒ f.getElementName == "_widget" }.flatMap { f ⇒
         println("found widget " + f.getTypeSignature);
         resolveTypeName(f.getTypeSignature)
       }
-      val bs = new BoxTypeSymbol(root, fqn, None, img, guiClass)
+      val superName = resolveTypeName(t.getSuperclassTypeSignature)
+      val bs = new BoxTypeSymbol(root, fqn, superName, img, guiClass,Flags.isAbstract(t.getFlags()))
       bs.scope = this
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
@@ -141,17 +150,17 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
       }
       for (f ← t.getFields) {
         def port(in: Boolean, a: IAnnotation) {
+          println("resolving port " + f + " " + f.getTypeSignature )
           val port = new PortSymbol(bs, Name(f.getElementName), pointOf(a), if (in) In else Out)
           val name = resolveTypeName(f.getTypeSignature)
           val tpe = name.flatMap {lookupType(_)}.getOrElse { NoSymbol }
           port.tpe = tpe
           bs.enter(port)
         }
-        findAnnotations(t, f, "org.zaluum.nide.java.In") foreach { port(true, _) }
-        findAnnotations(t, f, "org.zaluum.nide.java.Out") foreach { port(false, _) }
+        findAnnotations(t, f, classOf[org.zaluum.runtime.In].getName) foreach { port(true, _) }
+        findAnnotations(t, f, classOf[org.zaluum.runtime.Out].getName) foreach { port(false, _) }
       }
       cacheType += (bs.name -> bs)
-      //creatorClass foreach { c ⇒ creatorCache += (bc.className, () ⇒ c.newInstance.asInstanceOf[JComponent]) }
 
     }
     val searchRequestor = new SearchRequestor() {
@@ -169,8 +178,13 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
     search.search(pattern, participants, searchScope, searchRequestor, null)
     // FIND ZALUUMS IN SOURCE
     visitSourceZaluums { loadZaluum(_) }
+    resolve()
   }
-
+  def resolve() {
+    for (t<-cacheType.values; superName<-t.superName) {
+      t.superSymbol = cacheType.get(superName)
+    }
+  }
   def loadZaluum(f: IFile) {
     /*def addCache(cl: BoxClass) {
       cache += (cl.className -> cl)

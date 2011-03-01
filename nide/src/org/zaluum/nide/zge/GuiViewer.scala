@@ -80,15 +80,15 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
     helpers.foreach { _.show }
     selectedItems foreach { _.showFeedback() }
   }
-  def selectedItems = this.deepChildren.collect { case i: Item if selection(i.tree) ⇒ i }.toSet
+  def selectedItems = this.deepChildren.collect { case i: TreeItem if selection(i.tree) ⇒ i }.toSet
   refresh()
 }
 class GuiTool(guiViewer: GuiViewer) extends ItemTool(guiViewer) {
   type C = Container
   override val resizing = new Resizing {
-    override def command(newPos: Point, newSize: Dimension) = new EditTransformer {
+    override def command(newPos: Point, newSize: Dimension,t:Tree) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == itf.tree) ⇒
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == t) ⇒
           ValDef(name, typeName, pos, size, Some(newPos), Some(newSize))
       }
     }

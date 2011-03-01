@@ -1,15 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Java
-Bundle-SymbolicName: org.zaluum.runtime;singleton:=true
+Bundle-Name: runtime
+Bundle-SymbolicName: org.zaluum.runtime
 Bundle-Version: 1.0.0.qualifier
-Require-Bundle: 
- com.google.common;bundle-version="1.0.0",
- com.google.protobuf;bundle-version="2.3.0",
- org.scala-ide.scala.library;bundle-version="2.8.1"
-Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
-Export-Package: org.zaluum.runtime,
- org.zaluum.runtime.serial,
- se.scalablesolutions.akka.dispatch
-Import-Package: org.osgi.framework;version="1.5.0"
+Export-Package: org.zaluum.runtime
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6

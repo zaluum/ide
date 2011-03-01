@@ -53,14 +53,14 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
       b.setSize(48, 48)
       b
     }
-    val innerb = createButton("INNER", viewer.imageFactory.notFound)
+    val innerb = createButton("Loop", viewer.imageFactory.notFound)
     addReaction(innerb) {
       viewer.tool.state.abort()
       viewer.tool.innercreating.enter(container)
       viewer.canvas.setFocus()
       hide()
     }
-    val classes = bcp.boxes.toBuffer.sortWith(_.name.toString < _.name.toString)
+    val classes = bcp.boxes.filter { !_.abstractCl }.toBuffer.sortWith(_.name.toString < _.name.toString)
     for (tpe ← classes) {
       val bc = tpe.asInstanceOf[BoxTypeSymbol]
       val b = createButton(bc.name.str, viewer.imageFactory(bc))

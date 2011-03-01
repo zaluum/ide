@@ -52,7 +52,7 @@ trait Scope {
   def lookupType(name: Name): Option[Type]
   def lookupBoxType(name: Name): Option[Type]
   def lookupBoxTypeLocal(name: Name): Option[Type]
-  def enter(sym: Symbol): Symbol
+  def enter[S<:Symbol](sym: S): S
   def root: Symbol
 }
 
@@ -69,15 +69,13 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   var vals = Map[Name, Symbol]()
   var boxes = Map[Name, Type]()
   var connections = Set[ConnectionSymbol]()
-  def lookupPort(name: Name): Option[Symbol] =
-    ports.get(name) orElse { enclosingScope.lookupPort(name) }
-  def lookupVal(name: Name): Option[Symbol] =
-    vals.get(name) orElse { enclosingScope.lookupVal(name) }
+  def lookupPort(name: Name): Option[Symbol] = ports.get(name) 
+  def lookupVal(name: Name): Option[Symbol] = vals.get(name) 
   def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name)
   def lookupBoxType(name: Name): Option[Type] =
     boxes.get(name) orElse { enclosingScope.lookupBoxType(name) }
   def lookupBoxTypeLocal(name: Name): Option[Type] = boxes.get(name)
-  def enter(sym: Symbol): Symbol = {
+  def enter[S<:Symbol](sym: S): S = {
     val entry = (sym.name -> sym)
     sym match {
       case p: PortSymbol ⇒ ports += entry
@@ -99,15 +97,14 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
   class Namer(initOwner: Symbol) extends Traverser(initOwner) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
-    def defineBox(symbol: Symbol, tree: Tree): Symbol = {
+    def defineBox(symbol: BoxTypeSymbol, tree: Tree): BoxTypeSymbol = 
       define(symbol, currentScope, currentScope.lookupBoxType(symbol.name).isDefined, tree)
-    }
     def defineVal(symbol: Symbol, tree: Tree): Symbol =
       define(symbol, currentScope, currentScope.lookupVal(symbol.name).isDefined, tree)
     def definePort(symbol: Symbol, tree: Tree): Symbol = {
       define(symbol, currentScope, currentScope.lookupPort(symbol.name).isDefined, tree)
     }
-    def define(symbol: Symbol, scope: Scope, dupl: Boolean, tree: Tree): Symbol = {
+    def define[S<:Symbol](symbol: S, scope: Scope, dupl: Boolean, tree: Tree): S = {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
       symbol.scope = scope
       tree.scope = scope
@@ -120,7 +117,16 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       tree match {
         case BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
           val cl = Some(Name(classOf[JPanel].getName))
-          defineBox(new BoxTypeSymbol(currentOwner, name, superName,image, cl), tree)
+          val sym = defineBox(new BoxTypeSymbol(currentOwner, name, superName, image, cl), tree)
+          superName foreach { sn=> 
+            currentScope.lookupBoxType(sn) match {
+              case Some(bs:BoxTypeSymbol) => 
+                sym.superSymbol = Some(bs)  
+                println("found super " + bs + " for " + sym)
+              case None => 
+                error("Super box type not found " + sn, tree)
+            }
+          }
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
           definePort(new PortSymbol(currentOwner, name, extPos, dir), tree)
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
@@ -156,7 +162,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           tree.symbol = fromTree.tpe match {
             case b: BoxTypeSymbol ⇒
               b.lookupPort(name).getOrElse {
-                error("Port not found " + name, tree);
+                error("Port not found " + name + " in box type " + b, tree);
                 NoSymbol
               }
             case tpe ⇒ NoSymbol

@@ -9,17 +9,6 @@ import javax.swing.JFrame;
 
 public class Run {
 
-	/**
-	 * @param args
-	 * @throws ClassNotFoundException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 * @throws NoSuchMethodException
-	 * @throws SecurityException
-	 * @throws InvocationTargetException
-	 * @throws IllegalArgumentException
-	 * @throws NoSuchFieldException
-	 */
 	public static void main(String[] args) throws ClassNotFoundException,
 			InstantiationException, IllegalAccessException, SecurityException,
 			NoSuchMethodException, IllegalArgumentException,
@@ -37,7 +26,6 @@ public class Run {
 			public void run() {
 				try {
 					m.invoke(instance);
-					Thread.sleep(100);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

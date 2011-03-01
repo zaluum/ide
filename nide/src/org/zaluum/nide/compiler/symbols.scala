@@ -20,7 +20,14 @@ class PrimitiveJavaType(val owner:Symbol, val name:Name) extends Symbol with Typ
 class ClassJavaType(val owner:Symbol, val name:Name) extends Type {
   scope=owner.scope
 }
-class BoxTypeSymbol(val owner: Symbol, val name: Name, val superName:Option[Name], val image:Option[String], val visualClass:Option[Name]) extends LocalScope(owner.scope) with Symbol with Type {
+class BoxTypeSymbol(
+    val owner: Symbol, 
+    val name: Name, 
+    val superName:Option[Name], 
+    val image:Option[String], 
+    val visualClass:Option[Name],
+    val abstractCl:Boolean=false) extends LocalScope(owner.scope) with Symbol with Type {
+  var superSymbol:Option[BoxTypeSymbol] = None
   var source : String = "" // TODO
   def valsInOrder = boxes.values.toList.sortWith(_.name.str< _.name.str).asInstanceOf[List[ValSymbol]]
   def portsInOrder = ports.values.toList.sortWith(_.name.str<_.name.str).asInstanceOf[List[PortSymbol]]
@@ -29,6 +36,9 @@ class BoxTypeSymbol(val owner: Symbol, val name: Name, val superName:Option[Name
     case bown:BoxTypeSymbol => Name(bown.fqName.str + "$" + name.str)
     case _ => name
   }
+  override def toString = "BoxTypeSymbol(" + name.str +", super=" + superSymbol +")"
+  override def lookupPort(name: Name): Option[Symbol] = 
+    super.lookupPort(name) orElse (superSymbol flatMap {_.lookupPort(name)}) 
 }
 
 class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 

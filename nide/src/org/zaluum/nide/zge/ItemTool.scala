@@ -21,21 +21,21 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   state = selecting
   // SELECTING 
   class Selecting extends ToolState {
-    var selected: Option[Item] = None
+    var selected: Option[TreeItem] = None
     var handle: Option[HandleRectangle] = None
     var initDrag: Point = _
     var initContainer: C = _
     def enter() { state = this; }
 
     def buttonDown {
-      selected = itemOrLineUnderMouse collect { case i: Item ⇒ i }
+      selected = itemOrLineUnderMouse collect { case i: TreeItem ⇒ i }
       initDrag = currentMouseLocation.getCopy
       initContainer = current
     }
 
     def buttonUp {
       selected match {
-        case Some(box) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
+        case Some(box:TreeItem) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
         case None ⇒ viewer.selection.deselectAll()
       }
       viewer.refresh()
@@ -84,7 +84,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
 
     def allowed = (current eq initContainer) || (movables.exists { isOrHas(_, current) })
     def movables = viewer.selectedItems.collect {
-      case item if item.container == initContainer ⇒ item
+      case item:TreeItem if item.container == initContainer ⇒ item
     }
     def buttonUp {
       val positions = movables.map { item ⇒
@@ -151,11 +151,15 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       val newBounds = handle.deltaAdd(delta, itf.getBounds);
       val newPos = newBounds.getLocation
       val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(15, 15))
-      controller.exec(command(newPos, newSize))
+      itf match {
+        case ti: TreeItem =>
+          controller.exec(command(newPos, newSize,ti.tree))
+        case _ =>  
+      }
     }
-    def command(newPos: MPoint, newSize: Dimension) = new EditTransformer {
+    def command(newPos: MPoint, newSize: Dimension,t:Tree) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == itf.tree) ⇒
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == t) ⇒
           ValDef(name, typeName, newPos, Some(newSize), guiPos, guiSize)
       }
     }

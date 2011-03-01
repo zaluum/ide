@@ -1,6 +1,6 @@
 package org.zaluum.nide.compiler
 
-import org.zaluum.nide.runtime.RunnableBox
+import org.zaluum.runtime.RunnableBox
 
 case class BoxClass(name: Name, superName:Name, contents : List[Tree]) extends Tree
 case class FieldDef(name: Name, typeName: Name) extends Tree
@@ -52,12 +52,11 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         val fields = vClass(b) map { vn =>
           FieldDef(Name("_widget"), vn) :: baseFields} getOrElse { baseFields }
         val baseMethods = List(cons(b), appl(b))
-        val methods = superName map { spr => condMethod() :: baseMethods } getOrElse { baseMethods }
         BoxClass(
           tpe.fqName,
           // TODO check super-name
           superName getOrElse {Name(classOf[RunnableBox].getName)},
-          methods++ fields)
+          baseMethods++ fields)
     }
     def field(t: Tree) = t match {
       case PortDef(name, typeName, dir, inPos, extPos) ⇒
@@ -65,9 +64,6 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
         val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
         FieldDef(name, t.symbol.tpe.asInstanceOf[BoxTypeSymbol].fqName)
-    }
-    def condMethod() = {
-      Method(Name("cond"),"()Z", List(Return(True)))
     }
     def cons(b: BoxDef) = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]

@@ -1,7 +1,7 @@
 package org.zaluum.example;
 
-import org.zaluum.nide.java.Box;
-import org.zaluum.nide.java.Out;
+import org.zaluum.runtime.Box;
+import org.zaluum.runtime.Out;
 
 @Box
 public class SerialCreate {

@@ -5,6 +5,7 @@ import Opcodes._
 object ByteCodeGen {
   def descriptor(n: Name) = n match {
     case Name("double") ⇒ "D"
+    case Name("boolean") => "Z"
     case null ⇒ "null"
     case _ ⇒ "L" + n.internal + ";"
   }

@@ -9,7 +9,7 @@ import scala.collection.mutable.Buffer
 
 // TREE SPECIFIC FIGURES
 
-class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with SimpleItem with RectFeedback {
+class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with SimpleItem with TreeItem with RectFeedback {
   type T = ValDef
   def sym = tree.symbol.asInstanceOf[ValSymbol]
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
@@ -79,7 +79,7 @@ class ConnectionPainter(bdf: BoxDefContainer) {
   }
 }
 // TODO not really a figure right now... no children
-class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) extends Item {
+class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) extends TreeItem {
   type T = ConnectionDef
   val painter = new ConnectionPainter(container)
   def calcRoute = {

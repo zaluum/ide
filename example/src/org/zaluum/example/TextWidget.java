@@ -1,12 +1,10 @@
 package org.zaluum.example;
 
-import javax.swing.JComponent;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import org.zaluum.nide.java.Box;
-import org.zaluum.nide.java.In;
-import org.zaluum.nide.java.Widget;
+import org.zaluum.runtime.Box;
+import org.zaluum.runtime.In;
 
 @Box
 public class TextWidget {

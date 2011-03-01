@@ -14,8 +14,6 @@ class PortFigure(val ipos: MPoint,
     val valSym: Option[ValSymbol], 
     val container: BoxDefContainer)
     extends Ellipse with SimpleItem with RectFeedback{
-  type T = Null
-  def tree = null // ugly
   def myLayer = container.portsLayer
   def size = Dimension(10, 10)
   def pos = MPoint(ipos.x - size.w/2, ipos.y-size.h / 2)
@@ -35,28 +33,41 @@ class PortFigure(val ipos: MPoint,
   setAlpha(50)
   setOutline(false)
 }
-class OpenPortDeclFigure(val tree: PortDef, val in:Boolean, val openBox: OpenBoxFigure) extends RectangleFigure with SimpleItem with RectFeedback {
+class OpenPortSymbolFigure(val sym:PortSymbol, left:Boolean, openBox:OpenBoxFigure) extends OpenPortFigure(left,openBox) with SymbolItem {
+  type S = PortSymbol
+  def extPos = sym.extPos
+  def dir = sym.dir 
+}
+class OpenPortDeclFigure(val tree: PortDef, left:Boolean, openBox: OpenBoxFigure) extends OpenPortFigure(left,openBox) with TreeItem {
   type T = PortDef
+  def extPos = tree.extPos
+  def dir = tree.dir
+  def sym = tree.symbol.asInstanceOf[PortSymbol]
+}
+
+abstract class OpenPortFigure(val left:Boolean, val openBox: OpenBoxFigure) extends RectangleFigure with SimpleItem with RectFeedback {
   def container = openBox.container
   def myLayer = container.portsLayer
   val size = Dimension(10, 10)
+  def extPos : MPoint
+  def dir :PortDir
+  def sym : PortSymbol
   // tree.extPos must be (0,relY)
-  def xDisplacement = if (in) Vector2(0,0) else Vector2(openBox.size.w -10,0)
+  def xDisplacement = if (left) Vector2(0,0) else Vector2(openBox.size.w -10,0)
   def absDisplacement = Vector2(openBox.pos.x,openBox.pos.y)
-  def relPos = tree.extPos + xDisplacement
-  def pos = tree.extPos + xDisplacement + absDisplacement // abs coordinates
+  def relPos = extPos + xDisplacement
+  def pos = extPos + xDisplacement + absDisplacement // abs coordinates
   override def update() {
     super.update()
-    val sym = tree.symbol.asInstanceOf[PortSymbol]
     setBackgroundColor(Colorizer.color(sym.tpe))
-    setForegroundColor(if (tree.dir==Shift) ColorConstants.yellow else ColorConstants.white)
+    setForegroundColor(if (dir==Shift) ColorConstants.yellow else ColorConstants.white)
     val valsym = openBox.valTree.symbol.asInstanceOf[ValSymbol]
     // external
-    val extDisplacement = if (in) Vector2(-10,0) else Vector2(10,0)
-    helpers += new PortFigure(getBounds.getCenter + extDisplacement, sym, in, Some(valsym), openBox.container)
+    val extDisplacement = if (left) Vector2(-10,0) else Vector2(10,0)
+    helpers += new PortFigure(getBounds.getCenter + extDisplacement, sym, left, Some(valsym), openBox.container)
     // internal
-    def inDisplacement = if (in) Vector2(10,0) else Vector2(-10,0)
-    helpers += new PortFigure(relPos + inDisplacement, sym, !in, None, openBox)
+    def inDisplacement = if (left) Vector2(10,0) else Vector2(-10,0)
+    helpers += new PortFigure(relPos + inDisplacement, sym, !left, None, openBox)
   }
   setForegroundColor(ColorConstants.white)
   //setBackgroundColor(ColorConstants.gray)
@@ -72,7 +83,7 @@ object PortDeclFigure {
   def img(dir: PortDir) = "org/zaluum/nide/icons/portDecl" + str(dir) + ".png"
 }
 
-class PortDeclFigure(val tree: PortDef, val container: BoxDefContainer) extends ImageFigure with SimpleItem with RectFeedback {
+class PortDeclFigure(val tree: PortDef, val container: BoxDefContainer) extends ImageFigure with SimpleItem with TreeItem with RectFeedback {
   type T = PortDef
   def sym = tree.symbol match {
     case NoSymbol ⇒ None

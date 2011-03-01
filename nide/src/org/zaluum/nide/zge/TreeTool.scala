@@ -4,7 +4,7 @@ import org.eclipse.draw2d.{ Cursors, Figure }
 import org.eclipse.draw2d.geometry.{ Point, Rectangle }
 import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
 import scala.collection.JavaConversions._
-import org.zaluum.nide.runtime.LoopBox
+import org.zaluum.runtime.LoopBox
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   def tree = viewer.tree
