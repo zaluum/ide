@@ -138,8 +138,7 @@ class OpenBoxFigure(
         for (sup ← s.superSymbol; p ← sup.ports.values) {
           p match {
             case p: PortSymbol ⇒
-              def newFig(left:Boolean) = helpers += new OpenPortSymbolFigure(p,left,OpenBoxFigure.this)
-              if (p.dir == Out) newFig(false)
+              helpers += new PortSymbolFigure(p,OpenBoxFigure.this)
           }
         }
     }

@@ -12,7 +12,7 @@ import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
 import org.eclipse.swt.SWT
 import scala.collection.mutable.Buffer
 
-class SwingFigure(val container: Container, val box: ValDef, val component: JComponent) extends SimpleItem with ResizableFeedback {
+class SwingFigure(val container: Container, val box: ValDef, val component: JComponent) extends SimpleItem with TreeItem with ResizableFeedback {
   setOpaque(true)
   type T = ValDef
   def tree = box

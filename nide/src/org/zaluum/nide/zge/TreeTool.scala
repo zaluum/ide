@@ -1,4 +1,8 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.compiler.NoSymbol
+import org.eclipse.swt.SWT
+import org.eclipse.swt.widgets.ToolTip
 import draw2dConversions._
 import org.eclipse.draw2d.{ Cursors, Figure }
 import org.eclipse.draw2d.geometry.{ Point, Rectangle }
@@ -10,6 +14,25 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   def tree = viewer.tree
   type C = BoxDefContainer
   override lazy val selecting = new TreeSelecting
+  class PortTrack extends OverTrack[PortFigure] {
+    def container = viewer.portsLayer
+      var tooltip : ToolTip = null
+      def showTip(p:PortFigure) {
+        tooltip = new ToolTip(viewer.shell, SWT.BALLOON)
+        tooltip.setAutoHide(true)
+        tooltip.setText(p.sym.name.str + " : " + p.sym.tpe.name.str)
+        tooltip.setVisible(true)
+      }
+      def hideTip() {
+        if (tooltip!=null){
+          tooltip.setVisible(false)
+          tooltip.dispose()
+          tooltip=null
+        }
+      }
+      def onEnter(p: PortFigure) { p.showFeedback; showTip(p) }
+      def onExit(p: PortFigure) { p.hideFeedback; hideTip }
+  }
   class TreeSelecting extends Selecting with DeleteState {
     var port: Option[PortFigure] = None
     var lineSelected: Option[LineFigure] = None
@@ -17,24 +40,26 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       super.buttonDown()
       lineSelected = itemOrLineUnderMouse collect { case l: LineFigure ⇒ l }
     }
-    override def buttonUp {
+    override def buttonUp { // TODO inherit
       (selected, lineSelected) match {
         case (Some(box), _) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
-        case (None, Some(line)) ⇒ line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c), shift) }
+          println(box.tree)
+        case (None, Some(line)) ⇒ line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c), shift); println(c) }
+        
         case (None, None) ⇒ viewer.selection.deselectAll()
       }
       viewer.refresh()
     }
-    val portsTrack = new OverTrack[PortFigure] {
-      def container = viewer.portsLayer
-      def onEnter(p: PortFigure) { port = Some(p); p.showFeedback }
-      def onExit(p: PortFigure) { port = None; p.hideFeedback }
+    val portsTrack = new PortTrack {
+      override def onEnter(p: PortFigure) { super.onEnter(p); port = Some(p) }
+      override def onExit(p: PortFigure) { super.onExit(p); port = None}
     }
     override def move() {
       super.move()
       portsTrack.update()
     }
     override def drag { // TODO inherit item drag
+      portsTrack.hideTip()
       (handle, selected, port) match {
         case (Some(h), _, _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
@@ -230,13 +255,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     var dst: Option[PortFigure] = None
     var src: Option[PortFigure] = None
     var painter: ConnectionPainter = _
-    val portsTrack = new OverTrack[PortFigure] {
-      def onEnter(p: PortFigure) {
+    val portsTrack = new PortTrack {
+      override def onEnter(p: PortFigure) {
         if (p.container == initContainer) {
-          dst = Some(p); p.showFeedback
+          super.onEnter(p)
+          dst = Some(p)
         }
       }
-      def onExit(p: PortFigure) { dst = None; p.hideFeedback }
+      override def onExit(p: PortFigure) { super.onExit(p); dst = None }
     }
     def enter(initContainer: C, initPort: PortFigure) {
       state = this

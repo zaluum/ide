@@ -6,7 +6,11 @@ import org.eclipse.draw2d.ColorConstants
 import org.zaluum.nide.compiler.Type
 object Colorizer {
   def color(t:Symbol)  : Color= t match {
-    case NoSymbol => ColorConstants.gray
-    case a => ColorConstants.blue
+    case t: Type => t.name match {
+      case Name("double") => ColorConstants.orange
+      case Name("boolean") => ColorConstants.red
+      case _ => ColorConstants.lightBlue
+    }
+    case a => ColorConstants.gray
   }
 }
