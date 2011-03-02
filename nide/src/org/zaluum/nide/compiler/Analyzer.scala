@@ -78,7 +78,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   def enter[S <: Symbol](sym: S): S = {
     val entry = (sym.name -> sym)
     sym match {
-      case p: PortSymbol ⇒ ports += entry
+      case p: FieldSymbol ⇒ ports += entry
       case b: BoxTypeSymbol ⇒ boxes += (sym.name -> sym.asInstanceOf[Type])
       case v: ValSymbol ⇒ vals += entry
     }
@@ -129,7 +129,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             }
           }
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
-          definePort(new PortSymbol(currentOwner, name, extPos, dir), tree)
+          definePort(new PorttSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], name, extPos, dir), tree)
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
           defineVal(new ValSymbol(currentOwner, name), tree)
         case _ ⇒
@@ -249,7 +249,7 @@ trait ConnectionHelper extends ReporterAdapter {
   def direction(c: ConnectionDef): (PortRef, PortRef) = {
     implicit val tree: Tree = c
     def isIn(ap: PortRef): Boolean = ap.symbol match {
-      case s: PortSymbol ⇒
+      case s: PorttSymbol ⇒
         (s.dir, ap.fromRef) match {
           case (In, v: ValRef) ⇒ true
           case (In, ThisRef) ⇒ false

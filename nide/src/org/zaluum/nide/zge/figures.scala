@@ -16,20 +16,18 @@ import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
 import scala.collection.mutable.Buffer
 
 // TREE SPECIFIC FIGURES
-
-class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with SimpleItem with TreeItem with RectFeedback {
+trait ValFigure extends SimpleItem with TreeItem {
   type T = ValDef
   def sym = tree.symbol.asInstanceOf[ValSymbol]
-  def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def pos = tree.pos
   def myLayer = container.layer
+  def container : BoxDefContainer
   override def update() {
-    setImage(container.viewerResources.imageFactory(tree.tpe))
     super.update()
     val l = sym.tpe match {
       case b: BoxTypeSymbol ⇒
         b.ports.values.collect {
-          case s: PortSymbol ⇒
+          case s: PorttSymbol ⇒
             new PortFigure(s.extPos + Vector2(getBounds.x, getBounds.y),
               s, s.dir == In, Some(sym), container)
         }.toList
@@ -38,24 +36,32 @@ class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends I
     helpers.appendAll(l);
   }
 }
-class ConstEditFigure(val tree:ValDef,container:BoxDefContainer) extends TextEditFigure(container) with TreeItem {
-  type T = ValDef
-  def pos = tree.pos
-  def size = Dimension(60,20)
-  def text = "text"
-  def myLayer = container.layer  
-}
-abstract class TextEditFigure(val container: BoxDefContainer) extends RectangleFigure with SimpleItem with RectFeedback {
-  def text : String;
-  {
-    val pg = new FlowPage()
-    pg.setBounds(new Rectangle(0, 0, 100, 100))
-    val fl = new TextFlow(text)
-    pg.add(fl)
-    add(pg)
+class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with ValFigure  with RectFeedback {
+  def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
+  override def update() {
+    setImage(container.viewerResources.imageFactory(tree.tpe))
+    super.update()
   }
+}
+class DirectValFigure(val tree: ValDef, val container: BoxDefContainer) extends TextEditFigure with ValFigure {
+  def size = Dimension(60, 20)
+  def text = "text"
+  override def update() {
+    fl.setText(text)
+    super.update()
+  }
+}
+trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
+  def text: String;
+  
+  val pg = new FlowPage()
+  pg.setBounds(new Rectangle(0, 0, 100, 100))
+  val fl = new TextFlow()
+  pg.add(fl)
+  add(pg)
+  
   var textCellEditor: TextCellEditor = null
-  def edit(onComplete : ()=> Unit, onCancel: ()=> Unit) = {
+  def edit(onComplete: () ⇒ Unit, onCancel: () ⇒ Unit) = {
     if (textCellEditor == null) {
       textCellEditor = new TextCellEditor(container.viewer.canvas)
       val textC = textCellEditor.getControl().asInstanceOf[Text]
@@ -68,7 +74,7 @@ abstract class TextEditFigure(val container: BoxDefContainer) extends RectangleF
       })
       val b = getClientArea.getCopy
       translateToAbsolute(b)
-      textC.setBounds(b.x+1, b.y+1, b.width-2, b.height-2)
+      textC.setBounds(b.x + 1, b.y + 1, b.width - 2, b.height - 2)
       textC.setBackground(ColorConstants.white)
       textC.setVisible(true)
       textC.selectAll()

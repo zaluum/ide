@@ -43,6 +43,7 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
   def boxDef = tree
   def owner = global.root
   /*LAYERS*/
+  def viewer = this
   def viewerResources = this
   val tool: Tool = new GuiTool(this);
   override def dispose() {

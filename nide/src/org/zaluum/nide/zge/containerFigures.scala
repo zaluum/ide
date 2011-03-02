@@ -1,7 +1,7 @@
 package org.zaluum.nide.zge
 
 import org.eclipse.swt.widgets.Text
-import org.eclipse.swt.events.{FocusListener,FocusEvent}
+import org.eclipse.swt.events.{ FocusListener, FocusEvent }
 import org.eclipse.jface.viewers.TextCellEditor
 import org.eclipse.jface.viewers.ICellEditorListener
 import org.eclipse.draw2d.text.FlowPage
@@ -23,6 +23,7 @@ import scala.collection.mutable.Buffer
 import scala.collection.JavaConversions._
 import RichFigure._
 trait Container extends IFigure {
+  def viewer : Viewer
   def viewerResources: ViewerResources
   def layer: Figure
   val helpers: Buffer[ShowHide]
@@ -41,7 +42,6 @@ trait BoxDefContainer extends Container {
   def boxDef: BoxDef
   def connectionsLayer: Figure
   def portsLayer: Figure
-  def viewer: Viewer
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒
@@ -74,10 +74,15 @@ trait BoxDefContainer extends Container {
                 viewer,
                 viewerResources)
             case None ⇒
-              v.symbol.tpe match {
-                case a:DirectEditType => helpers += new ConstEditFigure(v,BoxDefContainer.this) 
-                case _ => helpers += new ImageValFigure(v, BoxDefContainer.this)
+              def hasDirect(tpe: Type) = tpe match {
+                case b: BoxTypeSymbol ⇒
+                  b.ports.values exists { _.isInstanceOf[ParamSymbol] }
+                case _ ⇒ false
               }
+              if (hasDirect(v.symbol.tpe))
+                helpers += new DirectValFigure(v, BoxDefContainer.this)
+              else
+                helpers += new ImageValFigure(v, BoxDefContainer.this)
           }
         case _ ⇒
       }
@@ -149,7 +154,7 @@ class OpenBoxFigure(
       case s: BoxTypeSymbol ⇒
         for (sup ← s.superSymbol; p ← sup.ports.values) {
           p match {
-            case p: PortSymbol ⇒
+            case p: PorttSymbol ⇒
               helpers += new PortSymbolFigure(p, OpenBoxFigure.this)
           }
         }

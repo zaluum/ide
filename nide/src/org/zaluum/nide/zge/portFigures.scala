@@ -9,7 +9,7 @@ import org.zaluum.nide.compiler.{Point => MPoint,_}
 import scala.collection.mutable.Buffer
 
 class PortFigure(val ipos: MPoint,
-    val sym: PortSymbol,
+    val sym: PorttSymbol,
     val in: Boolean,
     val valSym: Option[ValSymbol], 
     val container: BoxDefContainer)
@@ -37,7 +37,7 @@ class OpenPortDeclFigure(val tree: PortDef, left:Boolean, openBox: OpenBoxFigure
   type T = PortDef
   def extPos = tree.extPos
   def dir = tree.dir
-  def sym = tree.symbol.asInstanceOf[PortSymbol]
+  def sym = tree.symbol.asInstanceOf[PorttSymbol]
 }
 
 abstract class OpenPortFigure(val left:Boolean, val openBox: OpenBoxFigure) extends RectangleFigure with SimpleItem with RectFeedback {
@@ -46,7 +46,7 @@ abstract class OpenPortFigure(val left:Boolean, val openBox: OpenBoxFigure) exte
   val size = Dimension(10, 10)
   def extPos : MPoint
   def dir :PortDir
-  def sym : PortSymbol
+  def sym : PorttSymbol
   // tree.extPos must be (0,relY)
   def xDisplacement = if (left) Vector2(0,0) else Vector2(openBox.size.w -7,0)
   def absDisplacement = Vector2(openBox.pos.x,openBox.pos.y)
@@ -76,7 +76,7 @@ object PortDeclFigure {
   def img(dir: PortDir) = "org/zaluum/nide/icons/portDecl" + str(dir) + ".png"
 }
 abstract class PortHolderFigure(val container:BoxDefContainer) extends ImageFigure with SimpleItem with RectFeedback {
-  def sym : PortSymbol 
+  def sym : PorttSymbol 
   def myLayer = container.layer
   def pos : MPoint 
   def dir : PortDir
@@ -95,10 +95,10 @@ class PortDeclFigure(val tree: PortDef, container: BoxDefContainer) extends Port
   type T = PortDef
   def pos = tree.inPos
   def dir = tree.dir 
-  def sym = tree.symbol.asInstanceOf[PortSymbol]
+  def sym = tree.symbol.asInstanceOf[PorttSymbol]
 }
-class PortSymbolFigure(val sym:PortSymbol, openBox:OpenBoxFigure) extends PortHolderFigure(openBox) with SymbolItem {
-  type S = PortSymbol
+class PortSymbolFigure(val sym:PorttSymbol, openBox:OpenBoxFigure) extends PortHolderFigure(openBox) with SymbolItem {
+  type S = PorttSymbol
   def pos = MPoint(openBox.getSize.w -60, openBox.getSize.h -30 )
   def dir = sym.dir 
 }

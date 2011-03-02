@@ -39,12 +39,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     def enter(e: TextEditFigure) {
       state = this
       this.e = e;
-      e.edit(exit _,exit _)
+      e.edit(exit _, exit _)
     }
     def exit() { e.hideEdit(); selecting.enter(); }
-    def buttonDown() { exit()}
+    def buttonDown() { exit() }
     def move() {}
-    def buttonUp() { }
+    def buttonUp() {}
     def drag() {}
     override def menu() {}
     def abort() { exit() }
@@ -58,8 +58,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
     override def doubleClick() {
       itemOrLineUnderMouse match {
-        case Some(e:TextEditFigure) ⇒ directEditing.enter(e)
-        case _ => 
+        case Some(e: TextEditFigure) ⇒ directEditing.enter(e)
+        case _ ⇒
       }
     }
     override def buttonUp { // TODO inherit
@@ -334,6 +334,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       dst foreach { _.hideFeedback }
       dst = None
       viewer.setCursor(null)
+      portsTrack.hideTip
       selecting.enter()
     }
     def move() {

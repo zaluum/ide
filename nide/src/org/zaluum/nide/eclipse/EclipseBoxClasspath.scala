@@ -138,12 +138,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
         resolveTypeName(f.getTypeSignature)
       }
       val superName = resolveTypeName(t.getSuperclassTypeSignature)
-      val bs = fqn match {
-            case Name("org.zaluum.example.Direct") => 
-              new BoxTypeSymbol(root, fqn, superName, img, guiClass,Flags.isAbstract(t.getFlags())) with DirectEditType
-            case _ => 
-              new BoxTypeSymbol(root, fqn, superName, img, guiClass,Flags.isAbstract(t.getFlags()))
-          }
+      val bs = new BoxTypeSymbol(root, fqn, superName, img, guiClass,Flags.isAbstract(t.getFlags()))
       bs.scope = this
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
@@ -154,16 +149,23 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
         }
       }
       for (f ← t.getFields) {
+        val name = Name(f.getElementName)
+        val tpeName = resolveTypeName(f.getTypeSignature)
+        val tpe = tpeName.flatMap {lookupType(_)}.getOrElse { NoSymbol }
         def port(in: Boolean, a: IAnnotation) {
           println("resolving port " + f + " " + f.getTypeSignature )
-          val port = new PortSymbol(bs, Name(f.getElementName), pointOf(a), if (in) In else Out)
-          val name = resolveTypeName(f.getTypeSignature)
-          val tpe = name.flatMap {lookupType(_)}.getOrElse { NoSymbol }
+          val port = new PorttSymbol(bs, Name(f.getElementName), pointOf(a), if (in) In else Out)
           port.tpe = tpe
           bs.enter(port)
         }
+        def param(a : IAnnotation) {
+          val param = new ParamSymbol(bs, Name(f.getElementName), "", In) // TODO default
+          param.tpe = tpe
+          bs.enter(param)
+        }
         findAnnotations(t, f, classOf[org.zaluum.runtime.In].getName) foreach { port(true, _) }
         findAnnotations(t, f, classOf[org.zaluum.runtime.Out].getName) foreach { port(false, _) }
+        findAnnotations(t, f, classOf[org.zaluum.runtime.Param].getName) foreach { param(_) } 
       }
       cacheType += (bs.name -> bs)
 
