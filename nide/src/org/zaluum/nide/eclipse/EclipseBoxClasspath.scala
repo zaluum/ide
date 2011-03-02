@@ -138,7 +138,12 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
         resolveTypeName(f.getTypeSignature)
       }
       val superName = resolveTypeName(t.getSuperclassTypeSignature)
-      val bs = new BoxTypeSymbol(root, fqn, superName, img, guiClass,Flags.isAbstract(t.getFlags()))
+      val bs = fqn match {
+            case Name("org.zaluum.example.Direct") => 
+              new BoxTypeSymbol(root, fqn, superName, img, guiClass,Flags.isAbstract(t.getFlags())) with DirectEditType
+            case _ => 
+              new BoxTypeSymbol(root, fqn, superName, img, guiClass,Flags.isAbstract(t.getFlags()))
+          }
       bs.scope = this
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")

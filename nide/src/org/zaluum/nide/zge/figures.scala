@@ -1,10 +1,18 @@
 package org.zaluum.nide.zge
+
+import org.eclipse.swt.events.FocusListener
+import org.eclipse.jface.viewers.ICellEditorListener
+import org.eclipse.swt.widgets.Text
+import org.eclipse.jface.viewers.TextCellEditor
+import org.eclipse.draw2d.text.TextFlow
+import org.eclipse.draw2d.text.FlowPage
+import org.eclipse.draw2d.RectangleFigure
 import draw2dConversions._
 import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.compiler.{Point ⇒ MPoint,_}
+import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
 import scala.collection.mutable.Buffer
 
 // TREE SPECIFIC FIGURES
@@ -30,7 +38,50 @@ class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends I
     helpers.appendAll(l);
   }
 }
-
+class ConstEditFigure(val tree:ValDef,container:BoxDefContainer) extends TextEditFigure(container) with TreeItem {
+  type T = ValDef
+  def pos = tree.pos
+  def size = Dimension(60,20)
+  def text = "text"
+  def myLayer = container.layer  
+}
+abstract class TextEditFigure(val container: BoxDefContainer) extends RectangleFigure with SimpleItem with RectFeedback {
+  def text : String;
+  {
+    val pg = new FlowPage()
+    pg.setBounds(new Rectangle(0, 0, 100, 100))
+    val fl = new TextFlow(text)
+    pg.add(fl)
+    add(pg)
+  }
+  var textCellEditor: TextCellEditor = null
+  def edit(onComplete : ()=> Unit, onCancel: ()=> Unit) = {
+    if (textCellEditor == null) {
+      textCellEditor = new TextCellEditor(container.viewer.canvas)
+      val textC = textCellEditor.getControl().asInstanceOf[Text]
+      textC.setText(text)
+      textCellEditor.activate()
+      textCellEditor.addListener(new ICellEditorListener() {
+        def applyEditorValue() { onComplete() }
+        def cancelEditor() { onCancel() }
+        def editorValueChanged(oldValid: Boolean, newValid: Boolean) {}
+      })
+      val b = getClientArea.getCopy
+      translateToAbsolute(b)
+      textC.setBounds(b.x+1, b.y+1, b.width-2, b.height-2)
+      textC.setBackground(ColorConstants.white)
+      textC.setVisible(true)
+      textC.selectAll()
+      textC.setFocus
+    }
+  }
+  def hideEdit() = {
+    if (textCellEditor != null) {
+      textCellEditor.dispose()
+      textCellEditor = null
+    }
+  }
+}
 class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] = None) extends Polyline with Selectable {
   //setAntialias(1)
   //setForegroundColor(ColorConstants.gray)
@@ -42,7 +93,7 @@ class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] =
   def showComplete { complete = true; calcStyle }
   def showIncomplete { complete = false; calcStyle }
   def calcStyle {
-    setForegroundColor(Colorizer.color(con map {_.tpe} getOrElse NoSymbol))
+    setForegroundColor(Colorizer.color(con map { _.tpe } getOrElse NoSymbol))
     if (feedback) {
       setLineStyle(SWT.LINE_DASH)
       setLineWidth(2)
@@ -68,10 +119,10 @@ class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] =
 }
 class ConnectionPainter(bdf: BoxDefContainer) {
   val lines = Buffer[LineFigure]()
-  def paintRoute(route: Route, feedback: Boolean ,con: Option[ConnectionDef] = None) {
+  def paintRoute(route: Route, feedback: Boolean, con: Option[ConnectionDef] = None) {
     clear()
     route.lines foreach { l ⇒ lines += new LineFigure(l, bdf, con) }
-    lines foreach { l => if (feedback) l.showFeedback() else l.hideFeedback(); l.show }
+    lines foreach { l ⇒ if (feedback) l.showFeedback() else l.hideFeedback(); l.show }
   }
   def clear() {
     lines.foreach { _.hide }
@@ -103,7 +154,7 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
   }
   def show() = {
     container.connectionsLayer.add(this);
-    paint 
+    paint
   }
   def hide() {
     if (container.connectionsLayer.getChildren.contains(this))
@@ -111,12 +162,12 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
     painter.clear()
   }
   def showFeedback() {
-   feedback = true
-   paint
+    feedback = true
+    paint
   }
   def hideFeedback() {
-   feedback = false
-   paint
+    feedback = false
+    paint
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {}
   def moveDeltaFeed(delta: Vector2) {}

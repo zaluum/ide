@@ -7,7 +7,7 @@ import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.compiler._
 
-trait ViewerResources {
+trait ViewerResources { // XXX rename
   def imageFactory  : ImageFactory 
 }
 class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath) 
@@ -20,6 +20,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   def tree = controller.tree.asInstanceOf[BoxDef]
   def boxDef = tree
   def owner = global.root
+  def viewer = this
   /*LAYERS*/
   def viewerResources = this
   val tool: TreeTool = new TreeTool(this)

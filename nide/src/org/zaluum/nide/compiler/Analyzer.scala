@@ -117,7 +117,8 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       tree match {
         case BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
           val cl = Some(Name(classOf[JPanel].getName))
-          val sym = defineBox(new BoxTypeSymbol(currentOwner, name, superName, image, cl), tree)
+          val newSym = new BoxTypeSymbol(currentOwner, name, superName, image, cl)
+          val sym = defineBox(newSym, tree)
           superName foreach { sn ⇒
             currentScope.lookupBoxType(sn) match {
               case Some(bs: BoxTypeSymbol) ⇒

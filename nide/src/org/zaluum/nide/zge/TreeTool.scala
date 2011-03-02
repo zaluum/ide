@@ -16,22 +16,38 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   override lazy val selecting = new TreeSelecting
   class PortTrack extends OverTrack[PortFigure] {
     def container = viewer.portsLayer
-      var tooltip : ToolTip = null
-      def showTip(p:PortFigure) {
-        tooltip = new ToolTip(viewer.shell, SWT.BALLOON)
-        tooltip.setAutoHide(true)
-        tooltip.setText(p.sym.name.str + " : " + p.sym.tpe.name.str)
-        tooltip.setVisible(true)
+    var tooltip: ToolTip = null
+    def showTip(p: PortFigure) {
+      tooltip = new ToolTip(viewer.shell, SWT.BALLOON)
+      tooltip.setAutoHide(true)
+      tooltip.setText(p.sym.name.str + " : " + p.sym.tpe.name.str)
+      tooltip.setVisible(true)
+    }
+    def hideTip() {
+      if (tooltip != null) {
+        tooltip.setVisible(false)
+        tooltip.dispose()
+        tooltip = null
       }
-      def hideTip() {
-        if (tooltip!=null){
-          tooltip.setVisible(false)
-          tooltip.dispose()
-          tooltip=null
-        }
-      }
-      def onEnter(p: PortFigure) { p.showFeedback; showTip(p) }
-      def onExit(p: PortFigure) { p.hideFeedback; hideTip }
+    }
+    def onEnter(p: PortFigure) { p.showFeedback; showTip(p) }
+    def onExit(p: PortFigure) { p.hideFeedback; hideTip }
+  }
+  // Direct edit
+  object directEditing extends ToolState {
+    var e: TextEditFigure = null
+    def enter(e: TextEditFigure) {
+      state = this
+      this.e = e;
+      e.edit(exit _,exit _)
+    }
+    def exit() { e.hideEdit(); selecting.enter(); }
+    def buttonDown() { exit()}
+    def move() {}
+    def buttonUp() { }
+    def drag() {}
+    override def menu() {}
+    def abort() { exit() }
   }
   class TreeSelecting extends Selecting with DeleteState {
     var port: Option[PortFigure] = None
@@ -40,19 +56,26 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       super.buttonDown()
       lineSelected = itemOrLineUnderMouse collect { case l: LineFigure ⇒ l }
     }
+    override def doubleClick() {
+      itemOrLineUnderMouse match {
+        case Some(e:TextEditFigure) ⇒ directEditing.enter(e)
+        case _ => 
+      }
+    }
     override def buttonUp { // TODO inherit
       (selected, lineSelected) match {
-        case (Some(box), _) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
+        case (Some(box), _) ⇒
+          viewer.selection.updateSelection(Set(box.tree), shift)
           println(box.tree)
         case (None, Some(line)) ⇒ line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c), shift); println(c) }
-        
+
         case (None, None) ⇒ viewer.selection.deselectAll()
       }
       viewer.refresh()
     }
     val portsTrack = new PortTrack {
       override def onEnter(p: PortFigure) { super.onEnter(p); port = Some(p) }
-      override def onExit(p: PortFigure) { super.onExit(p); port = None}
+      override def onExit(p: PortFigure) { super.onExit(p); port = None }
     }
     override def move() {
       super.move()
@@ -66,7 +89,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
         case (None, _, Some(port)) ⇒ // connect
           connecting.enter(initContainer, port)
         case (None, Some(fig), _) ⇒ // select and move
-          if (!viewer.selection(fig.tree)){
+          if (!viewer.selection(fig.tree)) {
             viewer.selection.updateSelection(Set(fig.tree), shift)
             fig.showFeedback()
           }

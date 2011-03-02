@@ -1,5 +1,11 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.swt.widgets.Text
+import org.eclipse.swt.events.{FocusListener,FocusEvent}
+import org.eclipse.jface.viewers.TextCellEditor
+import org.eclipse.jface.viewers.ICellEditorListener
+import org.eclipse.draw2d.text.FlowPage
+import org.eclipse.draw2d.text.TextFlow
 import org.eclipse.draw2d.geometry.Point
 import org.eclipse.draw2d.GroupBoxBorder
 import org.eclipse.draw2d.RectangleFigure
@@ -35,6 +41,7 @@ trait BoxDefContainer extends Container {
   def boxDef: BoxDef
   def connectionsLayer: Figure
   def portsLayer: Figure
+  def viewer: Viewer
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒
@@ -64,9 +71,13 @@ trait BoxDefContainer extends Container {
                 tpe.decl.asInstanceOf[BoxDef],
                 v.symbol.owner,
                 BoxDefContainer.this,
+                viewer,
                 viewerResources)
             case None ⇒
-              helpers += new ImageValFigure(v, BoxDefContainer.this)
+              v.symbol.tpe match {
+                case a:DirectEditType => helpers += new ConstEditFigure(v,BoxDefContainer.this) 
+                case _ => helpers += new ImageValFigure(v, BoxDefContainer.this)
+              }
           }
         case _ ⇒
       }
@@ -104,7 +115,8 @@ class OpenBoxFigure(
   val boxDef: BoxDef,
   val owner: Symbol,
   val container: BoxDefContainer,
-  val viewerResources: ViewerResources) extends SimpleItem with  TreeItem with ResizableFeedback with BoxDefContainer with Transparent {
+  val viewer: Viewer,
+  val viewerResources: ViewerResources) extends SimpleItem with TreeItem with ResizableFeedback with BoxDefContainer with Transparent {
   // Item
   type T = ValDef
   def tree = valTree
@@ -138,7 +150,7 @@ class OpenBoxFigure(
         for (sup ← s.superSymbol; p ← sup.ports.values) {
           p match {
             case p: PortSymbol ⇒
-              helpers += new PortSymbolFigure(p,OpenBoxFigure.this)
+              helpers += new PortSymbolFigure(p, OpenBoxFigure.this)
           }
         }
     }

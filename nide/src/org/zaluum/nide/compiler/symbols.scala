@@ -20,6 +20,7 @@ class PrimitiveJavaType(val owner:Symbol, val name:Name) extends Symbol with Typ
 class ClassJavaType(val owner:Symbol, val name:Name) extends Type {
   scope=owner.scope
 }
+trait DirectEditType
 class BoxTypeSymbol(
     val owner: Symbol, 
     val name: Name, 

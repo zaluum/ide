@@ -22,13 +22,15 @@ abstract class Tool(viewer: Viewer) {
     def keyReleased(e: KeyEvent) {}
     def menuDetected(e: MenuDetectEvent) { state.menu() }
     def mouseScrolled(e: MouseEvent) {}
-    def mouseDoubleClick(me: MouseEvent) { updateMouse(me); }
-    def mouseDown(me: MouseEvent) {
+    def mouseDoubleClick(me: MouseEvent) { 
       updateMouse(me);
       if (leftButton(me)) {
-        down = true
-        state.buttonDown()
+        state.doubleClick()
       }
+    }
+    def mouseDown(me: MouseEvent) {
+      updateMouse(me);
+      if (leftButton(me)) state.buttonDown()
     }
     def mouseEnter(me: MouseEvent) { updateMouse(me); state.move(); }
     def mouseExit(e: MouseEvent) {}
@@ -36,10 +38,7 @@ abstract class Tool(viewer: Viewer) {
     def mouseMove(me: MouseEvent) { updateMouse(me); state.move() }
     def mouseUp(me: MouseEvent) {
       updateMouse(me);
-      if (leftButton(me)) {
-        down = false
-        state.buttonUp()
-      }
+      if (leftButton(me)) state.buttonUp()
     }
     def keyTraversed(e: TraverseEvent) {}
   }
@@ -63,11 +62,10 @@ abstract class Tool(viewer: Viewer) {
     def buttonUp()
     def drag()
     def menu() {}
+    def doubleClick() {}
     def abort() 
   }
-
   
-  var down = false
   var state: ToolState = _
   var stateMask = 0
   var absMouseLocation = new Point
