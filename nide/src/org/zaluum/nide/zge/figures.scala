@@ -27,7 +27,7 @@ trait ValFigure extends SimpleItem with TreeItem {
     val l = sym.tpe match {
       case b: BoxTypeSymbol ⇒
         b.ports.values.collect {
-          case s: PorttSymbol ⇒
+          case s: PortSymbol ⇒
             new PortFigure(s.extPos + Vector2(getBounds.x, getBounds.y),
               s, s.dir == In, Some(sym), container)
         }.toList
@@ -43,11 +43,12 @@ class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends I
     super.update()
   }
 }
-class DirectValFigure(val tree: ValDef, val container: BoxDefContainer) extends TextEditFigure with ValFigure {
-  def size = Dimension(60, 20)
-  def text = "text"
+class DirectValFigure(val tree: ValDef, val param:Param, val container: BoxDefContainer) extends TextEditFigure with ValFigure {
+  def size = Dimension(40, 20)
+  def text = param.value 
   override def update() {
     fl.setText(text)
+    setForegroundColor(Colorizer.color(param.tpe))
     super.update()
   }
 }
@@ -55,20 +56,21 @@ trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
   def text: String;
   
   val pg = new FlowPage()
-  pg.setBounds(new Rectangle(0, 0, 100, 100))
+  pg.setForegroundColor(ColorConstants.black)
+  pg.setBounds(new Rectangle(2, 2, 40, 20))
   val fl = new TextFlow()
   pg.add(fl)
   add(pg)
   
   var textCellEditor: TextCellEditor = null
-  def edit(onComplete: () ⇒ Unit, onCancel: () ⇒ Unit) = {
+  def edit(onComplete: (String) ⇒ Unit, onCancel: () ⇒ Unit) = {
     if (textCellEditor == null) {
       textCellEditor = new TextCellEditor(container.viewer.canvas)
       val textC = textCellEditor.getControl().asInstanceOf[Text]
       textC.setText(text)
       textCellEditor.activate()
       textCellEditor.addListener(new ICellEditorListener() {
-        def applyEditorValue() { onComplete() }
+        def applyEditorValue() { onComplete(textC.getText) }
         def cancelEditor() { onCancel() }
         def editorValueChanged(oldValid: Boolean, newValid: Boolean) {}
       })

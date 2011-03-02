@@ -154,7 +154,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
         val tpe = tpeName.flatMap {lookupType(_)}.getOrElse { NoSymbol }
         def port(in: Boolean, a: IAnnotation) {
           println("resolving port " + f + " " + f.getTypeSignature )
-          val port = new PorttSymbol(bs, Name(f.getElementName), pointOf(a), if (in) In else Out)
+          val port = new PortSymbol(bs, Name(f.getElementName), pointOf(a), if (in) In else Out)
           port.tpe = tpe
           bs.enter(port)
         }

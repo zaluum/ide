@@ -13,11 +13,20 @@ object Parser {
       connections = b.getConnectionList.map { parse(_) }.toList)
   }
   def parse(i: BoxFileProtos.BoxClassDef.Instance): ValDef = {
-    // TODO parameters
     val guiPos = if (i.hasGuiPos) Some(parse(i.getGuiPos)) else None
     val guiSize = if (i.hasGuiSize) Some(parseDim(i.getGuiSize)) else None
     val size = if (i.hasSize) Some(parseDim(i.getSize)) else None
-    ValDef(Name(i.getName), Name(i.getClassName), parse(i.getPos), size, guiPos, guiSize)
+    ValDef(
+        Name(i.getName), 
+        Name(i.getClassName), 
+        parse(i.getPos), 
+        size, 
+        guiPos, 
+        guiSize,    
+        i.getParameterList.map { parse(_)}.toList)
+  }
+  def parse(p:BoxFileProtos.BoxClassDef.Parameter) : Param = {
+    Param(Name(p.getKey),p.getValue)
   }
   def parse(c: BoxFileProtos.BoxClassDef.Connection): ConnectionDef = {
     ConnectionDef(

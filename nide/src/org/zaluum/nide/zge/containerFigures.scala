@@ -64,7 +64,7 @@ trait BoxDefContainer extends Container {
     boxDef.children foreach {
       _ match {
         case EmptyTree ⇒
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) ⇒
           v.scope.lookupBoxTypeLocal(typeName) match {
             case Some(tpe) ⇒
               helpers += new OpenBoxFigure(v,
@@ -74,15 +74,12 @@ trait BoxDefContainer extends Container {
                 viewer,
                 viewerResources)
             case None ⇒
-              def hasDirect(tpe: Type) = tpe match {
-                case b: BoxTypeSymbol ⇒
-                  b.ports.values exists { _.isInstanceOf[ParamSymbol] }
-                case _ ⇒ false
+              v.params.headOption match {
+                case Some(p:Param) => 
+                  helpers += new DirectValFigure(v, p, BoxDefContainer.this)
+                case _ =>
+                  helpers += new ImageValFigure(v, BoxDefContainer.this)
               }
-              if (hasDirect(v.symbol.tpe))
-                helpers += new DirectValFigure(v, BoxDefContainer.this)
-              else
-                helpers += new ImageValFigure(v, BoxDefContainer.this)
           }
         case _ ⇒
       }
@@ -154,7 +151,7 @@ class OpenBoxFigure(
       case s: BoxTypeSymbol ⇒
         for (sup ← s.superSymbol; p ← sup.ports.values) {
           p match {
-            case p: PorttSymbol ⇒
+            case p: PortSymbol ⇒
               helpers += new PortSymbolFigure(p, OpenBoxFigure.this)
           }
         }

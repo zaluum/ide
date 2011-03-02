@@ -35,13 +35,24 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   }
   // Direct edit
   object directEditing extends ToolState {
-    var e: TextEditFigure = null
-    def enter(e: TextEditFigure) {
+    var e: DirectValFigure = null
+    def enter(e: DirectValFigure) {
       state = this
       this.e = e;
-      e.edit(exit _, exit _)
+      e.edit(execute(_), exit _)
     }
-    def exit() { e.hideEdit(); selecting.enter(); }
+    def execute(s:String) {
+      if (e!=null && s!=e.param.value) {
+        val tr = new EditTransformer() {
+        val trans: PartialFunction[Tree, Tree] = {
+          case p: Param if p == e.param ⇒
+            Param(e.param.key,s)
+        }
+      }
+      controller.exec(tr)
+      }
+    }
+    def exit() { e.hideEdit(); viewer.focus; selecting.enter(); }
     def buttonDown() { exit() }
     def move() {}
     def buttonUp() {}
@@ -58,7 +69,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
     override def doubleClick() {
       itemOrLineUnderMouse match {
-        case Some(e: TextEditFigure) ⇒ directEditing.enter(e)
+        case Some(e: DirectValFigure) ⇒ directEditing.enter(e)
         case _ ⇒
       }
     }
@@ -138,7 +149,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
               vals = List(),
               ports = List(),
               connections = List())
-            val newVal = ValDef(name, className, dst, Some(Dimension(200, 200)), None, None)
+            val newVal = ValDef(name, className, dst, Some(Dimension(200, 200)), None, None, List())
             BoxDef(b.name, b.superName, b.image,
               newDef :: transformTrees(b.defs),
               newVal :: transformTrees(b.vals),
@@ -176,10 +187,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
+            val params = tpe.params.map { p=>  Param(p.name,p.default) }.toList
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
             BoxDef(b.name, b.superName, b.image,
               transformTrees(b.defs),
-              ValDef(name, tpe.name, dst, None, None, None) :: transformTrees(b.vals),
+              ValDef(name, tpe.name, dst, None, None, None,params) :: transformTrees(b.vals),
               transformTrees(b.ports),
               transformTrees(b.connections))
         }

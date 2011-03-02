@@ -78,7 +78,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   def enter[S <: Symbol](sym: S): S = {
     val entry = (sym.name -> sym)
     sym match {
-      case p: FieldSymbol ⇒ ports += entry
+      case p: IOSymbol ⇒ ports += entry
       case b: BoxTypeSymbol ⇒ boxes += (sym.name -> sym.asInstanceOf[Type])
       case v: ValSymbol ⇒ vals += entry
     }
@@ -129,8 +129,8 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             }
           }
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
-          definePort(new PorttSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], name, extPos, dir), tree)
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
+          definePort(new PortSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], name, extPos, dir), tree)
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
           defineVal(new ValSymbol(currentOwner, name), tree)
         case _ ⇒
           tree.scope = currentScope
@@ -149,7 +149,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             error("Port type not found " + typeName, tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
           tree.symbol.tpe = currentScope.lookupBoxType(typeName) getOrElse {
             error("Box class " + typeName + " not found", tree); NoSymbol
           }
@@ -176,7 +176,38 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       }
     }
   }
-
+  class CheckParams(global: Symbol) extends Traverser(global) with ReporterAdapter {
+    def reporter = Analyzer.this.reporter
+    def location(tree: Tree) = globLocation(tree)
+    def parseValue(p: Param, parSymbol: ParamSymbol, valSymbol: ValSymbol) {
+      p.symbol = parSymbol
+      p.tpe = parSymbol.tpe
+      try {
+        parSymbol.tpe.name match {
+          case Name("double") ⇒ valSymbol.params += (parSymbol -> p.value.toDouble)
+          case n ⇒ error("error type " +n.str+ " cannot parse literals", p)
+        }
+      } catch {
+        case e ⇒ error("invalid literal: " + p.value, p)
+      }
+    }
+    override def traverse(tree: Tree) {
+      super.traverse(tree)
+      tree match {
+        case p@Param(name, value) ⇒
+          val valSym = currentOwner.asInstanceOf[ValSymbol]
+          valSym.tpe match {
+            case b: BoxTypeSymbol ⇒
+              b.params.find(_.name == name) match {
+                case Some(parSymbol) ⇒ parseValue(p, parSymbol, valSym)
+                case None ⇒ error("Parameter " + name + " does not exist", p)
+              }
+            case _ ⇒ error("cannot find type of valDef owner " + p, p) // already failed
+          }
+        case _ ⇒
+      }
+    }
+  }
   class CheckConnections(b: Tree, owner: Symbol) {
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
     var usedInputs = Set[PortRef]()
@@ -240,6 +271,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
     val root = global.root
     new Namer(root).traverse(toCompile)
     new Resolver(root).traverse(toCompile)
+    new CheckParams(root).traverse(toCompile)
     new CheckConnections(toCompile, root).check()
     toCompile
   }
@@ -249,7 +281,7 @@ trait ConnectionHelper extends ReporterAdapter {
   def direction(c: ConnectionDef): (PortRef, PortRef) = {
     implicit val tree: Tree = c
     def isIn(ap: PortRef): Boolean = ap.symbol match {
-      case s: PorttSymbol ⇒
+      case s: PortSymbol ⇒
         (s.dir, ap.fromRef) match {
           case (In, v: ValRef) ⇒ true
           case (In, ThisRef) ⇒ false
@@ -262,11 +294,11 @@ trait ConnectionHelper extends ReporterAdapter {
     }
     (c.a, c.b) match {
       case (ap: PortRef, bp: PortRef) ⇒
-        (isIn(ap), isIn(bp) ) match {
+        (isIn(ap), isIn(bp)) match {
           case (true, false) ⇒ (bp, ap)
           case (false, true) ⇒ (ap, bp)
           case _ ⇒ error("invalid connection. Must connect output and inputs.", c); (ap, bp)
         }
     }
   }
-} 
+}

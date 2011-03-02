@@ -17,14 +17,20 @@ object Serializer {
   }
   
   def proto (p:ValDef) : BoxFileProtos.BoxClassDef.Instance = {
-      BoxFileProtos.BoxClassDef.Instance.newBuilder
-      .setGuiPos(proto(p.guiPos.getOrElse {Point(0,0)}))
+      val b = BoxFileProtos.BoxClassDef.Instance.newBuilder
+      p.params collect { case p :Param => p } sortBy {_.key.str} foreach { p=> b.addParameter(proto(p))} 
+      b.setGuiPos(proto(p.guiPos.getOrElse {Point(0,0)}))
       .setGuiSize(proto(p.guiSize.getOrElse {Dimension(50,50)}))
       .setClassName(p.typeName.str )
       .setName(p.name.str)
       .setPos(proto(p.pos))
       .setSize(proto(p.size.getOrElse(Dimension(50,50))))
       .build
+  }
+  def proto (p: Param) : BoxFileProtos.BoxClassDef.Parameter = {
+    BoxFileProtos.BoxClassDef.Parameter.newBuilder
+      .setKey(p.key.str)
+      .setValue(p.value).build
   }
   def proto (c:ConnectionDef) : BoxFileProtos.BoxClassDef.Connection = {
    val b = BoxFileProtos.BoxClassDef.Connection.newBuilder

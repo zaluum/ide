@@ -93,8 +93,8 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       }.toMap
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (positions.contains(v)) ⇒
-            ValDef(name, typeName, positions(v), size, guiPos, guiSize)
+          case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) if (positions.contains(v)) ⇒
+            ValDef(name, typeName, positions(v), size, guiPos, guiSize,params)
           case p: PortDef if (positions.contains(p)) ⇒
             p.copy(inPos = positions(p))
         }
@@ -159,8 +159,8 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
     def command(newPos: MPoint, newSize: Dimension,t:Tree) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == t) ⇒
-          ValDef(name, typeName, newPos, Some(newSize), guiPos, guiSize)
+        case v:ValDef if (v == t) ⇒
+          v.copy(size=Some(newSize))
       }
     }
     def move() { itf.resizeDeltaFeed(delta, handle) }

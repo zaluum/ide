@@ -63,7 +63,7 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
   def populate() {
     boxDef.children foreach {
       _ match {
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
+        case v:ValDef⇒
           val sym = v.symbol.asInstanceOf[ValSymbol]
           val tpe = sym.tpe.asInstanceOf[BoxTypeSymbol]
           for (c <- tpe.visualClass; cl <- forName(c.str)) {
@@ -89,8 +89,8 @@ class GuiTool(guiViewer: GuiViewer) extends ItemTool(guiViewer) {
   override val resizing = new Resizing {
     override def command(newPos: Point, newSize: Dimension,t:Tree) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (v == t) ⇒
-          ValDef(name, typeName, pos, size, Some(newPos), Some(newSize))
+        case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) if (v == t) ⇒
+          ValDef(name, typeName, pos, size, Some(newPos), Some(newSize),params)
       }
     }
   }
@@ -102,8 +102,8 @@ class GuiTool(guiViewer: GuiViewer) extends ItemTool(guiViewer) {
       }.toMap
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize) if (positions.contains(v)) ⇒
-            ValDef(name, typeName, pos, size, Some(positions(v)), guiSize)
+          case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) if (positions.contains(v)) ⇒
+            ValDef(name, typeName, pos, size, Some(positions(v)), guiSize,params)
         }
       }
       controller.exec(command)

@@ -67,8 +67,10 @@ object ByteCodeGen {
           mv.visitMethodInsn(INVOKEVIRTUAL, fromClass.internal, meth, descriptor)
         case Pop ⇒
           mv.visitInsn(POP)
-        case Const(i) ⇒
+        case Const(i:Int) ⇒
           mv.visitIntInsn(SIPUSH, i)
+        case Const(d:Double) =>
+          mv.visitLdcInsn(d)
         case Return(t) =>
           emit(t)
           mv.visitInsn(IRETURN)

@@ -14,7 +14,7 @@ case object Pop extends Tree
 case object NullConst extends Tree
 case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Tree
 case class Invoke(obj: Tree, meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
-case class Const(i: Int) extends Tree
+case class Const(i: Any) extends Tree
 case class Return(t:Tree) extends Tree
 case object True extends Tree
 
@@ -61,7 +61,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     def field(t: Tree) = t match {
       case PortDef(name, typeName, dir, inPos, extPos) ⇒
         FieldDef(name, t.symbol.tpe.name)
-      case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
+      case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) ⇒
         val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
         FieldDef(name, t.symbol.tpe.asInstanceOf[BoxTypeSymbol].fqName)
     }
@@ -70,10 +70,26 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       // boxes
       val boxCreation: List[Tree] = b.vals map {
         _ match {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
+          case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) ⇒
             val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
             Assign(Select(This, FieldRef(name, tpe.fqName, bs.fqName)), New(tpe.fqName, EmptyTree, "()V"))
         }
+      }
+      // ports
+      val ports = b.vals flatMap {
+        case v:ValDef => 
+          val valSym = v.symbol.asInstanceOf[ValSymbol]
+          val valTpe = valSym.tpe.asInstanceOf[BoxTypeSymbol]
+          valSym.params map {  
+            case (param,v) =>
+              Assign(
+                Select(
+                  Select(This,FieldRef(valSym.name,valTpe.fqName,bs.fqName)), 
+                  FieldRef(param.name, param.tpe.name, valTpe.fqName) // TODO FIXME
+                ),  
+                Const(v)    
+              )       
+          }
       }
       // widgets
       val widgets = vClass(b) map { vn => 
@@ -82,7 +98,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
           Assign(Select(This, FieldRef(widgetName, vn, bs.fqName)),
             New(vn, NullConst, "(Ljava/awt/LayoutManager;)V"))
         val widgetInit = b.vals flatMap {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
+          case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) ⇒
             val tpe = v.tpe.asInstanceOf[BoxTypeSymbol];
             tpe.visualClass map { cl ⇒
               List[Tree](
@@ -107,7 +123,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         }
         widgetCreation :: widgetInit
       }
-      ConstructorMethod(widgets map {w => boxCreation ++ w } getOrElse boxCreation)
+      ConstructorMethod(widgets map {w => boxCreation ++ ports ++ w } getOrElse (boxCreation ++ ports))
     }
     def appl(b: BoxDef) = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]

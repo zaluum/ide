@@ -30,7 +30,8 @@ class BoxTypeSymbol(
   var superSymbol:Option[BoxTypeSymbol] = None
   var source : String = "" // TODO
   def valsInOrder = boxes.values.toList.sortWith(_.name.str< _.name.str).asInstanceOf[List[ValSymbol]]
-  def fieldsInOrder = ports.values.toList.sortWith(_.name.str<_.name.str).asInstanceOf[List[FieldSymbol]]
+  def IOInOrder = ports.values.toList.sortWith(_.name.str<_.name.str).asInstanceOf[List[IOSymbol]]
+  def params = ports.values collect { case p : ParamSymbol => p }
   var executionOrder = List[ValSymbol]() 
   def fqName : Name = owner match {
     case bown:BoxTypeSymbol => Name(bown.fqName.str + "$" + name.str)
@@ -43,15 +44,16 @@ class BoxTypeSymbol(
 
 class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 
 // TODO make two classes one that has values from the declaring tree and the other directly from symbol
-class FieldSymbol(val owner: BoxTypeSymbol, val name : Name, val dir: PortDir) extends Symbol {
+class IOSymbol(val owner: BoxTypeSymbol, val name : Name, val dir: PortDir) extends Symbol {
   def box = owner
 }
-class PorttSymbol(owner: BoxTypeSymbol, name: Name, val extPos:Point, dir:PortDir) extends FieldSymbol(owner,name,dir) {  
+class PortSymbol(owner: BoxTypeSymbol, name: Name, val extPos:Point, dir:PortDir) extends IOSymbol(owner,name,dir) {  
   override def toString = "PortSymbol(" + name + ")"
 }
-class ParamSymbol(owner: BoxTypeSymbol, name:Name, val default:String, dir:PortDir) extends FieldSymbol(owner,name,dir) {
+class ParamSymbol(owner: BoxTypeSymbol, name:Name, val default:String, dir:PortDir) extends IOSymbol(owner,name,dir) {
   override def toString = "ParamSymbol(" + name + ")"  
 }
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
+  var params = Map [ParamSymbol,Any]()
   override def toString = "ValSymbol(" + name + ")"
 }

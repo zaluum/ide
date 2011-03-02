@@ -6,8 +6,8 @@ import java.io.StringWriter
 
 abstract class Tree extends Product {
   //var pos : Position = NoPosition
-  var tpe: Type = null
-  var symbol: Symbol = null
+  var tpe: Type = NoSymbol
+  var symbol: Symbol = NoSymbol
   var scope: Scope = null
   def hasSymbol = false
   def isDef = false
@@ -94,8 +94,11 @@ trait CopyTransformer extends Transformer {
       }
     case PortDef(name, typeName, dir, inPos, extPos) ⇒
       PortDef(name, typeName, dir, inPos, extPos)
-    case ValDef(name, typeName, pos, size, guiPos, guiSize) ⇒
-      ValDef(name, typeName, pos, size, guiPos, guiSize)
+    case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
+      atOwner(v.symbol) {
+        ValDef(name, typeName, pos, size, guiPos, guiSize, transformTrees(params))
+      }
+    case p:Param => p.copy()
     case c@ConnectionDef(a, b) ⇒
       atOwner(c.symbol) {
         ConnectionDef(transform(a), transform(b))
@@ -142,10 +145,14 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
           traverseTrees(connections)
         }
       case v: ValDef ⇒
+        atOwner(tree.symbol){
+          traverseTrees(v.params)
+        }
+      case p: Param =>
       case ConnectionDef(a, b) ⇒
         traverse(a)
         traverse(b)
-      case PortDef(_, _, _, _, _) ⇒
+      case p:PortDef ⇒
       case PortRef(tree, _, _) ⇒
         traverse(tree)
       case ValRef(_) ⇒
@@ -173,7 +180,12 @@ object PrettyPrinter {
       print(ports, deep + 1)
       print(connections, deep + 1)
       print(")", deep)
-    case v: ValDef ⇒ print(v.toString, deep)
+    case v: ValDef ⇒
+      print("ValDef(" + List(v.name,v.pos,v.size,v.typeName,v.guiPos ,v.guiSize).mkString(","), deep)
+      print(v.params,deep+1)
+      print(")",deep)
+    case p: Param => 
+      print(p.toString,deep)
     case ConnectionDef(a, b) ⇒
       print("ConnectionDef(", deep)
       print(a, deep + 1)
@@ -233,7 +245,15 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
 case class ValRef(name: Name) extends RefTree
 case object ThisRef extends Tree
 case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends RefTree
-case class ValDef(name: Name, typeName: Name, pos: Point, size: Option[Dimension], guiPos: Option[Point], guiSize: Option[Dimension]) extends DefTree with Positionable
+case class Param(key:Name, value:String) extends Tree
+case class ValDef(
+    name: Name, 
+    typeName: Name, 
+    pos: Point, 
+    size: Option[Dimension], 
+    guiPos: Option[Point], 
+    guiSize: Option[Dimension],
+    params:List[Tree]) extends DefTree with Positionable
 //case class SizeDef(pos: Point, size: Dimension) extends Tree
 case class ConnectionDef(a: Tree, b: Tree) extends SymTree
 
