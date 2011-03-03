@@ -225,7 +225,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
                 case bDef: BoxDef ⇒ new CheckConnections(bDef, b.symbol).check
               }
             }
-          case c@ConnectionDef(a, b) ⇒
+          case c@ConnectionDef(a, b, waypoints) ⇒
             if (a.symbol == NoSymbol || b.symbol == NoSymbol) {
               error("incomplete connection " + a + "<->" + b, tree)
             } else if (a.tpe != b.tpe) {

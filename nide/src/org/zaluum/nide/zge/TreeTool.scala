@@ -304,7 +304,6 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       enterSingle(initContainer)
       painter = new ConnectionPainter(initContainer.asInstanceOf[BoxDefContainer])
       src = Some(initPort)
-
       viewer.setCursor(Cursors.HAND)
       move()
     }
@@ -315,6 +314,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
         def toRef(pf: PortFigure) = {
           pf.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef }
         }
+        val route = Route(src.get.anchor,dst.get.anchor)
+        val waypoint = route.points.get(1);
         val srcPortName = src.get.sym.name
         val dstPortName = dst.get.sym.name
         val srcRef = toRef(src.get)
@@ -322,7 +323,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
         if (srcRef != dstRef) { // MORE checks?
           val condef = ConnectionDef(
             PortRef(srcRef, srcPortName, src.get.in),
-            PortRef(dstRef, dstPortName, dst.get.in))
+            PortRef(dstRef, dstPortName, dst.get.in),
+            List(waypoint))
           controller.exec(
             new EditTransformer {
               val trans: PartialFunction[Tree, Tree] = {

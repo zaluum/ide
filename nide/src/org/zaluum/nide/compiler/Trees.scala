@@ -98,9 +98,9 @@ trait CopyTransformer extends Transformer {
         ValDef(name, typeName, pos, size, guiPos, guiSize, transformTrees(params))
       }
     case p:Param => p.copy()
-    case c@ConnectionDef(a, b) ⇒
+    case c@ConnectionDef(a, b,wp) ⇒
       atOwner(c.symbol) {
-        ConnectionDef(transform(a), transform(b))
+        ConnectionDef(transform(a), transform(b),wp)
       }
     case PortRef(from, name, in) ⇒
       PortRef(transform(from), name, in)
@@ -148,7 +148,7 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
           traverseTrees(v.params)
         }
       case p: Param =>
-      case ConnectionDef(a, b) ⇒
+      case ConnectionDef(a, b,waypoints) ⇒
         traverse(a)
         traverse(b)
       case p:PortDef ⇒
@@ -185,10 +185,13 @@ object PrettyPrinter {
       print(")",deep)
     case p: Param => 
       print(p.toString,deep)
-    case ConnectionDef(a, b) ⇒
+    case ConnectionDef(a, b,wp) ⇒
       print("ConnectionDef(", deep)
       print(a, deep + 1)
       print(b, deep + 1)
+      for (p<-wp) {
+        print(p.toString,deep+1)
+      }
       print(")", deep)
     case p@PortDef(_, _, _, _, _) ⇒
       print(p.toString, deep)
@@ -254,5 +257,4 @@ case class ValDef(
     guiSize: Option[Dimension],
     params:List[Tree]) extends DefTree with Positionable
 //case class SizeDef(pos: Point, size: Dimension) extends Tree
-case class ConnectionDef(a: Tree, b: Tree) extends SymTree
-
+case class ConnectionDef(a: Tree, b: Tree, wayPoints:List[Point]) extends SymTree

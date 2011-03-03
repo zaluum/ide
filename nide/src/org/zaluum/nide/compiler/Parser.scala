@@ -31,7 +31,8 @@ object Parser {
   def parse(c: BoxFileProtos.BoxClassDef.Connection): ConnectionDef = {
     ConnectionDef(
       if (c.hasSource) parse(c.getSource) else EmptyTree,
-      if (c.hasTarget) parse(c.getTarget) else EmptyTree)
+      if (c.hasTarget) parse(c.getTarget) else EmptyTree,
+      c.getWaypointList map { parse(_)} toList)
   }
   def parse(p: BoxFileProtos.BoxClassDef.PortRef): PortRef = {
     PortRef(if (p.hasBoxName) ValRef(Name(p.getBoxName)) else ThisRef,

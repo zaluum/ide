@@ -150,7 +150,8 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
     }
     def position(tree: Tree): Option[MPoint] = portFigure(tree) map { p ⇒ p.anchor }
     val route = (position(tree.a), position(tree.b)) match {
-      case (Some(a), Some(b)) ⇒ Some(Route(a, b))
+      case (Some(a), Some(b)) ⇒
+        Some(Route((a :: tree.wayPoints) ++ List(b)))
       case _ ⇒ None
     }
     route

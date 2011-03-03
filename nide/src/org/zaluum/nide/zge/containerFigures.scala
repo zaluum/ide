@@ -88,7 +88,7 @@ trait BoxDefContainer extends Container {
   def populateConnections() {
     boxDef.connections foreach {
       _ match {
-        case c@ConnectionDef(a, b) ⇒
+        case c:ConnectionDef ⇒
           helpers += new ConnectionFigure(c, BoxDefContainer.this)
         case _ ⇒
       }

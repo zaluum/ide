@@ -33,7 +33,7 @@ case class Line(val dir: OrtoDirection, val from: Point, val len: Int) {
   }
 }
 
-object Route {
+/*object Route {
   def apply(src:Point,dst:Point) : Route = {
     val lines = if (src == dst) {
       List()
@@ -47,8 +47,36 @@ object Route {
     }
     Route(src,dst,lines)
   }
+}*/
+object Route { 
+  def apply(src:Point,dst:Point) : Route = {
+    val mid = Point(src.x + (dst.x-src.x)/2, dst.y)
+    Route (List(src,mid,dst))
+  }
 }
-case class Route(val src:Point, val dst:Point, val lines : List[Line]) {
+case class Route(val points : List[Point]) {
+  def ¬(src:Point,dst:Point) = {
+    if (src == dst) {
+      List()
+    }else if (src.x == dst.x) {
+      List(Line(V, src, dst.y - src.y))
+    } else if (src.y == dst.y) {
+      List(Line(H, src, dst.x - src.x))
+    } else {
+      val despl = (dst.x - src.x) 
+      List(Line(H, src, despl), Line(V, src >> despl, dst.y - src.y))
+    }
+  }
+  lazy val lines = makePath(points)
+  def makePath(path:List[Point]) : List[Line] = {
+    path match {
+      case Nil => Nil
+      case e :: Nil => Nil
+      case from :: to :: tail => ¬(from,to) ++ makePath(to::tail) 
+    }
+  }
+}
+/*case class Route(val src:Point, val dst:Point, val lines : List[Line]) {
   def appendEnd(to: Point, dir: OrtoDirection) {
     val l = lines.last
     if (l.canExtendTo(to)) {
@@ -65,4 +93,4 @@ case class Route(val src:Point, val dst:Point, val lines : List[Line]) {
       }
     }
   }
-}
+}*/

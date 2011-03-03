@@ -25,7 +25,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     val trans: PartialFunction[Tree, Tree] = {
       case c: ConnectionDef ⇒
         val (from, to) = direction(c)
-        ConnectionDef(transform(from), transform(to))
+        ConnectionDef(transform(from), transform(to),c.wayPoints)
     }
   }
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
@@ -163,14 +163,14 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       def connections = b.connections collect { case c: ConnectionDef ⇒ c }
       def propagateInitialInputs = {
         def initialConnections = connections collect {
-          case c@ConnectionDef(p@PortRef(ThisRef, portName, in), b) ⇒ c
+          case c@ConnectionDef(p@PortRef(ThisRef, portName, in), b,_) ⇒ c
         }
         initialConnections map { execConnection(_) }
       }
       // execute in order
       def runOne(v: ValDef) = {
         def outConnections = connections collect {
-          case c@ConnectionDef(p@PortRef(vref@ValRef(_), _, _), b) if (vref.symbol == v.symbol) ⇒ c
+          case c@ConnectionDef(p@PortRef(vref@ValRef(_), _, _), b,_) if (vref.symbol == v.symbol) ⇒ c
         }
         val outs = outConnections map { execConnection(_) }
         val tpe = v.tpe.asInstanceOf[BoxTypeSymbol].fqName

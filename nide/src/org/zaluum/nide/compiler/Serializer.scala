@@ -36,12 +36,9 @@ object Serializer {
    val b = BoxFileProtos.BoxClassDef.Connection.newBuilder
    protoRef(c.a) foreach { b.setSource(_) }
    protoRef(c.b) foreach { b.setTarget(_) }
+   c.wayPoints foreach {p => b.addWaypoint(proto(p)) } 
    b.build
   }
-  /*def parse(p: BoxFileProtos.BoxClassDef.PortRef): PortRef = {
-    PortRef(if (p.hasBoxName) ValRef(Name(p.getBoxName)) else ThisRef,
-      Name(p.getPortName),if (p.hasIn) p.getIn else true)
-  }*/
   def protoRef (t:Tree) : Option[BoxFileProtos.BoxClassDef.PortRef] = {
     t match {
       case PortRef(ThisRef, name, in) => 
