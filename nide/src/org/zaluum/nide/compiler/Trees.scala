@@ -56,7 +56,6 @@ abstract class DefTree extends SymTree {
 trait RefTree extends SymTree {
   def name: Name
 }
-trait TypTree extends Tree
 /*
     case EmptyTree ⇒
     case BoxDef(name, defs, vals, ports, connections) ⇒

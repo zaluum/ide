@@ -31,10 +31,26 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
     val name = null
     scope = EclipseBoxClasspath.this
   }
-  private def newJavaType(str: String) =
-    (Name(str) -> new PrimitiveJavaType(root, Name(str)))
-  var types = Map[Name, Type](newJavaType("double"),newJavaType("boolean")) //TODO
+  object primitives {
+    private def n(str: String, desc: String) = new PrimitiveJavaType(root, Name(str), desc)
+    val byte = n("byte", "B")
+    val short = n("short", "S")
+    val int = n("int", "I")
+    val long = n("long", "J")
+    val float = n("float", "F")
+    val double = n("double", "D")
+    val boolean = n("boolean", "Z")
+    val char = n("char", "C")
+    val allTypes = List(byte, short, int, long, float, double, boolean, char)
+    def find(desc: String) = allTypes.find(_.descriptor == desc)
+  }
 
+  var types: Map[Name, JavaType] = primitives.allTypes map { t ⇒ (t.name -> t) } toMap
+  def newJavaType(n: Name) = {
+    val p = new JavaType(root, n)
+    types += (n -> p)
+    p
+  }
   def lookupPort(name: Name): Option[Symbol] = None
   def lookupVal(name: Name): Option[Symbol] = None
   def lookupType(name: Name): Option[Type] = {
@@ -52,18 +68,14 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
           matchh match {
             case t: TypeDeclarationMatch ⇒
               t.getElement match {
-                case t: IType ⇒ println("found type" + t);found = true
+                case t: IType ⇒ println("found type" + t); found = true
                 case other ⇒ println("ohter match " + other + " " + other.getClass)
               }
           }
         }
       }
       search.search(pattern, participants, searchScope, searchRequestor, null)
-      if (found) {
-        val tpe = newJavaType(name.str)
-        types += tpe
-        Some(tpe._2)
-      } else None
+      if (found) Some(newJavaType(name)) else None
       /*val cl = classLoader.loadClass(name.toString)
         val tpe = newJavaType(name.toString)
         types += tpe
@@ -77,7 +89,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
   def lookupBoxTypeLocal(name: Name): Option[Type] = lookupBoxType(name)
 
   def boxes = cacheType.values
-  def enter[S<:Symbol](sym: S): S = { throw new Exception("cannot enter new symbols to global scope") }
+  def enter[S <: Symbol](sym: S): S = { throw new Exception("cannot enter new symbols to global scope") }
   // cacheType += (sym.name->sym.asInstanceOf[Type]);sym}//throw new Exception("cannot enter")
   def update() {
     cacheType = cacheType.empty
@@ -114,20 +126,20 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
         v.getMemberName == key && v.getValueKind == IMemberValuePair.K_INT
       } map { _.getValue.asInstanceOf[Int] }
     }
-    
+
     def processTypeSym(t: IType) {
-      def resolveTypeName(signature:String) : Option[Name]= signature match { 
-        case "D" ⇒ Some(Name("double"))
-        case "Z" => Some(Name("boolean"))
-        case "null" => None
-        case null => None
-        case _ => 
-          val className = signature.dropRight(1).drop(1).replace('/', '.')
-          val res = Option(t.resolveType(className))
-          res flatMap { 
-            _.headOption map { arr ⇒ Name(arr.mkString(".")) }
+      def resolveTypeName(signature: String): Option[Name] =
+        primitives.find(signature).map { _.name }.orElse {
+          signature match {
+            case null ⇒ None
+            case _ ⇒
+              val className = signature.dropRight(1).drop(1).replace('/', '.')
+              val res = Option(t.resolveType(className))
+              res flatMap {
+                _.headOption map { arr ⇒ Name(arr.mkString(".")) }
+              }
           }
-      }
+        }
       val fqn = Name(t.getFullyQualifiedName)
       println("processing box: " + fqn)
       val img = findAnnotations(t, t, classOf[BoxImage].getName).headOption flatMap { a ⇒
@@ -138,7 +150,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
         resolveTypeName(f.getTypeSignature)
       }
       val superName = resolveTypeName(t.getSuperclassTypeSignature)
-      val bs = new BoxTypeSymbol(root, fqn, superName, img, guiClass,Flags.isAbstract(t.getFlags()))
+      val bs = new BoxTypeSymbol(root, fqn, superName, img, guiClass, Flags.isAbstract(t.getFlags()))
       bs.scope = this
       def pointOf(a: IAnnotation) = {
         val ox = findIntegerValueOfAnnotation(a, "x")
@@ -151,21 +163,21 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
       for (f ← t.getFields) {
         val name = Name(f.getElementName)
         val tpeName = resolveTypeName(f.getTypeSignature)
-        val tpe = tpeName.flatMap {lookupType(_)}.getOrElse { NoSymbol }
+        val tpe = tpeName.flatMap { lookupType(_) }.getOrElse { NoSymbol }
         def port(in: Boolean, a: IAnnotation) {
-          println("resolving port " + f + " " + f.getTypeSignature )
+          println("resolving port " + f + " " + f.getTypeSignature)
           val port = new PortSymbol(bs, Name(f.getElementName), pointOf(a), if (in) In else Out)
           port.tpe = tpe
           bs.enter(port)
         }
-        def param(a : IAnnotation) {
+        def param(a: IAnnotation) {
           val param = new ParamSymbol(bs, Name(f.getElementName), "", In) // TODO default
           param.tpe = tpe
           bs.enter(param)
         }
         findAnnotations(t, f, classOf[org.zaluum.runtime.In].getName) foreach { port(true, _) }
         findAnnotations(t, f, classOf[org.zaluum.runtime.Out].getName) foreach { port(false, _) }
-        findAnnotations(t, f, classOf[org.zaluum.runtime.Param].getName) foreach { param(_) } 
+        findAnnotations(t, f, classOf[org.zaluum.runtime.Param].getName) foreach { param(_) }
       }
       cacheType += (bs.name -> bs)
 
@@ -188,7 +200,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
     resolve()
   }
   def resolve() {
-    for (t<-cacheType.values; superName<-t.superName) {
+    for (t ← cacheType.values; superName ← t.superName) {
       t.superSymbol = cacheType.get(superName)
     }
   }

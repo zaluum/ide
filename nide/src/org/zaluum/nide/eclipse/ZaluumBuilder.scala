@@ -81,9 +81,9 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
             case b: BoxDef ⇒ b.defs foreach { case c:BoxDef ⇒ generate(c) }
           }
         }
-        val bd = analyzedTree.asInstanceOf[BoxDef]
-        generate(analyzedTree)
+        val bd = analyzedTree.asInstanceOf[BoxDef]        
         reporter.check()
+        generate(analyzedTree)
       }
     } catch {
       case e: CompilationException ⇒

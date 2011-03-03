@@ -4,9 +4,14 @@ import org.objectweb.asm._
 import Opcodes._
 object ByteCodeGen {
   def descriptor(n: Name) = n match {
-    case Name("double") ⇒ "D"
+    case Name("byte") => "B"
+    case Name("short") => "S"
+    case Name("int") => "I"
+    case Name("long") => "J"
+    case Name("float") => "F"
+    case Name("double") => "D"
     case Name("boolean") => "Z"
-    case null ⇒ "null"
+    case Name("char") => "C"
     case _ ⇒ "L" + n.internal + ";"
   }
   def dump(bc: BoxClass): Array[Byte] = {
@@ -67,10 +72,14 @@ object ByteCodeGen {
           mv.visitMethodInsn(INVOKEVIRTUAL, fromClass.internal, meth, descriptor)
         case Pop ⇒
           mv.visitInsn(POP)
-        case Const(i:Int) ⇒
-          mv.visitIntInsn(SIPUSH, i)
-        case Const(d:Double) =>
-          mv.visitLdcInsn(d)
+        case Const(d:Any) =>
+          val v = d match {
+            case b:Byte => b.asInstanceOf[Int]
+            case s:Short=> s.asInstanceOf[Int]
+            case b:Boolean => b.asInstanceOf[Int]
+            case _ => d
+          }
+          mv.visitLdcInsn(v)
         case Return(t) =>
           emit(t)
           mv.visitInsn(IRETURN)
