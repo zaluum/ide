@@ -38,14 +38,22 @@ message BoxClassDef {
     required Point pos_internal = 4;
     required Point pos_external = 5; 
   }
+  message Waypoint {
+  	required Point point =1;
+  	required Orto dir = 2;
+  }
   message Connection {
     optional PortRef source = 1;
     optional PortRef target = 2;
-   	repeated Point waypoint = 3; 
+   	repeated Waypoint waypoint = 3; 
   }
   message Point {
  	required int32 x =1;
   	required int32 y =2;
+  }
+  enum Orto {
+  	H = 1;
+  	V = 2;
   }
   enum Direction {
     IN = 0;

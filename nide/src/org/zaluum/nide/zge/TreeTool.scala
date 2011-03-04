@@ -41,15 +41,15 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       this.e = e;
       e.edit(execute(_), exit _)
     }
-    def execute(s:String) {
-      if (e!=null && s!=e.param.value) {
+    def execute(s: String) {
+      if (e != null && s != e.param.value) {
         val tr = new EditTransformer() {
-        val trans: PartialFunction[Tree, Tree] = {
-          case p: Param if p == e.param ⇒
-            Param(e.param.key,s)
+          val trans: PartialFunction[Tree, Tree] = {
+            case p: Param if p == e.param ⇒
+              Param(e.param.key, s)
+          }
         }
-      }
-      controller.exec(tr)
+        controller.exec(tr)
       }
     }
     def exit() { e.hideEdit(); viewer.focus; selecting.enter(); }
@@ -74,15 +74,21 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       }
     }
     override def buttonUp { // TODO inherit
-      (selected, lineSelected) match {
-        case (Some(box), _) ⇒
+      (selected, lineSelected, port) match {
+        case (None, _, Some(port)) ⇒ // connect
+          portsTrack.hideTip()
+          connecting.enter(initContainer, port)
+        case (Some(box), _, _) ⇒
           viewer.selection.updateSelection(Set(box.tree), shift)
           println(box.tree)
-        case (None, Some(line)) ⇒ line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c), shift); println(c) }
-
-        case (None, None) ⇒ viewer.selection.deselectAll()
+          viewer.refresh()
+        case (None, Some(line), _) ⇒
+          line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c), shift); println(c) }
+          viewer.refresh()
+        case (None, None, _) ⇒
+          viewer.selection.deselectAll()
+          viewer.refresh()
       }
-      viewer.refresh()
     }
     val portsTrack = new PortTrack {
       override def onEnter(p: PortFigure) { super.onEnter(p); port = Some(p) }
@@ -94,12 +100,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
     override def drag { // TODO inherit item drag
       portsTrack.hideTip()
-      (handle, selected, port) match {
-        case (Some(h), _, _) ⇒ // resize
+      (handle, selected) match {
+        case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
-        case (None, _, Some(port)) ⇒ // connect
-          connecting.enter(initContainer, port)
-        case (None, Some(fig), _) ⇒ // select and move
+        case (None, Some(fig)) ⇒ // select and move
           if (!viewer.selection(fig.tree)) {
             viewer.selection.updateSelection(Set(fig.tree), shift)
             fig.showFeedback()
@@ -108,7 +112,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
             case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
             case _ ⇒ moving.enter(initDrag, initContainer)
           }
-        case (None, None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
+        case (None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
     def delete() {
@@ -187,11 +191,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
-            val params = tpe.params.map { p=>  Param(p.name,p.default) }.toList
+            val params = tpe.params.map { p ⇒ Param(p.name, p.default) }.toList
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
             BoxDef(b.name, b.superName, b.image,
               transformTrees(b.defs),
-              ValDef(name, tpe.name, dst, None, None, None,params) :: transformTrees(b.vals),
+              ValDef(name, tpe.name, dst, None, None, None, params) :: transformTrees(b.vals),
               transformTrees(b.ports),
               transformTrees(b.connections))
         }
@@ -287,6 +291,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
   // CONNECT
   trait Connecting extends ToolState {
     self: SingleContainer ⇒
+    var route: Route = null
     var dst: Option[PortFigure] = None
     var src: Option[PortFigure] = None
     var painter: ConnectionPainter = _
@@ -304,42 +309,54 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       enterSingle(initContainer)
       painter = new ConnectionPainter(initContainer.asInstanceOf[BoxDefContainer])
       src = Some(initPort)
+      route = Route(List(Waypoint(initPort.anchor, H)))
       viewer.setCursor(Cursors.HAND)
       move()
     }
     def doEnter {}
-    def buttonUp {
-      // execute model command
-      if (dst.isDefined) {
-        def toRef(pf: PortFigure) = {
-          pf.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef }
-        }
-        val route = Route(src.get.anchor,dst.get.anchor)
-        val waypoint = route.points.get(1);
-        val srcPortName = src.get.sym.name
-        val dstPortName = dst.get.sym.name
-        val srcRef = toRef(src.get)
-        val dstRef = toRef(dst.get)
-        if (srcRef != dstRef) { // MORE checks?
-          val condef = ConnectionDef(
-            PortRef(srcRef, srcPortName, src.get.in),
-            PortRef(dstRef, dstPortName, dst.get.in),
-            List(waypoint))
-          controller.exec(
-            new EditTransformer {
-              val trans: PartialFunction[Tree, Tree] = {
-                case b: BoxDef if (b == initContainer.boxDef) ⇒
-                  BoxDef(b.name, b.superName, b.image,
-                    transformTrees(b.defs),
-                    transformTrees(b.vals),
-                    transformTrees(b.ports),
-                    condef :: transformTrees(b.connections))
-              }
-            })
-        } else exit()
+    def endConnection() {
+      def dstWaypoints = dst map { dstPort ⇒
+        route = route.extend(dstPort.anchor)
+        route.points.drop(1)
+        } getOrElse (route.points)
+      val waypoints = if (src.isDefined) dstWaypoints.dropRight(1) else dstWaypoints
+      def toPortRef(p: PortFigure) = {
+        def toRef = p.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef }
+        PortRef(toRef, p.sym.name, p.in)
+      }
+      if (src != dst) { // MORE checks?
+        val condef = ConnectionDef(
+          src map { toPortRef(_) } getOrElse { EmptyTree },
+          dst map { toPortRef(_) } getOrElse { EmptyTree },
+          waypoints)
+        controller.exec(
+          new EditTransformer {
+            val trans: PartialFunction[Tree, Tree] = {
+              case b: BoxDef if (b == initContainer.boxDef) ⇒
+                BoxDef(b.name, b.superName, b.image,
+                  transformTrees(b.defs),
+                  transformTrees(b.vals),
+                  transformTrees(b.ports),
+                  condef :: transformTrees(b.connections))
+            }
+          })
       } else {
         exit()
       }
+    }
+    def buttonUp {
+      // execute model command
+      if (dst.isDefined) {
+        endConnection()
+      } else {
+        // waypoint
+        route = route.extend(end)
+        println(route)
+        move()
+      }
+    }
+    override def doubleClick {
+      endConnection()
     }
     def drag {}
     def buttonDown {}
@@ -351,14 +368,15 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       portsTrack.hideTip
       selecting.enter()
     }
+    def end = dst match {
+      case Some(df) ⇒ df.anchor
+      case None ⇒ currentMouseLocation
+    }
+
     def move() {
       portsTrack.update()
       val start = src.get.anchor
-      val end = dst match {
-        case Some(df) ⇒ df.anchor
-        case None ⇒ currentMouseLocation
-      }
-      painter.paintRoute(Route(start, end), false)
+      painter.paintRoute(route.extend(end), false)
     }
     def abort() { exit() }
 

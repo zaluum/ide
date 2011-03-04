@@ -12,6 +12,7 @@ case class Point(x: Int, y: Int) extends Tuple2 {
   def +(p: Point) = Point(x + p.x,y+ p.y )
   def -(o: Point) = Vector2(x - o.x, y - o.y)
   def >>(despl: Int) = Point(x + despl, y)
+  def ^(despl: Int) = Point(x, y+despl)
   def toProto  = {
     val p =BoxFileProtos.BoxClassDef.Point.newBuilder
     p.setX(x)

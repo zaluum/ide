@@ -1,5 +1,8 @@
 package org.zaluum.nide.compiler
 
+import org.zaluum.nide.zge.V
+import org.zaluum.nide.zge.H
+import org.zaluum.nide.zge.Waypoint
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.JavaConversions._
 object Parser {
@@ -33,6 +36,9 @@ object Parser {
       if (c.hasSource) parse(c.getSource) else EmptyTree,
       if (c.hasTarget) parse(c.getTarget) else EmptyTree,
       c.getWaypointList map { parse(_)} toList)
+  }
+  def parse(w: BoxFileProtos.BoxClassDef.Waypoint) : Waypoint = {
+    Waypoint(parse(w.getPoint), if (w.getDir == BoxFileProtos.BoxClassDef.Orto.H) H else V)
   }
   def parse(p: BoxFileProtos.BoxClassDef.PortRef): PortRef = {
     PortRef(if (p.hasBoxName) ValRef(Name(p.getBoxName)) else ThisRef,

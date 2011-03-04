@@ -1,5 +1,7 @@
 package org.zaluum.nide.compiler
 
+import org.zaluum.nide.zge.H
+import org.zaluum.nide.zge.Waypoint
 import org.zaluum.nide.protobuf.BoxFileProtos
 object Serializer {
   def proto(b:BoxDef) : BoxFileProtos.BoxClassDef = {
@@ -38,6 +40,13 @@ object Serializer {
    protoRef(c.b) foreach { b.setTarget(_) }
    c.wayPoints foreach {p => b.addWaypoint(proto(p)) } 
    b.build
+  }
+  def proto (w: Waypoint) : BoxFileProtos.BoxClassDef.Waypoint = {
+    BoxFileProtos.BoxClassDef.Waypoint.newBuilder.setPoint(proto(w.p)).setDir(
+        if(w.d == H) 
+          BoxFileProtos.BoxClassDef.Orto.H 
+        else 
+          BoxFileProtos.BoxClassDef.Orto.V).build
   }
   def protoRef (t:Tree) : Option[BoxFileProtos.BoxClassDef.PortRef] = {
     t match {

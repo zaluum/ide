@@ -247,6 +247,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
                     acyclic.addDagEdge(va.symbol.asInstanceOf[ValSymbol], vb.symbol.asInstanceOf[ValSymbol]);
                   } catch {
                     case e: CycleFoundException ⇒ error("cycle found ", tree)
+                    case e: IllegalArgumentException => error("loop found", tree)
                   }
                 case (ThisRef, b) ⇒
                 case (a, ThisRef) ⇒

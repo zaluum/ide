@@ -142,25 +142,18 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
   type T = ConnectionDef
   val painter = new ConnectionPainter(container)
   def calcRoute = {
-    // TODO paint incomplete connections gracefully
     def portFigure(tree: Tree): Option[PortFigure] = tree match {
       case PortRef(v@ValRef(_), portName, in) ⇒ container.findPortFigure(v.symbol.name, portName, in)
       case PortRef(ThisRef, portName, in) ⇒ container.findPortFigure(portName, in)
       case _ ⇒ None
     }
     def position(tree: Tree): Option[MPoint] = portFigure(tree) map { p ⇒ p.anchor }
-    val route = (position(tree.a), position(tree.b)) match {
-      case (Some(a), Some(b)) ⇒
-        Some(Route((a :: tree.wayPoints) ++ List(b)))
-      case _ ⇒ None
-    }
-    route
+    val aw = position(tree.a).map (p=> Waypoint(p,H)).toList
+    val bw = position(tree.b).map (p=> Waypoint(p,H)).toList
+    Route(bw ::: tree.wayPoints ::: aw)
   }
   var feedback = false
-  def paint = calcRoute match {
-    case Some(r) ⇒ painter.paintRoute(r, feedback, Some(tree))
-    case None ⇒ painter.clear()
-  }
+  def paint = painter.paintRoute(calcRoute,feedback, Some(tree))
   def show() = {
     container.connectionsLayer.add(this);
     paint
