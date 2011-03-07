@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.Ellipse
 import org.eclipse.swt.events.FocusListener
 import org.eclipse.jface.viewers.ICellEditorListener
 import org.eclipse.swt.widgets.Text
@@ -21,7 +22,7 @@ trait ValFigure extends SimpleItem with TreeItem {
   def sym = tree.symbol.asInstanceOf[ValSymbol]
   def pos = tree.pos
   def myLayer = container.layer
-  def container : BoxDefContainer
+  def container: BoxDefContainer
   override def update() {
     super.update()
     val l = sym.tpe match {
@@ -36,16 +37,16 @@ trait ValFigure extends SimpleItem with TreeItem {
     helpers.appendAll(l);
   }
 }
-class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with ValFigure  with RectFeedback {
+class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   override def update() {
     setImage(container.viewerResources.imageFactory(tree.tpe))
     super.update()
   }
 }
-class DirectValFigure(val tree: ValDef, val param:Param, val container: BoxDefContainer) extends TextEditFigure with ValFigure {
+class DirectValFigure(val tree: ValDef, val param: Param, val container: BoxDefContainer) extends TextEditFigure with ValFigure {
   def size = Dimension(40, 20)
-  def text = param.value 
+  def text = param.value
   override def update() {
     fl.setText(text)
     setForegroundColor(Colorizer.color(param.tpe))
@@ -54,14 +55,14 @@ class DirectValFigure(val tree: ValDef, val param:Param, val container: BoxDefCo
 }
 trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
   def text: String;
-  
+
   val pg = new FlowPage()
   pg.setForegroundColor(ColorConstants.black)
   pg.setBounds(new Rectangle(2, 2, 40, 20))
   val fl = new TextFlow()
   pg.add(fl)
   add(pg)
-  
+
   var textCellEditor: TextCellEditor = null
   def edit(onComplete: (String) ⇒ Unit, onCancel: () ⇒ Unit) = {
     if (textCellEditor == null) {
@@ -125,16 +126,45 @@ class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] =
       bdf.connectionsLayer.remove(this)
   }
 }
+class PointFigure(p: Waypoint, bdf: BoxDefContainer) extends Ellipse with Selectable {
+  def show() {
+    setSize(5, 5)
+    setFill(true)
+    setLocation(p.p)
+    setBackgroundColor ( if (p.d == H) ColorConstants.yellow else ColorConstants.blue ) 
+    bdf.connectionsLayer.add(this)
+  }
+  def showFeedback() {}
+  def hideFeedback() {}
+  def hide() {
+    if (bdf.connectionsLayer.getChildren.contains(this))
+      bdf.connectionsLayer.remove(this)
+  }
+}
 class ConnectionPainter(bdf: BoxDefContainer) {
   val lines = Buffer[LineFigure]()
+  val points = Buffer[PointFigure]()
+  def paintCreatingRoute(route: Route) {
+    paintRoute(route, false)
+    lines foreach { _.showIncomplete }
+    if (lines.size >= 2) {
+      lines.head.showFeedback()
+      lines(1).showFeedback()
+    }
+  }
   def paintRoute(route: Route, feedback: Boolean, con: Option[ConnectionDef] = None) {
     clear()
     route.lines foreach { l ⇒ lines += new LineFigure(l, bdf, con) }
-    lines foreach { l ⇒ if (feedback) l.showFeedback() else l.hideFeedback(); l.show }
+    route.points foreach { p => points += new PointFigure(p,bdf) }
+    if (feedback) lines foreach { l ⇒ l.showFeedback() }
+    lines foreach { l ⇒ l.show }
+    points foreach { _.show }
   }
   def clear() {
     lines.foreach { _.hide }
+    points.foreach {_.hide }
     lines.clear
+    points.clear
   }
 }
 // TODO not really a figure right now... no children
@@ -148,12 +178,12 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
       case _ ⇒ None
     }
     def position(tree: Tree): Option[MPoint] = portFigure(tree) map { p ⇒ p.anchor }
-    val aw = position(tree.a).map (p=> Waypoint(p,H)).toList
-    val bw = position(tree.b).map (p=> Waypoint(p,H)).toList
+    val aw = position(tree.a).map(p ⇒ Waypoint(p, H)).toList
+    val bw = position(tree.b).map(p ⇒ Waypoint(p, H)).toList
     Route(bw ::: tree.wayPoints ::: aw)
   }
   var feedback = false
-  def paint = painter.paintRoute(calcRoute,feedback, Some(tree))
+  def paint = painter.paintRoute(calcRoute, feedback, Some(tree))
   def show() = {
     container.connectionsLayer.add(this);
     paint

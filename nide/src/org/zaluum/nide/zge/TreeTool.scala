@@ -295,6 +295,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     var dst: Option[PortFigure] = None
     var src: Option[PortFigure] = None
     var painter: ConnectionPainter = _
+    var dir : OrtoDirection = H
+    var center = true
     val portsTrack = new PortTrack {
       override def onEnter(p: PortFigure) {
         if (p.container == initContainer) {
@@ -309,6 +311,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       enterSingle(initContainer)
       painter = new ConnectionPainter(initContainer.asInstanceOf[BoxDefContainer])
       src = Some(initPort)
+      center = true
+      dir = H
       route = Route(List(Waypoint(initPort.anchor, H)))
       viewer.setCursor(Cursors.HAND)
       move()
@@ -316,7 +320,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     def doEnter {}
     def endConnection() {
       def dstWaypoints = dst map { dstPort ⇒
-        route = route.extend(dstPort.anchor)
+        route = route.close(dstPort.anchor)
         route.points.drop(1)
         } getOrElse (route.points)
       val waypoints = if (src.isDefined) dstWaypoints.dropRight(1) else dstWaypoints
@@ -344,13 +348,17 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
         exit()
       }
     }
+    def extend = dst match {
+      case Some(p) => route.close(p.anchor)
+      case None => Route(Waypoint(currentMouseLocation,H) :: route.changeHead(dir).points)
+    }
     def buttonUp {
       // execute model command
       if (dst.isDefined) {
         endConnection()
       } else {
         // waypoint
-        route = route.extend(end)
+        route = route.changeHead(dir).extend(Waypoint(currentMouseLocation,H))
         println(route)
         move()
       }
@@ -368,15 +376,22 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       portsTrack.hideTip
       selecting.enter()
     }
-    def end = dst match {
-      case Some(df) ⇒ df.anchor
-      case None ⇒ currentMouseLocation
-    }
-
+    
     def move() {
+      import math.abs
       portsTrack.update()
-      val start = src.get.anchor
-      painter.paintRoute(route.extend(end), false)
+      val v = currentMouseLocation - route.head
+      val d = abs (v.x) + abs(v.y)
+      if (d<4) center=true
+      if (center) {
+        if (abs(v.x) > abs(v.y)) {
+          dir = H 
+        }else {
+          dir = V
+        }
+        if (d > 6) center = false
+      }
+      painter.paintCreatingRoute(extend)
     }
     def abort() { exit() }
 
