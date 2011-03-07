@@ -91,7 +91,7 @@ trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
     }
   }
 }
-class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] = None) extends Polyline with Selectable {
+class LineFigure(val l: Line, val r:Route, bdf: BoxDefContainer, val con: Option[ConnectionFigure] = None) extends Polyline with Selectable {
   //setAntialias(1)
   //setForegroundColor(ColorConstants.gray)
   var complete = false
@@ -102,7 +102,7 @@ class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] =
   def showComplete { complete = true; calcStyle }
   def showIncomplete { complete = false; calcStyle }
   def calcStyle {
-    setForegroundColor(Colorizer.color(con map { _.tpe } getOrElse NoSymbol))
+    setForegroundColor(Colorizer.color(con map { _.tree.tpe } getOrElse NoSymbol))
     if (feedback) {
       setLineStyle(SWT.LINE_DASH)
       setLineWidth(2)
@@ -116,7 +116,7 @@ class LineFigure(l: Line, bdf: BoxDefContainer, val con: Option[ConnectionDef] =
     }
   }
   def show() {
-    setStart(new EPoint(l.from.x, l.from.y))
+    setStart(new EPoint(l.start.x, l.start.y))
     setEnd(new EPoint(l.end.x, l.end.y))
     calcStyle
     bdf.connectionsLayer.add(this)
@@ -130,7 +130,7 @@ class PointFigure(p: Waypoint, bdf: BoxDefContainer) extends Ellipse with Select
   def show() {
     setSize(5, 5)
     setFill(true)
-    setLocation(p.p)
+    setLocation(point(p.p))
     setBackgroundColor ( if (p.d == H) ColorConstants.yellow else ColorConstants.blue ) 
     bdf.connectionsLayer.add(this)
   }
@@ -152,9 +152,9 @@ class ConnectionPainter(bdf: BoxDefContainer) {
       lines(1).showFeedback()
     }
   }
-  def paintRoute(route: Route, feedback: Boolean, con: Option[ConnectionDef] = None) {
+  def paintRoute(route: Route, feedback: Boolean, con: Option[ConnectionFigure] = None) {
     clear()
-    route.lines foreach { l ⇒ lines += new LineFigure(l, bdf, con) }
+    route.lines foreach { l ⇒ lines += new LineFigure(l, route, bdf, con) }
     route.points foreach { p => points += new PointFigure(p,bdf) }
     if (feedback) lines foreach { l ⇒ l.showFeedback() }
     lines foreach { l ⇒ l.show }
@@ -183,7 +183,7 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
     Route(bw ::: tree.wayPoints ::: aw)
   }
   var feedback = false
-  def paint = painter.paintRoute(calcRoute, feedback, Some(tree))
+  def paint = painter.paintRoute(calcRoute, feedback, Some(this))
   def show() = {
     container.connectionsLayer.add(this);
     paint

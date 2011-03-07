@@ -6,8 +6,8 @@ import org.zaluum.nide.compiler.{Point ⇒ MPoint,_}
 import scala.collection.mutable.Buffer
 
 object draw2dConversions {
-  implicit def point(p: MPoint): EPoint = new EPoint(p.x, p.y)
-  implicit def dimension(d: Dimension): EDimension = new EDimension(d.w, d.h)
+  def point(p: MPoint): EPoint = new EPoint(p.x, p.y)
+  def dimension(d: Dimension): EDimension = new EDimension(d.w, d.h)
   implicit def rpoint(p: EPoint): MPoint = MPoint(p.x, p.y)
   implicit def rdimension(d: EDimension): Dimension = Dimension(d.width, d.height)
 }
@@ -139,11 +139,11 @@ trait SimpleItem extends Item {
     helpers.foreach { _.hide() }
   }
   def moveFeed(loc: MPoint) {
-    feed.setInnerLocation(loc)
+    feed.setInnerLocation(point(loc))
   }
   def moveDeltaFeed(delta: Vector2) {
     val loc = pos + delta
-    feed.setInnerLocation(loc)
+    feed.setInnerLocation(point(loc))
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))

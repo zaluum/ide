@@ -4,8 +4,8 @@ import org.zaluum.nide.compiler.EditTransformer
 import draw2dConversions._
 import org.eclipse.swt.graphics.Cursor
 import org.eclipse.draw2d.{ Cursors, Figure, IFigure }
-import org.eclipse.draw2d.geometry.{ Point, Rectangle }
-import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
+import org.eclipse.draw2d.geometry.{ Point => EPoint, Rectangle }
+import org.zaluum.nide.compiler.{  _ }
 import scala.collection.JavaConversions._
 import scala.reflect.Manifest._
 import FigureHelper._
@@ -29,7 +29,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
 
     def buttonDown {
       selected = itemOrLineUnderMouse collect { case i: TreeItem ⇒ i }
-      initDrag = currentMouseLocation.getCopy
+      initDrag = currentMouseLocation
       initContainer = current
     }
 
@@ -89,7 +89,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def buttonUp {
       val positions = movables.map { item ⇒
         val oldLoc = item.getBounds.getLocation
-        (item.tree.asInstanceOf[Tree] -> (MPoint(oldLoc.x, oldLoc.y) + delta))
+        (item.tree.asInstanceOf[Tree] -> (Point(oldLoc.x, oldLoc.y) + delta))
       }.toMap
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
@@ -134,7 +134,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       viewer.hideMarquee()
       exit()
     }
-    override def move { viewer.moveMarquee(new Rectangle(currentMouseLocation, initDrag)) } // FIXME
+    override def move { viewer.moveMarquee(new Rectangle(point(currentMouseLocation), point(Point(0,0)))) } // FIXME
   }
   // RESIZING
   val resizing  = new Resizing
@@ -157,7 +157,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
         case _ =>  
       }
     }
-    def command(newPos: MPoint, newSize: Dimension,t:Tree) = new EditTransformer {
+    def command(newPos: Point, newSize: Dimension,t:Tree) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
         case v:ValDef if (v == t) ⇒
           v.copy(size=Some(newSize))

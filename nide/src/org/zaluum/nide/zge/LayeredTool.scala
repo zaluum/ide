@@ -2,23 +2,23 @@ package org.zaluum.nide.zge
 import draw2dConversions._
 import org.eclipse.swt.graphics.Cursor
 import org.eclipse.draw2d.{ Cursors, Figure, IFigure }
-import org.eclipse.draw2d.geometry.{ Point, Rectangle }
-import org.zaluum.nide.compiler.{Point ⇒ MPoint,_ }
+import org.eclipse.draw2d.geometry.{ Point => EPoint, Rectangle }
+import org.zaluum.nide.compiler.{_ }
 import scala.collection.JavaConversions._
 import scala.reflect.Manifest._
 import RichFigure._
 abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   type C <: Container
-  def itemOrLineUnderMouse = current.itemOrLineAt(currentMouseLocation)
-  def currentMouseLocation = translate(current, absMouseLocation)
-  def current : C = viewer.findDeepContainerAt(absMouseLocation) {
+  def itemOrLineUnderMouse = current.itemOrLineAt(point(currentMouseLocation))
+  def currentMouseLocation : Point = translate(current, absMouseLocation)
+  def current : C = viewer.findDeepContainerAt(point(absMouseLocation)) {
     case (f: OpenBoxFigure) ⇒ f.asInstanceOf[C]
   } getOrElse { viewer.asInstanceOf[C] }
   def translate(me: IFigure, p: Point): Point = {
     if (me eq viewport) p
     else {
-      val ep = translate(me.getParent, p.getCopy)
-      me.translateFromParent(ep)
+      val ep = translate(me.getParent, p)
+      me.translateFromParent(point(ep))
       ep
     }
   }
@@ -26,7 +26,7 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     var last: Option[F] = None
     val partial : PartialFunction[AnyRef,F] = { case s if singleType(s)<:<m => s.asInstanceOf[F]}
     def update() {
-      val under: Option[F] = viewer.findDeepAt(absMouseLocation)(partial)
+      val under: Option[F] = viewer.findDeepAt(point(absMouseLocation))(partial)
       if (under == last) return ;
       last foreach { f ⇒ onExit(f); last = None }
       under foreach { f ⇒ onEnter(f); last = Some(f) }
@@ -69,8 +69,9 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     def currentMouseLocation = translate(initContainer, absMouseLocation)
   }
   trait DeltaMove extends ToolState {
-    var initDrag: Point = _
+    private var initDrag: Point = _
     def enterMoving(initDrag: Point) {
+      println("enter moving")
       this.initDrag = initDrag
     }
     def currentMouseLocation: Point

@@ -5,8 +5,8 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.ToolTip
 import draw2dConversions._
 import org.eclipse.draw2d.{ Cursors, Figure }
-import org.eclipse.draw2d.geometry.{ Point, Rectangle }
-import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
+import org.eclipse.draw2d.geometry.{ Point => EPoint, Rectangle }
+import org.zaluum.nide.compiler.{ _ }
 import scala.collection.JavaConversions._
 import org.zaluum.runtime.LoopBox
 
@@ -77,18 +77,23 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       (selected, lineSelected, port) match {
         case (None, _, Some(port)) ⇒ // connect
           portsTrack.hideTip()
+          lineSelected = None
           connecting.enter(initContainer, port)
         case (Some(box), _, _) ⇒
           viewer.selection.updateSelection(Set(box.tree), shift)
+          lineSelected = None
           println(box.tree)
           viewer.refresh()
         case (None, Some(line), _) ⇒
-          line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c), shift); println(c) }
+          line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c.tree), shift); println(c) }
+          lineSelected = None
           viewer.refresh()
         case (None, None, _) ⇒
           viewer.selection.deselectAll()
+          lineSelected = None
           viewer.refresh()
       }
+
     }
     val portsTrack = new PortTrack {
       override def onEnter(p: PortFigure) { super.onEnter(p); port = Some(p) }
@@ -100,10 +105,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
     override def drag { // TODO inherit item drag
       portsTrack.hideTip()
-      (handle, selected) match {
-        case (Some(h), _) ⇒ // resize
+      (handle, selected, lineSelected) match {
+        case (_, _, Some(l)) ⇒
+          segmentMoving.enter(currentMouseLocation,l, initContainer)
+        case (Some(h), _, _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
-        case (None, Some(fig)) ⇒ // select and move
+        case (None, Some(fig), _) ⇒ // select and move
           if (!viewer.selection(fig.tree)) {
             viewer.selection.updateSelection(Set(fig.tree), shift)
             fig.showFeedback()
@@ -112,7 +119,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
             case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
             case _ ⇒ moving.enter(initDrag, initContainer)
           }
-        case (None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
+        case (None, None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
     def delete() {
@@ -138,11 +145,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       feed.setInnerBounds(new Rectangle(0, 0, 48, 48))
       feed.show()
     }
-    def move() { feed.setInnerLocation(currentMouseLocation) }
+    def move() { feed.setInnerLocation(point(currentMouseLocation)) }
     def abort() { exit() }
     def drag() {}
     def buttonUp() {
-      val dst = MPoint(currentMouseLocation.x, currentMouseLocation.y)
+      val dst = Point(currentMouseLocation.x, currentMouseLocation.y)
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
@@ -183,11 +190,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
       feed.show()
     }
-    def move() { feed.setInnerLocation(currentMouseLocation) }
+    def move() { feed.setInnerLocation(point(currentMouseLocation)) }
     def abort() { exit() }
     def drag() {}
     def buttonUp() {
-      val dst = MPoint(currentMouseLocation.x, currentMouseLocation.y)
+      val dst = Point(currentMouseLocation.x, currentMouseLocation.y)
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
@@ -225,18 +232,18 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     }
     var feed: ItemFeedbackFigure = _
     var dir: PortDir = In
-    def move() { feed.setInnerLocation(currentMouseLocation) }
+    def move() { feed.setInnerLocation(point(currentMouseLocation)) }
     def abort() { exit() }
     def drag() {}
     def buttonUp() {
       // execute
-      val pos = MPoint(currentMouseLocation.x, currentMouseLocation.y)
+      val pos = Point(currentMouseLocation.x, currentMouseLocation.y)
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
             val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
             val name = Name(tpe.freshName("port"))
-            val p = PortDef(name, Name("double"), dir, pos, MPoint(0, pos.y))
+            val p = PortDef(name, Name("double"), dir, pos, Point(0, pos.y))
             BoxDef(b.name, b.superName, b.image,
               transformTrees(b.defs),
               transformTrees(b.vals),
@@ -261,10 +268,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       state = this
     }
     def minY = 0
-    def maxY = fig.openBox.size.height
+    def maxY = fig.openBox.size.h
     def posY = fig.relPos.y
     def minDelta = minY - posY
-    def maxDelta = maxY - posY - fig.size.height
+    def maxDelta = maxY - posY - fig.size.h
     def clamp(low: Int, i: Int, high: Int) = math.max(low, math.min(i, high))
     def clampDelta = Vector2(0, clamp(minDelta, delta.y, maxDelta))
     def buttonUp {
@@ -295,7 +302,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
     var dst: Option[PortFigure] = None
     var src: Option[PortFigure] = None
     var painter: ConnectionPainter = _
-    var dir : OrtoDirection = H
+    var dir: OrtoDirection = H
     var center = true
     val portsTrack = new PortTrack {
       override def onEnter(p: PortFigure) {
@@ -322,7 +329,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       def dstWaypoints = dst map { dstPort ⇒
         route = route.close(dstPort.anchor)
         route.points.drop(1)
-        } getOrElse (route.points)
+      } getOrElse (route.points)
       val waypoints = if (src.isDefined) dstWaypoints.dropRight(1) else dstWaypoints
       def toPortRef(p: PortFigure) = {
         def toRef = p.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef }
@@ -349,8 +356,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       }
     }
     def extend = dst match {
-      case Some(p) => route.close(p.anchor)
-      case None => Route(Waypoint(currentMouseLocation,H) :: route.changeHead(dir).points)
+      case Some(p) ⇒ route.close(p.anchor)
+      case None ⇒ Route(Waypoint(currentMouseLocation, H) :: route.changeHead(dir).points)
     }
     def buttonUp {
       // execute model command
@@ -358,7 +365,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
         endConnection()
       } else {
         // waypoint
-        route = route.changeHead(dir).extend(Waypoint(currentMouseLocation,H))
+        route = route.changeHead(dir).extend(Waypoint(currentMouseLocation, H))
         println(route)
         move()
       }
@@ -376,17 +383,17 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
       portsTrack.hideTip
       selecting.enter()
     }
-    
+
     def move() {
       import math.abs
       portsTrack.update()
       val v = currentMouseLocation - route.head
-      val d = abs (v.x) + abs(v.y)
-      if (d<4) center=true
+      val d = abs(v.x) + abs(v.y)
+      if (d < 4) center = true
       if (center) {
         if (abs(v.x) > abs(v.y)) {
-          dir = H 
-        }else {
+          dir = H
+        } else {
           dir = V
         }
         if (d > 6) center = false
@@ -397,5 +404,68 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) {
 
   }
   object connecting extends Connecting with SingleContainer
-
+  // move connections
+  trait SegmentMoving extends ToolState {
+    self :  SingleContainer with DeltaMove  =>
+    var lf: LineFigure = null
+    var painter: ConnectionPainter = _
+    var route: Route = _
+    var before: List[Waypoint] = _
+    var after: List[Waypoint] = _
+    def enter(initPoint:Point, lf: LineFigure, initContainer: BoxDefContainer) {
+      enterMoving(initPoint)
+      enterSingle(initContainer)
+      state = this
+      println("segment moving " + delta + " " + initPoint)
+      this.lf = lf
+      this.route = lf.r
+      val lastIndex = route.points.lastIndexOf(lf.l.from)
+      val (after, before) = route.points.splitAt(lastIndex)
+      this.before = before
+      this.after = after
+      lf.con foreach { _.hide }
+      painter = new ConnectionPainter(initContainer.asInstanceOf[BoxDefContainer])
+      move()
+    }
+    def newRoute = {
+      if (lf.l.primary) {
+        val p = if (lf.l.from.d == V) Waypoint(currentMouseLocation.x, lf.l.from.y + delta.y, V)
+        else Waypoint(lf.l.from.x + delta.x, currentMouseLocation.y, H)
+        val newBefore = before match {
+          case m :: tail ⇒ p :: tail
+          case Nil ⇒ Nil
+        }
+        Route(after ::: newBefore)
+      } else {
+        val p = if (lf.l.from.d == V) Waypoint(lf.l.to.x + delta.x, currentMouseLocation.y, lf.l.to.d )
+        else Waypoint(currentMouseLocation.x, lf.l.to.y + delta.y, lf.l.to.d)
+        Route((after.dropRight(1) :+ p) ::: before)
+      }
+    }
+    def move() {
+      println(delta)
+      painter.paintRoute(newRoute,false)
+    }
+    def buttonUp() {
+      val oldcon = lf.con.get.tree
+      val newcon = oldcon.copy(wayPoints = newRoute.points)
+      val b = initContainer.boxDef
+      controller.exec(
+        new EditTransformer {
+          val trans: PartialFunction[Tree, Tree] = {
+            case b: BoxDef if (b == initContainer.boxDef) ⇒
+              BoxDef(b.name, b.superName, b.image,
+                transformTrees(b.defs),
+                transformTrees(b.vals),
+                transformTrees(b.ports),
+                newcon :: transformTrees(b.connections.filter { _ != oldcon }))
+          }
+        })
+    }
+    def buttonDown() {}
+    def drag() {}
+    def abort() {  exit() }
+    def exit() { painter.clear; selecting.enter }
+  }
+  object segmentMoving extends SegmentMoving  with SingleContainer with DeltaMove 
 }

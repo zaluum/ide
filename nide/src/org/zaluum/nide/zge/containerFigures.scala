@@ -28,7 +28,7 @@ trait Container extends IFigure {
   def layer: Figure
   val helpers: Buffer[ShowHide]
   def feedbackLayer: Figure
-  def itemOrLineAt(p: EPoint, debug: Boolean = false) = this.findDeepAt(p, 0, debug) {
+  def itemOrLineAt(p: Point, debug: Boolean = false) = this.findDeepAt(point(p), 0, debug) {
     case bf: Item ⇒ bf
     case l: LineFigure ⇒ l
   }

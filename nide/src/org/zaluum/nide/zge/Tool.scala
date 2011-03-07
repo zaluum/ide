@@ -2,7 +2,7 @@ package org.zaluum.nide.zge
 
 import scala.annotation.tailrec
 import org.eclipse.draw2d.{ Figure, IFigure }
-import org.eclipse.draw2d.geometry.Point
+import org.zaluum.nide.compiler.Point
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events._
 
@@ -68,16 +68,16 @@ abstract class Tool(viewer: Viewer) {
   
   var state: ToolState = _
   var stateMask = 0
-  var absMouseLocation = new Point
+  var absMouseLocation = Point(0,0)
   var swtMouseLocation = new org.eclipse.swt.graphics.Point(0, 0)
   def updateMouse(me: MouseEvent) {
     stateMask = me.stateMask
     swtMouseLocation.x = me.x
     swtMouseLocation.y = me.y
     swtMouseLocation = canvas.getDisplay.map(canvas, null, swtMouseLocation)
-    absMouseLocation.x = me.x
-    absMouseLocation.y = me.y
-    viewport.translateFromParent(absMouseLocation);
+    val absMouse = new org.eclipse.draw2d.geometry.Point(me.x, me.y)
+    viewport.translateFromParent(absMouse);
+    absMouseLocation = Point(absMouse.x,absMouse.y)
   }
   
   def leftButton(me: MouseEvent) = me.button == 1
