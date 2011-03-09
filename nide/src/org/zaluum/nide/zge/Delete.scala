@@ -38,7 +38,8 @@ object Delete {
             transformTrees(filterDefs(b.defs)),
             transformTrees(filter(b.vals)),
             transformTrees(filter(b.ports)),
-            transformTrees(filterConnections(b.connections)))
+            transformTrees(filterConnections(b.connections)),
+            transformTrees(filter(b.junctions))) // FIXME
       }
     }
   }

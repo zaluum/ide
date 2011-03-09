@@ -84,13 +84,15 @@ trait CopySymbolTransformer extends Transformer {
 trait CopyTransformer extends Transformer {
   val defaultTransform: PartialFunction[Tree, Tree] = {
     case e@EmptyTree ⇒ e
-    case b@BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
+    case b@BoxDef(name, superName, image, defs, vals, ports, connections,junctions) ⇒
       atOwner(b.symbol) {
         BoxDef(name, superName, image,
           transformTrees(defs),
           transformTrees(vals),
           transformTrees(ports),
-          transformTrees(connections))
+          transformTrees(connections),
+          transformTrees(junctions)
+          )
       }
     case PortDef(name, typeName, dir, inPos, extPos) ⇒
       PortDef(name, typeName, dir, inPos, extPos)
@@ -106,6 +108,7 @@ trait CopyTransformer extends Transformer {
     case PortRef(from, name, in) ⇒
       PortRef(transform(from), name, in)
     case ValRef(name) ⇒ ValRef(name)
+    case j:JunctionRef => j 
     case t@ThisRef ⇒ t
   }
 }
@@ -137,12 +140,13 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
     tree match {
       case EmptyTree ⇒
         ;
-      case b@BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
+      case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
         atOwner(tree.symbol) {
           traverseTrees(defs)
           traverseTrees(vals)
           traverseTrees(ports)
           traverseTrees(connections)
+          traverseTrees(junctions)
         }
       case v: ValDef ⇒
         atOwner(tree.symbol){
@@ -173,12 +177,13 @@ object PrettyPrinter {
   }
   def print(tree: Tree, deep: Int): Unit = tree match {
     case EmptyTree ⇒ print("EmptyTree", deep)
-    case b@BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
+    case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
       print("BoxDef(" + name + " extends " + superName + ", " + image, deep)
       print(defs, deep + 1)
       print(vals, deep + 1)
       print(ports, deep + 1)
       print(connections, deep + 1)
+      print(junctions, deep +1)
       print(")", deep)
     case v: ValDef ⇒
       print("ValDef(" + List(v.name,v.pos,v.size,v.typeName,v.guiPos ,v.guiSize).mkString(","), deep)
@@ -237,7 +242,8 @@ case class BoxDef(name: Name, superName:Option[Name],
   defs: List[Tree],
   vals: List[Tree],
   ports: List[Tree],
-  connections: List[Tree]) extends DefTree
+  connections: List[Tree],
+  junctions:List[Tree]) extends DefTree
 sealed trait PortDir
 case object In extends PortDir
 case object Out extends PortDir
@@ -259,3 +265,5 @@ case class ValDef(
     params:List[Tree]) extends DefTree with Positionable
 //case class SizeDef(pos: Point, size: Dimension) extends Tree
 case class ConnectionDef(a: Tree, b: Tree, wayPoints:List[Waypoint]) extends SymTree
+case class Junction(name: Name, p:Point) extends DefTree
+case class JunctionRef(name:Name) extends RefTree

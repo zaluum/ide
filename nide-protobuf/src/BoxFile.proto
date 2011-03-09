@@ -12,7 +12,8 @@ message BoxClassDef {
   repeated BoxClassDef inner_class = 6;
   repeated Instance instance = 7;
   repeated Connection connection =8; 
-  optional string super = 9;
+  repeated Junction junction =9;
+  optional string super = 10;
   message Instance {
 	required string name = 1;
 	required string class_name = 2;
@@ -42,10 +43,21 @@ message BoxClassDef {
   	required Point point =1;
   	required Orto dir = 2;
   }
+  message Ref {
+  	optional JunctionRef junction = 1;
+  	optional PortRef port = 2;
+  }
   message Connection {
-    optional PortRef source = 1;
-    optional PortRef target = 2;
+    required Ref source = 1;
+    required Ref target = 2;
    	repeated Waypoint waypoint = 3; 
+  }
+  message Junction {
+  	required string name = 1;
+  	required Point pos = 2;
+  }
+  message JunctionRef {
+  	required string name = 1;
   }
   message Point {
  	required int32 x =1;

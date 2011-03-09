@@ -21,23 +21,24 @@ case object True extends Tree
 class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = Location(List(0))
-  object swapConnections extends CopyTransformer with CopySymbolTransformer {
+  /*  object swapConnections extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
       case c: ConnectionDef ⇒
         val (from, to) = direction(c)
         ConnectionDef(transform(from), transform(to),c.wayPoints)
     }
-  }
+  }*/
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
-      case b@BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
+      case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
         val orderVals = b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder map { _.decl }
         atOwner(b.symbol) {
           BoxDef(name, superName, image,
             transformTrees(defs),
             transformTrees(orderVals),
             transformTrees(ports),
-            transformTrees(connections))
+            transformTrees(connections),
+            transformTrees(junctions))
         }
     }
   }
@@ -46,7 +47,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       bd.symbol.asInstanceOf[BoxTypeSymbol].visualClass
     }
     def apply(t: Tree) = t match {
-      case b@BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
+      case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
         val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
         val baseFields = (vals ++ ports).map { field(_) }
         val fields = vClass(b) map { vn ⇒
@@ -87,7 +88,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
                 Select(
                   Select(This, FieldRef(valSym.name, valTpe.fqName, bs.fqName)),
                   FieldRef(param.name, param.tpe.name, valTpe.fqName) // TODO FIXME
-                  ),
+),
                 Const(v))
           }
       }
@@ -96,7 +97,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         val widgetCreation: Tree =
           Assign(Select(This, FieldRef(widgetName, vn, bs.fqName)),
             New(vn, NullConst, "(Ljava/awt/LayoutManager;)V"))
-        List(widgetCreation) ++ createWidgets(bs,List(),b)
+        List(widgetCreation) ++ createWidgets(bs, List(), b)
       }
       ConstructorMethod(widgets map { w ⇒ boxCreation ++ ports ++ w } getOrElse (boxCreation ++ ports))
     }
@@ -113,7 +114,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         case v :: tail ⇒ Select(selectPath(tail), fieldRef(v))
       }
     }
-    def createWidget(path: List[ValSymbol], mainBox: BoxDef) : List[Tree]= {
+    def createWidget(path: List[ValSymbol], mainBox: BoxDef): List[Tree] = {
       val vs = path.head
       val valDef = vs.decl.asInstanceOf[ValDef]
       val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
@@ -138,7 +139,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
           Pop)
       } getOrElse List()
     }
-    def createWidgets(b: BoxTypeSymbol, path: List[ValSymbol], mainBox: BoxDef) : List[Tree] = {
+    def createWidgets(b: BoxTypeSymbol, path: List[ValSymbol], mainBox: BoxDef): List[Tree] = {
       b.vals.values.toList flatMap {
         case v: ValSymbol ⇒
           val tpe = v.tpe.asInstanceOf[BoxTypeSymbol];
@@ -148,31 +149,36 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
             createWidget(v :: path, mainBox)
       }
     }
-    def appl(b: BoxDef) = {
+    def appl(b: BoxDef): Method = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
       // propagate initial inputs
-      def execConnection(c: ConnectionDef) = {
+      def execConnection(c: (PortRef, Set[PortRef])) = {
         def toRef(p: Tree): Tree = p match {
           case ThisRef ⇒ This
           case v: ValRef ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
           case p@PortRef(ref, _, _) ⇒
             Select(toRef(ref), FieldRef(p.name, p.tpe.name, p.fromRef.tpe.asInstanceOf[BoxTypeSymbol].fqName))
         }
-        Assign(toRef(c.b), toRef(c.a))
-      }
-      def connections = b.connections collect { case c: ConnectionDef ⇒ c }
-      def propagateInitialInputs = {
-        def initialConnections = connections collect {
-          case c@ConnectionDef(p@PortRef(ThisRef, portName, in), b,_) ⇒ c
+        val (out, ins) = c
+        ins.toList map { in ⇒
+          Assign(toRef(out), toRef(in))
         }
-        initialConnections map { execConnection(_) }
+      }
+      def connections = bs.connections
+      def propagateInitialInputs = {
+        val initialConnections = {
+          connections.flow collect {
+            case c@(PortRef(ThisRef, portName, in), ins) ⇒ c
+          } toList
+        }
+        initialConnections flatMap { execConnection(_) }
       }
       // execute in order
       def runOne(v: ValDef) = {
-        def outConnections = connections collect {
-          case c@ConnectionDef(p@PortRef(vref@ValRef(_), _, _), b,_) if (vref.symbol == v.symbol) ⇒ c
-        }
-        val outs = outConnections map { execConnection(_) }
+        def outConnections = connections.flow collect {
+          case c@(p@PortRef(vref@ValRef(_), _, _), ins) if (vref.symbol == v.symbol) ⇒ c
+        } toList
+        val outs = outConnections flatMap { execConnection(_) }
         val tpe = v.tpe.asInstanceOf[BoxTypeSymbol].fqName
         val invoke = Invoke(
           Select(This, FieldRef(v.name, tpe, bs.fqName)),
@@ -189,8 +195,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
   }
   def run() = {
     val owner = global.root
-    val mutated = orderValDefs(
-      swapConnections(t, owner))
+    val mutated = orderValDefs(t, owner)
     PrettyPrinter.print(mutated, 0)
     rewrite(mutated)
   }

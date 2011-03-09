@@ -68,7 +68,6 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   var ports = Map[Name, Symbol]()
   var vals = Map[Name, Symbol]()
   var boxes = Map[Name, Type]()
-  var connections = Set[ConnectionSymbol]()
   def lookupPort(name: Name): Option[Symbol] = ports.get(name)
   def lookupVal(name: Name): Option[Symbol] = vals.get(name)
   def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name)
@@ -101,9 +100,10 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       define(symbol, currentScope, currentScope.lookupBoxType(symbol.name).isDefined, tree)
     def defineVal(symbol: Symbol, tree: Tree): Symbol =
       define(symbol, currentScope, currentScope.lookupVal(symbol.name).isDefined, tree)
-    def definePort(symbol: Symbol, tree: Tree): Symbol = {
+    def definePort(symbol: Symbol, tree: Tree): Symbol =
       define(symbol, currentScope, currentScope.lookupPort(symbol.name).isDefined, tree)
-    }
+    /*def defineJunction(symbol: Symbol, tree:Tree) : Symbol =
+      define(symbol,currentScope, currentScope.lookupJunction(symbol.name).isDefined,tree)*/
     def define[S <: Symbol](symbol: S, scope: Scope, dupl: Boolean, tree: Tree): S = {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
       symbol.scope = scope
@@ -115,7 +115,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
 
     override def traverse(tree: Tree) {
       tree match {
-        case BoxDef(name, superName, image, defs, vals, ports, connections) ⇒
+        case BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
           val cl = Some(Name(classOf[JPanel].getName))
           val newSym = new BoxTypeSymbol(currentOwner, name, superName, image, cl)
           val sym = defineBox(newSym, tree)
@@ -132,6 +132,8 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           definePort(new PortSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], name, extPos, dir), tree)
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
           defineVal(new ValSymbol(currentOwner, name), tree)
+        /* case j@Junction(name,point) => 
+          defineJunction(new JunctionSymbol(currentOwner.asInstanceOf[BoxTypeSymbol],name,point),tree)*/
         case _ ⇒
           tree.scope = currentScope
       }
@@ -172,6 +174,11 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
         case ThisRef ⇒
           tree.symbol = currentOwner // TODO what symbol for this?
           tree.tpe = currentOwner.asInstanceOf[BoxTypeSymbol]
+        /*case JunctionRef(name) => 
+          tree.symbol = currentScope.lookupJunction(name) getOrElse {
+            error("Junction not found " + name, tree); NoSymbol
+          }
+          tree.tpe = NoSymbol // TODO what type?*/
         case _ ⇒
       }
     }
@@ -185,7 +192,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       try {
         parSymbol.tpe.name match {
           case Name("double") ⇒ valSymbol.params += (parSymbol -> p.value.toDouble)
-          case n ⇒ error("error type " +n.str+ " cannot parse literals", p)
+          case n ⇒ error("error type " + n.str + " cannot parse literals", p)
         }
       } catch {
         case e ⇒ error("invalid literal: " + p.value, p)
@@ -208,10 +215,11 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       }
     }
   }
+  
   class CheckConnections(b: Tree, owner: Symbol) {
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
     var usedInputs = Set[PortRef]()
-    var connections = Buffer[(PortRef, PortRef)]()
+    def check() = Checker.traverse(b)
     object Checker extends Traverser(owner) with ReporterAdapter with ConnectionHelper {
       def location(tree: Tree) = globLocation(tree)
       def reporter = Analyzer.this.reporter
@@ -219,53 +227,67 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
         tree match {
           case b: BoxDef ⇒
             traverseTrees(b.vals)
+            traverseTrees(b.junctions)
             traverseTrees(b.connections)
             b.defs foreach {
               _ match {
-                case bDef: BoxDef ⇒ new CheckConnections(bDef, b.symbol).check
+                case bDef: BoxDef ⇒ new CheckConnections(bDef, b.symbol).check()
               }
             }
-          case c@ConnectionDef(a, b, waypoints) ⇒
-            if (a.symbol == NoSymbol || b.symbol == NoSymbol) {
-              error("incomplete connection " + a + "<->" + b, tree)
-            } else if (a.tpe != b.tpe) {
-              error("connection " + a.tpe + "<->" + b.tpe + " is not type compatible", tree)
-            } else {
-              // check direction
-              val connection = direction(c)
-              connections += connection
-              val (from, to) = connection
-              // check only one connection per input
-              if (usedInputs.contains(to))
-                error("input already used " + to, tree)
-              usedInputs += to
-              // check graph consistency
-              (from.fromRef, to.fromRef) match {
-                case (va: ValRef, vb: ValRef) ⇒
-                  try {
-                    println(va.symbol.name + "->" + vb.symbol.name)
-                    acyclic.addDagEdge(va.symbol.asInstanceOf[ValSymbol], vb.symbol.asInstanceOf[ValSymbol]);
-                  } catch {
-                    case e: CycleFoundException ⇒ error("cycle found ", tree)
-                    case e: IllegalArgumentException => error("loop found", tree)
-                  }
-                case (ThisRef, b) ⇒
-                case (a, ThisRef) ⇒
-              }
-
-              tree.tpe = a.tpe
-            }
+            check()
           case v: ValDef ⇒ acyclic.addVertex(v.symbol.asInstanceOf[ValSymbol])
+          case c@ConnectionDef(a, b, waypoints) ⇒
+            if (a == EmptyTree || b.symbol == EmptyTree) {
+              error("incomplete connection " + a + "<->" + b, tree)
+            } else {
+              currentOwner.asInstanceOf[BoxTypeSymbol].connections.addConnection(c)
+            }
           case _ ⇒
         }
       }
-    }
-
-    def check() {
-      import scala.collection.JavaConversions._
-      Checker.traverse(b)
-      val topo = new TopologicalOrderIterator(acyclic);
-      b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder = topo.toList
+      private def check() {
+        def checkClump(c: BoxTypeSymbol#Clump) {
+          val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
+          val ins = c.ports.filter(p ⇒ isIn(p))
+          val outs = c.ports.filter(!isIn(_))
+          if (outs.size == 0) error("No output connected", c.connections.head)
+          else if (outs.size > 1) error("More than one output is connected", c.connections.head)
+          else if (ins.size == 0) error("No inputs connected", c.connections.head)
+          else {
+            // FIXME this does not work it uses PortRef which is a new instance of each connection. We should make a symbol for the ValDef-PortRef combination
+            if (!usedInputs.intersect(ins).isEmpty) error("input connected multiple times", c.connections.head) // TODO check online to identify offending connection 
+            usedInputs ++= ins
+            // check types
+            val types = c.ports.map { p ⇒ p.tpe }
+            if (types.size != 1) error("Connection with incompatible types " + types.mkString(","), c.connections.head)
+            else {
+              c.connections foreach { _.tpe = types.head }
+            }
+            // check graph consistency
+            val out = outs.head
+            bs.connections.flow += (out -> ins)
+            out.fromRef match {
+              case va: ValRef ⇒
+                ins map { _.fromRef } foreach {
+                  case vb: ValDef ⇒
+                    try {
+                      println(va.symbol.name + "->" + vb.symbol.name)
+                      acyclic.addDagEdge(va.symbol.asInstanceOf[ValSymbol], vb.symbol.asInstanceOf[ValSymbol]);
+                    } catch {
+                      case e: CycleFoundException ⇒ error("cycle found ", c.connections.head)
+                      case e: IllegalArgumentException ⇒ error("loop found", c.connections.head)
+                    }
+                }
+              case _ ⇒
+            }
+          }
+        }
+        val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
+        bs.connections.clumps foreach { checkClump(_) }
+        import scala.collection.JavaConversions._
+        val topo = new TopologicalOrderIterator(acyclic);
+        bs.executionOrder = topo.toList
+      }
     }
   }
   def compile(): Tree = {
@@ -279,20 +301,20 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
 }
 trait ConnectionHelper extends ReporterAdapter {
   implicit def reporter: Reporter
-  def direction(c: ConnectionDef): (PortRef, PortRef) = {
+  def isIn(ap: PortRef): Boolean = ap.symbol match {
+    case s: PortSymbol ⇒
+      (s.dir, ap.fromRef) match {
+        case (In, v: ValRef) ⇒ true
+        case (In, ThisRef) ⇒ false
+        case (Out, v: ValRef) ⇒ false
+        case (Out, ThisRef) ⇒ true
+        case (Shift, v: ValRef) ⇒ ap.in
+        case (Shift, ThisRef) ⇒ ap.in
+      }
+    case _ ⇒ true
+  }
+  /* def direction(c: ConnectionDef): (PortRef, PortRef) = {
     implicit val tree: Tree = c
-    def isIn(ap: PortRef): Boolean = ap.symbol match {
-      case s: PortSymbol ⇒
-        (s.dir, ap.fromRef) match {
-          case (In, v: ValRef) ⇒ true
-          case (In, ThisRef) ⇒ false
-          case (Out, v: ValRef) ⇒ false
-          case (Out, ThisRef) ⇒ true
-          case (Shift, v: ValRef) ⇒ ap.in
-          case (Shift, ThisRef) ⇒ ap.in
-        }
-      case _ ⇒ true
-    }
     (c.a, c.b) match {
       case (ap: PortRef, bp: PortRef) ⇒
         (isIn(ap), isIn(bp)) match {
@@ -301,5 +323,5 @@ trait ConnectionHelper extends ReporterAdapter {
           case _ ⇒ error("invalid connection. Must connect output and inputs.", c); (ap, bp)
         }
     }
-  }
+  }*/
 }

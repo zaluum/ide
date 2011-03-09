@@ -13,7 +13,11 @@ object Parser {
       defs = b.getInnerClassList.map { parse(_) }.toList,
       vals = b.getInstanceList.map { parse(_) }.toList,
       ports = b.getPortList.map { parse(_) }.toList,
-      connections = b.getConnectionList.map { parse(_) }.toList)
+      connections = b.getConnectionList.map { parse(_) }.toList,
+      junctions = b.getJunctionList.map {parse(_)}.toList)
+  }
+  def parse(r: BoxFileProtos.BoxClassDef.Junction) : Junction = {
+    Junction(Name(r.getName), parse(r.getPos))
   }
   def parse(i: BoxFileProtos.BoxClassDef.Instance): ValDef = {
     val guiPos = if (i.hasGuiPos) Some(parse(i.getGuiPos)) else None
@@ -33,9 +37,17 @@ object Parser {
   }
   def parse(c: BoxFileProtos.BoxClassDef.Connection): ConnectionDef = {
     ConnectionDef(
-      if (c.hasSource) parse(c.getSource) else EmptyTree,
-      if (c.hasTarget) parse(c.getTarget) else EmptyTree,
+      parse(c.getSource),
+      parse(c.getTarget),
       c.getWaypointList map { parse(_)} toList)
+  }
+  def parse(ref : BoxFileProtos.BoxClassDef.Ref) : Tree = {
+    if (ref.hasPort) parse(ref.getPort) 
+    else if (ref.hasJunction) parse(ref.getJunction)
+    else EmptyTree
+  }
+  def parse(jref : BoxFileProtos.BoxClassDef.JunctionRef) : JunctionRef = {
+    JunctionRef(Name(jref.getName))
   }
   def parse(w: BoxFileProtos.BoxClassDef.Waypoint) : Waypoint = {
     Waypoint(parse(w.getPoint), if (w.getDir == BoxFileProtos.BoxClassDef.Orto.H) H else V)
