@@ -174,11 +174,6 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
         case ThisRef ⇒
           tree.symbol = currentOwner // TODO what symbol for this?
           tree.tpe = currentOwner.asInstanceOf[BoxTypeSymbol]
-        /*case JunctionRef(name) => 
-          tree.symbol = currentScope.lookupJunction(name) getOrElse {
-            error("Junction not found " + name, tree); NoSymbol
-          }
-          tree.tpe = NoSymbol // TODO what type?*/
         case _ ⇒
       }
     }
@@ -217,6 +212,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
   }
   
   class CheckConnections(b: Tree, owner: Symbol) {
+    val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
     var usedInputs = Set[PortRef]()
     def check() = Checker.traverse(b)
@@ -236,11 +232,16 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             }
             check()
           case v: ValDef ⇒ acyclic.addVertex(v.symbol.asInstanceOf[ValSymbol])
+          case j@Junction(name,_) =>
+            bs.connections.lookupJunction(name) match {
+              case Some(j) => error("junction name already exists", j)
+              case None => bs.connections.junctions += j
+            }
           case c@ConnectionDef(a, b, waypoints) ⇒
             if (a == EmptyTree || b.symbol == EmptyTree) {
               error("incomplete connection " + a + "<->" + b, tree)
             } else {
-              currentOwner.asInstanceOf[BoxTypeSymbol].connections.addConnection(c)
+              bs.connections.addConnection(c)
             }
           case _ ⇒
         }
@@ -269,7 +270,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             out.fromRef match {
               case va: ValRef ⇒
                 ins map { _.fromRef } foreach {
-                  case vb: ValDef ⇒
+                  case vb: ValRef ⇒
                     try {
                       println(va.symbol.name + "->" + vb.symbol.name)
                       acyclic.addDagEdge(va.symbol.asInstanceOf[ValSymbol], vb.symbol.asInstanceOf[ValSymbol]);

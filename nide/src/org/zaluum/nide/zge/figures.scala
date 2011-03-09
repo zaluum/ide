@@ -13,7 +13,7 @@ import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
+import org.zaluum.nide.compiler._
 import scala.collection.mutable.Buffer
 
 // TREE SPECIFIC FIGURES
@@ -119,12 +119,18 @@ class LineFigure(val l: Line, val r:Route, bdf: BoxDefContainer, val con: Option
     setStart(new EPoint(l.start.x, l.start.y))
     setEnd(new EPoint(l.end.x, l.end.y))
     calcStyle
-    bdf.connectionsLayer.add(this)
+    if (con.isDefined) {
+      bdf.connectionsLayer.add(this)
+    }else {
+      bdf.feedbackLayer.add(this)
+    }
   }
   def hide() {
-    if (bdf.connectionsLayer.getChildren.contains(this))
-      bdf.connectionsLayer.remove(this)
+    val layer = if (con.isDefined) bdf.connectionsLayer else bdf.feedbackLayer
+    if (layer.getChildren.contains(this))
+      layer.remove(this)
   }
+  
 }
 class PointFigure(p: Waypoint, bdf: BoxDefContainer) extends Ellipse with Selectable {
   def show() {
@@ -171,19 +177,20 @@ class ConnectionPainter(bdf: BoxDefContainer) {
 class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) extends TreeItem {
   type T = ConnectionDef
   val painter = new ConnectionPainter(container)
-  def calcRoute = {
-    def portFigure(tree: Tree): Option[PortFigure] = tree match {
+  def route = {
+    /*def portFigure(tree: Tree): Option[PortFigure] = tree match {
       case PortRef(v@ValRef(_), portName, in) ⇒ container.findPortFigure(v.symbol.name, portName, in)
       case PortRef(ThisRef, portName, in) ⇒ container.findPortFigure(portName, in)
       case _ ⇒ None
     }
-    def position(tree: Tree): Option[MPoint] = portFigure(tree) map { p ⇒ p.anchor }
+    def position(tree: Tree): Option[Point] = portFigure(tree) map { p ⇒ p.anchor }
     val aw = position(tree.a).map(p ⇒ Waypoint(p, H)).toList
     val bw = position(tree.b).map(p ⇒ Waypoint(p, H)).toList
-    Route(bw ::: tree.wayPoints ::: aw)
+    Route(bw ::: tree.wayPoints ::: aw)*/
+    Route(tree.wayPoints)
   }
   var feedback = false
-  def paint = painter.paintRoute(calcRoute, feedback, Some(this))
+  def paint = painter.paintRoute(route, feedback, Some(this))
   def show() = {
     container.connectionsLayer.add(this);
     paint
@@ -203,5 +210,5 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {}
   def moveDeltaFeed(delta: Vector2) {}
-  def moveFeed(p: MPoint) {}
+  def moveFeed(p: Point) {}
 }

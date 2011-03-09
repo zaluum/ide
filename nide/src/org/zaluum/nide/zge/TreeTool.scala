@@ -78,16 +78,21 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case (None, _, Some(port)) ⇒ // connect
           portsTrack.hideTip()
           lineSelected = None
-          connecting.enter(initContainer, port)
+          connecting.enter(initContainer, port,currentMouseLocation)
         case (Some(box), _, _) ⇒
           viewer.selection.updateSelection(Set(box.tree), shift)
           lineSelected = None
           println(box.tree)
           viewer.refresh()
         case (None, Some(line), _) ⇒
-          line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c.tree), shift); println(c) }
-          lineSelected = None
-          viewer.refresh()
+          if (line.l.distance(currentMouseLocation) <=2) {
+            line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c.tree), shift); println(c) }
+            lineSelected = None
+            viewer.refresh()
+          }else {
+            println("connecting line")
+            connecting.enter(initContainer,line,currentMouseLocation)
+          }
         case (None, None, _) ⇒
           viewer.selection.deselectAll()
           lineSelected = None

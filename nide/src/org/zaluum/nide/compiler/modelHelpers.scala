@@ -22,6 +22,9 @@ case class Point(x: Int, y: Int) extends Tuple2 {
 }
 case class Vector2(x: Int, y: Int) extends Tuple2 {
   def +(v: Vector2) = Vector2(x + v.x, y + v.y)
+  def dot(v:Vector2) : Double = x*v.x + y*v.y
+  def *(d: Double) = Vector2((x*d).asInstanceOf[Int], (y*d).asInstanceOf[Int])
+  def toPoint : Point = Point(x,y)
 }
 object Geometry {
   def maxDim(a: Dimension, b: Dimension) = Dimension(math.max(a.w, b.w), math.max(a.h, b.h))

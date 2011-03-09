@@ -108,7 +108,8 @@ trait CopyTransformer extends Transformer {
     case PortRef(from, name, in) ⇒
       PortRef(transform(from), name, in)
     case ValRef(name) ⇒ ValRef(name)
-    case j:JunctionRef => j 
+    case j:JunctionRef => j.copy()
+    case j:Junction => j.copy()
     case t@ThisRef ⇒ t
   }
 }
@@ -159,6 +160,8 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
       case p:PortDef ⇒
       case PortRef(tree, _, _) ⇒
         traverse(tree)
+      case j:Junction =>
+      case j:JunctionRef =>
       case ValRef(_) ⇒
       case ThisRef ⇒
     }
@@ -206,8 +209,6 @@ object PrettyPrinter {
       print(tree, deep + 1)
       print(a + ", " + b, deep + 1)
       print(")", deep)
-    case v@ValRef(_) ⇒ print(v.toString, deep)
-    case ThisRef ⇒ print(ThisRef.toString, deep)
     case _ ⇒ print(tree.toString, deep)
   }
 }

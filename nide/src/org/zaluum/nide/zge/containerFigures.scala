@@ -28,10 +28,11 @@ trait Container extends IFigure {
   def layer: Figure
   val helpers: Buffer[ShowHide]
   def feedbackLayer: Figure
-  def itemOrLineAt(p: Point, debug: Boolean = false) = this.findDeepAt(point(p), 0, debug) {
+  protected def itemOrLineAtIn(container:Figure,p:Point,debug:Boolean=false) : Option[Figure]= container.findDeepAt(point(p), 0, debug) {
     case bf: Item ⇒ bf
     case l: LineFigure ⇒ l
-  }
+  } 
+  def itemOrLineAt(p: Point, debug: Boolean = false) :Option[Figure]= itemOrLineAtIn(layer,p,debug) 
   def clear() {
     layer.removeAll()
     feedbackLayer.removeAll()
@@ -42,6 +43,11 @@ trait BoxDefContainer extends Container {
   def boxDef: BoxDef
   def connectionsLayer: Figure
   def portsLayer: Figure
+  override def itemOrLineAt(p:Point, debug:Boolean = false) = {
+    super.itemOrLineAt(p, debug) 
+    .orElse (itemOrLineAtIn(connectionsLayer,p,debug)) 
+    .orElse (itemOrLineAtIn(portsLayer,p,debug)) 
+  }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒

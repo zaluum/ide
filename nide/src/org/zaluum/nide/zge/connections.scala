@@ -28,8 +28,24 @@ object H extends OrtoDirection {
 }*/
 case class Line(val from: Waypoint, val to: Waypoint, primary: Boolean) {
   def midPoint = if (from.d == V) Point(from.x, to.y) else Point(to.x, from.y)
-  def start = if (primary) from.p  else midPoint
+  def start = if (primary) from.p else midPoint
   def end = if (primary) midPoint else to.p
+  def dir = if (primary) from.d else from.d.orto
+  def project(p: Point): Point = {
+    val a = p - start
+    val b = end - start
+    val ab = a dot b
+    val bb = b dot b
+    val div = ab / bb
+    val v = b * div
+    start + v
+  }
+  def distance(p: Point): Double = {
+    java.awt.geom.Line2D.ptSegDist(start.x, start.y, end.x, end.y, p.x, p.y)
+  }
+  def contains(p: Point): Boolean = {
+    distance(p) < 0.001
+  }
 }
 /*case class Line(val dir: OrtoDirection, val from: Point, val len: Int) {
   def canExtendTo(to: Point) = dir.const(from) == dir.const(to)
@@ -52,6 +68,28 @@ case class Route(points: List[Waypoint]) {
       (mid.d == V && mid.x == from.x) || (mid.y == to.y)
     } else {
       (mid.d == H && mid.y == from.y) || (mid.x == to.x)
+    }
+  }
+  // p has to lie in some segment of the route
+  def split(p: Point): (Route, Route) = {
+    val seg = lines.find(_.contains(p)).get
+    val after = points.takeWhile(_ != seg.to)
+    val before = points.dropWhile(_ != seg.from).drop(1)
+    (Route(Waypoint(p, H) :: seg.from :: before),
+      Route(after ::: seg.to :: Waypoint(p, H) :: Nil))
+  }
+  def extend(to: Waypoint, dir: OrtoDirection): Route = {
+    points match {
+      case h :: Nil ⇒ // h is H
+        if (dir == H) { // make an N
+          val mid = Point(h.x + (to.x - h.x) / 2, to.y)
+          extend(Waypoint(mid, H)).extend(to)
+        } else {
+          extend(to)
+        }
+      case h :: tail ⇒
+        Route(tail).extend(Waypoint(h.p, dir.orto)).extend(to)
+      case _ ⇒ extend(to)
     }
   }
   def extend(to: Waypoint): Route = {
@@ -83,14 +121,6 @@ case class Route(points: List[Waypoint]) {
     }
   }
   def head = points.head.p
-  def close(p: Point): Route = {
-    points match {
-      case h :: Nil ⇒
-        val mid = Point(h.x + (p.x - h.x) / 2, p.y)
-        Route(Waypoint(p, H) :: Waypoint(mid, V) :: h :: Nil)
-      case _ ⇒ extend(Waypoint(p, H))
-    }
-  }
   def ¬(src: Waypoint, dst: Waypoint) = {
     if (src.p == dst.p) {
       List()
@@ -100,7 +130,7 @@ case class Route(points: List[Waypoint]) {
       List(Line(H, src.p, dst.x - src.x))
     } */ else {
       val despl = dst.x - src.x
-      List(Line(src,dst,true), Line(src,dst,false))
+      List(Line(src, dst, true), Line(src, dst, false))
     }
   }
   lazy val lines = makePath(points)

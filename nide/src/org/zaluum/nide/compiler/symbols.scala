@@ -33,7 +33,9 @@ class BoxTypeSymbol(
   val abstractCl: Boolean = false) extends LocalScope(owner.scope) with Symbol with Type {
 
   case class Clump(var junctions: Set[Junction], var ports: Set[PortRef], var connections: Set[ConnectionDef])
-  object connections {
+  object connections  extends Namer{
+    var junctions = Set[Junction]()
+    def usedNames = junctions map { _.name.str}
     var flow = Map[PortRef, Set[PortRef]]()
     var clumps = Buffer[Clump]()
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) = {
@@ -42,6 +44,7 @@ class BoxTypeSymbol(
         case None ⇒ clumps += Clump(Set(j), Set(a), Set(c))
       }
     }
+    def lookupJunction(n:Name) = { junctions.find{_.name == n} }
     def merge(j1: Junction, j2: Junction, c: ConnectionDef) {
       val c1 = clumps.find(_.junctions.contains(j1))
       val c2 = clumps.find(_.junctions.contains(j2))
@@ -67,10 +70,10 @@ class BoxTypeSymbol(
     }
     def addConnection(c: ConnectionDef) = {
       (c.a, c.b) match {
-        case (p: PortRef, j: Junction) ⇒ addPort(j, p, c)
-        case (j: Junction, p: PortRef) ⇒ addPort(j, p, c)
+        case (p: PortRef, j: JunctionRef) ⇒ addPort(lookupJunction(j.name).get, p, c)
+        case (j: JunctionRef, p: PortRef) ⇒ addPort(lookupJunction(j.name).get, p, c)
         case (p1: PortRef, p2: PortRef) ⇒ addPorts(p1, p2, c)
-        case (j1: Junction, j2: Junction) ⇒ merge(j1, j2, c)
+        case (j1: JunctionRef, j2: JunctionRef) ⇒ merge(lookupJunction(j1.name).get, lookupJunction(j2.name).get, c)
         case _ ⇒
       }
     }
