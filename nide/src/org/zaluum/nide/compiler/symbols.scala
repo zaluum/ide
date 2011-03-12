@@ -23,7 +23,12 @@ class PrimitiveJavaType(owner: Symbol, name: Name, override val descriptor: Stri
 class ClassJavaType(val owner: Symbol, val name: Name) extends Type {
   scope = owner.scope
 }
-
+object PortPath {
+  def apply(p: PortRef): PortPath = PortPath(p.fromRef.symbol, p.symbol)
+}
+// from can be BoxTypeSymbol if it is "this" or ValSymbol
+case class PortPath(from: Symbol, port: Symbol)
+case class Clump(var junctions: Set[Junction], var ports: Set[PortPath], var connections: Set[ConnectionDef])
 class BoxTypeSymbol(
   val owner: Symbol,
   val name: Name,
@@ -32,48 +37,59 @@ class BoxTypeSymbol(
   val visualClass: Option[Name],
   val abstractCl: Boolean = false) extends LocalScope(owner.scope) with Symbol with Type {
 
-  case class Clump(var junctions: Set[Junction], var ports: Set[PortRef], var connections: Set[ConnectionDef])
-  object connections  extends Namer{
+  object connections extends Namer {
     var junctions = Set[Junction]()
-    def usedNames = junctions map { _.name.str}
-    var flow = Map[PortRef, Set[PortRef]]()
+    def usedNames = junctions map { _.name.str }
+    var flow = Map[PortPath, Set[PortPath]]()
     var clumps = Buffer[Clump]()
-    def addPort(j: Junction, a: PortRef, c: ConnectionDef) = {
-      clumps.find(_.junctions.contains(j)) match {
-        case Some(clump) ⇒ clump.ports += a; clump.connections += c
-        case None ⇒ clumps += Clump(Set(j), Set(a), Set(c))
-      }
+    def clumpOf(c: ConnectionDef) = clumps find { _.connections.contains(c) }
+    def clumpOf(p: PortPath) = clumps find { _.ports.contains(p) }
+    def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
+    def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
+      val sym = PortPath(a)
+      val newClump = merge(clumpOf(sym), clumpOf(j))
+      newClump.connections += c
+      newClump.ports += sym
+      newClump.junctions += j
     }
-    def lookupJunction(n:Name) = { junctions.find{_.name == n} }
-    def merge(j1: Junction, j2: Junction, c: ConnectionDef) {
-      val c1 = clumps.find(_.junctions.contains(j1))
-      val c2 = clumps.find(_.junctions.contains(j2))
-      (c1, c2) match {
-        case (Some(a), Some(b)) if !(a eq b) ⇒ // merge clumps 
-          clumps -= b;
-          a.junctions ++= b.junctions;
-          a.ports ++= b.ports;
-          a.connections ++= b.connections;
-        case (None, None) ⇒ // new clump 
-          clumps += Clump(Set(j1, j2), Set(), Set(c))
-        case (Some(a), None) ⇒
-          a.junctions += j2;
-          a.connections += c
-        case (None, Some(b)) ⇒
-          b.junctions += j1;
-          b.connections += c
-        case _ ⇒
-      }
+    def addPorts(a: PortRef, b: PortRef, c: ConnectionDef) {
+      val as = PortPath(a)
+      val bs = PortPath(b)
+      val newClump = merge(clumpOf(as), clumpOf(bs))
+      newClump.connections += c
+      newClump.ports ++= Set(as, bs)
     }
-    def addPorts(a: PortRef, b: PortRef, c: ConnectionDef) = {
-      clumps += Clump(Set(), Set(a, b), Set(c))
+    def addJunctions(j1: Junction, j2: Junction, c: ConnectionDef) {
+      val newClump = merge(clumpOf(j1), clumpOf(j2))
+      newClump.connections += c
+      newClump.junctions ++= Set(j1, j2)
+    }
+    def lookupJunction(n: Name) = { junctions.find { _.name == n } }
+    def merge(a: Option[Clump], b: Option[Clump]): Clump = {
+      (a, b) match {
+        case (Some(c1), Some(c2)) ⇒
+          if (c1 != c2) {
+            clumps -= c2
+            c1.ports ++= c2.ports
+            c1.connections ++= c2.connections
+            c1.junctions ++= c2.junctions
+          }
+          c1
+        case (Some(c1), None) ⇒ c1
+        case (None, Some(c2)) ⇒ c2
+        case (None, None) ⇒
+          val clump = Clump(Set(), Set(), Set())
+          clumps += clump
+          clump
+      }
     }
     def addConnection(c: ConnectionDef) = {
       (c.a, c.b) match {
         case (p: PortRef, j: JunctionRef) ⇒ addPort(lookupJunction(j.name).get, p, c)
         case (j: JunctionRef, p: PortRef) ⇒ addPort(lookupJunction(j.name).get, p, c)
         case (p1: PortRef, p2: PortRef) ⇒ addPorts(p1, p2, c)
-        case (j1: JunctionRef, j2: JunctionRef) ⇒ merge(lookupJunction(j1.name).get, lookupJunction(j2.name).get, c)
+        case (j1: JunctionRef, j2: JunctionRef) ⇒ addJunctions(lookupJunction(j1.name).get, lookupJunction(j2.name).get, c)
+        // FIXME not connected EmptyTrees
         case _ ⇒
       }
     }

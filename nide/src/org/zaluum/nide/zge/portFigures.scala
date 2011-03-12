@@ -18,6 +18,7 @@ class PortFigure(val ipos: MPoint,
   def size = Dimension(6, 6)
   def pos = MPoint(ipos.x - size.w/2, ipos.y-size.h / 2)
   def anchor = getBounds.getCenter
+  lazy val portPath = PortPath(valSym getOrElse container.symbol, sym)
   override def showFeedback() {
     setForegroundColor(ColorConstants.lightGray)
     setBackgroundColor(Colorizer.color(sym.tpe))

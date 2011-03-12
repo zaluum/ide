@@ -152,12 +152,12 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     def appl(b: BoxDef): Method = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
       // propagate initial inputs
-      def execConnection(c: (PortRef, Set[PortRef])) = {
-        def toRef(p: Tree): Tree = p match {
-          case ThisRef ⇒ This
-          case v: ValRef ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
-          case p@PortRef(ref, _, _) ⇒
-            Select(toRef(ref), FieldRef(p.name, p.tpe.name, p.fromRef.tpe.asInstanceOf[BoxTypeSymbol].fqName))
+      def execConnection(c: (PortPath, Set[PortPath])) = {
+        def toRef(p: AnyRef): Tree = p match {
+          case b:BoxTypeSymbol ⇒ This
+          case v: ValSymbol ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
+          case PortPath(from, p@port) ⇒
+            Select(toRef(from), FieldRef(p.name, p.tpe.name, from.tpe.asInstanceOf[BoxTypeSymbol].fqName))
         }
         val (out, ins) = c
         ins.toList map { in ⇒
@@ -168,7 +168,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       def propagateInitialInputs = {
         val initialConnections = {
           connections.flow collect {
-            case c@(PortRef(ThisRef, portName, in), ins) ⇒ c
+            case c@(PortPath(from:BoxTypeSymbol, _),_) ⇒ c
           } toList
         }
         initialConnections flatMap { execConnection(_) }
@@ -176,7 +176,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       // execute in order
       def runOne(v: ValDef) = {
         def outConnections = connections.flow collect {
-          case c@(p@PortRef(vref@ValRef(_), _, _), ins) if (vref.symbol == v.symbol) ⇒ c
+          case c@(p@PortPath(vref:ValSymbol, _), ins) if (vref == v.symbol) ⇒ c
         } toList
         val outs = outConnections flatMap { execConnection(_) }
         val tpe = v.tpe.asInstanceOf[BoxTypeSymbol].fqName

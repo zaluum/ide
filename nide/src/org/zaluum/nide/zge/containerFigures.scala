@@ -41,6 +41,7 @@ trait Container extends IFigure {
 }
 trait BoxDefContainer extends Container {
   def boxDef: BoxDef
+  def symbol: BoxTypeSymbol = boxDef.symbol.asInstanceOf[BoxTypeSymbol]
   def connectionsLayer: Figure
   def portsLayer: Figure
   override def itemOrLineAt(p:Point, debug:Boolean = false) = {

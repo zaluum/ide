@@ -21,11 +21,37 @@ object H extends OrtoDirection {
   def orto = V
   override def toString = "H"
 }
-/*object Line {
-  def apply(dir: OrtoDirection, from: Point, to: Point): Line = {
-    Line(dir, from, dir.vari(to - from))
+case class Interval(start: Int, end: Int) {
+  def low = math.min(start,end)
+  def high = math.max(start,end)
+  def intersect(other: Interval, nearEnd : Boolean): Option[Int] = {
+    if (other.high < low || other.low > high) None // |--| <-->
+    else {
+      if (nearEnd) {
+        if (end>start) {
+          if (other.low>=start && other.high <= end) Some(other.high) // s--<--(>)--e
+          else if (other.low <= end) Some(end)                        // s--<--(e)-->
+          else Some(other.high)                                       // <--s--(>)--e
+        }else {
+          if (other.low>=end && other.high <= start) Some(other.low)  // e--(<)-->--s
+          else if (other.low <= start) Some(other.low)                // e--(<)--s-->
+          else Some(end)                                              // <--(e)-->--s          
+        }
+      }else { // near start
+        if (end>start) { 
+          if (other.low>=start && other.high <= end) Some(other.low)  // s--(<)-->--e
+          else if (other.low <= end) Some(other.low)                  // s--(<)--e-->
+          else Some(start)                                            // <--(s)-->--e
+        }else {
+          if (other.low>=end && other.high <= start) Some(other.high) // e--<--(>)--s
+          else if (other.low <= start) Some(start)                    // e--<--(s)-->
+          else Some(other.high)                                       // <--e--(>)--s          
+        }
+      }
+    }
   }
-}*/
+  def contains(i: Int) = i >= low && i <= high
+}
 case class Line(val from: Waypoint, val to: Waypoint, primary: Boolean) {
   def midPoint = if (from.d == V) Point(from.x, to.y) else Point(to.x, from.y)
   def start = if (primary) from.p else midPoint
@@ -46,6 +72,28 @@ case class Line(val from: Waypoint, val to: Waypoint, primary: Boolean) {
   def contains(p: Point): Boolean = {
     distance(p) < 0.001
   }
+  import math.{ min, max }
+  def intervalX = Interval(start.x, end.x)
+  def intervalY = Interval(start.y, end.y)
+
+  def intersect(other: Line, nearEnd : Boolean): Option[Point] = {
+    (dir, other.dir) match {
+      case (H, H) ⇒
+        if (start.y != other.start.y) None
+        else intervalX.intersect(other.intervalX, nearEnd) map (x ⇒ Point(x, start.y))
+      case (V, V) ⇒
+        if (start.x != other.start.x) None
+        else intervalY.intersect(other.intervalY, nearEnd) map (y ⇒ Point(start.x, y))
+      case (H, V) ⇒
+        if (intervalX.contains(other.start.x) && other.intervalY.contains(start.y))
+          Some(Point(other.start.x, start.y))
+        else None
+      case (V, H) ⇒
+        if (intervalY.contains(other.start.y) && other.intervalX.contains(start.x))
+          Some(Point(start.x, other.start.y))
+        else None
+    }
+  }
 }
 /*case class Line(val dir: OrtoDirection, val from: Point, val len: Int) {
   def canExtendTo(to: Point) = dir.const(from) == dir.const(to)
@@ -55,6 +103,22 @@ case class Line(val from: Waypoint, val to: Waypoint, primary: Boolean) {
     case V ⇒ Point(from.x, from.y + len)
   }
 }*/
+
+/*// routes should be connected by their ends
+case class Graph(routes:List[Route]) {
+  lazy val jointPoints = {
+    var map = Map[Point,Set[Route]]()
+    for (r<-routes) {
+      val p = wp.p
+      if (map.contains(p))
+        map += (p -> (map(p) +r))
+      else 
+        map += (p -> Set(r))
+      map.filterNot {e => e._2.size==1 }
+    }
+  }
+  
+}*/
 object Waypoint {
   def apply(x: Int, y: Int, d: OrtoDirection): Waypoint = Waypoint(Point(x, y), d)
 }
@@ -63,6 +127,35 @@ case class Waypoint(p: Point, d: OrtoDirection) {
   def x = p.x
 }
 case class Route(points: List[Waypoint]) {
+  private def intersection(remaining: List[Line], nearEnd:Boolean,others: List[ConnectionDef], toPoint: (Line ⇒ Point)): Option[(ConnectionDef,Line, Point)] =
+    remaining match {
+      case Nil ⇒ None
+      case h :: tail ⇒
+        
+        val intersections: List[(ConnectionDef,Point)] = for {
+          cd ← others
+          ol ← cd.route.lines
+          p ← ol.intersect(h,!nearEnd)
+        } yield (cd,p)
+        if (intersections.isEmpty) {
+          intersection(tail, nearEnd, others, toPoint)
+        } else {
+          val (cd,p) = intersections.reduceLeft{
+            (a,b) ⇒ 
+            val (ra,ap) = a
+            val (rb,bp) = b
+            if (ap.distanceOrto(toPoint(h)) < bp.distanceOrto(toPoint(h))) a else b
+          }
+          Some((cd,h, p))
+        }
+    }
+
+  def lastIntersection(others: List[ConnectionDef]): Option[(ConnectionDef,Line, Point)] = {
+    intersection(lines, false, others, _.end)
+  }
+  def firstIntersection(others: List[ConnectionDef]): Option[(ConnectionDef, Line, Point)] = {
+    intersection(lines.reverse, true, others, _.start)
+  }
   def liesIn(from: Waypoint, mid: Waypoint, to: Waypoint) = {
     if (from.d == V) {
       (mid.d == V && mid.x == from.x) || (mid.y == to.y)
@@ -75,8 +168,12 @@ case class Route(points: List[Waypoint]) {
     val seg = lines.find(_.contains(p)).get
     val after = points.takeWhile(_ != seg.to)
     val before = points.dropWhile(_ != seg.from).drop(1)
-    (Route(Waypoint(p, H) :: seg.from :: before),
-      Route(after ::: seg.to :: Waypoint(p, H) :: Nil))
+    val wp = Waypoint(p,H)
+    val fbefore = if (seg.from.p != p) Route(Waypoint(p,H) :: seg.from :: before)
+      else Route(Waypoint(p,H) :: before)
+    val fafter = if (seg.to.p!=p ) Route(after ::: seg.to :: Waypoint(p,H) :: Nil) 
+      else Route(after ::: Waypoint(p,H) :: Nil)
+    (fbefore,fafter)
   }
   def extend(to: Waypoint, dir: OrtoDirection): Route = {
     points match {
@@ -124,11 +221,7 @@ case class Route(points: List[Waypoint]) {
   def ¬(src: Waypoint, dst: Waypoint) = {
     if (src.p == dst.p) {
       List()
-    } /*else if (src.x == dst.x) {
-      List(Line(V, src.p, dst.y - src.y))
-    } else if (src.y == dst.p.y) {
-      List(Line(H, src.p, dst.x - src.x))
-    } */ else {
+    } else {
       val despl = dst.x - src.x
       List(Line(src, dst, true), Line(src, dst, false))
     }
