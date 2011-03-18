@@ -52,11 +52,11 @@ case class Interval(start: Int, end: Int) {
   }
   def contains(i: Int) = i >= low && i <= high
 }
-case class Line(val from: Waypoint, val to: Waypoint, primary: Boolean) {
-  def midPoint = if (from.d == V) Point(from.x, to.y) else Point(to.x, from.y)
-  def start = if (primary) from.p else midPoint
-  def end = if (primary) midPoint else to.p
-  def dir = if (primary) from.d else from.d.orto
+case class Line(val from: Point, val to: Point, primary: Boolean) {
+  def midPoint = Point(to.x, from.y)
+  def start = if (primary) from else midPoint
+  def end = if (primary) midPoint else to
+  def dir = if (primary) H else V
   def project(p: Point): Point = {
     val a = p - start
     val b = end - start
@@ -83,7 +83,10 @@ case class Line(val from: Waypoint, val to: Waypoint, primary: Boolean) {
         else intervalX.intersect(other.intervalX, nearEnd) map (x ⇒ Point(x, start.y))
       case (V, V) ⇒
         if (start.x != other.start.x) None
-        else intervalY.intersect(other.intervalY, nearEnd) map (y ⇒ Point(start.x, y))
+        else {
+          val p = intervalY.intersect(other.intervalY, nearEnd) map (y ⇒ Point(start.x, y))
+          p
+        }
       case (H, V) ⇒
         if (intervalX.contains(other.start.x) && other.intervalY.contains(start.y))
           Some(Point(other.start.x, start.y))
@@ -95,30 +98,7 @@ case class Line(val from: Waypoint, val to: Waypoint, primary: Boolean) {
     }
   }
 }
-/*case class Line(val dir: OrtoDirection, val from: Point, val len: Int) {
-  def canExtendTo(to: Point) = dir.const(from) == dir.const(to)
-  def extendTo(to: Point) = { copy(len = dir.vari(to - from)) }
-  def end = dir match {
-    case H ⇒ Point(from.x + len, from.y)
-    case V ⇒ Point(from.x, from.y + len)
-  }
-}*/
 
-/*// routes should be connected by their ends
-case class Graph(routes:List[Route]) {
-  lazy val jointPoints = {
-    var map = Map[Point,Set[Route]]()
-    for (r<-routes) {
-      val p = wp.p
-      if (map.contains(p))
-        map += (p -> (map(p) +r))
-      else 
-        map += (p -> Set(r))
-      map.filterNot {e => e._2.size==1 }
-    }
-  }
-  
-}*/
 object Waypoint {
   def apply(x: Int, y: Int, d: OrtoDirection): Waypoint = Waypoint(Point(x, y), d)
 }
@@ -164,17 +144,17 @@ case class Route(points: List[Waypoint]) {
     }
   }
   // p has to lie in some segment of the route
-  def split(p: Point): (Route, Route) = {
-    val seg = lines.find(_.contains(p)).get
+  def split(p: Point): (Route, Route) = { null }
+ /*   val seg = lines.find(_.contains(p)).get
     val after = points.takeWhile(_ != seg.to)
     val before = points.dropWhile(_ != seg.from).drop(1)
     val wp = Waypoint(p,H)
-    val fbefore = if (seg.from.p != p) Route(Waypoint(p,H) :: seg.from :: before)
+    val fbefore = if (seg.from != p) Route(Waypoint(p,H) :: seg.from :: before)
       else Route(Waypoint(p,H) :: before)
-    val fafter = if (seg.to.p!=p ) Route(after ::: seg.to :: Waypoint(p,H) :: Nil) 
+    val fafter = if (seg.to!=p ) Route(after ::: seg.to :: Waypoint(p,H) :: Nil) 
       else Route(after ::: Waypoint(p,H) :: Nil)
     (fbefore,fafter)
-  }
+  }*/
   def extend(to: Waypoint, dir: OrtoDirection): Route = {
     points match {
       case h :: Nil ⇒ // h is H
@@ -218,7 +198,8 @@ case class Route(points: List[Waypoint]) {
     }
   }
   def head = points.head.p
-  def ¬(src: Waypoint, dst: Waypoint) = {
+  lazy val lines : List[Line]= null// FIXMEmakePath(points)
+  /*def ¬(src: Waypoint, dst: Waypoint) = {
     if (src.p == dst.p) {
       List()
     } else {
@@ -226,12 +207,11 @@ case class Route(points: List[Waypoint]) {
       List(Line(src, dst, true), Line(src, dst, false))
     }
   }
-  lazy val lines = makePath(points)
   def makePath(path: List[Waypoint]): List[Line] = {
     path match {
       case Nil ⇒ Nil
       case e :: Nil ⇒ Nil
       case to :: from :: tail ⇒ ¬(from, to) ++ makePath(from :: tail)
     }
-  }
+  }*/
 }
