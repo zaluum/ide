@@ -77,6 +77,21 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
   def liesIn(from: Point, mid: Point, to: Point) = {
     mid.y == from.y || mid.x == to.x
   }
+  def merge(e:Edge) : (Vertex,Edge)= { // TODO simplify route
+    def mergePoints(to:List[Point], from:List[Point]) = { 
+      assert(to.last == from.head)
+      to ::: from.tail 
+    }
+    if (e.a==a) { // <-=>
+      (a, new Edge(e.b,b  , mergePoints(points, e.points.reverse)))
+    }else if (e.a==b) { //   =>->
+      (b, new Edge(a,  e.b, mergePoints(e.points, points)))
+    }else if (e.b==a) {// ->=>
+      (a, new Edge(e.a,b  , mergePoints(points, e.points)))
+    }else if (e.b==b) { //   =><-
+      (b, new Edge(a  ,e.a, mergePoints(e.points.reverse, points)))
+    }else throw new Exception()
+  }
   def extend(to: Vertex): Edge = {
     val res = points match {
       case Nil ⇒ new Edge(a, to, to.p :: Nil)
@@ -101,6 +116,17 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
 }
 case class CutResult(me: Set[Edge], other: Set[Edge], newVertex: Set[Vertex])
 class ConnectionGraphV(val vertexs: Set[Vertex], val edges: Set[Edge]) extends ConnectionGraph
+object Timer {
+  var start:Long = 0L
+  var end:Long = 0L
+  def go = {
+    start = System.currentTimeMillis
+  }
+  def stop = {
+    end = System.currentTimeMillis
+    println(">   " + (end - start)/ 1000.0 + " s")
+  }
+}
 abstract class ConnectionGraph {
   val vertexs: Set[Vertex]
   val edges: Set[Edge]
@@ -164,7 +190,6 @@ abstract class ConnectionGraph {
     var remainingEdges = edges
     def vertexAt(p: Point) = myvertexs find { _.p == p } getOrElse {
       val j = new Joint(p)
-      //println("new vertex " + j)
       myvertexs += j
       j
     }
@@ -201,7 +226,28 @@ abstract class ConnectionGraph {
     }
     CutResult(edges, others, myvertexs)
   }
-  def clean: ConnectionGraph = this // FIXME
+  def clean: ConnectionGraph = {
+    var edgesToProcess = edges
+    var current = edges
+    var removedVertexs = Set[Vertex]()
+    while (!edgesToProcess.isEmpty) {
+      val e = edgesToProcess.head
+      val aAdj = current filter { o => o!=e && (e.a == o.a || e.a == o.b)}
+      val bAdj = current filter { o => o!=e && (e.b == o.a || e.b == o.b)}
+      def mergeOne(other:Edge) = {
+        val (v,merged) = e.merge(other)
+        edgesToProcess = edgesToProcess -e - other + merged
+        current = current - e - other + merged 
+        removedVertexs += v
+      }
+      if (aAdj.size ==1) mergeOne(aAdj.head) 
+      else if (bAdj.size==1) mergeOne(bAdj.head)
+      else {
+        edgesToProcess = edgesToProcess - e
+      }
+    }
+    new ConnectionGraphV(vertexs -- removedVertexs, current)
+  }
   def add(e: Edge): ConnectionGraph = {
     assert(vertexs.contains(e.a))
     assert(vertexs.contains(e.b))
@@ -214,19 +260,14 @@ abstract class ConnectionGraph {
     var remainingAffected = ca.edges ++ cb.edges
     var currentAffected = Set[Edge]()
     var currentVertexs = vertexs 
-    //println("remainingAffected=" + remainingAffected) 
     var eFrags = Set(e)
-    //var currentG = new ConnectionGraphV(vertexs,eFrags)
     while (!remainingAffected.isEmpty) {
         val affected = remainingAffected.head
         val CutResult(neweFrags,affectedCut, newv) = new ConnectionGraphV(currentVertexs, eFrags).cut(Set(affected))
         currentVertexs = currentVertexs ++ newv
         currentAffected = (currentAffected - affected) ++ affectedCut        
-        //currentG = new ConnectionGraphV(currentG.vertexs ++ newv, (currentG.edges -- eFrags) ++ neweFrags)
         remainingAffected = (remainingAffected ++ affectedCut) - affected
-        //println("remainingAffected=" + remainingAffected)
         eFrags = neweFrags
-        //println ("eFrags= " + neweFrags)
     }
     var currentG = new ConnectionGraphV(currentVertexs, eFrags)
     for (a <- currentAffected) {
@@ -236,7 +277,7 @@ abstract class ConnectionGraph {
       }
     }
     val res = new ConnectionGraphV(currentG.vertexs, currentG.edges ++ unaffectedEdges).clean
-    println ("result has cycle=" + res.hasCycle + " edges= " + res.edges.size + " " + res.edges )
+    //println ("result has cycle=" + res.hasCycle + " edges= " + res.edges.size + " " + res.edges )
     res
   }
 }
