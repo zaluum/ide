@@ -79,10 +79,10 @@ trait ConnectionsTool {
     def endConnection() {
       val bs = initContainer.boxDef.symbol.asInstanceOf[BoxTypeSymbol]
       val wp = extend.points
-      val vend = vertexAt(wp.head)
-      val vstart = vertexAt(wp.last)
-      val newEdge = new Edge(vstart, vend, wp)
-      val newGraph = g.add(vstart).add(vend).add(newEdge)
+      val vend = vertexAt(wp.last)
+      val vstart = vertexAt(wp.head)
+      val newEdge = new Edge(vstart, vend, wp).untangle
+      val newGraph = g.add(vstart).add(vend).addMaster2(newEdge)
       var map = Map[Vertex,Junction]()
       val namer = new Namer {
         def usedNames = map.values.map{_.name.str}.toSet ++ bs.connections.junctions.map {_.name.str}
@@ -147,6 +147,7 @@ trait ConnectionsTool {
       import math.abs
       portsTrack.update()
       dst foreach { _.hideFeedback() }
+      viewer.setStatusMessage(currentMouseLocation.toString)
       initContainer.itemOrLineAt(point(currentMouseLocation)) match {
         case Some(p: PortFigure) ⇒ dst = Some(p)
         case Some(l: LineFigure) ⇒ dst = Some(l)
@@ -198,7 +199,7 @@ trait ConnectionsTool {
       painter = new ConnectionPainter(initContainer.asInstanceOf[BoxDefContainer])
       move()
     }
-    def newRoute: Route = null /*{
+    /*def newRoute: Route = null {
       if (lf.l.primary) {
         val p = if (lf.l.from.d == V) Waypoint(currentMouseLocation.x, lf.l.from.y + delta.y, V)
         else Waypoint(lf.l.from.x + delta.x, currentMouseLocation.y, H)
@@ -218,7 +219,7 @@ trait ConnectionsTool {
       // painter.paintRoute(newRoute, false)
     }
     def buttonUp() {
-      val oldcon = lf.con.get.tree
+     /* val oldcon = lf.con.get.tree
       val newcon = oldcon.copy(wayPoints = newRoute.points)
       val b = initContainer.boxDef
       controller.exec(
@@ -232,7 +233,7 @@ trait ConnectionsTool {
                 newcon :: transformTrees(b.connections.filter { _ != oldcon }),
                 transformTrees(b.junctions))
           }
-        })
+        })*/
     }
     def buttonDown() {}
     def drag() {}

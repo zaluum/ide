@@ -187,7 +187,7 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
     val aw = position(tree.a).map(p ⇒ Waypoint(p, H)).toList
     val bw = position(tree.b).map(p ⇒ Waypoint(p, H)).toList
     Route(bw ::: tree.wayPoints ::: aw)*/
-    new Edge(new Joint(tree.wayPoints.last.p), new Joint(tree.wayPoints.head.p),tree.wayPoints map {_.p})
+    new Edge(new Joint(tree.wayPoints.head.p), new Joint(tree.wayPoints.last.p),tree.wayPoints map {_.p})
   }
   var feedback = false
   def paint = painter.paintRoute(route, feedback, Some(this))

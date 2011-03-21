@@ -23,29 +23,30 @@ object H extends OrtoDirection {
 }
 case class Interval(start: Int, end: Int) {
   def low = math.min(start,end)
+  def isZero = start==end
   def high = math.max(start,end)
-  def intersect(other: Interval, nearEnd : Boolean): Option[Int] = {
-    if (other.high < low || other.low > high) None // |--| <-->
+  def intersect(other: Interval, nearEnd : Boolean): List[Int] = {
+    if (other.high < low || other.low > high) List() // |--| <-->
     else {
       if (nearEnd) {
         if (end>start) {
-          if (other.low>=start && other.high <= end) Some(other.high) // s--<--(>)--e
-          else if (other.low <= end) Some(end)                        // s--<--(e)-->
-          else Some(other.high)                                       // <--s--(>)--e
+          if (other.low>=start && other.high <= end) List(other.high,other.low) // s--<--(>)--e
+          else if (other.low <= end) List(end,other.low)                        // s--<--(e)-->
+          else List(other.high, start)                                          // <--s--(>)--e
         }else {
-          if (other.low>=end && other.high <= start) Some(other.low)  // e--(<)-->--s
-          else if (other.low <= start) Some(other.low)                // e--(<)--s-->
-          else Some(end)                                              // <--(e)-->--s          
+          if (other.low>=end && other.high <= start) List(other.low, other.high)  // e--(<)-->--s
+          else if (other.low <= start) List(other.low,start)                      // e--(<)--s-->
+          else List(end, other.high)                                              // <--(e)-->--s          
         }
       }else { // near start
         if (end>start) { 
-          if (other.low>=start && other.high <= end) Some(other.low)  // s--(<)-->--e
-          else if (other.low <= end) Some(other.low)                  // s--(<)--e-->
-          else Some(start)                                            // <--(s)-->--e
+          if (other.low>=start && other.high <= end) List(other.low, other.high) // s--(<)-->--e
+          else if (other.low <= end) List(other.low,end)                         // s--(<)--e-->
+          else List(start,other.high)                                            // <--(s)-->--e
         }else {
-          if (other.low>=end && other.high <= start) Some(other.high) // e--<--(>)--s
-          else if (other.low <= start) Some(start)                    // e--<--(s)-->
-          else Some(other.high)                                       // <--e--(>)--s          
+          if (other.low>=end && other.high <= start) List(other.high, other.low)// e--<--(>)--s
+          else if (other.low <= start) List(start,other.low)                    // e--<--(s)-->
+          else List(other.high,end)                                             // <--e--(>)--s          
         }
       }
     }
@@ -76,25 +77,25 @@ case class Line(val from: Point, val to: Point, primary: Boolean) {
   def intervalX = Interval(start.x, end.x)
   def intervalY = Interval(start.y, end.y)
 
-  def intersect(other: Line, nearEnd : Boolean): Option[Point] = {
+  def intersect(other: Line, nearEnd : Boolean = false): List[Point] = {
     (dir, other.dir) match {
       case (H, H) ⇒
-        if (start.y != other.start.y) None
-        else intervalX.intersect(other.intervalX, nearEnd) map (x ⇒ Point(x, start.y))
+        if (start.y != other.start.y || intervalX.isZero || other.intervalX.isZero) List()
+        else intervalX.intersect(other.intervalX,nearEnd) map (x ⇒ Point(x, start.y))
       case (V, V) ⇒
-        if (start.x != other.start.x) None
+        if (start.x != other.start.x || intervalY.isZero || other.intervalY.isZero) List()
         else {
-          val p = intervalY.intersect(other.intervalY, nearEnd) map (y ⇒ Point(start.x, y))
+          val p = intervalY.intersect(other.intervalY,nearEnd) map (y ⇒ Point(start.x, y))
           p
         }
       case (H, V) ⇒
-        if (intervalX.contains(other.start.x) && other.intervalY.contains(start.y))
-          Some(Point(other.start.x, start.y))
-        else None
+        if (!intervalX.isZero && !other.intervalY.isZero && intervalX.contains(other.start.x) && other.intervalY.contains(start.y))
+          List(Point(other.start.x, start.y))
+        else List()
       case (V, H) ⇒
-        if (intervalY.contains(other.start.y) && other.intervalX.contains(start.x))
-          Some(Point(start.x, other.start.y))
-        else None
+        if (!intervalY.isZero && ! other.intervalX.isZero && intervalY.contains(other.start.y) && other.intervalX.contains(start.x))
+          List(Point(start.x, other.start.y))
+        else List()
     }
   }
 }
@@ -105,113 +106,4 @@ object Waypoint {
 case class Waypoint(p: Point, d: OrtoDirection) {
   def y = p.y
   def x = p.x
-}
-case class Route(points: List[Waypoint]) {
-  private def intersection(remaining: List[Line], nearEnd:Boolean,others: List[ConnectionDef], toPoint: (Line ⇒ Point)): Option[(ConnectionDef,Line, Point)] =
-    remaining match {
-      case Nil ⇒ None
-      case h :: tail ⇒
-        
-        val intersections: List[(ConnectionDef,Point)] = for {
-          cd ← others
-          ol ← cd.route.lines
-          p ← ol.intersect(h,!nearEnd)
-        } yield (cd,p)
-        if (intersections.isEmpty) {
-          intersection(tail, nearEnd, others, toPoint)
-        } else {
-          val (cd,p) = intersections.reduceLeft{
-            (a,b) ⇒ 
-            val (ra,ap) = a
-            val (rb,bp) = b
-            if (ap.distanceOrto(toPoint(h)) < bp.distanceOrto(toPoint(h))) a else b
-          }
-          Some((cd,h, p))
-        }
-    }
-
-  def lastIntersection(others: List[ConnectionDef]): Option[(ConnectionDef,Line, Point)] = {
-    intersection(lines, false, others, _.end)
-  }
-  def firstIntersection(others: List[ConnectionDef]): Option[(ConnectionDef, Line, Point)] = {
-    intersection(lines.reverse, true, others, _.start)
-  }
-  def liesIn(from: Waypoint, mid: Waypoint, to: Waypoint) = {
-    if (from.d == V) {
-      (mid.d == V && mid.x == from.x) || (mid.y == to.y)
-    } else {
-      (mid.d == H && mid.y == from.y) || (mid.x == to.x)
-    }
-  }
-  // p has to lie in some segment of the route
-  def split(p: Point): (Route, Route) = { null }
- /*   val seg = lines.find(_.contains(p)).get
-    val after = points.takeWhile(_ != seg.to)
-    val before = points.dropWhile(_ != seg.from).drop(1)
-    val wp = Waypoint(p,H)
-    val fbefore = if (seg.from != p) Route(Waypoint(p,H) :: seg.from :: before)
-      else Route(Waypoint(p,H) :: before)
-    val fafter = if (seg.to!=p ) Route(after ::: seg.to :: Waypoint(p,H) :: Nil) 
-      else Route(after ::: Waypoint(p,H) :: Nil)
-    (fbefore,fafter)
-  }*/
-  def extend(to: Waypoint, dir: OrtoDirection): Route = {
-    points match {
-      case h :: Nil ⇒ // h is H
-        if (dir == H) { // make an N
-          val mid = Point(h.x + (to.x - h.x) / 2, to.y)
-          extend(Waypoint(mid, H)).extend(to)
-        } else {
-          extend(to)
-        }
-      case h :: tail ⇒
-        Route(tail).extend(Waypoint(h.p, dir.orto)).extend(to)
-      case _ ⇒ extend(to)
-    }
-  }
-  def extend(to: Waypoint): Route = {
-    val res = points match {
-      case Nil ⇒ Route(to :: Nil)
-      case from :: Nil ⇒ Route(to :: from :: Nil)
-      case mid :: from :: tail ⇒
-        if (liesIn(from, mid, to)) { // we can suppress h if it lies in the L from hh to p 
-          Route(to :: from :: tail)
-        } else { // we make the longest L possible 
-          (from.d, mid.d) match {
-            case (V, H) ⇒
-              Route(to :: Waypoint(to.x, mid.y, V) :: from :: tail)
-            case (H, V) ⇒
-              Route(to :: Waypoint(mid.x, to.y, H) :: from :: tail)
-            case _ ⇒
-              Route(to :: mid :: from :: tail)
-          }
-        }
-    }
-    //println ("extended to " + res)
-    res
-  }
-  def changeHead(dir: OrtoDirection) = {
-    points match {
-      case Nil ⇒ this
-      case h :: Nil ⇒ this
-      case h :: hh :: tail ⇒ Route(Waypoint(h.p, dir) :: hh :: tail)
-    }
-  }
-  def head = points.head.p
-  lazy val lines : List[Line]= null// FIXMEmakePath(points)
-  /*def ¬(src: Waypoint, dst: Waypoint) = {
-    if (src.p == dst.p) {
-      List()
-    } else {
-      val despl = dst.x - src.x
-      List(Line(src, dst, true), Line(src, dst, false))
-    }
-  }
-  def makePath(path: List[Waypoint]): List[Line] = {
-    path match {
-      case Nil ⇒ Nil
-      case e :: Nil ⇒ Nil
-      case to :: from :: tail ⇒ ¬(from, to) ++ makePath(from :: tail)
-    }
-  }*/
 }

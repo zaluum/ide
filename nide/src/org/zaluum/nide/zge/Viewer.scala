@@ -1,5 +1,8 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.ui.IEditorSite
+import org.eclipse.ui.IViewSite
+import org.eclipse.ui.PlatformUI
 import org.zaluum.nide.compiler.Tree
 import draw2dConversions._
 import org.eclipse.draw2d.{FigureCanvas, FreeformViewport, LightweightSystem}
@@ -19,5 +22,18 @@ abstract class Viewer(parent: Composite, val controller: Controller) extends Fre
   def dispose() {
     canvas.dispose()
     controller.unregisterViewer(this)
+  }
+  def setStatusMessage(s:String) {
+    val wb = PlatformUI.getWorkbench();
+    val win = wb.getActiveWorkbenchWindow();
+    val page = win.getActivePage();
+    val part = page.getActivePart();
+    val site = part.getSite();
+    val vSite =  site.asInstanceOf[IEditorSite];
+    val actionBars =  vSite.getActionBars();
+    if( actionBars == null ) return ;
+    val statusLineManager = actionBars.getStatusLineManager();
+    if( statusLineManager == null ) return ;
+    statusLineManager.setMessage( s);
   }
 }

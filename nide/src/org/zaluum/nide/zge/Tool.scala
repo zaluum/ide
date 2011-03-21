@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.ui.IViewSite
+import org.eclipse.ui.PlatformUI
 import scala.annotation.tailrec
 import org.eclipse.draw2d.{ Figure, IFigure }
 import org.zaluum.nide.compiler.Point

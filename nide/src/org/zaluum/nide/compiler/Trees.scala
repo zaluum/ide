@@ -1,6 +1,5 @@
 package org.zaluum.nide.compiler
 
-import org.zaluum.nide.zge.Route
 import org.zaluum.nide.zge.Waypoint
 import scala.collection.immutable.Stack
 import scala.collection.mutable.Buffer
@@ -266,8 +265,6 @@ case class ValDef(
     guiSize: Option[Dimension],
     params:List[Tree]) extends DefTree with Positionable
 //case class SizeDef(pos: Point, size: Dimension) extends Tree
-case class ConnectionDef(a: Tree, b: Tree, wayPoints:List[Waypoint]) extends SymTree {
-  lazy val route = Route(wayPoints)
-}
+case class ConnectionDef(a: Tree, b: Tree, wayPoints:List[Waypoint]) extends SymTree 
 case class Junction(name: Name, p:Point) extends DefTree
 case class JunctionRef(name:Name) extends RefTree
