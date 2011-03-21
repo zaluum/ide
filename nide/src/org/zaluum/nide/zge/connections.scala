@@ -58,6 +58,7 @@ case class Line(val from: Point, val to: Point, primary: Boolean) {
   def start = if (primary) from else midPoint
   def end = if (primary) midPoint else to
   def dir = if (primary) H else V
+  override def toString = "("+start+","+end+")"
   def project(p: Point): Point = {
     val a = p - start
     val b = end - start

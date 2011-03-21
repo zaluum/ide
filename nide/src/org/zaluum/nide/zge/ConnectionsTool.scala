@@ -82,7 +82,7 @@ trait ConnectionsTool {
       val vend = vertexAt(wp.last)
       val vstart = vertexAt(wp.head)
       val newEdge = new Edge(vstart, vend, wp).untangle
-      val newGraph = g.add(vstart).add(vend).addMaster2(newEdge)
+      val newGraph = g.add(vstart).add(vend).addMaster(newEdge)
       var map = Map[Vertex,Junction]()
       val namer = new Namer {
         def usedNames = map.values.map{_.name.str}.toSet ++ bs.connections.junctions.map {_.name.str}
