@@ -88,6 +88,8 @@ trait BoxDefContainer extends Container {
                   helpers += new ImageValFigure(v, BoxDefContainer.this)
               }
           }
+        case j@Junction(name,pos) =>
+          helpers += new PointFigure(pos,BoxDefContainer.this,ColorConstants.green)
         case _ ⇒
       }
     }

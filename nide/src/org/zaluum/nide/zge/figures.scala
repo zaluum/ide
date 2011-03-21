@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.swt.graphics.Color
 import org.eclipse.draw2d.Ellipse
 import org.eclipse.swt.events.FocusListener
 import org.eclipse.jface.viewers.ICellEditorListener
@@ -132,12 +133,12 @@ class LineFigure(val l: Line, val r:Edge, bdf: BoxDefContainer, val con: Option[
   }
   
 }
-class PointFigure(p: Point, bdf: BoxDefContainer) extends Ellipse with Selectable {
+class PointFigure(p: Point, bdf: BoxDefContainer, color:Color) extends Ellipse with Selectable {
   def show() {
     setSize(6, 6)
     setFill(true)
     setLocation(point(p + Vector2(-3,-3)))
-    //setBackgroundColor ( if (p.d == H) ColorConstants.yellow else ColorConstants.blue ) 
+    setBackgroundColor (color);// if (p.d == H) ColorConstants.yellow else ColorConstants.blue ) 
     bdf.connectionsLayer.add(this)
   }
   def showFeedback() {}
@@ -161,7 +162,7 @@ class ConnectionPainter(bdf: BoxDefContainer) {
   def paintRoute(edge: Edge, feedback: Boolean, con: Option[ConnectionFigure] = None) {
     clear()
     edge.lines foreach { l ⇒ lines += new LineFigure(l, edge, bdf, con) }
-    edge.points foreach { p => points += new PointFigure(p,bdf) }
+    //edge.points foreach { p => points += new PointFigure(p,bdf,ColorConstants.white) }
     if (feedback) lines foreach { l ⇒ l.showFeedback() }
     lines foreach { l ⇒ l.show }
     points foreach { _.show }

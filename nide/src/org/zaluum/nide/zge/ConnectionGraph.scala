@@ -44,7 +44,6 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
   def isParallel(o: Edge) = { (a == o.a && b == o.b) || (a == o.b && b == o.a) }
   def intersections(e: Edge): (List[Point], List[Point]) = {
     val thisSorted = for (l ← lines; ol ← e.lines; i ← l.intersect(ol, true)) yield (i, l, ol)
-    println(thisSorted)
     val otherSorted = e.lines flatMap { l ⇒
       thisSorted.filter { case (_, _, ol) ⇒ ol == l }.
         sortBy { case (i, _, _) ⇒ l.start.distanceOrto(i) }
@@ -62,7 +61,6 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
       val after = points.dropWhile(_ != seg.to).drop(1)
       val ebefore = new Edge(a, v, before ::: seg.from :: v.p :: Nil)
       val eafter = new Edge(v, b, v.p :: seg.to :: after)
-      //println("split " + this + " => " + eafter + " " + ebefore)
       (ebefore, Some(eafter))
     }
   }
@@ -74,15 +72,13 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
       val b = pair.last
       new Edge(VertexWP(a), VertexWP(b), List(a, b))
     }.toSet
-    println("fakeEdges=" + fakeEdges)
     var g: ConnectionGraph = new ConnectionGraphV(fakeVertexs, Set(fakeEdges.head))
-    def fill(g:ConnectionGraph, edges : List[Edge]) = {
-      edges.foldLeft(g)((g,e)=> g.addNoParallel(e))
+    def fill(g: ConnectionGraph, edges: List[Edge]) = {
+      edges.foldLeft(g)((g, e) ⇒ g.addNoParallel(e))
     }
-    fakeEdges.tail.foldLeft(g)((g,e) => g.addMaster2(e,fill))
+    g=fakeEdges.tail.foldLeft(g)((g, e) ⇒ g.addMaster2(e, fill))
     val path = g.findPath(VertexWP(a.p), VertexWP(b.p), Set())
     new Edge(a, b, path map { _.p })
-    this
   }
   def contains(p: Point) = lines.exists(_.contains(p))
   def liesIn(from: Point, mid: Point, to: Point) = mid.y == from.y || mid.x == to.x
@@ -94,10 +90,10 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
       val nfrom = from.dropRight(1)
       val nto = to.tail
       val mid = to.head
-      if (liesIn (nfrom.last, mid, nto.head))
+      if (liesIn(nfrom.last, mid, nto.head))
         nfrom ::: nto
       else
-        nfrom ::: mid :: nto 
+        nfrom ::: mid :: nto
     }
     if (e.a == a) { // <-=>
       (a, new Edge(e.b, b, mergePoints(e.points.reverse, points)))
@@ -183,10 +179,6 @@ abstract class ConnectionGraph {
       j
     }
     val (isecs1, isecs2) = e1.intersections(e2)
-    println("e1 lines = " + (e1.lines map { l ⇒ "(" + l.start + ", " + l.end + ")" }))
-    println("isecs1=" + isecs1)
-    println("e2 lines = " + (e2.lines map { l ⇒ "(" + l.start + ", " + l.end + ")" }))
-    println("isecs2=" + isecs2)
     def splitOne(e: Edge, points: List[Point]) = {
       var segments = Vector[Edge]()
       var remainingMe = e
@@ -204,7 +196,7 @@ abstract class ConnectionGraph {
     }
     (splitOne(e2, isecs2), myvertexs, isecs1)
   }
-  def addMaster2(master: Edge, fill:(ConnectionGraph, List[Edge])=>ConnectionGraph): ConnectionGraph = {
+  def addMaster2(master: Edge, fill: (ConnectionGraph, List[Edge]) ⇒ ConnectionGraph): ConnectionGraph = {
     var myVertexs = vertexs
     var edgesResult = List[Edge]()
     var masterPoints = Set[Point]()
@@ -241,17 +233,17 @@ abstract class ConnectionGraph {
       if (test.hasCycle) this else test
     }
   }
-  def addNoParallel(e:Edge) : ConnectionGraph = {
+  def addNoParallel(e: Edge): ConnectionGraph = {
     if (edges.exists(_.isParallel(e))) this
-    else new ConnectionGraphV(vertexs, edges+e)
+    else new ConnectionGraphV(vertexs, edges + e)
   }
   def addMaster(e: Edge) = {
     val ca = component(e.a)
     val cb = component(e.b)
     val unaffectedEdges = edges filterNot { e ⇒ ca.edges(e) || cb.edges(e) }
     val affected = ca.edges ++ cb.edges
-    def fill(g:ConnectionGraph, edges:List[Edge]) =  edges.foldLeft(g)((g,e) => g.addTree(e))
-    val g = new ConnectionGraphV(vertexs, affected).addMaster2(e, fill) .clean
+    def fill(g: ConnectionGraph, edges: List[Edge]) = edges.foldLeft(g)((g, e) ⇒ g.addTree(e))
+    val g = new ConnectionGraphV(vertexs, affected).addMaster2(e, fill).clean
     new ConnectionGraphV(g.vertexs, g.edges ++ unaffectedEdges)
   }
   def findPath(a: Vertex, b: Vertex, visited: Set[Vertex]): List[Vertex] = {
@@ -260,12 +252,16 @@ abstract class ConnectionGraph {
     if (a == b) List(b)
     else {
       val others = vertexConnect(a)
+      var min = Integer.MAX_VALUE
+      var candidate = List[Vertex]()
       for (o ← others; if (!visited.contains(o))) {
         val path = findPath(o, b, visited + a)
-        if (!path.isEmpty)
-          return a :: path
+        if (!path.isEmpty && path.length < min){
+          candidate = a :: path
+          min = path.length
+        }   
       }
-      List()
+      candidate
     }
   }
 
@@ -290,11 +286,7 @@ abstract class ConnectionGraph {
       val aAdj = current filter { o ⇒ o != e && (e.a == o.a || e.a == o.b) }
       val bAdj = current filter { o ⇒ o != e && (e.b == o.a || e.b == o.b) }
       def mergeOne(other: Edge) = {
-        println("merging ")
-        println(e.linesString)
-        println(other.linesString)
         val (v, merged) = e.merge(other)
-        println(merged.linesString)
         edgesToProcess = edgesToProcess - e - other + merged
         current = current - e - other + merged
         removedVertexs += v
