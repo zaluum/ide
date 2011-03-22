@@ -43,7 +43,8 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
   }
   def isParallel(o: Edge) = { (a == o.a && b == o.b) || (a == o.b && b == o.a) }
   def intersections(e: Edge): (List[Point], List[Point]) = {
-    val thisSorted = for (l ← lines; ol ← e.lines; i ← l.intersect(ol, true)) yield (i, l, ol)
+    val thisSorted = for (l ← lines; ol ← e.lines; i ← l.intersect(ol, false)) yield (i, l, ol)
+    //println(thisSorted.mkString("\n\t"))
     val otherSorted = e.lines flatMap { l ⇒
       thisSorted.filter { case (_, _, ol) ⇒ ol == l }.
         sortBy { case (i, _, _) ⇒ l.start.distanceOrto(i) }
@@ -55,7 +56,7 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
     if (v.p == a.p || v.p == b.p) (this, None)
     else {
       val seg = lines.find(_.contains(v.p)).getOrElse {
-        throw new RuntimeException("Cannot split " + this.lines.map { l ⇒ "(" + l.start + ", " + l.end + ")" } + " at " + v.p)
+        throw new RuntimeException("Cannot split " + this.linesString + " at " + v.p)
       }
       val before = points.takeWhile(_ != seg.from)
       val after = points.dropWhile(_ != seg.to).drop(1)
@@ -64,6 +65,7 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
       (ebefore, Some(eafter))
     }
   }
+  // removes loops. convert to graph and serach shortest path
   def untangle: Edge = {
     case class VertexWP(p: Point) extends Vertex
     val fakeVertexs: Set[Vertex] = points.map { VertexWP(_) }.toSet
@@ -76,12 +78,13 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
     def fill(g: ConnectionGraph, edges: List[Edge]) = {
       edges.foldLeft(g)((g, e) ⇒ g.addNoParallel(e))
     }
-    g=fakeEdges.tail.foldLeft(g)((g, e) ⇒ g.addMaster2(e, fill))
-    val path = g.findPath(VertexWP(a.p), VertexWP(b.p), Set())
+    g = fakeEdges.tail.foldLeft(g)((g, e) ⇒ g.addMaster2(e, fill))
+    val path = g.findShortestPath(VertexWP(a.p), VertexWP(b.p), Set())
     new Edge(a, b, path map { _.p })
   }
   def contains(p: Point) = lines.exists(_.contains(p))
   def liesIn(from: Point, mid: Point, to: Point) = mid.y == from.y || mid.x == to.x
+  // merges two adjacent edges
   def merge(e: Edge): (Vertex, Edge) = { // TODO simplify route
     def mergePoints(from: List[Point], to: List[Point]) = {
       assert(from.last == to.head)
@@ -90,7 +93,7 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
       val nfrom = from.dropRight(1)
       val nto = to.tail
       val mid = to.head
-      if (liesIn(nfrom.last, mid, nto.head))
+      if (liesIn(nfrom.last, mid, nto.head)) // Fixme direction change bug?
         nfrom ::: nto
       else
         nfrom ::: mid :: nto
@@ -178,28 +181,33 @@ abstract class ConnectionGraph {
       myvertexs += j
       j
     }
+    //println("e1 = " + e1.linesString)
+    //println("e2 = " + e2.linesString)
     val (isecs1, isecs2) = e1.intersections(e2)
-    def splitOne(e: Edge, points: List[Point]) = {
-      var segments = Vector[Edge]()
-      var remainingMe = e
-      for (i ← points) {
-        remainingMe.splitAt(vertexAt(i)) match {
-          case (before, None) ⇒
-          //assert(i==points.last)// can only happen if it's the last isec 
-          case (before, Some(after)) ⇒
-            remainingMe = after
-            segments = segments :+ before
-        }
+    //println("isecs2 = " + isecs2)
+    //println("isecs1 = " + isecs1)
+    var segments = Vector[Edge]()
+    var remainingMe = e2
+    for (i ← isecs2) {
+      remainingMe.splitAt(vertexAt(i)) match {
+        case (before, None) ⇒ //println("happens!")
+        //assert(i==points.last)// can only happen if it's the last isec 
+        case (before, Some(after)) ⇒
+          //println("splited " + remainingMe.linesString + " at " + i )
+          //println("before " + before.linesString)
+          //println("after " + after.linesString)
+          remainingMe = after
+          segments = segments :+ before
       }
-      segments = segments :+ remainingMe
-      segments
     }
-    (splitOne(e2, isecs2), myvertexs, isecs1)
+    segments = segments :+ remainingMe
+    (segments, myvertexs, isecs1)
   }
   def addMaster2(master: Edge, fill: (ConnectionGraph, List[Edge]) ⇒ ConnectionGraph): ConnectionGraph = {
     var myVertexs = vertexs
     var edgesResult = List[Edge]()
     var masterPoints = Set[Point]()
+    //println("adding master edge = " + master.linesString )
     for (e ← edges) {
       val (efs, nv, mPoints) = split(master, e, myVertexs)
       masterPoints ++= mPoints
@@ -246,7 +254,7 @@ abstract class ConnectionGraph {
     val g = new ConnectionGraphV(vertexs, affected).addMaster2(e, fill).clean
     new ConnectionGraphV(g.vertexs, g.edges ++ unaffectedEdges)
   }
-  def findPath(a: Vertex, b: Vertex, visited: Set[Vertex]): List[Vertex] = {
+  def findShortestPath(a: Vertex, b: Vertex, visited: Set[Vertex]): List[Vertex] = {
     assert(vertexs.contains(a))
     assert(vertexs.contains(b))
     if (a == b) List(b)
@@ -255,11 +263,11 @@ abstract class ConnectionGraph {
       var min = Integer.MAX_VALUE
       var candidate = List[Vertex]()
       for (o ← others; if (!visited.contains(o))) {
-        val path = findPath(o, b, visited + a)
-        if (!path.isEmpty && path.length < min){
+        val path = findShortestPath(o, b, visited + a)
+        if (!path.isEmpty && path.length < min) {
           candidate = a :: path
           min = path.length
-        }   
+        }
       }
       candidate
     }

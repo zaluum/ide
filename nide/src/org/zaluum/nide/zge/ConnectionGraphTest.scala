@@ -5,7 +5,7 @@ import junit.framework._
 import org.junit.Assert._
 import org.junit.Test
 class ConnectionGraphTest {
-  val a = new End(Point(0, 0))
+  /*val a = new End(Point(0, 0))
   val b1 = new End(Point(10, 10))
   val b2 = new End(Point(10, 20))
   val c = new End(Point(20, 10))
@@ -44,7 +44,7 @@ class ConnectionGraphTest {
   val y3 = new End(Point(5, 5));
 
   val ywp = List(Point(5, 5), Point(10, 5), Point(0, 10))
-  val y = new Edge(y1, y3, ywp);
+  val y = new Edge(y1, y3, ywp);*/
   /**
    * --------|
    *         |
@@ -73,7 +73,7 @@ class ConnectionGraphTest {
     val xafter = new Edge(y3, x3, List(Point(15, 8), Point(8, 5), Point(5, 5)))
     assertEquals(xbefore.firstIntersection(y, Set()), Some(Point(5, 5)))*/
   }
-  @Test
+  /*@Test
   def testGraphIsec {
     val xwp = List(Point(15, 8), Point(5, 8), Point(0, 0))
     val x = new Edge(x1, x3, xwp)
@@ -85,10 +85,10 @@ class ConnectionGraphTest {
     assertEquals(g2.vertexs, Set(x1,x3,y1,y3))
     //assertEquals(g2.edges, Set(x))
     //val g3 = g2.add(y)
-    /*println("g3=" + g3.vertexs)
-    println("ge=" + g3.edges)
-    assert(g3.vertexs.exists { _.p == Point(5,5) })
-    assert(!g3.edges.contains(x))*/
+    //println("g3=" + g3.vertexs)
+    //println("ge=" + g3.edges)
+    //assert(g3.vertexs.exists { _.p == Point(5,5) })
+    //assert(!g3.edges.contains(x))
   }
   @Test
   def cutTest {
@@ -96,15 +96,21 @@ class ConnectionGraphTest {
     val x = new Edge(x1, x3, xwp)
     val g = new ConnectionGraphV(Set(y1,y3),Set(y)).add(x1).add(x3)
     println("g=" + g.edges)
-   /* val res =g.cut(Set(x))
-    println(res)*/
-  }
+   // val res =g.cut(Set(x))
+   // println(res)
+  }*/
   @Test
+  def interval {
+    val a = new Interval(100,150)
+    val b = new Interval(80,110)
+    println (a.intersect(b, false))
+  }
+  /*@Test
   def untangle {
    val a = new End(Point(0,5))
    val b = new End(Point(10,0))
    val c = new End(Point(5,10))
    val e = new Edge(a,c, List(Point(5,10),Point(10,0), Point(0,5)))
    e.untangle
-  }
+  }*/
 }
