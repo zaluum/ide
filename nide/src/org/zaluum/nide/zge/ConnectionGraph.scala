@@ -181,11 +181,11 @@ abstract class ConnectionGraph {
       myvertexs += j
       j
     }
-    //println("e1 = " + e1.linesString)
-    //println("e2 = " + e2.linesString)
+    println("e1 = " + e1.linesString)
+    println("e2 = " + e2.linesString)
     val (isecs1, isecs2) = e1.intersections(e2)
-    //println("isecs2 = " + isecs2)
-    //println("isecs1 = " + isecs1)
+    println("isecs2 = " + isecs2)
+    println("isecs1 = " + isecs1)
     var segments = Vector[Edge]()
     var remainingMe = e2
     for (i ← isecs2) {
@@ -193,9 +193,9 @@ abstract class ConnectionGraph {
         case (before, None) ⇒ //println("happens!")
         //assert(i==points.last)// can only happen if it's the last isec 
         case (before, Some(after)) ⇒
-          //println("splited " + remainingMe.linesString + " at " + i )
-          //println("before " + before.linesString)
-          //println("after " + after.linesString)
+          println("splited " + remainingMe.linesString + " at " + i )
+          println("before " + before.linesString)
+          println("after " + after.linesString)
           remainingMe = after
           segments = segments :+ before
       }
@@ -207,7 +207,7 @@ abstract class ConnectionGraph {
     var myVertexs = vertexs
     var edgesResult = List[Edge]()
     var masterPoints = Set[Point]()
-    //println("adding master edge = " + master.linesString )
+    println("adding master edge = " + master.linesString )
     for (e ← edges) {
       val (efs, nv, mPoints) = split(master, e, myVertexs)
       masterPoints ++= mPoints

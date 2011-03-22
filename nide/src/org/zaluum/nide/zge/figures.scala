@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.Shape
 import org.eclipse.swt.graphics.Color
 import org.eclipse.draw2d.Ellipse
 import org.eclipse.swt.events.FocusListener
@@ -10,7 +11,7 @@ import org.eclipse.draw2d.text.TextFlow
 import org.eclipse.draw2d.text.FlowPage
 import org.eclipse.draw2d.RectangleFigure
 import draw2dConversions._
-import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline }
+import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline, Graphics }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
@@ -92,53 +93,96 @@ trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
     }
   }
 }
-class LineFigure(val l: Line, val r:Edge, bdf: BoxDefContainer, val con: Option[ConnectionFigure] = None) extends Polyline with Selectable {
-  //setAntialias(1)
-  //setForegroundColor(ColorConstants.gray)
-  var complete = false
+
+class LineFigure(val l: Line, val r: Edge, bdf: BoxDefContainer, val con: Option[ConnectionFigure] = None) extends Figure with Selectable {
+  val tolerance = 4
+  def expand = ((width +2)/ 2.0f).asInstanceOf[Int] 
+  override def getBounds: Rectangle = {
+    if (bounds == null) {
+      val (expandx, expandy) = if (l.horizontal) (0, expand) else (expand, 0)
+      bounds = new Rectangle(point(l.start), point(l.end)).expand(expandx, expandy)
+    }
+    bounds
+  }
+  override def containsPoint(x: Int, y: Int) = {
+    val t = math.max(expand, tolerance).asInstanceOf[Int];
+    val b = getBounds.getCopy
+    b.expand(t, t)
+    b.contains(x, y)
+    //  return shapeContainsPoint(x, y) || childrenContainsPoint(x, y);
+  }
+  override def paintFigure(g: Graphics) = {
+    g.setForegroundColor(getForegroundColor);
+    g.setLineStyle(style)
+    g.setLineWidth(width)
+    g.drawLine(point(l.start), point(l.end))
+    val w = ((width/2.0f)+1).asInstanceOf[Int]
+    val (sv, ev, upv, downv) = if (l.horizontal)
+      (Vector2(expand + 1, 0), Vector2(-expand - 1, 0), Vector2(0, -w), Vector2(0, w))
+    else
+      (Vector2(0, expand + 1), Vector2(0, -expand - 1), Vector2(-w, 0), Vector2(w, 0))
+
+    val s = l.low + sv
+    val e = l.high + ev
+    val ups = s + upv
+    val upe = e + upv
+    val downs = s + downv
+    val downe = e + downv
+    g.setForegroundColor(ColorConstants.white)
+    g.setLineStyle(SWT.LINE_SOLID)
+    g.setLineWidth(1)
+    g.drawLine(point(ups), point(upe))
+    g.drawLine(point(downs), point(downe))
+  }
+  var complete = true
   var feedback = false
-  showComplete
+  var style = SWT.LINE_SOLID
+  var width = 1
+  def calcStyle {
+    setForegroundColor(Colorizer.color(con map { _.tree.tpe } getOrElse NoSymbol))
+    if (feedback) {
+      style = SWT.LINE_DASH
+      width = 2
+    } else {
+      width = 1
+      if (complete) {
+        style = SWT.LINE_SOLID
+      } else {
+        style = SWT.LINE_DOT
+      }
+    }
+    erase
+    repaint
+  }
   def showFeedback { feedback = true; calcStyle }
   def hideFeedback { feedback = false; calcStyle }
   def showComplete { complete = true; calcStyle }
   def showIncomplete { complete = false; calcStyle }
-  def calcStyle {
-    setForegroundColor(Colorizer.color(con map { _.tree.tpe } getOrElse NoSymbol))
-    if (feedback) {
-      setLineStyle(SWT.LINE_DASH)
-      setLineWidth(2)
-    } else {
-      setLineWidth(1)
-      if (complete) {
-        setLineStyle(SWT.LINE_SOLID)
-      } else {
-        setLineStyle(SWT.LINE_DOT)
-      }
-    }
+  override def repaint() {
+    bounds =null
+    super.repaint()
   }
-  def show() {
-    setStart(new EPoint(l.start.x, l.start.y))
-    setEnd(new EPoint(l.end.x, l.end.y))
-    calcStyle
-    if (con.isDefined) {
-      bdf.connectionsLayer.add(this)
-    }else {
-      bdf.feedbackLayer.add(this)
-    }
-  }
-  def hide() {
+  def hide {
     val layer = if (con.isDefined) bdf.connectionsLayer else bdf.feedbackLayer
     if (layer.getChildren.contains(this))
       layer.remove(this)
   }
-  
+  def show {
+    calcStyle
+    if (con.isDefined) {
+      bdf.connectionsLayer.add(this)
+    } else {
+      bdf.feedbackLayer.add(this)
+    }
+  }
 }
-class PointFigure(p: Point, bdf: BoxDefContainer, color:Color) extends Ellipse with Selectable {
+
+class PointFigure(p: Point, bdf: BoxDefContainer, color: Color) extends Ellipse with Selectable {
   def show() {
     setSize(6, 6)
     setFill(true)
-    setLocation(point(p + Vector2(-3,-3)))
-    setBackgroundColor (color);// if (p.d == H) ColorConstants.yellow else ColorConstants.blue ) 
+    setLocation(point(p + Vector2(-3, -3)))
+    setBackgroundColor(color); // if (p.d == H) ColorConstants.yellow else ColorConstants.blue ) 
     bdf.connectionsLayer.add(this)
   }
   def showFeedback() {}
@@ -169,7 +213,7 @@ class ConnectionPainter(bdf: BoxDefContainer) {
   }
   def clear() {
     lines.foreach { _.hide }
-    points.foreach {_.hide }
+    points.foreach { _.hide }
     lines.clear
     points.clear
   }
@@ -188,7 +232,7 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
     val aw = position(tree.a).map(p ⇒ Waypoint(p, H)).toList
     val bw = position(tree.b).map(p ⇒ Waypoint(p, H)).toList
     Route(bw ::: tree.wayPoints ::: aw)*/
-    new Edge(new Joint(tree.wayPoints.head.p), new Joint(tree.wayPoints.last.p),tree.wayPoints map {_.p})
+    new Edge(new Joint(tree.wayPoints.head.p), new Joint(tree.wayPoints.last.p), tree.wayPoints map { _.p })
   }
   var feedback = false
   def paint = painter.paintRoute(route, feedback, Some(this))

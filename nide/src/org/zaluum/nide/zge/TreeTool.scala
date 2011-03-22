@@ -5,13 +5,14 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.ToolTip
 import draw2dConversions._
 import org.eclipse.draw2d.{ Cursors, Figure }
-import org.eclipse.draw2d.geometry.{ Point => EPoint, Rectangle }
+import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle }
 import org.zaluum.nide.compiler.{ _ }
 import scala.collection.JavaConversions._
 import org.zaluum.runtime.LoopBox
 
-class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool{
+class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
+  val connectionLineDistance = 3
   type C = BoxDefContainer
   override lazy val selecting = new TreeSelecting
   class PortTrack extends OverTrack[PortFigure] {
@@ -78,20 +79,20 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case (None, _, Some(port)) ⇒ // connect
           portsTrack.hideTip()
           lineSelected = None
-          connecting.enter(initContainer, port,currentMouseLocation)
+          connecting.enter(initContainer, port, currentMouseLocation)
         case (Some(box), _, _) ⇒
           viewer.selection.updateSelection(Set(box.tree), shift)
           lineSelected = None
           println(box.tree)
           viewer.refresh()
         case (None, Some(line), _) ⇒
-          if (line.l.distance(currentMouseLocation) <=2) {
+          if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
             line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c.tree), shift); println(c) }
             lineSelected = None
             viewer.refresh()
-          }else {
+          } else {
             println("connecting line")
-            connecting.enter(initContainer,line,currentMouseLocation)
+            connecting.enter(initContainer, line, currentMouseLocation)
           }
         case (None, None, _) ⇒
           viewer.selection.deselectAll()
@@ -101,18 +102,24 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
 
     }
     val portsTrack = new PortTrack {
-      override def onEnter(p: PortFigure) { super.onEnter(p); port = Some(p) }
+      override def onEnter(p: PortFigure) { super.onEnter(p); port = Some(p); viewer.setCursor(Cursors.CROSS) }
       override def onExit(p: PortFigure) { super.onExit(p); port = None }
     }
     override def move() {
       super.move()
+      viewer.setCursor(Cursors.ARROW);
+      itemOrLineUnderMouse foreach {
+        case l: LineFigure ⇒
+          if (l.l.distance(currentMouseLocation) > connectionLineDistance) viewer.setCursor(Cursors.CROSS)
+        case _ ⇒
+      }
       portsTrack.update()
     }
     override def drag { // TODO inherit item drag
       portsTrack.hideTip()
       (handle, selected, lineSelected) match {
         case (_, _, Some(l)) ⇒
-          segmentMoving.enter(currentMouseLocation,l, initContainer)
+          segmentMoving.enter(currentMouseLocation, l, initContainer)
         case (Some(h), _, _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
         case (None, Some(fig), _) ⇒ // select and move
@@ -304,5 +311,5 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   object movingOpenPort extends MovingOpenPort with DeltaMove with SingleContainer
-  
+
 }

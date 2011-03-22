@@ -27,6 +27,8 @@ case class Interval(start: Int, end: Int) {
   def high = math.max(start, end)
   def intersect(other: Interval, nearEnd: Boolean): List[Int] = {
     if (other.high < low || other.low > high) List() // |--| <-->
+    else if (other.high == low && high >= other.high) List(low)// <-->--|
+    else if (other.low == high && low <= other.low) List(high)// |--<-->
     else {
       val res = if (end > start) {
         if (other.low <= start && other.high >= end) List(end,start)                  // <--s--(e)-->
@@ -46,11 +48,19 @@ case class Interval(start: Int, end: Int) {
   }
   def contains(i: Int) = i >= low && i <= high
 }
-case class Line(val from: Point, val to: Point, primary: Boolean) {
+case class Line(val from: Point, val to: Point, horizontal: Boolean) {
   def midPoint = Point(to.x, from.y)
-  def start = if (primary) from else midPoint
-  def end = if (primary) midPoint else to
-  def dir = if (primary) H else V
+  def start = if (horizontal) from else midPoint
+  def end = if (horizontal) midPoint else to
+  def dir = if (horizontal) H else V
+  def low = {
+    if (horizontal) {
+      if (start.x < end.x) start else end
+    }else {
+      if (start.y < end.y) start else end
+    }
+  }
+  def high = if (low==start) end else start
   override def toString = "(" + start + "," + end + ")"
   def project(p: Point): Point = {
     val a = p - start
