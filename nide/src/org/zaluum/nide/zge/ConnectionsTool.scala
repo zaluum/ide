@@ -38,6 +38,7 @@ trait ConnectionsTool {
         port.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef },
         port.sym.name,
         port.in)
+      override def isEnd=true
     }
     case class JunctionVertex(val j: Junction) extends Vertex {
       def p = j.p

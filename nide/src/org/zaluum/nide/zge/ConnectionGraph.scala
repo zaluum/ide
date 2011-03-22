@@ -4,10 +4,12 @@ import org.zaluum.nide.compiler.Point
 import scala.annotation.tailrec
 trait Vertex {
   def p: Point
+  def isEnd = false
   //override def toString = "v(" + p + ")"
 }
 class End(val p: Point) extends Vertex {
   override def toString = "end(" + p + ")"
+  override def isEnd = true
 }
 class Joint(val p: Point) extends Vertex {
   override def toString = "joint(" + p + " " + hashCode + ")"
@@ -44,7 +46,7 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
   def isParallel(o: Edge) = { (a == o.a && b == o.b) || (a == o.b && b == o.a) }
   def intersections(e: Edge): (List[Point], List[Point]) = {
     val thisSorted = for (l ← lines; ol ← e.lines; i ← l.intersect(ol, false)) yield (i, l, ol)
-    //println(thisSorted.mkString("\n\t"))
+    println(thisSorted.mkString("\n\t"))
     val otherSorted = e.lines flatMap { l ⇒
       thisSorted.filter { case (_, _, ol) ⇒ ol == l }.
         sortBy { case (i, _, _) ⇒ l.start.distanceOrto(i) }
@@ -251,7 +253,7 @@ abstract class ConnectionGraph {
     val unaffectedEdges = edges filterNot { e ⇒ ca.edges(e) || cb.edges(e) }
     val affected = ca.edges ++ cb.edges
     def fill(g: ConnectionGraph, edges: List[Edge]) = edges.foldLeft(g)((g, e) ⇒ g.addTree(e))
-    val g = new ConnectionGraphV(vertexs, affected).addMaster2(e, fill).clean
+    val g = new ConnectionGraphV(vertexs, affected).addMaster2(e, fill).clean.pruneTree.clean
     new ConnectionGraphV(g.vertexs, g.edges ++ unaffectedEdges)
   }
   def findShortestPath(a: Vertex, b: Vertex, visited: Set[Vertex]): List[Vertex] = {
@@ -272,7 +274,6 @@ abstract class ConnectionGraph {
       candidate
     }
   }
-
   def vertexAtPos(p: Point): Option[Vertex] = vertexs.find { _.p == p }
   def component(v: Vertex) = components.find { c ⇒ c.vertexs.contains(v) }.get
   def add(v: Vertex) = {
@@ -285,6 +286,14 @@ abstract class ConnectionGraph {
     } getOrElse { new ConnectionGraphV(vertexs + v, edges) }
   }
   def remove(e: Edge) = new ConnectionGraphV(vertexs, edges - e)
+  // preconditions: it's a tree and it's connected
+  def pruneTree: ConnectionGraph = {
+    val keep = for (e<- edges; v<- Set(e.a,e.b); if (v.isEnd)) yield v
+    val root = keep.head
+    val cover = (for (k<-keep.tail; pv<-findShortestPath(root,k,Set())) yield pv).toSet
+    val coverE = for (e<-edges; if (cover.contains(e.a) && cover.contains(e.b))) yield e
+    new ConnectionGraphV(cover ++ ends,coverE)
+  }
   def clean: ConnectionGraph = {
     var edgesToProcess = edges
     var current = edges
@@ -307,5 +316,5 @@ abstract class ConnectionGraph {
     }
     new ConnectionGraphV(vertexs -- removedVertexs, current)
   }
-
+  def ends = vertexs.filter { _.isEnd }
 }

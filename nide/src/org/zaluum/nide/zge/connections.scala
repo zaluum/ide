@@ -37,7 +37,7 @@ case class Interval(start: Int, end: Int) {
         else if (other.low <= start && other.high>= start) List(other.high, start)    // <--s--(>)--e
         else throw new RuntimeException()
       } else {
-        if (other.low<=start && other.high>=end) List(start,end)                      // <--(s)--e-->
+        if (other.low<=end && other.high>=start) List(end,start)                      // <--(e)--s-->
         else if (other.low >= end && other.high <= start) List(other.low, other.high) // e--(<)-->--s
         else if (other.low <= start && other.high>=start) List(other.low, start)      // e--(<)--s-->
         else if ( other.low <= end && other.high >= end) List(end, other.high)        // <--(e)-->--s
