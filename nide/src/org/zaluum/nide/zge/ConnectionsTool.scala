@@ -40,9 +40,6 @@ trait ConnectionsTool {
         port.in)
       override def isEnd=true
     }
-    case class JunctionVertex(val j: Junction) extends Vertex {
-      def p = j.p
-    }
     def vertexAt(p: Point) = g.vertexs.find(v ⇒ v.p == p) getOrElse (new Joint(p))
     
     def enter(initContainer: C, initFig: Selectable, initPos: Point) {
@@ -50,11 +47,11 @@ trait ConnectionsTool {
       enterSingle(initContainer)
       painter = new ConnectionPainter(initContainer.asInstanceOf[BoxDefContainer])
       val ports = initContainer.portsLayer.getChildren collect { case port: PortFigure ⇒ PortVertex(port) }
-      val junctions = initContainer.boxDef.junctions collect { case j: Junction ⇒ JunctionVertex(j) }
+      val junctions = initContainer.boxDef.junctions.collect { case j: Junction ⇒ (j->new Joint(j.p)) }.toMap
       val edges = initContainer.boxDef.connections map {
         case c: ConnectionDef ⇒
           def toVertex(t: Tree, start: Boolean): Vertex = t match {
-            case JunctionRef(name) ⇒ junctions.find { _.j.name == name }.get
+            case JunctionRef(name) ⇒ junctions.find { case (k,v) => k.name == name }.get._2
             case p: PortRef ⇒ ports.find { _.portPath == PortPath(p) }.get
           }
           new Edge(toVertex(c.a, true), toVertex(c.b, false), c.wayPoints map { _.p })
@@ -63,7 +60,7 @@ trait ConnectionsTool {
       src = Some(initFig)
       srcPos = snapMouse(src, initPos)
       center = true
-      g = new ConnectionGraphV(ports.toSet ++ junctions, edges.toSet)
+      g = new ConnectionGraphV(ports.toSet ++ junctions.values, edges.toSet)
       edge = Edge(vertexAt(srcPos), vertexAt(srcPos))
       dir = H
       move()
@@ -85,12 +82,12 @@ trait ConnectionsTool {
       val newEdge = new Edge(vstart, vend, wp).untangle
       println("endConnection newEdge=" + newEdge.linesString )
       val newGraph = g.add(vstart).add(vend).addMaster(newEdge)
+      println(newGraph.vertexs)
       var map = Map[Vertex,Junction]()
       val namer = new Namer {
-        def usedNames = map.values.map{_.name.str}.toSet ++ bs.connections.junctions.map {_.name.str}
+        def usedNames = map.values.map{_.name.str}.toSet 
       }
       val junctions : List[Junction]= newGraph.vertexs.toList collect {
-        case j:JunctionVertex=> j.j
         case v:Joint => 
           val j = Junction(Name(namer.freshName("j")),v.p)
           map += (v->j)
@@ -100,7 +97,6 @@ trait ConnectionsTool {
       val connections : List[Tree]= newGraph.edges.map { e ⇒
         def vertexRef(v: Vertex) : Tree= v match {
           case p: PortVertex ⇒ p.toRef
-          case j: JunctionVertex ⇒ JunctionRef(j.j.name)
           case v ⇒ JunctionRef(map(v).name)
         }
         ConnectionDef(vertexRef(e.a),vertexRef(e.b),e.points map { Waypoint(_,H)})
@@ -120,7 +116,7 @@ trait ConnectionsTool {
 
     }
     def extend = edge.extend(vertexAt(snapMouse(dst, currentMouseLocation)))
-    def buttonUp {
+    def buttonUp { 
       // execute model command
       if (dst.isDefined) {
         endConnection()

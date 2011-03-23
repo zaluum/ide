@@ -39,8 +39,8 @@ class Controller(private var nowTree: Tree, val global: EclipseBoxClasspath) {
     nowTree = c(tree)
     undoStack.push(Mutation(before, c.map, nowTree))
     redoStack.clear
-    update(c.map)
     PrettyPrinter.print(nowTree, 0)
+    update(c.map)
   }
   private def update(m: DMap) {
     compile()

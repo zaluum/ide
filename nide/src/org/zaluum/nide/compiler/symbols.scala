@@ -85,7 +85,7 @@ class BoxTypeSymbol(
     }
     def addConnection(c: ConnectionDef) = {
       (c.a, c.b) match {
-        case (p: PortRef, j: JunctionRef) ⇒ addPort(lookupJunction(j.name).get, p, c)
+        case (p: PortRef, j: JunctionRef) ⇒ addPort(lookupJunction(j.name).getOrElse{throw new RuntimeException("cannot find junction"  + j.name)}, p, c)
         case (j: JunctionRef, p: PortRef) ⇒ addPort(lookupJunction(j.name).get, p, c)
         case (p1: PortRef, p2: PortRef) ⇒ addPorts(p1, p2, c)
         case (j1: JunctionRef, j2: JunctionRef) ⇒ addJunctions(lookupJunction(j1.name).get, lookupJunction(j2.name).get, c)

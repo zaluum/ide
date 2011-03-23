@@ -233,6 +233,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             check()
           case v: ValDef ⇒ acyclic.addVertex(v.symbol.asInstanceOf[ValSymbol])
           case j@Junction(name,_) =>
+            println("adding junction " +  name)
             bs.connections.lookupJunction(name) match {
               case Some(j) => error("junction name already exists", j)
               case None => bs.connections.junctions += j
@@ -292,6 +293,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
   }
   def compile(): Tree = {
     val root = global.root
+    PrettyPrinter.print(toCompile, 0)
     new Namer(root).traverse(toCompile)
     new Resolver(root).traverse(toCompile)
     new CheckParams(root).traverse(toCompile)
