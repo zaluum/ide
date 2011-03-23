@@ -93,11 +93,16 @@ trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
     }
   }
 }
-case class LineSelectionSubject(c:ConnectionDef, l : Line) extends SelectionSubject
-class LineFigure(val l: Line, val r: Edge, val container: BoxDefContainer, val con: Option[ConnectionFigure] = None) extends Figure with Item {
+case class LineSelectionSubject(c: ConnectionDef, l: Line) extends SelectionSubject
+class LineFigure(
+  val l: Line,
+  val r: Edge,
+  val container: BoxDefContainer,
+  val complete:Boolean,
+  val con: Option[ConnectionFigure] = None) extends SimpleItem with RectFeedback {
   val tolerance = 4
-  def expand = ((width +2)/ 2.0f).asInstanceOf[Int] 
-  override def selectionSubject = con map { cf => LineSelectionSubject(cf.tree,l)}
+  def expand = ((width + 2) / 2.0f).asInstanceOf[Int]
+  override def selectionSubject = con map { cf ⇒ LineSelectionSubject(cf.tree, l) }
   override def getBounds: Rectangle = {
     if (bounds == null) {
       val (expandx, expandy) = if (l.horizontal) (0, expand) else (expand, 0)
@@ -105,6 +110,8 @@ class LineFigure(val l: Line, val r: Edge, val container: BoxDefContainer, val c
     }
     bounds
   }
+  def size = getBounds.getSize //special size
+  def pos = getBounds.getLocation
   override def containsPoint(x: Int, y: Int) = {
     val t = math.max(expand, tolerance).asInstanceOf[Int];
     val b = getBounds.getCopy
@@ -112,12 +119,25 @@ class LineFigure(val l: Line, val r: Edge, val container: BoxDefContainer, val c
     b.contains(x, y)
     //  return shapeContainsPoint(x, y) || childrenContainsPoint(x, y);
   }
+  override def update = {
+    setForegroundColor(Colorizer.color(con map { _.tree.tpe } getOrElse NoSymbol))
+    width = 1
+    if (complete) {
+      style = SWT.LINE_SOLID
+    } else {
+      style = SWT.LINE_DOT
+    }
+    helpers.clear
+    //erase
+    //repaint
+    feed.setInnerBounds(getBounds)
+  }
   override def paintFigure(g: Graphics) = {
     g.setForegroundColor(getForegroundColor);
     g.setLineStyle(style)
     g.setLineWidth(width)
     g.drawLine(point(l.start), point(l.end))
-    val w = ((width/2.0f)+1).asInstanceOf[Int]
+    val w = ((width / 2.0f) + 1).asInstanceOf[Int]
     val (sv, ev, upv, downv) = if (l.horizontal)
       (Vector2(expand + 1, 0), Vector2(-expand - 1, 0), Vector2(0, -w), Vector2(0, w))
     else
@@ -135,50 +155,13 @@ class LineFigure(val l: Line, val r: Edge, val container: BoxDefContainer, val c
     g.drawLine(point(ups), point(upe))
     g.drawLine(point(downs), point(downe))
   }
-  var complete = true
-  var feedback = false
   var style = SWT.LINE_SOLID
   var width = 1
-  def calcStyle {
-    setForegroundColor(Colorizer.color(con map { _.tree.tpe } getOrElse NoSymbol))
-    if (feedback) {
-      style = SWT.LINE_DASH
-      width = 2
-    } else {
-      width = 1
-      if (complete) {
-        style = SWT.LINE_SOLID
-      } else {
-        style = SWT.LINE_DOT
-      }
-    }
-    erase
-    repaint
-  }
-  def showFeedback { feedback = true; calcStyle }
-  def hideFeedback { feedback = false; calcStyle }
-  def showComplete { complete = true; calcStyle }
-  def showIncomplete { complete = false; calcStyle }
-  def resizeDeltaFeed(delta:Vector2,handle:HandleRectangle) = {}
-  def moveDeltaFeed(delta:Vector2){}
-  def moveFeed(p:Point){}
   override def repaint() {
-    bounds =null
+    bounds = null
     super.repaint()
   }
-  def hide {
-    val layer = if (con.isDefined) container.connectionsLayer else container.feedbackLayer
-    if (layer.getChildren.contains(this))
-      layer.remove(this)
-  }
-  def show {
-    calcStyle
-    if (con.isDefined) {
-      container.connectionsLayer.add(this)
-    } else {
-      container.feedbackLayer.add(this)
-    }
-  }
+  def myLayer = if(con.isDefined) container.connectionsLayer else container.feedbackLayer
 }
 
 class PointFigure(p: Point, val container: BoxDefContainer, color: Color) extends Ellipse with Item {
@@ -195,24 +178,19 @@ class PointFigure(p: Point, val container: BoxDefContainer, color: Color) extend
     if (container.connectionsLayer.getChildren.contains(this))
       container.connectionsLayer.remove(this)
   }
-  def resizeDeltaFeed(delta:Vector2,handle:HandleRectangle) = {}
-  def moveDeltaFeed(delta:Vector2){}
-  def moveFeed(p:Point){}
+  def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) = {}
+  def moveDeltaFeed(delta: Vector2) {}
+  def moveFeed(p: Point) {}
 }
 class ConnectionPainter(bdf: BoxDefContainer) {
   val lines = Buffer[LineFigure]()
   val points = Buffer[PointFigure]()
   def paintCreatingRoute(edge: Edge) {
-    paintRoute(edge, false)
-    lines foreach { _.showIncomplete }
-    if (lines.size >= 2) {
-      lines.head.showFeedback()
-      lines(1).showFeedback()
-    }
+    paintRoute(edge, false, false)
   }
-  def paintRoute(edge: Edge, feedback: Boolean, con: Option[ConnectionFigure] = None) {
+  def paintRoute(edge: Edge, feedback: Boolean, complete:Boolean, con: Option[ConnectionFigure] = None) {
     clear()
-    edge.lines foreach { l ⇒ lines += new LineFigure(l, edge, bdf, con) }
+    edge.lines foreach { l ⇒ lines += new LineFigure(l, edge, bdf, complete, con) }
     //edge.points foreach { p => points += new PointFigure(p,bdf,ColorConstants.white) }
     if (feedback) lines foreach { l ⇒ l.showFeedback() }
     lines foreach { l ⇒ l.show }
@@ -242,7 +220,7 @@ class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) 
     new Edge(new Joint(tree.wayPoints.head.p), new Joint(tree.wayPoints.last.p), tree.wayPoints map { _.p })
   }
   var feedback = false
-  def paint = painter.paintRoute(route, feedback, Some(this))
+  def paint = painter.paintRoute(route, feedback, true, Some(this))
   def show() = {
     container.connectionsLayer.add(this);
     paint

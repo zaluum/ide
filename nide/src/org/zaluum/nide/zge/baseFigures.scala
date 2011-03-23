@@ -137,8 +137,9 @@ trait SimpleItem extends Item {
     myLayer.add(this)
   }
   def hide() {
-    myLayer.remove(this)
+    if (myLayer.getChildren.contains(this)) myLayer.remove(this)
     helpers.foreach { _.hide() }
+    hideFeedback()
   }
   def moveFeed(loc: MPoint) {
     feed.setInnerLocation(point(loc))
