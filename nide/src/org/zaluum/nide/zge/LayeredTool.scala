@@ -9,7 +9,7 @@ import scala.reflect.Manifest._
 import RichFigure._
 abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   type C <: Container
-  def itemOrLineUnderMouse = current.itemOrLineAt(point(currentMouseLocation))
+  def itemOrLineUnderMouse = current.itemAt(point(currentMouseLocation))
   def currentMouseLocation : Point = translate(current, absMouseLocation)
   def current : C = viewer.findDeepContainerAt(point(absMouseLocation)) {
     case (f: OpenBoxFigure) ⇒ f.asInstanceOf[C]

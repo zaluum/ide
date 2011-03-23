@@ -21,21 +21,21 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   state = selecting
   // SELECTING 
   class Selecting extends ToolState {
-    var selected: Option[TreeItem] = None
+    var beingSelected: Option[Item] = None
     var handle: Option[HandleRectangle] = None
     var initDrag: Point = _
     var initContainer: C = _
     def enter() { state = this; }
 
     def buttonDown {
-      selected = itemOrLineUnderMouse collect { case i: TreeItem ⇒ i }
+      beingSelected = itemOrLineUnderMouse collect { case i: Item ⇒ i }
       initDrag = currentMouseLocation
       initContainer = current
     }
 
     def buttonUp {
-      selected match {
-        case Some(box:TreeItem) ⇒ viewer.selection.updateSelection(Set(box.tree), shift)
+      beingSelected match {
+        case Some(s:Item) => viewer.selection.updateSelection(s.selectionSubject.toSet, shift)
         case None ⇒ viewer.selection.deselectAll()
       }
       viewer.refresh()
@@ -58,13 +58,15 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       handleTrack.update()
     }
     def drag {
-      (handle, selected) match {
+      (handle, beingSelected) match {
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
         case (None, Some(fig)) ⇒ // select and move
-          if (!viewer.selection(fig.tree)){
-            viewer.selection.updateSelection(Set(fig.tree), shift)
-            fig.showFeedback()
+          if (fig.selectionSubject.isDefined){
+            if (!viewer.selection(fig.selectionSubject.get)){
+              viewer.selection.updateSelection(fig.selectionSubject.toSet, shift)
+              fig.showFeedback()
+            }
           }
           moving.enter(initDrag, initContainer)
         case (None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee

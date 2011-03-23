@@ -8,10 +8,10 @@ import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.compiler._
 
 trait ViewerResources { // XXX rename
-  def imageFactory  : ImageFactory 
+  def imageFactory: ImageFactory
 }
-class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath) 
-  extends ItemViewer(parent, controller) with BoxDefContainer with ViewerResources{
+class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
+  extends ItemViewer(parent, controller) with BoxDefContainer with ViewerResources {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
   val palette = new Palette(this, parent.getShell, controller.global)
@@ -26,13 +26,13 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   val tool: TreeTool = new TreeTool(this)
   def gotoMarker(l: Location) {
     // IDEA look at controllers save mark and then transform the selection to get the current blame node
-    tree.findPath(l.path) foreach { t => 
-    selection.deselectAll
+    tree.findPath(l.path) foreach { t ⇒
+      selection.deselectAll
       selection.select(t)
       refresh()
       focus
     }
-  } 
+  }
   override def populateFigures() {
     super.populateFigures()
     boxDef.children foreach {
@@ -48,15 +48,38 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     imageFactory.reg.dispose
   }
   import RichFigure._
-  def remapSelection(m : Map[Tree,Tree]){
-    selection.refresh(m);
+  def remapSelection(m: PartialFunction[SelectionSubject, SelectionSubject]) {
+    val mapper = m.orElse{ 
+      //map LineSelectionSubject
+      new PartialFunction[SelectionSubject,SelectionSubject] { 
+        def isDefinedAt(s:SelectionSubject) : Boolean = {
+            s match {
+              case l:LineSelectionSubject =>
+                if (m.isDefinedAt(l.c)) {
+                  val cd = m(l.c).asInstanceOf[ConnectionDef]
+                  Edge(cd).lines exists {_ == l.l }
+                }else false
+              case _ => false
+            }
+        }
+        def apply(s:SelectionSubject) : SelectionSubject = {
+          val l = s.asInstanceOf[LineSelectionSubject]
+          val cd = m(l.c).asInstanceOf[ConnectionDef]
+          LineSelectionSubject(cd,l.l)
+        }
+      }
+    };
+    selection.refresh(mapper);
   }
   def refresh() {
     helpers.clear
     clear
     populate()
-    helpers.foreach{_.show}
+    helpers.foreach { _.show }
+    println(selectedItems)
     selectedItems foreach { _.showFeedback() }
   }
-  def selectedItems = this.deepChildren.collect { case i:TreeItem if selection(i.tree) => i}.toSet
+  def selectedItems = this.deepChildren.collect {
+    case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i
+  }.toSet
 }

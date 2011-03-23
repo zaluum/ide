@@ -1,4 +1,6 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.compiler.SelectionSubject
 import draw2dConversions._
 import org.eclipse.draw2d.{ Figure, IFigure }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
@@ -85,8 +87,13 @@ class RichFigure(container: IFigure) {
     return candidate
   }
 }
-
-trait Selectable extends Figure with Feedback with ShowHide
+trait Item extends Figure with Feedback with ShowHide {
+  def selectionSubject : Option[SelectionSubject] = None 
+  def container :Container
+  def moveFeed(loc: MPoint) 
+  def moveDeltaFeed(delta: Vector2) 
+  def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) 
+}
 trait Feedback {
   def showFeedback()
   def hideFeedback()
@@ -95,15 +102,10 @@ trait ShowHide {
   def show()
   def hide()
 }
-trait Item extends Selectable {
-  def container :Container
-  def moveFeed(loc: MPoint) 
-  def moveDeltaFeed(delta: Vector2) 
-  def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) 
-}
 trait TreeItem extends Item {
   type T <: Tree
   def tree :T  
+  override def selectionSubject = Some(tree)
 }
 trait SymbolItem extends Item {
   type S <: Symbol

@@ -5,7 +5,8 @@ import scala.collection.immutable.Stack
 import scala.collection.mutable.Buffer
 import java.io.StringWriter
 
-abstract class Tree extends Product {
+trait SelectionSubject 
+abstract class Tree extends Product with SelectionSubject{
   //var pos : Position = NoPosition
   var tpe: Type = NoSymbol
   var symbol: Symbol = NoSymbol
@@ -70,7 +71,7 @@ trait RefTree extends SymTree {
 abstract class EditTransformer extends CopyTransformer with MapTransformer
 
 trait MapTransformer extends Transformer {
-  var map = Map[Tree, Tree]()
+  var map = Map[SelectionSubject, SelectionSubject]()
   abstract override protected def transform(tree: Tree): Tree = {
     val transformed = super.transform(tree)
     map += (tree -> transformed)

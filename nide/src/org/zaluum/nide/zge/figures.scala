@@ -93,10 +93,11 @@ trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
     }
   }
 }
-
-class LineFigure(val l: Line, val r: Edge, bdf: BoxDefContainer, val con: Option[ConnectionFigure] = None) extends Figure with Selectable {
+case class LineSelectionSubject(c:ConnectionDef, l : Line) extends SelectionSubject
+class LineFigure(val l: Line, val r: Edge, val container: BoxDefContainer, val con: Option[ConnectionFigure] = None) extends Figure with Item {
   val tolerance = 4
   def expand = ((width +2)/ 2.0f).asInstanceOf[Int] 
+  override def selectionSubject = con map { cf => LineSelectionSubject(cf.tree,l)}
   override def getBounds: Rectangle = {
     if (bounds == null) {
       val (expandx, expandy) = if (l.horizontal) (0, expand) else (expand, 0)
@@ -158,39 +159,45 @@ class LineFigure(val l: Line, val r: Edge, bdf: BoxDefContainer, val con: Option
   def hideFeedback { feedback = false; calcStyle }
   def showComplete { complete = true; calcStyle }
   def showIncomplete { complete = false; calcStyle }
+  def resizeDeltaFeed(delta:Vector2,handle:HandleRectangle) = {}
+  def moveDeltaFeed(delta:Vector2){}
+  def moveFeed(p:Point){}
   override def repaint() {
     bounds =null
     super.repaint()
   }
   def hide {
-    val layer = if (con.isDefined) bdf.connectionsLayer else bdf.feedbackLayer
+    val layer = if (con.isDefined) container.connectionsLayer else container.feedbackLayer
     if (layer.getChildren.contains(this))
       layer.remove(this)
   }
   def show {
     calcStyle
     if (con.isDefined) {
-      bdf.connectionsLayer.add(this)
+      container.connectionsLayer.add(this)
     } else {
-      bdf.feedbackLayer.add(this)
+      container.feedbackLayer.add(this)
     }
   }
 }
 
-class PointFigure(p: Point, bdf: BoxDefContainer, color: Color) extends Ellipse with Selectable {
+class PointFigure(p: Point, val container: BoxDefContainer, color: Color) extends Ellipse with Item {
   def show() {
     setSize(6, 6)
     setFill(true)
     setLocation(point(p + Vector2(-3, -3)))
     setBackgroundColor(color); // if (p.d == H) ColorConstants.yellow else ColorConstants.blue ) 
-    bdf.connectionsLayer.add(this)
+    container.connectionsLayer.add(this)
   }
   def showFeedback() {}
   def hideFeedback() {}
   def hide() {
-    if (bdf.connectionsLayer.getChildren.contains(this))
-      bdf.connectionsLayer.remove(this)
+    if (container.connectionsLayer.getChildren.contains(this))
+      container.connectionsLayer.remove(this)
   }
+  def resizeDeltaFeed(delta:Vector2,handle:HandleRectangle) = {}
+  def moveDeltaFeed(delta:Vector2){}
+  def moveFeed(p:Point){}
 }
 class ConnectionPainter(bdf: BoxDefContainer) {
   val lines = Buffer[LineFigure]()

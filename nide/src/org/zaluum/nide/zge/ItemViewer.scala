@@ -1,4 +1,7 @@
 package org.zaluum.nide.zge
+
+import org.zaluum.nide.compiler.SelectionSubject
+import org.zaluum.nide.compiler.Tree
 import draw2dConversions._
 import org.eclipse.draw2d.{ Figure, FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, ColorConstants, RectangleFigure, Graphics }
 import org.eclipse.draw2d.geometry.Rectangle
@@ -40,6 +43,6 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   def showMarquee() { feedbackLayer.add(marquee) }
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
   def hideMarquee() { feedbackLayer.remove(marquee) }
-  def selectedItems : Set[TreeItem]
-  val selection = new SelectionManager()
+  def selectedItems : Set[Item]
+  val selection = new SelectionManager[SelectionSubject]()
 }

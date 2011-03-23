@@ -17,8 +17,8 @@ trait ConnectionsTool {
     self: SingleContainer ⇒
     var g: ConnectionGraph = null
     var edge: Edge = null
-    var dst: Option[Selectable] = None
-    var src: Option[Selectable] = None
+    var dst: Option[Item] = None
+    var src: Option[Item] = None
     var srcPos: Point = Point(0, 0)
     var painter: ConnectionPainter = _
     var dir: OrtoDirection = H
@@ -42,7 +42,7 @@ trait ConnectionsTool {
     }
     def vertexAt(p: Point) = g.vertexs.find(v ⇒ v.p == p) getOrElse (new Joint(p))
     
-    def enter(initContainer: C, initFig: Selectable, initPos: Point) {
+    def enter(initContainer: C, initFig: Item, initPos: Point) {
       state = this
       enterSingle(initContainer)
       painter = new ConnectionPainter(initContainer.asInstanceOf[BoxDefContainer])
@@ -146,7 +146,7 @@ trait ConnectionsTool {
       portsTrack.update()
       dst foreach { _.hideFeedback() }
       viewer.setStatusMessage(currentMouseLocation.toString)
-      initContainer.itemOrLineAt(point(currentMouseLocation)) match {
+      initContainer.itemAt(point(currentMouseLocation)) match {
         case Some(p: PortFigure) ⇒ dst = Some(p)
         case Some(l: LineFigure) ⇒ dst = Some(l)
         case _ ⇒ dst = None

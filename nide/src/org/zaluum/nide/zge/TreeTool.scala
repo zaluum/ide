@@ -63,10 +63,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   }
   class TreeSelecting extends Selecting with DeleteState {
     var port: Option[PortFigure] = None
-    var lineSelected: Option[LineFigure] = None
     override def buttonDown {
       super.buttonDown()
-      lineSelected = itemOrLineUnderMouse collect { case l: LineFigure ⇒ l }
     }
     override def doubleClick() {
       itemOrLineUnderMouse match {
@@ -75,28 +73,27 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     override def buttonUp { // TODO inherit
-      (selected, lineSelected, port) match {
-        case (None, _, Some(port)) ⇒ // connect
+      println("buttonUp " + beingSelected + " " + port)
+      (beingSelected, port) match {
+        case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
-          lineSelected = None
           connecting.enter(initContainer, port, currentMouseLocation)
-        case (Some(box), _, _) ⇒
-          viewer.selection.updateSelection(Set(box.tree), shift)
-          lineSelected = None
+        case (Some(box:TreeItem), None) ⇒
+          viewer.selection.updateSelection(box.selectionSubject.toSet, shift)
           println(box.tree)
           viewer.refresh()
-        case (None, Some(line), _) ⇒
+        case (Some(line:LineFigure), None) =>
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
-            line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c.tree), shift); println(c) }
-            lineSelected = None
+            viewer.selection.updateSelection(line.selectionSubject.toSet,shift)
+            println("line selected")
+            //line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c.tree), shift); println(c) }
             viewer.refresh()
           } else {
             println("connecting line")
             connecting.enter(initContainer, line, currentMouseLocation)
           }
-        case (None, None, _) ⇒
+        case (None, _) ⇒
           viewer.selection.deselectAll()
-          lineSelected = None
           viewer.refresh()
       }
 
@@ -117,12 +114,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     override def drag { // TODO inherit item drag
       portsTrack.hideTip()
-      (handle, selected, lineSelected) match {
-        case (_, _, Some(l)) ⇒
-          segmentMoving.enter(currentMouseLocation, l, initContainer)
-        case (Some(h), _, _) ⇒ // resize
+      (handle, beingSelected) match {
+        case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
-        case (None, Some(fig), _) ⇒ // select and move
+        case (None, Some(fig:TreeItem)) ⇒ // select and move
           if (!viewer.selection(fig.tree)) {
             viewer.selection.updateSelection(Set(fig.tree), shift)
             fig.showFeedback()
@@ -131,7 +126,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
             case _ ⇒ moving.enter(initDrag, initContainer)
           }
-        case (None, None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
+        case (None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
     def delete() {

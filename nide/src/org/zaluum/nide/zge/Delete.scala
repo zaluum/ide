@@ -3,8 +3,8 @@ package org.zaluum.nide.zge
 import org.zaluum.nide.compiler._
 
 object Delete {
-  def deleteSelection(selected: Set[TreeItem]) = {
-    val selectedTree = selected map { _.tree.asInstanceOf[Tree] }
+  def deleteSelection(selected: Set[Item]) = {
+    val selectedTree = selected collect  { case i : TreeItem => i.tree.asInstanceOf[Tree] }
     val valDefs = selectedTree collect { case v: ValDef ⇒ v }
     val portDefs = selectedTree collect { case p: PortDef ⇒ p }
     val connDefs = selectedTree collect { case c: ConnectionDef ⇒ c }

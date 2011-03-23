@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.compiler.TreeToClass
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.PrettyPrinter
@@ -17,7 +18,7 @@ class Controller(private var nowTree: Tree, val global: EclipseBoxClasspath) {
   def unregisterViewer(viewer: Viewer) {
     viewers -= viewer
   }
-  def updateViewers(map: Map[Tree, Tree]) {
+  def updateViewers(map: Map[SelectionSubject, SelectionSubject]) {
     viewers foreach { v ⇒ v.remapSelection(map); v.refresh() }
   }
   def refreshTools() { viewers foreach { _.tool.refresh() } }
@@ -27,7 +28,7 @@ class Controller(private var nowTree: Tree, val global: EclipseBoxClasspath) {
     val scope = new FakeGlobalScope(global)
     nowTree = new Analyzer(reporter, tree, scope).compile()
   }
-  type DMap = Map[Tree, Tree]
+  type DMap = Map[SelectionSubject, SelectionSubject]
   case class Mutation(before: Tree, d: DMap, now: Tree)
   var undoStack = Stack[Mutation]()
   var redoStack = Stack[Mutation]()

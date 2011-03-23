@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.compiler.ConnectionDef
 import org.zaluum.nide.compiler.Point
 import scala.annotation.tailrec
 trait Vertex {
@@ -7,11 +8,20 @@ trait Vertex {
   def isEnd = false
   //override def toString = "v(" + p + ")"
 }
+class TempEnd(val p:Point) extends Vertex {
+  override def isEnd =true
+}
 class Joint(val p: Point) extends Vertex {
   override def toString = "joint(" + p + " " + hashCode + ")"
 }
 object Edge {
   def apply(a: Vertex, b: Vertex): Edge = new Edge(a, b, List(b.p, a.p))
+  def apply(c:ConnectionDef) :Edge = {
+    val points = c.wayPoints map { _.p}
+    val a = new TempEnd(points.head)
+    val b = new TempEnd(points.last)
+    new Edge(a,b,points)
+  }
 }
 case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
   assert(points.size >= 2)

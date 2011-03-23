@@ -3,7 +3,7 @@ package org.zaluum.nide.zge
 import org.eclipse.ui.IEditorSite
 import org.eclipse.ui.IViewSite
 import org.eclipse.ui.PlatformUI
-import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.{Tree,SelectionSubject}
 import draw2dConversions._
 import org.eclipse.draw2d.{FigureCanvas, FreeformViewport, LightweightSystem}
 import org.eclipse.swt.graphics.Cursor
@@ -18,7 +18,7 @@ abstract class Viewer(parent: Composite, val controller: Controller) extends Fre
   def focus = parent.setFocus
   def tool: Tool
   def refresh()
-  def remapSelection(map :  Map[Tree,Tree]) // move to item?
+  def remapSelection(map :  PartialFunction[SelectionSubject,SelectionSubject]) // move to item?
   def dispose() {
     canvas.dispose()
     controller.unregisterViewer(this)

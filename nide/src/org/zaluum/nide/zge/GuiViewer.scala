@@ -51,7 +51,7 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
     imageFactory.reg.dispose
   }
   import RichFigure._
-  def remapSelection(m: Map[Tree, Tree]) {
+  def remapSelection(m: PartialFunction[SelectionSubject, SelectionSubject]) {
     selection.refresh(m);
   }
 
