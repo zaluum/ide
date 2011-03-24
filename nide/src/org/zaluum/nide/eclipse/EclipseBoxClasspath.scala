@@ -24,7 +24,7 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
   def jproject = jmodel.getJavaProject(project);
   val classLoader = {
     val urls = jproject.getResolvedClasspath(true) flatMap { e ⇒ pathToURL(e.getPath) }
-    new URLClassLoader(urls, currentThread.getContextClassLoader)
+    new URLClassLoader(urls, Thread.currentThread.getContextClassLoader)
   }
   case object root extends Symbol {
     val owner = NoSymbol
