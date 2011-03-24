@@ -100,9 +100,9 @@ class GuiTool(guiViewer: GuiViewer) extends ItemTool(guiViewer) {
       }
     }
   }
-  override val moving = new MovingItem {
+  /* FIXME override val moving = new MovingItem {
     override def buttonUp {
-      val positions = movables.map { item ⇒
+      val positions = movables.collect { case item : TreeItem ⇒
         val oldLoc = item.getBounds.getLocation
         (item.tree.asInstanceOf[ValDef] -> (Point(oldLoc.x, oldLoc.y) + delta))
       }.toMap
@@ -114,5 +114,5 @@ class GuiTool(guiViewer: GuiViewer) extends ItemTool(guiViewer) {
       }
       controller.exec(command)
     }
-  }
+  }*/
 }

@@ -68,53 +68,15 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
               fig.showFeedback()
             }
           }
-          moving.enter(initDrag, initContainer)
+          // FIXME moving.enter(initDrag, initContainer)
         case (None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
     def exit {}
     def abort {}
   }
-  // MOVE
-  trait Moving extends ToolState {
-    self: DeltaMove with SingleContainer ⇒
-    def enter(initDrag: Point, initContainer: C) {
-      enterMoving(initDrag)
-      enterSingle(initContainer)
-      state = this
-    }
-
-    def allowed = (current eq initContainer) || (movables.exists { isOrHas(_, current) })
-    def movables = viewer.selectedItems.collect {
-      case item:TreeItem if item.container == initContainer ⇒ item
-    }
-    def buttonUp {
-      val positions = movables.map { item ⇒
-        val oldLoc = item.getBounds.getLocation
-        (item.tree.asInstanceOf[Tree] -> (Point(oldLoc.x, oldLoc.y) + delta))
-      }.toMap
-      val command = new EditTransformer {
-        val trans: PartialFunction[Tree, Tree] = {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) if (positions.contains(v)) ⇒
-            ValDef(name, typeName, positions(v), size, guiPos, guiSize,params)
-          case p: PortDef if (positions.contains(p)) ⇒
-            p.copy(inPos = positions(p))
-        }
-      }
-      controller.exec(command)
-    }
-    def drag {}
-    def buttonDown {}
-    def exit() { selecting.enter() }
-    def move() { viewer.selectedItems foreach { _.moveDeltaFeed(delta) } }
-    def abort() {
-      viewer.selectedItems foreach { _.moveDeltaFeed(Vector2(0, 0)) }
-      exit()
-    }
-  }
-  class MovingItem extends Moving with DeltaMove with SingleContainer with Allower 
-  val moving = new MovingItem
-  
+  //// MOVE
+    
   /// MARQUEE
   object marqueeing extends DeltaMove with SingleContainer {
     def enter(p: Point, initContainer: C) {

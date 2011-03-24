@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.compiler.ConnectionDef
 import org.zaluum.nide.compiler.Point
 import scala.annotation.tailrec
@@ -63,6 +64,41 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
   def reverse = {
     val p = lines.head.start :: (for (l <- lines) yield l.end)
     new Edge(b,a,p.reverse)
+  }
+  def move(moveLines:Set[Line],v : Vector2) = {
+    var moveH = Set[Point]()
+    var moveV = Set[Point]()
+    for (l<-moveLines; if (lines.contains(l))) {
+      if (l.horizontal){
+        assert(points.contains(l.start))
+        val prefix = points.takeWhile(p => p!=l.start)
+        moveH ++= prefix.reverse.takeWhile(p=> p.x == l.start.x)
+        val suffix = points.dropWhile(p => p!=l.start).drop(1)
+        moveH ++= suffix.takeWhile(p=> p.x ==l.end.x)
+        moveV ++= prefix.reverse.takeWhile(p => p.y == l.start.y)
+        moveV ++= suffix.takeWhile(p=> p.y == l.end.y)
+        moveV += l.start
+        moveH += l.start
+      } else {
+        assert(points.contains(l.end))
+        val prefix = points.takeWhile(p => p!=l.end)
+        moveH ++= prefix.reverse.takeWhile(p => p.x == l.end.x)
+        val suffix = points.dropWhile(p=> p!=l.end).drop(1)
+        moveH ++= suffix.takeWhile(p=> p.x == l.end.x)
+        moveV ++= prefix.reverse.takeWhile(p=> p.y == l.start.y)
+        moveV ++= suffix.takeWhile(p=> p.y == l.end.y)
+        moveH += l.end
+        moveV += l.end
+      }
+    }
+    val newPoints = for (p<-points) yield {
+      if (moveH.contains(p) && moveV.contains(p)) p+v
+      else if (moveH.contains(p)) Point(p.x+v.x, p.y)
+      else if (moveV.contains(p)) Point(p.x, p.y+v.y)
+      else p
+    }
+    val fixedPoints = (a.p :: newPoints.tail).dropRight(1) ::: b.p :: Nil
+    new Edge(a,b, fixedPoints)
   }
   def splitAt(v: Vertex): (Edge, Option[Edge]) = {
     if (v.p == a.p || v.p == b.p) (this, None)

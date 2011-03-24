@@ -117,9 +117,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       (handle, beingSelected) match {
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
-        case (None, Some(fig:TreeItem)) ⇒ // select and move
-          if (!viewer.selection(fig.tree)) {
-            viewer.selection.updateSelection(Set(fig.tree), shift)
+        case (None, Some(fig:Item)) ⇒ // select and move
+          fig.selectionSubject foreach { s =>
+            viewer.selection.select(s)
             fig.showFeedback()
           }
           fig match {
