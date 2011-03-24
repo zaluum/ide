@@ -11,6 +11,5 @@
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="/home/frede/devel/libs/scala-2.8.1.final/lib/scala-compiler.jar" sourcepath="/home/frede/devel/libs/scala-2.8.1.final/src/scala-compiler-src.jar"/>
-	<classpathentry kind="lib" path="classes"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
