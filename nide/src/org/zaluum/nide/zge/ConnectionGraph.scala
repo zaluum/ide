@@ -18,7 +18,7 @@ class Joint(val p: Point) extends Vertex {
 object Edge {
   def apply(a: Vertex, b: Vertex): Edge = new Edge(a, b, List(b.p, a.p))
   def apply(c: ConnectionDef): Edge = {
-    val points = c.wayPoints map { _.p }
+    val points = c.points
     val a = new TempEnd(points.head)
     val b = new TempEnd(points.last)
     new Edge(a, b, points)

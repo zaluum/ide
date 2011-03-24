@@ -40,7 +40,7 @@ trait ConnectionsTool {
         case p: PortVertex ⇒ p.toRef
         case v ⇒ JunctionRef(map(v).name)
       }
-      ConnectionDef(vertexRef(e.a), vertexRef(e.b), e.points map { Waypoint(_, H) })
+      ConnectionDef(vertexRef(e.a), vertexRef(e.b), e.points)
     }.toList
     controller.exec(
       new EditTransformer {
@@ -64,7 +64,7 @@ trait ConnectionsTool {
           case JunctionRef(name) ⇒ junctions.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
           case p: PortRef ⇒ ports.find { _.portPath == PortPath(p) }.get
         }
-        (c -> new Edge(toVertex(c.a, true), toVertex(c.b, false), c.wayPoints map { _.p }))
+        (c -> new Edge(toVertex(c.a, true), toVertex(c.b, false), c.points))
     }.toMap
     (new ConnectionGraphV(ports.toSet ++ junctions.values, edges.values.toSet), edges)
   }

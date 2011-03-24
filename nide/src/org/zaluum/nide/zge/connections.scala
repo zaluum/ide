@@ -103,11 +103,3 @@ case class Line(val from: Point, val to: Point, horizontal: Boolean) {
     }
   }
 }
-
-object Waypoint {
-  def apply(x: Int, y: Int, d: OrtoDirection): Waypoint = Waypoint(Point(x, y), d)
-}
-case class Waypoint(p: Point, d: OrtoDirection) {
-  def y = p.y
-  def x = p.x
-}

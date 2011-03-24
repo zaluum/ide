@@ -39,10 +39,6 @@ message BoxClassDef {
     required Point pos_internal = 4;
     required Point pos_external = 5; 
   }
-  message Waypoint {
-  	required Point point =1;
-  	required Orto dir = 2;
-  }
   message Ref {
   	optional JunctionRef junction = 1;
   	optional PortRef port = 2;
@@ -50,7 +46,7 @@ message BoxClassDef {
   message Connection {
     required Ref source = 1;
     required Ref target = 2;
-   	repeated Waypoint waypoint = 3; 
+   	repeated Point point = 3; 
   }
   message Junction {
   	required string name = 1;
@@ -62,10 +58,6 @@ message BoxClassDef {
   message Point {
  	required int32 x =1;
   	required int32 y =2;
-  }
-  enum Orto {
-  	H = 1;
-  	V = 2;
   }
   enum Direction {
     IN = 0;
