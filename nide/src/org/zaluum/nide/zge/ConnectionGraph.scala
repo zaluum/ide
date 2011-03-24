@@ -9,19 +9,19 @@ trait Vertex {
   def isEnd = false
   //override def toString = "v(" + p + ")"
 }
-class TempEnd(val p:Point) extends Vertex {
-  override def isEnd =true
+class TempEnd(val p: Point) extends Vertex {
+  override def isEnd = true
 }
 class Joint(val p: Point) extends Vertex {
   override def toString = "joint(" + p + " " + hashCode + ")"
 }
 object Edge {
   def apply(a: Vertex, b: Vertex): Edge = new Edge(a, b, List(b.p, a.p))
-  def apply(c:ConnectionDef) :Edge = {
-    val points = c.wayPoints map { _.p}
+  def apply(c: ConnectionDef): Edge = {
+    val points = c.wayPoints map { _.p }
     val a = new TempEnd(points.head)
     val b = new TempEnd(points.last)
-    new Edge(a,b,points)
+    new Edge(a, b, points)
   }
 }
 case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
@@ -29,7 +29,7 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
   assert(a.p == points.head)
   assert(b.p == points.last)
   override def toString = "Edge(" + a + "," + b + "," + points + "," + hashCode + ")"
-  def vertexs = List(a,b)
+  def vertexs = List(a, b)
   lazy val lines: List[Line] = makePath(points)
   def linesString = lines.mkString(",")
   private def ¬(src: Point, dst: Point) = {
@@ -62,43 +62,43 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
     (thisSorted map { case (i, _, _) ⇒ i }, otherSorted.map { case (i, _, _) ⇒ i })
   }
   def reverse = {
-    val p = lines.head.start :: (for (l <- lines) yield l.end)
-    new Edge(b,a,p.reverse)
+    val p = lines.head.start :: (for (l ← lines) yield l.end)
+    new Edge(b, a, p.reverse)
   }
-  def move(moveLines:Set[Line],v : Vector2) = {
+  def move(moveLines: Set[Line], v: Vector2) = {
     var moveH = Set[Point]()
     var moveV = Set[Point]()
-    for (l<-moveLines; if (lines.contains(l))) {
-      if (l.horizontal){
+    for (l ← moveLines; if (lines.contains(l))) {
+      if (l.horizontal) {
         assert(points.contains(l.start))
-        val prefix = points.takeWhile(p => p!=l.start)
-        moveH ++= prefix.reverse.takeWhile(p=> p.x == l.start.x)
-        val suffix = points.dropWhile(p => p!=l.start).drop(1)
-        moveH ++= suffix.takeWhile(p=> p.x ==l.end.x)
-        moveV ++= prefix.reverse.takeWhile(p => p.y == l.start.y)
-        moveV ++= suffix.takeWhile(p=> p.y == l.end.y)
+        val prefix = points.takeWhile(p ⇒ p != l.start)
+        moveH ++= prefix.reverse.takeWhile(p ⇒ p.x == l.start.x)
+        val suffix = points.dropWhile(p ⇒ p != l.start).drop(1)
+        moveH ++= suffix.takeWhile(p ⇒ p.x == l.end.x)
+        moveV ++= prefix.reverse.takeWhile(p ⇒ p.y == l.start.y)
+        moveV ++= suffix.takeWhile(p ⇒ p.y == l.end.y)
         moveV += l.start
         moveH += l.start
       } else {
         assert(points.contains(l.end))
-        val prefix = points.takeWhile(p => p!=l.end)
-        moveH ++= prefix.reverse.takeWhile(p => p.x == l.end.x)
-        val suffix = points.dropWhile(p=> p!=l.end).drop(1)
-        moveH ++= suffix.takeWhile(p=> p.x == l.end.x)
-        moveV ++= prefix.reverse.takeWhile(p=> p.y == l.start.y)
-        moveV ++= suffix.takeWhile(p=> p.y == l.end.y)
+        val prefix = points.takeWhile(p ⇒ p != l.end)
+        moveH ++= prefix.reverse.takeWhile(p ⇒ p.x == l.end.x)
+        val suffix = points.dropWhile(p ⇒ p != l.end).drop(1)
+        moveH ++= suffix.takeWhile(p ⇒ p.x == l.end.x)
+        moveV ++= prefix.reverse.takeWhile(p ⇒ p.y == l.start.y)
+        moveV ++= suffix.takeWhile(p ⇒ p.y == l.end.y)
         moveH += l.end
         moveV += l.end
       }
     }
-    val newPoints = for (p<-points) yield {
-      if (moveH.contains(p) && moveV.contains(p)) p+v
-      else if (moveH.contains(p)) Point(p.x+v.x, p.y)
-      else if (moveV.contains(p)) Point(p.x, p.y+v.y)
+    val newPoints = for (p ← points) yield {
+      if (moveH.contains(p) && moveV.contains(p)) p + v
+      else if (moveH.contains(p)) Point(p.x + v.x, p.y)
+      else if (moveV.contains(p)) Point(p.x, p.y + v.y)
       else p
     }
     val fixedPoints = (a.p :: newPoints.tail).dropRight(1) ::: b.p :: Nil
-    new Edge(a,b, fixedPoints)
+    new Edge(a, b, fixedPoints)
   }
   def splitAt(v: Vertex): (Edge, Option[Edge]) = {
     if (v.p == a.p || v.p == b.p) (this, None)
@@ -156,7 +156,7 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
       (b, new Edge(a, e.a, mergePoints(points, e.reverse.points)))
     } else throw new Exception()
   }
-  def extend(to: Vertex): Edge = {
+  def extend(to: Vertex, dir: OrtoDirection): Edge = {
     val res = points match {
       case Nil ⇒ new Edge(a, to, to.p :: Nil)
       case from :: Nil ⇒ new Edge(a, to, from :: to.p :: Nil)
@@ -164,18 +164,14 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
         val mid = h.last
         val from = h(h.size - 2)
         // src mid
-        if (liesIn(from, mid, to.p)) { // we can suppress h if it lies in the L from hh to p
-          // src to
-          new Edge(a, to, h.dropRight(1) :+ to.p)
-        } else { // we make the longest L possible 
-          /*(from.d, mid.d) match {
-            case (V, H) ⇒
-              Route(to :: Waypoint(to.x, mid.y, V) :: from :: tail)
-            case (H, V) ⇒
-              Route(to :: Waypoint(mid.x, to.y, H) :: from :: tail)
-            case _ ⇒*/
-          new Edge(a, to, h :+ to.p)
-          //}
+        if (dir == H) {
+          if (liesIn(from, mid, to.p)) // we can suppress h if it lies in the L from hh to p
+            new Edge(a, to, h.dropRight(1) :+ to.p)
+          else // we make the longest L possible
+            new Edge(a, to, h :+ to.p)
+        } else {
+          val newmid = Point(mid.x, to.p.y)
+          new Edge(a, to, h.dropRight(1) :+ newmid :+ to.p)
         }
     }
     //println ("extended to " + res)
@@ -241,7 +237,7 @@ abstract class ConnectionGraph {
         case (before, None) ⇒ //println("happens!")
         //assert(i==points.last)// can only happen if it's the last isec 
         case (before, Some(after)) ⇒
-          println("splited " + remainingMe.linesString + " at " + i )
+          println("splited " + remainingMe.linesString + " at " + i)
           println("before " + before.linesString)
           println("after " + after.linesString)
           remainingMe = after
@@ -255,7 +251,7 @@ abstract class ConnectionGraph {
     var myVertexs = vertexs
     var edgesResult = List[Edge]()
     var masterPoints = Set[Point]()
-    println("adding master edge = " + master.linesString )
+    println("adding master edge = " + master.linesString)
     for (e ← edges) {
       val (efs, nv, mPoints) = split(master, e, myVertexs)
       masterPoints ++= mPoints
@@ -296,7 +292,7 @@ abstract class ConnectionGraph {
   def addMaster(e: Edge) = {
     val ca = component(e.a)
     val cb = component(e.b)
-    println("components " + ca +  " " + cb)
+    println("components " + ca + " " + cb)
     val unaffectedEdges = edges filterNot { e ⇒ ca.edges(e) || cb.edges(e) }
     val affected = ca.edges ++ cb.edges
     def fill(g: ConnectionGraph, edges: List[Edge]) = edges.foldLeft(g)((g, e) ⇒ g.addTree(e))
@@ -335,11 +331,11 @@ abstract class ConnectionGraph {
   def remove(e: Edge) = new ConnectionGraphV(vertexs, edges - e)
   // preconditions: it's a tree and it's connected
   def pruneTree: ConnectionGraph = {
-    val keep = for (e<- edges; v<- Set(e.a,e.b); if (v.isEnd)) yield v
+    val keep = for (e ← edges; v ← Set(e.a, e.b); if (v.isEnd)) yield v
     val root = keep.head
-    val cover = (for (k<-keep.tail; pv<-findShortestPath(root,k,Set())) yield pv).toSet
-    val coverE = for (e<-edges; if (cover.contains(e.a) && cover.contains(e.b))) yield e
-    new ConnectionGraphV(vertexs,coverE)
+    val cover = (for (k ← keep.tail; pv ← findShortestPath(root, k, Set())) yield pv).toSet
+    val coverE = for (e ← edges; if (cover.contains(e.a) && cover.contains(e.b))) yield e
+    new ConnectionGraphV(vertexs, coverE)
   }
   def clean: ConnectionGraph = {
     var edgesToProcess = edges
@@ -361,7 +357,7 @@ abstract class ConnectionGraph {
         edgesToProcess = edgesToProcess - e
       }
     }
-    val used = for (e <- current; v <- e.vertexs) yield v
+    val used = for (e ← current; v ← e.vertexs) yield v
     new ConnectionGraphV(used ++ ends -- removedVertexs, current)
   }
   def ends = vertexs.filter { _.isEnd }
