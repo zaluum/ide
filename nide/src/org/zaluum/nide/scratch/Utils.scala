@@ -2,7 +2,6 @@ package org.zaluum.nide.scratch
 import org.eclipse.jface.viewers.CellEditor
 import org.eclipse.swt.widgets.{Text,Display}
 import org.eclipse.jface.resource.ImageRegistry
-import org.eclipse.gef.tools.CellEditorLocator
 import org.eclipse.draw2d.Figure
 import org.eclipse.jface.fieldassist.IContentProposalProvider
 import org.eclipse.jface.fieldassist.IContentProposal
@@ -36,17 +35,6 @@ object Utils {
        else display).asyncExec(new Runnable {override def run {toRun}})
     }
   }
-}
-
-class TextEditorLocator(label:Figure) extends CellEditorLocator {
-  override def relocate(celleditor : CellEditor) = {
-    val text : Text = celleditor.getControl.asInstanceOf[Text]
-    val rect = label.getClientArea
-    val trim = text.computeTrim(0, 0, 0, 0);
-    label.translateToAbsolute(rect);
-    rect.translate(trim.x, trim.y); rect.width += trim.width; rect.height += trim.height;
-    text.setBounds(rect.x, rect.y, rect.width, rect.height);    
-  } 
 }
 
 class EditCPP(val c : Array[String]) extends IContentProposalProvider() {

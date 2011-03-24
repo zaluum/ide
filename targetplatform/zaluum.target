@@ -3,39 +3,59 @@
 
 <target name="Base RCP with Source">
 <locations>
+<location path="${project_loc:targetplatform}/third" type="Directory"/>
 <location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
-<unit id="org.eclipse.draw2d.feature.group" version="3.5.2.v20100111-1352-4417w311A223702A19"/>
-<unit id="org.eclipse.draw2d.sdk.feature.group" version="3.5.2.v20100111-1352-7A7E38yD6E88B9I5AELD4H8D8x42"/>
-<unit id="org.eclipse.draw2d.source.feature.group" version="3.5.2.v20100111-1352-4417w311A223702A19"/>
-<unit id="org.eclipse.gef.feature.group" version="3.5.2.v20100111-1352-777928194B66D5D476C33B2A"/>
-<unit id="org.eclipse.gef.all.feature.group" version="3.5.2.v20100111-1352-787A47PpPBNpsWlH3EdWS1fY14Gn"/>
-<unit id="org.eclipse.gef.examples.feature.group" version="3.5.1.v20090813-1341-7P7c1EVVFGMFsTX7Tcko"/>
-<unit id="org.eclipse.gef.sdk.feature.group" version="3.5.2.v20100111-1352-7G7O5A5WNXWQF_OVSWjaZLTWkNKY"/>
-<unit id="org.eclipse.gef.source.feature.group" version="3.5.2.v20100111-1352-777928194B66D5D476C33B2A"/>
-<unit id="org.eclipse.zest.feature.group" version="1.1.2.v20100111-1352-6618yD6DH8G6N59OM53B2A"/>
-<unit id="org.eclipse.zest.sdk.feature.group" version="1.1.2.v20100111-1352-6658CNDT4R8WTQUMhLVdgPbPObOX"/>
-<unit id="org.eclipse.zest.source.feature.group" version="1.1.2.v20100111-1352-6618yD6DH8G6N59OM53B2A"/>
+<unit id="master-equinox-p2.feature.group" version="1.0.0.v20091106-2-A77w31211614b"/>
+<unit id="master-equinox.feature.group" version="1.1.1.r362_v20101118-7f7PFB-FCv7Ukz-8eopxjih9VvBk"/>
+<unit id="com.ibm.icu.base.feature.group" version="1.1.0.v20090119-79318s73533B57"/>
+<unit id="org.eclipse.equinox.server.core.feature.group" version="1.0.1.R36x_v20101007-7K7QEtDVci4YrnH_88QAH"/>
+<unit id="org.eclipse.cvs.feature.group" version="1.2.1.r362_v20101111-7B77FKv99HL0GvIAF99I8H14B7E"/>
+<unit id="org.eclipse.cvs.source.feature.group" version="1.2.1.r362_v20101111-7B77FKv99HL0GvIAF99I8H14B7E"/>
+<unit id="org.eclipse.help.source.feature.group" version="1.2.1.r362_v20101111-7e7jEVFDr6xg-LSlC_z0w1D"/>
+<unit id="org.eclipse.help.feature.group" version="1.2.1.r362_v20101111-7e7jEVFDr6xg-LSlC_z0w1D"/>
+<unit id="org.eclipse.jdt.feature.group" version="3.6.2.r362_v20101117-0800-7z8XFW6FLFlmjJcvz03jyeFBLS_F"/>
+<unit id="org.eclipse.jdt.source.feature.group" version="3.6.2.r362_v20101117-0800-7z8XFW6FLFlmjJcvz03jyeFBLS_F"/>
+<unit id="org.eclipse.equinox.p2.user.ui.source.feature.group" version="2.0.1.r361_v20100903-897HFa-FX0z-z-ntoaavz0JPX628"/>
+<unit id="org.eclipse.pde.source.feature.group" version="3.6.2.r362_v20110203-7b7mFL2FET3dhHalh1iNZtL"/>
+<unit id="org.eclipse.platform.feature.group" version="3.6.2.r362_v20110210-9gF78Gs1FrIGnHDHWkEcopoN8AmxeZflGDGKQi"/>
+<unit id="org.eclipse.platform.ide" version="3.6.2.M20110210-1200"/>
+<unit id="org.eclipse.equinox.executable.feature.group" version="3.4.2.R36x_v20110125-7N7K7bF8zk1BAKMh0iz0t94miBLY"/>
+<unit id="org.eclipse.equinox.executable" version="3.4.2.R36x_v20110125-7N7K7bF8zk1BAKMh0iz0t94miBLY"/>
+<unit id="org.eclipse.platform.source.feature.group" version="3.6.2.r362_v20110210-9gF78Gs1FrIGnHDHWkEcopoN8AmxeZflGDGKQi"/>
+<unit id="org.eclipse.platform.sdk" version="3.6.2.M20110210-1200"/>
+<unit id="org.eclipse.pde.feature.group" version="3.6.2.r362_v20110203-7b7mFL2FET3dhHalh1iNZtL"/>
+<unit id="org.eclipse.sdk.feature.group" version="3.6.2.r362_v20100929-7Q7m7HD5cWlFgdCBHllpZMd2M468sbnm2RJvUWIbiJnWC"/>
+<unit id="org.eclipse.rcp.feature.group" version="3.6.2.r362_v20101104-9SAxFMKFkSAqi8axkv1ZjegmiBLY"/>
+<unit id="org.eclipse.rcp.id" version="3.6.0.M20110210-1200"/>
+<unit id="org.eclipse.rcp.source.feature.group" version="3.6.2.r362_v20101104-9SAxFMKFkSAqi8axkv1ZjegmiBLY"/>
+<unit id="org.eclipse.rcp.sdk.id" version="3.6.0.M20110210-1200"/>
+<unit id="org.eclipse.releng.tools.feature.group" version="3.3.0.v20100427-44A77w31211642"/>
+<unit id="org.eclipse.sdk.ide" version="3.6.2.M20110210-1200"/>
+<unit id="org.eclipse.sdk.examples.feature.group" version="3.3.1.r362_v20101014-817fFcgFE_daeVKiesDUeYc"/>
+<unit id="org.eclipse.sdk.examples.source.feature.group" version="3.3.1.r362_v20101014"/>
+<unit id="org.eclipse.equinox.compendium.sdk.feature.group" version="3.6.1.R36x_v20101014-7V7RFiwFLSgEt4Pctn77c7J"/>
+<unit id="org.eclipse.equinox.core.sdk.feature.group" version="3.6.1.r36x_v20110210-7sF99FsNFS-Ci4TSP4RDFHLIA5B3"/>
+<unit id="org.eclipse.equinox.p2.discovery.feature.feature.group" version="1.0.1.R36x_v20110210-4-09oB5865H6L02434"/>
+<unit id="org.eclipse.equinox.p2.user.ui.feature.group" version="2.0.1.r361_v20100903-897HFa-FX0z-z-ntoaavz0JPX628"/>
+<unit id="org.eclipse.equinox.p2.sdk.feature.group" version="3.6.2.R36x_v20110120-9I7VGEAG438GhnfSLuLz0FXP9NYJ"/>
+<unit id="org.eclipse.equinox.serverside.sdk.feature.group" version="3.6.1.R36x_v20101014-7u7NFVmFL9O33b1CgDPjCI2jWYYn"/>
+<unit id="org.eclipse.equinox.sdk.feature.group" version="3.6.2.r362_v20110210b-7H7R67v9rtOv_dTCawtb0WQnN92B"/>
+<unit id="org.eclipse.equinox.weaving.sdk.feature.group" version="1.0.0.v20100421-79--EVVFNFFsFc"/>
+<unit id="org.eclipse.equinox.server.jetty.feature.group" version="1.0.0.v20100510-7I777iBgJ9DIARGH8IIQ"/>
+<unit id="org.eclipse.equinox.server.p2.feature.group" version="1.0.1.R36x_v20101007-7x7IFI3FOf7yk63X6z0kz-Z2T158"/>
+<unit id="org.eclipse.pde.api.tools.ee.fragments.feature.group" version="1.0.0.v20100427-7C-7BF9JgLWLMBMMAMsLL"/>
+<unit id="org.eclipse.equinox.p2.ui.admin.rcp.product" version="1.1.0.M20110210-1200"/>
+<unit id="org.eclipse.equinox.jmx.client.feature.feature.group" version="1.0.0.v20081124-4--9oB5855K5E"/>
+<unit id="org.eclipse.equinox.jmx.common.feature.feature.group" version="1.0.0.v20070507-7D7A8dF7RZHQHHvSF9VLPG"/>
+<unit id="org.eclipse.equinox.jmx.server.feature.feature.group" version="1.0.0.v20081124-7H47DF9JgLUaMDLr5F48"/>
+<unit id="org.eclipse.equinox.server.servletbridge.feature.group" version="1.0.0.v20100510-42A79oB5855K5E"/>
+<unit id="org.eclipse.equinox.server.simple.feature.group" version="1.0.0.v20100510-44DF8s734C48662444"/>
+<repository location="http://download.eclipse.org/eclipse/updates/3.6"/>
+</location>
+<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
+<unit id="org.eclipse.draw2d.feature.group" version="3.6.2.v20110128-0100-4517w3122123901211"/>
+<unit id="org.eclipse.draw2d.sdk.feature.group" version="3.6.2.v20110128-0100-7A7G38yE6F08CAO499J539958x42"/>
 <repository location="http://download.eclipse.org/tools/gef/updates/releases/"/>
 </location>
-<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
-<unit id="org.eclipse.platform.ide" version="3.5.2.M20100211-1343"/>
-<unit id="org.eclipse.platform.sdk" version="3.5.2.M20100211-1343"/>
-<unit id="org.eclipse.sdk.ide" version="3.5.2.M20100211-1343"/>
-<unit id="org.eclipse.pde.api.tools.ee.javase16" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.osgiminimum12" version="1.0.1.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.cdcfoundation10" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.j2se12" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.fragments.feature.jar" version="1.0.0.v20090512-7C-0F9JgLMsM0MXAWLrL"/>
-<unit id="org.eclipse.pde.api.tools.ee.j2se15" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.cdcfoundation11" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.osgiminimum11" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.j2se14" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.osgiminimum10" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.jre11" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.pde.api.tools.ee.j2se13" version="1.0.0.v20090407-1030"/>
-<unit id="org.eclipse.releng.tools.feature.group" version="3.3.0.v20090520-4407S46yaw311A1923"/>
-<repository location="http://download.eclipse.org/eclipse/updates/3.5"/>
-</location>
-<location path="${project_loc:targetplatform}/third" type="Directory"/>
 </locations>
 </target>
