@@ -25,8 +25,7 @@ trait ValFigure extends SimpleItem with TreeItem {
   def pos = tree.pos
   def myLayer = container.layer
   def container: BoxDefContainer
-  override def update() {
-    super.update()
+  def populateFigures() {
     val l = sym.tpe match {
       case b: BoxTypeSymbol ⇒
         b.ports.values.collect {
@@ -41,18 +40,18 @@ trait ValFigure extends SimpleItem with TreeItem {
 }
 class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
-  override def update() {
+  override def show(){
     setImage(container.viewerResources.imageFactory(tree.tpe))
-    super.update()
+    super.show()
   }
 }
 class DirectValFigure(val tree: ValDef, val param: Param, val container: BoxDefContainer) extends TextEditFigure with ValFigure {
   def size = Dimension(40, 20)
   def text = param.value
-  override def update() {
+  override def populateFigures() {
     fl.setText(text)
     setForegroundColor(Colorizer.color(param.tpe))
-    super.update()
+    super.populateFigures()
   }
 }
 trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
@@ -102,7 +101,8 @@ class LineFigure(
   val con: Option[ConnectionFigure] = None) extends SimpleItem with RectFeedback {
   val tolerance = 4
   def expand = ((width + 2) / 2.0f).asInstanceOf[Int]
-  override def selectionSubject = con map { cf ⇒ LineSelectionSubject(cf.tree, l) }
+  
+  override def selectionSubject = for (cf <-con; cdef <- cf.e.c) yield LineSelectionSubject(cdef,l)
   override def getBounds: Rectangle = {
     if (bounds == null) {
       val (expandx, expandy) = if (l.horizontal) (0, expand) else (expand, 0)
@@ -119,18 +119,19 @@ class LineFigure(
     b.contains(x, y)
     //  return shapeContainsPoint(x, y) || childrenContainsPoint(x, y);
   }
-  override def update = {
-    setForegroundColor(Colorizer.color(con map { _.tree.tpe } getOrElse NoSymbol))
+  val tpe = for (cf <- con; cdef <- cf.e.c) yield  cdef.tpe
+  def populateFigures = {
+    setForegroundColor(Colorizer.color( tpe.getOrElse{NoSymbol} ))
     width = 1
     if (complete) {
       style = SWT.LINE_SOLID
     } else {
       style = SWT.LINE_DOT
     }
-    helpers.clear
+    //helpers.clear
     //erase
     //repaint
-    feed.setInnerBounds(getBounds)
+    //feed.setInnerBounds(getBounds)
   }
   override def paintFigure(g: Graphics) = {
     g.setForegroundColor(getForegroundColor);
@@ -204,23 +205,11 @@ class ConnectionPainter(bdf: BoxDefContainer) {
   }
 }
 // TODO not really a figure right now... no children
-class ConnectionFigure(val tree: ConnectionDef, val container: BoxDefContainer) extends TreeItem {
+class ConnectionFigure(val e: Edge, val container: BoxDefContainer) extends Item {
   type T = ConnectionDef
   val painter = new ConnectionPainter(container)
-  def route = {
-    /*def portFigure(tree: Tree): Option[PortFigure] = tree match {
-      case PortRef(v@ValRef(_), portName, in) ⇒ container.findPortFigure(v.symbol.name, portName, in)
-      case PortRef(ThisRef, portName, in) ⇒ container.findPortFigure(portName, in)
-      case _ ⇒ None
-    }
-    def position(tree: Tree): Option[Point] = portFigure(tree) map { p ⇒ p.anchor }
-    val aw = position(tree.a).map(p ⇒ Waypoint(p, H)).toList
-    val bw = position(tree.b).map(p ⇒ Waypoint(p, H)).toList
-    Route(bw ::: tree.wayPoints ::: aw)*/
-    new Edge(new Joint(tree.points.head), new Joint(tree.points.last), tree.points)
-  }
   var feedback = false
-  def paint = painter.paintRoute(route, feedback, true, Some(this))
+  def paint = painter.paintRoute(e, feedback, true, Some(this))
   def show() = {
     container.connectionsLayer.add(this);
     paint

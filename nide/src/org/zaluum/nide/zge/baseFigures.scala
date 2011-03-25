@@ -119,21 +119,26 @@ trait SimpleItem extends Item {
   val helpers = Buffer[ShowHide]()
   def showFeedback() {
     container.feedbackLayer.add(feed)
-    update()
   }
   def hideFeedback() {
     if (container.feedbackLayer.getChildren.contains(feed))
       container.feedbackLayer.remove(feed)
   }
-  def update() {
-    helpers.clear
+  def updateSize() = {
     val rect = new Rectangle(pos.x, pos.y, size.w, size.h)
     setBounds(rect)
-    feed.setInnerBounds(rect)
+    feed.setInnerBounds(rect)    
   }
+  def populateFigures()
+  def newConnectionFigures : Set[Item] = Set()
   def show() {
-    update()
+    updateSize()
+    helpers.clear
+    populateFigures
     helpers.foreach { _.show() }
+    val cf = newConnectionFigures
+    cf foreach { _.show() }
+    helpers ++= cf
     myLayer.add(this)
   }
   def hide() {

@@ -19,6 +19,7 @@ class PortFigure(val ipos: MPoint,
   def pos = MPoint(ipos.x - size.w/2, ipos.y-size.h / 2)
   def anchor = getBounds.getCenter
   lazy val portPath = PortPath(valSym getOrElse container.symbol, sym)
+  def populateFigures {}
   override def showFeedback() {
     setForegroundColor(ColorConstants.lightGray)
     setBackgroundColor(Colorizer.color(sym.tpe))
@@ -53,8 +54,7 @@ abstract class OpenPortFigure(val left:Boolean, val openBox: OpenBoxFigure) exte
   def absDisplacement = Vector2(openBox.pos.x,openBox.pos.y)
   def relPos = extPos + xDisplacement
   def pos = extPos + xDisplacement + absDisplacement // abs coordinates
-  override def update() {
-    super.update()
+  def populateFigures() {
     setBackgroundColor(Colorizer.color(sym.tpe))
     setForegroundColor(if (dir==Shift) ColorConstants.yellow else ColorConstants.white)
     val valsym = openBox.valTree.symbol.asInstanceOf[ValSymbol]
@@ -82,12 +82,14 @@ abstract class PortHolderFigure(val container:BoxDefContainer) extends ImageFigu
   def pos : MPoint 
   def dir : PortDir
   var size = Dimension(50, 20)
-  override def update() {
-    val position = pos + (if (dir == In) Vector2(48, 8) else Vector2(0, 8))
+  override def show() {
     val image = container.viewerResources.imageFactory.get(PortDeclFigure.img(dir)).get
     setImage(image)
     size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
-    super.update()
+    super.show()
+  }
+  def populateFigures {
+    val position = pos + (if (dir == In) Vector2(48, 8) else Vector2(0, 8))
     helpers += new PortFigure(position, sym, dir == In, None, container) 
   }
   

@@ -66,7 +66,7 @@ trait BoxDefContainer extends Container {
     portsLayer.removeAll()
   }
   def owner: Symbol
-  def createGraph  : (ConnectionGraph,Map[ConnectionDef,Edge])= {
+  lazy val graph  : ConnectionGraph= {
     val ports = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port,port.anchor) }
     val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
     val edges = boxDef.connections.map {
@@ -75,11 +75,12 @@ trait BoxDefContainer extends Container {
           case JunctionRef(name) ⇒ junctions.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
           case p: PortRef ⇒ ports.find { _.portPath == PortPath(p) }.get
         }
-        (c -> new Edge(toVertex(c.a,true), toVertex(c.b,true), c.points).fixStart.fixEnd)
+        (c -> new Edge(toVertex(c.a,true), toVertex(c.b,true), c.points,Some(c)).fixStart.fixEnd)
     }.toMap
-    (new ConnectionGraphV(ports.toSet ++ junctions.values, edges.values.toSet), edges)
+    println("graph edges = " + edges)
+    new ConnectionGraphV(ports.toSet ++ junctions.values, edges.values.toSet)
   }
-  def populateFigures() {
+  def createFigures() {
     boxDef.children foreach {
       _ match {
         case EmptyTree ⇒
@@ -106,19 +107,8 @@ trait BoxDefContainer extends Container {
       }
     }
   }
-  def populateConnections() {
-    boxDef.connections foreach {
-      _ match {
-        case c:ConnectionDef ⇒
-          helpers += new ConnectionFigure(c, BoxDefContainer.this)
-        case _ ⇒
-      }
-    }
-  }
-  def populate() {
-    populateFigures()
-    // create connections (requires figures)
-    populateConnections()
+  def createConnectionFigures : Set[Item] = {
+    graph.edges map { e => new ConnectionFigure(e, BoxDefContainer.this) }
   }
 }
 import scala.collection.JavaConversions._
@@ -154,8 +144,8 @@ class OpenBoxFigure(
   val feedbackLayer = new Layer
   // BoxDefContainer
   override def useLocalCoordinates = true
-  override def populateFigures() {
-    super.populateFigures()
+  override def newConnectionFigures : Set[Item] = { super.newConnectionFigures}
+  def populateFigures() {
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
@@ -194,12 +184,6 @@ class OpenBoxFigure(
     graphics.restoreState();
     super.paintClientArea(graphics)
   }
-  override def update() {
-    super.update()
-    populate()
-    inners.setSize(this.getSize)
-  }
-
   inners.add(layer)
   inners.add(portsLayer)
   inners.add(connectionsLayer)

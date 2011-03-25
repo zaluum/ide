@@ -1,4 +1,4 @@
-#Tue Feb 15 17:56:55 CET 2011
+#Fri Mar 25 13:49:23 CET 2011
 Xcheck-null=false
 Xcheckinit=false
 Xdisable-assertions=false
@@ -20,16 +20,21 @@ Ylinearizer=rpo
 Yno-generic-signatures=false
 Yno-imports=false
 Yno-predefs=false
+Ypresentation-debug=false
+Ypresentation-delay=0
+Ypresentation-verbose=false
 Yrecursion=0
 Yself-in-annots=false
 Ysqueeze=on
 Ystruct-dispatch=poly-cache
 Ywarn-dead-code=false
+buildmanager=refined
 deprecation=true
 eclipse.preferences.version=1
-g=vars
+g=notailcalls
 no-specialization=false
 optimise=false
 scala.compiler.useProjectSettings=true
 target=jvm-1.5
 unchecked=true
+verbose=false

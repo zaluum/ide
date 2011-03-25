@@ -33,8 +33,8 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
       focus
     }
   }
-  override def populateFigures() {
-    super.populateFigures()
+  override def createFigures() {
+    super.createFigures()
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
@@ -74,9 +74,12 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   def refresh() {
     helpers.clear
     clear
-    populate()
+    createFigures
     helpers.foreach { _.show }
-    println(selectedItems)
+    val cf = createConnectionFigures
+    cf.foreach {_.show }
+    println(cf)
+    helpers ++=cf
     selectedItems foreach { _.showFeedback() }
   }
   def selectedItems = this.deepChildren.collect {
