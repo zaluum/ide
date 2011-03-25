@@ -19,6 +19,7 @@ class SwingFigure(val container: Container, val box: ValDef, val component: JCom
   def size = box.guiSize getOrElse { Dimension(15, 15) }
   def pos = box.guiPos getOrElse { Point(0, 0) }
   def myLayer = container.layer
+  def populateFigures {}
   override def paintFigure(g: Graphics) {
     val rect = getClientArea()
     component.setBounds(0, 0, rect.width, rect.height);

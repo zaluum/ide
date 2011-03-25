@@ -66,7 +66,7 @@ trait BoxDefContainer extends Container {
     portsLayer.removeAll()
   }
   def owner: Symbol
-  lazy val graph  : ConnectionGraph= {
+  def graph  : ConnectionGraph= {
     val ports = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port,port.anchor) }
     val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
     val edges = boxDef.connections.map {

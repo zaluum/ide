@@ -35,7 +35,7 @@ object Edge {
     new Edge(a, b, points,Some(c))
   }
 }
-case class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val c: Option[ConnectionDef]) {
+class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val c: Option[ConnectionDef]) {
   assert(points.size >= 2)
  // assert(a.p == points.head)
  // assert(b.p == points.last)

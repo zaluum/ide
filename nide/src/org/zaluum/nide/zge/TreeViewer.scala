@@ -77,6 +77,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     createFigures
     helpers.foreach { _.show }
     val cf = createConnectionFigures
+    println("cf = " + cf)
     cf.foreach {_.show }
     println(cf)
     helpers ++=cf
