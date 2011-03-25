@@ -14,16 +14,8 @@ import FigureHelper._
 
 trait ConnectionsTool {
   this: TreeTool ⇒
-  case class PortVertex(val port: PortFigure) extends Vertex {
-    def p = port.anchor
-    val portPath = port.portPath
-    def toRef = PortRef(
-      port.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef },
-      port.sym.name,
-      port.in)
-    override def isEnd = true
-  }
-  def modifyGraph(initContainer: C, newGraph: ConnectionGraph) {
+
+  def modifyGraph(initContainer: C, newGraph: ConnectionGraph) = {
     var map = Map[Vertex, Junction]()
     val namer = new Namer {
       def usedNames = map.values.map { _.name.str }.toSet
@@ -42,38 +34,14 @@ trait ConnectionsTool {
       }
       ConnectionDef(vertexRef(e.a), vertexRef(e.b), e.points)
     }.toList
-    controller.exec(
-      new EditTransformer {
-        val trans: PartialFunction[Tree, Tree] = {
-          case b: BoxDef if (b == initContainer.boxDef) ⇒
-            BoxDef(b.name, b.superName, b.image,
-              transformTrees(b.defs),
-              transformTrees(b.vals),
-              transformTrees(b.ports),
-              connections,
-              junctions)
-        }
-      })
-  }
-  def createGraph(initContainer: C)  : (ConnectionGraph,Map[ConnectionDef,Edge])= {
-    val ports = initContainer.portsLayer.getChildren collect { case port: PortFigure ⇒ PortVertex(port) }
-    val junctions = initContainer.boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
-    val edges = initContainer.boxDef.connections.map {
-      case c: ConnectionDef ⇒
-        def toVertex(t: Tree, start: Boolean): Vertex = t match {
-          case JunctionRef(name) ⇒ junctions.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
-          case p: PortRef ⇒ ports.find { _.portPath == PortPath(p) }.get
-        }
-        (c -> new Edge(toVertex(c.a, true), toVertex(c.b, false), c.points))
-    }.toMap
-    (new ConnectionGraphV(ports.toSet ++ junctions.values, edges.values.toSet), edges)
+    (connections, junctions)
   }
   // CONNECT
   trait Connecting extends ToolState {
     self: SingleContainer ⇒
     var g: ConnectionGraph = null
     var edge: Edge = null
-    var last:Point = null
+    var last: Point = null
     var dst: Option[Item] = None
     var src: Option[Item] = None
     var hFig = new Polyline()
@@ -105,7 +73,7 @@ trait ConnectionsTool {
       srcPos = snapMouse(src, initPos)
       last = srcPos
       center = true
-      val (graph,_) = createGraph(initContainer)
+      val (graph, _) = initContainer.createGraph
       g = graph
       edge = Edge(vertexAt(srcPos), vertexAt(srcPos))
       dir = H
@@ -128,10 +96,21 @@ trait ConnectionsTool {
       val newEdge = new Edge(vstart, vend, wp).untangle
       println("endConnection newEdge=" + newEdge.linesString)
       val newGraph = g.add(vstart).add(vend).addMaster(newEdge)
-      println(newGraph.vertexs)
-      modifyGraph(initContainer, newGraph)
+      val (connections, junctions) = modifyGraph(initContainer, newGraph)
+      controller.exec(
+        new EditTransformer {
+          val trans: PartialFunction[Tree, Tree] = {
+            case b: BoxDef if (b == initContainer.boxDef) ⇒
+              BoxDef(b.name, b.superName, b.image,
+                transformTrees(b.defs),
+                transformTrees(b.vals),
+                transformTrees(b.ports),
+                connections,
+                junctions)
+          }
+        })
     }
-    def extend = edge.extend(vertexAt(snapMouse(dst, currentMouseLocation)),dir)
+    def extend = edge.extend(vertexAt(snapMouse(dst, currentMouseLocation)), dir)
     def buttonUp {
       // execute model command
       if (dst.isDefined) {
@@ -150,7 +129,7 @@ trait ConnectionsTool {
     }
     def drag {}
     def buttonDown {}
-    private def removeFeed(f:Figure) {
+    private def removeFeed(f: Figure) {
       if (initContainer.feedbackLayer.getChildren.contains(f))
         initContainer.feedbackLayer.remove(f)
     }
@@ -171,7 +150,7 @@ trait ConnectionsTool {
       portsTrack.update()
       dst foreach { _.hideFeedback() }
       viewer.setStatusMessage(currentMouseLocation.toString)
-      initContainer.itemAt(point(currentMouseLocation)) match {
+      initContainer.itemAt( point(currentMouseLocation),false) match {
         case Some(p: PortFigure) ⇒ dst = Some(p)
         case Some(l: LineFigure) ⇒ dst = Some(l)
         case _ ⇒ dst = None
@@ -190,14 +169,14 @@ trait ConnectionsTool {
         }
         if (d > 10) center = false
       }
-      
+
       if (dir == H) {
         hFig.setStart(point(last))
-        val mid = new EPoint(now.x, last.y) 
+        val mid = new EPoint(now.x, last.y)
         hFig.setEnd(mid)
         vFig.setStart(mid)
         vFig.setEnd(point(now))
-      }else {
+      } else {
         vFig.setStart(point(last))
         val mid = new EPoint(last.x, now.y)
         vFig.setEnd(mid)
@@ -224,32 +203,44 @@ trait ConnectionsTool {
       case item: Item if item.container == initContainer ⇒ item
     }
     def buttonUp {
-      val (g,edges) = createGraph(initContainer)
+      val (g, edges) = initContainer.createGraph
       val subjects = for (m ← movables; s ← m.selectionSubject) yield s
+      val valdefs = subjects collect { case v : ValDef => v }
+      val portdefs = subjects collect { case p : PortDef => p }
       val lines = subjects collect { case l: LineSelectionSubject ⇒ l }
-      val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })      
+      val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })
       val edgeMap = for ((c, lines) ← groups; e ← edges.get(c)) yield {
         (e, e.move(lines, delta).untangle)
       }
       println("edgeMap = " + edgeMap)
       var result: ConnectionGraph = new ConnectionGraphV(g.vertexs, g.edges -- edgeMap.keys)
       for ((_, newe) ← edgeMap) { result = result.addMaster(newe) }
-      modifyGraph(initContainer, result)
-
-      /*val positions = movables.collect { case item:TreeItem ⇒
-        val oldLoc = item.getBounds.getLocation
-        (item.tree.asInstanceOf[Tree] -> (Point(oldLoc.x, oldLoc.y) + delta))
-      }.toMap
-      
+      val moveVertexs = result.vertexs.collect { case p : PortVertex => p }.filter { p=>
+        p.port.valSym match {
+          case Some(v) => valdefs.contains(v.decl)
+          case None => portdefs.contains(p.port.sym.decl)
+        }
+      } 
+      println("moveVertexs = " + moveVertexs)
+      result = result.moveVertexs(moveVertexs,delta)
+      val (connections, junctions) = modifyGraph(initContainer, result)      
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) if (positions.contains(v)) ⇒
-            ValDef(name, typeName, positions(v), size, guiPos, guiSize,params)
-          case p: PortDef if (positions.contains(p)) ⇒
-            p.copy(inPos = positions(p))
+          case b: BoxDef if (b == initContainer.boxDef) ⇒
+              BoxDef(b.name, b.superName, b.image,
+                transformTrees(b.defs),
+                transformTrees(b.vals),
+                transformTrees(b.ports),
+                connections,
+                junctions)
+          case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) if (valdefs.contains(v)) ⇒
+            ValDef(name, typeName, pos+delta, size, guiPos, guiSize,params)
+          case p: PortDef if (portdefs.contains(p)) ⇒
+            p.copy(inPos = p.inPos +delta)
+          
         }
       }
-      controller.exec(command)*/
+      controller.exec(command)
     }
     def drag {}
     def buttonDown {}

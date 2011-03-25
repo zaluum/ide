@@ -66,6 +66,19 @@ trait BoxDefContainer extends Container {
     portsLayer.removeAll()
   }
   def owner: Symbol
+  def createGraph  : (ConnectionGraph,Map[ConnectionDef,Edge])= {
+    val ports = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port,port.anchor) }
+    val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
+    val edges = boxDef.connections.map {
+      case c: ConnectionDef ⇒
+        def toVertex(t: Tree, start: Boolean): Vertex = t match {
+          case JunctionRef(name) ⇒ junctions.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
+          case p: PortRef ⇒ ports.find { _.portPath == PortPath(p) }.get
+        }
+        (c -> new Edge(toVertex(c.a,true), toVertex(c.b,true), c.points).fixStart.fixEnd)
+    }.toMap
+    (new ConnectionGraphV(ports.toSet ++ junctions.values, edges.values.toSet), edges)
+  }
   def populateFigures() {
     boxDef.children foreach {
       _ match {

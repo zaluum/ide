@@ -1,19 +1,30 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.compiler.Vector2
-import org.zaluum.nide.compiler.ConnectionDef
-import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler._
+import org.zaluum.nide.zge.draw2dConversions._
 import scala.annotation.tailrec
 trait Vertex {
   def p: Point
   def isEnd = false
+  def move(v:Vector2) : Vertex
   //override def toString = "v(" + p + ")"
 }
 class TempEnd(val p: Point) extends Vertex {
   override def isEnd = true
+  def move(v:Vector2) = new TempEnd(p+v)
 }
 class Joint(val p: Point) extends Vertex {
   override def toString = "joint(" + p + " " + hashCode + ")"
+  def move(v:Vector2) = new Joint(p+v)
+}
+class PortVertex(val port: PortFigure, val p : Point) extends Vertex {
+  val portPath = port.portPath
+  def toRef = PortRef(
+    port.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef },
+    port.sym.name,
+    port.in)
+  override def isEnd = true
+  def move(v:Vector2) = new PortVertex(port, p+v)
 }
 object Edge {
   def apply(a: Vertex, b: Vertex): Edge = new Edge(a, b, List(b.p, a.p))
@@ -26,8 +37,8 @@ object Edge {
 }
 case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
   assert(points.size >= 2)
-  assert(a.p == points.head)
-  assert(b.p == points.last)
+ // assert(a.p == points.head)
+ // assert(b.p == points.last)
   override def toString = "Edge(" + a + "," + b + "," + points + "," + hashCode + ")"
   def vertexs = List(a, b)
   lazy val lines: List[Line] = makePath(points)
@@ -51,6 +62,8 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
       case from :: to :: tail ⇒ ¬(from, to) ::: makePath(to :: tail)
     }
   }
+  def fixStart : Edge = new Edge(a,b, a.p :: points.tail)
+  def fixEnd : Edge = new Edge(a,b, points.dropRight(1) :+ b.p)
   def isParallel(o: Edge) = { (a == o.a && b == o.b) || (a == o.b && b == o.a) }
   def intersections(e: Edge): (List[Point], List[Point]) = {
     val thisSorted = for (l ← lines; ol ← e.lines; i ← l.intersect(ol, false)) yield (i, l, ol)
@@ -65,6 +78,7 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
     val p = lines.head.start :: (for (l ← lines) yield l.end)
     new Edge(b, a, p.reverse)
   }
+  
   def move(moveLines: Set[Line], v: Vector2) = {
     var moveH = Set[Point]()
     var moveV = Set[Point]()
@@ -115,7 +129,9 @@ case class Edge(val a: Vertex, val b: Vertex, val points: List[Point]) {
   }
   // removes loops. convert to graph and serach shortest path
   def untangle: Edge = {
-    case class VertexWP(p: Point) extends Vertex
+    case class VertexWP(p: Point) extends Vertex {
+      def move(v:Vector2) = VertexWP(p+v)
+    }
     val fakeVertexs: Set[Vertex] = points.map { VertexWP(_) }.toSet
     val fakeEdges = points.sliding(2, 1).map { pair ⇒
       val a = pair.head
@@ -315,6 +331,14 @@ abstract class ConnectionGraph {
         }
       }
       candidate
+    }
+  }
+  def moveVertexs(moveVertexs : Set[_ <: Vertex], v:Vector2): ConnectionGraph = {
+    val map = moveVertexs.map { vx:Vertex => (vx->vx.move(v)) }.toMap
+    val newVertexs = vertexs -- moveVertexs ++ map.values
+    edges.foldLeft(this) { (current,edge) =>
+      val newEdge = new Edge(map.getOrElse(edge.a,edge.a), map.getOrElse(edge.b,edge.b), edge.points).fixStart.fixEnd
+      new ConnectionGraphV(newVertexs, current.edges - edge + newEdge)
     }
   }
   def vertexAtPos(p: Point): Option[Vertex] = vertexs.find { _.p == p }
