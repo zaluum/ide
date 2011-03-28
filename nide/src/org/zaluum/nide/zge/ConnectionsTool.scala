@@ -73,7 +73,7 @@ trait ConnectionsTool {
       val vstart = vertexAt(wp.head)
       val newEdge = new Edge(vstart, vend, wp,None).untangle
       println("endConnection newEdge=" + newEdge.linesString)
-      val newGraph = g.add(vstart).add(vend).addMaster(newEdge)
+      val newGraph = g.add(vstart).add(vend).addMaster(newEdge).clean.pruneTree.clean
       println("newGraph edges " + newGraph.edges)
       val (connections, junctions) = newGraph.toTree
       println("endConnection connections = " + connections) 
@@ -189,18 +189,44 @@ trait ConnectionsTool {
       val portdefs = subjects collect { case p : PortDef => p }
       val lines = subjects collect { case l: LineSelectionSubject ⇒ l }
       val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })
-      val edgeMap = for ((c, lines) ← groups; e ← g.edges; if (e.srcCon == Some(c))) yield {
-        (e, e.move(lines, delta).untangle)
+      var edges = g.edges
+      var vertexs = g.vertexs
+      // move lines
+      for ((c, lines) ← groups; e ← g.edges; if (e.srcCon == Some(c))) {
+        edges = edges - e + e.move(lines, delta) 
       }
-      var result: ConnectionGraph = new ConnectionGraphV(g.vertexs, g.edges -- edgeMap.keys)
-      for ((_, newe) ← edgeMap) { result = result.addMaster(newe) }
-      val moveVertexs = result.vertexs.collect { case p : PortVertex => p }.filter { p=>
+      // collect moved junctions
+      var movedJunctions = Set[Vertex]() 
+      for (e<-edges; v<-vertexs; if !v.isEnd) {
+        if (e.a == v && e.points.head != e.a.p) movedJunctions += v
+        if (e.b == v && e.points.last != e.b.p) movedJunctions += v
+      }
+      // collect moved ends
+      val movedEnds = vertexs.collect { case p : PortVertex => p }.filter { p=>
         p.port.valSym match {
           case Some(v) => valdefs.contains(v.decl)
           case None => portdefs.contains(p.port.sym.decl)
         }
-      } 
-      result = result.moveVertexs(moveVertexs,delta)
+      }       
+      // update edge vertexs
+      for (v <- movedJunctions.view ++ movedEnds) {
+        val newv = v.move(delta)
+        vertexs = vertexs - v + newv
+        edges = for (e <- edges) yield {
+          assert(!(e.a==v && e.b==v)) 
+          if (e.a == v) new Edge(newv, e.b, e.points, e.srcCon)
+          else if (e.b == v) new Edge(e.a, newv, e.points, e.srcCon)
+          else e
+        }
+      }
+      // create graph result
+      var result : ConnectionGraph = new ConnectionGraphV(vertexs,Set())
+      // add edges fixed and untangled
+      for (e <- edges) { 
+        result = result.addMaster(e.fixEnds.untangle) 
+      }
+      result = result.clean.pruneTree.clean
+      // done
       val (connections, junctions) = result.toTree      
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {

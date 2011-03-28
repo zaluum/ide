@@ -128,8 +128,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
       else if (moveV.contains(p)) Point(p.x, p.y + v.y)
       else p
     }
-    val fixedPoints = (a.p :: newPoints.tail).dropRight(1) ::: b.p :: Nil
-    new Edge(a, b, fixedPoints, srcCon)
+    new Edge(a, b, newPoints, srcCon)
   }
   def splitAt(v: Vertex): (Edge, Option[Edge]) = {
     if (v.p == a.p || v.p == b.p) (this, None)
@@ -319,8 +318,8 @@ abstract class ConnectionGraph {
     val unaffectedEdges = edges filterNot { e ⇒ ca.edges(e) || cb.edges(e) }
     val affected = ca.edges ++ cb.edges
     def fill(g: ConnectionGraph, edges: List[Edge]) = edges.foldLeft(g)((g, e) ⇒ g.addTree(e))
-    val g = new ConnectionGraphV(vertexs, affected).addMaster2(e, fill).clean.pruneTree
-    new ConnectionGraphV(g.vertexs, g.edges ++ unaffectedEdges).clean
+    val g = new ConnectionGraphV(vertexs, affected).addMaster2(e, fill)
+    new ConnectionGraphV(g.vertexs, g.edges ++ unaffectedEdges)
   }
   def findShortestPath(a: Vertex, b: Vertex, visited: Set[Vertex]): List[Vertex] = {
     assert(vertexs.contains(a))

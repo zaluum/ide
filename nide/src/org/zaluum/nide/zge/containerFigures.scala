@@ -79,7 +79,6 @@ trait BoxDefContainer extends Container {
         }
         (c -> new Edge(toVertex(c.a,true), toVertex(c.b,true), c.points,Some(c)).fixEnds)
     }.toMap
-    println("graph edges = " + edges)
     new ConnectionGraphV(portVertexs.toSet ++ junctions.values, edges.values.toSet)
   }
   private var _currentBox:BoxDef = null
