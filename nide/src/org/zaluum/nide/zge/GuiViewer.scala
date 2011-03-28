@@ -1,39 +1,11 @@
 package org.zaluum.nide.zge
 
-import javax.swing.JSlider
-import org.zaluum.nide.eclipse.EclipseBoxClasspath
-import org.zaluum.nide.compiler._
-import javax.swing.JButton
 import javax.swing.JComponent
-import java.awt.{ Graphics ⇒ AG }
-import java.awt.image.BufferedImage
-import org.eclipse.draw2d.{ Figure, Graphics }
-import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
-import org.eclipse.swt.SWT
+import org.eclipse.swt.widgets.{Composite, Display}
+import org.zaluum.nide.compiler._
+import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import scala.collection.mutable.Buffer
 
-class SwingFigure(val container: Container, val box: ValDef, val component: JComponent) extends SimpleItem with TreeItem with ResizableFeedback {
-  setOpaque(true)
-  type T = ValDef
-  def tree = box
-  def size = box.guiSize getOrElse { Dimension(15, 15) }
-  def pos = box.guiPos getOrElse { Point(0, 0) }
-  def myLayer = container.layer
-  def populateFigures {}
-  override def paintFigure(g: Graphics) {
-    val rect = getClientArea()
-    component.setBounds(0, 0, rect.width, rect.height);
-    component.doLayout
-    val aimage = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB)
-    val ag = aimage.createGraphics
-    component.paint(ag)
-    val imageData = SWTUtils.convertAWTImageToSWT(aimage)
-    val image = new org.eclipse.swt.graphics.Image(Display.getCurrent(), imageData)
-    g.drawImage(image, rect.x, rect.y)
-    ag.dispose();
-    image.dispose()
-  }
-}
 class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
   extends ItemViewer(parent, controller) with Container with ViewerResources {
   /*TOOLS*/
@@ -90,30 +62,4 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
   }
   def selectedItems = this.deepChildren.collect { case i: TreeItem if selection(i.tree) ⇒ i }.toSet
   refresh()
-}
-class GuiTool(guiViewer: GuiViewer) extends ItemTool(guiViewer) {
-  type C = Container
-  override val resizing = new Resizing {
-    override def command(newPos: Point, newSize: Dimension, t: Tree) = new EditTransformer {
-      val trans: PartialFunction[Tree, Tree] = {
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) if (v == t) ⇒
-          ValDef(name, typeName, pos, size, Some(newPos), Some(newSize), params)
-      }
-    }
-  }
-  /* FIXME override val moving = new MovingItem {
-    override def buttonUp {
-      val positions = movables.collect { case item : TreeItem ⇒
-        val oldLoc = item.getBounds.getLocation
-        (item.tree.asInstanceOf[ValDef] -> (Point(oldLoc.x, oldLoc.y) + delta))
-      }.toMap
-      val command = new EditTransformer {
-        val trans: PartialFunction[Tree, Tree] = {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) if (positions.contains(v)) ⇒
-            ValDef(name, typeName, pos, size, Some(positions(v)), guiSize, params)
-        }
-      }
-      controller.exec(command)
-    }
-  }*/
 }

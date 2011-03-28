@@ -71,7 +71,6 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   trait DeltaMove extends ToolState {
     private var initDrag: Point = _
     def enterMoving(initDrag: Point) {
-      println("enter moving")
       this.initDrag = initDrag
     }
     def currentMouseLocation: Point

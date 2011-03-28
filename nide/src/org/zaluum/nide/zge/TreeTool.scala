@@ -14,55 +14,30 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   def tree = viewer.tree
   val connectionLineDistance = 3
   type C = BoxDefContainer
-  override lazy val selecting = new TreeSelecting
-  class PortTrack extends OverTrack[PortFigure] {
-    def container = viewer.portsLayer
-    var tooltip: ToolTip = null
-    def showTip(p: PortFigure) {
-      tooltip = new ToolTip(viewer.shell, SWT.BALLOON)
-      tooltip.setAutoHide(true)
-      tooltip.setText(p.sym.name.str + " : " + p.sym.tpe.name.str)
-      tooltip.setVisible(true)
-    }
-    def hideTip() {
-      if (tooltip != null) {
-        tooltip.setVisible(false)
-        tooltip.dispose()
-        tooltip = null
-      }
-    }
-    def onEnter(p: PortFigure) { p.showFeedback; showTip(p) }
-    def onExit(p: PortFigure) { p.hideFeedback; hideTip }
-  }
-  class TreeSelecting extends Selecting with DeleteState {
+
+  object selecting extends Selecting with DeleteState {
     var port: Option[PortFigure] = None
-    override def buttonDown {
-      super.buttonDown()
-    }
     override def doubleClick() {
       itemOrLineUnderMouse match {
         case Some(e: DirectValFigure) ⇒ directEditing.enter(e)
         case _ ⇒
       }
     }
-    override def buttonUp { // TODO inherit
+    def buttonUp {
       println("buttonUp " + beingSelected + " " + port)
       (beingSelected, port) match {
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
           connecting.enter(initContainer, port, currentMouseLocation)
-        case (Some(box:TreeItem), None) ⇒
+        case (Some(box: TreeItem), None) ⇒
           viewer.selection.updateSelection(box.selectionSubject.toSet, shift)
           println(box.tree)
           viewer.refresh()
-        case (Some(line:LineFigure), None) =>
+        case (Some(line: LineFigure), None) ⇒
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
-            viewer.selection.updateSelection(line.selectionSubject.toSet,shift)
-            println("line selected")
-            //line.con foreach { c ⇒ viewer.selection.updateSelection(Set(c.tree), shift); println(c) }
+            viewer.selection.updateSelection(line.selectionSubject.toSet, shift)
             viewer.refresh()
           } else {
-            println("connecting line")
             connecting.enter(initContainer, line, currentMouseLocation)
           }
         case (None, _) ⇒
@@ -85,15 +60,15 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
       portsTrack.update()
     }
-    override def drag { // TODO inherit item drag
+    def drag {
       portsTrack.hideTip()
       (handle, beingSelected) match {
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
-        case (None, Some(fig:Item)) ⇒ // select and move
+        case (None, Some(fig: Item)) ⇒ // select and move
           val s = fig.selectionSubject.toSet
-          viewer.selection.updateSelection(s,shift)
-          if (!s.isEmpty){
+          viewer.selection.updateSelection(s, shift)
+          if (!s.isEmpty) {
             fig.showFeedback()
             fig match {
               case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
@@ -280,7 +255,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   object movingOpenPort extends MovingOpenPort with DeltaMove with SingleContainer
- // Direct edit
+  // Direct edit
   object directEditing extends ToolState {
     var e: DirectValFigure = null
     def enter(e: DirectValFigure) {
@@ -306,5 +281,24 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def drag() {}
     override def menu() {}
     def abort() { exit() }
+  }
+  class PortTrack extends OverTrack[PortFigure] {
+    def container = viewer.portsLayer
+    var tooltip: ToolTip = null
+    def showTip(p: PortFigure) {
+      tooltip = new ToolTip(viewer.shell, SWT.BALLOON)
+      tooltip.setAutoHide(true)
+      tooltip.setText(p.sym.name.str + " : " + p.sym.tpe.name.str)
+      tooltip.setVisible(true)
+    }
+    def hideTip() {
+      if (tooltip != null) {
+        tooltip.setVisible(false)
+        tooltip.dispose()
+        tooltip = null
+      }
+    }
+    def onEnter(p: PortFigure) { p.showFeedback; showTip(p) }
+    def onExit(p: PortFigure) { p.hideFeedback; hideTip }
   }
 }

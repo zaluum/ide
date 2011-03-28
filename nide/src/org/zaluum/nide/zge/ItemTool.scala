@@ -16,11 +16,11 @@ import FigureHelper._
  *
  */
 abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
-  lazy val selecting = new Selecting
+  def selecting : Selecting
   type C <: Container
   state = selecting
   // SELECTING 
-  class Selecting extends ToolState {
+  abstract class Selecting extends ToolState {
     var beingSelected: Option[Item] = None
     var handle: Option[HandleRectangle] = None
     var initDrag: Point = _
@@ -31,14 +31,6 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       beingSelected = itemOrLineUnderMouse collect { case i: Item ⇒ i }
       initDrag = currentMouseLocation
       initContainer = current
-    }
-
-    def buttonUp {
-      beingSelected match {
-        case Some(s:Item) => viewer.selection.updateSelection(s.selectionSubject.toSet, shift)
-        case None ⇒ viewer.selection.deselectAll()
-      }
-      viewer.refresh()
     }
 
     val handleTrack = new OverTrack[HandleRectangle] {
@@ -57,21 +49,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def move {
       handleTrack.update()
     }
-    def drag {
-      (handle, beingSelected) match {
-        case (Some(h), _) ⇒ // resize
-          resizing.enter(initDrag, initContainer, h)
-        case (None, Some(fig)) ⇒ // select and move
-          if (fig.selectionSubject.isDefined){
-            if (!viewer.selection(fig.selectionSubject.get)){
-              viewer.selection.updateSelection(fig.selectionSubject.toSet, shift)
-              fig.showFeedback()
-            }
-          }
-          // FIXME moving.enter(initDrag, initContainer)
-        case (None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
-      }
-    }
+    
     def exit {}
     def abort {}
   }

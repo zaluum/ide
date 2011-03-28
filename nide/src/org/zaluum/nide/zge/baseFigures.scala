@@ -87,6 +87,19 @@ class RichFigure(container: IFigure) {
     return candidate
   }
 }
+trait Transparent extends Figure {
+  import scala.collection.JavaConversions._
+  override def containsPoint(x: Int, y: Int) = {
+    val pt = new EPoint(x, y)
+    translateFromParent(pt);
+    if (getClientArea.contains(pt)) {
+      getChildren.asInstanceOf[java.util.List[IFigure]].reverse exists (_.containsPoint(pt.x, pt.y))
+    } else {
+      getBounds.contains(x, y)
+    }
+  }
+}
+
 trait Item extends Figure with Feedback with ShowHide {
   def selectionSubject : Option[SelectionSubject] = None 
   def container :Container

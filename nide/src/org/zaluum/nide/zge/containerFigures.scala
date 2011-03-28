@@ -36,8 +36,8 @@ trait Container extends IFigure {
     layer.removeAll()
     feedbackLayer.removeAll()
   }
-
 }
+
 trait BoxDefContainer extends Container {
   def boxDef: BoxDef
   def symbol: BoxTypeSymbol = boxDef.symbol.asInstanceOf[BoxTypeSymbol]
@@ -122,18 +122,7 @@ trait BoxDefContainer extends Container {
     graph.edges map { e => new ConnectionFigure(e, BoxDefContainer.this) }
   }
 }
-import scala.collection.JavaConversions._
-trait Transparent extends Figure {
-  override def containsPoint(x: Int, y: Int) = {
-    val pt = new Point(x, y)
-    translateFromParent(pt);
-    if (getClientArea.contains(pt)) {
-      getChildren.asInstanceOf[java.util.List[IFigure]].reverse exists (_.containsPoint(pt.x, pt.y))
-    } else {
-      getBounds.contains(x, y)
-    }
-  }
-}
+
 class OpenBoxFigure(
   val valTree: ValDef,
   val boxDef: BoxDef,
