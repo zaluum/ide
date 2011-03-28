@@ -8,7 +8,7 @@ trait Symbol {
   var decl: Tree = EmptyTree
   var tpe: Type = NoSymbol
   var scope: Scope = null
-  override def toString = "Symbol(" + (if (name != null) name.toString else "NoSymbol") + ")"
+ // override def toString = "Symbol(" + (if (name != null) name.toString else "NoSymbol") + ")"
 }
 trait Type extends Symbol
 case object NoSymbol extends Symbol with Type {
@@ -117,13 +117,13 @@ class IOSymbol(val owner: BoxTypeSymbol, val name: Name, val dir: PortDir) exten
   def box = owner
 }
 class PortSymbol(owner: BoxTypeSymbol, name: Name, val extPos: Point, dir: PortDir) extends IOSymbol(owner, name, dir) {
-  override def toString = "PortSymbol(" + name + ")"
+  //override def toString = "PortSymbol(" + name + ")"
 }
 class ParamSymbol(owner: BoxTypeSymbol, name: Name, val default: String, dir: PortDir) extends IOSymbol(owner, name, dir) {
   override def toString = "ParamSymbol(" + name + ")"
 }
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
   var params = Map[ParamSymbol, Any]()
-  override def toString = "ValSymbol(" + name + ")"
+ // override def toString = "ValSymbol(" + name + ")"
 }
 

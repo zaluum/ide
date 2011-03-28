@@ -25,6 +25,7 @@ class PortVertex(val port: PortFigure, val p : Point) extends Vertex {
     port.in)
   override def isEnd = true
   def move(v:Vector2) = new PortVertex(port, p+v)
+  override def toString = "PortVertex("+portPath+")"
 }
 object Edge {
   def apply(a: Vertex, b: Vertex): Edge = new Edge(a, b, List(b.p, a.p),None)

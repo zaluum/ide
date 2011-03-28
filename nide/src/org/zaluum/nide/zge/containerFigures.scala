@@ -66,19 +66,30 @@ trait BoxDefContainer extends Container {
     portsLayer.removeAll()
   }
   def owner: Symbol
-  def graph  : ConnectionGraph= {
-    val ports = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port,port.anchor) }
+  
+  protected def createGraph  : ConnectionGraph= {
+    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port,port.anchor) }
+    println ("ports " + portVertexs)
     val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
     val edges = boxDef.connections.map {
       case c: ConnectionDef ⇒
         def toVertex(t: Tree, start: Boolean): Vertex = t match {
           case JunctionRef(name) ⇒ junctions.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
-          case p: PortRef ⇒ ports.find { _.portPath == PortPath(p) }.get
+          case p: PortRef ⇒ portVertexs.find { _.portPath == PortPath(p) }.getOrElse { throw new RuntimeException("could not find vertex for " + PortPath(p))}
         }
         (c -> new Edge(toVertex(c.a,true), toVertex(c.b,true), c.points,Some(c)).fixStart.fixEnd)
     }.toMap
     println("graph edges = " + edges)
-    new ConnectionGraphV(ports.toSet ++ junctions.values, edges.values.toSet)
+    new ConnectionGraphV(portVertexs.toSet ++ junctions.values, edges.values.toSet)
+  }
+  private var _currentBox:BoxDef = null
+  private var _graph:ConnectionGraph = null
+  def graph : ConnectionGraph = {
+    if (_currentBox!=boxDef) {
+      _graph = createGraph
+      _currentBox = boxDef
+    }
+    _graph
   }
   def createFigures() {
     boxDef.children foreach {

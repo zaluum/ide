@@ -189,10 +189,9 @@ trait ConnectionsTool {
       val portdefs = subjects collect { case p : PortDef => p }
       val lines = subjects collect { case l: LineSelectionSubject ⇒ l }
       val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })
-      val edgeMap = for ((c, lines) ← groups; e ← g.edges; if (e.c == c)) yield {
+      val edgeMap = for ((c, lines) ← groups; e ← g.edges; if (e.c == Some(c))) yield {
         (e, e.move(lines, delta).untangle)
       }
-      println("edgeMap = " + edgeMap)
       var result: ConnectionGraph = new ConnectionGraphV(g.vertexs, g.edges -- edgeMap.keys)
       for ((_, newe) ← edgeMap) { result = result.addMaster(newe) }
       val moveVertexs = result.vertexs.collect { case p : PortVertex => p }.filter { p=>
@@ -201,7 +200,6 @@ trait ConnectionsTool {
           case None => portdefs.contains(p.port.sym.decl)
         }
       } 
-      println("moveVertexs = " + moveVertexs)
       result = result.moveVertexs(moveVertexs,delta)
       val (connections, junctions) = result.toTree      
       val command = new EditTransformer {

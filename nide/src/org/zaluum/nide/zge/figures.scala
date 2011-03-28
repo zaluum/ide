@@ -110,6 +110,10 @@ class LineFigure(
     }
     bounds
   }
+  override def showFeedback() {
+    feed.setInnerBounds(getBounds)
+    super.showFeedback
+  }
   def size = getBounds.getSize //special size
   def pos = getBounds.getLocation
   override def containsPoint(x: Int, y: Int) = {
@@ -117,7 +121,6 @@ class LineFigure(
     val b = getBounds.getCopy
     b.expand(t, t)
     b.contains(x, y)
-    //  return shapeContainsPoint(x, y) || childrenContainsPoint(x, y);
   }
   val tpe = for (cf <- con; cdef <- cf.e.c) yield  cdef.tpe
   def populateFigures = {
