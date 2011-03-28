@@ -34,33 +34,6 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def onEnter(p: PortFigure) { p.showFeedback; showTip(p) }
     def onExit(p: PortFigure) { p.hideFeedback; hideTip }
   }
-  // Direct edit
-  object directEditing extends ToolState {
-    var e: DirectValFigure = null
-    def enter(e: DirectValFigure) {
-      state = this
-      this.e = e;
-      e.edit(execute(_), exit _)
-    }
-    def execute(s: String) {
-      if (e != null && s != e.param.value) {
-        val tr = new EditTransformer() {
-          val trans: PartialFunction[Tree, Tree] = {
-            case p: Param if p == e.param ⇒
-              Param(e.param.key, s)
-          }
-        }
-        controller.exec(tr)
-      }
-    }
-    def exit() { e.hideEdit(); viewer.focus; selecting.enter(); }
-    def buttonDown() { exit() }
-    def move() {}
-    def buttonUp() {}
-    def drag() {}
-    override def menu() {}
-    def abort() { exit() }
-  }
   class TreeSelecting extends Selecting with DeleteState {
     var port: Option[PortFigure] = None
     override def buttonDown {
@@ -118,13 +91,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
         case (None, Some(fig:Item)) ⇒ // select and move
-          fig.selectionSubject foreach { s =>
-            viewer.selection.select(s)
+          val s = fig.selectionSubject.toSet
+          viewer.selection.updateSelection(s,shift)
+          if (!s.isEmpty){
             fig.showFeedback()
-          }
-          fig match {
-            case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
-            case _ ⇒ moving.enter(initDrag, initContainer)
+            fig match {
+              case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
+              case _ ⇒ moving.enter(initDrag, initContainer)
+            }
           }
         case (None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
@@ -306,5 +280,31 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   object movingOpenPort extends MovingOpenPort with DeltaMove with SingleContainer
-
+ // Direct edit
+  object directEditing extends ToolState {
+    var e: DirectValFigure = null
+    def enter(e: DirectValFigure) {
+      state = this
+      this.e = e;
+      e.edit(execute(_), exit _)
+    }
+    def execute(s: String) {
+      if (e != null && s != e.param.value) {
+        val tr = new EditTransformer() {
+          val trans: PartialFunction[Tree, Tree] = {
+            case p: Param if p == e.param ⇒
+              Param(e.param.key, s)
+          }
+        }
+        controller.exec(tr)
+      }
+    }
+    def exit() { e.hideEdit(); viewer.focus; selecting.enter(); }
+    def buttonDown() { exit() }
+    def move() {}
+    def buttonUp() {}
+    def drag() {}
+    override def menu() {}
+    def abort() { exit() }
+  }
 }
