@@ -28,7 +28,7 @@ class LineFigure(
   val tolerance = 4
   def expand = ((width + 2) / 2.0f).asInstanceOf[Int]
   
-  override def selectionSubject = for (cf <-con; cdef <- cf.e.c) yield LineSelectionSubject(cdef,l)
+  override def selectionSubject = for (cf <-con; cdef <- cf.e.srcCon) yield LineSelectionSubject(cdef,l)
   override def getBounds: Rectangle = {
     if (bounds == null) {
       val (expandx, expandy) = if (l.horizontal) (0, expand) else (expand, 0)
@@ -48,7 +48,7 @@ class LineFigure(
     b.expand(t, t)
     b.contains(x, y)
   }
-  val tpe = for (cf <- con; cdef <- cf.e.c) yield  cdef.tpe
+  val tpe = for (cf <- con; cdef <- cf.e.srcCon) yield  cdef.tpe
   def populateFigures = {
     setForegroundColor(Colorizer.color( tpe.getOrElse{NoSymbol} ))
     width = 1
@@ -57,10 +57,6 @@ class LineFigure(
     } else {
       style = SWT.LINE_DOT
     }
-    //helpers.clear
-    //erase
-    //repaint
-    //feed.setInnerBounds(getBounds)
   }
   override def paintFigure(g: Graphics) = {
     g.setForegroundColor(getForegroundColor);

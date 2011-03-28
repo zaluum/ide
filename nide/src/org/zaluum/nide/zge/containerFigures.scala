@@ -77,7 +77,7 @@ trait BoxDefContainer extends Container {
           case JunctionRef(name) ⇒ junctions.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
           case p: PortRef ⇒ portVertexs.find { _.portPath == PortPath(p) }.getOrElse { throw new RuntimeException("could not find vertex for " + PortPath(p))}
         }
-        (c -> new Edge(toVertex(c.a,true), toVertex(c.b,true), c.points,Some(c)).fixStart.fixEnd)
+        (c -> new Edge(toVertex(c.a,true), toVertex(c.b,true), c.points,Some(c)).fixEnds)
     }.toMap
     println("graph edges = " + edges)
     new ConnectionGraphV(portVertexs.toSet ++ junctions.values, edges.values.toSet)

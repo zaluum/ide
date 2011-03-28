@@ -66,9 +66,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
         case (None, Some(fig: Item)) ⇒ // select and move
-          val s = fig.selectionSubject.toSet
-          viewer.selection.updateSelection(s, shift)
+        val s = fig.selectionSubject
           if (!s.isEmpty) {
+            viewer.selection.select(s.get)
             fig.showFeedback()
             fig match {
               case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)

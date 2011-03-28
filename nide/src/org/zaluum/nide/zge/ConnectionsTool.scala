@@ -189,7 +189,7 @@ trait ConnectionsTool {
       val portdefs = subjects collect { case p : PortDef => p }
       val lines = subjects collect { case l: LineSelectionSubject ⇒ l }
       val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })
-      val edgeMap = for ((c, lines) ← groups; e ← g.edges; if (e.c == Some(c))) yield {
+      val edgeMap = for ((c, lines) ← groups; e ← g.edges; if (e.srcCon == Some(c))) yield {
         (e, e.move(lines, delta).untangle)
       }
       var result: ConnectionGraph = new ConnectionGraphV(g.vertexs, g.edges -- edgeMap.keys)
