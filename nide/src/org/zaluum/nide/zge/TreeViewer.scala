@@ -85,4 +85,12 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i
   }.toSet
+  def graphOf(b:BoxDef) = {
+    if(boxDef==b) Some(graph)
+    else {
+      this.deepChildren.view.collect {
+        case c:BoxDefContainer => c
+      } filter {_.boxDef==b} map { _.graph } headOption 
+    }
+  }
 }

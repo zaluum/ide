@@ -80,7 +80,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     def delete() {
-      controller.exec(Delete.deleteSelection(viewer.selectedItems))
+      controller.exec(Delete.deleteSelection(viewer.selectedItems,viewer.graphOf))
     }
     override def menu() {
       itemOrLineUnderMouse match {

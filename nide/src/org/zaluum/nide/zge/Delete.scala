@@ -3,43 +3,46 @@ package org.zaluum.nide.zge
 import org.zaluum.nide.compiler._
 
 object Delete {
-  def deleteSelection(selected: Set[Item]) = {
-    val selectedTree = selected collect  { case i : TreeItem => i.tree.asInstanceOf[Tree] }
-    val valDefs = selectedTree collect { case v: ValDef ⇒ v }
-    val portDefs = selectedTree collect { case p: PortDef ⇒ p }
-    val connDefs = selectedTree collect { case c: ConnectionDef ⇒ c }
-    // add valDefs connections
+  def deleteSelection(selected: Set[Item], g:(BoxDef => Option[ConnectionGraph])) = {
+    val selection = (for (i<-selected; s<-i.selectionSubject) yield s).toList
+    val valDefs = selection collect { case v: ValDef ⇒ v }
+    val portDefs = selection collect { case p: PortDef ⇒ p }
+    val connDefs = selection.collect { case c: ConnectionDef ⇒ c } ++ 
+      selection.collect { case LineSelectionSubject(c,l) => c}
     new EditTransformer() {
-      def filter(l: List[Tree]) : List[Tree] = l.filterNot(selectedTree.contains(_))
-      def filterConnections (l:List[Tree]) : List[Tree] = {
-        val connections = filter(l).asInstanceOf[List[ConnectionDef]]
-        connections filterNot { c=> // true for removal 
-          def connectsRemovedVal(t:Tree) = t.asInstanceOf[PortRef].fromRef.symbol match {
-            case v:ValSymbol => selectedTree.contains(v.decl)
-            case _=> false
+      def isRemoved (c : ConnectionDef) : Boolean = {
+          def connectsRemovedVal(t:Tree) = t match {
+            case p:PortRef => p.fromRef.symbol match {
+              case v:ValSymbol => valDefs.contains(v.decl.asInstanceOf[ValDef])
+              case _=> false
+            }
+            case _ => false
           }
-          def connectsRemovedPortDef(t:Tree) = t.asInstanceOf[PortRef].symbol match {
-            case p:PortSymbol => selectedTree.contains(p.decl)
-            case _ => println("no symbol for port tree " + t); false
+          def connectsRemovedPortDef(t:Tree) = t match {
+            case p:PortRef => p.symbol match { 
+              case p:PortSymbol => selection.contains(p.decl)
+              case _ => println("no symbol for port tree " + t); false
+            }
+            case _ => false
           }
           connectsRemovedPortDef(c.a) || connectsRemovedPortDef(c.b) ||
-          connectsRemovedVal(c.a) || connectsRemovedVal(c.b)
-        }
+          connectsRemovedVal(c.a) || connectsRemovedVal(c.b) || connDefs.contains(c)
       }
-      def filterDefs(l:List[Tree]) = {
-        val removedDefs = valDefs map {_.symbol.asInstanceOf[ValSymbol].tpe} collect { 
-            case b:BoxTypeSymbol if (b.decl!=null)=> b.decl
-        }
-        l.filterNot { removedDefs.contains(_)}
+      val removedDefs = valDefs map {_.symbol.asInstanceOf[ValSymbol].tpe} collect { 
+          case b:BoxTypeSymbol if (b.decl!=null)=> b.decl
       }
       val trans: PartialFunction[Tree, Tree] = {
         case b: BoxDef ⇒
+          val gb = g(b).get
+          val removedEdges = for (e <- gb.edges; c <- e.srcCon; if isRemoved(c)) yield e
+          val removedg =  removedEdges.foldLeft (gb)((gg,e) => gg.remove(e))
+          val (newCons, newJunc) = removedg.prune.clean.toTree
           BoxDef(b.name, b.superName, b.image,
-            transformTrees(filterDefs(b.defs)),
-            transformTrees(filter(b.vals)),
-            transformTrees(filter(b.ports)),
-            transformTrees(filterConnections(b.connections)),
-            transformTrees(filter(b.junctions))) // FIXME
+            transformTrees(b.defs filterNot { removedDefs contains(_) }),
+            transformTrees(b.vals filterNot { valDefs contains (_) }) ,
+            transformTrees(b.ports filterNot { portDefs contains(_)} ),
+            newCons,
+            newJunc) 
       }
     }
   }
