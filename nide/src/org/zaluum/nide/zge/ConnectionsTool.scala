@@ -72,11 +72,8 @@ trait ConnectionsTool {
       val vend = vertexAt(wp.last)
       val vstart = vertexAt(wp.head)
       val newEdge = new Edge(vstart, vend, wp,None).untangle
-      println("endConnection newEdge=" + newEdge.linesString)
-      val newGraph = g.add(vstart).add(vend).addMaster(newEdge).clean.pruneTree.clean
-      println("newGraph edges " + newGraph.edges)
+      val newGraph = g.add(vstart).add(vend).cutAndAddToGraph(newEdge).prune.clean//.pruneTree.clean
       val (connections, junctions) = newGraph.toTree
-      println("endConnection connections = " + connections) 
       controller.exec(
         new EditTransformer {
           val trans: PartialFunction[Tree, Tree] = {
@@ -223,9 +220,9 @@ trait ConnectionsTool {
       var result : ConnectionGraph = new ConnectionGraphV(vertexs,Set())
       // add edges fixed and untangled
       for (e <- edges) { 
-        result = result.addMaster(e.fixEnds.untangle) 
+        result = result.cutAndAddToGraph(e.fixEnds.untangle) 
       }
-      result = result.clean.pruneTree.clean
+      result = result.clean
       // done
       val (connections, junctions) = result.toTree      
       val command = new EditTransformer {
