@@ -216,10 +216,15 @@ trait ConnectionsTool {
         }
       }
       // create graph result
-      var result : ConnectionGraph = new ConnectionGraphV(vertexs,Set())
       // add edges fixed and untangled
-      for (e <- edges) { 
-        result = result.cutAndAddToGraph(e.fixEnds.untangle) 
+      val initGraph = new ConnectionGraphV(vertexs,edges)
+      var result : ConnectionGraph = new ConnectionGraphV(vertexs,Set())
+      for (c <- initGraph.components) {
+        var res : ConnectionGraph= new ConnectionGraphV(vertexs,Set())
+        for (e <- c.edges) {
+          res = res.cutAddToTree(e.fixEnds.untangle)(ConnectionGraph.fillTree)
+        }
+        result = new ConnectionGraphV(res.vertexs ++ result.vertexs, res.edges ++ result.edges)
       }
       result = result.prune.clean
       // done

@@ -165,10 +165,8 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
       new Edge(VertexWP(a), VertexWP(b), List(a, b), srcCon)
     }.toSet
     var g: ConnectionGraph = new ConnectionGraphV(fakeVertexs, Set(fakeEdges.head))
-    def fill(g: ConnectionGraph, edges: List[Edge]) = {
-      edges.foldLeft(g)((g, e) ⇒ g.addNoParallel(e))
-    }
-    g = fakeEdges.tail.foldLeft(g)((g, e) ⇒ g.cutAddToTree(e, fill))
+    def fill(g: ConnectionGraph, edges: List[Edge]) =  edges.foldLeft(g)((g, e) ⇒ g.addNoParallel(e))
+    g = fakeEdges.tail.foldLeft(g)((g, e) ⇒ g.cutAddToTree(e)(fill))
     val path = g.findShortestPath(VertexWP(a.p), VertexWP(b.p), Set())
     new Edge(a, b, path map { _.p }, srcCon).simplifyPoints
   }
@@ -234,7 +232,11 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
     new Edge(a, to, extendPoints(points, to.p, dir), srcCon)
   }
 }
+
 class ConnectionGraphV(val vertexs: Set[Vertex], val edges: Set[Edge]) extends ConnectionGraph
+object ConnectionGraph {
+  def fillTree(g: ConnectionGraph, edges: List[Edge]) = edges.foldLeft(g)((g, e) ⇒ g.addTree(e))
+}
 abstract class ConnectionGraph {
   val vertexs: Set[Vertex]
   val edges: Set[Edge]
@@ -319,7 +321,7 @@ abstract class ConnectionGraph {
    * the fill function is used to create the resulting graph begining with a graph with only the master's edges.
    * (For example to ensure it remains a tree)
    */
-  def cutAddToTree(master: Edge, fill: (ConnectionGraph, List[Edge]) ⇒ ConnectionGraph): ConnectionGraph = {
+  def cutAddToTree(master: Edge)(fill: (ConnectionGraph, List[Edge]) ⇒ ConnectionGraph): ConnectionGraph = {
     var myVertexs = vertexs
     var edgesResult = List[Edge]()
     var masterPoints = Set[Point]()
@@ -380,10 +382,10 @@ abstract class ConnectionGraph {
     val cb = component(e.b)
     val unaffectedEdges = edges filterNot { e ⇒ ca.edges(e) || cb.edges(e) }
     val affected = ca.edges ++ cb.edges
-    def fill(g: ConnectionGraph, edges: List[Edge]) = edges.foldLeft(g)((g, e) ⇒ g.addTree(e))
-    val g = new ConnectionGraphV(vertexs, affected).cutAddToTree(e, fill)
+    val g = new ConnectionGraphV(vertexs, affected).cutAddToTree(e)(ConnectionGraph.fillTree)
     new ConnectionGraphV(g.vertexs, g.edges ++ unaffectedEdges)
   }
+
   /**
    * Finds the shortest path from a to b.
    * An empty list means no path exists
