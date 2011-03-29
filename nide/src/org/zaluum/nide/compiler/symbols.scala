@@ -8,7 +8,7 @@ trait Symbol {
   var decl: Tree = EmptyTree
   var tpe: Type = NoSymbol
   var scope: Scope = null
- // override def toString = "Symbol(" + (if (name != null) name.toString else "NoSymbol") + ")"
+  override def toString = "Symbol(" + (if (name != null) name.toString else "NoSymbol") + ")"
 }
 trait Type extends Symbol
 case object NoSymbol extends Symbol with Type {

@@ -85,7 +85,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
   def isParallelTo(o: Edge) = { (a == o.a && b == o.b) || (a == o.b && b == o.a) }
   /**
    * Returns the intersections sorted from source to end.
-   * (intersections in "this" order, intersections in e order) 
+   * (intersections in "this" order, intersections in e order)
    */
   def intersections(e: Edge): (List[Point], List[Point]) = {
     val thisSorted = for (l ← lines; ol ← e.lines; i ← l.intersect(ol, false)) yield (i, l, ol)
@@ -100,7 +100,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
     new Edge(b, a, p.reverse, srcCon)
   }
 
-  def move(moveLines: Set[Line], v: Vector2) = { 
+  def move(moveLines: Set[Line], v: Vector2) = {
     var moveH = Set[Point]()
     var moveV = Set[Point]()
     for (l ← moveLines; if (lines.contains(l))) {
@@ -151,7 +151,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
     }
   }
   /**
-   * removes loops. 
+   * removes loops.
    */
   def untangle: Edge = {
     //convert to graph and search shortest path
@@ -172,20 +172,20 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
     val path = g.findShortestPath(VertexWP(a.p), VertexWP(b.p), Set())
     new Edge(a, b, path map { _.p }, srcCon).simplifyPoints
   }
-  def simplifyPoints : Edge= {
+  def simplifyPoints: Edge = {
     points match {
-      case from :: to :: Nil => this
-      case h => 
-        val res = points.foldLeft(List[Point]()){
-          (l,p) => extendPoints(l,p,H)
+      case from :: to :: Nil ⇒ this
+      case h ⇒
+        val res = points.foldLeft(List[Point]()) { (l, p) ⇒
+          extendPoints(l, p, H)
         }
-        new Edge(a,b,res,srcCon)
+        new Edge(a, b, res, srcCon)
     }
   }
   def contains(p: Point) = lines.exists(_.contains(p))
   def liesIn(from: Point, mid: Point, to: Point) = mid.y == from.y || mid.x == to.x // FIXME?
   // merges two adjacent edges
-  def merge(e: Edge): (Vertex, Edge) = { 
+  def merge(e: Edge): (Vertex, Edge) = {
     def mergePoints(from: List[Point], to: List[Point]) = {
       assert(from.last == to.head)
       assert(from.size >= 2)
@@ -193,7 +193,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
       val nfrom = from.dropRight(1)
       val nto = to.tail
       val mid = to.head
-      if (liesIn(nfrom.last, mid, nto.head)) 
+      if (liesIn(nfrom.last, mid, nto.head))
         nfrom ::: nto
       else
         nfrom ::: mid :: nto
@@ -208,7 +208,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
       (b, new Edge(a, e.a, mergePoints(points, e.reverse.points), srcCon))
     } else throw new Exception()
   }
-  private def extendPoints(points : List[Point], to : Point, dir : OrtoDirection) : List[Point] = {
+  private def extendPoints(points: List[Point], to: Point, dir: OrtoDirection): List[Point] = {
     points match {
       case Nil ⇒ to :: Nil
       case from :: Nil ⇒ from :: to :: Nil
@@ -219,7 +219,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
         if (dir == H) {
           if (liesIn(from, mid, to)) // can suppress h if it lies in the L from hh to p
             h.dropRight(1) :+ to
-          else 
+          else
             h :+ to
         } else { // dir == V
           val newmid = Point(mid.x, to.y)
@@ -228,10 +228,10 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
           else
             h.dropRight(1) :+ newmid :+ to
         }
-    }    
+    }
   }
   def extend(to: Vertex, dir: OrtoDirection): Edge = {
-    new Edge(a,to, extendPoints(points,to.p,dir), srcCon)
+    new Edge(a, to, extendPoints(points, to.p, dir), srcCon)
   }
 }
 class ConnectionGraphV(val vertexs: Set[Vertex], val edges: Set[Edge]) extends ConnectionGraph
@@ -249,21 +249,27 @@ abstract class ConnectionGraph {
     }
     map
   }
+  private def connectedFrom(v: Vertex, visited: Set[Vertex]): Set[Vertex] = {
+    if (visited.contains(v)) visited
+    else {
+      var res = visited + v
+      for (other ← vertexConnect(v)) {
+        res ++= connectedFrom(other, res)
+      }
+      res
+    }
+  }
+
   /**
    * Connected components
    */
   lazy val components: Set[ConnectionGraph] = {
-    var allComponents = vertexs map { v ⇒ v -> Set(v) } toMap;
-    for (e ← edges) {
-      val newSet = allComponents(e.a) ++ allComponents(e.b)
-      allComponents += (e.a -> newSet)
-      allComponents += (e.b -> newSet)
+    var vxs = Set[Set[Vertex]]()
+    for (v ← vertexs; if !vxs.exists(_.contains(v))) {
+        vxs += connectedFrom(v,Set())
     }
-    allComponents.values.toSet map { vs: Set[Vertex] ⇒
-      new ConnectionGraph {
-        val vertexs = vs
-        lazy val edges = ConnectionGraph.this.edges filter { e ⇒ vs.contains(e.a) || vs.contains(e.b) }
-      }
+    vxs map { vs: Set[Vertex] ⇒
+      new ConnectionGraphV(vs, edges filter { e ⇒ vs.contains(e.a) && vs.contains(e.b) })
     }
   }
   lazy val hasCycle: Boolean = {
@@ -278,7 +284,7 @@ abstract class ConnectionGraph {
     vertexs.exists { v ⇒ !visited.contains(v) && findCycle(v, null) }
   }
   /**
-   * intersects e1 and e2. 
+   * intersects e1 and e2.
    * returns:
    *  e2 fragments converted to edges
    *  inivertexs + vertexs created by the intersections
@@ -310,7 +316,7 @@ abstract class ConnectionGraph {
    * adds master to the tree graph.
    * master cuts all the edges in the graph
    * then master itself is cut on the points
-   * the fill function is used to create the resulting graph begining with a graph with only the master's edges. 
+   * the fill function is used to create the resulting graph begining with a graph with only the master's edges.
    * (For example to ensure it remains a tree)
    */
   def cutAddToTree(master: Edge, fill: (ConnectionGraph, List[Edge]) ⇒ ConnectionGraph): ConnectionGraph = {
@@ -325,7 +331,7 @@ abstract class ConnectionGraph {
     }
     /**
      * cuts edges on the points.  |-*--*--| -> |-||--||--|
-     *   
+     *
      */
     @tailrec // TODO this looks similar to other functions. can be done more efficiently
     def splitMaster(edges: Set[Edge], remaining: Set[Point]): Set[Edge] = {
@@ -379,7 +385,7 @@ abstract class ConnectionGraph {
     new ConnectionGraphV(g.vertexs, g.edges ++ unaffectedEdges)
   }
   /**
-   * Finds the shortest path from a to b. 
+   * Finds the shortest path from a to b.
    * An empty list means no path exists
    */
   def findShortestPath(a: Vertex, b: Vertex, visited: Set[Vertex]): List[Vertex] = {
@@ -400,7 +406,7 @@ abstract class ConnectionGraph {
       candidate
     }
   }
- /* def moveVertexs(moveVertexs: Set[_ <: Vertex], v: Vector2): ConnectionGraph = {
+  /* def moveVertexs(moveVertexs: Set[_ <: Vertex], v: Vector2): ConnectionGraph = {
     val map = moveVertexs.map { vx: Vertex ⇒ (vx -> vx.move(v)) }.toMap
     val newVertexs = vertexs -- moveVertexs ++ map.values
     edges.foldLeft(this) { (current, edge) ⇒
@@ -411,7 +417,7 @@ abstract class ConnectionGraph {
   def vertexAtPos(p: Point): Option[Vertex] = vertexs.find { _.p == p }
   def component(v: Vertex) = components.find { c ⇒ c.vertexs.contains(v) }.get
   /**
-   * Adds a vertex to the graph. 
+   * Adds a vertex to the graph.
    * If the vertex lays in some edge's path it is splitted
    */
   def add(v: Vertex) = {
@@ -440,17 +446,17 @@ abstract class ConnectionGraph {
     }
   }
   /**
-   * 
+   *
    */
   def prune = {
     var vertexs = Set[Vertex]()
     var edges = Set[Edge]()
-    for (c <- components) {
+    for (c ← components) {
       val pruned = c.pruneTree
       vertexs ++= pruned.vertexs
       edges ++= pruned.edges
     }
-    new ConnectionGraphV(vertexs,edges)
+    new ConnectionGraphV(vertexs, edges)
   }
   def clean: ConnectionGraph = {
     var edgesToProcess = edges
@@ -497,5 +503,7 @@ abstract class ConnectionGraph {
     }.toList
     (connections, junctions)
   }
-
+  override def toString = {
+    "\t" + vertexs + "\n\t" + edges
+  }
 }

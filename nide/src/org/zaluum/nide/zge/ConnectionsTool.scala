@@ -97,7 +97,6 @@ trait ConnectionsTool {
         edge = extend
         last = edge.points.last
         painter.paintCreatingRoute(edge)
-        println(edge)
         move()
       }
     }
@@ -222,7 +221,7 @@ trait ConnectionsTool {
       for (e <- edges) { 
         result = result.cutAndAddToGraph(e.fixEnds.untangle) 
       }
-      result = result.clean
+      result = result.prune.clean
       // done
       val (connections, junctions) = result.toTree      
       val command = new EditTransformer {
