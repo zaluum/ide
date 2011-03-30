@@ -134,12 +134,33 @@ trait SymbolItem extends Item {
   type S <: Symbol
   def sym : S
 }
-trait SimpleItem extends Item {
+trait SimpleShowHide extends ShowHide{
+  val helpers = Buffer[ShowHide]()
+  def updateSize() 
+  def populateFigures()
+  def newConnectionFigures : Set[Item] 
+  def show() {
+    updateSize()
+    helpers.clear
+    populateFigures
+    helpers.foreach { _.show() }
+    val cf = newConnectionFigures
+    cf foreach { _.show() }
+    helpers ++= cf
+    showme()
+  }
+  def showme()
+  def hideme()
+  def hide() {
+    hideme()
+    helpers.foreach { _.hide() }
+  }
+}
+trait SimpleItem extends Item with SimpleShowHide{
   def myLayer: Figure
   def pos: MPoint
   def size: Dimension
   val feed: ItemFeedbackFigure
-  val helpers = Buffer[ShowHide]()
   def showFeedback() {
     container.feedbackLayer.add(feed)
   }
@@ -152,21 +173,12 @@ trait SimpleItem extends Item {
     setBounds(rect)
     feed.setInnerBounds(rect)    
   }
-  def populateFigures()
-  def newConnectionFigures : Set[Item] = Set()
-  def show() {
-    updateSize()
-    helpers.clear
-    populateFigures
-    helpers.foreach { _.show() }
-    val cf = newConnectionFigures
-    cf foreach { _.show() }
-    helpers ++= cf
-    myLayer.add(this)
-  }
-  def hide() {
+  def showme = myLayer.add(this)
+  def hideme = {
     if (myLayer.getChildren.contains(this)) myLayer.remove(this)
-    helpers.foreach { _.hide() }
+  }
+  override def hide() {
+    super.hide()
     hideFeedback()
   }
   def moveFeed(loc: MPoint) {
@@ -179,6 +191,7 @@ trait SimpleItem extends Item {
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
+  def newConnectionFigures = Set()
 }
 trait RectFeedback extends Item {
   val feed = new ItemFeedbackFigure(container)

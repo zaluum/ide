@@ -11,11 +11,10 @@ trait ViewerResources { // XXX rename
   def imageFactory: ImageFactory
 }
 class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
-  extends ItemViewer(parent, controller) with BoxDefContainer with ViewerResources {
+  extends ItemViewer(parent, controller) with BoxDefContainer with SimpleShowHide with ViewerResources {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
   val palette = new Palette(this, parent.getShell, controller.global)
-  val helpers = Buffer[ShowHide]()
   /*MODEL*/
   def tree = controller.tree.asInstanceOf[BoxDef]
   def boxDef = tree
@@ -33,8 +32,9 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
       focus
     }
   }
-  override def createFigures() {
-    super.createFigures()
+  def updateSize() {}
+  override def populateFigures() {
+    super.populateFigures()
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
@@ -43,6 +43,8 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
       }
     }
   }
+  def hideme() {}
+  def showme() {}
   override def dispose() {
     super.dispose()
     imageFactory.reg.dispose
@@ -72,15 +74,9 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     selection.refresh(mapper);
   }
   def refresh() {
-    helpers.clear
-    clear
-    createFigures
-    helpers.foreach { _.show }
-    val cf = createConnectionFigures
-    cf.foreach {_.show }
-    helpers ++=cf
+    hide()
+    show()
     selectedItems foreach { _.showFeedback() }
-    println("selectedItems " + selectedItems)
   }
   def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i

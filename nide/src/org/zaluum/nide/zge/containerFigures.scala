@@ -38,7 +38,7 @@ trait Container extends IFigure {
   }
 }
 
-trait BoxDefContainer extends Container {
+trait BoxDefContainer extends Container with SimpleShowHide{
   def boxDef: BoxDef
   def symbol: BoxTypeSymbol = boxDef.symbol.asInstanceOf[BoxTypeSymbol]
   def connectionsLayer: Figure
@@ -92,7 +92,7 @@ trait BoxDefContainer extends Container {
     }
     _graph
   }
-  def createFigures() {
+  def populateFigures() {
     boxDef.children foreach {
       _ match {
         case EmptyTree ⇒
@@ -110,7 +110,9 @@ trait BoxDefContainer extends Container {
                 case Some(p:Param) => 
                   helpers += new DirectValFigure(v, p, BoxDefContainer.this)
                 case _ =>
-                  helpers += new ImageValFigure(v, BoxDefContainer.this)
+                  val i = new ImageValFigure(v, BoxDefContainer.this)
+                  helpers += i 
+                  println("added imageval " + helpers )
               }
           }
         case j@Junction(name,pos) =>
@@ -119,7 +121,7 @@ trait BoxDefContainer extends Container {
       }
     }
   }
-  def createConnectionFigures : Set[Item] = {
+  def newConnectionFigures : Set[Item] = {
     graph.edges map { e => new ConnectionFigure(e, BoxDefContainer.this) }
   }
 }
@@ -146,8 +148,9 @@ class OpenBoxFigure(
   val feedbackLayer = new Layer
   // BoxDefContainer
   override def useLocalCoordinates = true
-  override def newConnectionFigures : Set[Item] = { super.newConnectionFigures}
-  def populateFigures() {
+  override def newConnectionFigures = super.newConnectionFigures
+  override def populateFigures() {
+    super.populateFigures
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
@@ -185,6 +188,10 @@ class OpenBoxFigure(
     graphics.popState();
     graphics.restoreState();
     super.paintClientArea(graphics)
+  }
+  override def updateSize(){
+    super.updateSize()
+    inners.setSize(getBounds.getSize)
   }
   inners.add(layer)
   inners.add(portsLayer)
