@@ -233,7 +233,6 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             check()
           case v: ValDef ⇒ acyclic.addVertex(v.symbol.asInstanceOf[ValSymbol])
           case j@Junction(name,_) =>
-            println("adding junction " +  name)
             bs.connections.lookupJunction(name) match {
               case Some(j) => error("junction name already exists", j)
               case None => bs.connections.junctions += j
@@ -263,6 +262,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             if (types.size != 1) error("Connection with incompatible types " + types.mkString(","), c.connections.head)
             else {
               c.connections foreach { _.tpe = types.head }
+              c.junctions foreach { _.tpe = types.head }
             }
             // check graph consistency
             val out = outs.head

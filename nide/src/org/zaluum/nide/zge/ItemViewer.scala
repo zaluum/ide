@@ -13,6 +13,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   /*SWT*/
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
+  val pointsLayer = new FreeformLayer
   val connectionsLayer = new FreeformLayer
   val layer = new FreeformLayer {
     override def paintFigure(graphics: Graphics) {
@@ -32,6 +33,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
     innerLayers.add(layer)
     innerLayers.add(portsLayer)
     innerLayers.add(connectionsLayer)
+    innerLayers.add(pointsLayer)
     innerLayers.add(feedbackLayer)
     this.setContents(innerLayers);
     canvas.setViewport(this)

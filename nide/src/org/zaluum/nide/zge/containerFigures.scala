@@ -42,6 +42,7 @@ trait BoxDefContainer extends Container {
   def boxDef: BoxDef
   def symbol: BoxTypeSymbol = boxDef.symbol.asInstanceOf[BoxTypeSymbol]
   def connectionsLayer: Figure
+  def pointsLayer:Figure
   def portsLayer: Figure
   override def itemAt(p:Point, debug:Boolean = false) = {
     super.itemAt(p, debug) 
@@ -62,6 +63,7 @@ trait BoxDefContainer extends Container {
   }
   override def clear() {
     super.clear()
+    pointsLayer.removeAll()
     connectionsLayer.removeAll()
     portsLayer.removeAll()
   }
@@ -112,7 +114,7 @@ trait BoxDefContainer extends Container {
               }
           }
         case j@Junction(name,pos) =>
-          helpers += new PointFigure(pos,BoxDefContainer.this,ColorConstants.green)
+          helpers += new PointFigure(pos,BoxDefContainer.this,j.tpe)
         case _ ⇒
       }
     }
@@ -140,6 +142,7 @@ class OpenBoxFigure(
   val layer = new Layer
   val portsLayer = new Layer
   val connectionsLayer = new Layer
+  val pointsLayer = new Layer
   val feedbackLayer = new Layer
   // BoxDefContainer
   override def useLocalCoordinates = true
@@ -186,6 +189,7 @@ class OpenBoxFigure(
   inners.add(layer)
   inners.add(portsLayer)
   inners.add(connectionsLayer)
+  inners.add(pointsLayer)
   inners.add(feedbackLayer)
   add(inners);
   setBorder(new LineBorder(ColorConstants.gray, 5))

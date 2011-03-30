@@ -90,19 +90,21 @@ class LineFigure(
   def myLayer = if(con.isDefined) container.connectionsLayer else container.feedbackLayer
 }
 
-class PointFigure(p: Point, val container: BoxDefContainer, color: Color) extends Ellipse with Item {
+class PointFigure(p: Point, val container: BoxDefContainer, tpe: Type) extends Ellipse with Item {
   def show() {
-    setSize(6, 6)
+    setSize(5, 5)
     setFill(true)
-    setLocation(point(p + Vector2(-3, -3)))
-    setBackgroundColor(color); // if (p.d == H) ColorConstants.yellow else ColorConstants.blue ) 
-    container.connectionsLayer.add(this)
+    setLocation(point(p + Vector2(-2, -2)))
+    val color = Colorizer.color(tpe)
+    setBackgroundColor(color)
+    setForegroundColor(color)
+    container.pointsLayer.add(this)
   }
   def showFeedback() {}
   def hideFeedback() {}
   def hide() {
-    if (container.connectionsLayer.getChildren.contains(this))
-      container.connectionsLayer.remove(this)
+    if (container.pointsLayer.getChildren.contains(this))
+      container.pointsLayer.remove(this)
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) = {}
   def moveDeltaFeed(delta: Vector2) {}
