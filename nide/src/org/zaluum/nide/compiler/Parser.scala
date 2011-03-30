@@ -49,7 +49,7 @@ object Parser {
     JunctionRef(Name(jref.getName))
   }
   def parse(p: BoxFileProtos.BoxClassDef.PortRef): PortRef = {
-    PortRef(if (p.hasBoxName) ValRef(Name(p.getBoxName)) else ThisRef,
+    PortRef(if (p.hasBoxName) ValRef(Name(p.getBoxName)) else ThisRef(),
       Name(p.getPortName),if (p.hasIn) p.getIn else true)
   }
   def parse(p: BoxFileProtos.BoxClassDef.Port): PortDef = {

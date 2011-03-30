@@ -69,23 +69,25 @@ trait ConnectionsTool {
     def endConnection() {
       val bs = initContainer.boxDef.symbol.asInstanceOf[BoxTypeSymbol]
       val wp = extend.points
-      val vend = vertexAt(wp.last)
-      val vstart = vertexAt(wp.head)
-      val newEdge = new Edge(vstart, vend, wp,None).untangle
-      val newGraph = g.add(vstart).add(vend).cutAndAddToGraph(newEdge).prune.clean//.pruneTree.clean
-      val (connections, junctions) = newGraph.toTree
-      controller.exec(
-        new EditTransformer {
-          val trans: PartialFunction[Tree, Tree] = {
-            case b: BoxDef if (b == initContainer.boxDef) ⇒
-              BoxDef(b.name, b.superName, b.image,
-                transformTrees(b.defs),
-                transformTrees(b.vals),
-                transformTrees(b.ports),
-                connections,
-                junctions)
-          }
-        })
+      if (wp.distinct.size >= 2) { 
+        val vend = vertexAt(wp.last)
+        val vstart = vertexAt(wp.head)
+        val newEdge = new Edge(vstart, vend, wp,None).untangle
+        val newGraph = g.add(vstart).add(vend).cutAndAddToGraph(newEdge).prune.clean
+        val (connections, junctions) = newGraph.toTree
+        controller.exec(
+          new EditTransformer {
+            val trans: PartialFunction[Tree, Tree] = {
+              case b: BoxDef if (b == initContainer.boxDef) ⇒
+                BoxDef(b.name, b.superName, b.image,
+                  transformTrees(b.defs),
+                  transformTrees(b.vals),
+                  transformTrees(b.ports),
+                  connections,
+                  junctions)
+            }
+          })
+      }else exit()
     }
     def extend = edge.extend(vertexAt(snapMouse(dst, currentMouseLocation)), dir)
     def buttonUp {
@@ -124,14 +126,14 @@ trait ConnectionsTool {
       import math.abs
       portsTrack.update()
       dst foreach { _.hideFeedback() }
-      dst = portsTrack.last orElse {
+      dst = portsTrack.current orElse {
         initContainer.itemAt( point(currentMouseLocation),false) match {
           case Some(l: LineFigure) ⇒ Some(l)
           case _ ⇒ None
         }
       }
       val now = snapMouse(dst, currentMouseLocation)
-      viewer.setStatusMessage(currentMouseLocation.toString)
+      viewer.setStatusMessage(currentMouseLocation.toString + " " + absMouseLocation.toString)
       dst foreach { _.showFeedback() }
       if (dst.isDefined)
         viewer.setCursor(Cursors.ARROW) else viewer.setCursor(Cursors.CROSS)

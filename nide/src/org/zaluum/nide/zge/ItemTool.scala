@@ -22,7 +22,6 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   // SELECTING 
   abstract class Selecting extends ToolState {
     var beingSelected: Option[Item] = None
-    var handle: Option[HandleRectangle] = None
     var initDrag: Point = _
     var initContainer: C = _
     def enter() { state = this; }
@@ -35,14 +34,14 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
 
     val handleTrack = new OverTrack[HandleRectangle] {
       def container = viewer.feedbackLayer
-      def onEnter(h: HandleRectangle) {
-        handle = Some(h)
+      override def onEnter(h: HandleRectangle) {
+        super.onEnter(h)
         h.setXOR(true);
         viewer.setCursor(h.resizeCursor)
       }
-      def onExit(f: HandleRectangle) {
-        handle = None
-        f.setXOR(false);
+      override def onExit(h: HandleRectangle) {
+        super.onExit(h)
+        h.setXOR(false);
         viewer.setCursor(null)
       }
     }

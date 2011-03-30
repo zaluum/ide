@@ -73,7 +73,6 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
         val analyzedTree = new Analyzer(reporter, tree, scope).compile()
         def generate(tree: Tree) {
           val sym = tree.symbol.asInstanceOf[BoxTypeSymbol]
-          println("generating " + sym.fqName)
           val classTree = new TreeToClass(tree, scope).run()
           val outputPath = defaultOutputFolder.append(new Path(sym.fqName.toRelativePathClass))
           writeFile(outputPath, ByteCodeGen.dump(classTree))

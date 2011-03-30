@@ -11,7 +11,7 @@ trait ViewerResources { // XXX rename
   def imageFactory: ImageFactory
 }
 class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
-  extends ItemViewer(parent, controller) with BoxDefContainer with SimpleShowHide with ViewerResources {
+  extends ItemViewer(parent, controller) with BoxDefContainer with ViewerResources {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
   val palette = new Palette(this, parent.getShell, controller.global)
@@ -32,7 +32,10 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
       focus
     }
   }
+  // Viewer doesn't have any visual representation
   def updateSize() {}
+  def hideme() {}
+  def showme() {}
   override def populateFigures() {
     super.populateFigures()
     boxDef.children foreach {
@@ -43,8 +46,6 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
       }
     }
   }
-  def hideme() {}
-  def showme() {}
   override def dispose() {
     super.dispose()
     imageFactory.reg.dispose
@@ -77,6 +78,15 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     hide()
     show()
     selectedItems foreach { _.showFeedback() }
+    /*for (s <- selectedItems; ss <- s.selectionSubject) {
+      println ("selected : " + ss)
+      ss match {
+        case t:Tree => 
+          println ("symbol: " + t.symbol)
+          println ("tpe: " + t.tpe )
+        case _ =>
+      }
+    }*/
   }
   def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i

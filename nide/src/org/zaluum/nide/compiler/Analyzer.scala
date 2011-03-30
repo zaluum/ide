@@ -123,7 +123,6 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             currentScope.lookupBoxType(sn) match {
               case Some(bs: BoxTypeSymbol) ⇒
                 sym.superSymbol = Some(bs)
-                println("found super " + bs + " for " + sym)
               case None ⇒
                 error("Super box type not found " + sn, tree)
             }
@@ -161,7 +160,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             error("Box not found " + name, tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case PortRef(fromTree, name, in) ⇒ // TODO filter in?
+        case p@PortRef(fromTree, name, in) ⇒ // TODO filter in?
           tree.symbol = fromTree.tpe match {
             case b: BoxTypeSymbol ⇒
               b.lookupPort(name).getOrElse {
@@ -171,7 +170,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             case tpe ⇒ NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case ThisRef ⇒
+        case ThisRef() ⇒
           tree.symbol = currentOwner // TODO what symbol for this?
           tree.tpe = currentOwner.asInstanceOf[BoxTypeSymbol]
         case _ ⇒
@@ -272,12 +271,12 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
                 ins map { p=> p.from } foreach {
                   case vb: ValSymbol ⇒
                     try {
-                      println(va.name + "->" + vb.name)
                       acyclic.addDagEdge(va, vb);
                     } catch {
                       case e: CycleFoundException ⇒ error("cycle found ", c.connections.head)
                       case e: IllegalArgumentException ⇒ error("loop found", c.connections.head)
                     }
+                  case _ => 
                 }
               case _ ⇒
             }
@@ -315,15 +314,4 @@ trait ConnectionHelper extends ReporterAdapter {
       }
     case _ ⇒ true
   }
-  /* def direction(c: ConnectionDef): (PortRef, PortRef) = {
-    implicit val tree: Tree = c
-    (c.a, c.b) match {
-      case (ap: PortRef, bp: PortRef) ⇒
-        (isIn(ap), isIn(bp)) match {
-          case (true, false) ⇒ (bp, ap)
-          case (false, true) ⇒ (ap, bp)
-          case _ ⇒ error("invalid connection. Must connect output and inputs.", c); (ap, bp)
-        }
-    }
-  }*/
 }

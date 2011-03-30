@@ -17,13 +17,14 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   def translate(me: IFigure, p: Point): Point = {
     if (me eq viewport) p
     else {
-      val ep = translate(me.getParent, p)
-      me.translateFromParent(point(ep))
+      val ep = point(translate(me.getParent, p))
+      me.translateFromParent(ep)
       ep
     }
   }
   abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
-    var last: Option[F] = None
+    var current : Option[F] = None
+    protected var last: Option[F] = None
     val partial : PartialFunction[AnyRef,F] = { case s if singleType(s)<:<m => s.asInstanceOf[F]}
     def update() {
       val near = viewer.deepChildrenNear(point(absMouseLocation),10)
@@ -31,11 +32,11 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
       val under = if (fil.isEmpty)  None
         else Some(fil.minBy( _._2)._1)
       if (under == last) return ;
-      last foreach { f ⇒ onExit(f); last = None }
-      under foreach { f ⇒ onEnter(f); last = Some(f) }
+      last foreach { f ⇒ last = None; onExit(f); }
+      under foreach { f ⇒ last = Some(f); onEnter(f);  }
     }
-    def onEnter(f: F)
-    def onExit(f: F)
+    def onEnter(f: F) { current = last}
+    def onExit(f: F) { current = None }
   }
   trait Allower extends ToolState {
     private var storedCursor: Option[Cursor] = None

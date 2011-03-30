@@ -68,8 +68,8 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
           matchh match {
             case t: TypeDeclarationMatch ⇒
               t.getElement match {
-                case t: IType ⇒ println("found type" + t); found = true
-                case other ⇒ println("ohter match " + other + " " + other.getClass)
+                case t: IType ⇒  found = true
+                case other ⇒ 
               }
           }
         }
@@ -141,12 +141,10 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
           }
         }
       val fqn = Name(t.getFullyQualifiedName)
-      println("processing box: " + fqn)
       val img = findAnnotations(t, t, classOf[BoxImage].getName).headOption flatMap { a ⇒
         findStringValueOfAnnotation(a, "value")
       }
       val guiClass = t.getFields.find { f ⇒ f.getElementName == "_widget" }.flatMap { f ⇒
-        println("found widget " + f.getTypeSignature);
         resolveTypeName(f.getTypeSignature)
       }
       val superName = resolveTypeName(t.getSuperclassTypeSignature)
@@ -165,7 +163,6 @@ class EclipseBoxClasspath(project: IProject) extends EclipseUtils with ClassPath
         val tpeName = resolveTypeName(f.getTypeSignature)
         val tpe = tpeName.flatMap { lookupType(_) }.getOrElse { NoSymbol }
         def port(in: Boolean, a: IAnnotation) {
-          println("resolving port " + f + " " + f.getTypeSignature)
           val port = new PortSymbol(bs, Name(f.getElementName), pointOf(a), if (in) In else Out)
           port.tpe = tpe
           bs.enter(port)

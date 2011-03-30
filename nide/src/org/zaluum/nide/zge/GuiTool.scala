@@ -29,7 +29,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       viewer.refresh()
     }
     def drag {
-      (handle, beingSelected) match {
+      (handleTrack.current, beingSelected) match {
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
         case (None, Some(fig)) ⇒ // select and move

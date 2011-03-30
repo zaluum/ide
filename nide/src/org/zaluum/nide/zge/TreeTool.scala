@@ -27,14 +27,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     def buttonUp {
-      println("buttonUp " + beingSelected + " " + port)
       (beingSelected, port) match {
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
           connecting.enter(port.container, port, currentMouseLocation)
         case (Some(box: TreeItem), None) ⇒
           viewer.selection.updateSelection(box.selectionSubject.toSet, shift)
-          println(box.tree)
           viewer.refresh()
         case (Some(line: LineFigure), None) ⇒
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
@@ -65,7 +63,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def drag {
       portsTrack.hideTip()
-      (handle, beingSelected) match {
+      (handleTrack.current, beingSelected) match {
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
         case (None, Some(fig: Item)) ⇒ // select and move
@@ -98,8 +96,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   abstract class InnerCreating extends ToolState {
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
-    def enter(initContainer: BoxDefContainer) {
+    var superName : Name =null
+    def enter(initContainer: BoxDefContainer, superName:Name) {
       enterSingle(initContainer)
+      this.superName = superName
       state = this
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, 48, 48))
@@ -116,7 +116,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             val sym = b.symbol.asInstanceOf[BoxTypeSymbol]
             val name = Name(sym.freshName("box"))
             val className = Name(sym.freshName("C"))
-            val newDef = BoxDef(className, Some(Name(classOf[LoopBox].getName)), None, List(),
+            val newDef = BoxDef(className, Some(superName), None, List(),
               vals = List(),
               ports = List(),
               connections = List(),
@@ -312,7 +312,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         if (viewer.feedbackLayer.getChildren.contains(tooltip))
           viewer.feedbackLayer.remove(tooltip)
     }
-    def onEnter(p: PortFigure) { p.showFeedback; showTip(p) }
-    def onExit(p: PortFigure) { p.hideFeedback; hideTip }
+    override def onEnter(p: PortFigure) { super.onEnter(p);p.showFeedback; showTip(p) }
+    override def onExit(p: PortFigure) { super.onExit(p); p.hideFeedback; hideTip }
   }
 }

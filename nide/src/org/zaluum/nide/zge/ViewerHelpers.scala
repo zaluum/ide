@@ -75,7 +75,6 @@ class SelectionManager[A] {
       deselectAll()
       trees foreach { select(_) }
     }
-    println("Selection manager = " + selected)
   }
 }
 

@@ -70,14 +70,16 @@ trait BoxDefContainer extends Container with SimpleShowHide{
   def owner: Symbol
   
   protected def createGraph  : ConnectionGraph= {
+    // fixme portslayer
     val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port,port.anchor) }
-    println ("ports " + portVertexs)
     val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
     val edges = boxDef.connections.map {
       case c: ConnectionDef ⇒
         def toVertex(t: Tree, start: Boolean): Vertex = t match {
           case JunctionRef(name) ⇒ junctions.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
-          case p: PortRef ⇒ portVertexs.find { _.portPath == PortPath(p) }.getOrElse { throw new RuntimeException("could not find vertex for " + PortPath(p))}
+          case p: PortRef ⇒ 
+            portVertexs.find { _.portPath == PortPath(p) }.getOrElse { throw new RuntimeException("could not find vertex for " + p + " " + PortPath(p) )}
+          
         }
         (c -> new Edge(toVertex(c.a,true), toVertex(c.b,true), c.points,Some(c)).fixEnds)
     }.toMap
@@ -112,7 +114,6 @@ trait BoxDefContainer extends Container with SimpleShowHide{
                 case _ =>
                   val i = new ImageValFigure(v, BoxDefContainer.this)
                   helpers += i 
-                  println("added imageval " + helpers )
               }
           }
         case j@Junction(name,pos) =>

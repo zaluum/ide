@@ -21,7 +21,7 @@ object Delete {
           def connectsRemovedPortDef(t:Tree) = t match {
             case p:PortRef => p.symbol match { 
               case p:PortSymbol => selection.contains(p.decl)
-              case _ => println("no symbol for port tree " + t); false
+              case _ => false
             }
             case _ => false
           }

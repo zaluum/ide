@@ -51,7 +51,7 @@ object Serializer {
           BoxFileProtos.BoxClassDef.JunctionRef.newBuilder
           .setName(name.str)
           .build).build
-      case PortRef(ThisRef, name, in) ⇒
+      case PortRef(ThisRef(), name, in) ⇒
         BoxFileProtos.BoxClassDef.Ref.newBuilder.setPort(
           BoxFileProtos.BoxClassDef.PortRef.newBuilder
           .setPortName(name.str)

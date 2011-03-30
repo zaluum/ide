@@ -105,7 +105,7 @@ class BoxTypeSymbol(
     case _ ⇒ name
   }
   def isLocal = owner.isInstanceOf[BoxTypeSymbol]
-  override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"
+ // override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"
   override def lookupPort(name: Name): Option[Symbol] =
     super.lookupPort(name) orElse (superSymbol flatMap { _.lookupPort(name) })
 

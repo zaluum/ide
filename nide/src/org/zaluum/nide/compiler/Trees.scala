@@ -110,7 +110,7 @@ trait CopyTransformer extends Transformer {
     case ValRef(name) ⇒ ValRef(name)
     case j:JunctionRef => j.copy()
     case j:Junction => j.copy()
-    case t@ThisRef ⇒ t
+    case t:ThisRef ⇒ ThisRef()
   }
 }
 abstract class Transformer extends OwnerHelper[Tree] {
@@ -163,7 +163,7 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
       case j:Junction =>
       case j:JunctionRef =>
       case ValRef(_) ⇒
-      case ThisRef ⇒
+      case ThisRef() ⇒
     }
   }
   def traverseTrees(trees: List[Tree]) {
@@ -253,7 +253,7 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
   def pos = inPos
 }
 case class ValRef(name: Name) extends RefTree
-case object ThisRef extends Tree
+case class ThisRef() extends Tree
 case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends RefTree
 case class Param(key:Name, value:String) extends Tree
 case class ValDef(
