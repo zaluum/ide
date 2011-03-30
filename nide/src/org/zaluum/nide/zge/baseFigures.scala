@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.Layer
 import org.zaluum.nide.compiler.SelectionSubject
 import draw2dConversions._
 import org.eclipse.draw2d.{ Figure, IFigure }
@@ -29,14 +30,23 @@ object RichFigure {
 import RichFigure._
 class RichFigure(container: IFigure) {
   import scala.collection.JavaConversions._
+  def immediateChildren = container.getChildren.asInstanceOf[java.util.List[IFigure]].toList
   def deepChildren : List[IFigure] = {
-    val immediateChildren = container.getChildren.asInstanceOf[java.util.List[IFigure]].toList
     val deepChildren:List[IFigure] = immediateChildren.flatMap { _.deepChildren }.toList
     immediateChildren ++ deepChildren 
   }
+  def deepChildrenNear(abs:EPoint, radius : Double) : List[(IFigure,Double)] = {
+    def distance(f:IFigure, abs:EPoint) : Double = {
+      val rel = abs.getCopy
+      f.translateToRelative(rel)
+      f.getBounds.getCenter.getDistance(rel)
+    }
+    val v = for (c <- deepChildren.view; val d = distance(c,abs); if (d<radius)) yield (c,d)
+    v.toList
+  }
   def findDeepAt[A](internalCoords: EPoint, deep: Int = 0, debug: Boolean = false)(partial: PartialFunction[IFigure, A]): Option[A] = {
     // bounds in parent coordinates
-    // client area in relative coordinates
+    // client area in relative coordinates 
     val spaces = new String(Array.fill(deep)(' '))
     def println2(str: String) = { if (debug) println(spaces + str) }
     var candidate: Option[A] = None

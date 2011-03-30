@@ -1,11 +1,14 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.RectangleFigure
+import org.eclipse.draw2d.ColorConstants
+import org.eclipse.draw2d.Label
 import org.zaluum.nide.compiler.NoSymbol
 import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.ToolTip
 import draw2dConversions._
 import org.eclipse.draw2d.{ Cursors, Figure }
-import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle }
+import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle, Dimension => EDimension }
 import org.zaluum.nide.compiler.{ _ }
 import scala.collection.JavaConversions._
 import org.zaluum.runtime.LoopBox
@@ -28,7 +31,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       (beingSelected, port) match {
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
-          connecting.enter(initContainer, port, currentMouseLocation)
+          connecting.enter(port.container, port, currentMouseLocation)
         case (Some(box: TreeItem), None) ⇒
           viewer.selection.updateSelection(box.selectionSubject.toSet, shift)
           println(box.tree)
@@ -38,7 +41,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             viewer.selection.updateSelection(line.selectionSubject.toSet, shift)
             viewer.refresh()
           } else {
-            connecting.enter(initContainer, line, currentMouseLocation)
+            connecting.enter(line.container, line, currentMouseLocation)
           }
         case (None, _) ⇒
           viewer.selection.deselectAll()
@@ -284,20 +287,30 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def abort() { exit() }
   }
   class PortTrack extends OverTrack[PortFigure] {
-    def container = viewer.portsLayer
-    var tooltip: ToolTip = null
+    class TooltipLabel extends RectangleFigure {
+      val l = new Label
+      l.setFont(viewer.display.getSystemFont)
+      setBackgroundColor(ColorConstants.tooltipBackground)
+      add(l)
+      def setText(s:String) { l.setText(s) }
+      override def getPreferredSize(x:Int,y:Int) = l.getPreferredSize(x,y)
+      override def setSize(x:Int,y:Int) = { l.setSize(x,y); super.setSize(x,y) }
+    }
+    lazy val tooltip = new TooltipLabel 
     def showTip(p: PortFigure) {
-      tooltip = new ToolTip(viewer.shell, SWT.BALLOON)
-      tooltip.setAutoHide(true)
+      val abs = p.anchor.getCopy      
       tooltip.setText(p.sym.name.str + " : " + p.sym.tpe.name.str)
-      tooltip.setVisible(true)
+      viewer.feedbackLayer.add(tooltip)
+      
+    }
+    override def update {
+      super.update
+      tooltip.setLocation(draw2dConversions.point(absMouseLocation + Vector2(15,15)))
+      tooltip.setSize(tooltip.getPreferredSize())
     }
     def hideTip() {
-      if (tooltip != null) {
-        tooltip.setVisible(false)
-        tooltip.dispose()
-        tooltip = null
-      }
+        if (viewer.feedbackLayer.getChildren.contains(tooltip))
+          viewer.feedbackLayer.remove(tooltip)
     }
     def onEnter(p: PortFigure) { p.showFeedback; showTip(p) }
     def onExit(p: PortFigure) { p.hideFeedback; hideTip }

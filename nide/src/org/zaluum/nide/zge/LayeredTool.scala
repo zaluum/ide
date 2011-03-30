@@ -26,7 +26,10 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     var last: Option[F] = None
     val partial : PartialFunction[AnyRef,F] = { case s if singleType(s)<:<m => s.asInstanceOf[F]}
     def update() {
-      val under: Option[F] = viewer.findDeepAt(point(absMouseLocation))(partial)
+      val near = viewer.deepChildrenNear(point(absMouseLocation),10)
+      val fil= for ((f,d) <- near; if (partial.isDefinedAt(f))) yield (partial(f),d)
+      val under = if (fil.isEmpty)  None
+        else Some(fil.minBy( _._2)._1)
       if (under == last) return ;
       last foreach { f ⇒ onExit(f); last = None }
       under foreach { f ⇒ onEnter(f); last = Some(f) }

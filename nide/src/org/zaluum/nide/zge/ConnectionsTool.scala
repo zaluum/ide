@@ -122,15 +122,16 @@ trait ConnectionsTool {
 
     def move() {
       import math.abs
-      val now = snapMouse(dst, currentMouseLocation)
       portsTrack.update()
       dst foreach { _.hideFeedback() }
-      viewer.setStatusMessage(currentMouseLocation.toString)
-      initContainer.itemAt( point(currentMouseLocation),false) match {
-        case Some(p: PortFigure) ⇒ dst = Some(p)
-        case Some(l: LineFigure) ⇒ dst = Some(l)
-        case _ ⇒ dst = None
+      dst = portsTrack.last orElse {
+        initContainer.itemAt( point(currentMouseLocation),false) match {
+          case Some(l: LineFigure) ⇒ Some(l)
+          case _ ⇒ None
+        }
       }
+      val now = snapMouse(dst, currentMouseLocation)
+      viewer.setStatusMessage(currentMouseLocation.toString)
       dst foreach { _.showFeedback() }
       if (dst.isDefined)
         viewer.setCursor(Cursors.ARROW) else viewer.setCursor(Cursors.CROSS)
