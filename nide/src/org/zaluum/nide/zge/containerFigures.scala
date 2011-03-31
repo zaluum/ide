@@ -45,9 +45,9 @@ trait BoxDefContainer extends Container with SimpleShowHide{
   def pointsLayer:Figure
   def portsLayer: Figure
   override def itemAt(p:Point, debug:Boolean = false) = {
-    super.itemAt(p, debug) 
+    itemAtIn(portsLayer,p,debug)
+    .orElse(super.itemAt(p, debug))
     .orElse (itemAtIn(connectionsLayer,p,debug)) 
-    .orElse (itemAtIn(portsLayer,p,debug)) 
   }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {

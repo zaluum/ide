@@ -27,7 +27,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def enter() { state = this; }
 
     def buttonDown {
-      beingSelected = itemOrLineUnderMouse collect { case i: Item ⇒ i }
+      beingSelected = itemUnderMouse
       initDrag = currentMouseLocation
       initContainer = current
     }

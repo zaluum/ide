@@ -21,26 +21,26 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   object selecting extends Selecting with DeleteState {
     var port: Option[PortFigure] = None
     override def doubleClick() {
-      itemOrLineUnderMouse match {
+      itemUnderMouse match {
         case Some(e: DirectValFigure) ⇒ directEditing.enter(e)
         case _ ⇒
       }
     }
     def buttonUp {
       (beingSelected, port) match {
-        case (_, Some(port)) ⇒ // connect
-          portsTrack.hideTip()
-          connecting.enter(port.container, port, currentMouseLocation)
-        case (Some(box: TreeItem), None) ⇒
+        case (Some(box: TreeItem), _) ⇒
           viewer.selection.updateSelection(box.selectionSubject.toSet, shift)
           viewer.refresh()
-        case (Some(line: LineFigure), None) ⇒
+        case (Some(line: LineFigure), _) ⇒
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
             viewer.selection.updateSelection(line.selectionSubject.toSet, shift)
             viewer.refresh()
           } else {
             connecting.enter(line.container, line, currentMouseLocation)
           }
+        case (_, Some(port)) ⇒ // connect
+          portsTrack.hideTip()
+          connecting.enter(port.container, port, currentMouseLocation)
         case (None, _) ⇒
           viewer.selection.deselectAll()
           viewer.refresh()
@@ -54,7 +54,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     override def move() {
       super.move()
       viewer.setCursor(Cursors.ARROW);
-      itemOrLineUnderMouse foreach {
+      itemUnderMouse foreach {
         case l: LineFigure ⇒
           if (l.l.distance(currentMouseLocation) > connectionLineDistance) viewer.setCursor(Cursors.CROSS)
         case _ ⇒
@@ -84,10 +84,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       controller.exec(Delete.deleteSelection(viewer.selectedItems,viewer.graphOf))
     }
     override def menu() {
-      itemOrLineUnderMouse match {
+      itemUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
         case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
-        case Some(o: OpenBoxFigure) ⇒
+        case Some(o: OpenBoxFigure) ⇒ 
         case Some(b: ImageValFigure) ⇒
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)
       }
