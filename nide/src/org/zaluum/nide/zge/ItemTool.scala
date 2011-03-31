@@ -101,7 +101,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def command(newPos: Point, newSize: Dimension,t:Tree) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
         case v:ValDef if (v == t) ⇒
-          v.copy(size=Some(newSize))
+          v.copy(size=Some(newSize), pos=newPos)
       }
     }
     def move() { itf.resizeDeltaFeed(delta, handle) }
