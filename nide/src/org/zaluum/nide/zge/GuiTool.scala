@@ -39,7 +39,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
               fig.showFeedback()
             }
           }
-        // FIXME moving.enter(initDrag, initContainer)
+        moving.enter(initDrag, initContainer)
         case (None, None) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }

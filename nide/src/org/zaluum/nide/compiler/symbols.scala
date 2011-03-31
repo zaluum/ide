@@ -108,7 +108,7 @@ class BoxTypeSymbol(
  // override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"
   override def lookupPort(name: Name): Option[Symbol] =
     super.lookupPort(name) orElse (superSymbol flatMap { _.lookupPort(name) })
-
+  tpe=this
 }
 
 //class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 

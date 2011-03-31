@@ -16,7 +16,7 @@ abstract class Tree extends Product with SelectionSubject{
   def findPath(l:List[Int]) : Option[Tree]= { 
     if (l.isEmpty) Some(this) 
     else children.lift(l.head).flatMap {_.findPath(l.tail)}
-  }
+  } 
   def pathOf(t: Tree): Option[List[Int]] = {
     if (t == this) Some(List())
     else children.view.map {_.pathOf(t)}.zipWithIndex.
@@ -34,7 +34,7 @@ abstract class Tree extends Product with SelectionSubject{
   private[zaluum] def copyAttrs(tree: Tree): this.type = {
     //pos = tree.pos
     tpe = tree.tpe
-    if (hasSymbol) symbol = tree.symbol
+    symbol = tree.symbol
     this
   }
 
@@ -178,6 +178,7 @@ object PrettyPrinter {
   def print(trees: List[Tree], deep: Int) {
     trees.foreach { print(_, deep) }
   }
+  def sym (tree:Tree) = " sym= " + tree.symbol + " tpe= " + tree.tpe 
   def print(tree: Tree, deep: Int): Unit = tree match {
     case EmptyTree ⇒ print("EmptyTree", deep)
     case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
@@ -187,29 +188,29 @@ object PrettyPrinter {
       print(ports, deep + 1)
       print(connections, deep + 1)
       print(junctions, deep +1)
-      print(")", deep)
+      print(")"+ sym(b), deep)
     case v: ValDef ⇒
       print("ValDef(" + List(v.name,v.pos,v.size,v.typeName,v.guiPos ,v.guiSize).mkString(","), deep)
       print(v.params,deep+1)
-      print(")",deep)
+      print(")" + sym(v),deep)
     case p: Param => 
-      print(p.toString,deep)
-    case ConnectionDef(a, b,wp) ⇒
+      print(p.toString + sym(p),deep)
+    case c@ConnectionDef(a, b,wp) ⇒
       print("ConnectionDef(", deep)
       print(a, deep + 1)
       print(b, deep + 1)
       for (p<-wp) {
         print(p.toString,deep+1)
       }
-      print(")", deep)
+      print(")" + sym(c) , deep)
     case p@PortDef(_, _, _, _, _) ⇒
-      print(p.toString, deep)
-    case PortRef(tree, a, b) ⇒
+      print(p.toString + sym(p), deep)
+    case p@PortRef(tree, a, b) ⇒
       print("PortRef(", deep)
       print(tree, deep + 1)
       print(a + ", " + b, deep + 1)
-      print(")", deep)
-    case _ ⇒ print(tree.toString, deep)
+      print(")" + sym(p), deep)
+    case _ ⇒ print(tree.toString + sym(tree), deep)
   }
 }
 abstract class OwnerHelper[A] {
@@ -253,7 +254,7 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
   def pos = inPos
 }
 case class ValRef(name: Name) extends RefTree
-case class ThisRef() extends Tree
+case class ThisRef() extends SymTree 
 case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends RefTree
 case class Param(key:Name, value:String) extends Tree
 case class ValDef(

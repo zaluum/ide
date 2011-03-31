@@ -21,13 +21,6 @@ case object True extends Tree
 class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = Location(List(0))
-  /*  object swapConnections extends CopyTransformer with CopySymbolTransformer {
-    val trans: PartialFunction[Tree, Tree] = {
-      case c: ConnectionDef ⇒
-        val (from, to) = direction(c)
-        ConnectionDef(transform(from), transform(to),c.wayPoints)
-    }
-  }*/
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
       case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
@@ -48,7 +41,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     }
     def apply(t: Tree) = t match {
       case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
-        val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
+        val tpe = b.tpe.asInstanceOf[BoxTypeSymbol]
         val baseFields = (vals ++ ports).map { field(_) }
         val fields = vClass(b) map { vn ⇒
           FieldDef(Name("_widget"), vn) :: baseFields
@@ -88,7 +81,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
                 Select(
                   Select(This, FieldRef(valSym.name, valTpe.fqName, bs.fqName)),
                   FieldRef(param.name, param.tpe.name, valTpe.fqName) // TODO FIXME
-),
+                ),
                 Const(v))
           }
       }
@@ -161,7 +154,8 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         }
         val (out, ins) = c
         ins.toList map { in ⇒
-          Assign(toRef(out), toRef(in))
+          println(in + "<-" + out)
+          Assign(toRef(in), toRef(out))
         }
       }
       def connections = bs.connections
@@ -196,7 +190,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
   def run() = {
     val owner = global.root
     val mutated = orderValDefs(t, owner)
-    PrettyPrinter.print(mutated, 0)
+    //PrettyPrinter.print(mutated, 0)
     rewrite(mutated)
   }
 }

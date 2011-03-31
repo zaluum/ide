@@ -102,8 +102,6 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       define(symbol, currentScope, currentScope.lookupVal(symbol.name).isDefined, tree)
     def definePort(symbol: Symbol, tree: Tree): Symbol =
       define(symbol, currentScope, currentScope.lookupPort(symbol.name).isDefined, tree)
-    /*def defineJunction(symbol: Symbol, tree:Tree) : Symbol =
-      define(symbol,currentScope, currentScope.lookupJunction(symbol.name).isDefined,tree)*/
     def define[S <: Symbol](symbol: S, scope: Scope, dupl: Boolean, tree: Tree): S = {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
       symbol.scope = scope
@@ -119,6 +117,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           val cl = Some(Name(classOf[JPanel].getName))
           val newSym = new BoxTypeSymbol(currentOwner, name, superName, image, cl)
           val sym = defineBox(newSym, tree)
+          tree.tpe= sym
           superName foreach { sn ⇒
             currentScope.lookupBoxType(sn) match {
               case Some(bs: BoxTypeSymbol) ⇒
@@ -131,8 +130,6 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           definePort(new PortSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], name, extPos, dir), tree)
         case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
           defineVal(new ValSymbol(currentOwner, name), tree)
-        /* case j@Junction(name,point) => 
-          defineJunction(new JunctionSymbol(currentOwner.asInstanceOf[BoxTypeSymbol],name,point),tree)*/
         case _ ⇒
           tree.scope = currentScope
       }
@@ -292,7 +289,6 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
   }
   def compile(): Tree = {
     val root = global.root
-    PrettyPrinter.print(toCompile, 0)
     new Namer(root).traverse(toCompile)
     new Resolver(root).traverse(toCompile)
     new CheckParams(root).traverse(toCompile)
