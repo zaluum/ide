@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.Viewport
 import org.eclipse.draw2d.Layer
 import org.zaluum.nide.compiler.SelectionSubject
 import draw2dConversions._
@@ -35,13 +36,18 @@ class RichFigure(container: IFigure) {
     val deepChildren:List[IFigure] = immediateChildren.flatMap { _.deepChildren }.toList
     immediateChildren ++ deepChildren 
   }
-  def deepChildrenNear(abs:EPoint, radius : Double) : List[(IFigure,Double)] = {
-    def distance(f:IFigure, abs:EPoint) : Double = {
-      val rel = abs.getCopy
-      f.translateToRelative(rel)
-      f.getBounds.getCenter.getDistance(rel)
+  def translateFromViewport(p: MPoint) : MPoint = translateFromViewport(point(p))
+  def translateFromViewport(p: EPoint): EPoint = {
+    if (container.isInstanceOf[Viewport]) p.getCopy
+    else {
+      val ep = container.getParent.translateFromViewport(p)
+      container.translateFromParent(ep)
+      ep
     }
-    val v = for (c <- deepChildren.view; val d = distance(c,abs); if (d<radius)) yield (c,d)
+  }
+  def deepChildrenNear(abs:EPoint, radius : Double) : List[(IFigure,Double)] = {
+    def distance(f:IFigure) : Double = f.getBounds.getCenter.getDistance( f.translateFromViewport(abs))
+    val v = for (c <- deepChildren.view; val d = distance(c); if (d<radius)) yield (c,d)
     v.toList
   }
   def findDeepAt[A](internalCoords: EPoint, deep: Int = 0, debug: Boolean = false)(partial: PartialFunction[IFigure, A]): Option[A] = {

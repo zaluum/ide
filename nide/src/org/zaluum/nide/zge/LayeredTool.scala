@@ -10,18 +10,10 @@ import RichFigure._
 abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   type C <: Container
   def itemOrLineUnderMouse = current.itemAt(point(currentMouseLocation))
-  def currentMouseLocation : Point = translate(current, absMouseLocation)
+  def currentMouseLocation : Point = current.translateFromViewport(absMouseLocation)
   def current : C = viewer.findDeepContainerAt(point(absMouseLocation)) {
     case (f: OpenBoxFigure) ⇒ f.asInstanceOf[C]
   } getOrElse { viewer.asInstanceOf[C] }
-  def translate(me: IFigure, p: Point): Point = {
-    if (me eq viewport) p
-    else {
-      val ep = point(translate(me.getParent, p))
-      me.translateFromParent(ep)
-      ep
-    }
-  }
   abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
     var current : Option[F] = None
     protected var last: Option[F] = None
@@ -70,7 +62,7 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     def enterSingle(initContainer: C) {
       this.initContainer = initContainer
     }
-    def currentMouseLocation = translate(initContainer, absMouseLocation)
+    def currentMouseLocation = initContainer.translateFromViewport(absMouseLocation)
   }
   trait DeltaMove extends ToolState {
     private var initDrag: Point = _
