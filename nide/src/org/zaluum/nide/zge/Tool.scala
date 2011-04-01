@@ -54,7 +54,7 @@ abstract class Tool(viewer: Viewer) {
   canvas.addMouseWheelListener(listener);
   canvas.addTraverseListener(listener);
   def refresh() {
-    state.abort()
+    state.exit()
     state.move() // TODO some kind of refresh?
   }
   trait ToolState {

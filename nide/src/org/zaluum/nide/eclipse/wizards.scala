@@ -76,7 +76,7 @@ class BoxWizardPage(
   import com.google.common.base.Charsets
   //TODO def className = BoxClassName.parse(this.getFileName) // FIXME
   override protected def getInitialContents = {
-    val model = BoxDef(Name(""), None, None, List(),List(),List(),List(),List())
+    val model = BoxDef(Name(""), None, guiSize=Some(Dimension(250,250)), None, List(),List(),List(),List(),List())
     new java.io.ByteArrayInputStream(Serializer.proto(model).toByteArray)
   }
 

@@ -84,9 +84,9 @@ trait CopySymbolTransformer extends Transformer {
 trait CopyTransformer extends Transformer {
   val defaultTransform: PartialFunction[Tree, Tree] = {
     case e@EmptyTree ⇒ e
-    case b@BoxDef(name, superName, image, defs, vals, ports, connections,junctions) ⇒
+    case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections,junctions) ⇒
       atOwner(b.symbol) {
-        BoxDef(name, superName, image,
+        BoxDef(name, superName, guiSize, image,
           transformTrees(defs),
           transformTrees(vals),
           transformTrees(ports),
@@ -141,7 +141,7 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
     tree match {
       case EmptyTree ⇒
         ;
-      case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
+      case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
         atOwner(tree.symbol) {
           traverseTrees(defs)
           traverseTrees(vals)
@@ -181,8 +181,9 @@ object PrettyPrinter {
   def sym (tree:Tree) = " sym= " + tree.symbol + " tpe= " + tree.tpe 
   def print(tree: Tree, deep: Int): Unit = tree match {
     case EmptyTree ⇒ print("EmptyTree", deep)
-    case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
+    case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
       print("BoxDef(" + name + " extends " + superName + ", " + image, deep)
+      print(guiSize.toString, deep + 1)
       print(defs, deep + 1)
       print(vals, deep + 1)
       print(ports, deep + 1)
@@ -240,6 +241,7 @@ case object EmptyTree extends Tree {
 
 /* Definition */
 case class BoxDef(name: Name, superName:Option[Name],
+  guiSize : Option[Dimension],
   image: Option[String],
   defs: List[Tree],
   vals: List[Tree],

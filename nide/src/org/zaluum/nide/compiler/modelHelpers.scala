@@ -37,6 +37,9 @@ case class Dimension(w: Int, h: Int) {
     p.setY(h)
     p.build
   }
+  def + (v: Vector2) = Dimension(w +v.x,h+v.y)
+  import math.max
+  def ensureMin(min:Dimension) = Dimension(max(w,min.w) , max(h,min.h))
 }
 trait Positionable {
   def pos: Point

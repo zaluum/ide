@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.Graphics
+import org.eclipse.draw2d.FreeformLayer
 import org.eclipse.draw2d.IFigure
 import scala.collection.mutable.Buffer
 import org.eclipse.jface.resource.ImageRegistry

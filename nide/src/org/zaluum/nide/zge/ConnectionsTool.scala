@@ -79,7 +79,7 @@ trait ConnectionsTool {
           new EditTransformer {
             val trans: PartialFunction[Tree, Tree] = {
               case b: BoxDef if (b == initContainer.boxDef) ⇒
-                BoxDef(b.name, b.superName, b.image,
+                BoxDef(b.name, b.superName, b.guiSize, b.image,
                   transformTrees(b.defs),
                   transformTrees(b.vals),
                   transformTrees(b.ports),
@@ -235,7 +235,7 @@ trait ConnectionsTool {
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if (b == initContainer.boxDef) ⇒
-              BoxDef(b.name, b.superName, b.image,
+              BoxDef(b.name, b.superName, b.guiSize, b.image,
                 transformTrees(b.defs),
                 transformTrees(b.vals),
                 transformTrees(b.ports),

@@ -1,6 +1,5 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.runtime.Loop2Box
 import org.zaluum.runtime.LoopBox
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Shift
@@ -60,13 +59,6 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
     addReaction(innerb) {
       viewer.tool.state.abort()
       viewer.tool.innercreating.enter(container, Name(classOf[LoopBox].getName))
-      viewer.canvas.setFocus()
-      hide()
-    }
-    val innerb2 = createButton("Loop2", viewer.imageFactory.notFound)
-    addReaction(innerb2) {
-      viewer.tool.state.abort()
-      viewer.tool.innercreating.enter(container, Name(classOf[Loop2Box].getName))
       viewer.canvas.setFocus()
       hide()
     }

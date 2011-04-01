@@ -1,5 +1,10 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.geometry.Rectangle
+import org.eclipse.draw2d.IFigure
+import org.eclipse.draw2d.AbstractBackground
+import org.eclipse.draw2d.Graphics
+import org.eclipse.draw2d.Figure
 import org.zaluum.nide.eclipse.ClassPath
 import org.zaluum.nide.compiler._
 import org.eclipse.jface.dialogs.PopupDialog
@@ -24,25 +29,25 @@ class ImageFactory(val display: Display, bcp: ClassPath) {
       }
     }
   }
-  def apply(tpe : Type) : Image = {
+  def apply(tpe: Type): Image = {
     tpe match {
-      case b:BoxTypeSymbol => imageFor(b.image,b.name)
+      case b: BoxTypeSymbol ⇒ imageFor(b.image, b.name)
       // TODO port case?
-      case _ => notFound
+      case _ ⇒ notFound
     }
   }
-  private def imageFor(image:Option[String],name:Name) = {
+  private def imageFor(image: Option[String], name: Name) = {
     def defaultImage(name: Name) = name.toRelativePath + ".png";
-    def fallbackImage(name:Name) = get(defaultImage(name)).getOrElse {generateImage(name.classNameWithoutPackage)}
-    image.flatMap {get(_)}.getOrElse(fallbackImage(name))
+    def fallbackImage(name: Name) = get(defaultImage(name)).getOrElse { generateImage(name.classNameWithoutPackage) }
+    image.flatMap { get(_) }.getOrElse(fallbackImage(name))
   }
   def apply(typeTree: Tree): Image = {
     typeTree match {
-      case b:BoxDef => imageFor(b.image,b.name)
-      case _ => notFound
+      case b: BoxDef ⇒ imageFor(b.image, b.name)
+      case _ ⇒ notFound
     }
   }
-  def generateImage(txt:String): Image = {
+  def generateImage(txt: String): Image = {
     val img = new Image(display, 48, 48);
     val gc = new GC(img)
     val font = new Font(display, "Arial", 6, SWT.NONE);
@@ -56,11 +61,11 @@ class ImageFactory(val display: Display, bcp: ClassPath) {
 }
 class SelectionManager[A] {
   protected var selected = Set[A]()
-  override def toString= selected.toString
-  def refresh(f : PartialFunction[A,A]) {
+  override def toString = selected.toString
+  def refresh(f: PartialFunction[A, A]) {
     selected = selected flatMap { f.lift(_) }
   }
-  def apply(t:A) = selected(t)
+  def apply(t: A) = selected(t)
   def select(t: A) { selected += t }
   def deselect(t: A) { selected -= t }
   def toggleSelection(f: A) {
@@ -117,5 +122,13 @@ abstract class ScrollPopup(mainShell: Shell) {
   }
   def hide() {
     popup.close
+  }
+}
+object DotPainter {
+  def dotFill(graphics : Graphics, b:Rectangle) {
+    graphics.fillRectangle(b);
+    for (i ← 0 to b.width by 15; j ← 0 to b.height by 15) {
+      graphics.drawPoint(i, j);
+    }    
   }
 }

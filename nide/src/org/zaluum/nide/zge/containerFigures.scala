@@ -26,6 +26,7 @@ trait Container extends IFigure {
   def viewer : Viewer
   def viewerResources: ViewerResources
   def layer: Figure
+  def background : Figure
   val helpers: Buffer[ShowHide]
   def feedbackLayer: Figure
   protected def itemAtIn(container:Figure,p:Point,debug:Boolean=false) : Option[Item]= container.findDeepAt(point(p), 0, debug) {
@@ -34,6 +35,7 @@ trait Container extends IFigure {
   def itemAt(p: Point, debug: Boolean = false) :Option[Item]= itemAtIn(layer,p,debug) 
   def clear() {
     layer.removeAll()
+    background.removeAll()
     feedbackLayer.removeAll()
   }
 }
@@ -147,6 +149,7 @@ class OpenBoxFigure(
   val connectionsLayer = new Layer
   val pointsLayer = new Layer
   val feedbackLayer = new Layer
+  val background = new Layer
   // BoxDefContainer
   override def useLocalCoordinates = true
   override def newConnectionFigures = super.newConnectionFigures
@@ -194,6 +197,7 @@ class OpenBoxFigure(
     super.updateSize()
     inners.setSize(getBounds.getSize)
   }
+  inners.add(background)
   inners.add(layer)
   inners.add(portsLayer)
   inners.add(connectionsLayer)

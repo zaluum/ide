@@ -23,10 +23,10 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
   def location(t: Tree) = Location(List(0))
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
-      case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
+      case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
         val orderVals = b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder map { _.decl }
         atOwner(b.symbol) {
-          BoxDef(name, superName, image,
+          BoxDef(name, superName, guiSize, image,
             transformTrees(defs),
             transformTrees(orderVals),
             transformTrees(ports),
@@ -40,7 +40,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       bd.symbol.asInstanceOf[BoxTypeSymbol].visualClass
     }
     def apply(t: Tree) = t match {
-      case b@BoxDef(name, superName, image, defs, vals, ports, connections, junctions) ⇒
+      case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
         val tpe = b.tpe.asInstanceOf[BoxTypeSymbol]
         val baseFields = (vals ++ ports).map { field(_) }
         val fields = vClass(b) map { vn ⇒
@@ -81,16 +81,23 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
                 Select(
                   Select(This, FieldRef(valSym.name, valTpe.fqName, bs.fqName)),
                   FieldRef(param.name, param.tpe.name, valTpe.fqName) // TODO FIXME
-                ),
+                  ),
                 Const(v))
           }
       }
       // widgets
       val widgets = vClass(b) map { vn ⇒
-        val widgetCreation: Tree =
+        val widgetCreation: List[Tree] = List(
           Assign(Select(This, FieldRef(widgetName, vn, bs.fqName)),
-            New(vn, NullConst, "(Ljava/awt/LayoutManager;)V"))
-        List(widgetCreation) ++ createWidgets(bs, List(), b)
+            New(vn, NullConst, "(Ljava/awt/LayoutManager;)V")),
+          Invoke(
+            Select(This, FieldRef(widgetName, vn, bs.fqName)),
+            "setSize",
+            List(Const(b.guiSize.map(_.w).getOrElse(100)),
+              Const(b.guiSize.map(_.h).getOrElse(100))),
+            Name("javax.swing.JComponent"),
+            "(II)V"))
+        widgetCreation ++ createWidgets(bs, List(), b)
       }
       ConstructorMethod(widgets map { w ⇒ boxCreation ++ ports ++ w } getOrElse (boxCreation ++ ports))
     }
@@ -147,7 +154,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       // propagate initial inputs
       def execConnection(c: (PortPath, Set[PortPath])) = {
         def toRef(p: AnyRef): Tree = p match {
-          case b:BoxTypeSymbol ⇒ This
+          case b: BoxTypeSymbol ⇒ This
           case v: ValSymbol ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
           case PortPath(from, p@port) ⇒
             Select(toRef(from), FieldRef(p.name, p.tpe.name, from.tpe.asInstanceOf[BoxTypeSymbol].fqName))
@@ -162,7 +169,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       def propagateInitialInputs = {
         val initialConnections = {
           connections.flow collect {
-            case c@(PortPath(from:BoxTypeSymbol, _),_) ⇒ c
+            case c@(PortPath(from: BoxTypeSymbol, _), _) ⇒ c
           } toList
         }
         initialConnections flatMap { execConnection(_) }
@@ -170,7 +177,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       // execute in order
       def runOne(v: ValDef) = {
         def outConnections = connections.flow collect {
-          case c@(p@PortPath(vref:ValSymbol, _), ins) if (vref == v.symbol) ⇒ c
+          case c@(p@PortPath(vref: ValSymbol, _), ins) if (vref == v.symbol) ⇒ c
         } toList
         val outs = outConnections flatMap { execConnection(_) }
         val tpe = v.tpe.asInstanceOf[BoxTypeSymbol].fqName

@@ -8,6 +8,7 @@ object Parser {
   def parse(b: BoxFileProtos.BoxClassDef,name:Option[Name]=None): BoxDef = {
     BoxDef(name.getOrElse(Name(b.getClassName)), 
       superName = if (b.hasSuper) Some(Name(b.getSuper)) else None,
+      guiSize = if (b.hasGuiSize) Some(parseDim(b.getGuiSize)) else None,
       image = if (b.hasImageName) Some(b.getImageName) else None,
       defs = b.getInnerClassList.map { parse(_) }.toList,
       vals = b.getInstanceList.map { parse(_) }.toList,

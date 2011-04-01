@@ -77,7 +77,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def setFocus() { viewer.canvas.setFocus }
   def openGUI() {
     if (!shell.isDefined) {
-      val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE | SWT.RESIZE )
+      val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE | SWT.RESIZE)
       newshell.setLayout(new FillLayout)
       newshell.setText(getTitle + " GUI");
       val guiViewer= new GuiViewer(newshell, controller, globalScope)

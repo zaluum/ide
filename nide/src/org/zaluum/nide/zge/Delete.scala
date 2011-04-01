@@ -37,7 +37,7 @@ object Delete {
           val removedEdges = for (e <- gb.edges; c <- e.srcCon; if isRemoved(c)) yield e
           val removedg =  removedEdges.foldLeft (gb)((gg,e) => gg.remove(e))
           val (newCons, newJunc) = removedg.prune.clean.toTree
-          BoxDef(b.name, b.superName, b.image,
+          BoxDef(b.name, b.superName, b.guiSize, b.image,
             transformTrees(b.defs filterNot { removedDefs contains(_) }),
             transformTrees(b.vals filterNot { valDefs contains (_) }) ,
             transformTrees(b.ports filterNot { portDefs contains(_)} ),

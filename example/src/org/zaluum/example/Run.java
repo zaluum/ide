@@ -21,7 +21,7 @@ public class Run {
 		JComponent comp = (JComponent) f.get(instance);
 		JFrame frame = new JFrame();
 		frame.add(comp);
-		frame.setSize(comp.getSize());
+		frame.setSize(comp.getSize().width + 30 , comp.getSize().height + 40 );
 		new Thread(new Runnable() {
 			public void run() {
 				try {
