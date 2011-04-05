@@ -25,10 +25,10 @@ import java.awt.image.BufferedImage
 
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item {
-  var valDef : ValDef = _
+  var valDef: ValDef = _
   def pos = valDef.pos
   override def selectionSubject = Some(valDef)
-  def updateValDef(t:ValDef) {
+  def updateValDef(t: ValDef) {
     valDef = t
     updateMe()
     updateSize()
@@ -38,20 +38,20 @@ trait ValDefItem extends Item {
   def updateValPorts()
 }
 
-trait ValFigure extends ValDefItem with HasPorts{
+trait ValFigure extends ValDefItem with HasPorts {
   def sym = valDef.symbol.asInstanceOf[ValSymbol]
   def myLayer = container.layer
   def updateValPorts() {
-    for (p<-ports) container.portsLayer.remove(p)
+    for (p ← ports) container.portsLayer.remove(p)
     ports.clear
     sym.tpe match {
       case b: BoxTypeSymbol ⇒
         b.ports.values.foreach {
           case s: PortSymbol ⇒
             val p = new PortFigure(container)
-            p.update(s.extPos + Vector2(getBounds.x, getBounds.y),s, sym, s.dir == In)
+            p.update(s.extPos + Vector2(getBounds.x, getBounds.y), s, sym, s.dir == In)
             ports += p
-          case _ =>
+          case _ ⇒
         }
       case _ ⇒ List()
     }
@@ -60,7 +60,7 @@ trait ValFigure extends ValDefItem with HasPorts{
 class ImageValFigure(val container: ContainerItem) extends ImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def updateMe() {
-    setImage(container.viewerResources.imageFactory(valDef.tpe))    
+    setImage(container.viewerResources.imageFactory(valDef.tpe))
   }
 }
 class DirectValFigure(val container: ContainerItem) extends TextEditFigure with ValFigure {
@@ -69,7 +69,7 @@ class DirectValFigure(val container: ContainerItem) extends TextEditFigure with 
   def text = param.value
   def updateMe {
     fl.setText(text)
-    setForegroundColor(Colorizer.color(param.tpe))    
+    setForegroundColor(Colorizer.color(param.tpe))
   }
 }
 trait TextEditFigure extends RectangleFigure with Item with RectFeedback {
@@ -109,21 +109,41 @@ trait TextEditFigure extends RectangleFigure with Item with RectFeedback {
     }
   }
 }
-class SwingFigure(val container: ContainerItem, val valDef: ValDef, val component: JComponent) extends Figure with Item with ResizableFeedback {
+class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Figure with ValDefItem with ResizableFeedback {
   setOpaque(true)
   def size = valDef.guiSize getOrElse { Dimension(15, 15) }
-  def pos = valDef.guiPos getOrElse { Point(0, 0) }
+  override def pos = valDef.guiPos getOrElse { Point(0, 0) }
   def myLayer = container.layer
-  def updatePorts {}
-  def updateMain {}
-  def helpers = List()
+  var component: Option[JComponent] = None
+  def forName(str: String): Option[Class[_]] = {
+    try { Some(cl.loadClass(str)) }
+    catch { case e: Exception ⇒ e.printStackTrace; None }
+  }
+
+  override def updateValDef(valDef: ValDef) = {
+    def instance(cl: Class[_]) = {
+      try {
+        Some(cl.newInstance().asInstanceOf[JComponent])
+      } catch { case e ⇒ e.printStackTrace; None }
+    }
+    component = for (
+        c ← valDef.tpe.asInstanceOf[BoxTypeSymbol].visualClass; 
+        cl ← forName(c.str); 
+        i <- instance(cl)) yield i
+    super.updateValDef(valDef)
+  }
+  def updateMe() {}
+  override def updateValPorts() {}
+  override def selectionSubject = Some(valDef)
   override def paintFigure(g: Graphics) {
     val rect = getClientArea()
-    component.setBounds(0, 0, rect.width, rect.height);
-    component.doLayout
     val aimage = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB)
     val ag = aimage.createGraphics
-    component.paint(ag)
+    component foreach { c ⇒
+      c.setBounds(0, 0, rect.width, rect.height);
+      c.doLayout
+      c.paint(ag)
+    }
     val imageData = SWTUtils.convertAWTImageToSWT(aimage)
     val image = new org.eclipse.swt.graphics.Image(Display.getCurrent(), imageData)
     g.drawImage(image, rect.x, rect.y)

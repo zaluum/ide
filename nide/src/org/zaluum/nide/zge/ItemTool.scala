@@ -95,7 +95,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       itf match {
         case vd: ValDefItem =>
           controller.exec(command(newPos, newSize,vd.valDef))
-        case _ => exit() 
+        case _ => abort() 
       }
     }
     def command(newPos: Point, newSize: Dimension,t:Tree) = new EditTransformer {

@@ -146,6 +146,7 @@ trait Item extends Hover {
     hideFeedback()
   }
   def showFeedback() {
+    println("showFeedback")
     container.feedbackLayer.add(feed)
   }
   def hideFeedback() {
@@ -169,11 +170,11 @@ trait Item extends Hover {
   }
   def selectionSubject : Option[SelectionSubject] = None
 }
-trait TreeItem extends Item {
+/*trait TreeItem extends Item {
   type T <: Tree
   def tree :T
   override def selectionSubject = Some(tree)
-}
+}*/
 trait HasPorts extends Item {
   val ports = Buffer[PortFigure]()
   override def show() {

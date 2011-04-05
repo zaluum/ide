@@ -130,9 +130,9 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
     def buttonUp {
       val positions = viewer.selectedItems.collect {
-        case item: TreeItem ⇒
+        case item: SwingFigure ⇒
           val oldLoc = item.getBounds.getLocation
-          (item.tree.asInstanceOf[ValDef] -> (Point(oldLoc.x, oldLoc.y) + delta))
+          (item.valDef -> (Point(oldLoc.x, oldLoc.y) + delta))
       }.toMap
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {

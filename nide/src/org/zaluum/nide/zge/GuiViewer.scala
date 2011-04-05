@@ -18,7 +18,7 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
   extends ItemViewer(parent, controller) with ContainerItem with ViewerResources {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
-  val helpers = Buffer[Item]()
+  val items = Buffer[Item]()
   val feed = null
   def pos = Point(0,0)
   def container = null
@@ -42,11 +42,6 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
   def remapSelection(m: PartialFunction[SelectionSubject, SelectionSubject]) {
     selection.refresh(m);
   }
-
-  def forName(str: String): Option[Class[_]] = {
-    try { Some(global.classLoader.loadClass(str)) }
-    catch { case e: Exception ⇒ e.printStackTrace; None }
-  }
   val backRect = new RectangleFigure()  {
     override def fillShape(g:Graphics) {
       DotPainter.dotFill(g,getBounds)
@@ -55,38 +50,39 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
   def updatePorts(changes:Map[Tree,Tree]){}
   backRect.setForegroundColor(ColorConstants.red)
   backRect.setBackgroundColor(ColorConstants.white)
-  def populate() {
-    def populateBoxDef(b: BoxDef) {
+  background.add(backRect)
+  override def updateContents(changes:Map[Tree,Tree]) {
+    items.foreach {_.hide}
+    items.clear()
+    def updateBoxDef(b: BoxDef) {
       b.children foreach {
         _ match {
           case v: ValDef ⇒
             val sym = v.symbol.asInstanceOf[ValSymbol]
             val tpe = sym.tpe.asInstanceOf[BoxTypeSymbol]
-            if (!tpe.isLocal) {
-              /*for (c ← tpe.visualClass; cl ← forName(c.str)) {
-                helpers += new SwingFigure(GuiViewer.this, v,
-                  cl.newInstance.asInstanceOf[JComponent])
-              }*/
+            if (!tpe.isLocal && tpe.visualClass.isDefined) {
+                val f = new SwingFigure(GuiViewer.this,global.classLoader)
+                f.updateValDef(v)
+                items += f
+                f.show()
             }
-          case childBox: BoxDef ⇒ populateBoxDef(childBox)
+          case childBox: BoxDef ⇒ updateBoxDef(childBox)
           case _ ⇒
         }
       }
     }
-    populateBoxDef(boxDef)
-    background.add(backRect)
+    val Dimension(w,h) = size
+    backRect.setBounds(new Rectangle(0,0,w,h))
+    updateBoxDef(boxDef)
   }
   def size = boxDef.guiSize.getOrElse(Dimension(200,200))
   def refresh() {
-    helpers.foreach {_.hide }
-    helpers.clear
-    populate()
-    val Dimension(w,h) = size
-    backRect.setBounds(new Rectangle(0,0,w,h))
-    helpers.foreach { _.show }
+    updateContents(Map())
     selectedItems foreach { _.showFeedback() }
   }
-  def selectedItems = Set() //FIXME this.deepChildren.collect { case i: Item if selection(i.tree) ⇒ i }.toSet
+   def selectedItems = this.deepChildren.collect {
+    case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i
+  }.toSet
   shell.setSize(size.w + 30, size.h +40)
   refresh(); 
  
