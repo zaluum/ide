@@ -9,7 +9,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.{ Composite, MessageBox }
 import scala.collection.JavaConversions._
 
-abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with Container {
+abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with ContainerItem {
   /*SWT*/
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer

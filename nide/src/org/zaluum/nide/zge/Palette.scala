@@ -19,8 +19,8 @@ object Palette {
 class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) extends ScrollPopup(mainShell) {
   def name = "Palette"
   def columns = 4
-  var container : BoxDefContainer = _
-  def show(p:Point, container:BoxDefContainer) {
+  var container : ContainerItem  = _
+  def show(p:Point, container:ContainerItem) {
     this.container = container
     show(p)
   }

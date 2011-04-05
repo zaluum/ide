@@ -14,7 +14,6 @@ import org.eclipse.swt.SWT
 import scala.collection.mutable.Buffer
 
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
-  type C = Container
   override val resizing = new Resizing {
     override def command(newPos: Point, newSize: Dimension, t: Tree) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
@@ -96,7 +95,6 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
     def buttonUp {
       if (newSize != initSize) {
-        println ("newSize " + newSize)
         val command = new EditTransformer {
           val trans: PartialFunction[Tree, Tree] = {
             case b: BoxDef if (b == viewer.boxDef) ⇒

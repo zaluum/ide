@@ -8,7 +8,7 @@ trait Symbol {
   var decl: Tree = EmptyTree
   var tpe: Type = NoSymbol
   var scope: Scope = null
-  override def toString = "Symbol(" + (if (name != null) name.toString else "NoSymbol") + ")"
+  override def toString = "Symbol(" + (if (name != null) super.toString else "NoSymbol") + ")"
 }
 trait Type extends Symbol
 case object NoSymbol extends Symbol with Type {
@@ -24,10 +24,10 @@ class ClassJavaType(val owner: Symbol, val name: Name) extends Type {
   scope = owner.scope
 }
 object PortPath {
-  def apply(p: PortRef): PortPath = PortPath(p.fromRef.symbol, p.symbol)
+  def apply(p: PortRef): PortPath = PortPath(p.fromRef.symbol, p.symbol.asInstanceOf[PortSymbol])
 }
 // from can be BoxTypeSymbol if it is "this" or ValSymbol
-case class PortPath(from: Symbol, port: Symbol)
+case class PortPath(from: Symbol, port: PortSymbol)
 case class Clump(var junctions: Set[Junction], var ports: Set[PortPath], var connections: Set[ConnectionDef])
 class BoxTypeSymbol(
   val owner: Symbol,

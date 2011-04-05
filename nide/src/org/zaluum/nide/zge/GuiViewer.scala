@@ -15,10 +15,14 @@ import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import scala.collection.mutable.Buffer
 import org.eclipse.draw2d.{IFigure,LayoutListener}
 class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
-  extends ItemViewer(parent, controller) with Container with ViewerResources {
+  extends ItemViewer(parent, controller) with ContainerItem with ViewerResources {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
-  val helpers = Buffer[ShowHide]()
+  val helpers = Buffer[Item]()
+  val feed = null
+  def pos = Point(0,0)
+  def container = null
+  def myLayer = null
   /*MODEL*/
   def tree = controller.tree.asInstanceOf[BoxDef]
   def boxDef = tree
@@ -48,6 +52,7 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
       DotPainter.dotFill(g,getBounds)
     }
   }
+  def updatePorts(changes:Map[Tree,Tree]){}
   backRect.setForegroundColor(ColorConstants.red)
   backRect.setBackgroundColor(ColorConstants.white)
   def populate() {
@@ -58,10 +63,10 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
             val sym = v.symbol.asInstanceOf[ValSymbol]
             val tpe = sym.tpe.asInstanceOf[BoxTypeSymbol]
             if (!tpe.isLocal) {
-              for (c ← tpe.visualClass; cl ← forName(c.str)) {
+              /*for (c ← tpe.visualClass; cl ← forName(c.str)) {
                 helpers += new SwingFigure(GuiViewer.this, v,
                   cl.newInstance.asInstanceOf[JComponent])
-              }
+              }*/
             }
           case childBox: BoxDef ⇒ populateBoxDef(childBox)
           case _ ⇒
@@ -73,15 +78,15 @@ class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBo
   }
   def size = boxDef.guiSize.getOrElse(Dimension(200,200))
   def refresh() {
+    helpers.foreach {_.hide }
     helpers.clear
-    clear
     populate()
     val Dimension(w,h) = size
     backRect.setBounds(new Rectangle(0,0,w,h))
     helpers.foreach { _.show }
     selectedItems foreach { _.showFeedback() }
   }
-  def selectedItems = this.deepChildren.collect { case i: TreeItem if selection(i.tree) ⇒ i }.toSet
+  def selectedItems = Set() //FIXME this.deepChildren.collect { case i: Item if selection(i.tree) ⇒ i }.toSet
   shell.setSize(size.w + 30, size.h +40)
   refresh(); 
  

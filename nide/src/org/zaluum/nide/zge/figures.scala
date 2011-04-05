@@ -24,44 +24,56 @@ import java.awt.{ Graphics ⇒ AG }
 import java.awt.image.BufferedImage
 
 // TREE SPECIFIC FIGURES
-trait ValFigure extends SimpleItem with TreeItem {
-  type T = ValDef
-  def sym = tree.symbol.asInstanceOf[ValSymbol]
-  def pos = tree.pos
+trait ValDefItem extends Item {
+  var valDef : ValDef = _
+  def pos = valDef.pos
+  override def selectionSubject = Some(valDef)
+  def updateValDef(t:ValDef) {
+    valDef = t
+    updateMe()
+    updateSize()
+    updateValPorts()
+  }
+  def updateMe()
+  def updateValPorts()
+}
+
+trait ValFigure extends ValDefItem with HasPorts{
+  def sym = valDef.symbol.asInstanceOf[ValSymbol]
   def myLayer = container.layer
-  def container: BoxDefContainer
-  def populateFigures() {
-    val l = sym.tpe match {
+  def updateValPorts() {
+    for (p<-ports) container.portsLayer.remove(p)
+    ports.clear
+    sym.tpe match {
       case b: BoxTypeSymbol ⇒
-        b.ports.values.collect {
+        b.ports.values.foreach {
           case s: PortSymbol ⇒
-            new PortFigure(s.extPos + Vector2(getBounds.x, getBounds.y),
-              s, s.dir == In, Some(sym), container)
-        }.toList
+            val p = new PortFigure(container)
+            p.update(s.extPos + Vector2(getBounds.x, getBounds.y),s, sym, s.dir == In)
+            ports += p
+          case _ =>
+        }
       case _ ⇒ List()
     }
-    helpers.appendAll(l);
   }
 }
-class ImageValFigure(val tree: ValDef, val container: BoxDefContainer) extends ImageFigure with ValFigure with RectFeedback {
+class ImageValFigure(val container: ContainerItem) extends ImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
-  override def show(){
-    setImage(container.viewerResources.imageFactory(tree.tpe))
-    super.show()
+  def updateMe() {
+    setImage(container.viewerResources.imageFactory(valDef.tpe))    
   }
 }
-class DirectValFigure(val tree: ValDef, val param: Param, val container: BoxDefContainer) extends TextEditFigure with ValFigure {
+class DirectValFigure(val container: ContainerItem) extends TextEditFigure with ValFigure {
   def size = Dimension(40, 20)
+  def param = valDef.params.head.asInstanceOf[Param]
   def text = param.value
-  override def populateFigures() {
+  def updateMe {
     fl.setText(text)
-    setForegroundColor(Colorizer.color(param.tpe))
-    super.populateFigures()
+    setForegroundColor(Colorizer.color(param.tpe))    
   }
 }
-trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
+trait TextEditFigure extends RectangleFigure with Item with RectFeedback {
   def text: String;
-
   val pg = new FlowPage()
   pg.setForegroundColor(ColorConstants.black)
   pg.setBounds(new Rectangle(2, 2, 40, 20))
@@ -97,14 +109,14 @@ trait TextEditFigure extends RectangleFigure with SimpleItem with RectFeedback {
     }
   }
 }
-class SwingFigure(val container: Container, val box: ValDef, val component: JComponent) extends SimpleItem with TreeItem with ResizableFeedback {
+class SwingFigure(val container: ContainerItem, val valDef: ValDef, val component: JComponent) extends Figure with Item with ResizableFeedback {
   setOpaque(true)
-  type T = ValDef
-  def tree = box
-  def size = box.guiSize getOrElse { Dimension(15, 15) }
-  def pos = box.guiPos getOrElse { Point(0, 0) }
+  def size = valDef.guiSize getOrElse { Dimension(15, 15) }
+  def pos = valDef.guiPos getOrElse { Point(0, 0) }
   def myLayer = container.layer
-  def populateFigures {}
+  def updatePorts {}
+  def updateMain {}
+  def helpers = List()
   override def paintFigure(g: Graphics) {
     val rect = getClientArea()
     component.setBounds(0, 0, rect.width, rect.height);

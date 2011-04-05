@@ -13,7 +13,7 @@ object Serializer {
     b.vals collect { case va: ValDef ⇒ va } sortBy { _.name.str } foreach { va ⇒ p.addInstance(proto(va)) }
     b.connections collect { case c: ConnectionDef ⇒ p.addConnection(proto(c)) } // TODO sort
     b.junctions collect { case j: Junction ⇒ p.addJunction(proto(j)) }
-    b.guiSize foreach { s =>  p.setGuiSize(proto(s)) } 
+    p.setGuiSize(proto(b.guiSize.getOrElse(Dimension(100,100))))  
     p.setVisual(false) // TODO
     p.build
   }

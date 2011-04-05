@@ -17,7 +17,7 @@ import FigureHelper._
  */
 abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   def selecting : Selecting
-  type C <: Container
+  type C = ContainerItem
   state = selecting
   // SELECTING 
   abstract class Selecting extends ToolState {
@@ -93,9 +93,9 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       val newPos = newBounds.getLocation
       val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(15, 15))
       itf match {
-        case ti: TreeItem =>
-          controller.exec(command(newPos, newSize,ti.tree))
-        case _ =>  
+        case vd: ValDefItem =>
+          controller.exec(command(newPos, newSize,vd.valDef))
+        case _ => exit() 
       }
     }
     def command(newPos: Point, newSize: Dimension,t:Tree) = new EditTransformer {

@@ -13,7 +13,7 @@ trait ViewerResources { // XXX rename
   def imageFactory: ImageFactory
 }
 class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
-  extends ItemViewer(parent, controller) with BoxDefContainer with ViewerResources {
+  extends ItemViewer(parent, controller) with ContainerItem with ViewerResources {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
   val palette = new Palette(this, parent.getShell, controller.global)
@@ -35,18 +35,28 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     }
   }
   // Viewer doesn't have any visual representation
-  def updateSize() {}
+  override def updateSize() {}
+  val feed = null
   def hideme() {}
   def showme() {}
-  override def populateFigures() {
-    super.populateFigures()
+  def size = Dimension(0,0)
+  def pos = Point(0,0)
+  def container = this
+  def myLayer = null
+  val ports = Buffer[PortDeclFigure]()
+  def updatePorts(changes:Map[Tree,Tree]) {
+    ports.foreach {_.hide}
+    ports.clear
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, dir, inPos, extPos) ⇒
-          helpers += new PortDeclFigure(p, TreeViewer.this)
+          val f =  new PortDeclFigure(p, TreeViewer.this)
+          f.update()
+          ports += f
         case _ ⇒
       }
     }
+    ports.foreach { _.show} 
   }
   override def dispose() {
     super.dispose()
@@ -77,8 +87,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     selection.refresh(mapper);
   }
   def refresh() {
-    hide()
-    show()
+    updateContents(Map()) // FIXME
     selectedItems foreach { _.showFeedback() }
     /*for (s <- selectedItems; ss <- s.selectionSubject) {
       println ("selected : " + ss)
@@ -97,7 +106,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
     if(boxDef==b) Some(graph)
     else {
       this.deepChildren.view.collect {
-        case c:BoxDefContainer => c
+        case c:ContainerItem => c
       } filter {_.boxDef==b} map { _.graph } headOption 
     }
   }

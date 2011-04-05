@@ -36,6 +36,10 @@ class RichFigure(container: IFigure) {
     val deepChildren:List[IFigure] = immediateChildren.flatMap { _.deepChildren }.toList
     immediateChildren ++ deepChildren 
   }
+  def safeRemove(i:IFigure) : Unit = {
+    if (container.getChildren.contains(i))
+      container.remove(i)
+  }
   def translateFromViewport(p: MPoint) : MPoint = translateFromViewport(point(p))
   def translateFromViewport(p: EPoint): EPoint = {
     if (container.isInstanceOf[Viewport]) p.getCopy
@@ -103,7 +107,7 @@ class RichFigure(container: IFigure) {
     return candidate
   }
 }
-trait Transparent extends Figure {
+trait Transparent extends IFigure {
   import scala.collection.JavaConversions._
   override def containsPoint(x: Int, y: Int) = {
     val pt = new EPoint(x, y)
@@ -115,77 +119,38 @@ trait Transparent extends Figure {
     }
   }
 }
-
-trait Item extends Figure with Feedback with ShowHide {
-  def selectionSubject : Option[SelectionSubject] = None 
-  def container :Container
-  def moveFeed(loc: MPoint) 
-  def moveDeltaFeed(delta: Vector2) 
-  def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) 
+trait Hover extends Figure{
+  def hover_=(b:Boolean) 
+  def hover
 }
-trait Feedback {
-  def showFeedback()
-  def hideFeedback()
-}
-trait ShowHide {
-  def show()
-  def hide()
-}
-trait TreeItem extends Item {
-  type T <: Tree
-  def tree :T  
-  override def selectionSubject = Some(tree)
-}
-trait SymbolItem extends Item {
-  type S <: Symbol
-  def sym : S
-}
-trait SimpleShowHide extends ShowHide{
-  val helpers = Buffer[ShowHide]()
-  def updateSize() 
-  def populateFigures()
-  def newConnectionFigures : Set[Item] 
-  def show() {
-    updateSize()
-    helpers.clear
-    populateFigures
-    helpers.foreach { _.show() }
-    val cf = newConnectionFigures
-    cf foreach { _.show() }
-    helpers ++= cf
-    showme()
-  }
-  def showme()
-  def hideme()
-  def hide() {
-    hideme()
-    helpers.foreach { _.hide() }
-  }
-}
-trait SimpleItem extends Item with SimpleShowHide{
+trait Item extends Hover {
   def myLayer: Figure
-  def pos: MPoint
+  def container : ContainerItem
+  def pos: MPoint 
   def size: Dimension
   val feed: ItemFeedbackFigure
+  var showing = true
+  var _hover = false
+  def hover = _hover
+  def hover_=(b:Boolean) {
+    _hover = b
+    if (b) showFeedback else hideFeedback
+  }
+  def show() {
+    showing = true
+    myLayer.add(this)
+  }
+  def hide() {
+    showing = false
+    if (myLayer.getChildren.contains(this)) myLayer.remove(this)
+    hideFeedback()
+  }
   def showFeedback() {
     container.feedbackLayer.add(feed)
   }
   def hideFeedback() {
     if (container.feedbackLayer.getChildren.contains(feed))
       container.feedbackLayer.remove(feed)
-  }
-  def updateSize() = {
-    val rect = new Rectangle(pos.x, pos.y, size.w, size.h)
-    setBounds(rect)
-    feed.setInnerBounds(rect)    
-  }
-  def showme = myLayer.add(this)
-  def hideme = {
-    if (myLayer.getChildren.contains(this)) myLayer.remove(this)
-  }
-  override def hide() {
-    super.hide()
-    hideFeedback()
   }
   def moveFeed(loc: MPoint) {
     feed.setInnerLocation(point(loc))
@@ -197,12 +162,39 @@ trait SimpleItem extends Item with SimpleShowHide{
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
-  def newConnectionFigures = Set()
+  protected def updateSize() {
+    val rect = new Rectangle(pos.x, pos.y, size.w, size.h)
+    setBounds(rect)
+    feed.setInnerBounds(rect)        
+  }
+  def selectionSubject : Option[SelectionSubject] = None
 }
-trait RectFeedback extends Item {
+trait TreeItem extends Item {
+  type T <: Tree
+  def tree :T
+  override def selectionSubject = Some(tree)
+}
+trait HasPorts extends Item {
+  val ports = Buffer[PortFigure]()
+  override def show() {
+    super.show
+    for (p <- ports) p.container.portsLayer.add(p)
+  }
+  override def hide() {
+    super.hide
+    for (p <- ports) {
+      if (p.container.portsLayer.getChildren.contains(p)) 
+        p.container.portsLayer.remove(p)
+    }
+  }
+}
+
+trait RectFeedback {
+  self : Item =>
   val feed = new ItemFeedbackFigure(container)
 }
 
 trait ResizableFeedback extends RectFeedback {
+  self : Item =>
   override val feed: ResizeItemFeedbackFigure = new ResizeItemFeedbackFigure(this, container)
 }

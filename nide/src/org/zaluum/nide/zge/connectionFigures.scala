@@ -19,15 +19,18 @@ import org.zaluum.nide.compiler._
 import scala.collection.mutable.Buffer
  
 case class LineSelectionSubject(c: ConnectionDef, l: Line) extends SelectionSubject
-class LineFigure(
-  val l: Line,
-  val r: Edge,
-  val container: BoxDefContainer,
-  val complete:Boolean,
-  val con: Option[ConnectionFigure] = None) extends SimpleItem with RectFeedback {
+class LineItem(val container: ContainerItem) extends Item with RectFeedback {
+  var con : Option[ConnectionFigure] = None
+  var complete = true
+  var l : Line = _
+  def helpers = List()
+  def update(con:Option[ConnectionFigure], complete: Boolean, l:Line) {
+    this.con = con
+    this.complete = complete
+    this.l = l
+  }
   val tolerance = 4
   def expand = ((width + 2) / 2.0f).asInstanceOf[Int]
-  
   override def selectionSubject = for (cf <-con; cdef <- cf.e.srcCon) yield LineSelectionSubject(cdef,l)
   override def getBounds: Rectangle = {
     if (bounds == null) {
@@ -90,50 +93,38 @@ class LineFigure(
   def myLayer = if(con.isDefined) container.connectionsLayer else container.feedbackLayer
 }
 
-class PointFigure(p: Point, val container: BoxDefContainer, tpe: Type) extends Ellipse with Item {
-  def show() {
+class PointFigure extends Ellipse {
+  def update(p:Point,tpe:Type) = {
     setSize(5, 5)
     setFill(true)
     setLocation(point(p + Vector2(-2, -2)))
     val color = Colorizer.color(tpe)
     setBackgroundColor(color)
     setForegroundColor(color)
-    container.pointsLayer.add(this)
   }
-  def showFeedback() {}
-  def hideFeedback() {}
-  def hide() {
-    if (container.pointsLayer.getChildren.contains(this))
-      container.pointsLayer.remove(this)
-  }
-  def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) = {}
-  def moveDeltaFeed(delta: Vector2) {}
-  def moveFeed(p: Point) {}
 }
-class ConnectionPainter(bdf: BoxDefContainer) {
-  val lines = Buffer[LineFigure]()
-  val points = Buffer[PointFigure]()
+class ConnectionPainter(container: ContainerItem) {
+  val lines = Buffer[LineItem]()
   def paintCreatingRoute(edge: Edge) {
     paintRoute(edge, false, false)
   }
   def paintRoute(edge: Edge, feedback: Boolean, complete:Boolean, con: Option[ConnectionFigure] = None) {
     clear()
-    edge.lines foreach { l ⇒ lines += new LineFigure(l, edge, bdf, complete, con) }
-    //edge.points foreach { p => points += new PointFigure(p,bdf,ColorConstants.white) }
+    edge.lines foreach { l ⇒ 
+      val nl = new LineItem(container)
+      nl.update(con, complete, l)
+      lines += nl
+    }
     if (feedback) lines foreach { l ⇒ l.showFeedback() }
     lines foreach { l ⇒ l.show }
-    points foreach { _.show }
   }
   def clear() {
-    lines.foreach { _.hide }
-    points.foreach { _.hide }
+    lines.foreach { _.hide() }
     lines.clear
-    points.clear
   }
 }
 // TODO not really a figure right now... no children
-class ConnectionFigure(val e: Edge, val container: BoxDefContainer) extends Item {
-  type T = ConnectionDef
+class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Figure {
   val painter = new ConnectionPainter(container)
   var feedback = false
   def paint = painter.paintRoute(e, feedback, true, Some(this))

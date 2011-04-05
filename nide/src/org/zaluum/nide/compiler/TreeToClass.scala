@@ -161,7 +161,6 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         }
         val (out, ins) = c
         ins.toList map { in ⇒
-          println(in + "<-" + out)
           Assign(toRef(in), toRef(out))
         }
       }

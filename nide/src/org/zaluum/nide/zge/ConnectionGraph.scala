@@ -20,7 +20,10 @@ class Joint(val p: Point) extends Vertex {
 class PortVertex(val port: PortFigure, val p: Point) extends Vertex {
   val portPath = port.portPath
   def toRef = PortRef(
-    port.valSym.map { s ⇒ ValRef(s.name) } getOrElse { ThisRef() },
+    port.fromSym match {
+      case v:ValSymbol => ValRef(v.name) 
+      case b:BoxTypeSymbol =>  ThisRef() 
+    },
     port.sym.name,
     port.in)
   override def isEnd = true

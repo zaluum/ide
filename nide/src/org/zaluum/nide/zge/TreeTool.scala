@@ -8,7 +8,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.ToolTip
 import draw2dConversions._
 import org.eclipse.draw2d.{ Cursors, Figure }
-import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle, Dimension => EDimension }
+import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle, Dimension ⇒ EDimension }
 import org.zaluum.nide.compiler.{ _ }
 import scala.collection.JavaConversions._
 import org.zaluum.runtime.LoopBox
@@ -16,7 +16,6 @@ import org.zaluum.runtime.LoopBox
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
   val connectionLineDistance = 3
-  type C = BoxDefContainer
 
   object selecting extends Selecting with DeleteState {
     var port: Option[PortFigure] = None
@@ -28,22 +27,23 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def buttonUp {
       (beingSelected, port) match {
-        case (Some(box: TreeItem), _) ⇒
-          viewer.selection.updateSelection(box.selectionSubject.toSet, shift)
-          viewer.refresh()
-        case (Some(line: LineFigure), _) ⇒
+        case (Some(line: LineItem), _) ⇒
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
             viewer.selection.updateSelection(line.selectionSubject.toSet, shift)
             viewer.refresh()
           } else {
             connecting.enter(line.container, line, currentMouseLocation)
           }
+        case (Some(box: Item), _) ⇒
+          viewer.selection.updateSelection(box.selectionSubject.toSet, shift)
+          viewer.refresh()
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
           connecting.enter(port.container, port, currentMouseLocation)
         case (None, _) ⇒
           viewer.selection.deselectAll()
           viewer.refresh()
+        case _ ⇒ 
       }
 
     }
@@ -55,7 +55,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       super.move()
       viewer.setCursor(Cursors.ARROW);
       itemUnderMouse foreach {
-        case l: LineFigure ⇒
+        case l: LineItem ⇒
           if (l.l.distance(currentMouseLocation) > connectionLineDistance) viewer.setCursor(Cursors.CROSS)
         case _ ⇒
       }
@@ -67,10 +67,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)
         case (None, Some(fig: Item)) ⇒ // select and move
-        val s = fig.selectionSubject
+          val s = fig.selectionSubject
           if (!s.isEmpty) {
             if (!viewer.selection(s.get))
-              viewer.selection.updateSelection(s.toSet,false)
+              viewer.selection.updateSelection(s.toSet, false)
             fig.showFeedback()
             fig match {
               case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
@@ -81,13 +81,13 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     def delete() {
-      controller.exec(Delete.deleteSelection(viewer.selectedItems,viewer.graphOf))
+      controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.graphOf))
     }
     override def menu() {
       itemUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
         case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
-        case Some(o: OpenBoxFigure) ⇒ 
+        case Some(o: OpenBoxFigure) ⇒
         case Some(b: ImageValFigure) ⇒
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)
       }
@@ -96,8 +96,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   abstract class InnerCreating extends ToolState {
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
-    var superName : Name =null
-    def enter(initContainer: BoxDefContainer, superName:Name) {
+    var superName: Name = null
+    def enter(initContainer: ContainerItem, superName: Name) {
       enterSingle(initContainer)
       this.superName = superName
       state = this
@@ -116,7 +116,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             val sym = b.symbol.asInstanceOf[BoxTypeSymbol]
             val name = Name(sym.freshName("box"))
             val className = Name(sym.freshName("C"))
-            val newDef = BoxDef(className, Some(superName), guiSize= None, image=None, List(),
+            val newDef = BoxDef(className, Some(superName), guiSize = None, image = None, List(),
               vals = List(),
               ports = List(),
               connections = List(),
@@ -143,7 +143,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
     var tpe: BoxTypeSymbol = _
-    def enter(tpe: BoxTypeSymbol, initContainer: BoxDefContainer) {
+    def enter(tpe: BoxTypeSymbol, initContainer: ContainerItem) {
       enterSingle(initContainer)
       this.tpe = tpe
       state = this
@@ -162,7 +162,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           case b: BoxDef if b == initContainer.boxDef ⇒
             val params = tpe.params.map { p ⇒ Param(p.name, p.default) }.toList
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
-            BoxDef(b.name, b.superName, guiSize=b.guiSize, b.image,
+            BoxDef(b.name, b.superName, guiSize = b.guiSize, b.image,
               transformTrees(b.defs),
               ValDef(name, tpe.name, dst, None, None, None, params) :: transformTrees(b.vals),
               transformTrees(b.ports),
@@ -184,7 +184,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   // CREATING PORT
   class CreatingPort extends ToolState {
     self: SingleContainer ⇒
-    def enter(dir: PortDir, initContainer: BoxDefContainer) {
+    def enter(dir: PortDir, initContainer: ContainerItem) {
       enterSingle(initContainer)
       state = this
       this.dir = dir
@@ -225,7 +225,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   trait MovingOpenPort {
     self: ToolState with DeltaMove with SingleContainer ⇒
     var fig: OpenPortDeclFigure = _
-    def enter(initDrag: Point, initContainer: BoxDefContainer, fig: OpenPortDeclFigure) {
+    def enter(initDrag: Point, initContainer: ContainerItem, fig: OpenPortDeclFigure) {
       this.fig = fig
       enterMoving(initDrag)
       enterSingle(initContainer)
@@ -292,27 +292,27 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       l.setFont(viewer.display.getSystemFont)
       setBackgroundColor(ColorConstants.tooltipBackground)
       add(l)
-      def setText(s:String) { l.setText(s) }
-      override def getPreferredSize(x:Int,y:Int) = l.getPreferredSize(x,y)
-      override def setSize(x:Int,y:Int) = { l.setSize(x,y); super.setSize(x,y) }
+      def setText(s: String) { l.setText(s) }
+      override def getPreferredSize(x: Int, y: Int) = l.getPreferredSize(x, y)
+      override def setSize(x: Int, y: Int) = { l.setSize(x, y); super.setSize(x, y) }
     }
-    lazy val tooltip = new TooltipLabel 
+    lazy val tooltip = new TooltipLabel
     def showTip(p: PortFigure) {
-      val abs = p.anchor.getCopy      
+      val abs = p.anchor.getCopy
       tooltip.setText(p.sym.name.str + " : " + p.sym.tpe.name.str)
       viewer.feedbackLayer.add(tooltip)
-      
+
     }
     override def update {
       super.update
-      tooltip.setLocation(draw2dConversions.point(absMouseLocation + Vector2(15,15)))
+      tooltip.setLocation(draw2dConversions.point(absMouseLocation + Vector2(15, 15)))
       tooltip.setSize(tooltip.getPreferredSize())
     }
     def hideTip() {
-        if (viewer.feedbackLayer.getChildren.contains(tooltip))
-          viewer.feedbackLayer.remove(tooltip)
+      if (viewer.feedbackLayer.getChildren.contains(tooltip))
+        viewer.feedbackLayer.remove(tooltip)
     }
-    override def onEnter(p: PortFigure) { super.onEnter(p);p.showFeedback; showTip(p) }
-    override def onExit(p: PortFigure) { super.onExit(p); p.hideFeedback; hideTip }
+    override def onEnter(p: PortFigure) { super.onEnter(p); p.hover = true; showTip(p) }
+    override def onExit(p: PortFigure) { super.onExit(p); p.hover = false; hideTip }
   }
 }

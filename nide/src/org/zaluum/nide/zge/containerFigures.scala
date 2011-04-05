@@ -22,126 +22,129 @@ import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
 import scala.collection.mutable.Buffer
 import scala.collection.JavaConversions._
 import RichFigure._
-trait Container extends IFigure {
-  def viewer : Viewer
+
+trait ContainerItem extends Item {
+  def viewer: Viewer
   def viewerResources: ViewerResources
   def layer: Figure
-  def background : Figure
-  val helpers: Buffer[ShowHide]
+  def background: Figure
   def feedbackLayer: Figure
-  protected def itemAtIn(container:Figure,p:Point,debug:Boolean=false) : Option[Item]= container.findDeepAt(point(p), 0, debug) {
+  protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] = container.findDeepAt(point(p), 0, debug) {
     case i: Item ⇒ i
-  } 
-  def itemAt(p: Point, debug: Boolean = false) :Option[Item]= itemAtIn(layer,p,debug) 
-  def clear() {
-    layer.removeAll()
-    background.removeAll()
-    feedbackLayer.removeAll()
   }
-}
-
-trait BoxDefContainer extends Container with SimpleShowHide{
-  def boxDef: BoxDef
   def symbol: BoxTypeSymbol = boxDef.symbol.asInstanceOf[BoxTypeSymbol]
   def connectionsLayer: Figure
-  def pointsLayer:Figure
+  def pointsLayer: Figure
   def portsLayer: Figure
-  override def itemAt(p:Point, debug:Boolean = false) = {
-    itemAtIn(portsLayer,p,debug)
-    .orElse(super.itemAt(p, debug))
-    .orElse (itemAtIn(connectionsLayer,p,debug)) 
+  def itemAt(p: Point, debug: Boolean = false) = {
+    itemAtIn(portsLayer, p, debug)
+      .orElse(itemAtIn(layer,p, debug))
+      .orElse(itemAtIn(connectionsLayer, p, debug))
   }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒
-      p.valSym match {
-        case Some(valSym) ⇒ (valSym.name == boxName && p.sym.name == portName && p.in == in)
-        case None ⇒ false
+      p.fromSym match {
+        case valSym : ValSymbol ⇒ (valSym.name == boxName && p.sym.name == portName && p.in == in)
+        case _ ⇒ false
       }
     }
   }
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] = {
-    portFigures find { p ⇒ p.valSym.isEmpty && p.sym.name == portName && p.in == in }
+    portFigures find { p ⇒ p.fromSym.isInstanceOf[BoxTypeSymbol] && p.sym.name == portName && p.in == in }
   }
-  override def clear() {
-    super.clear()
-    pointsLayer.removeAll()
-    connectionsLayer.removeAll()
-    portsLayer.removeAll()
-  }
-  def owner: Symbol
-  
-  protected def createGraph  : ConnectionGraph= {
+  protected def createGraph: ConnectionGraph = {
     // fixme portslayer
-    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port,port.anchor) }
+    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port, port.anchor) }
     val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
     val edges = boxDef.connections.map {
       case c: ConnectionDef ⇒
         def toVertex(t: Tree, start: Boolean): Vertex = t match {
           case JunctionRef(name) ⇒ junctions.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
-          case p: PortRef ⇒ 
-            portVertexs.find { _.portPath == PortPath(p) }.getOrElse { throw new RuntimeException("could not find vertex for " + p + " " + PortPath(p) )}
-          
+          case p: PortRef ⇒
+            portVertexs.find { _.portPath == PortPath(p) }.getOrElse { throw new RuntimeException("could not find vertex for " + p + " " + PortPath(p)) }
+
         }
-        (c -> new Edge(toVertex(c.a,true), toVertex(c.b,true), c.points,Some(c)).fixEnds)
+        (c -> new Edge(toVertex(c.a, true), toVertex(c.b, true), c.points, Some(c)).fixEnds)
     }.toMap
     new ConnectionGraphV(portVertexs.toSet ++ junctions.values, edges.values.toSet)
   }
-  private var _currentBox:BoxDef = null
-  private var _graph:ConnectionGraph = null
-  def graph : ConnectionGraph = {
-    if (_currentBox!=boxDef) {
-      _graph = createGraph
-      _currentBox = boxDef
-    }
-    _graph
-  }
-  def populateFigures() {
-    boxDef.children foreach {
-      _ match {
-        case EmptyTree ⇒
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) ⇒
-          v.scope.lookupBoxTypeLocal(typeName) match {
-            case Some(tpe) ⇒
-              helpers += new OpenBoxFigure(v,
-                tpe.decl.asInstanceOf[BoxDef],
-                v.symbol.owner,
-                BoxDefContainer.this,
-                viewer,
-                viewerResources)
-            case None ⇒
-              v.params.headOption match {
-                case Some(p:Param) => 
-                  helpers += new DirectValFigure(v, p, BoxDefContainer.this)
-                case _ =>
-                  val i = new ImageValFigure(v, BoxDefContainer.this)
-                  helpers += i 
-              }
+  val boxes = Buffer[ValDefItem]()
+  def boxDef :BoxDef 
+  val junctions = Buffer[PointFigure]()
+  val connections = Buffer[ConnectionFigure]()
+  var graph : ConnectionGraph = _
+  def updateContents(changes:Map[Tree,Tree]) {
+    updateBoxes(changes)
+    updatePorts(changes)
+    updateJunctions()
+    graph = createGraph
+    updateConnections()
+  }  
+  def updateBoxes(changes: Map[Tree, Tree]) {
+    val remove = Buffer[ValDefItem]()
+    for (bf ← boxes) {
+      changes.get(bf.valDef) match {
+        case Some(t:ValDef) ⇒ 
+          bf match {
+            case o:OpenBoxFigure => o.updateOpenBox(t,changes)
+            case s:ValDefItem => s.updateValDef(t)
           }
-        case j@Junction(name,pos) =>
-          helpers += new PointFigure(pos,BoxDefContainer.this,j.tpe)
         case _ ⇒
+          bf.hide
+          remove += bf
       }
     }
+    boxes.filterNot(remove.contains)
+    val news = boxDef.vals filterNot (remove contains) collect { case v: ValDef ⇒ v }
+    news foreach { v ⇒
+      val f = v.scope.lookupBoxTypeLocal(v.typeName) match {
+        case Some(tpe) ⇒
+          val o = new OpenBoxFigure(ContainerItem.this,
+            viewer,
+            viewerResources)
+          o.updateOpenBox(v,Map())
+          o
+        case None ⇒
+          val f = v.params.headOption match {
+            case Some(p: Param) ⇒
+              new DirectValFigure(ContainerItem.this)
+            case _ ⇒
+              new ImageValFigure(ContainerItem.this)
+          }
+          f.updateValDef(v)
+          f
+      }
+      if (showing) f.show
+      boxes += f
+    }
   }
-  def newConnectionFigures : Set[Item] = {
-    graph.edges map { e => new ConnectionFigure(e, BoxDefContainer.this) }
+  def updatePorts(changes : Map[Tree,Tree])
+  def updateJunctions() {
+    junctions.foreach { container.pointsLayer.safeRemove(_) }
+    junctions.clear
+    for (j ← boxDef.junctions.asInstanceOf[List[Junction]]) {
+      val p = new PointFigure
+      p.update(j.p,j.tpe)
+      junctions += p
+    }
+    if (showing) junctions.foreach { container.pointsLayer.add(_) }
+  }
+  def updateConnections() {
+    connections.foreach { _.hide }
+    connections.clear
+    connections ++= graph.edges map { e ⇒ new ConnectionFigure(e, ContainerItem.this) }
+    if (showing) connections.foreach { _.show }
   }
 }
 
 class OpenBoxFigure(
-  val valTree: ValDef,
-  val boxDef: BoxDef,
-  val owner: Symbol,
-  val container: BoxDefContainer,
-  val viewer: Viewer,
-  val viewerResources: ViewerResources) extends SimpleItem with TreeItem with ResizableFeedback with BoxDefContainer with Transparent {
+    val container: ContainerItem,
+    val viewer: Viewer,
+    val viewerResources: ViewerResources) extends Figure with ValDefItem with ResizableFeedback with ContainerItem with Transparent {
   // Item
-  type T = ValDef
-  def tree = valTree
   def myLayer = container.layer
-  def pos = tree.pos
-  def size = valTree.size getOrElse Dimension(100, 100)
+  def size = valDef.size getOrElse Dimension(100, 100)
   // layers
   val inners = new LayeredPane
   val layer = new Layer
@@ -150,15 +153,40 @@ class OpenBoxFigure(
   val pointsLayer = new Layer
   val feedbackLayer = new Layer
   val background = new Layer
-  // BoxDefContainer
+  // ContainerItem
+  def helpers =  portDecls ++ portSymbols
+  val portDecls = Buffer[OpenPortDeclFigure]()
+  val portSymbols = Buffer[PortSymbolFigure]()
   override def useLocalCoordinates = true
-  override def newConnectionFigures = super.newConnectionFigures
-  override def populateFigures() {
-    super.populateFigures
+  def boxDef = valDef.tpe.decl.asInstanceOf[BoxDef]
+  def updateOpenBox(v:ValDef,changes:Map[Tree,Tree]) {
+    updateValDef(v)
+    updateContents(changes)
+  }
+  def updateMe() {}
+  def updateValPorts(){}
+  override def show(){
+    super.show()
+    portDecls.foreach {_.show}
+    portSymbols.foreach {_.show}
+  }
+  override def hide(){
+    super.hide()
+    portDecls.foreach {_.hide}
+    portSymbols.foreach {_.hide}
+  }
+  def updatePorts(changes : Map[Tree,Tree]) {
+    portDecls.foreach {_.hide()}
+    portDecls.clear()
     boxDef.children foreach {
       _ match {
         case p@PortDef(name, typeName, in, inPos, extPos) ⇒
-          def newFig(left: Boolean) = helpers += new OpenPortDeclFigure(p, left, OpenBoxFigure.this)
+          def newFig(left: Boolean) = {
+            val f = new OpenPortDeclFigure(OpenBoxFigure.this)
+            f.update(p, left)
+            portDecls += f
+            if (showing) f.show()
+          }
           in match {
             case In ⇒ newFig(true)
             case Out ⇒ newFig(false)
@@ -167,19 +195,25 @@ class OpenBoxFigure(
         case _ ⇒
       }
     }
+    portSymbols.foreach(_.hide)
+    portSymbols.clear()
+    // super ports
     boxDef.symbol match {
       case s: BoxTypeSymbol ⇒
         for (sup ← s.superSymbol; p ← sup.ports.values) {
           p match {
             case p: PortSymbol ⇒
-              helpers += new PortSymbolFigure(p, OpenBoxFigure.this)
+              val f = new PortSymbolFigure(p, OpenBoxFigure.this)
+              f.update()
+              portSymbols += f
+              if (showing) f.show()
           }
         }
     }
   }
   override def paintClientArea(graphics: Graphics) {
     val rect = new Rectangle
-    if (useLocalCoordinates()) {
+    if (useLocalCoordinates) {
       graphics.translate(
         getBounds().x + getInsets().left,
         getBounds().y + getInsets().top);
@@ -193,15 +227,15 @@ class OpenBoxFigure(
     graphics.restoreState();
     super.paintClientArea(graphics)
   }
-  override def updateSize(){
+  override def updateSize() {
     super.updateSize()
     inners.setSize(getBounds.getSize)
   }
   inners.add(background)
   inners.add(layer)
+  inners.add(pointsLayer)
   inners.add(portsLayer)
   inners.add(connectionsLayer)
-  inners.add(pointsLayer)
   inners.add(feedbackLayer)
   add(inners);
   setBorder(new LineBorder(ColorConstants.gray, 5))

@@ -21,8 +21,8 @@ trait ConnectionsTool {
     var g: ConnectionGraph = null
     var edge: Edge = null
     var last: Point = null
-    var dst: Option[Item] = None
-    var src: Option[Item] = None
+    var dst: Option[Hover] = None
+    var src: Option[Hover] = None
     var hFig = new Polyline()
     val vFig = new Polyline()
     var srcPos: Point = Point(0, 0)
@@ -39,10 +39,10 @@ trait ConnectionsTool {
     }
     def vertexAt(p: Point) = g.vertexs.find(v ⇒ v.p == p) getOrElse (new Joint(p))
 
-    def enter(initContainer: C, initFig: Item, initPos: Point) {
+    def enter(initContainer: C, initFig: Hover, initPos: Point) {
       state = this
       enterSingle(initContainer)
-      painter = new ConnectionPainter(initContainer.asInstanceOf[BoxDefContainer])
+      painter = new ConnectionPainter(initContainer)
       initContainer.feedbackLayer.add(hFig)
       initContainer.feedbackLayer.add(vFig)
       hFig.setLineStyle(org.eclipse.swt.SWT.LINE_DASHDOT);
@@ -58,7 +58,7 @@ trait ConnectionsTool {
       move()
     }
     def snapMouse(f: Option[Figure], p: Point): Point = f match {
-      case Some(l: LineFigure) ⇒ l.l.project(p)
+      case Some(l: LineItem) ⇒ l.l.project(p)
       case Some(p: PortFigure) ⇒ p.anchor
       case _ ⇒ p
     }
@@ -125,16 +125,16 @@ trait ConnectionsTool {
     def move() {
       import math.abs
       portsTrack.update()
-      dst foreach { _.hideFeedback() }
+      dst foreach { _.hover=false }
       dst = portsTrack.current orElse {
         initContainer.itemAt( point(currentMouseLocation),false) match {
-          case Some(l: LineFigure) ⇒ Some(l)
+          case Some(l: LineItem) ⇒ Some(l)
           case _ ⇒ None
         }
       }
       val now = snapMouse(dst, currentMouseLocation)
       viewer.setStatusMessage(currentMouseLocation.toString + " " + absMouseLocation.toString)
-      dst foreach { _.showFeedback() }
+      dst foreach { _.hover=true }
       if (dst.isDefined)
         viewer.setCursor(Cursors.ARROW) else viewer.setCursor(Cursors.CROSS)
       val v = now - last
@@ -202,9 +202,9 @@ trait ConnectionsTool {
       }
       // collect moved ends
       val movedEnds = vertexs.collect { case p : PortVertex => p }.filter { p=>
-        p.port.valSym match {
-          case Some(v) => valdefs.contains(v.decl)
-          case None => portdefs.contains(p.port.sym.decl)
+        p.port.fromSym match {
+          case v:ValSymbol => valdefs.contains(v.decl)
+          case t:BoxTypeSymbol => portdefs.contains(t.decl)
         }
       }       
       // update edge vertexs
