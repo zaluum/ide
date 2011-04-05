@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.PositionConstants
+import org.eclipse.draw2d.Triangle
 import org.eclipse.swt.widgets.Text
 import org.eclipse.swt.events.{ FocusListener, FocusEvent }
 import org.eclipse.jface.viewers.TextCellEditor
@@ -38,14 +40,14 @@ trait ContainerItem extends Item {
   def portsLayer: Figure
   def itemAt(p: Point, debug: Boolean = false) = {
     itemAtIn(portsLayer, p, debug)
-      .orElse(itemAtIn(layer,p, debug))
+      .orElse(itemAtIn(layer, p, debug))
       .orElse(itemAtIn(connectionsLayer, p, debug))
   }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒
       p.fromSym match {
-        case valSym : ValSymbol ⇒ (valSym.name == boxName && p.sym.name == portName && p.in == in)
+        case valSym: ValSymbol ⇒ (valSym.name == boxName && p.sym.name == portName && p.in == in)
         case _ ⇒ false
       }
     }
@@ -53,6 +55,7 @@ trait ContainerItem extends Item {
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] = {
     portFigures find { p ⇒ p.fromSym.isInstanceOf[BoxTypeSymbol] && p.sym.name == portName && p.in == in }
   }
+
   protected def createGraph: ConnectionGraph = {
     // fixme portslayer
     val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port, port.anchor) }
@@ -70,25 +73,25 @@ trait ContainerItem extends Item {
     new ConnectionGraphV(portVertexs.toSet ++ junctions.values, edges.values.toSet)
   }
   val boxes = Buffer[ValDefItem]()
-  def boxDef :BoxDef 
+  def boxDef: BoxDef
   val junctions = Buffer[PointFigure]()
   val connections = Buffer[ConnectionFigure]()
-  var graph : ConnectionGraph = _
-  def updateContents(changes:Map[Tree,Tree]) {
+  var graph: ConnectionGraph = _
+  def updateContents(changes: Map[Tree, Tree]) {
     updateBoxes(changes)
     updatePorts(changes)
     updateJunctions()
     graph = createGraph
     updateConnections()
-  }  
+  }
   def updateBoxes(changes: Map[Tree, Tree]) {
     val remove = Buffer[ValDefItem]()
     for (bf ← boxes) {
       changes.get(bf.valDef) match {
-        case Some(t:ValDef) ⇒ 
+        case Some(t: ValDef) ⇒
           bf match {
-            case o:OpenBoxFigure => o.updateOpenBox(t,changes)
-            case s:ValDefItem => s.updateValDef(t)
+            case o: OpenBoxFigure ⇒ o.updateOpenBox(t, changes)
+            case s: ValDefItem ⇒ s.updateValDef(t)
           }
         case _ ⇒
           bf.hide
@@ -103,7 +106,7 @@ trait ContainerItem extends Item {
           val o = new OpenBoxFigure(ContainerItem.this,
             viewer,
             viewerResources)
-          o.updateOpenBox(v,Map())
+          o.updateOpenBox(v, Map())
           o
         case None ⇒
           val f = v.params.headOption match {
@@ -119,13 +122,13 @@ trait ContainerItem extends Item {
       boxes += f
     }
   }
-  def updatePorts(changes : Map[Tree,Tree])
+  def updatePorts(changes: Map[Tree, Tree])
   def updateJunctions() {
     junctions.foreach { container.pointsLayer.safeRemove(_) }
     junctions.clear
     for (j ← boxDef.junctions.asInstanceOf[List[Junction]]) {
       val p = new PointFigure
-      p.update(j.p,j.tpe)
+      p.update(j.p, j.tpe)
       junctions += p
     }
     if (showing) junctions.foreach { container.pointsLayer.add(_) }
@@ -139,9 +142,9 @@ trait ContainerItem extends Item {
 }
 
 class OpenBoxFigure(
-    val container: ContainerItem,
-    val viewer: Viewer,
-    val viewerResources: ViewerResources) extends Figure with ValDefItem with ResizableFeedback with ContainerItem with Transparent {
+  val container: ContainerItem,
+  val viewer: Viewer,
+  val viewerResources: ViewerResources) extends Figure with ValDefItem with ResizableFeedback with ContainerItem with Transparent {
   // Item
   def myLayer = container.layer
   def size = valDef.size getOrElse Dimension(100, 100)
@@ -154,29 +157,75 @@ class OpenBoxFigure(
   val feedbackLayer = new Layer
   val background = new Layer
   // ContainerItem
-  def helpers =  portDecls ++ portSymbols
+  def helpers = portDecls ++ portSymbols
   val portDecls = Buffer[OpenPortDeclFigure]()
   val portSymbols = Buffer[PortSymbolFigure]()
   override def useLocalCoordinates = true
   def boxDef = valDef.tpe.decl.asInstanceOf[BoxDef]
-  def updateOpenBox(v:ValDef,changes:Map[Tree,Tree]) {
+  def updateOpenBox(v: ValDef, changes: Map[Tree, Tree]) {
     updateValDef(v)
     updateContents(changes)
+    showArrowsIfNotBigEnough
+  }
+  import PositionConstants._
+  private def newTriangle(pos: Int) = {
+    val t = new Triangle
+    t.setBackgroundColor(ColorConstants.lightGray)
+    val size = (14, 80)
+    val s = if (pos == EAST || pos == WEST) size else size.swap
+    t.setSize(s._1, s._2)
+    t.setFillXOR(true)
+    t.setDirection(pos)
+    t.setOrientation(if (pos == EAST || pos == WEST) PositionConstants.VERTICAL else PositionConstants.HORIZONTAL)
+    t
+  }
+  val triangles = Map(
+    EAST -> newTriangle(EAST),
+    WEST -> newTriangle(WEST),
+    NORTH -> newTriangle(NORTH),
+    SOUTH -> newTriangle(SOUTH))
+
+  def showArrowsIfNotBigEnough() {
+    val b = new Rectangle()
+    inners.deepChildren.foreach { f ⇒ b.union(f.getBounds()) }
+    def showTriangle(pos: Int) = {
+      val t = triangles(pos)
+      if (!container.feedbackLayer.getChildren.contains(t))
+        add(t)
+      val point = if (pos == EAST || pos == WEST) {
+        val y = size.h / 2 - t.getSize.height / 2
+        val x = if (pos == EAST) size.w - t.getSize.width - getInsets.left - getInsets.right
+        else getInsets.left
+        new Point(x, y)
+      } else {
+        val x = size.w / 2 - t.getSize.width / 2
+        val y = if (pos == SOUTH) size.h - t.getSize.height - getInsets.top - getInsets.bottom
+        else getInsets.top
+        new Point(x, y)
+      }
+      t.setLocation(point)
+    }
+    triangles.values.foreach { this.safeRemove(_) }
+    if (b.width > getClientArea.getSize.width) showTriangle(EAST)
+    if (b.height > getClientArea.getSize.height) showTriangle(SOUTH)
+    if (b.x < 0) showTriangle(WEST)
+    if (b.y < 0) showTriangle(NORTH)
   }
   def updateMe() {}
-  def updateValPorts(){}
-  override def show(){
+  def updateValPorts() {}
+  override def show() {
     super.show()
-    portDecls.foreach {_.show}
-    portSymbols.foreach {_.show}
+    portDecls.foreach { _.show }
+    portSymbols.foreach { _.show }
   }
-  override def hide(){
+  override def hide() {
     super.hide()
-    portDecls.foreach {_.hide}
-    portSymbols.foreach {_.hide}
+    portDecls.foreach { _.hide }
+    portSymbols.foreach { _.hide }
+
   }
-  def updatePorts(changes : Map[Tree,Tree]) {
-    portDecls.foreach {_.hide()}
+  def updatePorts(changes: Map[Tree, Tree]) {
+    portDecls.foreach { _.hide() }
     portDecls.clear()
     boxDef.children foreach {
       _ match {

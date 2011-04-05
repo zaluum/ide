@@ -146,7 +146,6 @@ trait Item extends Hover {
     hideFeedback()
   }
   def showFeedback() {
-    println("showFeedback")
     container.feedbackLayer.add(feed)
   }
   def hideFeedback() {
