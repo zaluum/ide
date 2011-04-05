@@ -28,6 +28,14 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
     this.con = con
     this.complete = complete
     this.l = l
+    setForegroundColor(Colorizer.color( connectionDef.map {_.tpe}.getOrElse{NoSymbol} ))
+    width = 1
+    if (complete) {
+      style = SWT.LINE_SOLID
+    } else {
+      style = SWT.LINE_DOT
+    }
+
   }
   val tolerance = 4
   def expand = ((width + 2) / 2.0f).asInstanceOf[Int]
@@ -51,16 +59,7 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
     b.expand(t, t)
     b.contains(x, y)
   }
-  val tpe = for (cf <- con; cdef <- cf.e.srcCon) yield  cdef.tpe
-  def populateFigures = {
-    setForegroundColor(Colorizer.color( tpe.getOrElse{NoSymbol} ))
-    width = 1
-    if (complete) {
-      style = SWT.LINE_SOLID
-    } else {
-      style = SWT.LINE_DOT
-    }
-  }
+  def connectionDef = for (cf <- con; cdef <- cf.e.srcCon) yield  cdef
   override def paintFigure(g: Graphics) = {
     g.setForegroundColor(getForegroundColor);
     g.setLineStyle(style)
