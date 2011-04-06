@@ -31,7 +31,6 @@ import org.zaluum.nide.zge.{Viewer, Controller}
 class GraphicalEditor extends EditorPart with IGotoMarker {
 
   var viewer: TreeViewer = _
-  //var guiViewer : GUIViewer = _
   var shell : Option[Shell] = None 
   def controller = viewer.controller
 

@@ -8,23 +8,22 @@ import org.zaluum.nide.compiler.Point
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events._
 
-abstract class Tool(viewer: Viewer) { 
+abstract class Tool(viewer: Viewer) {
   def viewport = viewer
   def canvas = viewer.canvas
   def controller = viewer.controller
-  
+
   val listener = new MouseMoveListener() with MouseListener with KeyListener with FocusListener with DragDetectListener with MenuDetectListener with MouseTrackListener with MouseWheelListener with TraverseListener {
     def dragDetected(e: DragDetectEvent) { updateMouse(e); state.drag() }
     def focusGained(e: FocusEvent) {}
     def focusLost(e: FocusEvent) {}
     def keyPressed(e: KeyEvent) = {
       if (e.keyCode == SWT.ESC) handleAbort()
-      if (e.keyCode == SWT.DEL) handleDel()
     }
     def keyReleased(e: KeyEvent) {}
     def menuDetected(e: MenuDetectEvent) { state.menu() }
     def mouseScrolled(e: MouseEvent) {}
-    def mouseDoubleClick(me: MouseEvent) { 
+    def mouseDoubleClick(me: MouseEvent) {
       updateMouse(me);
       if (leftButton(me)) {
         state.doubleClick()
@@ -36,7 +35,7 @@ abstract class Tool(viewer: Viewer) {
     }
     def mouseEnter(me: MouseEvent) { updateMouse(me); state.move(); }
     def mouseExit(e: MouseEvent) {}
-    def mouseHover(e: MouseEvent) {} 
+    def mouseHover(e: MouseEvent) {}
     def mouseMove(me: MouseEvent) { updateMouse(me); state.move() }
     def mouseUp(me: MouseEvent) {
       updateMouse(me);
@@ -65,12 +64,12 @@ abstract class Tool(viewer: Viewer) {
     def drag()
     def menu() {}
     def doubleClick() {}
-    def abort() 
+    def abort()
   }
-  
+
   var state: ToolState = _
   var stateMask = 0
-  var absMouseLocation = Point(0,0)
+  var absMouseLocation = Point(0, 0)
   var swtMouseLocation = new org.eclipse.swt.graphics.Point(0, 0)
   def updateMouse(me: MouseEvent) {
     stateMask = me.stateMask
@@ -79,20 +78,36 @@ abstract class Tool(viewer: Viewer) {
     swtMouseLocation = canvas.getDisplay.map(canvas, null, swtMouseLocation)
     val absMouse = new org.eclipse.draw2d.geometry.Point(me.x, me.y)
     viewport.translateFromParent(absMouse);
-    absMouseLocation = Point(absMouse.x,absMouse.y)
+    absMouseLocation = Point(absMouse.x, absMouse.y)
   }
-  
+
   def leftButton(me: MouseEvent) = me.button == 1
   def shift = (stateMask & SWT.SHIFT) != 0
   def handleAbort() { state.abort() }
   trait DeleteState {
     def delete()
   }
-  def handleDel() { state match {
-    case d:DeleteState => d.delete()
-    case _ =>
+  def handleDel() {
+    state match {
+      case d: DeleteState ⇒ d.delete()
+      case _ ⇒
     }
   }
-  // Over track
-
+  trait ClipboardState {
+    def cut()
+    def copy()
+    def paste()
+  }
+  def handleCut() = state match {
+      case c:ClipboardState => c.cut
+      case _=> 
+  }
+  def handleCopy() = state match {
+    case c:ClipboardState => c.copy
+    case _ => 
+  }
+  def handlePaste() = state match {
+    case c:ClipboardState => c.paste
+    case _ => 
+  }
 }

@@ -1,5 +1,6 @@
 package org.zaluum.nide.compiler
 
+import org.zaluum.nide.zge.Clipboard
 import org.zaluum.nide.zge.V
 import org.zaluum.nide.zge.H
 import org.zaluum.nide.protobuf.BoxFileProtos
@@ -16,10 +17,10 @@ object Parser {
       connections = b.getConnectionList.map { parse(_) }.toList,
       junctions = b.getJunctionList.map {parse(_)}.toList)
   }
-  def parse(r: BoxFileProtos.BoxClassDef.Junction) : Junction = {
+  def parse(r: BoxFileProtos.Junction) : Junction = {
     Junction(Name(r.getName), parse(r.getPos))
   }
-  def parse(i: BoxFileProtos.BoxClassDef.Instance): ValDef = {
+  def parse(i: BoxFileProtos.Instance): ValDef = {
     val guiPos = if (i.hasGuiPos) Some(parse(i.getGuiPos)) else None
     val guiSize = if (i.hasGuiSize) Some(parseDim(i.getGuiSize)) else None
     val size = if (i.hasSize) Some(parseDim(i.getSize)) else None
@@ -32,38 +33,45 @@ object Parser {
         guiSize,    
         i.getParameterList.map { parse(_)}.toList)
   }
-  def parse(p:BoxFileProtos.BoxClassDef.Parameter) : Param = {
+  def parse(p:BoxFileProtos.Parameter) : Param = {
     Param(Name(p.getKey),p.getValue)
   }
-  def parse(c: BoxFileProtos.BoxClassDef.Connection): ConnectionDef = {
+  def parse(c: BoxFileProtos.Connection): ConnectionDef = {
     ConnectionDef(
       parse(c.getSource),
       parse(c.getTarget),
       c.getPointList map { parse(_)} toList)
   }
-  def parse(ref : BoxFileProtos.BoxClassDef.Ref) : Tree = {
+  def parse(ref : BoxFileProtos.Ref) : Tree = {
     if (ref.hasPort) parse(ref.getPort) 
     else if (ref.hasJunction) parse(ref.getJunction)
     else EmptyTree
   }
-  def parse(jref : BoxFileProtos.BoxClassDef.JunctionRef) : JunctionRef = {
+  def parse(jref : BoxFileProtos.JunctionRef) : JunctionRef = {
     JunctionRef(Name(jref.getName))
   }
-  def parse(p: BoxFileProtos.BoxClassDef.PortRef): PortRef = {
+  def parse(p: BoxFileProtos.PortRef): PortRef = {
     PortRef(if (p.hasBoxName) ValRef(Name(p.getBoxName)) else ThisRef(),
       Name(p.getPortName),if (p.hasIn) p.getIn else true)
   }
-  def parse(p: BoxFileProtos.BoxClassDef.Port): PortDef = {
+  def parse(p: BoxFileProtos.Port): PortDef = {
     PortDef(name = Name(p.getName), typeName = Name(p.getType),
       dir = parseDir(p.getDirection),
       inPos = parse(p.getPosInternal),
       extPos = parse(p.getPosExternal))
   }
-  def parseDir (dir : BoxFileProtos.BoxClassDef.Direction) = dir match {
-    case BoxFileProtos.BoxClassDef.Direction.IN => In
-    case BoxFileProtos.BoxClassDef.Direction.OUT => Out
-    case BoxFileProtos.BoxClassDef.Direction.SHIFT => Shift   
+  def parseDir (dir : BoxFileProtos.Direction) = dir match {
+    case BoxFileProtos.Direction.IN => In
+    case BoxFileProtos.Direction.OUT => Out
+    case BoxFileProtos.Direction.SHIFT => Shift   
   }
-  def parse(p: BoxFileProtos.BoxClassDef.Point) = Point(p.getX, p.getY)
-  def parseDim(p: BoxFileProtos.BoxClassDef.Point) = Dimension(p.getX,p.getY)
+  def parse(p: BoxFileProtos.Point) = Point(p.getX, p.getY)
+  def parseDim(p: BoxFileProtos.Point) = Dimension(p.getX,p.getY)
+  def parse(p: BoxFileProtos.Clipboard) : Clipboard = {
+    val boxes = p.getBoxClassList map { parse(_)} toList
+    val vals = p.getInstanceList map { parse(_)} toList
+    val ports = p.getPortList map { parse(_)} toList
+    val connections = p.getConnnectionList map { parse(_) } toList;
+    Clipboard(boxes,vals,ports,connections)
+  } 
 }

@@ -7,6 +7,9 @@ trait Tuple2 {
   val x: Int
   val y: Int
 }
+object Point {
+  implicit val ordering = Ordering[(Int,Int)].on[Point](p =>(p.x,p.y))  
+}
 case class Point(x: Int, y: Int) extends Tuple2 {
   def +(v: Vector2) = Point(x + v.x, y + v.y)
   def +(p: Point) = Point(x + p.x,y+ p.y )
@@ -15,16 +18,18 @@ case class Point(x: Int, y: Int) extends Tuple2 {
   def ^(despl: Int) = Point(x, y+despl)
   def distanceOrto(p:Point) = math.abs(x-p.x) + math.abs(y-p.y) 
   def toProto  = {
-    val p =BoxFileProtos.BoxClassDef.Point.newBuilder
+    val p =BoxFileProtos.Point.newBuilder
     p.setX(x)
     p.setY(y)
     p.build
   }
+  def toVector : Vector2 = Vector2(x,y)
 }
 case class Vector2(x: Int, y: Int) extends Tuple2 {
   def +(v: Vector2) = Vector2(x + v.x, y + v.y)
   def dot(v:Vector2) : Double = x*v.x + y*v.y
   def *(d: Double) = Vector2((x*d).asInstanceOf[Int], (y*d).asInstanceOf[Int])
+  def negate = Vector2(-x,-y)
   def toPoint : Point = Point(x,y)
 }
 object Geometry {
@@ -32,7 +37,7 @@ object Geometry {
 }
 case class Dimension(w: Int, h: Int) {
   def toProto  = {
-    val p =BoxFileProtos.BoxClassDef.Point.newBuilder
+    val p =BoxFileProtos.Point.newBuilder
     p.setX(w)
     p.setY(h)
     p.build

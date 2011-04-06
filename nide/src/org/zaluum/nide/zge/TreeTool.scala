@@ -16,8 +16,7 @@ import org.zaluum.runtime.LoopBox
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
   val connectionLineDistance = 3
-
-  object selecting extends Selecting with DeleteState {
+  object selecting extends Selecting with DeleteState with ClipboardState{
     var port: Option[PortFigure] = None
     override def doubleClick() {
       itemUnderMouse match {
@@ -83,6 +82,18 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def delete() {
       controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.graphOf))
     }
+    def cut() {
+      viewer.updateClipboard
+      delete
+    }
+    def copy() {viewer.updateClipboard}
+    
+    def paste() {
+      viewer.getClipboard foreach { c=>
+        controller.exec(c.pasteCommand(current,currentMouseLocation))
+      }
+    }
+
     override def menu() {
       itemUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?

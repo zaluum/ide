@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.swt.dnd.ByteArrayTransfer
+import org.eclipse.swt.dnd.Transfer
 import org.eclipse.draw2d.Graphics
 import org.eclipse.draw2d.FreeformLayer
 import org.eclipse.draw2d.IFigure
@@ -13,7 +15,7 @@ trait ViewerResources { // XXX rename
   def imageFactory: ImageFactory
 }
 class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
-  extends ItemViewer(parent, controller) with ContainerItem with ViewerResources {
+  extends ItemViewer(parent, controller) with ContainerItem with ViewerResources with ClipboardViewer {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
   val palette = new Palette(this, parent.getShell, controller.global)
@@ -25,11 +27,11 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   /*LAYERS*/
   def viewerResources = this
   val tool: TreeTool = new TreeTool(this)
+  
   def gotoMarker(l: Location) {
     // IDEA look at controllers save mark and then transform the selection to get the current blame node
     tree.findPath(l.path) foreach { t ⇒
-      selection.deselectAll
-      selection.select(t)
+      selection.updateSelection(Set(t),false)
       refresh()
       focus
     }
