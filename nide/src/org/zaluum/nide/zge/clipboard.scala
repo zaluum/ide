@@ -8,42 +8,41 @@ import scala.collection.mutable.Buffer
 import org.zaluum.nide.compiler._
 
 case class Clipboard(boxes: List[BoxDef], valDefs: List[ValDef], ports: List[PortDef], connections: List[ConnectionDef]) {
-  def renameRelocate(baseNamer : Namer, pos: Point) = {
+
+  def positions = (valDefs.view.map(_.pos) ++ ports.view.map(_.inPos))
+  val minPos = if (positions.isEmpty) Vector2(0, 0) else positions.min.toVector.negate
+  def renameRelocate(baseNamer: Namer, pos: Point) = {
     import scala.collection.mutable.Map
-    val newNames = Map[String,String]()
+    val newNames = Map[String, String]()
     val namer = new Namer() {
-      def usedNames = baseNamer.usedNames ++ newNames.values 
+      def usedNames = baseNamer.usedNames ++ newNames.values
     }
-    def rename(oldName:String) : String = {
+    def rename(oldName: String): String = {
       val newName = namer.freshName(oldName)
       newNames += (oldName -> newName)
       newName
     }
-    val positions = (valDefs.map(_.pos) ++ ports.map(_.inPos))
-    val minPos = if (positions.isEmpty) Vector2(0,0) else positions.min.toVector.negate
-    val newBoxes = for (b<-boxes) yield { b.copy(name=Name(rename(b.name.str))) }
-    val newVals = for (v<-valDefs) yield { 
+    val newBoxes = for (b ← boxes) yield { b.copy(name = Name(rename(b.name.str))) }
+    val newVals = for (v ← valDefs) yield {
       v.copy(
-          name=Name(rename(v.name.str)), 
-          typeName=Name(newNames.getOrElse(v.typeName.str,v.typeName.str)),
-          pos = v.pos+minPos+pos.toVector
-          ) 
+        name = Name(rename(v.name.str)),
+        typeName = Name(newNames.getOrElse(v.typeName.str, v.typeName.str)),
+        pos = v.pos + minPos + pos.toVector)
     }
-    val newPorts = for(p<-ports) yield {
-      p.copy( 
-          name= Name(rename(p.name.str)),
-          inPos = p.inPos + minPos + pos.toVector
-      )
+    val newPorts = for (p ← ports) yield {
+      p.copy(
+        name = Name(rename(p.name.str)),
+        inPos = p.inPos + minPos + pos.toVector)
     }
     // TODO Connections
-    Clipboard(newBoxes,newVals,newPorts,List())
+    Clipboard(newBoxes, newVals, newPorts, List())
   }
-  def pasteCommand(c: ContainerItem,currentMouseLocation : Point): MapTransformer = {
+  def pasteCommand(c: ContainerItem, currentMouseLocation: Point): MapTransformer = {
     new EditTransformer() {
       val trans: PartialFunction[Tree, Tree] = {
         case b: BoxDef if b == c.boxDef ⇒
           val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
-          val renamed = renameRelocate(tpe,currentMouseLocation)
+          val renamed = renameRelocate(tpe, currentMouseLocation)
           BoxDef(b.name, b.superName, guiSize = b.guiSize, b.image,
             transformTrees(b.defs) ++ renamed.boxes,
             transformTrees(b.vals) ++ renamed.valDefs,

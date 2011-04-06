@@ -16,7 +16,7 @@ import org.zaluum.runtime.LoopBox
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
   val connectionLineDistance = 3
-  object selecting extends Selecting with DeleteState with ClipboardState{
+  object selecting extends Selecting with DeleteState with ClipboardState {
     var port: Option[PortFigure] = None
     override def doubleClick() {
       itemUnderMouse match {
@@ -42,7 +42,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case (None, _) ⇒
           viewer.selection.deselectAll()
           viewer.refresh()
-        case _ ⇒ 
+        case _ ⇒
       }
 
     }
@@ -86,14 +86,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       viewer.updateClipboard
       delete
     }
-    def copy() {viewer.updateClipboard}
-    
-    def paste() {
-      viewer.getClipboard foreach { c=>
-        controller.exec(c.pasteCommand(current,currentMouseLocation))
-      }
-    }
-
+    def copy() = viewer.updateClipboard 
+    def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c,current) }
     override def menu() {
       itemUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
@@ -150,6 +144,33 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   object innercreating extends InnerCreating with SingleContainerAllower with Allower // inherit
+  // PASTING
+  abstract class Pasting extends ToolState {
+    self: SingleContainer ⇒
+    var feed: ItemFeedbackFigure = _
+    var clipboard: Clipboard = _
+    def enter(c: Clipboard,initContainer:ContainerItem) {
+      enterSingle(initContainer)
+      this.clipboard = c
+      state = this
+      feed = new ItemFeedbackFigure(current)
+      feed.setInnerBounds(new Rectangle(0, 0, 48, 48)); // XXX real clipboard size
+      feed.show()
+      move()
+    }
+    def move() { feed.setInnerLocation(point(currentMouseLocation))}
+    def abort {exit()}
+    def drag {}
+    def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, currentMouseLocation))
+    def buttonDown() {}
+    def exit() {
+      feed.hide();
+      feed = null;
+      selecting.enter()
+    }
+  }
+  object pasting extends Pasting with SingleContainerAllower
+  // CREATING
   abstract class Creating extends ToolState {
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
