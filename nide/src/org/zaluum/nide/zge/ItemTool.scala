@@ -56,9 +56,12 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     
   /// MARQUEE
   object marqueeing extends DeltaMove with SingleContainer {
+    var absInit = Point(0,0)
     def enter(p: Point, initContainer: C) {
+      import RichFigure._
       enterSingle(initContainer)
       enterMoving(p)
+      absInit = initContainer.translateToViewport(p)
       state = this
       viewer.setCursor(Cursors.CROSS)
       viewer.showMarquee()
@@ -73,9 +76,16 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def drag {}
     def buttonUp {
       viewer.hideMarquee()
+      val r = new Rectangle(point(currentMouseLocation),point(initDrag))
+      val touching = initContainer.shallowItems filter { i=> (r.touches(i.getBounds))  }
+      val sel = for (i <- touching; s <- i.selectionSubject) yield s
+      viewer.selection.updateSelection(sel.toSet, shift)
+      viewer.refresh
       exit()
     }
-    override def move { viewer.moveMarquee(new Rectangle(point(currentMouseLocation), point(Point(0,0)))) } // FIXME
+    override def move { 
+      viewer.moveMarquee(new Rectangle(point(absMouseLocation), point(absInit))) 
+    } 
   }
   // RESIZING
   val resizing  = new Resizing

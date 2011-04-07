@@ -76,7 +76,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
               case _ ⇒ moving.enter(initDrag, initContainer)
             }
           }
-        case (None, _) ⇒ //marqueeing.enter(initDrag, initContainer) // marquee
+        case (None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
     def delete() {

@@ -30,18 +30,24 @@ trait ContainerItem extends Item {
   def viewerResources: ViewerResources
   def layer: Figure
   def background: Figure
+  def connectionsLayer: Figure
+  def pointsLayer: Figure
+  def portsLayer: Figure
   def feedbackLayer: Figure
   protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] = container.findDeepAt(point(p), 0, debug) {
     case i: Item ⇒ i
   }
   def symbol: BoxTypeSymbol = boxDef.symbol.asInstanceOf[BoxTypeSymbol]
-  def connectionsLayer: Figure
-  def pointsLayer: Figure
-  def portsLayer: Figure
   def itemAt(p: Point, debug: Boolean = false) = {
     itemAtIn(portsLayer, p, debug)
       .orElse(itemAtIn(layer, p, debug))
       .orElse(itemAtIn(connectionsLayer, p, debug))
+  }
+  def shallowItems = {
+    (portsLayer.getChildren.view ++ 
+        layer.getChildren.view ++ 
+        connectionsLayer.getChildren.view ++ 
+        pointsLayer.getChildren.view).collect { case i:Item => i }
   }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {

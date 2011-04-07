@@ -65,14 +65,15 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     def currentMouseLocation = initContainer.translateFromViewport(absMouseLocation)
   }
   trait DeltaMove extends ToolState {
-    private var initDrag: Point = _
+    private var _initDrag: Point = _
     def enterMoving(initDrag: Point) {
-      this.initDrag = initDrag
+      this._initDrag = initDrag
     }
     def currentMouseLocation: Point
     protected def delta = {
       val now = currentMouseLocation
-      Vector2(now.x - initDrag.x, now.y - initDrag.y)
+      Vector2(now.x - _initDrag.x, now.y - _initDrag.y)
     }
+    def initDrag = _initDrag
   }
 }

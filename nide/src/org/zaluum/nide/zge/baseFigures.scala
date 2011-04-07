@@ -40,6 +40,15 @@ class RichFigure(container: IFigure) {
     if (container.getChildren.contains(i))
       container.remove(i)
   }
+  def translateToViewport(p:MPoint) : MPoint = translateToViewport(point(p))
+  def translateToViewport(p:EPoint):EPoint = {
+    if (container.isInstanceOf[Viewport]) p.getCopy
+    else {
+      val ep = container.getParent.translateToViewport(p)
+      container.translateToParent(ep)
+      ep
+    }
+  }
   def translateFromViewport(p: MPoint) : MPoint = translateFromViewport(point(p))
   def translateFromViewport(p: EPoint): EPoint = {
     if (container.isInstanceOf[Viewport]) p.getCopy
