@@ -268,6 +268,17 @@ case class ValDef(
     guiSize: Option[Dimension],
     params:List[Tree]) extends DefTree with Positionable
 //case class SizeDef(pos: Point, size: Dimension) extends Tree
-case class ConnectionDef(a: Tree, b: Tree, points:List[Point]) extends SymTree 
+case class ConnectionDef(a: Tree, b: Tree, points:List[Point]) extends SymTree {
+  def valRef(t:Tree) : Option[ValRef] = portRef(t) flatMap { p=>
+    p.fromRef match {
+      case v:ValRef => Some(v)
+      case _ => None 
+    }
+  }
+  def portRef(t:Tree) : Option[PortRef] = t match {
+    case EmptyTree => None
+    case p : PortRef => Some(p)
+  }
+}
 case class Junction(name: Name, p:Point) extends DefTree
 case class JunctionRef(name:Name) extends RefTree
