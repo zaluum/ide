@@ -67,8 +67,15 @@ case class Clipboard(boxes: List[BoxDef], valDefs: List[ValDef], ports: List[Por
 
 object Clipboard {
   def createFromSelection(selection: Set[SelectionSubject]): Clipboard = {
-    val valDefs = selection.collect { case v: ValDef ⇒ v }
-    val ports = selection.collect { case p: PortDef⇒ p }
+   
+    val rawValDefs = selection.collect { case v: ValDef ⇒ v }
+    val rawBoxes = for (v ← rawValDefs; b ← v.localTypeDecl) yield b
+    val rawPorts = selection.collect { case p: PortDef⇒ p }
+    
+    // Filter out nested selections 
+    val valDefs = rawValDefs.filterNot (v => rawBoxes exists {_.children.contains(v)})
+    val portDefs = rawPorts.filterNot (p => rawBoxes exists {_.children.contains(p)})
+    val boxes = for (v<- valDefs; b<-v.localTypeDecl) yield b
     def hasVal(o: Option[ValRef]) = o match {
       case Some(vr) ⇒ valDefs.exists { _.name == vr.name }
       case None ⇒ false
@@ -86,14 +93,7 @@ object Clipboard {
       def validEnd(t: Tree) = (hasVal(c.valRef(t)) /*&& hasPort(c.portRef(t))*/ ) || t == EmptyTree
       validEnd(c.a) && validEnd(c.b)
     }
-    println ("connections" + unfilteredConnections)
-    println ("filter connections " + connections)
-    def localDecl(v: ValDef) = v.tpe match {
-      case NoSymbol ⇒ None
-      case b: BoxTypeSymbol ⇒ if (b.isLocal) Some(b.decl.asInstanceOf[BoxDef]) else None
-    }
-    val boxes = for (v ← valDefs; b ← localDecl(v)) yield b
-    Clipboard(boxes.toList, valDefs.toList, ports.toList, connections.toList)
+    Clipboard(boxes.toList, valDefs.toList, portDefs.toList, connections.toList)
   }
 }
 object ClipTransfer extends ByteArrayTransfer {

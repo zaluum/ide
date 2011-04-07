@@ -4,8 +4,8 @@ import scala.collection.immutable.Stack
 import scala.collection.mutable.Buffer
 import java.io.StringWriter
 
-trait SelectionSubject 
-abstract class Tree extends Product with SelectionSubject{
+trait SelectionSubject
+abstract class Tree extends Product with SelectionSubject {
   //var pos : Position = NoPosition
   var tpe: Type = NoSymbol
   var symbol: Symbol = NoSymbol
@@ -13,14 +13,14 @@ abstract class Tree extends Product with SelectionSubject{
   def hasSymbol = false
   def isDef = false
   def isEmpty = false
-  def findPath(l:List[Int]) : Option[Tree]= { 
-    if (l.isEmpty) Some(this) 
-    else children.lift(l.head).flatMap {_.findPath(l.tail)}
-  } 
+  def findPath(l: List[Int]): Option[Tree] = {
+    if (l.isEmpty) Some(this)
+    else children.lift(l.head).flatMap { _.findPath(l.tail) }
+  }
   def pathOf(t: Tree): Option[List[Int]] = {
     if (t == this) Some(List())
-    else children.view.map {_.pathOf(t)}.zipWithIndex.
-        collect{case (Some(p),i)=> i::p }.headOption
+    else children.view.map { _.pathOf(t) }.zipWithIndex.
+      collect { case (Some(p), i) ⇒ i :: p }.headOption
   }
   def children: List[Tree] = {
     def subtrees(x: Any): List[Tree] = x match {
@@ -84,15 +84,14 @@ trait CopySymbolTransformer extends Transformer {
 trait CopyTransformer extends Transformer {
   val defaultTransform: PartialFunction[Tree, Tree] = {
     case e@EmptyTree ⇒ e
-    case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections,junctions) ⇒
+    case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
       atOwner(b.symbol) {
         BoxDef(name, superName, guiSize, image,
           transformTrees(defs),
           transformTrees(vals),
           transformTrees(ports),
           transformTrees(connections),
-          transformTrees(junctions)
-          )
+          transformTrees(junctions))
       }
     case PortDef(name, typeName, dir, inPos, extPos) ⇒
       PortDef(name, typeName, dir, inPos, extPos)
@@ -100,17 +99,17 @@ trait CopyTransformer extends Transformer {
       atOwner(v.symbol) {
         ValDef(name, typeName, pos, size, guiPos, guiSize, transformTrees(params))
       }
-    case p:Param => p.copy()
-    case c@ConnectionDef(a, b,wp) ⇒
+    case p: Param ⇒ p.copy()
+    case c@ConnectionDef(a, b, wp) ⇒
       atOwner(c.symbol) {
-        ConnectionDef(transform(a), transform(b),wp)
+        ConnectionDef(transform(a), transform(b), wp)
       }
     case PortRef(from, name, in) ⇒
       PortRef(transform(from), name, in)
     case ValRef(name) ⇒ ValRef(name)
-    case j:JunctionRef => j.copy()
-    case j:Junction => j.copy()
-    case t:ThisRef ⇒ ThisRef()
+    case j: JunctionRef ⇒ j.copy()
+    case j: Junction ⇒ j.copy()
+    case t: ThisRef ⇒ ThisRef()
   }
 }
 abstract class Transformer extends OwnerHelper[Tree] {
@@ -127,7 +126,7 @@ abstract class Transformer extends OwnerHelper[Tree] {
     trees mapConserve (transform(_))
 }
 object Location {
-  def parse(str:String) = Location(str.split("/").map { _.toInt }.toList)
+  def parse(str: String) = Location(str.split("/").map { _.toInt }.toList)
 }
 case class Location(path: List[Int]) {
   override def toString = path.mkString("/")
@@ -150,18 +149,18 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
           traverseTrees(junctions)
         }
       case v: ValDef ⇒
-        atOwner(tree.symbol){
+        atOwner(tree.symbol) {
           traverseTrees(v.params)
         }
-      case p: Param =>
-      case ConnectionDef(a, b,waypoints) ⇒
+      case p: Param ⇒
+      case ConnectionDef(a, b, waypoints) ⇒
         traverse(a)
         traverse(b)
-      case p:PortDef ⇒
+      case p: PortDef ⇒
       case PortRef(tree, _, _) ⇒
         traverse(tree)
-      case j:Junction =>
-      case j:JunctionRef =>
+      case j: Junction ⇒
+      case j: JunctionRef ⇒
       case ValRef(_) ⇒
       case ThisRef() ⇒
     }
@@ -178,7 +177,7 @@ object PrettyPrinter {
   def print(trees: List[Tree], deep: Int) {
     trees.foreach { print(_, deep) }
   }
-  def sym (tree:Tree) = " sym= " + tree.symbol + " tpe= " + tree.tpe 
+  def sym(tree: Tree) = " sym= " + tree.symbol + " tpe= " + tree.tpe
   def print(tree: Tree, deep: Int): Unit = tree match {
     case EmptyTree ⇒ print("EmptyTree", deep)
     case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
@@ -188,22 +187,22 @@ object PrettyPrinter {
       print(vals, deep + 1)
       print(ports, deep + 1)
       print(connections, deep + 1)
-      print(junctions, deep +1)
-      print(")"+ sym(b), deep)
+      print(junctions, deep + 1)
+      print(")" + sym(b), deep)
     case v: ValDef ⇒
-      print("ValDef(" + List(v.name,v.pos,v.size,v.typeName,v.guiPos ,v.guiSize).mkString(","), deep)
-      print(v.params,deep+1)
-      print(")" + sym(v),deep)
-    case p: Param => 
-      print(p.toString + sym(p),deep)
-    case c@ConnectionDef(a, b,wp) ⇒
+      print("ValDef(" + List(v.name, v.pos, v.size, v.typeName, v.guiPos, v.guiSize).mkString(","), deep)
+      print(v.params, deep + 1)
+      print(")" + sym(v), deep)
+    case p: Param ⇒
+      print(p.toString + sym(p), deep)
+    case c@ConnectionDef(a, b, wp) ⇒
       print("ConnectionDef(", deep)
       print(a, deep + 1)
       print(b, deep + 1)
-      for (p<-wp) {
-        print(p.toString,deep+1)
+      for (p ← wp) {
+        print(p.toString, deep + 1)
       }
-      print(")" + sym(c) , deep)
+      print(")" + sym(c), deep)
     case p@PortDef(_, _, _, _, _) ⇒
       print(p.toString + sym(p), deep)
     case p@PortRef(tree, a, b) ⇒
@@ -240,14 +239,14 @@ case object EmptyTree extends Tree {
 }
 
 /* Definition */
-case class BoxDef(name: Name, superName:Option[Name],
-  guiSize : Option[Dimension],
+case class BoxDef(name: Name, superName: Option[Name],
+  guiSize: Option[Dimension],
   image: Option[String],
   defs: List[Tree],
   vals: List[Tree],
   ports: List[Tree],
   connections: List[Tree],
-  junctions:List[Tree]) extends DefTree
+  junctions: List[Tree]) extends DefTree
 sealed trait PortDir
 case object In extends PortDir
 case object Out extends PortDir
@@ -256,29 +255,34 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
   def pos = inPos
 }
 case class ValRef(name: Name) extends RefTree
-case class ThisRef() extends SymTree 
+case class ThisRef() extends SymTree
 case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends RefTree
-case class Param(key:Name, value:String) extends Tree
+case class Param(key: Name, value: String) extends Tree
 case class ValDef(
-    name: Name, 
-    typeName: Name, 
-    pos: Point, 
-    size: Option[Dimension], 
-    guiPos: Option[Point], 
-    guiSize: Option[Dimension],
-    params:List[Tree]) extends DefTree with Positionable
-//case class SizeDef(pos: Point, size: Dimension) extends Tree
-case class ConnectionDef(a: Tree, b: Tree, points:List[Point]) extends SymTree {
-  def valRef(t:Tree) : Option[ValRef] = portRef(t) flatMap { p=>
-    p.fromRef match {
-      case v:ValRef => Some(v)
-      case _ => None 
-    }
-  }
-  def portRef(t:Tree) : Option[PortRef] = t match {
-    case EmptyTree => None
-    case p : PortRef => Some(p)
+  name: Name,
+  typeName: Name,
+  pos: Point,
+  size: Option[Dimension],
+  guiPos: Option[Point],
+  guiSize: Option[Dimension],
+  params: List[Tree]) extends DefTree with Positionable {
+  def localTypeDecl = tpe match {
+    case NoSymbol ⇒ None
+    case b: BoxTypeSymbol ⇒ if (b.isLocal) Some(b.decl.asInstanceOf[BoxDef]) else None
   }
 }
-case class Junction(name: Name, p:Point) extends DefTree
-case class JunctionRef(name:Name) extends RefTree
+//case class SizeDef(pos: Point, size: Dimension) extends Tree
+case class ConnectionDef(a: Tree, b: Tree, points: List[Point]) extends SymTree {
+  def valRef(t: Tree): Option[ValRef] = portRef(t) flatMap { p ⇒
+    p.fromRef match {
+      case v: ValRef ⇒ Some(v)
+      case _ ⇒ None
+    }
+  }
+  def portRef(t: Tree): Option[PortRef] = t match {
+    case EmptyTree ⇒ None
+    case p: PortRef ⇒ Some(p)
+  }
+}
+case class Junction(name: Name, p: Point) extends DefTree
+case class JunctionRef(name: Name) extends RefTree
