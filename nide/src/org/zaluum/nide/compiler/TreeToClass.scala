@@ -156,7 +156,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         def toRef(p: AnyRef): Tree = p match {
           case b: BoxTypeSymbol ⇒ This
           case v: ValSymbol ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
-          case PortPath(from, p@port) ⇒
+          case PortPath(from, p@port,in) ⇒
             Select(toRef(from), FieldRef(p.name, p.tpe.name, from.tpe.asInstanceOf[BoxTypeSymbol].fqName))
         }
         val (out, ins) = c
@@ -168,7 +168,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       def propagateInitialInputs = {
         val initialConnections = {
           connections.flow collect {
-            case c@(PortPath(from: BoxTypeSymbol, _), _) ⇒ c
+            case c@(a, _) if (a.isFromRoot) ⇒ c
           } toList
         }
         initialConnections flatMap { execConnection(_) }
@@ -176,7 +176,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       // execute in order
       def runOne(v: ValDef) = {
         def outConnections = connections.flow collect {
-          case c@(p@PortPath(vref: ValSymbol, _), ins) if (vref == v.symbol) ⇒ c
+          case c@(p@PortPath(vref: ValSymbol, _, in), ins) if (vref == v.symbol) ⇒ c
         } toList
         val outs = outConnections flatMap { execConnection(_) }
         val tpe = v.tpe.asInstanceOf[BoxTypeSymbol].fqName

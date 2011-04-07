@@ -282,7 +282,10 @@ case class ConnectionDef(a: Tree, b: Tree, points: List[Point]) extends SymTree 
   def portRef(t: Tree): Option[PortRef] = t match {
     case EmptyTree ⇒ None
     case p: PortRef ⇒ Some(p)
-  }
+ }
+ def headPoint = points.headOption.getOrElse(Point(0, 0))
+ def lastPoint = points.lastOption.getOrElse(Point(0, 0))
+
 }
 case class Junction(name: Name, p: Point) extends DefTree
 case class JunctionRef(name: Name) extends RefTree

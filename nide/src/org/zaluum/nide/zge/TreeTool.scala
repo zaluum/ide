@@ -25,6 +25,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     def buttonUp {
+      if (filterDouble) {filterDouble=false; return}
       (beingSelected, port) match {
         case (Some(line: LineItem), _) ⇒
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
@@ -55,7 +56,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       viewer.setCursor(Cursors.ARROW);
       itemUnderMouse foreach {
         case l: LineItem ⇒
-          if (l.l.distance(currentMouseLocation) > connectionLineDistance) viewer.setCursor(Cursors.CROSS)
+          if (l.l.distance(currentMouseLocation) > connectionLineDistance) 
+            viewer.setCursor(Cursors.CROSS)
         case _ ⇒
       }
       portsTrack.update()

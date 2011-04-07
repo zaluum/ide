@@ -24,7 +24,8 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var beingSelected: Option[Item] = None
     var initDrag: Point = _
     var initContainer: C = _
-    def enter() { state = this; }
+    var filterDouble = false
+    def enter() { state = this}
 
     def buttonDown {
       beingSelected = itemUnderMouse

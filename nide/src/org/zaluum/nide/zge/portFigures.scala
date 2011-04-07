@@ -16,7 +16,7 @@ class PortFigure(val container:ContainerItem) extends Ellipse with Hover{
   var in = false
   var sym: PortSymbol = _
   var fromSym: Symbol = _ 
-  lazy val portPath = PortPath(fromSym, sym)
+  def portPath = PortPath(fromSym, sym, in)
   def update(ipos: MPoint, sym: PortSymbol, fromSym: Symbol, in: Boolean) {
     this.ipos = ipos
     this.fromSym = fromSym

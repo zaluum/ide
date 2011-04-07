@@ -17,18 +17,18 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
 import org.zaluum.nide.compiler._
 import scala.collection.mutable.Buffer
- 
+
 case class LineSelectionSubject(c: ConnectionDef, l: Line) extends SelectionSubject
 class LineItem(val container: ContainerItem) extends Item with RectFeedback {
-  var con : Option[ConnectionFigure] = None
+  var con: Option[ConnectionFigure] = None
   var complete = true
-  var l : Line = _
+  var l: Line = _
   def helpers = List()
-  def update(con:Option[ConnectionFigure], complete: Boolean, l:Line) {
+  def update(con: Option[ConnectionFigure], complete: Boolean, l: Line) {
     this.con = con
     this.complete = complete
     this.l = l
-    setForegroundColor(Colorizer.color( connectionDef.map {_.tpe}.getOrElse{NoSymbol} ))
+    setForegroundColor(Colorizer.color(connectionDef.map { _.tpe }.getOrElse { NoSymbol }))
     width = 1
     if (complete) {
       style = SWT.LINE_SOLID
@@ -39,7 +39,7 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
   }
   val tolerance = 4
   def expand = ((width + 2) / 2.0f).asInstanceOf[Int]
-  override def selectionSubject = for (cf <-con; cdef <- cf.e.srcCon) yield LineSelectionSubject(cdef,l)
+  override def selectionSubject = for (cf ← con; cdef ← cf.e.srcCon) yield LineSelectionSubject(cdef, l)
   override def getBounds: Rectangle = {
     if (bounds == null) {
       val (expandx, expandy) = if (l.horizontal) (0, expand) else (expand, 0)
@@ -59,7 +59,7 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
     b.expand(t, t)
     b.contains(x, y)
   }
-  def connectionDef = for (cf <- con; cdef <- cf.e.srcCon) yield  cdef
+  def connectionDef = for (cf ← con; cdef ← cf.e.srcCon) yield cdef
   override def paintFigure(g: Graphics) = {
     g.setForegroundColor(getForegroundColor);
     g.setLineStyle(style)
@@ -89,11 +89,11 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
     bounds = null
     super.repaint()
   }
-  def myLayer = if(con.isDefined) container.connectionsLayer else container.feedbackLayer
+  def myLayer = if (con.isDefined) container.connectionsLayer else container.feedbackLayer
 }
 
 class PointFigure extends Ellipse {
-  def update(p:Point,tpe:Type) = {
+  def update(p: Point, tpe: Type) = {
     setSize(5, 5)
     setFill(true)
     setLocation(point(p + Vector2(-2, -2)))
@@ -107,9 +107,9 @@ class ConnectionPainter(container: ContainerItem) {
   def paintCreatingRoute(edge: Edge) {
     paintRoute(edge, false, false)
   }
-  def paintRoute(edge: Edge, feedback: Boolean, complete:Boolean, con: Option[ConnectionFigure] = None) {
+  def paintRoute(edge: Edge, feedback: Boolean, complete: Boolean, con: Option[ConnectionFigure] = None) {
     clear()
-    edge.lines foreach { l ⇒ 
+    edge.lines foreach { l ⇒
       val nl = new LineItem(container)
       nl.update(con, complete, l)
       lines += nl
@@ -126,7 +126,7 @@ class ConnectionPainter(container: ContainerItem) {
 class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Figure {
   val painter = new ConnectionPainter(container)
   var feedback = false
-  def paint = painter.paintRoute(e, feedback, true, Some(this))
+  def paint = painter.paintRoute(e, feedback, e.isComplete, Some(this))
   def show() = {
     container.connectionsLayer.add(this);
     paint

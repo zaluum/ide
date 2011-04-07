@@ -37,8 +37,16 @@ trait ConnectionsTool {
         }
       }
     }
-    def vertexAt(p: Point) = g.vertexs.find(v ⇒ v.p == p) getOrElse (new Joint(p))
-
+    def vertexAt(p: Point) = g.vertexs.find(v ⇒ v.p == p)
+    def vertexFor(p: Point, o: Option[Hover]) = {
+      val snap = snapMouse(o, p)
+      g.vertexs.find(v ⇒ v.p == snap).getOrElse {
+        o match {
+          case Some(l: LineItem) ⇒  new Joint(snap)
+          case _ ⇒ new EmptyVertex(snap)
+        }
+      }
+    }
     def enter(initContainer: C, initFig: Hover, initPos: Point) {
       state = this
       enterSingle(initContainer)
@@ -53,7 +61,7 @@ trait ConnectionsTool {
       last = srcPos
       center = true
       g = initContainer.graph
-      edge = Edge(vertexAt(srcPos), vertexAt(srcPos))
+      edge = Edge(vertexFor(initPos,src), vertexFor(initPos,src))
       dir = H
       move()
     }
@@ -69,10 +77,12 @@ trait ConnectionsTool {
     def endConnection() {
       val bs = initContainer.boxDef.symbol.asInstanceOf[BoxTypeSymbol]
       val wp = extend.points
-      if (wp.distinct.size >= 2) { 
-        val vend = vertexAt(wp.last)
-        val vstart = vertexAt(wp.head)
-        val newEdge = new Edge(vstart, vend, wp,None).untangle
+      if (wp.distinct.size >= 2) {
+        val vend = vertexFor(wp.last,dst)
+        val vstart = vertexFor(wp.head,src)
+        println ("vend= " + vend)
+        println ("vstart = " + vstart + " src " + src )
+        val newEdge = new Edge(vstart, vend, wp, None).untangle
         val newGraph = g.add(vstart).add(vend).cutAndAddToGraph(newEdge).prune.clean
         val (connections, junctions) = newGraph.toTree
         controller.exec(
@@ -87,9 +97,9 @@ trait ConnectionsTool {
                   junctions)
             }
           })
-      }else exit()
+      } else exit()
     }
-    def extend = edge.extend(vertexAt(snapMouse(dst, currentMouseLocation)), dir)
+    def extend = edge.extend(vertexFor(currentMouseLocation,dst), dir)
     def buttonUp {
       // execute model command
       if (dst.isDefined) {
@@ -104,6 +114,7 @@ trait ConnectionsTool {
     }
     override def doubleClick {
       endConnection()
+      selecting.filterDouble = true
     }
     def drag {}
     def buttonDown {}
@@ -125,16 +136,16 @@ trait ConnectionsTool {
     def move() {
       import math.abs
       portsTrack.update()
-      dst foreach { _.hover=false }
+      dst foreach { _.hover = false }
       dst = portsTrack.current orElse {
-        initContainer.itemAt( point(currentMouseLocation),false) match {
+        initContainer.itemAt(point(currentMouseLocation), false) match {
           case Some(l: LineItem) ⇒ Some(l)
           case _ ⇒ None
         }
       }
       val now = snapMouse(dst, currentMouseLocation)
       viewer.setStatusMessage(currentMouseLocation.toString + " " + absMouseLocation.toString)
-      dst foreach { _.hover=true }
+      dst foreach { _.hover = true }
       if (dst.isDefined)
         viewer.setCursor(Cursors.ARROW) else viewer.setCursor(Cursors.CROSS)
       val v = now - last
@@ -184,35 +195,35 @@ trait ConnectionsTool {
     def buttonUp {
       val g = initContainer.graph
       val subjects = for (m ← movables; s ← m.selectionSubject) yield s
-      val valdefs = subjects collect { case v : ValDef => v }
-      val portdefs = subjects collect { case p : PortDef => p }
+      val valdefs = subjects collect { case v: ValDef ⇒ v }
+      val portdefs = subjects collect { case p: PortDef ⇒ p }
       val lines = subjects collect { case l: LineSelectionSubject ⇒ l }
       val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })
       var edges = g.edges
       var vertexs = g.vertexs
       // move lines
       for ((c, lines) ← groups; e ← g.edges; if (e.srcCon == Some(c))) {
-        edges = edges - e + e.move(lines, delta) 
+        edges = edges - e + e.move(lines, delta)
       }
       // collect moved junctions
-      var movedJunctions = Set[Vertex]() 
-      for (e<-edges; v<-vertexs; if !v.isEnd) {
+      var movedJunctions = Set[Vertex]()
+      for (e ← edges; v ← vertexs; if !v.isEnd) {
         if (e.a == v && e.points.head != e.a.p) movedJunctions += v
         if (e.b == v && e.points.last != e.b.p) movedJunctions += v
       }
       // collect moved ends
-      val movedEnds = vertexs.collect { case p : PortVertex => p }.filter { p=>
-        p.port.fromSym match {
-          case v:ValSymbol => valdefs.contains(v.decl)
-          case t:BoxTypeSymbol => portdefs.contains(t.decl)
+      val movedEnds = vertexs.collect { case p: PortVertex ⇒ p }.filter { p ⇒
+        p.portPath.from match {
+          case v: ValSymbol ⇒ valdefs.contains(v.decl)
+          case t: BoxTypeSymbol ⇒ portdefs.contains(t.decl)
         }
-      }       
+      }
       // update edge vertexs
-      for (v <- movedJunctions.view ++ movedEnds) {
+      for (v ← movedJunctions.view ++ movedEnds) {
         val newv = v.move(delta)
         vertexs = vertexs - v + newv
-        edges = for (e <- edges) yield {
-          assert(!(e.a==v && e.b==v)) 
+        edges = for (e ← edges) yield {
+          assert(!(e.a == v && e.b == v))
           if (e.a == v) new Edge(newv, e.b, e.points, e.srcCon)
           else if (e.b == v) new Edge(e.a, newv, e.points, e.srcCon)
           else e
@@ -220,32 +231,32 @@ trait ConnectionsTool {
       }
       // create graph result
       // add edges fixed and untangled
-      val initGraph = new ConnectionGraphV(vertexs,edges)
-      var result : ConnectionGraph = new ConnectionGraphV(vertexs,Set())
-      for (c <- initGraph.components) {
-        var res : ConnectionGraph= new ConnectionGraphV(vertexs,Set())
-        for (e <- c.edges) {
+      val initGraph = new ConnectionGraphV(vertexs, edges)
+      var result: ConnectionGraph = new ConnectionGraphV(vertexs, Set())
+      for (c ← initGraph.components) {
+        var res: ConnectionGraph = new ConnectionGraphV(vertexs, Set())
+        for (e ← c.edges) {
           res = res.cutAddToTree(e.fixEnds.untangle)(ConnectionGraph.fillTree)
         }
         result = new ConnectionGraphV(res.vertexs ++ result.vertexs, res.edges ++ result.edges)
       }
       result = result.prune.clean
       // done
-      val (connections, junctions) = result.toTree      
+      val (connections, junctions) = result.toTree
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if (b == initContainer.boxDef) ⇒
-              BoxDef(b.name, b.superName, b.guiSize, b.image,
-                transformTrees(b.defs),
-                transformTrees(b.vals),
-                transformTrees(b.ports),
-                connections,
-                junctions)
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize,params) if (valdefs.contains(v)) ⇒
-            ValDef(name, typeName, pos+delta, size, guiPos, guiSize,params)
+            BoxDef(b.name, b.superName, b.guiSize, b.image,
+              transformTrees(b.defs),
+              transformTrees(b.vals),
+              transformTrees(b.ports),
+              connections,
+              junctions)
+          case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) if (valdefs.contains(v)) ⇒
+            ValDef(name, typeName, pos + delta, size, guiPos, guiSize, params)
           case p: PortDef if (portdefs.contains(p)) ⇒
-            p.copy(inPos = p.inPos +delta)
-          
+            p.copy(inPos = p.inPos + delta)
+
         }
       }
       controller.exec(command)

@@ -44,10 +44,10 @@ trait ContainerItem extends Item {
       .orElse(itemAtIn(connectionsLayer, p, debug))
   }
   def shallowItems = {
-    (portsLayer.getChildren.view ++ 
-        layer.getChildren.view ++ 
-        connectionsLayer.getChildren.view ++ 
-        pointsLayer.getChildren.view).collect { case i:Item => i }
+    (portsLayer.getChildren.view ++
+      layer.getChildren.view ++
+      connectionsLayer.getChildren.view ++
+      pointsLayer.getChildren.view).collect { case i: Item ⇒ i }
   }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
@@ -63,20 +63,38 @@ trait ContainerItem extends Item {
   }
 
   protected def createGraph: ConnectionGraph = {
-    // fixme portslayer
-    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port, port.anchor) }
+    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port.portPath, port.anchor) }
     val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
+    val nonExistingPortVertex = scala.collection.mutable.Map[PortRef, MissingPortVertex]()
+    val emptyVertexs = Buffer[EmptyVertex]()
     val edges = boxDef.connections.map {
       case c: ConnectionDef ⇒
-        def toVertex(t: Tree, start: Boolean): Vertex = t match {
-          case JunctionRef(name) ⇒ junctions.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
-          case p: PortRef ⇒
-            portVertexs.find { _.portPath == PortPath(p) }.getOrElse { throw new RuntimeException("could not find vertex for " + p + " " + PortPath(p)) }
-
+        def toVertex(t: Tree, start: Boolean): Vertex = {
+          def pos = if (start) c.headPoint else c.lastPoint
+          t match {
+            case JunctionRef(name) ⇒ 
+              junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
+            case p: PortRef ⇒
+              val path = PortPath.create(p)
+              path.flatMap { p => portVertexs.find { _.portPath == p }}
+                .getOrElse {
+                  println("nonexisting")
+                  nonExistingPortVertex.getOrElseUpdate(p, new MissingPortVertex(p, pos))
+                  }
+            case EmptyTree ⇒
+              val e = new EmptyVertex(pos)
+              emptyVertexs += e
+              e
+          }
         }
-        (c -> new Edge(toVertex(c.a, true), toVertex(c.b, true), c.points, Some(c)).fixEnds)
+        (c -> new Edge(toVertex(c.a, true), toVertex(c.b, false), c.points, Some(c)).fixEnds)
     }.toMap
-    new ConnectionGraphV(portVertexs.toSet ++ junctions.values, edges.values.toSet)
+    new ConnectionGraphV(
+        portVertexs.toSet ++ 
+        junctions.values ++ 
+        nonExistingPortVertex.values ++ 
+        emptyVertexs, 
+        edges.values.toSet)
   }
   val boxes = Buffer[ValDefItem]()
   def boxDef: BoxDef
@@ -130,14 +148,14 @@ trait ContainerItem extends Item {
   }
   def updatePorts(changes: Map[Tree, Tree])
   def updateJunctions() {
-    junctions.foreach { container.pointsLayer.safeRemove(_) }
+    junctions.foreach { this.pointsLayer.safeRemove(_) }
     junctions.clear
     for (j ← boxDef.junctions.asInstanceOf[List[Junction]]) {
       val p = new PointFigure
       p.update(j.p, j.tpe)
       junctions += p
     }
-    if (showing) junctions.foreach { container.pointsLayer.add(_) }
+    if (showing) junctions.foreach { this.pointsLayer.add(_) }
   }
   def updateConnections() {
     connections.foreach { _.hide }

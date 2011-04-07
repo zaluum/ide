@@ -24,10 +24,24 @@ class ClassJavaType(val owner: Symbol, val name: Name) extends Type {
   scope = owner.scope
 }
 object PortPath {
-  def apply(p: PortRef): PortPath = PortPath(p.fromRef.symbol, p.symbol.asInstanceOf[PortSymbol])
+  def create(p:PortRef) : Option[PortPath] = (p.fromRef.symbol,p.symbol) match {
+    case (NoSymbol,_) => None
+    case (a,b:PortSymbol) => Some(PortPath(a,b,p.in))
+    case _ => None 
+  }
 }
 // from can be BoxTypeSymbol if it is "this" or ValSymbol
-case class PortPath(from: Symbol, port: PortSymbol)
+case class PortPath(from: Symbol, port: PortSymbol, in: Boolean) {
+  def isFromVal = from.isInstanceOf[ValSymbol]
+  def isFromRoot = from.isInstanceOf[BoxTypeSymbol]
+  def toRef = PortRef(
+    from match {
+      case v: ValSymbol ⇒ ValRef(v.name)
+      case b: BoxTypeSymbol ⇒ ThisRef()
+    },
+    port.name,
+    in)
+}
 case class Clump(var junctions: Set[Junction], var ports: Set[PortPath], var connections: Set[ConnectionDef])
 class BoxTypeSymbol(
   val owner: Symbol,
@@ -46,18 +60,21 @@ class BoxTypeSymbol(
     def clumpOf(p: PortPath) = clumps find { _.ports.contains(p) }
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
-      val sym = PortPath(a)
-      val newClump = merge(clumpOf(sym), clumpOf(j))
-      newClump.connections += c
-      newClump.ports += sym
-      newClump.junctions += j
+      PortPath.create(a) foreach { sym=>
+        val newClump = merge(clumpOf(sym), clumpOf(j))
+        newClump.connections += c
+        newClump.ports += sym
+        newClump.junctions += j
+      }
     }
     def addPorts(a: PortRef, b: PortRef, c: ConnectionDef) {
-      val as = PortPath(a)
-      val bs = PortPath(b)
-      val newClump = merge(clumpOf(as), clumpOf(bs))
-      newClump.connections += c
-      newClump.ports ++= Set(as, bs)
+      (PortPath.create(a),PortPath.create(b)) match {
+        case (Some(as),Some(bs)) =>
+          val newClump = merge(clumpOf(as), clumpOf(bs))
+          newClump.connections += c
+          newClump.ports ++= Set(as, bs)
+        case _ => 
+      }
     }
     def addJunctions(j1: Junction, j2: Junction, c: ConnectionDef) {
       val newClump = merge(clumpOf(j1), clumpOf(j2))
@@ -85,7 +102,7 @@ class BoxTypeSymbol(
     }
     def addConnection(c: ConnectionDef) = {
       (c.a, c.b) match {
-        case (p: PortRef, j: JunctionRef) ⇒ addPort(lookupJunction(j.name).getOrElse{throw new RuntimeException("cannot find junction"  + j.name)}, p, c)
+        case (p: PortRef, j: JunctionRef) ⇒ addPort(lookupJunction(j.name).getOrElse { throw new RuntimeException("cannot find junction" + j.name) }, p, c)
         case (j: JunctionRef, p: PortRef) ⇒ addPort(lookupJunction(j.name).get, p, c)
         case (p1: PortRef, p2: PortRef) ⇒ addPorts(p1, p2, c)
         case (j1: JunctionRef, j2: JunctionRef) ⇒ addJunctions(lookupJunction(j1.name).get, lookupJunction(j2.name).get, c)
@@ -105,10 +122,10 @@ class BoxTypeSymbol(
     case _ ⇒ name
   }
   def isLocal = owner.isInstanceOf[BoxTypeSymbol]
- // override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"
+  // override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"
   override def lookupPort(name: Name): Option[Symbol] =
     super.lookupPort(name) orElse (superSymbol flatMap { _.lookupPort(name) })
-  tpe=this
+  tpe = this
 }
 
 //class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 
@@ -124,6 +141,6 @@ class ParamSymbol(owner: BoxTypeSymbol, name: Name, val default: String, dir: Po
 }
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
   var params = Map[ParamSymbol, Any]()
- // override def toString = "ValSymbol(" + name + ")"
+  // override def toString = "ValSymbol(" + name + ")"
 }
 

@@ -7,35 +7,43 @@ trait Vertex {
   def p: Point
   def isEnd = false
   def move(v: Vector2): Vertex
+  def isComplete : Boolean
   //override def toString = "v(" + p + ")"
 }
-class TempEnd(val p: Point) extends Vertex {
+class CreatingVertex(val p: Point) extends Vertex {
   override def isEnd = true
-  def move(v: Vector2) = new TempEnd(p + v)
+  def move(v: Vector2) = new CreatingVertex(p + v)
+  def isComplete = true
 }
 class Joint(val p: Point) extends Vertex {
   override def toString = "joint(" + p + " " + hashCode + ")"
   def move(v: Vector2) = new Joint(p + v)
+  def isComplete = true
 }
-class PortVertex(val port: PortFigure, val p: Point) extends Vertex {
-  val portPath = port.portPath
-  def toRef = PortRef(
-    port.fromSym match {
-      case v:ValSymbol => ValRef(v.name) 
-      case b:BoxTypeSymbol =>  ThisRef() 
-    },
-    port.sym.name,
-    port.in)
+class PortVertex(val portPath:PortPath,val p: Point) extends Vertex {
   override def isEnd = true
-  def move(v: Vector2) = new PortVertex(port, p + v)
+  def move(v: Vector2) = new PortVertex(portPath, p + v)
   override def toString = "PortVertex(" + portPath + ")"
+  def isComplete = true
+}
+class MissingPortVertex(val ref:PortRef, val p :Point) extends Vertex {
+  override def isEnd = true
+  def move(v: Vector2) = new MissingPortVertex(ref, p + v)
+  override def toString = "PortVertex(" + ref + ")"
+  def isComplete = false
+}
+class EmptyVertex(val p:Point) extends Vertex {
+  override def isEnd = true
+  def move(v:Vector2) = new EmptyVertex(p+v)
+  override def toString = "EmptyVertex("+p+")"
+  def isComplete = false
 }
 object Edge {
   def apply(a: Vertex, b: Vertex): Edge = new Edge(a, b, List(b.p, a.p), None)
   def apply(c: ConnectionDef): Edge = {
     val points = c.points
-    val a = new TempEnd(points.head)
-    val b = new TempEnd(points.last)
+    val a = new CreatingVertex(points.head)
+    val b = new CreatingVertex(points.last)
     new Edge(a, b, points, Some(c))
   }
 }
@@ -59,6 +67,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
         List(Line(src, dst, true), Line(src, dst, false))
     }
   }
+  def isComplete = a.isComplete && b.isComplete
   private def makePath(path: List[Point]): List[Line] = {
     path match {
       case Nil ⇒ Nil
@@ -160,6 +169,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
     //convert to graph and search shortest path
     case class VertexWP(p: Point) extends Vertex {
       def move(v: Vector2) = VertexWP(p + v)
+      def isComplete = false
     }
     val fakeVertexs: Set[Vertex] = points.map { VertexWP(_) }.toSet
     val fakeEdges = points.sliding(2, 1).map { pair ⇒
@@ -487,6 +497,7 @@ abstract class ConnectionGraph {
     new ConnectionGraphV(used ++ ends -- removedVertexs, current)
   }
   def ends = vertexs.filter { _.isEnd }
+  
   def toTree = {
     var map = Map[Vertex, Junction]()
     val namer = new Namer {
@@ -498,11 +509,12 @@ abstract class ConnectionGraph {
         map += (v -> j)
         j
     }
-
     val connections: List[Tree] = edges.map { e ⇒
       def vertexRef(v: Vertex): Tree = v match {
-        case p: PortVertex ⇒ p.toRef
-        case v ⇒ JunctionRef(map(v).name)
+        case p: PortVertex ⇒ p.portPath.toRef
+        case m: MissingPortVertex => m.ref
+        case e : EmptyVertex => EmptyTree 
+        case v : Joint ⇒ JunctionRef(map(v).name)
       }
       ConnectionDef(vertexRef(e.a), vertexRef(e.b), e.points)
     }.toList
