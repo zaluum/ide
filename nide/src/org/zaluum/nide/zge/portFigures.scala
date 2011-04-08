@@ -16,12 +16,16 @@ class PortFigure(val container:ContainerItem) extends Ellipse with Hover{
   var in = false
   var sym: PortSymbol = _
   var fromSym: Symbol = _ 
-  def portPath = PortPath(fromSym, sym, in)
+  var portKey : PortKey= _
   def update(ipos: MPoint, sym: PortSymbol, fromSym: Symbol, in: Boolean) {
     this.ipos = ipos
     this.fromSym = fromSym
     this.sym = sym
     this.in = in
+    portKey = fromSym match {
+      case s:ValSymbol => ValPortKey(fromSym.name, sym.name, in)
+      case b:BoxTypeSymbol => BoxPortKey(sym.name,in)
+    }
     setBounds(new Rectangle(pos.x,pos.y,size.w,size.h))
     setBackgroundColor(Colorizer.color(sym.tpe))
     setBounds(new Rectangle(pos.x,pos.y,size.w,size.h))

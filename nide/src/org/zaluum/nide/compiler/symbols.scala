@@ -23,26 +23,35 @@ class PrimitiveJavaType(owner: Symbol, name: Name, override val descriptor: Stri
 class ClassJavaType(val owner: Symbol, val name: Name) extends Type {
   scope = owner.scope
 }
-object PortPath {
-  def create(p:PortRef) : Option[PortPath] = (p.fromRef.symbol,p.symbol) match {
-    case (NoSymbol,_) => None
-    case (a,b:PortSymbol) => Some(PortPath(a,b,p.in))
-    case _ => None 
+object PortKey {
+  def create(p: PortRef): PortKey = p.fromRef match {
+    case t: ThisRef ⇒ BoxPortKey(p.name, p.in)
+    case v: ValRef ⇒ ValPortKey(v.name, p.name, p.in)
   }
 }
 // from can be BoxTypeSymbol if it is "this" or ValSymbol
-case class PortPath(from: Symbol, port: PortSymbol, in: Boolean) {
-  def isFromVal = from.isInstanceOf[ValSymbol]
-  def isFromRoot = from.isInstanceOf[BoxTypeSymbol]
-  def toRef = PortRef(
-    from match {
-      case v: ValSymbol ⇒ ValRef(v.name)
-      case b: BoxTypeSymbol ⇒ ThisRef()
-    },
-    port.name,
-    in)
+sealed trait PortKey {
+  def toRef: PortRef
+  def resolve(b:BoxTypeSymbol) : (Symbol,Symbol) 
 }
-case class Clump(var junctions: Set[Junction], var ports: Set[PortPath], var connections: Set[ConnectionDef])
+case class BoxPortKey(port: Name, in: Boolean) extends PortKey {
+  def toRef = PortRef(ThisRef(), port, in)
+  def resolve(bs:BoxTypeSymbol) =  (bs,bs.ports.getOrElse(port,NoSymbol))
+}
+case class ValPortKey(from: Name, port: Name, in: Boolean) extends PortKey {
+  def toRef = PortRef(ValRef(from), port, in)
+  def resolve(bs:BoxTypeSymbol) = {
+    val fSym = bs.vals.get(from).getOrElse(NoSymbol)
+    val portOption = fSym match {
+        case v:ValSymbol => v.tpe match {
+          case b: BoxTypeSymbol => b.ports.get(port)
+          case _ => None
+        }
+      }
+    ( fSym, portOption.getOrElse(NoSymbol) )
+  }
+}
+case class Clump(var junctions: Set[Junction], var ports: Set[PortKey], var connections: Set[ConnectionDef])
 class BoxTypeSymbol(
   val owner: Symbol,
   val name: Name,
@@ -54,27 +63,23 @@ class BoxTypeSymbol(
   object connections extends Namer {
     var junctions = Set[Junction]()
     def usedNames = junctions map { _.name.str }
-    var flow = Map[PortPath, Set[PortPath]]()
+    var flow = Map[PortKey, Set[PortKey]]()
     var clumps = Buffer[Clump]()
     def clumpOf(c: ConnectionDef) = clumps find { _.connections.contains(c) }
-    def clumpOf(p: PortPath) = clumps find { _.ports.contains(p) }
+    def clumpOf(p: PortKey) = clumps find { _.ports.contains(p) }
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
-      PortPath.create(a) foreach { sym=>
-        val newClump = merge(clumpOf(sym), clumpOf(j))
-        newClump.connections += c
-        newClump.ports += sym
-        newClump.junctions += j
-      }
+      val pk = PortKey.create(a)
+      val newClump = merge(clumpOf(pk), clumpOf(j))
+      newClump.connections += c
+      newClump.ports += pk
+      newClump.junctions += j
     }
     def addPorts(a: PortRef, b: PortRef, c: ConnectionDef) {
-      (PortPath.create(a),PortPath.create(b)) match {
-        case (Some(as),Some(bs)) =>
-          val newClump = merge(clumpOf(as), clumpOf(bs))
-          newClump.connections += c
-          newClump.ports ++= Set(as, bs)
-        case _ => 
-      }
+      val (as, bs) = (PortKey.create(a), PortKey.create(b))
+      val newClump = merge(clumpOf(as), clumpOf(bs))
+      newClump.connections += c
+      newClump.ports ++= Set(as, bs)
     }
     def addJunctions(j1: Junction, j2: Junction, c: ConnectionDef) {
       val newClump = merge(clumpOf(j1), clumpOf(j2))

@@ -152,12 +152,17 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     def appl(b: BoxDef): Method = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
       // propagate initial inputs
-      def execConnection(c: (PortPath, Set[PortPath])) = {
+      def execConnection(c: (PortKey, Set[PortKey])) = {
         def toRef(p: AnyRef): Tree = p match {
           case b: BoxTypeSymbol ⇒ This
           case v: ValSymbol ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
-          case PortPath(from, p@port,in) ⇒
-            Select(toRef(from), FieldRef(p.name, p.tpe.name, from.tpe.asInstanceOf[BoxTypeSymbol].fqName))
+          case ValPortKey(from, portName,in) ⇒
+            val vfrom = b.vals.view.collect {case v:ValDef => v.symbol } find {_.name==from} get
+            val pfrom = vfrom.tpe.asInstanceOf[BoxTypeSymbol].ports(portName).asInstanceOf[PortSymbol]
+            Select(toRef(vfrom), FieldRef(portName, pfrom.tpe.name, vfrom.tpe.asInstanceOf[BoxTypeSymbol].fqName))
+          case BoxPortKey(portName,in) ⇒
+            val pfrom = bs.ports(portName)
+            Select(This, FieldRef(portName, pfrom.tpe.name, bs.fqName))            
         }
         val (out, ins) = c
         ins.toList map { in ⇒
@@ -168,7 +173,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       def propagateInitialInputs = {
         val initialConnections = {
           connections.flow collect {
-            case c@(a, _) if (a.isFromRoot) ⇒ c
+            case c@(a:BoxPortKey, _) ⇒ c
           } toList
         }
         initialConnections flatMap { execConnection(_) }
@@ -176,7 +181,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       // execute in order
       def runOne(v: ValDef) = {
         def outConnections = connections.flow collect {
-          case c@(p@PortPath(vref: ValSymbol, _, in), ins) if (vref == v.symbol) ⇒ c
+          case c@(p@ValPortKey(name, _, in), ins) if (name == v.name) ⇒ c
         } toList
         val outs = outConnections flatMap { execConnection(_) }
         val tpe = v.tpe.asInstanceOf[BoxTypeSymbol].fqName

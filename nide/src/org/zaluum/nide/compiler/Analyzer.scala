@@ -210,7 +210,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
   class CheckConnections(b: Tree, owner: Symbol) {
     val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
-    var usedInputs = Set[PortPath]()
+    var usedInputs = Set[PortKey]()
     def check() = Checker.traverse(b)
     object Checker extends Traverser(owner) with ReporterAdapter with ConnectionHelper {
       def location(tree: Tree) = globLocation(tree)
@@ -245,8 +245,8 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       private def check() {
         def checkClump(c: Clump) {
           val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
-          val ins = c.ports.filter(p ⇒ isIn(p))
-          val outs = c.ports.filter(p => !isIn(p))
+          val ins = c.ports.filter(p ⇒ isIn(p,bs))
+          val outs = c.ports.filter(p => !isIn(p,bs))
           if (outs.size == 0) error("No output connected", c.connections.head)
           else if (outs.size > 1) error("More than one output is connected", c.connections.head)
           else if (ins.size == 0) error("No inputs connected", c.connections.head)
@@ -254,7 +254,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             if (!usedInputs.intersect(ins).isEmpty) error("input connected multiple times", c.connections.head) // TODO check online to identify offending connection 
             usedInputs ++= ins
             // check types
-            val types = c.ports.map { p ⇒ p.port.tpe }
+            val types = c.ports.map { p ⇒ p.resolve(bs)._2.tpe }
             if (types.size != 1) error("Connection with incompatible types " + types.mkString(","), c.connections.head)
             else {
               c.connections foreach { _.tpe = types.head }
@@ -263,12 +263,13 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             // check graph consistency
             val out = outs.head
             bs.connections.flow += (out -> ins)
-            out.from match {
-              case va: ValSymbol ⇒
-                ins map { p=> p.from } foreach {
+            out match {
+              case v :ValPortKey => 
+                val (va,_) = v.resolve(bs)
+                ins map { p=> p.resolve(bs)._1 } foreach {
                   case vb: ValSymbol ⇒
                     try {
-                      acyclic.addDagEdge(va, vb);
+                      acyclic.addDagEdge(va.asInstanceOf[ValSymbol], vb);
                     } catch {
                       case e: CycleFoundException ⇒ error("cycle found ", c.connections.head)
                       case e: IllegalArgumentException ⇒ error("loop found", c.connections.head)
@@ -298,9 +299,9 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
 }
 trait ConnectionHelper extends ReporterAdapter {
   implicit def reporter: Reporter
-  def isIn(ap: PortPath): Boolean = ap.port match {
-    case s: PortSymbol ⇒
-      (s.dir, ap.from) match {
+  def isIn(ap: PortKey,bs:BoxTypeSymbol): Boolean = ap.resolve(bs) match {
+    case (from,s: PortSymbol) ⇒
+      (s.dir, from) match {
         case (In, v: ValSymbol) ⇒ true
         case (In, b:BoxTypeSymbol) ⇒ false
         case (Out, v: ValSymbol) ⇒ false

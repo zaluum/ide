@@ -63,9 +63,9 @@ trait ContainerItem extends Item {
   }
 
   protected def createGraph: ConnectionGraph = {
-    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port.portPath, port.anchor) }
+    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port.portKey, port.anchor) }
     val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
-    val nonExistingPortVertex = scala.collection.mutable.Map[PortRef, MissingPortVertex]()
+    val nonExistingPortVertex = scala.collection.mutable.Map[PortKey, MissingPortVertex]()
     val emptyVertexs = Buffer[EmptyVertex]()
     val edges = boxDef.connections.map {
       case c: ConnectionDef ⇒
@@ -75,11 +75,11 @@ trait ContainerItem extends Item {
             case JunctionRef(name) ⇒ 
               junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
             case p: PortRef ⇒
-              val path = PortPath.create(p)
-              path.flatMap { p => portVertexs.find { _.portPath == p }}
+              val key = PortKey.create(p)
+              portVertexs.find { _.key == key }
                 .getOrElse {
                   println("nonexisting")
-                  nonExistingPortVertex.getOrElseUpdate(p, new MissingPortVertex(p, pos))
+                  nonExistingPortVertex.getOrElseUpdate(key, new MissingPortVertex(key, pos))
                   }
             case EmptyTree ⇒
               val e = new EmptyVertex(pos)

@@ -213,7 +213,8 @@ trait ConnectionsTool {
       }
       // collect moved ends
       val movedEnds = vertexs.collect { case p: PortVertex ⇒ p }.filter { p ⇒
-        p.portPath.from match {
+        val (fsym,psym) = p.key.resolve(initContainer.symbol)
+        fsym match {
           case v: ValSymbol ⇒ valdefs.contains(v.decl)
           case t: BoxTypeSymbol ⇒ portdefs.contains(t.decl)
         }
