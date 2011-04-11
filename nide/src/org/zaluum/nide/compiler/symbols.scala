@@ -36,7 +36,7 @@ sealed trait PortKey {
 }
 case class BoxPortKey(port: Name, in: Boolean) extends PortKey {
   def toRef = PortRef(ThisRef(), port, in)
-  def resolve(bs:BoxTypeSymbol) = bs.ports.get(port) collect {case p:PortSymbol => BoxPortKeySym(bs,p)}
+  def resolve(bs:BoxTypeSymbol) = bs.lookupPort(port) collect {case p:PortSymbol => BoxPortKeySym(bs,p)}
 }
 case class ValPortKey(from: Name, port: Name, in: Boolean) extends PortKey {
   def toRef = PortRef(ValRef(from), port, in)
@@ -44,7 +44,7 @@ case class ValPortKey(from: Name, port: Name, in: Boolean) extends PortKey {
     bs.vals.get(from) match {
       case Some(v:ValSymbol) =>
         v.tpe match {
-          case b: BoxTypeSymbol => b.ports.get(port) match {
+          case b: BoxTypeSymbol => b.lookupPort(port) match {
             case Some(p:PortSymbol) => Some(ValPortKeySym(bs,v,p))
             case _ => None
           }

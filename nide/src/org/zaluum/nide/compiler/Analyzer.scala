@@ -207,7 +207,8 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
     }
   }
 
-  class CheckConnections(b: Tree, owner: Symbol) {
+  class CheckConnections(t: Tree, owner: Symbol) {
+    val b = t.asInstanceOf[BoxDef]
     val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
     var usedInputs = Set[PortKey]()
@@ -282,6 +283,21 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           }
         }
         val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
+        b.connections.foreach { case con:ConnectionDef =>
+            def checkResolved(p:Tree) = p match {
+              case EmptyTree => error("Wire is not connected" , con)
+              case j:JunctionRef => /*if(!bs.junctions.exists {_.name == j.name}) {
+                  error("FATAL: junction does not exists " + j,con)
+                }*/
+              case p:PortRef =>
+                PortKey.create(p).resolve(bs) match {
+                  case None => error("Cannot find port " + p,con)
+                  case _ =>
+                }
+            }
+            checkResolved(con.a)
+            checkResolved(con.b)
+          }
         bs.connections.clumps foreach { checkClump(_) }
         import scala.collection.JavaConversions._
         val topo = new TopologicalOrderIterator(acyclic);
