@@ -117,7 +117,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
           val cl = Some(Name(classOf[JPanel].getName))
           val newSym = new BoxTypeSymbol(currentOwner, name, superName, image, cl)
           val sym = defineBox(newSym, tree)
-          tree.tpe= sym
+          tree.tpe = sym
           superName foreach { sn ⇒
             currentScope.lookupBoxType(sn) match {
               case Some(bs: BoxTypeSymbol) ⇒
@@ -206,7 +206,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       }
     }
   }
-  
+
   class CheckConnections(b: Tree, owner: Symbol) {
     val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
@@ -228,10 +228,10 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             }
             check()
           case v: ValDef ⇒ acyclic.addVertex(v.symbol.asInstanceOf[ValSymbol])
-          case j@Junction(name,_) =>
+          case j@Junction(name, _) ⇒
             bs.connections.lookupJunction(name) match {
-              case Some(j) => error("junction name already exists", j)
-              case None => bs.connections.junctions += j
+              case Some(j) ⇒ error("junction name already exists", j)
+              case None ⇒ bs.connections.junctions += j
             }
           case c@ConnectionDef(a, b, waypoints) ⇒
             if (a == EmptyTree || b.symbol == EmptyTree) {
@@ -245,8 +245,8 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
       private def check() {
         def checkClump(c: Clump) {
           val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
-          val ins = c.ports.filter(p ⇒ isIn(p,bs))
-          val outs = c.ports.filter(p => !isIn(p,bs))
+          val ins = c.ports.filter(p ⇒ isIn(p, bs))
+          val outs = c.ports.filter(p ⇒ !isIn(p, bs))
           if (outs.size == 0) error("No output connected", c.connections.head)
           else if (outs.size > 1) error("More than one output is connected", c.connections.head)
           else if (ins.size == 0) error("No inputs connected", c.connections.head)
@@ -254,7 +254,7 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             if (!usedInputs.intersect(ins).isEmpty) error("input connected multiple times", c.connections.head) // TODO check online to identify offending connection 
             usedInputs ++= ins
             // check types
-            val types = c.ports.map { p ⇒ p.resolve(bs)._2.tpe }
+            val types = for (pk ← c.ports; pks ← pk.resolve(bs)) yield pks.port.tpe
             if (types.size != 1) error("Connection with incompatible types " + types.mkString(","), c.connections.head)
             else {
               c.connections foreach { _.tpe = types.head }
@@ -263,21 +263,22 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
             // check graph consistency
             val out = outs.head
             bs.connections.flow += (out -> ins)
-            out match {
-              case v :ValPortKey => 
-                val (va,_) = v.resolve(bs)
-                ins map { p=> p.resolve(bs)._1 } foreach {
-                  case vb: ValSymbol ⇒
-                    try {
-                      acyclic.addDagEdge(va.asInstanceOf[ValSymbol], vb);
-                    } catch {
-                      case e: CycleFoundException ⇒ error("cycle found ", c.connections.head)
-                      case e: IllegalArgumentException ⇒ error("loop found", c.connections.head)
-                    }
-                  case _ => 
-                }
-              case _ ⇒
+            def addDag(vout: ValPortKeySym, vin: ValPortKeySym) {
+              try {
+                acyclic.addDagEdge(vout.valSym, vin.valSym);
+              } catch {
+                case e: CycleFoundException ⇒ error("cycle found ", c.connections.head)
+                case e: IllegalArgumentException ⇒ error("loop found", c.connections.head)
+              }
             }
+            import org.zaluum.nide.RichCast._
+            for {
+              voutg ← out.resolve(bs);
+              vout <- voutg.castOption[ValPortKeySym];
+              pkin ← ins;
+              ving ← pkin.resolve(bs);
+              vin <- ving.castOption[ValPortKeySym]
+            } (addDag(vout, vin))
           }
         }
         val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
@@ -299,16 +300,16 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
 }
 trait ConnectionHelper extends ReporterAdapter {
   implicit def reporter: Reporter
-  def isIn(ap: PortKey,bs:BoxTypeSymbol): Boolean = ap.resolve(bs) match {
-    case (from,s: PortSymbol) ⇒
-      (s.dir, from) match {
-        case (In, v: ValSymbol) ⇒ true
-        case (In, b:BoxTypeSymbol) ⇒ false
-        case (Out, v: ValSymbol) ⇒ false
-        case (Out, b:BoxTypeSymbol) ⇒ true
-        case (Shift, v: ValSymbol) ⇒ s.decl.asInstanceOf[PortRef].in
-        case (Shift, b:BoxTypeSymbol) ⇒ s.decl.asInstanceOf[PortRef].in
+  def isIn(ap: PortKey, bs: BoxTypeSymbol): Boolean = {
+    ap.resolve(bs).map { r ⇒
+      (r.port.dir, r) match {
+        case (In, v: ValPortKeySym) ⇒ true
+        case (In, b: BoxPortKeySym) ⇒ false
+        case (Out, v: ValPortKeySym) ⇒ false
+        case (Out, b: BoxPortKeySym) ⇒ true
+        case (Shift, v: ValPortKeySym) ⇒ r.port.decl.asInstanceOf[PortRef].in
+        case (Shift, b: BoxPortKeySym) ⇒ r.port.decl.asInstanceOf[PortRef].in
       }
-    case _ ⇒ true
+    }.getOrElse(true)
   }
 }

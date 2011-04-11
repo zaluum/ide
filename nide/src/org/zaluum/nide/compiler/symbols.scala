@@ -32,25 +32,34 @@ object PortKey {
 // from can be BoxTypeSymbol if it is "this" or ValSymbol
 sealed trait PortKey {
   def toRef: PortRef
-  def resolve(b:BoxTypeSymbol) : (Symbol,Symbol) 
+  def resolve(b:BoxTypeSymbol) : Option[PortKeySym]
 }
 case class BoxPortKey(port: Name, in: Boolean) extends PortKey {
   def toRef = PortRef(ThisRef(), port, in)
-  def resolve(bs:BoxTypeSymbol) =  (bs,bs.ports.getOrElse(port,NoSymbol))
+  def resolve(bs:BoxTypeSymbol) = bs.ports.get(port) collect {case p:PortSymbol => BoxPortKeySym(bs,p)}
 }
 case class ValPortKey(from: Name, port: Name, in: Boolean) extends PortKey {
   def toRef = PortRef(ValRef(from), port, in)
   def resolve(bs:BoxTypeSymbol) = {
-    val fSym = bs.vals.get(from).getOrElse(NoSymbol)
-    val portOption = fSym match {
-        case v:ValSymbol => v.tpe match {
-          case b: BoxTypeSymbol => b.ports.get(port)
+    bs.vals.get(from) match {
+      case Some(v:ValSymbol) =>
+        v.tpe match {
+          case b: BoxTypeSymbol => b.ports.get(port) match {
+            case p : PortSymbol => Some(ValPortKeySym(bs,v,p))
+            case _ => None
+          }
           case _ => None
         }
-      }
-    ( fSym, portOption.getOrElse(NoSymbol) )
+      case _ => None
+    }
   }
 }
+sealed trait PortKeySym {
+  def box : BoxTypeSymbol
+  def port : PortSymbol
+}
+case class BoxPortKeySym(box:BoxTypeSymbol, port:PortSymbol) extends PortKeySym 
+case class ValPortKeySym(box:BoxTypeSymbol, valSym: ValSymbol, port:PortSymbol) extends PortKeySym
 case class Clump(var junctions: Set[Junction], var ports: Set[PortKey], var connections: Set[ConnectionDef])
 class BoxTypeSymbol(
   val owner: Symbol,

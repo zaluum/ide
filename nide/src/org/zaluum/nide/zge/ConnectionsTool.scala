@@ -213,10 +213,11 @@ trait ConnectionsTool {
       }
       // collect moved ends
       val movedEnds = vertexs.collect { case p: PortVertex ⇒ p }.filter { p ⇒
-        val (fsym,psym) = p.key.resolve(initContainer.symbol)
-        fsym match {
-          case v: ValSymbol ⇒ valdefs.contains(v.decl)
-          case t: BoxTypeSymbol ⇒ portdefs.contains(t.decl)
+        val res = p.key.resolve(initContainer.symbol)
+        res match {
+          case Some(v: ValPortKeySym) ⇒ valdefs.contains(v.valSym.decl)
+          case Some(t: BoxPortKeySym) ⇒ portdefs.contains(t.box.decl)
+          case _ => false
         }
       }
       // update edge vertexs
