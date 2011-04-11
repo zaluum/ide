@@ -301,7 +301,9 @@ class Analyzer(val reporter: Reporter, val toCompile: Tree, val global: Scope) {
 trait ConnectionHelper extends ReporterAdapter {
   implicit def reporter: Reporter
   def isIn(ap: PortKey, bs: BoxTypeSymbol): Boolean = {
-    ap.resolve(bs).map { r ⇒
+    val resolved = ap.resolve(bs)
+    println("resolved " + ap + " to " + resolved)
+    resolved.map { r ⇒
       (r.port.dir, r) match {
         case (In, v: ValPortKeySym) ⇒ true
         case (In, b: BoxPortKeySym) ⇒ false
@@ -310,6 +312,6 @@ trait ConnectionHelper extends ReporterAdapter {
         case (Shift, v: ValPortKeySym) ⇒ r.port.decl.asInstanceOf[PortRef].in
         case (Shift, b: BoxPortKeySym) ⇒ r.port.decl.asInstanceOf[PortRef].in
       }
-    }.getOrElse(true)
+    }.getOrElse{println ("true"); true}
   }
 }

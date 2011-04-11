@@ -5,5 +5,8 @@
 	<classpathentry kind="lib" path="/home/frede/devel/libs/scala-2.8.1.final/lib/scala-library.jar"/>
 	<classpathentry kind="lib" path="/home/frede/devel/zaluum/runtime/bin"/>
 	<classpathentry kind="lib" path="/home/frede/devel/zaluum/nide/bin"/>
+	<classpathentry kind="lib" path="/home/frede/devel/zaluum/jchart2d/bin"/>
+	<classpathentry kind="lib" path="/home/frede/devel/zaluum/jchart2d/ext/bislider.jar"/>
+	<classpathentry kind="lib" path="/home/frede/devel/zaluum/jchart2d/ext/xmlgraphics-commons-1.3.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

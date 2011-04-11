@@ -158,10 +158,10 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
           case v: ValSymbol ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
           case ValPortKey(from, portName,in) ⇒
             val vfrom = b.vals.view.collect {case v:ValDef => v.symbol } find {_.name==from} get
-            val pfrom = vfrom.tpe.asInstanceOf[BoxTypeSymbol].ports(portName).asInstanceOf[PortSymbol]
+            val pfrom = vfrom.tpe.asInstanceOf[BoxTypeSymbol].lookupPort(portName).get.asInstanceOf[PortSymbol]
             Select(toRef(vfrom), FieldRef(portName, pfrom.tpe.name, vfrom.tpe.asInstanceOf[BoxTypeSymbol].fqName))
           case BoxPortKey(portName,in) ⇒
-            val pfrom = bs.ports(portName)
+            val pfrom = bs.lookupPort(portName).get
             Select(This, FieldRef(portName, pfrom.tpe.name, bs.fqName))            
         }
         val (out, ins) = c

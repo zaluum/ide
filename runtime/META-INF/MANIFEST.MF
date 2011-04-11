@@ -5,3 +5,4 @@ Bundle-SymbolicName: org.zaluum.runtime
 Bundle-Version: 1.0.0.qualifier
 Export-Package: org.zaluum.runtime
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: jchart2d;bundle-version="1.0.0"

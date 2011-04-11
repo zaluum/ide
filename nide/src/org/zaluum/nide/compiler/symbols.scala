@@ -45,7 +45,7 @@ case class ValPortKey(from: Name, port: Name, in: Boolean) extends PortKey {
       case Some(v:ValSymbol) =>
         v.tpe match {
           case b: BoxTypeSymbol => b.ports.get(port) match {
-            case p : PortSymbol => Some(ValPortKeySym(bs,v,p))
+            case Some(p:PortSymbol) => Some(ValPortKeySym(bs,v,p))
             case _ => None
           }
           case _ => None
