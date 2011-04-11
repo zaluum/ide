@@ -114,8 +114,8 @@ class ConnectionPainter(container: ContainerItem) {
       nl.update(con, complete, l)
       lines += nl
     }
-    if (feedback) lines foreach { l ⇒ l.showFeedback() }
     lines foreach { l ⇒ l.show }
+    if (feedback) lines foreach {_.showFeedback() }
   }
   def clear() {
     lines.foreach { _.hide() }
@@ -123,28 +123,33 @@ class ConnectionPainter(container: ContainerItem) {
   }
 }
 // TODO not really a figure right now... no children
-class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Figure {
+class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Item {
   val painter = new ConnectionPainter(container)
   var feedback = false
+  def size = null
+  def pos = null
+  val feed = null
+  def myLayer = null
   def paint = painter.paintRoute(e, feedback, e.isComplete, Some(this))
-  def show() = {
+  override def show() = {
     container.connectionsLayer.add(this);
     paint
   }
-  def hide() {
+  override def hide() {
     if (container.connectionsLayer.getChildren.contains(this))
       container.connectionsLayer.remove(this)
     painter.clear()
   }
-  def showFeedback() {
+  override def showFeedback() {
     feedback = true
     paint
   }
-  def hideFeedback() {
+  override def hideFeedback() {
     feedback = false
     paint
   }
-  def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {}
-  def moveDeltaFeed(delta: Vector2) {}
-  def moveFeed(p: Point) {}
+  override def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {}
+  override def moveDeltaFeed(delta: Vector2) {}
+  override def moveFeed(p: Point) {}
+  override def selectionSubject = e.srcCon
 }

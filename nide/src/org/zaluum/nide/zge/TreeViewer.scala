@@ -31,6 +31,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: EclipseB
   def gotoMarker(l: Location) {
     // IDEA look at controllers save mark and then transform the selection to get the current blame node
     tree.findPath(l.path) foreach { t ⇒
+      println(t)
       selection.updateSelection(Set(t),false)
       refresh()
       focus
