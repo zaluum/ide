@@ -273,7 +273,7 @@ class OpenBoxFigure(
     // super ports
     boxDef.symbol match {
       case s: BoxTypeSymbol ⇒
-        for (sup ← s.superSymbol; p ← sup.ports.values) {
+        for (sup ← s.superSymbol; p ← sup.portsWithSuper.values) {
           p match {
             case p: PortSymbol ⇒
               val f = new PortSymbolFigure(p, OpenBoxFigure.this)

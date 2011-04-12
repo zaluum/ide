@@ -41,7 +41,7 @@ case class BoxPortKey(port: Name, in: Boolean) extends PortKey {
 case class ValPortKey(from: Name, port: Name, in: Boolean) extends PortKey {
   def toRef = PortRef(ValRef(from), port, in)
   def resolve(bs:BoxTypeSymbol) = {
-    bs.vals.get(from) match {
+    bs.lookupVal(from) match {
       case Some(v:ValSymbol) =>
         v.tpe match {
           case b: BoxTypeSymbol => b.lookupPort(port) match {
@@ -68,7 +68,9 @@ class BoxTypeSymbol(
   val image: Option[String],
   val visualClass: Option[Name],
   val abstractCl: Boolean = false) extends LocalScope(owner.scope) with Symbol with Type {
-
+  def declaredPorts = ports
+  def portsWithSuper : Map[Name,Symbol] = ports ++ superSymbol.map {_.portsWithSuper}.getOrElse(Map())
+  def declaredVals = vals
   object connections extends Namer {
     var junctions = Set[Junction]()
     def usedNames = junctions map { _.name.str }

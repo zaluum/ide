@@ -140,7 +140,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       } getOrElse List()
     }
     def createWidgets(b: BoxTypeSymbol, path: List[ValSymbol], mainBox: BoxDef): List[Tree] = {
-      b.vals.values.toList flatMap {
+      b.declaredVals.values.toList flatMap {
         case v: ValSymbol ⇒
           val tpe = v.tpe.asInstanceOf[BoxTypeSymbol];
           if (tpe.isLocal)

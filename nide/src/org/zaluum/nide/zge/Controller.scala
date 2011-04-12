@@ -26,7 +26,7 @@ class Controller(private var nowTree: Tree, val global: EclipseBoxClasspath) {
   val reporter = new Reporter()
   def compile() = {
     val scope = new FakeGlobalScope(global)
-    nowTree = new Analyzer(reporter, tree, scope).compile()
+    nowTree = new Analyzer(reporter, tree.asInstanceOf[BoxDef], scope).compile()
   }
   type DMap = Map[SelectionSubject, SelectionSubject]
   case class Mutation(before: Tree, d: DMap, now: Tree)

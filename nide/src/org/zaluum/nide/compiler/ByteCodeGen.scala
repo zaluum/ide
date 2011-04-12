@@ -74,7 +74,7 @@ object ByteCodeGen {
           mv.visitInsn(POP)
         case Const(d:Any) =>
           val v = d match {
-            case b:Byte => b.asInstanceOf[Int]
+            case b:Byte => b.asInstanceOf[Int] // FIXME ?
             case s:Short=> s.asInstanceOf[Int]
             case b:Boolean => b.asInstanceOf[Int]
             case _ => d
