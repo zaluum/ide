@@ -338,7 +338,7 @@ trait ConnectionHelper extends ReporterAdapter {
   implicit def reporter: Reporter
   def isIn(ap: PortKey, bs: BoxTypeSymbol): Boolean = {
     val resolved = ap.resolve(bs)
-    println("resolved " + ap + " to " + resolved)
+    //println("resolved " + ap + " to " + resolved)
     resolved.map { r ⇒
       (r.port.dir, r) match {
         case (In, v: ValPortKeySym) ⇒ true

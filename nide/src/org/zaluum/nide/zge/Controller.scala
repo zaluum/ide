@@ -37,9 +37,35 @@ class Controller(private var nowTree: Tree, val global: ZaluumProject) {
     redoStack.clear
     update(c.map)
   }
+  def usedTypes : Seq[Type] = {
+    val b = scala.collection.mutable.Set[Type]()
+    val t = new Traverser(global) {
+      override def traverse(tree:Tree) = {
+        tree match {
+          case t:ValDef if (t.tpe!=NoSymbol)=> b+=t.tpe 
+          case _ =>
+        }
+        super.traverse(tree)
+      }
+    }
+    t.traverse(nowTree)
+    b.toSeq
+  }
+  def noChangeMap = {
+    var map:DMap = Map()
+    new Traverser(global) {
+      override def traverse(tree:Tree) = {
+        map += (tree->tree)
+      }
+    }
+    map
+  }
+  def recompile {
+    update(noChangeMap)
+  }
   private def update(m: DMap) {
     compile()
-    PrettyPrinter.print(nowTree, 0)
+    //PrettyPrinter.print(nowTree, 0)
     updateViewers(m)
     notifyListeners
     refreshTools
