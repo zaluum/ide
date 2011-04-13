@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.runtime.LoopBox
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Shift
@@ -10,13 +11,12 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Shell, Composite, Button }
-import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.compiler.{ BoxTypeSymbol, In, Out }
 object Palette {
   val w = 400
   val h = 300
 }
-class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) extends ScrollPopup(mainShell) {
+class Palette(viewer: TreeViewer, mainShell: Shell, proj: ZaluumProject) extends ScrollPopup(mainShell) {
   def name = "Palette"
   def columns = 4
   var container : ContainerItem  = _
@@ -62,7 +62,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell, bcp: EclipseBoxClasspath) ex
       viewer.canvas.setFocus()
       hide()
     }
-    val classes = bcp.boxes.filter { !_.abstractCl }.toBuffer.sortWith(_.name.toString < _.name.toString)
+    val classes = proj.allBoxes.filter { !_.abstractCl }.toBuffer.sortWith(_.name.toString < _.name.toString)
     for (tpe ← classes) {
       val bc = tpe.asInstanceOf[BoxTypeSymbol]
       val b = createButton(bc.name.str, viewer.imageFactory(bc))

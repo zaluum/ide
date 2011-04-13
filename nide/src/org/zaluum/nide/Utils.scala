@@ -67,3 +67,31 @@ trait Subject {
 trait Observer {
   def receiveUpdate(subject: Subject)
 }
+class DoOnce[A](once: => A)(otherwise : =>A) {
+  var done = false
+  def get() : A = if (done) otherwise else {
+    done=true
+    once
+  }
+  def reset() { done = false}
+}
+class ResetableLazy[A](calc: =>A) {
+  var cached :Option[A] = None
+  def apply :A = {
+    if (!cached.isDefined) cached = Some(calc)
+    cached.get
+  }
+}
+class Cache[A,B](compute : A=>Option[B]) {
+  private var map = Map[A,B]()
+  def get(a:A) : Option[B] = {
+    map.get(a).orElse {
+      val computed = compute(a)
+      computed foreach { c => add(a,c)}
+      computed
+    }
+  }
+  def add(a:A,b:B) {map +=(a->b)}
+  def reset() { map = Map() }
+  def values = map.values
+}

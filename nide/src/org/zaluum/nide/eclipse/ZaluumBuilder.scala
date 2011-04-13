@@ -59,17 +59,17 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
     file.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_ZERO);
   }
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
-  def jproject = jmodel.getJavaProject(getProject);
-  def defaultOutputFolder = { jproject.getOutputLocation }
+  def jProject = jmodel.getJavaProject(getProject);
+  def defaultOutputFolder = { jProject.getOutputLocation }
   def root = getProject.getWorkspace.getRoot
 
-  def compile(f: IFile, cl: EclipseBoxClasspath) = {
+  def compile(f: IFile, pr: ZaluumProject) = {
     val reporter = new Reporter
     try {
-      cl.toClassName(f) foreach { className ⇒
+      pr.toClassName(f) foreach { className ⇒
         val proto = BoxFileProtos.BoxClassDef.parseFrom(f.getContents(true))
         val tree = Parser.parse(proto, Some(className))
-        val scope = new FakeGlobalScope(cl)
+        val scope = new FakeGlobalScope(pr)
         val analyzedTree = new Analyzer(reporter, tree, scope).compile()
         def generate(tree: Tree) {
           val sym = tree.symbol.asInstanceOf[BoxTypeSymbol]
@@ -104,9 +104,10 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
   }
   protected def fullBuild(monitor: IProgressMonitor) {
     getProject.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
-    val cl = new EclipseBoxClasspath(getProject)
-    cl.update()
-    visitSourceZaluums { f ⇒ compile(f, cl) }
+    ZaluumModelMananger.getOrCreate(getProject) foreach { zp => 
+      zp.reset()
+      visitSourceZaluums { f ⇒ compile(f, zp) }      
+    }
   }
 
   protected def incrementalBuild(delta: IResourceDelta,

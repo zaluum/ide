@@ -57,18 +57,18 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def isSaveAsAllowed(): Boolean = { false }
 
   def inputFile = getEditorInput.asInstanceOf[FileEditorInput].getFile
+  def project = inputFile.getProject
+  def zproject = ZaluumModelMananger.getOrCreate(project)
   def input = inputFile.getContents(true)
-  var globalScope : EclipseBoxClasspath = _ 
   def createPartControl(parent: Composite) {
-    globalScope = new EclipseBoxClasspath(inputFile.getProject)
-    val className = globalScope.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
+    val zp = zproject.get // XXX better
+    val className = zp.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
     val proto = BoxFileProtos.BoxClassDef.parseFrom(input)
     val tree = Parser.parse(proto,Some(className)) 
-    globalScope.update()
     input.close()
-    val controller = new Controller(tree, globalScope)
+    val controller = new Controller(tree, zp)
     controller.addListener(fireDirty)
-    viewer = new TreeViewer(parent, controller, globalScope)
+    viewer = new TreeViewer(parent, controller, zp)
     controller.registerViewer(viewer)
     // TODO reopen
   }
@@ -79,7 +79,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
       val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE | SWT.RESIZE)
       newshell.setLayout(new FillLayout)
       newshell.setText(getTitle + " GUI");
-      val guiViewer= new GuiViewer(newshell, controller, globalScope)
+      val guiViewer= new GuiViewer(newshell, controller, zproject.get)
       controller.registerViewer(guiViewer)
       newshell.layout()
       newshell.open()

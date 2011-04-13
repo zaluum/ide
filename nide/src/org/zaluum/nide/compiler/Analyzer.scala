@@ -55,7 +55,31 @@ trait Scope {
   def enter[S <: Symbol](sym: S): S
   def root: Symbol
 }
-
+trait RootSymbol extends Scope with Symbol{
+  val owner = NoSymbol
+  val name = null
+  scope = this
+  private def fail = throw new  UnsupportedOperationException()
+  def lookupPort(name: Name): Option[Symbol] = fail
+  def lookupVal(name: Name): Option[Symbol] = fail
+  def lookupBoxTypeLocal(name: Name): Option[Type] = fail
+  def enter[S <: Symbol](sym: S): S = fail
+  def root: Symbol = this
+  object primitives {
+    private def n(str: String, desc: String) = new PrimitiveJavaType(root, Name(str), desc)
+    val byte = n("byte", "B")
+    val short = n("short", "S")
+    val int = n("int", "I")
+    val long = n("long", "J")
+    val float = n("float", "F")
+    val double = n("double", "D")
+    val boolean = n("boolean", "Z")
+    val char = n("char", "C")
+    val allTypes = List(byte, short, int, long, float, double, boolean, char)
+    def find(desc: String) = allTypes.find(_.descriptor == desc)
+    def find(name: Name) = allTypes.find(_.name == name)
+  }
+}
 class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for presentation compiler
   case object fakeRoot extends Symbol {
     val owner = NoSymbol

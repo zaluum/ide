@@ -8,13 +8,12 @@ import org.eclipse.draw2d.IFigure
 import scala.collection.mutable.Buffer
 import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import org.zaluum.nide.compiler._
 
 trait ViewerResources { // XXX rename
   def imageFactory: ImageFactory
 }
-class TreeViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
+class TreeViewer(parent: Composite, controller: Controller, val global: RootSymbol)
   extends ItemViewer(parent, controller) with ContainerItem with ViewerResources with ClipboardViewer {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)

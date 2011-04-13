@@ -11,10 +11,10 @@ import org.eclipse.swt.events._
 import org.eclipse.swt.SWT
 
 import org.zaluum.nide.compiler._
-import org.zaluum.nide.eclipse.EclipseBoxClasspath
 import scala.collection.mutable.Buffer
 import org.eclipse.draw2d.{IFigure,LayoutListener}
-class GuiViewer(parent: Composite, controller: Controller, val global: EclipseBoxClasspath)
+import org.zaluum.nide.eclipse.ZaluumProject
+class GuiViewer(parent: Composite, controller: Controller, val global: ZaluumProject)
   extends ItemViewer(parent, controller) with ContainerItem with ViewerResources {
   /*TOOLS*/
   lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)

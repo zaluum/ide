@@ -1,15 +1,10 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.compiler.SelectionSubject
-import org.zaluum.nide.compiler.TreeToClass
-import org.zaluum.nide.compiler.MapTransformer
-import org.zaluum.nide.compiler.PrettyPrinter
-import org.zaluum.nide.compiler.BoxDef
-import org.zaluum.nide.eclipse.EclipseBoxClasspath
-import org.zaluum.nide.compiler.{ Tree, Analyzer, Transformer, FakeGlobalScope, Reporter }
+import org.zaluum.nide.eclipse.ZaluumProject
+import org.zaluum.nide.compiler._
 import scala.collection.mutable.{ Buffer, Stack }
 
-class Controller(private var nowTree: Tree, val global: EclipseBoxClasspath) {
+class Controller(private var nowTree: Tree, val global: ZaluumProject) {
   private var viewers = Buffer[Viewer]()
   def registerViewer(viewer: Viewer) {
     viewers += viewer

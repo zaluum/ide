@@ -9,8 +9,8 @@ import org.eclipse.jdt.core.{ IJavaProject, IClasspathEntry }
 import scala.util.control.Exception._
 
 trait EclipseUtils {
-  def jproject: IJavaProject
-  def project = jproject.getProject
+  def jProject: IJavaProject
+  def project = jProject.getProject
   def visitSourceZaluums(body: IFile ⇒ Unit) {
     project.accept(
       new IResourceVisitor {
@@ -24,7 +24,7 @@ trait EclipseUtils {
       })
   }
   def isSourceCP(e: IClasspathEntry) = e.getEntryKind == IClasspathEntry.CPE_SOURCE
-  def sourcePaths = jproject.getResolvedClasspath(true) collect { case p if isSourceCP(p) ⇒ p.getPath }
+  def sourcePaths = jProject.getResolvedClasspath(true) collect { case p if isSourceCP(p) ⇒ p.getPath }
   def isSource(file: IFile) = { sourcePaths exists (p ⇒ p.isPrefixOf(file.getFullPath)) }
   def toClassName(f: IFile): Option[Name] = {
     val path = f.getFullPath
@@ -69,7 +69,7 @@ trait EclipseUtils {
       }
   }
   def getResource(str: String): Option[URL] = {
-    val cpaths = jproject.getResolvedClasspath(true)
+    val cpaths = jProject.getResolvedClasspath(true)
     cpaths.view.flatMap { cp ⇒ pathFileToURL(cp.getPath, str) } headOption
   }
 }
