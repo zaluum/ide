@@ -3,8 +3,8 @@ package org.zaluum.math;
 import org.zaluum.runtime.Box;
 
 @Box
-public class Sum extends DoubleOp2{
+public class Sqrt extends DoubleOp1{
   public void apply(){
-    o = a+b;
+    o = Math.sqrt(a);
   }
 }

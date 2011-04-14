@@ -356,8 +356,8 @@ trait ConnectionHelper extends ReporterAdapter {
         case (In, b: BoxPortKeySym) ⇒ false
         case (Out, v: ValPortKeySym) ⇒ false
         case (Out, b: BoxPortKeySym) ⇒ true
-        case (Shift, v: ValPortKeySym) ⇒ r.port.decl.asInstanceOf[PortRef].in // FIXME super ports don't have decl
-        case (Shift, b: BoxPortKeySym) ⇒ r.port.decl.asInstanceOf[PortRef].in
+        case (Shift, v: ValPortKeySym) ⇒ ap.toRef.in // FIXME super ports don't have decl
+        case (Shift, b: BoxPortKeySym) ⇒ ap.toRef.in
       }
     }.getOrElse { println("true"); true }
   }
