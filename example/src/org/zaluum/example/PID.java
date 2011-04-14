@@ -13,7 +13,6 @@ public class PID {
 	@In(x=0,y=30) public double d = 0.01;
 	@In(x=0,y=35) public double timeStep = 0.01;
 	@Out(x=48,y=24) public double out = 0.0;
-	
 	public void apply() {
 		double err = signal - setPoint;
 		out = err * p;

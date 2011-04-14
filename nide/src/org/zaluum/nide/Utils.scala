@@ -60,8 +60,8 @@ object RichCast {
 }
 trait Subject {
   private var observers = List[Observer]()
-  def addObserver(observer: Observer) = observers ::= observer
-  def removeObserver(observer: Observer) = observers filterNot (_ == observer)
+  def addObserver(observer: Observer) = if (!observers.contains(observer)) observers ::= observer
+  def removeObserver(observer: Observer) = observers = observers filterNot (_ == observer)
   def notifyObservers = observers foreach (_.receiveUpdate(this))
 }
 trait Observer {
