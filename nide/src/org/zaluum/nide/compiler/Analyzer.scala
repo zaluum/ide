@@ -139,6 +139,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
     override def traverse(tree: Tree) {
       tree match {
         case BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
+          println("analyzing " + name)
           val cl = Some(Name(classOf[JPanel].getName))
           val newSym = new BoxTypeSymbol(currentOwner, name, superName, image, cl)
           val sym = defineBox(newSym, tree)
@@ -146,8 +147,10 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
           superName foreach { sn ⇒
             currentScope.lookupBoxType(sn) match {
               case Some(bs: BoxTypeSymbol) ⇒
-                sym.superSymbol = Some(bs)
+                println("super = " + bs)
+                sym._superSymbol = Some(bs)
               case None ⇒
+                println ("not found" + sn)
                 error("Super box type not found " + sn, tree)
             }
           }

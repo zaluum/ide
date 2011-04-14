@@ -41,6 +41,7 @@ class ZaluumSearcher(val zProject : ZaluumProject) extends EclipseUtils with Zal
       signatureToName(t, f.getTypeSignature)
     }
     val superName = signatureToName(t, t.getSuperclassTypeSignature)
+    println(fqn + " supername " + superName)
     val bs = new BoxTypeSymbol(zProject, fqn, superName, img, guiClass, Flags.isAbstract(t.getFlags()))
     bs.scope = zProject
     

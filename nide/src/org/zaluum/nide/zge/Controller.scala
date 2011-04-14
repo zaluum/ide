@@ -5,7 +5,7 @@ import org.zaluum.nide.Observer
 import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.compiler._
 import scala.collection.mutable.{ Buffer, Stack }
-
+import org.zaluum.nide.Utils.inSWT
 class Controller(private var nowTree: Tree, val global: ZaluumProject) {
   private var viewers = Buffer[Viewer]()
   def registerViewer(viewer: Viewer) {
@@ -16,10 +16,17 @@ class Controller(private var nowTree: Tree, val global: ZaluumProject) {
     viewers -= viewer
   }
   def updateViewers(map: Map[SelectionSubject, SelectionSubject]) {
-    viewers foreach { v ⇒ v.remapSelection(map); v.refresh() }
+    viewers foreach { v ⇒ 
+      inSWT{
+        v.remapSelection(map); 
+        v.refresh(); 
+      }(v.display)
+    }
   }
   val observer = new Observer {
-    def receiveUpdate(subject: Subject) { recompile }
+    def receiveUpdate(subject: Subject) {
+      recompile
+    }
   }
   global.addObserver(observer)
   def dispose() { global.removeObserver(observer) }

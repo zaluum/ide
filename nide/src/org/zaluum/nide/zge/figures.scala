@@ -46,7 +46,7 @@ trait ValFigure extends ValDefItem with HasPorts {
     ports.clear
     sym.tpe match {
       case b: BoxTypeSymbol ⇒
-        b.declaredPorts.values.foreach {
+        b.portsWithSuper.values.foreach{
           case s: PortSymbol ⇒
             val p = new PortFigure(container)
             p.update(s.extPos + Vector2(getBounds.x, getBounds.y), s, sym, s.dir == In)

@@ -127,7 +127,18 @@ class BoxTypeSymbol(
       }
     }
   }
-  var superSymbol: Option[BoxTypeSymbol] = None
+  var _superSymbol: Option[BoxTypeSymbol] = None
+  def superSymbol = {
+    _superSymbol match {
+      case Some(s) => _superSymbol
+      case None => superName match {
+        case Some(sn) =>
+          _superSymbol = scope.lookupBoxType(sn).asInstanceOf[Option[BoxTypeSymbol]]
+          _superSymbol
+        case None => None
+      }
+    }
+  }
   var source: String = "" // TODO
   def valsInOrder = boxes.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[ValSymbol]]
   def IOInOrder = ports.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[IOSymbol]]
