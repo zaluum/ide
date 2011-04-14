@@ -62,16 +62,8 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def project = inputFile.getProject
   def zproject = ZaluumModelMananger.getOrCreate(project)
   def input = inputFile.getContents(true)
-  val observer = new Observer {
-    def receiveUpdate(subject: Subject) {
-      println("refresh" + this)
-      controller.recompile
-    }
-  }
-  var zp : ZaluumProject = null
   def createPartControl(parent: Composite) {
-    zp = zproject.get // XXX better
-    zp.addObserver(observer)
+    val zp = zproject.get // XXX better
     val className = zp.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
     val proto = BoxFileProtos.BoxClassDef.parseFrom(input)
     val tree = Parser.parse(proto,Some(className)) 
@@ -107,7 +99,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   override def dispose() {
     controller.removeListener(fireDirty)
     viewer.dispose()
-    zp.removeObserver(observer)
+    controller.dispose()
     shell foreach { s => if (!s.isDisposed) s.dispose } 
   }
   override def gotoMarker(marker: IMarker) {

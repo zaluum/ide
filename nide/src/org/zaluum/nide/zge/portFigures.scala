@@ -90,7 +90,7 @@ object PortDeclFigure {
   }
   def img(dir: PortDir) = "org/zaluum/nide/icons/portDecl" + str(dir) + ".png"
 }
-abstract class PortHolderFigure(val container: ContainerItem) extends ImageFigure with Item with HasPorts with RectFeedback {
+abstract class PortHolderFigure(val container: ContainerItem) extends AutoDisposeImageFigure with Item with HasPorts with RectFeedback {
   def sym: PortSymbol
   def myLayer = container.layer
   def pos: MPoint
@@ -99,7 +99,8 @@ abstract class PortHolderFigure(val container: ContainerItem) extends ImageFigur
   val port = new PortFigure(container)
   ports += port
   def update() {
-    val image = container.viewerResources.imageFactory.get(PortDeclFigure.img(dir)).get
+    disposeImage()
+    val image = container.viewerResources.imageFactory.load(PortDeclFigure.img(dir)).get
     setImage(image)
     size = Dimension(image.getBounds.width, image.getBounds.height)
     updateSize()

@@ -57,10 +57,17 @@ trait ValFigure extends ValDefItem with HasPorts {
     }
   }
 }
-class ImageValFigure(val container: ContainerItem) extends ImageFigure with ValFigure with RectFeedback {
+trait AutoDisposeImageFigure extends ImageFigure {
+  def disposeImage() {
+    if (getImage!=null) getImage.dispose
+  }
+}
+class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def updateMe() {
-    setImage(container.viewerResources.imageFactory(valDef.tpe))
+    disposeImage()
+    val newImg = container.viewerResources.imageFactory(valDef.tpe)
+    setImage(newImg)
   }
 }
 class DirectValFigure(val container: ContainerItem) extends TextEditFigure with ValFigure {

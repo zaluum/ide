@@ -31,9 +31,10 @@ class Palette(viewer: TreeViewer, mainShell: Shell, proj: ZaluumProject) extends
       data.horizontalAlignment = SWT.CENTER
       b.setLayoutData(data)
       b.setToolTipText("Port " + desc)
-      val image = viewer.imageFactory.get(PortDeclFigure.img(dir)).get
+      val image = viewer.imageFactory.load(PortDeclFigure.img(dir)).get
       b.setImage(image)
       b.setSize(48, 48)
+      addOnDispose(b) {image.dispose()}
       addReaction(b) {
         viewer.tool.state.abort()
         viewer.tool.creatingPort.enter(dir,container)
@@ -65,7 +66,9 @@ class Palette(viewer: TreeViewer, mainShell: Shell, proj: ZaluumProject) extends
     val classes = proj.allBoxes.filter { !_.abstractCl }.toBuffer.sortWith(_.name.toString < _.name.toString)
     for (tpe ← classes) {
       val bc = tpe.asInstanceOf[BoxTypeSymbol]
-      val b = createButton(bc.name.str, viewer.imageFactory(bc))
+      val img = viewer.imageFactory(bc)
+      val b = createButton(bc.name.str, img)
+      addOnDispose(b){img.dispose}
       addReaction(b) {
         viewer.tool.state.abort()
         viewer.tool.creating.enter(bc,container)

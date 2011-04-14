@@ -17,29 +17,23 @@ import org.eclipse.swt.widgets.{ Display, Shell, Composite }
 import org.zaluum.nide.icons.Icons
 
 class ImageFactory(val display: Display, bcp: ClassPath) {
-  val reg = new ImageRegistry
-  reg.put("*", ImageDescriptor.createFromFile(classOf[Icons], "notFound.png"))
-  def notFound = reg.get("*")
-  def get(resource: String) = {
-    Option(reg.get(resource)) orElse {
-      val url = bcp.getResource(resource);
-      url map { u ⇒
-        reg.put(resource, ImageDescriptor.createFromURL(u))
-        reg.get(resource)
-      }
+  def notFound = ImageDescriptor.createFromFile(classOf[Icons], "notFound.png").createImage()
+  def load(resource: String) = {
+    val url = bcp.getResource(resource);
+    url map { u ⇒
+      ImageDescriptor.createFromURL(u).createImage()
     }
   }
   def apply(tpe: Type): Image = {
     tpe match {
       case b: BoxTypeSymbol ⇒ imageFor(b.image, b.name)
-      // TODO port case?
       case _ ⇒ notFound
     }
   }
   private def imageFor(image: Option[String], name: Name) = {
     def defaultImage(name: Name) = name.toRelativePath + ".png";
-    def fallbackImage(name: Name) = get(defaultImage(name)).getOrElse { generateImage(name.classNameWithoutPackage) }
-    image.flatMap { get(_) }.getOrElse(fallbackImage(name))
+    def fallbackImage(name: Name) = load(defaultImage(name)).getOrElse { generateImage(name.classNameWithoutPackage) }
+    image.flatMap { load(_) }.getOrElse(fallbackImage(name))
   }
   def apply(typeTree: Tree): Image = {
     typeTree match {
@@ -47,7 +41,7 @@ class ImageFactory(val display: Display, bcp: ClassPath) {
       case _ ⇒ notFound
     }
   }
-  def generateImage(txt: String): Image = {
+  private def generateImage(txt: String): Image = {
     val img = new Image(display, 48, 48);
     val gc = new GC(img)
     val font = new Font(display, "Arial", 6, SWT.NONE);
@@ -64,10 +58,10 @@ class SelectionManager[A] {
   def currentSelected = selected
   override def toString = selected.toString
   def isEmpty = selected.isEmpty
-  protected var listeners = Set[() => Unit]()
-  def addListener(a:()=>Unit) {listeners +=a}
-  def removeListener(a:()=>Unit)  {listeners -=a}
-  def notifyListeners() { listeners foreach {_()}}
+  protected var listeners = Set[() ⇒ Unit]()
+  def addListener(a: () ⇒ Unit) { listeners += a }
+  def removeListener(a: () ⇒ Unit) { listeners -= a }
+  def notifyListeners() { listeners foreach { _() } }
   def refresh(f: PartialFunction[A, A]) {
     selected = selected flatMap { f.lift(_) }
     notifyListeners()
@@ -78,7 +72,7 @@ class SelectionManager[A] {
     else selected += f
     notifyListeners()
   }
-  def deselectAll() { 
+  def deselectAll() {
     selected = selected.empty
     notifyListeners()
   }
@@ -135,10 +129,10 @@ abstract class ScrollPopup(mainShell: Shell) {
   }
 }
 object DotPainter {
-  def dotFill(graphics : Graphics, b:Rectangle) {
+  def dotFill(graphics: Graphics, b: Rectangle) {
     graphics.fillRectangle(b);
     for (i ← 0 to b.width by 15; j ← 0 to b.height by 15) {
       graphics.drawPoint(i, j);
-    }    
+    }
   }
 }

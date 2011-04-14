@@ -184,6 +184,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       val img = viewer.imageFactory(tpe.decl);
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
+      img.dispose()
       feed.show()
     }
     def move() { feed.setInnerLocation(point(currentMouseLocation)) }
@@ -222,9 +223,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       enterSingle(initContainer)
       state = this
       this.dir = dir
-      val img = viewer.imageFactory.get(PortDeclFigure.img(dir)).get
+      val img = viewer.imageFactory.load(PortDeclFigure.img(dir)).get
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
+      img.dispose()
       feed.show()
     }
     var feed: ItemFeedbackFigure = _

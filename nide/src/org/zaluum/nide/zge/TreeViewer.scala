@@ -62,7 +62,6 @@ class TreeViewer(parent: Composite, controller: Controller, val global: RootSymb
   }
   override def dispose() {
     super.dispose()
-    imageFactory.reg.dispose
   }
   import RichFigure._
   def remapSelection(m: PartialFunction[SelectionSubject, SelectionSubject]) {

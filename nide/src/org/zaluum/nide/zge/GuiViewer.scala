@@ -36,7 +36,6 @@ class GuiViewer(parent: Composite, controller: Controller, val global: ZaluumPro
   var buttonDown : Boolean =true
   override def dispose() {
     super.dispose()
-    imageFactory.reg.dispose
   }
   import RichFigure._
   def remapSelection(m: PartialFunction[SelectionSubject, SelectionSubject]) {

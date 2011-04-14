@@ -38,6 +38,14 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
     marquee.setLineStyle(SWT.LINE_DASH);
     //UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
   }
+  import RichFigure._
+  override def dispose() {
+    this.deepChildren foreach { _ match {
+        case a : AutoDisposeImageFigure => a.disposeImage()
+      }
+    }
+    super.dispose()
+  }
   /*DEFS*/
   def showMarquee() { feedbackLayer.add(marquee) }
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }

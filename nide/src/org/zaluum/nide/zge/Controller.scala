@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.Subject
+import org.zaluum.nide.Observer
 import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.compiler._
 import scala.collection.mutable.{ Buffer, Stack }
@@ -16,6 +18,11 @@ class Controller(private var nowTree: Tree, val global: ZaluumProject) {
   def updateViewers(map: Map[SelectionSubject, SelectionSubject]) {
     viewers foreach { v ⇒ v.remapSelection(map); v.refresh() }
   }
+  val observer = new Observer {
+    def receiveUpdate(subject: Subject) { recompile }
+  }
+  global.addObserver(observer)
+  def dispose() { global.removeObserver(observer) }
   def refreshTools() { viewers foreach { _.tool.refresh() } }
   def tree = nowTree
   val reporter = new Reporter()
