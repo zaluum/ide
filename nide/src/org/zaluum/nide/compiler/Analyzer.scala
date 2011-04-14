@@ -7,7 +7,7 @@ import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import scala.collection.mutable.Buffer
 
-/*   def isValidJavaIdentifier(s: String) = {
+/* TODO  def isValidJavaIdentifier(s: String) = {
     s != null &&
       s.length != 0 &&
       Character.isJavaIdentifierStart(s(0)) &&
@@ -47,6 +47,7 @@ case class Name(str: String) {
   def internal = str.replace('.', '/')
 }
 trait Scope {
+  def alreadyDefinedBoxType(name:Name):Boolean
   def lookupPort(name: Name): Option[Symbol]
   def lookupVal(name: Name): Option[Symbol]
   def lookupType(name: Name): Option[Type]
@@ -91,10 +92,11 @@ class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for
 class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   protected var ports = Map[Name, Symbol]()
   protected var vals = Map[Name, Symbol]()
-  protected var boxes = Map[Name, Type]()
+  protected var boxes = Map[Name, Type]()  
   def lookupPort(name: Name): Option[Symbol] = ports.get(name)
   def lookupVal(name: Name): Option[Symbol] = vals.get(name)
   def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name)
+  def alreadyDefinedBoxType(name:Name) : Boolean = boxes.get(name).isDefined
   def lookupBoxType(name: Name): Option[Type] =
     boxes.get(name) orElse { enclosingScope.lookupBoxType(name) }
   def lookupBoxTypeLocal(name: Name): Option[Type] = boxes.get(name)
@@ -115,13 +117,13 @@ trait ReporterAdapter {
   def reporter: Reporter
   def error(str: String, tree: Tree) = reporter.report(str, Some(location(tree)))
 }
-class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope) {
+class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalScope) {
   def globLocation(t: Tree) = Location(toCompile.pathOf(t).getOrElse(throw new Exception("error")))
   class Namer(initOwner: Symbol) extends Traverser(initOwner) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
     def defineBox(symbol: BoxTypeSymbol, tree: Tree): BoxTypeSymbol =
-      define(symbol, currentScope, currentScope.lookupBoxType(symbol.name).isDefined, tree)
+      define(symbol, currentScope, currentScope.alreadyDefinedBoxType(symbol.name), tree) // TODO check already defined in another file
     def defineVal(symbol: Symbol, tree: Tree): Symbol =
       define(symbol, currentScope, currentScope.lookupVal(symbol.name).isDefined, tree)
     def definePort(symbol: Symbol, tree: Tree): Symbol =
@@ -324,6 +326,12 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
         bs.executionOrder = topo.toList
       }
     }
+  }
+  def shallowCompile() : Tree = { 
+    val root=global.root
+    new Namer(root).traverse(toCompile)
+    new Resolver(root).traverse(toCompile) // XXX make it shallower
+    toCompile 
   }
   def compile(): Tree = {
     val root = global.root

@@ -33,6 +33,7 @@ class ZaluumProject(val jProject: IJavaProject) extends RootSymbol with GlobalCl
 
   def lookupType(name: Name) = typeCache.get(name)
   def lookupBoxType(name: Name) = boxTypeCache.get(name)
+  def alreadyDefinedBoxType(name:Name) = false
   def allBoxes = allBoxesOnce.get()
   def reset() {
     typeCache.reset()
@@ -42,6 +43,7 @@ class ZaluumProject(val jProject: IJavaProject) extends RootSymbol with GlobalCl
   }
   def onChanged(res:IResource) {
     if (jProject.isOnClasspath(res)) {
+      //TODO refine the reset and notify should only affect controller that depend on changed resources
       reset()
       notifyObservers
     }

@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse;
 
+import java.io.InputStream
 import org.zaluum.nide.compiler.Reporter
 import org.zaluum.nide.protobuf.BoxFileProtos
 import org.zaluum.nide.compiler._
@@ -12,6 +13,10 @@ import org.eclipse.jdt.internal.core.JavaModelManager
 object ZaluumBuilder {
   val BUILDER_ID = "org.zaluum.nide.zaluumBuilder";
   val MARKER_TYPE = "org.zaluum.nide.zaluumProblem";
+  def readTree(i:InputStream,className:Name) = {
+    val proto = BoxFileProtos.BoxClassDef.parseFrom(i)
+    Parser.parse(proto, Some(className))
+  }
 }
 class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
 
@@ -67,8 +72,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
     val reporter = new Reporter
     try {
       pr.toClassName(f) foreach { className ⇒
-        val proto = BoxFileProtos.BoxClassDef.parseFrom(f.getContents(true))
-        val tree = Parser.parse(proto, Some(className))
+        val tree = ZaluumBuilder.readTree(f.getContents(true),className)
         val scope = new FakeGlobalScope(pr)
         val analyzedTree = new Analyzer(reporter, tree, scope).compile()
         def generate(tree: Tree) {
@@ -106,7 +110,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
     getProject.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
     ZaluumModelMananger.getOrCreate(getProject) foreach { zp => 
       zp.reset()
-      visitSourceZaluums { f ⇒ compile(f, zp) }      
+      visitSourceZaluums.map { f ⇒ compile(f, zp) }      
     }
   }
 

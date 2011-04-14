@@ -1,5 +1,7 @@
 package org.zaluum.nide.eclipse
 
+import java.io.InputStream
+import org.zaluum.nide.protobuf.BoxFileProtos
 import java.net.{URL, URLClassLoader}
 import org.eclipse.core.runtime.IPath
 import org.eclipse.jdt.core.search.SearchPattern
@@ -7,7 +9,7 @@ import org.eclipse.jdt.core.{IType, IJavaProject, IAnnotation, IClasspathEntry, 
 import org.zaluum.nide.compiler._
 import org.zaluum.runtime.{BoxImage, Box}
 
-class ZaluumSearcher(val zProject : ZaluumProject) {
+class ZaluumSearcher(val zProject : ZaluumProject) extends EclipseUtils with ZaluumLoader{
   import AnnotationUtils._
   import SearchUtils._
   def jProject = zProject.jProject
@@ -19,14 +21,17 @@ class ZaluumSearcher(val zProject : ZaluumProject) {
     search(classAndInterface(name.str), jProject) { t ⇒ toJavaType(name) } headOption
   
   def searchBoxType(name: Name): Option[BoxTypeSymbol] =
-    search(classAndInterface(name.str),jProject) { t ⇒ toBoxTypeSymbol(t) } headOption
+    searchSourceZaluum(name.str) orElse {
+      search(classAndInterface(name.str),jProject) { t ⇒ toBoxTypeSymbol(t) } headOption
+    }
 
   def searchVisibleBoxTypes : List[BoxTypeSymbol] = {
-    search(patternAnnotation(classOf[Box].getName),jProject) { toBoxTypeSymbol(_) }
+    search(patternAnnotation(classOf[Box].getName),jProject) { toBoxTypeSymbol(_) } ++
+    allSourceZaluums
   }
+  
   private def toJavaType(t: IType): JavaType = new JavaType(zProject, Name(t.getElementName)) 
   private def toJavaType(name: Name): JavaType = new JavaType(zProject, name)
-
   def toBoxTypeSymbol(t: IType): BoxTypeSymbol = {
     val fqn = Name(t.getFullyQualifiedName)
     val img = findAnnotations(t, t, classOf[BoxImage].getName).headOption flatMap { a ⇒
@@ -72,5 +77,43 @@ class ZaluumSearcher(val zProject : ZaluumProject) {
           }
       }
     }
+  }
+}
+trait ZaluumLoader {
+  self : ZaluumSearcher =>
+  private def shallowAnalize(t:BoxDef) : Option[BoxTypeSymbol]= {
+    val scope = new FakeGlobalScope(zProject)
+    val reporter = new Reporter()
+    val analyzedTree = new Analyzer(reporter, t, scope).shallowCompile()
+    analyzedTree.symbol match {
+      case b:BoxTypeSymbol => Some(b)
+      case _ => None
+    }
+  }
+  private def zaluumToSymbol(i:InputStream,name:Name) : Option[BoxTypeSymbol] = {
+    try{
+        shallowAnalize(ZaluumBuilder.readTree(i,name))
+    }catch {
+      case e => 
+        e.printStackTrace; 
+        None
+    }
+  }
+  def allSourceZaluums() = {
+    for (f <- visitSourceZaluums;
+      cl <- toClassName(f);
+      val i = f.getContents;
+      z<-zaluumToSymbol(i,cl)) yield z
+  }
+  def searchSourceZaluum(dotName:String) = {
+    sourcePaths.view.flatMap{ path => 
+        val filePath = path.append(dotName.replace('.','/')).addFileExtension("zaluum")
+        pathToURL(filePath) flatMap { url =>
+          val i =url.openStream
+          try {
+            zaluumToSymbol(i,Name(dotName))
+          }finally(i.close)
+        } 
+    }.headOption
   }
 }

@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse
 
+import scala.collection.mutable.Buffer
 import org.zaluum.nide.compiler.Name
 import org.eclipse.core.runtime.Path
 import java.net.URL
@@ -11,17 +12,19 @@ import scala.util.control.Exception._
 trait EclipseUtils {
   def jProject: IJavaProject
   def project = jProject.getProject
-  def visitSourceZaluums(body: IFile ⇒ Unit) {
+  def visitSourceZaluums : Seq[IFile] = {
+    val b= Buffer[IFile]()
     project.accept(
       new IResourceVisitor {
         def visit(resource: IResource) = resource match {
           case f: IFile if ("zaluum" == f.getFileExtension && isSource(f)) ⇒
-            body(f)
+            b+=f
             false
           case c: IContainer ⇒ true
           case _ ⇒ true
         }
       })
+    b.toSeq
   }
   def isSourceCP(e: IClasspathEntry) = e.getEntryKind == IClasspathEntry.CPE_SOURCE
   def sourcePaths = jProject.getResolvedClasspath(true) collect { case p if isSourceCP(p) ⇒ p.getPath }
