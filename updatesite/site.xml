@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/org.zaluum.ide.feature_1.0.0.201005201857.jar" id="org.zaluum.ide.feature" version="1.0.0.201005201857">
+   <description name="Zaluum update site">
+      Zaluum plugin
+   </description>
+   <feature url="features/org.zaluum.nide.feature_1.0.0.201104150006.jar" id="org.zaluum.nide.feature" version="1.0.0.201104150006">
       <category name="zaluum"/>
    </feature>
    <category-def name="zaluum" label="Zaluum"/>

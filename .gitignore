@@ -1,3 +1,6 @@
 bin/
 .scala_dependencies
 jchart2d/
+updatesite/*.jar
+updatesite/features
+updatesite/plugins
