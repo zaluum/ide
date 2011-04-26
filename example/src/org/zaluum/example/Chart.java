@@ -17,11 +17,11 @@ public class Chart {
   public Chart2D _widget;
   public Chart() {
     _widget = new Chart2D();
-    trace = new Trace2DLtd(500);
+    trace = new Trace2DLtd(2000);
     trace.setColor(Color.BLUE);
     _widget.addTrace(trace);
     _widget.getAxisX().setPaintScale(true);
-    _widget.getAxisX().setRangePolicy(new MyRangePolicy(500));
+    _widget.getAxisX().setRangePolicy(new MyRangePolicy(2000));
     _widget.setPaintLabels(false);
     //_widget = new ChartPanel(chart);
   }
