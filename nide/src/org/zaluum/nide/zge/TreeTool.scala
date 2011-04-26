@@ -176,12 +176,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   abstract class Creating extends ToolState {
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
-    var tpe: BoxTypeSymbol = _
-    def enter(tpe: BoxTypeSymbol, initContainer: ContainerItem) {
+    var tpeName: Name = _
+    def enter(tpename: Name, initContainer: ContainerItem) {
       enterSingle(initContainer)
-      this.tpe = tpe
+      this.tpeName = tpename
       state = this
-      val img = viewer.imageFactory(tpe.decl);
+      val img = viewer.imageFactory(tpeName);
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
       img.dispose()
@@ -195,11 +195,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
-            val params = tpe.params.map { p ⇒ Param(p.name, p.default) }.toList
+            //val params = tpe.params.map { p ⇒ Param(p.name, p.default) }.toList
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
             BoxDef(b.name, b.superName, guiSize = b.guiSize, b.image,
               transformTrees(b.defs),
-              ValDef(name, tpe.name, dst, None, None, None, params) :: transformTrees(b.vals),
+              ValDef(name, tpeName, dst, None, None, None, List()) :: transformTrees(b.vals),
               transformTrees(b.ports),
               transformTrees(b.connections),
               transformTrees(b.junctions))

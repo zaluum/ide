@@ -24,6 +24,9 @@ class ImageFactory(val display: Display, bcp: ClassPath) {
       ImageDescriptor.createFromURL(u).createImage()
     }
   }
+  def apply(name : Name) : Image = {
+    imageFor(None,name);
+  }
   def apply(tpe: Type): Image = {
     tpe match {
       case b: BoxTypeSymbol ⇒ imageFor(b.image, b.name)

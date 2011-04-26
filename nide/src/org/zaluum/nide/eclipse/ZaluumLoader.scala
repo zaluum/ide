@@ -9,7 +9,7 @@ import org.eclipse.jdt.core.{IType, IJavaProject, IAnnotation, IClasspathEntry, 
 import org.zaluum.nide.compiler._
 import org.zaluum.runtime.{BoxImage, Box}
 
-class ZaluumSearcher(val zProject : ZaluumProject) extends EclipseUtils with ZaluumLoader{
+class ZaluumLoader(val zProject : ZaluumProject) extends EclipseUtils{
   import AnnotationUtils._
   import SearchUtils._
   def jProject = zProject.jProject
@@ -25,9 +25,10 @@ class ZaluumSearcher(val zProject : ZaluumProject) extends EclipseUtils with Zal
       search(classAndInterface(name.str),jProject) { t ⇒ toBoxTypeSymbol(t) } headOption
     }
 
-  def searchVisibleBoxTypes : List[BoxTypeSymbol] = {
-    search(patternAnnotation(classOf[Box].getName),jProject) { toBoxTypeSymbol(_) } ++
-    allSourceZaluums
+  def index : Seq[Name] = indexZaluum ++ indexJava
+  private def indexZaluum = for (f <- visitSourceZaluums;cl <- toClassName(f)) yield cl
+  private def indexJava = search(patternAnnotation(classOf[Box].getName),jProject) { 
+     t=> Name(t.getFullyQualifiedName)
   }
   
   private def toJavaType(t: IType): JavaType = new JavaType(zProject, Name(t.getElementName)) 
@@ -79,9 +80,6 @@ class ZaluumSearcher(val zProject : ZaluumProject) extends EclipseUtils with Zal
       }
     }
   }
-}
-trait ZaluumLoader {
-  self : ZaluumSearcher =>
   private def shallowAnalize(t:BoxDef) : Option[BoxTypeSymbol]= {
     val scope = new FakeGlobalScope(zProject)
     val reporter = new Reporter()
@@ -100,13 +98,7 @@ trait ZaluumLoader {
         None
     }
   }
-  def allSourceZaluums() = {
-    for (f <- visitSourceZaluums;
-      cl <- toClassName(f);
-      val i = f.getContents;
-      z<-zaluumToSymbol(i,cl)) yield z
-  }
-  def searchSourceZaluum(dotName:String) = {
+  def searchSourceZaluum(dotName:String) : Option[BoxTypeSymbol]= {
     sourcePaths.view.flatMap{ path => 
         val filePath = path.append(dotName.replace('.','/')).addFileExtension("zaluum")
         pathToURL(filePath) flatMap { url =>

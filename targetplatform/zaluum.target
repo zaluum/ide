@@ -57,5 +57,10 @@
 <unit id="org.eclipse.draw2d.sdk.feature.group" version="3.6.2.v20110128-0100-7A7G38yE6F08CAO499J539958x42"/>
 <repository location="http://download.eclipse.org/tools/gef/updates/releases/"/>
 </location>
+<location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
+<unit id="org.eclipse.contribution.weaving.feature.group" version="2.1.3.e36x-20110421-0800"/>
+<unit id="org.eclipse.equinox.weaving.sdk.feature.group" version="1.0.0.v20090817"/>
+<repository location="http://download.eclipse.org/tools/ajdt/36/dev/update"/>
+</location>
 </locations>
 </target>

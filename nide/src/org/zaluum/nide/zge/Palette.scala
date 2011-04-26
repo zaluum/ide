@@ -63,15 +63,14 @@ class Palette(viewer: TreeViewer, mainShell: Shell, proj: ZaluumProject) extends
       viewer.canvas.setFocus()
       hide()
     }
-    val classes = proj.allBoxes.filter { !_.abstractCl }.toBuffer.sortWith(_.name.toString < _.name.toString)
-    for (tpe ← classes) {
-      val bc = tpe.asInstanceOf[BoxTypeSymbol]
-      val img = viewer.imageFactory(bc)
-      val b = createButton(bc.name.str, img)
+    val names = proj.index.toBuffer.sortWith(_.toString < _.toString)
+    for (name ← names) {
+      val img = viewer.imageFactory(name)
+      val b = createButton(name.str, img)
       addOnDispose(b){img.dispose}
       addReaction(b) {
         viewer.tool.state.abort()
-        viewer.tool.creating.enter(bc,container)
+        viewer.tool.creating.enter(name,container)
         viewer.canvas.setFocus()
         hide()
       }

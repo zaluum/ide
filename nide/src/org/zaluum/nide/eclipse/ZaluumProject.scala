@@ -22,24 +22,18 @@ trait ClassPath {
   def getResource(str: String): Option[URL]
 }
 class ZaluumProject(val jProject: IJavaProject) extends RootSymbol with GlobalClassPath with Subject{
-  private lazy val zaluumSearcher = new ZaluumSearcher(this)
+  private lazy val zaluumSearcher = new ZaluumLoader(this)
   private val typeCache = new Cache(zaluumSearcher.searchJavaType(_: Name))
   private val boxTypeCache = new Cache(zaluumSearcher.searchBoxType(_: Name))
-  private def fillCache() = {
-    for (b ← zaluumSearcher.searchVisibleBoxTypes) boxTypeCache.add(b.name, b)
-    boxTypeCache.values
-  }
-  private val allBoxesOnce = new DoOnce(fillCache())(boxTypeCache.values)
-
+  
   def lookupType(name: Name) = typeCache.get(name)
   def lookupBoxType(name: Name) = boxTypeCache.get(name)
   def alreadyDefinedBoxType(name:Name) = false
-  def allBoxes = allBoxesOnce.get()
+  def index = zaluumSearcher.index
   def reset() {
     typeCache.reset()
     boxTypeCache.reset()
     refreshClassLoader
-    allBoxesOnce.reset()
   }
   def onChanged(res:IResource) {
     if (jProject.isOnClasspath(res)) {
