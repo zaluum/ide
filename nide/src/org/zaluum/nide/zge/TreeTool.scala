@@ -15,7 +15,7 @@ import org.zaluum.runtime.LoopBox
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
-  val connectionLineDistance = 3
+  val connectionLineDistance = 2
   object selecting extends Selecting with DeleteState with ClipboardState {
     var port: Option[PortFigure] = None
     override def doubleClick() {
@@ -27,19 +27,19 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def buttonUp {
       if (filterDouble) {filterDouble=false; return}
       (beingSelected, port) match {
-        case (Some(line: LineItem), _) ⇒
+        case (_, Some(port)) ⇒ // connect
+          portsTrack.hideTip()
+          connecting.enter(port.container, port, currentMouseLocation)
+        case (Some(line: LineItem), None) ⇒  
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
             viewer.selection.updateSelection(line.selectionSubject.toSet, shift)
             viewer.refresh()
           } else {
             connecting.enter(line.container, line, currentMouseLocation)
           }
-        case (Some(box: Item), _) ⇒
+        case (Some(box: Item), None) ⇒
           viewer.selection.updateSelection(box.selectionSubject.toSet, shift)
           viewer.refresh()
-        case (_, Some(port)) ⇒ // connect
-          portsTrack.hideTip()
-          connecting.enter(port.container, port, currentMouseLocation)
         case (None, _) ⇒
           viewer.selection.deselectAll()
           viewer.refresh()
@@ -53,14 +53,21 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     override def move() {
       super.move()
-      viewer.setCursor(Cursors.ARROW);
-      itemUnderMouse foreach {
-        case l: LineItem ⇒
-          if (l.l.distance(currentMouseLocation) > connectionLineDistance) 
-            viewer.setCursor(Cursors.CROSS)
-        case _ ⇒
-      }
       portsTrack.update()
+      (portsTrack.current,itemUnderMouse) match {
+        case (_,Some(l: LineItem)) if (l.l.distance(currentMouseLocation) > connectionLineDistance) => 
+          viewer.setCursor(Cursors.UPARROW)
+        case (None,Some(item)) ⇒
+          viewer.setCursor(Cursors.ARROW)
+        case (Some(_),_) =>
+          viewer.setCursor(Cursors.UPARROW)
+        case (None,None) =>
+          viewer.setCursor(Cursors.CROSS)
+          portsTrack.current match {
+            case Some(_) => 
+            case None => 
+          }
+      }
     }
     def drag {
       portsTrack.hideTip()
