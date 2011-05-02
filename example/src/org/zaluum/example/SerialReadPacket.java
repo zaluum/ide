@@ -8,12 +8,12 @@ import com.google.common.io.ByteStreams;
 
 @Box
 public class SerialReadPacket {
-	@In(x = 0, y = 10)   public SerialPortData port;
-	@Out(x = 48, y = 10) public SerialPortData portOut;
-	@Out(x = 48, y = 16) public double cs = 0;
-	@Out(x = 48, y = 24) public boolean diag;
-	@Out(x = 48, y = 32) public double volt = 0;
-	@Out(x = 48, y = 42) public double lin = 0;
+	@In   public SerialPortData port;
+	@Out public SerialPortData portOut;
+	@Out public double cs = 0;
+	@Out public boolean diag;
+	@Out public double volt = 0;
+	@Out public double lin = 0;
 	
 	public void apply() {
 		int packetLen = 7;

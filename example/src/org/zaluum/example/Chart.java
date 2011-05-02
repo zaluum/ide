@@ -11,7 +11,7 @@ import org.zaluum.runtime.In;
 
 @Box
 public class Chart {
-  @In(x = 0 , y = 24) public double data;
+  @In public double data;
   private ITrace2D trace;
   private long i = 0;
   public Chart2D _widget;

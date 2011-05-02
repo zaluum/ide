@@ -6,10 +6,10 @@ import org.zaluum.runtime.Out;
 
 @Box
 public class TicksToCurrent {
-	@In(x=0,y=16) public double currentTicks;
-	@Out(x=48,y=16) public double current;
-	@In(x=0,y=32) public double voltTicks;
-	@Out(x=48,y=32) public double volt;
+	@In public double currentTicks;
+	@Out public double current;
+	@In public double voltTicks;
+	@Out public double volt;
 	
 	public static double vPerTick = 16.00/955; 
 	

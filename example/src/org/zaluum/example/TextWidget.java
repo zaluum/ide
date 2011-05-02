@@ -9,8 +9,7 @@ import org.zaluum.runtime.In;
 
 @Box
 public class TextWidget {
-  @In(x=0,y=24)  
-  public boolean d ;
+  @In public boolean d ;
   public JTextField _widget = new JTextField();
   public TextWidget() {
 	  _widget.setEnabled(false);

@@ -9,7 +9,7 @@ import org.zaluum.runtime.Out;
 
 @Box
 public class SerialCreate {
-	@Out(x=48,y=24) public SerialPortData p;
+	@Out public SerialPortData p;
 	public void apply(){
 		try {
 			CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier("/dev/ttyUSB0");

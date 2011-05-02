@@ -102,7 +102,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
         case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
         case Some(o: OpenBoxFigure) ⇒
-        case Some(b: ImageValFigure) ⇒
+        case Some(b: ValFigure) ⇒ 
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)
       }
     }

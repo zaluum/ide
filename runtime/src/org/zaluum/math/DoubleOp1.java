@@ -4,6 +4,6 @@ import org.zaluum.runtime.In;
 import org.zaluum.runtime.Out;
 
 public abstract class DoubleOp1 {
-  @In(x=0,y=12) public double a;
-  @Out(x=48,y=24) public double o;
+  @In public double a;
+  @Out public double o;
 }

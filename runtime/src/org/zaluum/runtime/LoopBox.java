@@ -2,7 +2,7 @@ package org.zaluum.runtime;
 
 @Box
 public abstract class LoopBox extends RunnableBox{
-  @Out(x=0,y=48) public boolean cond;
+  @Out public boolean cond;
   @Override
   public void apply() {
     do{
