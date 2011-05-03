@@ -72,7 +72,7 @@ trait ContainerItem extends Item {
         def toVertex(t: Tree, start: Boolean): Vertex = {
           def pos = if (start) c.headPoint else c.lastPoint
           t match {
-            case JunctionRef(name) ⇒ 
+            case JunctionRef(name) ⇒
               junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
             case p: PortRef ⇒
               val key = PortKey.create(p)
@@ -80,7 +80,7 @@ trait ContainerItem extends Item {
                 .getOrElse {
                   println("nonexisting")
                   nonExistingPortVertex.getOrElseUpdate(key, new MissingPortVertex(key, pos))
-                  }
+                }
             case EmptyTree ⇒
               val e = new EmptyVertex(pos)
               emptyVertexs += e
@@ -90,11 +90,11 @@ trait ContainerItem extends Item {
         (c -> new Edge(toVertex(c.a, true), toVertex(c.b, false), c.points, Some(c)).fixEnds)
     }.toMap
     new ConnectionGraphV(
-        portVertexs.toSet ++ 
-        junctions.values ++ 
-        nonExistingPortVertex.values ++ 
-        emptyVertexs, 
-        edges.values.toSet)
+      portVertexs.toSet ++
+        junctions.values ++
+        nonExistingPortVertex.values ++
+        emptyVertexs,
+      edges.values.toSet)
   }
   val boxes = Buffer[ValDefItem]()
   def boxDef: BoxDef
@@ -133,12 +133,10 @@ trait ContainerItem extends Item {
           o.updateOpenBox(v, Map())
           o
         case None ⇒
-          val f = v.params.headOption match {
-            case Some(p: Param) ⇒
-              new DirectValFigure(ContainerItem.this)
-            case _ ⇒
-              new ImageValFigure(ContainerItem.this)
-          }
+          val f = if (v.tpe.name == Name("org.zaluum.example.Direct"))
+            new DirectValFigure(ContainerItem.this)
+          else
+            new ImageValFigure(ContainerItem.this)
           f.updateValDef(v)
           f
       }
@@ -253,7 +251,7 @@ class OpenBoxFigure(
     portDecls.clear()
     boxDef.children foreach {
       _ match {
-        case p@PortDef(name, typeName, in, inPos, extPos) ⇒
+        case p @ PortDef(name, typeName, in, inPos, extPos) ⇒
           def newFig(left: Boolean) = {
             val f = new OpenPortDeclFigure(OpenBoxFigure.this)
             f.update(p, left)

@@ -46,20 +46,27 @@ trait ValFigure extends ValDefItem with HasPorts {
     ports.clear
     sym.tpe match {
       case b: BoxTypeSymbol ⇒
-        b.portsWithSuper.values.foreach{
-          case s: PortSymbol ⇒
-            val p = new PortFigure(container)
-            p.update(s.extPos + Vector2(getBounds.x, getBounds.y), s, sym, s.dir == In)
-            ports += p
-          case _ ⇒
+        val bports = b.portsWithSuper.values collect { case s: PortSymbol ⇒ s }
+        def isIn(p: PortSymbol) = p.dir == In
+        val (ins, outs) = bports.partition { isIn(_) } // SHIFT?
+        def space(s: PortSymbol) = if (isIn(s)) size.h / (ins.size + 1) else size.h / (outs.size + 1)
+        def createPort(s: PortSymbol, i: Int) {
+          val p = new PortFigure(container)
+          val x = if (isIn(s)) 0 else size.w
+          val point = Point(x, (i + 1) * space(s))
+          p.update(point + Vector2(getBounds.x, getBounds.y), s, sym, s.dir == In)
+          ports += p
         }
+        for ((p, i) ← ins.zipWithIndex) createPort(p, i)
+        for ((p, i) ← outs.zipWithIndex) createPort(p, i)
       case _ ⇒ List()
     }
+
   }
 }
 trait AutoDisposeImageFigure extends ImageFigure {
   def disposeImage() {
-    if (getImage!=null) getImage.dispose
+    if (getImage != null) getImage.dispose
   }
 }
 class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
@@ -72,11 +79,11 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
 }
 class DirectValFigure(val container: ContainerItem) extends TextEditFigure with ValFigure {
   def size = Dimension(40, 20)
-  def param = valDef.params.head.asInstanceOf[Param]
-  def text = param.value
+  def param = valDef.params.headOption.asInstanceOf[Option[Param]]
+  def text = param.map {_.value}.getOrElse{"0"}
   def updateMe {
     fl.setText(text)
-    setForegroundColor(Colorizer.color(param.tpe))
+    setForegroundColor(Colorizer.color(param.map(_.tpe).getOrElse(NoSymbol)))
   }
 }
 trait TextEditFigure extends RectangleFigure with Item with RectFeedback {
@@ -134,9 +141,10 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Fig
       } catch { case e ⇒ e.printStackTrace; None }
     }
     component = for (
-        c ← valDef.tpe.asInstanceOf[BoxTypeSymbol].visualClass; 
-        cl ← forName(c.str); 
-        i <- instance(cl)) yield i
+      c ← valDef.tpe.asInstanceOf[BoxTypeSymbol].visualClass;
+      cl ← forName(c.str);
+      i ← instance(cl)
+    ) yield i
     super.updateValDef(valDef)
   }
   def updateMe() {}

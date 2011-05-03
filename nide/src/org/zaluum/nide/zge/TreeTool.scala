@@ -25,12 +25,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     def buttonUp {
-      if (filterDouble) {filterDouble=false; return}
+      if (filterDouble) { filterDouble = false; return }
       (beingSelected, port) match {
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
           connecting.enter(port.container, port, currentMouseLocation)
-        case (Some(line: LineItem), None) ⇒  
+        case (Some(line: LineItem), None) ⇒
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
             viewer.selection.updateSelection(line.selectionSubject.toSet, shift)
             viewer.refresh()
@@ -54,18 +54,18 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     override def move() {
       super.move()
       portsTrack.update()
-      (portsTrack.current,itemUnderMouse) match {
-        case (_,Some(l: LineItem)) if (l.l.distance(currentMouseLocation) > connectionLineDistance) => 
+      (portsTrack.current, itemUnderMouse) match {
+        case (_, Some(l: LineItem)) if (l.l.distance(currentMouseLocation) > connectionLineDistance) ⇒
           viewer.setCursor(Cursors.UPARROW)
-        case (None,Some(item)) ⇒
+        case (None, Some(item)) ⇒
           viewer.setCursor(Cursors.ARROW)
-        case (Some(_),_) =>
+        case (Some(_), _) ⇒
           viewer.setCursor(Cursors.UPARROW)
-        case (None,None) =>
+        case (None, None) ⇒
           viewer.setCursor(Cursors.CROSS)
           portsTrack.current match {
-            case Some(_) => 
-            case None => 
+            case Some(_) ⇒
+            case None ⇒
           }
       }
     }
@@ -95,14 +95,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       viewer.updateClipboard
       delete
     }
-    def copy() = viewer.updateClipboard 
-    def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c,current) }
+    def copy() = viewer.updateClipboard
+    def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
     override def menu() {
       itemUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
         case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
         case Some(o: OpenBoxFigure) ⇒
-        case Some(b: ValFigure) ⇒ 
+        case Some(b: ValFigure) ⇒
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)
       }
     }
@@ -158,7 +158,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
     var clipboard: Clipboard = _
-    def enter(c: Clipboard,initContainer:ContainerItem) {
+    def enter(c: Clipboard, initContainer: ContainerItem) {
       enterSingle(initContainer)
       this.clipboard = c
       state = this
@@ -167,8 +167,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       feed.show()
       move()
     }
-    def move() { feed.setInnerLocation(point(currentMouseLocation))}
-    def abort {exit()}
+    def move() { feed.setInnerLocation(point(currentMouseLocation)) }
+    def abort { exit() }
     def drag {}
     def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, currentMouseLocation))
     def buttonDown() {}
@@ -310,15 +310,28 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       this.e = e;
       e.edit(execute(_), exit _)
     }
+    def editParam(valDef: ValDef, key: Name, value: String) {
+      val c = valDef.params find { p ⇒ p.asInstanceOf[Param].key == key } match {
+        case Some(par: Param) if (par.value != value) ⇒
+          controller.exec(
+            new EditTransformer() {
+              val trans: PartialFunction[Tree, Tree] = {
+                case p: Param if p == e.param ⇒ Param(p.key, value)
+              }
+            })
+        case None ⇒
+          controller.exec(
+            new EditTransformer() {
+              val trans: PartialFunction[Tree, Tree] = {
+                case v: ValDef ⇒ v.copy(params = Param(key, value) :: transformTrees(v.params))
+              }
+            })
+        case _ ⇒ // TODO exit?
+      }
+    }
     def execute(s: String) {
-      if (e != null && s != e.param.value) {
-        val tr = new EditTransformer() {
-          val trans: PartialFunction[Tree, Tree] = {
-            case p: Param if p == e.param ⇒
-              Param(e.param.key, s)
-          }
-        }
-        controller.exec(tr)
+      if (e != null) {
+        editParam(e.valDef,Name("param"), s)
       }
     }
     def exit() { e.hideEdit(); viewer.focus; selecting.enter(); }
