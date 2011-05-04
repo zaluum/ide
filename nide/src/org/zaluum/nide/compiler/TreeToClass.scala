@@ -56,18 +56,18 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     def field(t: Tree) = t match {
       case PortDef(name, typeName, dir, inPos, extPos) ⇒
         FieldDef(name, t.symbol.tpe.name)
-      case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
+      case v:ValDef ⇒
         val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
-        FieldDef(name, t.symbol.tpe.asInstanceOf[BoxTypeSymbol].fqName)
+        FieldDef(v.name, t.symbol.tpe.asInstanceOf[BoxTypeSymbol].fqName)
     }
     def cons(b: BoxDef) = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
       // boxes
       val boxCreation: List[Tree] = b.vals map {
         _ match {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
+          case v:ValDef ⇒
             val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
-            Assign(Select(This, FieldRef(name, tpe.fqName, bs.fqName)), New(tpe.fqName, EmptyTree, "()V"))
+            Assign(Select(This, FieldRef(v.name, tpe.fqName, bs.fqName)), New(tpe.fqName, EmptyTree, "()V"))
         }
       }
       // ports

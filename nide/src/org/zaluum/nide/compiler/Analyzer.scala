@@ -46,6 +46,24 @@ case class Name(str: String) {
   def toRelativePathClass = toRelativePath + ".class"
   def internal = str.replace('.', '/')
 }
+object Literals {
+  def parse(value : String, tpe:Name) : Option[Any] = {
+    try {
+      Some(tpe match {
+        case Name("byte") => value.toByte
+        case Name("short") => value.toShort
+        case Name("int") => value.toInt
+        case Name("float") => value.toFloat
+        case Name("double") => value.toDouble
+        case Name("boolean") => value.toBoolean
+        case Name("java.lang.String") => value
+        case Name("char") => value.charAt(0)
+      })
+    }catch {
+      case e => None
+    }
+  }
+}
 trait Scope {
   def alreadyDefinedBoxType(name:Name):Boolean
   def lookupPort(name: Name): Option[Symbol]
@@ -147,17 +165,15 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
           superName foreach { sn ⇒
             currentScope.lookupBoxType(sn) match {
               case Some(bs: BoxTypeSymbol) ⇒
-                println("super = " + bs)
                 sym._superSymbol = Some(bs)
               case None ⇒
-                println ("not found" + sn)
                 error("Super box type not found " + sn, tree)
             }
           }
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
           definePort(new PortSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], name, extPos, dir), tree) // owner of a port is boxtypesymbol
-        case v @ ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
-          defineVal(new ValSymbol(currentOwner, name), tree)
+        case v : ValDef ⇒
+          defineVal(new ValSymbol(currentOwner, v.name), tree)
         case _ ⇒
           tree.scope = currentScope
       }
@@ -175,10 +191,35 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
             error("Port type not found " + typeName, tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case v @ ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
-          tree.symbol.tpe = currentScope.lookupBoxType(typeName) getOrElse {
-            error("Box class " + typeName + " not found", tree); NoSymbol
+        case v : ValDef ⇒
+          val vsym = v.symbol.asInstanceOf[ValSymbol]
+          currentScope.lookupBoxType(v.typeName) match {
+            case Some(bs:BoxTypeSymbol) =>
+              v.symbol.tpe = bs
+              // Constructor
+              val consSign = v.constructorTypes map { name => 
+                currentScope.lookupType(name) getOrElse {
+                  error("Constructor type " + name + " not found", tree)
+                  NoSymbol
+                }
+              }
+              bs.constructors.find { _.matchesSignature(consSign)} match {
+                case Some(cons) => 
+                  vsym.constructor = Some(cons)
+                  v.constructorParams.zip(consSign) foreach {case (value,tpe) =>
+                    Literals.parse(value,tpe.name) getOrElse {
+                      error("Cannot parse literal \"" + value + "\" to " + tpe.name.str,tree)
+                    }
+                  }
+                case None => 
+                  error("Cannot find constructor for box " + v.typeName.str + 
+                    " with signature (" +v.constructorTypes.map{_.str}.mkString(", ") + ")", tree )
+              }
+            case _ =>
+              v.symbol.tpe = NoSymbol
+              error("Box class " + v.typeName + " not found", tree);
           }
+          // constructor match
           tree.tpe = tree.symbol.tpe
         case ValRef(name) ⇒
           tree.symbol = currentScope.lookupVal(name) getOrElse {
@@ -349,7 +390,6 @@ trait ConnectionHelper extends ReporterAdapter {
   implicit def reporter: Reporter
   def isIn(ap: PortKey, bs: BoxTypeSymbol): Boolean = {
     val resolved = ap.resolve(bs)
-    //println("resolved " + ap + " to " + resolved)
     resolved.map { r ⇒
       (r.port.dir, r) match {
         case (In, v: ValPortKeySym) ⇒ true
@@ -359,6 +399,6 @@ trait ConnectionHelper extends ReporterAdapter {
         case (Shift, v: ValPortKeySym) ⇒ ap.toRef.in // FIXME super ports don't have decl
         case (Shift, b: BoxPortKeySym) ⇒ ap.toRef.in
       }
-    }.getOrElse { println("true"); true }
+    }.getOrElse { true }
   }
 }

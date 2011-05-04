@@ -80,8 +80,6 @@ trait ConnectionsTool {
       if (wp.distinct.size >= 2) {
         val vend = vertexFor(wp.last,dst)
         val vstart = vertexFor(wp.head,src)
-        println ("vend= " + vend)
-        println ("vstart = " + vstart + " src " + src )
         val newEdge = new Edge(vstart, vend, wp, None).untangle
         val newGraph = g.add(vstart).add(vend).cutAndAddToGraph(newEdge).prune.clean
         val (connections, junctions) = newGraph.toTree
@@ -254,8 +252,8 @@ trait ConnectionsTool {
               transformTrees(b.ports),
               connections,
               junctions)
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) if (valdefs.contains(v)) ⇒
-            ValDef(name, typeName, pos + delta, size, guiPos, guiSize, params)
+          case v:ValDef if (valdefs.contains(v)) ⇒
+            v.copy(pos= v.pos + delta, params= transformTrees( v.params))
           case p: PortDef if (portdefs.contains(p)) ⇒
             p.copy(inPos = p.inPos + delta)
 

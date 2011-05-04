@@ -20,6 +20,7 @@ object Serializer {
   }
 
   def proto(p: ValDef): BoxFileProtos.Instance = {
+    import scala.collection.JavaConversions._
     val b = BoxFileProtos.Instance.newBuilder
     p.params collect { case p: Param ⇒ p } sortBy { _.key.str } foreach { p ⇒ b.addParameter(proto(p)) }
     b.setGuiPos(proto(p.guiPos.getOrElse { Point(0, 0) }))
@@ -28,6 +29,8 @@ object Serializer {
       .setName(p.name.str)
       .setPos(proto(p.pos))
       .setSize(proto(p.size.getOrElse(Dimension(50, 50))))
+      .addAllConstructorParameter(p.constructorParams)
+      .addAllConstructorTypes(p.constructorTypes map {_.str })
       .build
   }
   def proto(j: Junction): BoxFileProtos.Junction = {

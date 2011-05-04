@@ -102,7 +102,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
         case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
         case Some(o: OpenBoxFigure) ⇒
-        case Some(b: ValFigure) ⇒ new ConstructorMenu(viewer.shell, b.sym).open;
+        case Some(b: ValFigure) ⇒ new ConstructorMenu(viewer.shell, controller, b.sym).open;
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)
       }
     }
@@ -135,7 +135,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
               ports = List(),
               connections = List(),
               junctions = List())
-            val newVal = ValDef(name, className, dst, Some(Dimension(200, 200)), None, None, List())
+            val newVal = ValDef(name, className, dst, Some(Dimension(200, 200)), None, None, List(),List(),List())
             BoxDef(b.name, b.superName, guiSize = b.guiSize, b.image,
               newDef :: transformTrees(b.defs),
               newVal :: transformTrees(b.vals),
@@ -206,7 +206,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
             BoxDef(b.name, b.superName, guiSize = b.guiSize, b.image,
               transformTrees(b.defs),
-              ValDef(name, tpeName, dst, None, None, None, List()) :: transformTrees(b.vals),
+              ValDef(name, tpeName, dst, None, None, None, List(),List(),List()) :: transformTrees(b.vals),
               transformTrees(b.ports),
               transformTrees(b.connections),
               transformTrees(b.junctions))

@@ -5,7 +5,7 @@ import org.zaluum.nide.protobuf.BoxFileProtos
 import java.net.{ URL, URLClassLoader }
 import org.eclipse.core.runtime.IPath
 import org.eclipse.jdt.core.search.SearchPattern
-import org.eclipse.jdt.core.{ IType, IJavaProject, IAnnotation, IClasspathEntry, Flags }
+import org.eclipse.jdt.core.{ IType, IMethod, IJavaProject, IAnnotation, IClasspathEntry, Flags }
 import org.zaluum.nide.compiler._
 import org.zaluum.annotation.{ BoxImage, Box }
 
@@ -38,7 +38,8 @@ class ZaluumLoader(val zProject: ZaluumProject) extends EclipseUtils {
     (for (n ← tpeName; jt ← zProject.lookupType(n)) yield jt).getOrElse { NoSymbol }
 
   }
-  def toBoxTypeSymbol(t: IType): BoxTypeSymbol = {
+  
+  def toBoxTypeSymbol(t: IType): BoxTypeSymbol = { 
     val fqn = Name(t.getFullyQualifiedName)
     val img = findAnnotations(t, t, classOf[BoxImage].getName).headOption flatMap { a ⇒
       findStringValueOfAnnotation(a, "value")
@@ -51,7 +52,14 @@ class ZaluumLoader(val zProject: ZaluumProject) extends EclipseUtils {
     val bs = new BoxTypeSymbol(zProject, fqn, superName, img, guiClass, Flags.isAbstract(t.getFlags()))
     bs.scope = zProject
     // constructors
-    bs.constructors =
+    def isPrivateDefaultConstructor(c:IMethod) = {
+      c.isConstructor && c.getParameterNames.isEmpty && (Flags.isPrivate(c.getFlags) || Flags.isProtected(c.getFlags))
+    }
+    val defaultCons = if (t.getMethods exists (isPrivateDefaultConstructor(_)))
+      None
+       else 
+       Some(new Constructor(bs,List())) 
+    val collectedConstructors =
       for (
         c ← t.getMethods.toList;
         if !Flags.isAbstract(t.getFlags) &&
@@ -66,6 +74,10 @@ class ZaluumLoader(val zProject: ZaluumProject) extends EclipseUtils {
             param
           })
       }
+    bs.constructors = if (collectedConstructors exists {_.params.isEmpty}) 
+      collectedConstructors
+    else
+      collectedConstructors ++ defaultCons.toList 
     // ports
     for (f ← t.getFields) {
       val name = Name(f.getElementName)

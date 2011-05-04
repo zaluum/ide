@@ -78,7 +78,6 @@ trait ContainerItem extends Item {
               val key = PortKey.create(p)
               portVertexs.find { _.key == key }
                 .getOrElse {
-                  println("nonexisting")
                   nonExistingPortVertex.getOrElseUpdate(key, new MissingPortVertex(key, pos))
                 }
             case EmptyTree ⇒

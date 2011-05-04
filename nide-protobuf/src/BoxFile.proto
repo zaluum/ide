@@ -23,6 +23,8 @@ message Instance {
 	repeated Parameter parameter =5;
 	optional Point gui_pos = 6;
 	optional Point gui_size = 7;
+	repeated string constructor_parameter =8;
+	repeated string constructor_types = 9;
 }
 message Parameter {
 	required string key =1;

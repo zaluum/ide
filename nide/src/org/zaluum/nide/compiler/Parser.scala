@@ -31,7 +31,10 @@ object Parser {
         size, 
         guiPos, 
         guiSize,    
-        i.getParameterList.map { parse(_)}.toList)
+        i.getParameterList.map { parse(_)}.toList,
+        i.getConstructorParameterList.toList,
+        i.getConstructorTypesList.map {Name(_)}.toList 
+        )
   }
   def parse(p:BoxFileProtos.Parameter) : Param = {
     Param(Name(p.getKey),p.getValue)

@@ -17,8 +17,8 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   override val resizing = new Resizing {
     override def command(newPos: Point, newSize: Dimension, t: Tree) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
-        case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) if (v == t) ⇒
-          ValDef(name, typeName, pos, size, Some(newPos), Some(newSize), params)
+        case v:ValDef if (v == t) ⇒
+          v.copy(guiPos=Some(newPos), guiSize=Some(newSize))
       }
     }
   }
@@ -136,8 +136,8 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       }.toMap
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
-          case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) if (positions.contains(v)) ⇒
-            ValDef(name, typeName, pos, size, Some(positions(v)), guiSize, params)
+          case v:ValDef if (positions.contains(v)) ⇒
+            v.copy(guiPos = Some(positions(v)))
         }
       }
       controller.exec(command)

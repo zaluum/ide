@@ -165,7 +165,11 @@ class PortSymbol(owner: BoxTypeSymbol, name: Name, val extPos: Point, dir: PortD
   //override def toString = "PortSymbol(" + name + ")"
 }
 class Constructor(owner:BoxTypeSymbol, val params:List[ParamSymbol]) {
-  override def toString = params.map(p=> p.name.str +" : " + p.tpe.name.str).mkString(", ")
+  override def toString = {
+    if (params.isEmpty) "<default>()" else
+    params.map(p=> p.name.str +" : " + p.tpe.name.str).mkString(", ")
+  }
+  def matchesSignature(sig:List[Type]) = sig == params.map {_.tpe}
 }
 
 class ParamSymbol(owner: BoxTypeSymbol, name: Name, val default: String) extends IOSymbol(owner, name, In) {
@@ -173,6 +177,7 @@ class ParamSymbol(owner: BoxTypeSymbol, name: Name, val default: String) extends
 }
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
   var params = Map[ParamSymbol, Any]()
+  var constructor : Option[Constructor] = None
   // override def toString = "ValSymbol(" + name + ")"
 }
 

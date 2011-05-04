@@ -79,7 +79,7 @@ class Controller(private var nowTree: Tree, val global: ZaluumProject) {
   }
   private def update(m: DMap) {
     compile()
-    //PrettyPrinter.print(nowTree, 0)
+    PrettyPrinter.print(nowTree, 0)
     updateViewers(m)
     notifyListeners
     refreshTools

@@ -95,9 +95,9 @@ trait CopyTransformer extends Transformer {
       }
     case PortDef(name, typeName, dir, inPos, extPos) ⇒
       PortDef(name, typeName, dir, inPos, extPos)
-    case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params) ⇒
+    case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params, consParams,consTypes) ⇒
       atOwner(v.symbol) {
-        ValDef(name, typeName, pos, size, guiPos, guiSize, transformTrees(params))
+        ValDef(name, typeName, pos, size, guiPos, guiSize, transformTrees(params), consParams,consTypes)
       }
     case p: Param ⇒ p.copy()
     case c@ConnectionDef(a, b, wp) ⇒
@@ -192,6 +192,8 @@ object PrettyPrinter {
     case v: ValDef ⇒
       print("ValDef(" + List(v.name, v.pos, v.size, v.typeName, v.guiPos, v.guiSize).mkString(","), deep)
       print(v.params, deep + 1)
+      print(v.constructorParams.mkString(","), deep +1)
+      print("("+ v.constructorTypes.mkString(",") +")" , deep +1)
       print(")" + sym(v), deep)
     case p: Param ⇒
       print(p.toString + sym(p), deep)
@@ -265,7 +267,9 @@ case class ValDef(
   size: Option[Dimension],
   guiPos: Option[Point],
   guiSize: Option[Dimension],
-  params: List[Tree]) extends DefTree with Positionable {
+  params: List[Tree], 
+  constructorParams:List[String],
+  constructorTypes:List[Name]) extends DefTree with Positionable {
   def localTypeDecl = tpe match {
     case NoSymbol ⇒ None
     case b: BoxTypeSymbol ⇒ if (b.isLocal) Some(b.decl.asInstanceOf[BoxDef]) else None
