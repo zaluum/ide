@@ -1,8 +1,6 @@
 package org.zaluum.example;
 
-import org.zaluum.runtime.Box;
-import org.zaluum.runtime.In;
-import org.zaluum.runtime.Out;
+import org.zaluum.annotation.*;
 
 @Box
 public class TicksToForce {

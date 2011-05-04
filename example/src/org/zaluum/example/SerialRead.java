@@ -2,7 +2,8 @@ package org.zaluum.example;
 
 import java.io.IOException;
 
-import org.zaluum.runtime.*;
+import org.zaluum.annotation.*;
+
 @Box
 public class SerialRead {
 	 @In public SerialPortData port;

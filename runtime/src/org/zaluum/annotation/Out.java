@@ -1,12 +1,9 @@
-package org.zaluum.runtime;
+package org.zaluum.annotation;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Param {
-  String defaults();
-  boolean direct() default false;
-}
+public @interface Out {}

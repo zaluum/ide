@@ -1,4 +1,4 @@
-package org.zaluum.example;
+package org.zaluum.launch;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;

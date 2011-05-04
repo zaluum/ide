@@ -1,8 +1,8 @@
 package org.zaluum.nide.eclipse
 import org.eclipse.jdt.core.IElementChangedListener
 import org.eclipse.jdt.core.JavaCore
-import org.zaluum.runtime.Box
-import org.zaluum.runtime.BoxImage
+import org.zaluum.annotation.Box
+import org.zaluum.annotation.BoxImage
 import org.eclipse.jdt.core.search.TypeDeclarationMatch
 import org.zaluum.nide.compiler._
 import javax.swing.JComponent

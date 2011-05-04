@@ -4,8 +4,7 @@ import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.SerialPort;
 
-import org.zaluum.runtime.Box;
-import org.zaluum.runtime.Out;
+import org.zaluum.annotation.*;
 
 @Box
 public class SerialCreate {

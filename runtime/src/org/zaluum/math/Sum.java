@@ -1,6 +1,6 @@
 package org.zaluum.math;
 
-import org.zaluum.runtime.Box;
+import org.zaluum.annotation.Box;
 
 @Box
 public class Sum extends DoubleOp2{

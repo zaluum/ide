@@ -1,7 +1,7 @@
 package org.zaluum.nide.zge
 
 import org.zaluum.nide.eclipse.ZaluumProject
-import org.zaluum.runtime.LoopBox
+import org.zaluum.basic.LoopBox
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.PortDir

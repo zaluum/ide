@@ -1,7 +1,7 @@
 package org.zaluum.math;
 
-import org.zaluum.runtime.In;
-import org.zaluum.runtime.Out;
+import org.zaluum.annotation.In;
+import org.zaluum.annotation.Out;
 
 public abstract class DoubleBoolOp2 {
   @In public double a;

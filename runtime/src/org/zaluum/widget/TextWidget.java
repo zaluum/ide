@@ -1,11 +1,12 @@
-package org.zaluum.example;
+package org.zaluum.widget;
 
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.JTextField;
 
-import org.zaluum.runtime.Box;
-import org.zaluum.runtime.In;
+import org.zaluum.annotation.Box;
+import org.zaluum.annotation.In;
+
 
 @Box
 public class TextWidget {

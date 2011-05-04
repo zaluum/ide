@@ -11,7 +11,7 @@ import org.eclipse.draw2d.{ Cursors, Figure }
 import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle, Dimension ⇒ EDimension }
 import org.zaluum.nide.compiler.{ _ }
 import scala.collection.JavaConversions._
-import org.zaluum.runtime.LoopBox
+import org.zaluum.basic.LoopBox
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -102,7 +102,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
         case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
         case Some(o: OpenBoxFigure) ⇒
-        case Some(b: ValFigure) ⇒
+        case Some(b: ValFigure) ⇒ new ConstructorMenu(viewer.shell, b.sym).open;
         case _ ⇒ viewer.palette.show(swtMouseLocation, current)
       }
     }

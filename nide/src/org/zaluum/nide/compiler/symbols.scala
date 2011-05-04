@@ -62,12 +62,12 @@ case class BoxPortKeySym(box:BoxTypeSymbol, port:PortSymbol) extends PortKeySym
 case class ValPortKeySym(box:BoxTypeSymbol, valSym: ValSymbol, port:PortSymbol) extends PortKeySym
 case class Clump(var junctions: Set[Junction], var ports: Set[PortKey], var connections: Set[ConnectionDef])
 class BoxTypeSymbol(
-  val owner: Symbol,
-  val name: Name,
-  val superName: Option[Name],
-  val image: Option[String],
-  val visualClass: Option[Name],
-  val abstractCl: Boolean = false) extends LocalScope(owner.scope) with Symbol with Type {
+    val owner: Symbol,
+    val name: Name,
+    val superName: Option[Name],
+    val image: Option[String],
+    val visualClass: Option[Name],
+    val abstractCl: Boolean = false) extends LocalScope(owner.scope) with Symbol with Type {
   def declaredPorts = ports
   def portsWithSuper : Map[Name,Symbol] = ports ++ superSymbol.map {_.portsWithSuper}.getOrElse(Map())
   def declaredVals = vals
@@ -139,6 +139,7 @@ class BoxTypeSymbol(
       }
     }
   }
+  var constructors = List[Constructor] () 
   var source: String = "" // TODO
   def valsInOrder = boxes.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[ValSymbol]]
   def IOInOrder = ports.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[IOSymbol]]
@@ -163,7 +164,11 @@ class IOSymbol(val owner: BoxTypeSymbol, val name: Name, val dir: PortDir) exten
 class PortSymbol(owner: BoxTypeSymbol, name: Name, val extPos: Point, dir: PortDir) extends IOSymbol(owner, name, dir) {
   //override def toString = "PortSymbol(" + name + ")"
 }
-class ParamSymbol(owner: BoxTypeSymbol, name: Name, val default: String, dir: PortDir) extends IOSymbol(owner, name, dir) {
+class Constructor(owner:BoxTypeSymbol, val params:List[ParamSymbol]) {
+  override def toString = params.map(p=> p.name.str +" : " + p.tpe.name.str).mkString(", ")
+}
+
+class ParamSymbol(owner: BoxTypeSymbol, name: Name, val default: String) extends IOSymbol(owner, name, In) {
   override def toString = "ParamSymbol(" + name + ")"
 }
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {

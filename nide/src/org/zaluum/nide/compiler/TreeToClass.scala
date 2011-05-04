@@ -1,6 +1,6 @@
 package org.zaluum.nide.compiler
 
-import org.zaluum.runtime.RunnableBox
+import org.zaluum.basic.RunnableBox
 
 case class BoxClass(name: Name, superName: Name, contents: List[Tree]) extends Tree
 case class FieldDef(name: Name, typeName: Name) extends Tree

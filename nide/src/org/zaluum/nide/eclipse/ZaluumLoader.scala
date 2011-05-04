@@ -2,37 +2,42 @@ package org.zaluum.nide.eclipse
 
 import java.io.InputStream
 import org.zaluum.nide.protobuf.BoxFileProtos
-import java.net.{URL, URLClassLoader}
+import java.net.{ URL, URLClassLoader }
 import org.eclipse.core.runtime.IPath
 import org.eclipse.jdt.core.search.SearchPattern
-import org.eclipse.jdt.core.{IType, IJavaProject, IAnnotation, IClasspathEntry, Flags}
+import org.eclipse.jdt.core.{ IType, IJavaProject, IAnnotation, IClasspathEntry, Flags }
 import org.zaluum.nide.compiler._
-import org.zaluum.runtime.{BoxImage, Box}
+import org.zaluum.annotation.{ BoxImage, Box }
 
-class ZaluumLoader(val zProject : ZaluumProject) extends EclipseUtils{
+class ZaluumLoader(val zProject: ZaluumProject) extends EclipseUtils {
   import AnnotationUtils._
   import SearchUtils._
   def jProject = zProject.jProject
-  
-  def searchJavaType(name: Name): Option[JavaType] = 
+
+  def searchJavaType(name: Name): Option[JavaType] =
     zProject.primitives.find(name).orElse(searchNonPrimitiveJavaType(name))
 
   def searchNonPrimitiveJavaType(name: Name): Option[JavaType] =
     search(classAndInterface(name.str), jProject) { t ⇒ toJavaType(name) } headOption
-  
+
   def searchBoxType(name: Name): Option[BoxTypeSymbol] =
     searchSourceZaluum(name.str) orElse {
-      search(classAndInterface(name.str),jProject) { t ⇒ toBoxTypeSymbol(t) } headOption
+      search(classAndInterface(name.str), jProject) { t ⇒ toBoxTypeSymbol(t) } headOption
     }
 
-  def index : Seq[Name] = indexZaluum ++ indexJava
-  private def indexZaluum = for (f <- visitSourceZaluums;cl <- toClassName(f)) yield cl
-  private def indexJava = search(patternAnnotation(classOf[Box].getName),jProject) { 
-     t=> Name(t.getFullyQualifiedName)
+  def index: Seq[Name] = indexZaluum ++ indexJava
+  private def indexZaluum = for (f ← visitSourceZaluums; cl ← toClassName(f)) yield cl
+  private def indexJava = search(patternAnnotation(classOf[Box].getName), jProject) { t ⇒
+    Name(t.getFullyQualifiedName)
   }
-  
-  private def toJavaType(t: IType): JavaType = new JavaType(zProject, Name(t.getElementName)) 
+
+  private def toJavaType(t: IType): JavaType = new JavaType(zProject, Name(t.getElementName))
   private def toJavaType(name: Name): JavaType = new JavaType(zProject, name)
+  private def signatureToType(t: IType, sig: String) = {
+    val tpeName = signatureToName(t, sig)
+    (for (n ← tpeName; jt ← zProject.lookupType(n)) yield jt).getOrElse { NoSymbol }
+
+  }
   def toBoxTypeSymbol(t: IType): BoxTypeSymbol = {
     val fqn = Name(t.getFullyQualifiedName)
     val img = findAnnotations(t, t, classOf[BoxImage].getName).headOption flatMap { a ⇒
@@ -42,27 +47,42 @@ class ZaluumLoader(val zProject : ZaluumProject) extends EclipseUtils{
       signatureToName(t, f.getTypeSignature)
     }
     val superName = signatureToName(t, t.getSuperclassTypeSignature)
-    println(fqn + " supername " + superName)
+
     val bs = new BoxTypeSymbol(zProject, fqn, superName, img, guiClass, Flags.isAbstract(t.getFlags()))
     bs.scope = zProject
-    
+    // constructors
+    bs.constructors =
+      for (
+        c ← t.getMethods.toList;
+        if !Flags.isAbstract(t.getFlags) &&
+          c.isConstructor &&
+          Flags.isPublic(c.getFlags)
+      ) yield {
+        val params = c.getParameterNames.toList.zip(c.getParameterTypes)
+        new Constructor(bs,
+          for ((name, sig) ← params) yield {
+            val param = new ParamSymbol(bs, Name(name), "")
+            param.tpe = signatureToType(t, sig)
+            param
+          })
+      }
+    // ports
     for (f ← t.getFields) {
       val name = Name(f.getElementName)
-      val tpeName = signatureToName(t, f.getTypeSignature)
-      val tpe = (for (n ← tpeName; jt ← zProject.lookupType(n)) yield jt).getOrElse { NoSymbol }
+      val tpe = signatureToType(t, f.getTypeSignature)
       def port(in: Boolean, a: IAnnotation) {
         val port = new PortSymbol(bs, Name(f.getElementName), annotationToPoint(a), if (in) In else Out)
         port.tpe = tpe
         bs.enter(port)
       }
       def param(a: IAnnotation) {
-        val param = new ParamSymbol(bs, Name(f.getElementName), "", In) // TODO default
+        val param = new ParamSymbol(bs, Name(f.getElementName), "") // TODO default
         param.tpe = tpe
         bs.enter(param)
       }
-      findAnnotations(t, f, classOf[org.zaluum.runtime.In].getName) foreach { port(true, _) }
-      findAnnotations(t, f, classOf[org.zaluum.runtime.Out].getName) foreach { port(false, _) }
-      findAnnotations(t, f, classOf[org.zaluum.runtime.Param].getName) foreach { param(_) }
+      findAnnotations(t, f, classOf[org.zaluum.annotation.In].getName) foreach { port(true, _) }
+      findAnnotations(t, f, classOf[org.zaluum.annotation.Out].getName) foreach { port(false, _) }
+      findAnnotations(t, f, classOf[org.zaluum.annotation.Param].getName) foreach { param(_) }
     }
     bs
   }
@@ -80,33 +100,33 @@ class ZaluumLoader(val zProject : ZaluumProject) extends EclipseUtils{
       }
     }
   }
-  private def shallowAnalize(t:BoxDef) : Option[BoxTypeSymbol]= {
+  private def shallowAnalize(t: BoxDef): Option[BoxTypeSymbol] = {
     val scope = new FakeGlobalScope(zProject)
     val reporter = new Reporter()
     val analyzedTree = new Analyzer(reporter, t, scope).shallowCompile()
     analyzedTree.symbol match {
-      case b:BoxTypeSymbol => Some(b)
-      case _ => None
+      case b: BoxTypeSymbol ⇒ Some(b)
+      case _ ⇒ None
     }
   }
-  private def zaluumToSymbol(i:InputStream,name:Name) : Option[BoxTypeSymbol] = {
-    try{
-        shallowAnalize(ZaluumBuilder.readTree(i,name))
-    }catch {
-      case e => 
-        e.printStackTrace; 
+  private def zaluumToSymbol(i: InputStream, name: Name): Option[BoxTypeSymbol] = {
+    try {
+      shallowAnalize(ZaluumBuilder.readTree(i, name))
+    } catch {
+      case e ⇒
+        e.printStackTrace;
         None
     }
   }
-  def searchSourceZaluum(dotName:String) : Option[BoxTypeSymbol]= {
-    sourcePaths.view.flatMap{ path => 
-        val filePath = path.append(dotName.replace('.','/')).addFileExtension("zaluum")
-        pathToURL(filePath) flatMap { url =>
-          val i =url.openStream
-          try {
-            zaluumToSymbol(i,Name(dotName))
-          }finally(i.close)
-        } 
+  def searchSourceZaluum(dotName: String): Option[BoxTypeSymbol] = {
+    sourcePaths.view.flatMap { path ⇒
+      val filePath = path.append(dotName.replace('.', '/')).addFileExtension("zaluum")
+      pathToURL(filePath) flatMap { url ⇒
+        val i = url.openStream
+        try {
+          zaluumToSymbol(i, Name(dotName))
+        } finally (i.close)
+      }
     }.headOption
   }
 }

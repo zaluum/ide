@@ -1,4 +1,4 @@
-package org.zaluum.example;
+package org.zaluum.widget;
 
 import info.monitorenter.gui.chart.Chart2D;
 import info.monitorenter.gui.chart.ITrace2D;
@@ -6,8 +6,9 @@ import info.monitorenter.gui.chart.traces.Trace2DLtd;
 
 import java.awt.Color;
 
-import org.zaluum.runtime.Box;
-import org.zaluum.runtime.In;
+import org.zaluum.annotation.Box;
+import org.zaluum.annotation.In;
+
 
 @Box
 public class Chart {

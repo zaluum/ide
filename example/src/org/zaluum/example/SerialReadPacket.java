@@ -2,7 +2,7 @@ package org.zaluum.example;
 
 import java.io.IOException;
 
-import org.zaluum.runtime.*;
+import org.zaluum.annotation.*;
 
 import com.google.common.io.ByteStreams;
 

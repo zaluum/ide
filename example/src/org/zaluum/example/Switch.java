@@ -1,6 +1,6 @@
 package org.zaluum.example;
 
-import org.zaluum.runtime.*;
+import org.zaluum.annotation.*;
 @Box
 public class Switch {
 	 @In public boolean ab;

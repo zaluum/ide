@@ -1,4 +1,4 @@
-package org.zaluum.example;
+package org.zaluum.widget;
 
 import info.monitorenter.gui.chart.rangepolicies.ARangePolicy;
 

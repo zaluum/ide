@@ -1,4 +1,7 @@
-package org.zaluum.runtime;
+package org.zaluum.basic;
+
+import org.zaluum.annotation.Box;
+import org.zaluum.annotation.Out;
 
 @Box
 public abstract class LoopBox extends RunnableBox{

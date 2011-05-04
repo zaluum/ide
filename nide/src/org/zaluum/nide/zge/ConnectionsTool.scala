@@ -9,7 +9,7 @@ import org.eclipse.draw2d.{ Cursors, Figure }
 import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle }
 import org.zaluum.nide.compiler.{ _ }
 import scala.collection.JavaConversions._
-import org.zaluum.runtime.LoopBox
+import org.zaluum.basic.LoopBox
 import FigureHelper._
 
 trait ConnectionsTool {
