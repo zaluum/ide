@@ -1,16 +1,14 @@
 package org.zaluum.nide.zge
 
-import org.eclipse.swt.layout.GridLayout
-import org.eclipse.jface.dialogs.Dialog
-import org.zaluum.nide.compiler._
-import org.eclipse.jface.viewers._
-import org.eclipse.swt.SWT
-import org.eclipse.swt.SWT.NONE
-import org.eclipse.swt.graphics.Image
 import net.miginfocom.swt.MigLayout
-import org.eclipse.swt.widgets.{ Table, TableItem, Shell, Composite, TableColumn, Label, Combo, Control }
+import org.eclipse.jface.dialogs.Dialog
+import org.eclipse.jface.viewers._
+import org.eclipse.swt.graphics.Image
+import org.eclipse.swt.widgets.{ Table, TableItem, Shell, Composite, TableColumn, Label, Control }
+import org.eclipse.swt.SWT
+import org.zaluum.nide.compiler._
 
-class ConstructorMenu(shell: Shell, controller: Controller, vs: ValSymbol) extends Dialog(shell) {
+class ConstructorMenu(viewer:Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   var combo: ComboViewer = _
   def comboValue = {
     val sel = combo.getSelection.asInstanceOf[IStructuredSelection]
@@ -19,19 +17,24 @@ class ConstructorMenu(shell: Shell, controller: Controller, vs: ValSymbol) exten
   }
   var tableContents = List[TableEntry]()
   case class TableEntry(var sym: Option[ParamSymbol], var value: String)
-
+  def v = vs.decl.asInstanceOf[ValDef]
   override protected def okPressed() {
     val typeNames = for (c ← comboValue.toList; p ← c.params) yield p.tpe.name
-    val tr = new EditTransformer() {
-      val trans: PartialFunction[Tree, Tree] = {
-        case v: ValDef if vs.decl == v ⇒
-          v.copy(
-            constructorParams = tableContents.map(_.value),
-            constructorTypes = typeNames)
+    val params = tableContents.map(_.value)
+    if (typeNames != v.constructorTypes || params != v.constructorParams) {
+      val tr = new EditTransformer() {
+        val trans: PartialFunction[Tree, Tree] = {
+          case v: ValDef if vs.decl == v ⇒
+            v.copy(
+              constructorParams = params,
+              constructorTypes = typeNames)
+        }
       }
+      super.okPressed()
+      viewer.controller.exec(tr)
+    } else {
+      super.okPressed()
     }
-    super.okPressed();
-    controller.exec(tr)
   }
   def createTable(parent: Composite) = {
     val table = new Table(parent, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL |
@@ -56,10 +59,10 @@ class ConstructorMenu(shell: Shell, controller: Controller, vs: ValSymbol) exten
   }
   override def createDialogArea(parent: Composite): Control = {
     val sup = super.createDialogArea(parent).asInstanceOf[Composite];
-    val c = new Composite(sup, NONE)
+    val c = new Composite(sup, SWT.NONE)
     //applyDialogFont(c);
     c.setLayout(new MigLayout)
-    val l = new Label(c, NONE)
+    val l = new Label(c, SWT.NONE)
     l.setText("Select the constructor to be used")
     combo = new ComboViewer(c)
     combo.setContentProvider(ArrayContentProvider.getInstance)

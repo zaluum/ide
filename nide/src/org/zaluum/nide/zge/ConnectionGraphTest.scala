@@ -4,7 +4,7 @@ import org.zaluum.nide.compiler.Point
 import junit.framework._
 import org.junit.Assert._
 import org.junit.Test
-class ConnectionGraphTest {
+class ConnectionGraphTest { 
   /*val a = new End(Point(0, 0))
   val b1 = new End(Point(10, 10))
   val b2 = new End(Point(10, 20))

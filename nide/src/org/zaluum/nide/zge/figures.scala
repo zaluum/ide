@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item {
   var valDef: ValDef = _
+  def valSym = valDef.symbol.asInstanceOf[ValSymbol]
   def pos = valDef.pos
   override def selectionSubject = Some(valDef)
   def updateValDef(t: ValDef) {
