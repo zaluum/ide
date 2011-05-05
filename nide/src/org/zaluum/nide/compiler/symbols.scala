@@ -170,6 +170,10 @@ class Constructor(owner:BoxTypeSymbol, val params:List[ParamSymbol]) {
     params.map(p=> p.name.str +" : " + p.tpe.name.str).mkString(", ")
   }
   def matchesSignature(sig:List[Type]) = sig == params.map {_.tpe}
+  def signature = { // FIXME might not be a JavaType it could be a BoxTypeSymbol
+    val pars = params map { p => p.tpe.asInstanceOf[JavaType].descriptor } mkString;
+    "(" + pars + ")V"
+  }
 }
 
 class ParamSymbol(owner: BoxTypeSymbol, name: Name, val default: String) extends IOSymbol(owner, name, In) {
@@ -178,6 +182,7 @@ class ParamSymbol(owner: BoxTypeSymbol, name: Name, val default: String) extends
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
   var params = Map[ParamSymbol, Any]()
   var constructor : Option[Constructor] = None
+  var constructorParams = List[(Any,Type)]()
   // override def toString = "ValSymbol(" + name + ")"
 }
 

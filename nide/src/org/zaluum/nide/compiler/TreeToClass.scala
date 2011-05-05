@@ -4,7 +4,7 @@ import org.zaluum.basic.RunnableBox
 
 case class BoxClass(name: Name, superName: Name, contents: List[Tree]) extends Tree
 case class FieldDef(name: Name, typeName: Name) extends Tree
-case class New(typeName: Name, param: Tree, signature: String) extends Tree
+case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
 case class Method(name: Name, signature: String, stats: List[Tree]) extends Tree
 case class Assign(lhs: Tree, rhs: Tree) extends Tree
@@ -67,7 +67,14 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         _ match {
           case v:ValDef ⇒
             val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
-            Assign(Select(This, FieldRef(v.name, tpe.fqName, bs.fqName)), New(tpe.fqName, EmptyTree, "()V"))
+            val vs = v.symbol.asInstanceOf[ValSymbol]
+            val sig = vs.constructor.get.signature
+            val values = for ((v,t) <- vs.constructorParams) yield {
+              Const(v) 
+            }
+            Assign(
+                Select(This, FieldRef(v.name, tpe.fqName, bs.fqName)), 
+                New(tpe.fqName, values, sig))
         }
       }
       // ports
@@ -89,7 +96,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       val widgets = vClass(b) map { vn ⇒
         val widgetCreation: List[Tree] = List(
           Assign(Select(This, FieldRef(widgetName, vn, bs.fqName)),
-            New(vn, NullConst, "(Ljava/awt/LayoutManager;)V")),
+            New(vn, List(NullConst), "(Ljava/awt/LayoutManager;)V")),
           Invoke(
             Select(This, FieldRef(widgetName, vn, bs.fqName)),
             "setSize",

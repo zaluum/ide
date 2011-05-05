@@ -48,7 +48,7 @@ object ByteCodeGen {
         case New(typeName, param, signature) ⇒
           mv.visitTypeInsn(NEW, typeName.internal);
           mv.visitInsn(DUP);
-          emit(param)
+          for (p<-param) emit(p)
           mv.visitMethodInsn(INVOKESPECIAL, typeName.internal, "<init>", signature);
         case NullConst ⇒
           mv.visitInsn(ACONST_NULL)

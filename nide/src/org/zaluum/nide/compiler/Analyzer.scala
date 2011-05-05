@@ -161,6 +161,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
           val cl = Some(Name(classOf[JPanel].getName))
           val newSym = new BoxTypeSymbol(currentOwner, name, superName, image, cl)
           val sym = defineBox(newSym, tree)
+          val bs = sym.asInstanceOf[BoxTypeSymbol]
+          bs.constructors = List(new Constructor(bs,List()))
           tree.tpe = sym
           superName foreach { sn ⇒
             currentScope.lookupBoxType(sn) match {
@@ -206,10 +208,12 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
               bs.constructors.find { _.matchesSignature(consSign)} match {
                 case Some(cons) => 
                   vsym.constructor = Some(cons)
-                  v.constructorParams.zip(consSign) foreach {case (value,tpe) =>
-                    Literals.parse(value,tpe.name) getOrElse {
+                  vsym.constructorParams = v.constructorParams.zip(consSign) map {case (value,tpe) =>
+                    val parsed = Literals.parse(value,tpe.name) getOrElse {
                       error("Cannot parse literal \"" + value + "\" to " + tpe.name.str,tree)
+                      null
                     }
+                    (parsed,tpe)
                   }
                 case None => 
                   error("Cannot find constructor for box " + v.typeName.str + 

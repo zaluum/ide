@@ -16,7 +16,7 @@ public class Run {
 			NoSuchMethodException, IllegalArgumentException,
 			InvocationTargetException, NoSuchFieldException {
 		Class<?> c = Thread.currentThread().getContextClassLoader()
-				.loadClass("org.zaluum.example.a");
+				.loadClass(args[0]);
 		final Object instance = c.newInstance();
 		Field f = c.getField("_widget");
 		final Method m = c.getMethod("apply");

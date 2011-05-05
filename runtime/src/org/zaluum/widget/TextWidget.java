@@ -10,7 +10,7 @@ import org.zaluum.annotation.In;
 
 @Box
 public class TextWidget {
-  @In public boolean d ;
+  @In public double d ;
   public JTextField _widget = new JTextField();
   public TextWidget() {
 	  _widget.setEnabled(false);
@@ -20,7 +20,7 @@ public class TextWidget {
 
 		@Override
 		public void run() {*/
-			_widget.setText("diag: "+d);
+			_widget.setText(""+d);
 /*		}
 		  
 	  });*/
