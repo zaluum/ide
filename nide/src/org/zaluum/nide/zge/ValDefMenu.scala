@@ -25,12 +25,12 @@ object ValDefMenu{
     v.tpe match {
       case b:BoxTypeSymbol if (!b.isLocal)=>
         newItem("Constructor...") {
-          new ConstructorMenu(viewer, v).open()
+          new ConstructorDialog(viewer, v).open()
         }
         tpeMenu
       case b:BoxTypeSymbol if (b.isLocal) =>
         newItem("Super...") {
-          new SuperMenu(viewer,v).open() 
+          new SuperDialog(viewer,v).open() 
         }
       case _ =>
         tpeMenu

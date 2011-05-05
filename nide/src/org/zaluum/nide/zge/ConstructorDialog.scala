@@ -1,14 +1,17 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.ui.ISharedImages
+import org.eclipse.ui.PlatformUI
 import net.miginfocom.swt.MigLayout
 import org.eclipse.jface.dialogs.Dialog
 import org.eclipse.jface.viewers._
 import org.eclipse.swt.graphics.Image
-import org.eclipse.swt.widgets.{ Table, TableItem, Shell, Composite, TableColumn, Label, Control }
+import org.eclipse.swt.widgets.{ Menu,MenuItem,Table, TableItem, Shell, Composite, TableColumn, Label, Control }
 import org.eclipse.swt.SWT
+import org.eclipse.swt.events.{ KeyListener, KeyEvent }
 import org.zaluum.nide.compiler._
-
-class ConstructorMenu(viewer:Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
+import SWTScala._
+class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   var combo: ComboViewer = _
   def comboValue = {
     val sel = combo.getSelection.asInstanceOf[IStructuredSelection]
@@ -37,7 +40,7 @@ class ConstructorMenu(viewer:Viewer, vs: ValSymbol) extends Dialog(viewer.shell)
     }
   }
   def createTable(parent: Composite) = {
-    val table = new Table(parent, SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL |
+    val table = new Table(parent, SWT.MULTI | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL |
       SWT.FULL_SELECTION | SWT.HIDE_SELECTION)
     val nameCol = new TableColumn(table, SWT.RIGHT)
     table.setLinesVisible(true);
@@ -62,8 +65,7 @@ class ConstructorMenu(viewer:Viewer, vs: ValSymbol) extends Dialog(viewer.shell)
     val c = new Composite(sup, SWT.NONE)
     //applyDialogFont(c);
     c.setLayout(new MigLayout)
-    val l = new Label(c, SWT.NONE)
-    l.setText("Select the constructor to be used")
+    newLabel(c,"Select the constructor to be used")
     combo = new ComboViewer(c)
     combo.setContentProvider(ArrayContentProvider.getInstance)
     val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
@@ -115,8 +117,28 @@ class ConstructorMenu(viewer:Viewer, vs: ValSymbol) extends Dialog(viewer.shell)
         tableViewer.refresh()
       }
     })
+    // DELETE
+    def delete() {
+      val sel = tableViewer.getSelection.asInstanceOf[StructuredSelection]
+      if (!sel.isEmpty) {
+        import scala.collection.JavaConversions._
+        val selected = sel.toList.toList.asInstanceOf[List[TableEntry]]
+        val toDelete = selected filter { _.sym.isEmpty }
+        if (!toDelete.isEmpty) {
+          tableContents = tableContents filterNot (toDelete.contains(_))
+          tableViewer.refresh()
+        }
+      }
+    }
+    newPopupMenu(getShell,table) { m=>
+      newMenuItem(m, "Delete", Some(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_ELCL_REMOVE))) {
+        delete()
+      }
+    }
+    addKeyReleasedReaction(table,SWT.DEL) {delete()}
     c
   }
+
   def createTableValue(c: Option[Constructor], values: List[String]) = {
     val withSymbol = for (cons ← c.toList; p ← cons.params) yield { TableEntry(Some(p), "") }
     val others = for (i ← withSymbol.length until values.length) yield new TableEntry(None, "")

@@ -1,5 +1,9 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.swt.widgets.MenuItem
+import org.eclipse.swt.graphics.Image
+import org.eclipse.swt.widgets.Menu
+import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.custom.CCombo
 import org.eclipse.swt.widgets.Combo
 import org.eclipse.swt.widgets.Composite
@@ -8,7 +12,7 @@ import org.eclipse.swt.widgets.Widget
 import org.eclipse.swt.events.SelectionListener
 import org.eclipse.swt.widgets.Control
 import org.eclipse.swt.SWT
-import org.eclipse.swt.events.{ SelectionAdapter, SelectionEvent, DisposeListener, DisposeEvent }
+import org.eclipse.swt.events.{ SelectionAdapter, SelectionEvent, DisposeListener, DisposeEvent, KeyListener, KeyEvent }
 import org.eclipse.swt.widgets.{ Button, Text, Listener, Event }
 object SWTScala {
   def addReaction(b: { def addSelectionListener(l: SelectionListener) })(r: ⇒ Unit) {
@@ -44,5 +48,25 @@ object SWTScala {
     co.setText(txt)
     co.setLayoutData(layout)
     co
+  }
+  def newPopupMenu(s:Shell,target:Control)(body:Menu=>Unit) {
+    val menu = new Menu(s,SWT.POP_UP)
+    body(menu)
+    target.setMenu(menu)
+    menu
+  }
+  def newMenuItem(menu:Menu,txt:String, img:Option[Image]=None)(action : =>Unit) {
+    val menuItem = new MenuItem(menu, SWT.PUSH)
+    menuItem.setText(txt)
+    img foreach { menuItem.setImage(_) }
+    addReaction(menuItem)(action)
+  }
+  def addKeyReleasedReaction(obj:{def addKeyListener(k:KeyListener)}, keyCode:Int)(body: =>Unit) {
+    obj.addKeyListener(new KeyListener {
+        def keyPressed(e: KeyEvent) {}
+        def keyReleased(e: KeyEvent) {
+          if (e.keyCode == keyCode) body
+        }
+      })
   }
 }

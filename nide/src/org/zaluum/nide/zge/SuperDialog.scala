@@ -2,7 +2,7 @@ package org.zaluum.nide.zge
 
 import org.zaluum.nide.compiler._
 
-class SuperMenu(viewer: Viewer, vs: ValSymbol) extends ValDefDialog(viewer, vs) {
+class SuperDialog(viewer: Viewer, vs: ValSymbol) extends ValDefDialog(viewer, vs) {
   override def execCommand() {
     def bd = vs.tpe.decl.asInstanceOf[BoxDef]
     if (v.typeName.str != text) {
