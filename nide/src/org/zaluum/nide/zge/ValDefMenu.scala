@@ -27,6 +27,9 @@ object ValDefMenu{
         newItem("Constructor...") {
           new ConstructorDialog(viewer, v).open()
         }
+        newItem("Parameters...") {
+          new ParamsDialog(viewer,v).open()
+        }
         tpeMenu
       case b:BoxTypeSymbol if (b.isLocal) =>
         newItem("Super...") {
