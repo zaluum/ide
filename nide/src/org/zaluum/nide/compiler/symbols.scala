@@ -139,6 +139,7 @@ class BoxTypeSymbol(
       }
     }
   }
+  var okOverride = false
   var constructors = List[Constructor] () 
   var source: String = "" // TODO
   def valsInOrder = boxes.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[ValSymbol]]

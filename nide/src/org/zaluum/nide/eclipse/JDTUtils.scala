@@ -1,4 +1,9 @@
 package org.zaluum.nide.eclipse
+
+import scala.collection.mutable.Buffer
+import org.eclipse.jdt.core.IMember
+import org.eclipse.jdt.core.IMethod
+import org.eclipse.core.runtime.NullProgressMonitor
 import org.eclipse.jdt.core.IElementChangedListener
 import org.eclipse.jdt.core.JavaCore
 import org.zaluum.annotation.Box
@@ -14,7 +19,20 @@ import org.eclipse.jdt.core.{ ICompilationUnit, IJavaElement, IJavaElementDelta,
 import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch }
 import org.eclipse.jdt.internal.core.JavaModelManager
 import scala.util.control.Exception._
-
+object JDTUtils {
+  def abstractMethodsOf(t: IType) = {
+    val hier = t.newSupertypeHierarchy(new NullProgressMonitor)
+    var abstractMethods = Buffer[IMethod]()
+    def process(m:IMethod) {
+      abstractMethods.filterNot(m.isSimilar(_))
+      if (isAbstract(m)) abstractMethods += m
+    }
+    for (st ← hier.getAllSuperclasses(t); m ← st.getMethods) process(m)
+    for (m<- t.getMethods) process(m)
+    abstractMethods.toList
+  }
+  def isAbstract(t: IMember) = Flags.isAbstract(t.getFlags)
+}
 object AnnotationUtils {
   def annotationToPoint(a: IAnnotation) = {
     val ox = findIntegerValueOfAnnotation(a, "x")
@@ -24,7 +42,7 @@ object AnnotationUtils {
       case _ ⇒ Point(0, 0)
     }
   }
-  def findAnnotations(t: IType, ann: IAnnotatable, str: String) = 
+  def findAnnotations(t: IType, ann: IAnnotatable, str: String) =
     ann.getAnnotations find { a ⇒ isAnnType(t, a, str) }
 
   def findStringValueOfAnnotation(a: IAnnotation, key: String) = {
@@ -57,12 +75,12 @@ object SearchUtils {
     var list = List[A]()
     val searchRequestor = new SearchRequestor() {
       def acceptSearchMatch(matchh: SearchMatch) {
-        def processElement (a:AnyRef) = a match {
-              case t: IType ⇒ list = processor(t) :: list
-              case other ⇒
+        def processElement(a: AnyRef) = a match {
+          case t: IType ⇒ list = processor(t) :: list
+          case other ⇒
         }
         matchh match {
-          case t: TypeReferenceMatch => processElement(t.getElement) 
+          case t: TypeReferenceMatch ⇒ processElement(t.getElement)
           case t: TypeDeclarationMatch ⇒ processElement(t.getElement)
         }
       }
@@ -74,8 +92,8 @@ object SearchUtils {
     IJavaSearchConstants.CLASS_AND_INTERFACE,
     IJavaSearchConstants.DECLARATIONS,
     SearchPattern.R_EXACT_MATCH)
-  def patternAnnotation(str:String) = SearchPattern.createPattern(str,
-      IJavaSearchConstants.ANNOTATION_TYPE,
-      IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
-      SearchPattern.R_EXACT_MATCH)
+  def patternAnnotation(str: String) = SearchPattern.createPattern(str,
+    IJavaSearchConstants.ANNOTATION_TYPE,
+    IJavaSearchConstants.ANNOTATION_TYPE_REFERENCE,
+    SearchPattern.R_EXACT_MATCH)
 }

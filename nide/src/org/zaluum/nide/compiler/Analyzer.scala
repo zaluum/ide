@@ -164,10 +164,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
           val bs = sym.asInstanceOf[BoxTypeSymbol]
           bs.constructors = List(new Constructor(bs,List()))
           tree.tpe = sym
+          // FIXME reported errors do not show in the editor (valdef)
           superName foreach { sn ⇒
             currentScope.lookupBoxType(sn) match {
               case Some(bs: BoxTypeSymbol) ⇒
                 sym._superSymbol = Some(bs)
+                if (!bs.okOverride) 
+                  error ("Super box " + sn.str + " has no 'void contents()' to override or has other abstract methods.", tree)
               case None ⇒
                 error("Super box type not found " + sn, tree)
             }

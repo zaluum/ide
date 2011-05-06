@@ -1,5 +1,8 @@
 package org.zaluum.nide.eclipse
 
+import org.eclipse.jdt.core.Signature
+import org.eclipse.core.runtime.NullProgressMonitor
+import org.eclipse.jdt.core.dom.AST
 import java.io.InputStream
 import org.zaluum.nide.protobuf.BoxFileProtos
 import java.net.{ URL, URLClassLoader }
@@ -78,6 +81,14 @@ class ZaluumLoader(val zProject: ZaluumProject) extends EclipseUtils {
       collectedConstructors
     else
       collectedConstructors ++ defaultCons.toList 
+    // abstract methods
+    val abstracts = JDTUtils.abstractMethodsOf(t)
+    def isOverridable(m:IMethod) = {
+      m.getElementName == "contents" && m.getParameterTypes.size==0 && m.getReturnType== Signature.SIG_VOID// TODO remove string
+    }
+    if (abstracts.size == 1 && isOverridable(abstracts.head)) { 
+      bs.okOverride = true
+    }
     // ports
     for (f ← t.getFields) {
       val name = Name(f.getElementName)
