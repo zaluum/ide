@@ -23,7 +23,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
   def location(t: Tree) = Location(List(0))
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
-      case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
+      case b @ BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
         val orderVals = b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder map { _.decl }
         atOwner(b.symbol) {
           BoxDef(name, superName, guiSize, image,
@@ -40,7 +40,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       bd.symbol.asInstanceOf[BoxTypeSymbol].visualClass
     }
     def apply(t: Tree) = t match {
-      case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
+      case b @ BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
         val tpe = b.tpe.asInstanceOf[BoxTypeSymbol]
         val baseFields = (vals ++ ports).map { field(_) }
         val fields = vClass(b) map { vn ⇒
@@ -56,7 +56,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     def field(t: Tree) = t match {
       case PortDef(name, typeName, dir, inPos, extPos) ⇒
         FieldDef(name, t.symbol.tpe.name)
-      case v:ValDef ⇒
+      case v: ValDef ⇒
         val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
         FieldDef(v.name, t.symbol.tpe.asInstanceOf[BoxTypeSymbol].fqName)
     }
@@ -65,31 +65,31 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       // boxes
       val boxCreation: List[Tree] = b.vals map {
         _ match {
-          case v:ValDef ⇒
+          case v: ValDef ⇒
             val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
             val vs = v.symbol.asInstanceOf[ValSymbol]
             val sig = vs.constructor.get.signature
-            val values = for ((v,t) <- vs.constructorParams) yield {
-              Const(v) 
+            val values = for ((v, t) ← vs.constructorParams) yield {
+              Const(v)
             }
             Assign(
-                Select(This, FieldRef(v.name, tpe.fqName, bs.fqName)), 
-                New(tpe.fqName, values, sig))
+              Select(This, FieldRef(v.name, tpe.fqName, bs.fqName)),
+              New(tpe.fqName, values, sig))
         }
       }
-      // ports
-      val ports = b.vals flatMap {
-        case v: ValDef ⇒
-          val valSym = v.symbol.asInstanceOf[ValSymbol]
-          val valTpe = valSym.tpe.asInstanceOf[BoxTypeSymbol]
+      // params
+      val params = b.vals flatMap {
+        case valDef: ValDef ⇒
+          val valSym = valDef.symbol.asInstanceOf[ValSymbol]
+          val valBs = valSym.tpe.asInstanceOf[BoxTypeSymbol]
           valSym.params map {
             case (param, v) ⇒
-              Assign(
-                Select(
-                  Select(This, FieldRef(valSym.name, valTpe.fqName, bs.fqName)),
-                  FieldRef(param.name, param.tpe.name, valTpe.fqName) // TODO FIXME
-                  ),
-                Const(v))
+              Invoke(
+                Select(This, FieldRef(valSym.name, valBs.fqName, bs.fqName)),
+                param.name.str,
+                List(Const(v)),
+                valBs.fqName,
+                "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V")
           }
       }
       // widgets
@@ -106,7 +106,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
             "(II)V"))
         widgetCreation ++ createWidgets(bs, List(), b)
       }
-      ConstructorMethod(widgets map { w ⇒ boxCreation ++ ports ++ w } getOrElse (boxCreation ++ ports))
+      ConstructorMethod(boxCreation ++ params ++ widgets.toList.flatten)
     }
 
     val widgetName = Name("_widget")
@@ -163,13 +163,13 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         def toRef(p: AnyRef): Tree = p match {
           case b: BoxTypeSymbol ⇒ This
           case v: ValSymbol ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
-          case ValPortKey(from, portName,in) ⇒
-            val vfrom = b.vals.view.collect {case v:ValDef => v.symbol } find {_.name==from} get
+          case ValPortKey(from, portName, in) ⇒
+            val vfrom = b.vals.view.collect { case v: ValDef ⇒ v.symbol } find { _.name == from } get
             val pfrom = vfrom.tpe.asInstanceOf[BoxTypeSymbol].lookupPort(portName).get.asInstanceOf[PortSymbol]
             Select(toRef(vfrom), FieldRef(portName, pfrom.tpe.name, vfrom.tpe.asInstanceOf[BoxTypeSymbol].fqName))
-          case BoxPortKey(portName,in) ⇒
+          case BoxPortKey(portName, in) ⇒
             val pfrom = bs.lookupPort(portName).get
-            Select(This, FieldRef(portName, pfrom.tpe.name, bs.fqName))            
+            Select(This, FieldRef(portName, pfrom.tpe.name, bs.fqName))
         }
         val (out, ins) = c
         ins.toList map { in ⇒
@@ -180,7 +180,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       def propagateInitialInputs = {
         val initialConnections = {
           connections.flow collect {
-            case c@(a:BoxPortKey, _) ⇒ c
+            case c @ (a: BoxPortKey, _) ⇒ c
           } toList
         }
         initialConnections flatMap { execConnection(_) }
@@ -188,7 +188,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       // execute in order
       def runOne(v: ValDef) = {
         def outConnections = connections.flow collect {
-          case c@(p@ValPortKey(name, _, in), ins) if (name == v.name) ⇒ c
+          case c @ (p @ ValPortKey(name, _, in), ins) if (name == v.name) ⇒ c
         } toList
         val outs = outConnections flatMap { execConnection(_) }
         val tpe = v.tpe.asInstanceOf[BoxTypeSymbol].fqName

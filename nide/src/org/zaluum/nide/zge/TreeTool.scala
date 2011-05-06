@@ -331,7 +331,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def execute(s: String) {
       if (e != null) {
-        editParam(e.valDef,Name("param"), s)
+        editParam(e.valDef,Name("setParam"), s)
       }
     }
     def exit() { e.hideEdit(); viewer.focus; selecting.enter(); }

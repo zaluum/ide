@@ -20,18 +20,31 @@ import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequesto
 import org.eclipse.jdt.internal.core.JavaModelManager
 import scala.util.control.Exception._
 object JDTUtils {
-  def abstractMethodsOf(t: IType) = {
+  def allMethodsOf(t: IType) = {
     val hier = t.newSupertypeHierarchy(new NullProgressMonitor)
-    var abstractMethods = Buffer[IMethod]()
-    def process(m:IMethod) {
-      abstractMethods.filterNot(m.isSimilar(_))
-      if (isAbstract(m)) abstractMethods += m
+    val supers = for (st ← hier.getAllSuperclasses(t).toList.view; m ← st.getMethods) yield m
+    supers ++ t.getMethods
+  }
+  def visibleMethodsOf(t: IType) = {
+    var methods = Buffer[IMethod]()
+    def process(m: IMethod) {
+      methods.filterNot(m.isSimilar(_))
+      methods += m
     }
-    for (st ← hier.getAllSuperclasses(t); m ← st.getMethods) process(m)
-    for (m<- t.getMethods) process(m)
-    abstractMethods.toList
+    for (m ← allMethodsOf(t)) process(m)
+    methods.toList
+  }
+  def abstractMethodsOf (t:IType) = {
+    visibleMethodsOf(t).filter(isAbstract(_))
+  }
+  def publicMethodsOf(t:IType) = {
+    visibleMethodsOf(t).filter(isPublic(_))
   }
   def isAbstract(t: IMember) = Flags.isAbstract(t.getFlags)
+  def isPublic(t: IMember) = Flags.isPublic(t.getFlags)
+  def isPrivate(t: IMember) = Flags.isPrivate(t.getFlags)
+  def isProtected(t: IMember) = Flags.isProtected(t.getFlags)
+  def isPackageDefault(t: IMember) = Flags.isPackageDefault(t.getFlags)
 }
 object AnnotationUtils {
   def annotationToPoint(a: IAnnotation) = {

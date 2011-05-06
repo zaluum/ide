@@ -61,7 +61,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
   }
 
   private def deleteMarkers(file: IFile) {
-    file.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_ZERO);
+    file.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
   }
   def jmodel = JavaModelManager.getJavaModelManager.getJavaModel
   def jProject = jmodel.getJavaProject(getProject);
@@ -107,7 +107,7 @@ class ZaluumBuilder extends IncrementalProjectBuilder with EclipseUtils {
       outputFile.create(is, true, null)
   }
   protected def fullBuild(monitor: IProgressMonitor) {
-    getProject.deleteMarkers(ZaluumBuilder.MARKER_TYPE, false, IResource.DEPTH_INFINITE);
+    getProject.deleteMarkers(ZaluumBuilder.MARKER_TYPE, true, IResource.DEPTH_INFINITE);
     ZaluumModelMananger.getOrCreate(getProject) foreach { zp => 
       zp.reset()
       visitSourceZaluums.map { f ⇒ compile(f, zp) }      

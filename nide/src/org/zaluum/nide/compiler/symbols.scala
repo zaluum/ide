@@ -177,7 +177,7 @@ class Constructor(owner:BoxTypeSymbol, val params:List[ParamSymbol]) {
   }
 }
 
-class ParamSymbol(owner: BoxTypeSymbol, name: Name, val default: String) extends IOSymbol(owner, name, In) {
+class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name, In) {
   override def toString = "ParamSymbol(" + name + ")"
 }
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {

@@ -72,7 +72,7 @@ class ZaluumLoader(val zProject: ZaluumProject) extends EclipseUtils {
         val params = c.getParameterNames.toList.zip(c.getParameterTypes)
         new Constructor(bs,
           for ((name, sig) ← params) yield {
-            val param = new ParamSymbol(bs, Name(name), "")
+            val param = new ParamSymbol(bs, Name(name))
             param.tpe = signatureToType(t, sig)
             param
           })
@@ -89,6 +89,16 @@ class ZaluumLoader(val zProject: ZaluumProject) extends EclipseUtils {
     if (abstracts.size == 1 && isOverridable(abstracts.head)) { 
       bs.okOverride = true
     }
+    // setters
+    val methods = JDTUtils.publicMethodsOf(t)
+    val setters = methods filter {m => m.getElementName.startsWith("set") && m.getReturnType == Signature.SIG_VOID && m.getParameterTypes.size==1}
+    for (m<-setters) {
+      val name = m.getElementName
+      val param = new ParamSymbol(bs, Name(name))
+      val tpe = signatureToType(t,m.getParameterTypes.head)
+      param.tpe = tpe
+      bs.enter(param)
+    }
     // ports
     for (f ← t.getFields) {
       val name = Name(f.getElementName)
@@ -98,14 +108,8 @@ class ZaluumLoader(val zProject: ZaluumProject) extends EclipseUtils {
         port.tpe = tpe
         bs.enter(port)
       }
-      def param(a: IAnnotation) {
-        val param = new ParamSymbol(bs, Name(f.getElementName), "") // TODO default
-        param.tpe = tpe
-        bs.enter(param)
-      }
       findAnnotations(t, f, classOf[org.zaluum.annotation.In].getName) foreach { port(true, _) }
       findAnnotations(t, f, classOf[org.zaluum.annotation.Out].getName) foreach { port(false, _) }
-      findAnnotations(t, f, classOf[org.zaluum.annotation.Param].getName) foreach { param(_) }
     }
     bs
   }
