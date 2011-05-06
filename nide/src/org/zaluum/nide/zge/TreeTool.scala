@@ -316,7 +316,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           controller.exec(
             new EditTransformer() {
               val trans: PartialFunction[Tree, Tree] = {
-                case p: Param if p == e.param ⇒ Param(p.key, value)
+                case p: Param if Some(p) == e.param ⇒ Param(p.key, value)
               }
             })
         case None ⇒

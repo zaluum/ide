@@ -222,6 +222,20 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
                   error("Cannot find constructor for box " + v.typeName.str + 
                     " with signature (" +v.constructorTypes.map{_.str}.mkString(", ") + ")", tree )
               }
+              // params
+              for (p <- v.params.asInstanceOf[List[Param]]) {
+                bs.params.find { _.name == p.key} match {
+                  case Some(parSym) => 
+                    val toType = parSym.tpe.name
+                    val parsed = Literals.parse(p.value,toType) getOrElse {
+                      error("Cannot parse literal \"" + p.value + "\" to " + toType.str + " in parameter " + p.key,tree)
+                      null
+                    }
+                    vsym.params += (parSym -> parsed)
+                  case None => error("Cannot find parameter " + p.key,tree)
+                }
+              }
+              vsym.params
             case _ =>
               v.symbol.tpe = NoSymbol
               error("Box class " + v.typeName + " not found", tree);
@@ -246,38 +260,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
         case ThisRef() ⇒
           tree.symbol = currentOwner // TODO what symbol for this?
           tree.tpe = currentOwner.asInstanceOf[BoxTypeSymbol] // owner of thisRef is owner of connection which is boxTypeSymbol
-        case _ ⇒
-      }
-    }
-  }
-  class CheckParams(global: Symbol) extends Traverser(global) with ReporterAdapter {
-    def reporter = Analyzer.this.reporter
-    def location(tree: Tree) = globLocation(tree)
-    def parseValue(p: Param, parSymbol: ParamSymbol, valSymbol: ValSymbol) {
-      p.symbol = parSymbol
-      p.tpe = parSymbol.tpe
-      try {
-        parSymbol.tpe.name match {
-          case Name("double") ⇒ valSymbol.params += (parSymbol -> p.value.toDouble)
-          case n ⇒ error("error type " + n.str + " cannot parse literals", p)
-        }
-      } catch {
-        case e ⇒ error("invalid literal: " + p.value, p)
-      }
-    }
-    override def traverse(tree: Tree) {
-      super.traverse(tree)
-      tree match {
-        case p @ Param(name, value) ⇒
-          val valSym = currentOwner.asInstanceOf[ValSymbol] // Params are from valSymbols
-          valSym.tpe match {
-            case b: BoxTypeSymbol ⇒
-              b.params.find(_.name == name) match {
-                case Some(parSymbol) ⇒ parseValue(p, parSymbol, valSym)
-                case None ⇒ error("Parameter " + name + " does not exist", p)
-              }
-            case _ ⇒ error("cannot find type of valDef owner " + p, p) // already failed
-          }
         case _ ⇒
       }
     }
@@ -388,7 +370,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
     val root = global.root
     new Namer(root).traverse(toCompile)
     new Resolver(root).traverse(toCompile)
-    new CheckParams(root).traverse(toCompile)
     new CheckConnections(toCompile, root).check()
     toCompile
   }
