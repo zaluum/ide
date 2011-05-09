@@ -19,10 +19,10 @@ object Utils {
       ir.put(key, ImageDescriptor.createFromURL(base.getResource(key + ".png")));
     }
   }
-  implicit def asRunnable(func: () ⇒ Unit): Runnable = {
+  implicit def asRunnable(func: ⇒ Unit): Runnable = {
     new Runnable() {
       def run() {
-        func()
+        func
       }
     }
   }

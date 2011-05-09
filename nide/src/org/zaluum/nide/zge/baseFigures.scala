@@ -1,5 +1,7 @@
 package org.zaluum.nide.zge
 
+
+import org.eclipse.draw2d.Shape
 import org.eclipse.draw2d.Viewport
 import org.eclipse.draw2d.Layer
 import org.zaluum.nide.compiler.SelectionSubject
@@ -167,6 +169,15 @@ trait Item extends Hover {
   def moveDeltaFeed(delta: Vector2) {
     val loc = pos + delta
     feed.setInnerLocation(point(loc))
+  }
+  def blink(on:Boolean) 
+  def blink() { 
+    blink(true);
+    import org.zaluum.nide.Utils._
+    val display = container.viewer.display
+    display.timerExec(150, blink(false))
+    display.timerExec(250, blink(true))
+    display.timerExec(400, blink(false))  
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))

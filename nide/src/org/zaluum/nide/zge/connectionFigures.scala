@@ -60,6 +60,7 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
     b.contains(x, y)
   }
   def connectionDef = for (cf ← con; cdef ← cf.e.srcCon) yield cdef
+  def blink(c:Boolean) {}
   override def paintFigure(g: Graphics) = {
     g.setForegroundColor(getForegroundColor);
     g.setLineStyle(style)
@@ -131,6 +132,7 @@ class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Item {
   val feed = null
   def myLayer = null
   def paint = painter.paintRoute(e, feedback, e.isComplete, Some(this))
+  def blink(c:Boolean) = {}
   override def show() = {
     container.connectionsLayer.add(this);
     paint

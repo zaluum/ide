@@ -29,6 +29,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       def selectItem(i:Item) {
         viewer.selection.updateSelection(i.selectionSubject.toSet, shift)
         viewer.refresh()
+        i.selectionSubject foreach {controller.blink(_,viewer)}
       }
       (beingSelected, port) match {
         case (Some(o:OpenPortDeclFigure),_) => selectItem(o)

@@ -31,6 +31,9 @@ class Controller(private var nowTree: Tree, val global: ZaluumProject) {
   global.addObserver(observer)
   def dispose() { global.removeObserver(observer) }
   def refreshTools() { viewers foreach { _.tool.refresh() } }
+  def blink(s:SelectionSubject, fromViewer:Viewer) {
+    viewers filterNot {_==fromViewer} foreach { _.blink(s) }
+  }
   def tree = nowTree
   val reporter = new Reporter()
   def compile() = {

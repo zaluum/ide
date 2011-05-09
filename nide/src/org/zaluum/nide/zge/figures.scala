@@ -72,10 +72,21 @@ trait AutoDisposeImageFigure extends ImageFigure {
 }
 class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
+  setOpaque(true)
   def updateMe() {
     disposeImage()
     val newImg = container.viewerResources.imageFactory(valDef.tpe)
     setImage(newImg)
+  }
+  override def paintFigure(gc:Graphics) {
+    gc.setAlpha(if(blinkOn) 100 else 255);
+  //  gc.drawImage(getImage, getClientArea.x, getClientArea.y)
+    super.paintFigure(gc)
+  }
+  var blinkOn = false
+  def blink(b:Boolean) {
+    blinkOn = b
+    repaint()
   }
 }
 class DirectValFigure(val container: ContainerItem) extends TextEditFigure with ValFigure {
@@ -85,6 +96,9 @@ class DirectValFigure(val container: ContainerItem) extends TextEditFigure with 
   def updateMe {
     fl.setText(text)
     setForegroundColor(Colorizer.color(param.map(_.tpe).getOrElse(NoSymbol)))
+  }
+  def blink(c:Boolean) {
+    this.setXOR(c)
   }
 }
 trait TextEditFigure extends RectangleFigure with Item with RectFeedback {
@@ -151,6 +165,11 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Fig
   def updateMe() {}
   override def updateValPorts() {}
   override def selectionSubject = Some(valDef)
+  var blinkOn = false
+  def blink(b:Boolean) {
+    blinkOn = b
+    repaint()
+  }
   override def paintFigure(g: Graphics) {
     val rect = getClientArea()
     val aimage = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB)
@@ -162,7 +181,10 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Fig
     }
     val imageData = SWTUtils.convertAWTImageToSWT(aimage)
     val image = new org.eclipse.swt.graphics.Image(Display.getCurrent(), imageData)
+    g.setXORMode(blinkOn)
     g.drawImage(image, rect.x, rect.y)
+    g.setForegroundColor(ColorConstants.lightGray)
+    g.drawRectangle(rect.getCopy.expand(-1,-1))
     ag.dispose();
     image.dispose()
   }

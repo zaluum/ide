@@ -30,7 +30,9 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
     def buttonUp {
       beingSelected match {
-        case Some(s: Item) ⇒ viewer.selection.updateSelection(s.selectionSubject.toSet, shift)
+        case Some(s: Item) ⇒ 
+          viewer.selection.updateSelection(s.selectionSubject.toSet, shift)
+          s.selectionSubject foreach {controller.blink(_,viewer)}
         case None ⇒ viewer.selection.deselectAll()
       }
       viewer.refresh()
@@ -60,6 +62,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
             if (!viewer.selection(fig.selectionSubject.get)) {
               viewer.selection.updateSelection(fig.selectionSubject.toSet, shift)
               fig.showFeedback()
+             
             }
           }
           moving.enter(initDrag, initContainer)

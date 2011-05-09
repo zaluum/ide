@@ -79,7 +79,7 @@ class GuiViewer(parent: Composite, controller: Controller, val global: ZaluumPro
     updateContents(Map())
     selectedItems foreach { _.showFeedback() }
   }
-   def selectedItems = this.deepChildren.collect {
+  def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i
   }.toSet
   shell.setSize(size.w + 30, size.h +40)

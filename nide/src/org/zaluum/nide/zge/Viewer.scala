@@ -19,6 +19,7 @@ abstract class Viewer(parent: Composite, val controller: Controller) extends Fre
   def tool: Tool
   def refresh()
   def remapSelection(map :  PartialFunction[SelectionSubject,SelectionSubject]) // move to item?
+  def blink(s:SelectionSubject)
   def dispose() {
     canvas.dispose()
     controller.unregisterViewer(this)

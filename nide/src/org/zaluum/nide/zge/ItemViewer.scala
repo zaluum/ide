@@ -48,9 +48,19 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
     super.dispose()
   }
   /*DEFS*/
+  def blink(s:SelectionSubject) {
+    this.deepChildren.find { 
+      case i : Item => i.selectionSubject == Some(s) 
+      case _=> false
+    } foreach {
+      case i: Item => i.blink();
+    }
+  }
   def showMarquee() { feedbackLayer.add(marquee) }
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
   def hideMarquee() { feedbackLayer.remove(marquee) }
   def selectedItems: Set[Item]
   val selection = new SelectionManager[SelectionSubject]()
+  def blink(b:Boolean) {}
+  
 }

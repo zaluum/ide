@@ -65,6 +65,9 @@ class OpenPortDeclFigure(val openBox: OpenBoxFigure) extends RectangleFigure wit
   val intPort: PortFigure = new PortFigure(openBox)
   ports += extPort
   ports += intPort
+  def blink(b:Boolean) {
+    setXOR(b)
+  }
   def update(t: PortDef, left: Boolean) {
     this.tree = t
     this.left = left
@@ -107,6 +110,7 @@ abstract class PortHolderFigure(val container: ContainerItem) extends AutoDispos
     val position = pos + (if (dir == In) Vector2(48, 8) else Vector2(0, 8))
     port.update(position, sym, container.symbol, dir == In)
   }
+  def blink(b:Boolean) {}
 
 }
 class PortDeclFigure(val tree: PortDef, container: ContainerItem) extends PortHolderFigure(container) {

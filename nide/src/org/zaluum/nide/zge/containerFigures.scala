@@ -161,7 +161,10 @@ trait ContainerItem extends Item {
     if (showing) connections.foreach { _.show }
   }
 }
-
+object OpenBoxFigure {
+  val backgroundNormal = ColorConstants.lightGray
+  val backgroundBlink = ColorConstants.white
+}
 class OpenBoxFigure(
   val container: ContainerItem,
   val viewer: Viewer,
@@ -178,6 +181,7 @@ class OpenBoxFigure(
   val feedbackLayer = new Layer
   val background = new Layer
   // ContainerItem
+  var backgroundColor = OpenBoxFigure.backgroundNormal
   def helpers = portDecls ++ portSymbols
   val portDecls = Buffer[OpenPortDeclFigure]()
   val portSymbols = Buffer[PortSymbolFigure]()
@@ -187,6 +191,9 @@ class OpenBoxFigure(
     updateValDef(v)
     updateContents(changes)
     showArrowsIfNotBigEnough
+  }
+  def blink(b:Boolean) {
+    backgroundColor = if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal
   }
   import PositionConstants._
   private def newTriangle(pos: Int) = {
