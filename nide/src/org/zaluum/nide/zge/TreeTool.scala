@@ -26,7 +26,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def buttonUp {
       if (filterDouble) { filterDouble = false; return }
+      def selectItem(i:Item) {
+        viewer.selection.updateSelection(i.selectionSubject.toSet, shift)
+        viewer.refresh()
+      }
       (beingSelected, port) match {
+        case (Some(o:OpenPortDeclFigure),_) => selectItem(o)
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
           connecting.enter(port.container, port, currentMouseLocation)
@@ -37,9 +42,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           } else {
             connecting.enter(line.container, line, currentMouseLocation)
           }
-        case (Some(box: Item), None) ⇒
-          viewer.selection.updateSelection(box.selectionSubject.toSet, shift)
-          viewer.refresh()
+        case (Some(i: Item), None) ⇒ selectItem(i)
         case (None, _) ⇒
           viewer.selection.deselectAll()
           viewer.refresh()
@@ -55,6 +58,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       super.move()
       portsTrack.update()
       (portsTrack.current, itemUnderMouse) match {
+        case (_, Some(l:OpenPortDeclFigure)) => 
+          viewer.setCursor(Cursors.ARROW)
         case (_, Some(l: LineItem)) if (l.l.distance(currentMouseLocation) > connectionLineDistance) ⇒
           viewer.setCursor(Cursors.UPARROW)
         case (None, Some(item)) ⇒
