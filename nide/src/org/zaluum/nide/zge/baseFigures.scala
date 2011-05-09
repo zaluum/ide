@@ -175,9 +175,9 @@ trait Item extends Hover {
     blink(true);
     import org.zaluum.nide.Utils._
     val display = container.viewer.display
-    display.timerExec(150, blink(false))
-    display.timerExec(250, blink(true))
-    display.timerExec(400, blink(false))  
+    display.timerExec(100, blink(false))
+    display.timerExec(200, blink(true))
+    display.timerExec(300, blink(false))  
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
     feed.setInnerBounds(handle.deltaAdd(delta, getBounds))

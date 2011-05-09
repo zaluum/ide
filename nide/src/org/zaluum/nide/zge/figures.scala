@@ -72,7 +72,6 @@ trait AutoDisposeImageFigure extends ImageFigure {
 }
 class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
-  setOpaque(true)
   def updateMe() {
     disposeImage()
     val newImg = container.viewerResources.imageFactory(valDef.tpe)
@@ -168,6 +167,10 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Fig
   var blinkOn = false
   def blink(b:Boolean) {
     blinkOn = b
+    // raise the figure
+    val p = getParent
+    p.remove(this)
+    p.add(this)
     repaint()
   }
   override def paintFigure(g: Graphics) {
