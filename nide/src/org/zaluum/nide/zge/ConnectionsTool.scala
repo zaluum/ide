@@ -20,6 +20,7 @@ trait ConnectionsTool {
     self: SingleContainer ⇒
     var g: ConnectionGraph = null
     var edge: Edge = null
+    var paintedEdge : Edge = null
     var last: Point = null
     var dst: Option[Hover] = None
     var src: Option[Hover] = None
@@ -42,7 +43,7 @@ trait ConnectionsTool {
       val snap = snapMouse(o, p)
       g.vertexs.find(v ⇒ v.p == snap).getOrElse {
         o match {
-          case Some(l: LineItem) ⇒  new Joint(snap)
+          case Some(l: LineItem) ⇒ new Joint(snap)
           case _ ⇒ new EmptyVertex(snap)
         }
       }
@@ -50,6 +51,7 @@ trait ConnectionsTool {
     def enter(initContainer: C, initFig: Hover, initPos: Point) {
       state = this
       enterSingle(initContainer)
+      paintedEdge = null
       painter = new ConnectionPainter(initContainer)
       initContainer.feedbackLayer.add(hFig)
       initContainer.feedbackLayer.add(vFig)
@@ -61,7 +63,7 @@ trait ConnectionsTool {
       last = srcPos
       center = true
       g = initContainer.graph
-      edge = Edge(vertexFor(initPos,src), vertexFor(initPos,src))
+      edge = Edge(vertexFor(initPos, src), vertexFor(initPos, src))
       dir = H
       move()
     }
@@ -72,14 +74,14 @@ trait ConnectionsTool {
     }
     def doEnter {}
     /**
-     * This tries to simplify the connection by searching for intersections
+     * This tries to simplify the connection searching for intersections
      */
     def endConnection() {
       val bs = initContainer.boxDef.symbol.asInstanceOf[BoxTypeSymbol]
       val wp = extend.points
       if (wp.distinct.size >= 2) {
-        val vend = vertexFor(wp.last,dst)
-        val vstart = vertexFor(wp.head,src)
+        val vend = vertexFor(wp.last, dst)
+        val vstart = vertexFor(wp.head, src)
         val newEdge = new Edge(vstart, vend, wp, None).untangle
         val newGraph = g.add(vstart).add(vend).cutAndAddToGraph(newEdge).prune.clean
         val (connections, junctions) = newGraph.toTree
@@ -97,7 +99,7 @@ trait ConnectionsTool {
           })
       } else exit()
     }
-    def extend = edge.extend(vertexFor(currentMouseLocation,dst), dir)
+    def extend = edge.extend(vertexFor(currentMouseLocation, dst), dir)
     def buttonUp {
       // execute model command
       if (dst.isDefined) {
@@ -106,7 +108,6 @@ trait ConnectionsTool {
         // waypoint
         edge = extend
         last = edge.points.last
-        painter.paintCreatingRoute(edge)
         move()
       }
     }
@@ -130,8 +131,13 @@ trait ConnectionsTool {
       portsTrack.hideTip
       selecting.enter()
     }
-
-    def move() {
+    def paintCreatingEdge(e:Edge) = {
+      if (paintedEdge!=e) {
+        painter.paintCreatingRoute(e)
+        paintedEdge = e
+      }
+    } 
+    def move() {  
       import math.abs
       portsTrack.update()
       dst foreach { _.hover = false }
@@ -157,20 +163,32 @@ trait ConnectionsTool {
         }
         if (d > 10) center = false
       }
-
-      if (dir == H) {
-        hFig.setStart(point(last))
-        val mid = new EPoint(now.x, last.y)
-        hFig.setEnd(mid)
-        vFig.setStart(mid)
-        vFig.setEnd(point(now))
-      } else {
-        vFig.setStart(point(last))
-        val mid = new EPoint(last.x, now.y)
-        vFig.setEnd(mid)
-        hFig.setStart(mid)
-        hFig.setEnd(point(now))
+      dst match {
+        case Some(p) ⇒
+          val ext = extend.fixEnds
+          paintCreatingEdge(ext)
+          val p = point(ext.b.p)
+          hFig.setStart(p)
+          vFig.setStart(p)
+          hFig.setEnd(p)
+          vFig.setEnd(p)
+        case None ⇒
+          paintCreatingEdge(edge)
+          if (dir == H) {
+            hFig.setStart(point(last))
+            val mid = new EPoint(now.x, last.y)
+            hFig.setEnd(mid)
+            vFig.setStart(mid)
+            vFig.setEnd(point(now))
+          } else {
+            vFig.setStart(point(last))
+            val mid = new EPoint(last.x, now.y)
+            vFig.setEnd(mid)
+            hFig.setStart(mid)
+            hFig.setEnd(point(now))
+          }
       }
+
     }
     def abort() { exit() }
 
@@ -215,7 +233,7 @@ trait ConnectionsTool {
         res match {
           case Some(v: ValPortKeySym) ⇒ valdefs.contains(v.valSym.decl)
           case Some(t: BoxPortKeySym) ⇒ portdefs.contains(t.box.decl)
-          case _ => false
+          case _ ⇒ false
         }
       }
       // update edge vertexs
@@ -252,8 +270,8 @@ trait ConnectionsTool {
               transformTrees(b.ports),
               connections,
               junctions)
-          case v:ValDef if (valdefs.contains(v)) ⇒
-            v.copy(pos= v.pos + delta, params= transformTrees( v.params))
+          case v: ValDef if (valdefs.contains(v)) ⇒
+            v.copy(pos = v.pos + delta, params = transformTrees(v.params))
           case p: PortDef if (portdefs.contains(p)) ⇒
             p.copy(inPos = p.inPos + delta)
 
