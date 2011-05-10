@@ -1,7 +1,7 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.zge.dialogs
 
 import org.zaluum.nide.compiler._
-
+import org.zaluum.nide.zge._
 class SuperDialog(viewer: Viewer, vs: ValSymbol) extends ValDefDialog(viewer, vs) {
   override def execCommand() {
     def bd = vs.tpe.decl.asInstanceOf[BoxDef]

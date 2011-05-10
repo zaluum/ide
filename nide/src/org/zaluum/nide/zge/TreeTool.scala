@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.zge.dialogs._
 import org.eclipse.draw2d.RectangleFigure
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.Label

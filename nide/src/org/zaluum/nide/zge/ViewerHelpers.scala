@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.IFigure
 import org.eclipse.draw2d.AbstractBackground
@@ -96,7 +97,7 @@ abstract class ScrollPopup(mainShell: Shell) {
   def name: String
   def columns: Int
   def size = new Point(400, 300)
-  def populate(content: Composite)
+  def populate(content: Composite,scroll:ScrolledComposite)
   val popup = new PopupDialog(mainShell, SWT.ON_TOP, true,
     true, true,
     false, false,
@@ -105,18 +106,12 @@ abstract class ScrollPopup(mainShell: Shell) {
       val composite = super.createDialogArea(parent).asInstanceOf[Composite]
       composite.setBackground(display.getSystemColor(SWT.COLOR_BLACK))
       composite.setLayout(new FillLayout)
-      val scroll = new ScrolledComposite(composite, SWT.H_SCROLL | SWT.V_SCROLL)
+      val scroll = new ScrolledComposite(composite, SWT.V_SCROLL)
       val content = new Composite(scroll, SWT.NONE);
+      content.setBackground(ColorConstants.blue)
       scroll.setContent(content);
-      {
-        val layout = new GridLayout
-        layout.numColumns = columns
-        layout.verticalSpacing = 10;
-        layout.makeColumnsEqualWidth = true;
-        content.setLayout(layout)
-      }
-      populate(content)
-      content.setSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT))
+      populate(content,scroll)
+      content.setSize(content.computeSize(SWT.DEFAULT,SWT.DEFAULT))
       composite
     }
     override def getDefaultLocation(iniSize: Point) = loc

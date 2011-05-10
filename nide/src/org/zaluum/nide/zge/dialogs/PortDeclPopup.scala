@@ -1,10 +1,15 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.zge.dialogs
 
+import org.zaluum.nide.zge.TreeViewer
+import org.eclipse.swt.layout.GridLayout
+import org.eclipse.swt.custom.ScrolledComposite
 import org.zaluum.nide.compiler.EditTransformer
 import org.zaluum.nide.compiler.PortDef
 import org.zaluum.nide.compiler.Name
 
-import SWTScala._
+import org.zaluum.nide.zge.SWTScala._
+import org.zaluum.nide.zge.ScrollPopup
+
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Composite, Button, Label, Text }
@@ -15,7 +20,10 @@ class PortDeclPopup(
   portDef : PortDef) extends ScrollPopup(viewer.shell) {
   def name = "Properties"
   def columns = 2
-  def populate(content: Composite) {
+  def populate(content: Composite,scroll:ScrolledComposite) {
+    val lay = new GridLayout
+    lay.numColumns = 2
+    content.setLayout(lay)
     val lbl = new Label(content, SWT.NONE)
     lbl.setText("Type descriptor")
     val txt = new Text(content, SWT.BORDER)

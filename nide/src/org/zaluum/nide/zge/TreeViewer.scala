@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.zge.dialogs.Palette
 import org.eclipse.swt.dnd.ByteArrayTransfer
 import org.eclipse.swt.dnd.Transfer
 import org.eclipse.draw2d.Graphics

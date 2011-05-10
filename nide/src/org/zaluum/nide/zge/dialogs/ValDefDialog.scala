@@ -1,4 +1,4 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.zge.dialogs
 
 import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.custom.CCombo
@@ -13,6 +13,7 @@ import org.eclipse.swt.widgets.{Shell, Composite, Text, Label, Control, Menu, Me
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{SelectionListener,SelectionEvent}
 import org.zaluum.nide.compiler._
+import org.zaluum.nide.zge.{Viewer,SWTScala}
 import SWTScala._
 
 class ValDefDialog(viewer: Viewer, val vs: ValSymbol) extends Dialog(viewer.shell) {

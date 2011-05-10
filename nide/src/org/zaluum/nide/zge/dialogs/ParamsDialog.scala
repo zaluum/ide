@@ -1,15 +1,16 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.zge.dialogs
 
 import org.eclipse.ui.ISharedImages
 import org.eclipse.ui.PlatformUI
 import net.miginfocom.swt.MigLayout
 import org.eclipse.jface.dialogs.Dialog
-import org.eclipse.jface.viewers._
+import org.eclipse.jface.viewers.{Viewer => _, _}
 import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.widgets.{ Menu,MenuItem,Table, TableItem, Shell, Composite, TableColumn, Label, Control }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{ KeyListener, KeyEvent }
 import org.zaluum.nide.compiler._
+import org.zaluum.nide.zge._
 import SWTScala._
 // TODO merge table functionality with ConstructorDialog
 class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {

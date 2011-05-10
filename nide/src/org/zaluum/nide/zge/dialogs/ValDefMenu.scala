@@ -1,8 +1,8 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.zge.dialogs
 
+import org.zaluum.nide.zge.Viewer
 import net.miginfocom.swt.MigLayout
 import org.eclipse.jface.dialogs.Dialog
-import org.eclipse.jface.viewers._
 import org.eclipse.swt.widgets.{Shell, Composite, Label, Control, Menu, MenuItem}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{SelectionListener,SelectionEvent}
