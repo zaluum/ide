@@ -1,5 +1,8 @@
 package org.zaluum.nide.eclipse
 
+import org.eclipse.jdt.ui.JavaUI
+import org.eclipse.jdt.core.IType
+import org.eclipse.jdt.internal.ui.JavaPlugin
 import scala.collection.mutable.Buffer
 import org.zaluum.nide.compiler.Name
 import org.eclipse.core.runtime.Path
@@ -74,5 +77,17 @@ trait EclipseUtils {
   def getResource(str: String): Option[URL] = {
     val cpaths = jProject.getResolvedClasspath(true)
     cpaths.view.flatMap { cp ⇒ pathFileToURL(cp.getPath, str) } headOption
+  }
+  def forceViewJavaDoc(i:IType) {
+    import org.eclipse.jdt.internal.ui.infoviews.JavadocView
+    import org.eclipse.jface.internal.text.html.BrowserInput;
+    // force JavaDoc
+    val in = new BrowserInput(null) {
+      def getInputElement = i
+      def getInputName = i.getElementName
+    }
+    val jview = JavaPlugin.getActivePage().findView(JavaUI.ID_JAVADOC_VIEW).asInstanceOf[JavadocView];
+    if (jview != null)
+      jview.setInput(in)
   }
 }

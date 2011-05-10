@@ -1,6 +1,12 @@
 package org.zaluum.example;
 
 import org.zaluum.annotation.*;
+
+/**
+ * Hola!
+ * @author frede
+ *
+ */
 @Box
 public class Switch {
 	 @In public boolean ab;

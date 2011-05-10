@@ -1,5 +1,11 @@
 package org.zaluum.nide.eclipse
 
+import org.eclipse.jface.viewers.StructuredSelection
+import org.eclipse.jdt.ui.JavaUI
+import org.eclipse.jdt.internal.ui.JavaPlugin
+import org.eclipse.ui.PlatformUI
+import org.eclipse.jdt.core.IType
+import org.eclipse.ui.internal.part.SelectionProviderAdapter
 import org.zaluum.nide.Subject
 import org.zaluum.nide.Observer
 import org.zaluum.nide.zge.GuiViewer
@@ -20,20 +26,20 @@ import org.eclipse.ui.handlers.HandlerUtil
 import org.eclipse.core.commands.AbstractHandler
 import org.eclipse.core.commands.ExecutionEvent
 import java.io.ByteArrayInputStream
-import org.eclipse.core.resources.{IFile, IMarker}
+import org.eclipse.core.resources.{ IFile, IMarker }
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.FillLayout
-import org.eclipse.swt.widgets.{Composite, Shell}
-import org.eclipse.ui.{IEditorSite, IEditorInput, IEditorPart}
+import org.eclipse.swt.widgets.{ Composite, Shell }
+import org.eclipse.ui.{ IEditorSite, IEditorInput, IEditorPart }
 import org.eclipse.ui.ide.IGotoMarker
-import org.eclipse.ui.part.{EditorPart, FileEditorInput}
-import org.zaluum.nide.zge.{Viewer, Controller}
+import org.eclipse.ui.part.{ EditorPart, FileEditorInput }
+import org.zaluum.nide.zge.{ Viewer, Controller }
 
 class GraphicalEditor extends EditorPart with IGotoMarker {
 
   var viewer: TreeViewer = _
-  var shell : Option[Shell] = None 
+  var shell: Option[Shell] = None
   def controller = viewer.controller
 
   def doSave(monitor: IProgressMonitor) {
@@ -66,14 +72,29 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     val zp = zproject.get // XXX better
     val className = zp.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
     val proto = BoxFileProtos.BoxClassDef.parseFrom(input)
-    val tree = Parser.parse(proto,Some(className)) 
+    val tree = Parser.parse(proto, Some(className))
     input.close()
     val controller = new Controller(tree, zp)
     controller.addListener(fireDirty)
-    viewer = new TreeViewer(parent, controller, zp)
+    viewer = new TreeViewer(parent, controller, zp, this)
     controller.registerViewer(viewer)
+    getEditorSite().setSelectionProvider(selectionProvider);
     // TODO reopen
   }
+  def adaptItem(i: IType): StructuredSelection = {
+    val El = classOf[org.eclipse.jdt.core.IJavaElement]
+    val adaptable = new org.eclipse.core.runtime.IAdaptable() {
+      def getAdapter(cl: Class[_]) = {
+        cl match {
+          case El ⇒ i
+          case _ ⇒ null
+        }
+      }
+    }
+    new StructuredSelection(adaptable)
+  }
+  def setSelection(i: IType) { selectionProvider.setSelection(adaptItem(i)) }
+  private lazy val selectionProvider = new SelectionProvider()
   val fireDirty: () ⇒ Unit = () ⇒ firePropertyChange(IEditorPart.PROP_DIRTY)
   def setFocus() { viewer.canvas.setFocus }
   def openGUI() {
@@ -81,13 +102,13 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
       val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE | SWT.RESIZE)
       newshell.setLayout(new FillLayout)
       newshell.setText(getTitle + " GUI");
-      val guiViewer= new GuiViewer(newshell, controller, zproject.get)
+      val guiViewer = new GuiViewer(newshell, controller, zproject.get)
       controller.registerViewer(guiViewer)
       newshell.layout()
       newshell.open()
-      
-      newshell.addDisposeListener(new DisposeListener(){
-        override def widgetDisposed(e:DisposeEvent) {
+
+      newshell.addDisposeListener(new DisposeListener() {
+        override def widgetDisposed(e: DisposeEvent) {
           guiViewer.dispose()
           controller.unregisterViewer(guiViewer);
           shell = None
@@ -100,7 +121,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     controller.removeListener(fireDirty)
     viewer.dispose()
     controller.dispose()
-    shell foreach { s => if (!s.isDisposed) s.dispose } 
+    shell foreach { s ⇒ if (!s.isDisposed) s.dispose }
   }
   override def gotoMarker(marker: IMarker) {
     val str = marker.getAttribute("BLAME").asInstanceOf[String]
@@ -112,11 +133,12 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     else super.getAdapter(cl)
   }
 }
+
 class OpenGUIHandler extends AbstractHandler {
-  override def execute(event : ExecutionEvent) = {
+  override def execute(event: ExecutionEvent) = {
     Option(HandlerUtil.getActiveEditor(event)) match {
-      case Some(g:GraphicalEditor) => g.openGUI()
-      case _ => 
+      case Some(g: GraphicalEditor) ⇒ g.openGUI()
+      case _ ⇒
     }
     null
   }
