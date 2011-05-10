@@ -21,20 +21,19 @@ object ValDefMenu{
         def widgetDefaultSelected(e:SelectionEvent){}
       })
     }
-    def tpeMenu = newItem("Type...") { new ValDefDialog(viewer, v).open() } 
+    def tpeMenu = newItem("Type...") { new ValDefDialog(viewer, v).open() }
+    def params = newItem("Parameters...") { new ParamsDialog(viewer,v).open() }
+    def cons = newItem("Constructor...") { new ConstructorDialog(viewer, v).open() } 
     v.tpe match {
       case b:BoxTypeSymbol if (!b.isLocal)=>
-        newItem("Constructor...") {
-          new ConstructorDialog(viewer, v).open()
-        }
-        newItem("Parameters...") {
-          new ParamsDialog(viewer,v).open()
-        }
+        cons
+        params
         tpeMenu
       case b:BoxTypeSymbol if (b.isLocal) =>
         newItem("Super...") {
           new SuperDialog(viewer,v).open() 
         }
+        params
       case _ =>
         tpeMenu
     }

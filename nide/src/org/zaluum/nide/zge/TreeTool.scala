@@ -27,13 +27,13 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def buttonUp {
       if (filterDouble) { filterDouble = false; return }
-      def selectItem(i:Item) {
+      def selectItem(i: Item) {
         viewer.selection.updateSelection(i.selectionSubject.toSet, shift)
         viewer.refresh()
-        i.selectionSubject foreach {controller.blink(_,viewer)}
+        i.selectionSubject foreach { controller.blink(_, viewer) }
       }
       (beingSelected, port) match {
-        case (Some(o:OpenPortDeclFigure),_) => selectItem(o)
+        case (Some(o: OpenPortDeclFigure), _) ⇒ selectItem(o)
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
           connecting.enter(port.container, port, currentMouseLocation)
@@ -60,7 +60,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       super.move()
       portsTrack.update()
       (portsTrack.current, itemUnderMouse) match {
-        case (_, Some(l:OpenPortDeclFigure)) => 
+        case (_, Some(l: OpenPortDeclFigure)) ⇒
           viewer.setCursor(Cursors.ARROW)
         case (_, Some(l: LineItem)) if (l.l.distance(currentMouseLocation) > connectionLineDistance) ⇒
           viewer.setCursor(Cursors.UPARROW)
@@ -104,6 +104,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def copy() = viewer.updateClipboard
     def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
+    
     override def menu() {
       itemUnderMouse match {
         case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
@@ -114,52 +115,6 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
   }
-  abstract class InnerCreating extends ToolState {
-    self: SingleContainer ⇒
-    var feed: ItemFeedbackFigure = _
-    var superName: Name = null
-    def enter(initContainer: ContainerItem, superName: Name) {
-      enterSingle(initContainer)
-      this.superName = superName
-      state = this
-      feed = new ItemFeedbackFigure(current)
-      feed.setInnerBounds(new Rectangle(0, 0, 48, 48))
-      feed.show()
-    }
-    def move() { feed.setInnerLocation(point(currentMouseLocation)) }
-    def abort() { exit() }
-    def drag() {}
-    def buttonUp() {
-      val dst = Point(currentMouseLocation.x, currentMouseLocation.y)
-      val tr = new EditTransformer() {
-        val trans: PartialFunction[Tree, Tree] = {
-          case b: BoxDef if b == initContainer.boxDef ⇒
-            val sym = b.symbol.asInstanceOf[BoxTypeSymbol]
-            val name = Name(sym.freshName("box"))
-            val className = Name(sym.freshName("C"))
-            val newDef = BoxDef(className, Some(superName), guiSize = None, image = None, List(),
-              vals = List(),
-              ports = List(),
-              connections = List(),
-              junctions = List())
-            val newVal = ValDef(name, className, dst, Some(Dimension(200, 200)), None, None, List(),List(),List())
-            BoxDef(b.name, b.superName, guiSize = b.guiSize, b.image,
-              newDef :: transformTrees(b.defs),
-              newVal :: transformTrees(b.vals),
-              transformTrees(b.ports),
-              transformTrees(b.connections),
-              transformTrees(b.junctions))
-        }
-      }
-      controller.exec(tr)
-    }
-    def buttonDown() {}
-    def exit() {
-      feed.hide()
-      selecting.enter()
-    }
-  }
-  object innercreating extends InnerCreating with SingleContainerAllower with Allower // inherit
   // PASTING
   abstract class Pasting extends ToolState {
     self: SingleContainer ⇒
@@ -191,10 +146,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
     var tpeName: Name = _
+    var tpe: Option[BoxTypeSymbol] = None
     def enter(tpename: Name, initContainer: ContainerItem) {
       enterSingle(initContainer)
-      this.tpeName = tpename
       state = this
+      this.tpeName = tpename
+      tpe = controller.global.lookupBoxType(tpeName);
       val img = viewer.imageFactory(tpeName);
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
@@ -204,22 +161,50 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def move() { feed.setInnerLocation(point(currentMouseLocation)) }
     def abort() { exit() }
     def drag() {}
-    def buttonUp() {
-      val dst = Point(currentMouseLocation.x, currentMouseLocation.y)
-      val tr = new EditTransformer() {
+    private def newInstance(dst: Point) = {
+      new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
             //val params = tpe.params.map { p ⇒ Param(p.name, p.default) }.toList
             val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
             BoxDef(b.name, b.superName, guiSize = b.guiSize, b.image,
               transformTrees(b.defs),
-              ValDef(name, tpeName, dst, None, None, None, List(),List(),List()) :: transformTrees(b.vals),
+              ValDef(name, tpeName, dst, None, None, None, List(), List(), List()) :: transformTrees(b.vals),
               transformTrees(b.ports),
               transformTrees(b.connections),
               transformTrees(b.junctions))
         }
       }
-      controller.exec(tr)
+    }
+    private def newClass(dst: Point) = {
+      new EditTransformer() {
+        val trans: PartialFunction[Tree, Tree] = {
+          case b: BoxDef if b == initContainer.boxDef ⇒
+            val sym = b.symbol.asInstanceOf[BoxTypeSymbol]
+            val name = Name(sym.freshName("box"))
+            val className = Name(sym.freshName("C"))
+            val newDef = BoxDef(className, Some(tpeName), guiSize = None, image = None, List(),
+              vals = List(),
+              ports = List(),
+              connections = List(),
+              junctions = List())
+            val newVal = ValDef(name, className, dst, Some(Dimension(200, 200)), None, None, List(), List(), List())
+            BoxDef(b.name, b.superName, guiSize = b.guiSize, b.image,
+              newDef :: transformTrees(b.defs),
+              newVal :: transformTrees(b.vals),
+              transformTrees(b.ports),
+              transformTrees(b.connections),
+              transformTrees(b.junctions))
+        }
+      }
+    }
+    def buttonUp() {
+      val dst = Point(currentMouseLocation.x, currentMouseLocation.y)
+      val command = tpe match {
+        case Some(b) if b.abstractCl ⇒ newClass(dst)
+        case _ ⇒ newInstance(dst)
+      }
+      controller.exec(command)
     }
     def buttonDown() {}
     def exit() {
@@ -330,7 +315,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           controller.exec(
             new EditTransformer() {
               val trans: PartialFunction[Tree, Tree] = {
-                case v: ValDef ⇒ v.copy(params = Param(key, value) :: transformTrees(v.params))
+                case v: ValDef if v==valDef ⇒ v.copy(params = Param(key, value) :: transformTrees(v.params))
               }
             })
         case _ ⇒ // TODO exit?
@@ -338,7 +323,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def execute(s: String) {
       if (e != null) {
-        editParam(e.valDef,Name("setParam"), s)
+        editParam(e.valDef, Name("setParam"), s)
       }
     }
     def exit() { e.hideEdit(); viewer.focus; selecting.enter(); }
