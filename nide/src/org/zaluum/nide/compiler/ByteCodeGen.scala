@@ -72,6 +72,10 @@ object ByteCodeGen {
           mv.visitMethodInsn(INVOKEVIRTUAL, fromClass.internal, meth, descriptor)
         case Pop ⇒
           mv.visitInsn(POP)
+        case AStore(i:Int) => 
+          mv.visitVarInsn(ASTORE,i)
+        case ALoad(i:Int) =>
+          mv.visitVarInsn(ALOAD,i)
         case Const(d:Any) =>
           val v = d match {
             case b:Byte => b.asInstanceOf[Int] // FIXME ?
@@ -85,6 +89,8 @@ object ByteCodeGen {
           mv.visitInsn(IRETURN)
         case True => 
           mv.visitInsn(ICONST_1)
+        case Dup => 
+          mv.visitInsn(DUP)
       }
     }
     bc.children foreach { emit(_) }

@@ -1,5 +1,6 @@
 package org.zaluum.nide.compiler
 
+import javax.swing.JLabel
 import org.zaluum.basic.RunnableBox
 
 case class BoxClass(name: Name, superName: Name, contents: List[Tree]) extends Tree
@@ -17,7 +18,9 @@ case class Invoke(obj: Tree, meth: String, param: List[Tree], fromClass: Name, d
 case class Const(i: Any) extends Tree
 case class Return(t: Tree) extends Tree
 case object True extends Tree
-
+case object Dup extends Tree
+case class ALoad(i:Int) extends Tree
+case class AStore(i:Int) extends Tree
 class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = Location(List(0))
@@ -143,8 +146,37 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
             "add",
             List(widgetSelect),
             Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;"),
-          Pop)
+          Pop) ++ createLabel(vs,mainBox)
       } getOrElse List()
+    }
+    def createLabel(vs: ValSymbol,mainBox:BoxDef): List[Tree] = {
+      val v = vs.decl.asInstanceOf[ValDef]
+      val mainTpe = mainBox.symbol.asInstanceOf[BoxTypeSymbol]
+      v.labelGui match {
+        case Some(lbl) ⇒
+          val jlabel = new JLabel(lbl.description) // TODO better way to get size
+          val jdim = jlabel.getPreferredSize
+          val pos = v.guiPos.getOrElse(Point(0, 0)) + lbl.pos + Vector2(0,-jdim.height);
+          List[Tree](
+            New(Name("javax.swing.JLabel"), List(Const(lbl.description)), "(Ljava/lang/String;)V"),
+            AStore(1),
+            Invoke(
+              ALoad(1), 
+              "setBounds",
+              List(Const(pos.x),
+                Const(pos.y),
+                Const(jdim.width),
+                Const(jdim.height)),
+              Name("javax.swing.JComponent"),
+              "(IIII)V"),
+            Invoke(
+              Select(This, FieldRef(widgetName, vClass(mainBox).get, mainTpe.fqName)),
+              "add",
+              List(ALoad(1)),
+              Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;"),
+            Pop)
+        case None => List()
+      }
     }
     def createWidgets(b: BoxTypeSymbol, path: List[ValSymbol], mainBox: BoxDef): List[Tree] = {
       b.declaredVals.values.toList flatMap {
