@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.zge.dialogs.ValDefMenu
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.IFigure
 import org.eclipse.draw2d.Cursors
@@ -62,11 +63,26 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
             if (!viewer.selection(fig.selectionSubject.get)) {
               viewer.selection.updateSelection(fig.selectionSubject.toSet, shift)
               fig.showFeedback()
-             
             }
           }
-          moving.enter(initDrag, initContainer)
+          fig match {
+            case s:SwingFigure => moving.enter(initDrag, initContainer)
+            case l:LabelItem => movingLabel.enter(initDrag,initContainer,l)
+          }
         case (None, None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
+      }
+    }
+    override def doubleClick() {
+      itemUnderMouse match {
+        case Some(l:TextEditFigure) => directEditing.enter(l,true)
+        case None =>
+      }
+    }
+    override def menu() = {
+      itemUnderMouse match {
+        case Some(l: LabelItem) ⇒ ValDefMenu.show(viewer, l,true)
+        case Some(s: SwingFigure) ⇒ ValDefMenu.show(viewer, s,true)
+        case _ ⇒ 
       }
     }
   }
@@ -156,4 +172,22 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     def currentMouseLocation = GuiTool.this.currentMouseLocation
   }
   object moving extends Moving with DeltaMove
+  // Moving label
+  trait MovingLabel extends SpecialMove[LabelItem]{ // TODO inherit treetool movingLabel
+    self : ToolState with DeltaMove with SingleContainer =>
+    def clampDelta = delta
+    def buttonUp {
+      val oldPos = fig.valDef.labelGui.get.pos
+      val newPos = oldPos + clampDelta
+      val command = new EditTransformer {
+        val trans: PartialFunction[Tree, Tree] = {
+          case v: ValDef if (fig.valDef == v) ⇒
+            v.copy(labelGui = Some(v.labelGui.get.copy(pos=newPos)))
+        }
+      }
+      controller.exec(command)
+    }
+  }
+  object movingLabel extends MovingLabel with DeltaMove with SingleContainer
+
 }

@@ -25,6 +25,12 @@ message Instance {
 	optional Point gui_size = 7;
 	repeated string constructor_parameter =8;
 	repeated string constructor_types = 9;
+	optional Label label = 12;
+	optional Label label_gui = 13;
+}
+message Label {
+	required string description = 1;
+	required Point pos = 2;
 }
 message Parameter {
 	required string key =1;

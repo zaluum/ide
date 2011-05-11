@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.Label
 import org.eclipse.draw2d.Shape
 import org.eclipse.swt.graphics.Color
 import org.eclipse.draw2d.Ellipse
@@ -65,6 +66,25 @@ trait ValFigure extends ValDefItem with HasPorts {
 
   }
 }
+class LabelItem(val container:ContainerItem, gui:Boolean=false) extends Figure with TextEditFigure with ValDefItem with RectFeedback {
+  setForegroundColor(Colorizer.color(NoSymbol))
+  def blink(b:Boolean) {}
+  def size = pg.getPreferredSize
+  def baseVector = Vector2(0,-size.h)
+  def lbl = if (gui) valDef.labelGui else valDef.label
+  def text = {
+    val fromTree = lbl.map(_.description).getOrElse("XXX")
+    if (fromTree=="") valDef.name.str else fromTree
+  }
+  def basePos = if (gui) valDef.guiPos.getOrElse(Point(0,0)) else valDef.pos
+  override def pos = basePos + baseVector + (lbl.map { _.pos } getOrElse { Vector2(0,0) }) 
+  def myLayer = container.layer
+  def updateMe()  { 
+    fl.setText(text)
+    pg.setBounds(new Rectangle(new EPoint(0,0),dimension(size)))
+  }
+  def updateValPorts () {}
+}
 trait AutoDisposeImageFigure extends ImageFigure {
   def disposeImage() {
     if (getImage != null) getImage.dispose
@@ -88,23 +108,26 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
     repaint()
   }
 }
-class DirectValFigure(val container: ContainerItem) extends TextEditFigure with ValFigure {
-  def size = Dimension(40, 20)
+class DirectValFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure {
+  def size = {
+    pg.getPreferredSize().ensureMin(Dimension(20,20)) + Vector2(5,0)
+  }
   def param = valDef.params.headOption.asInstanceOf[Option[Param]]
   def text = param.map {_.value}.getOrElse{"0"}
   def updateMe {
     fl.setText(text)
     setForegroundColor(Colorizer.color(param.map(_.tpe).getOrElse(NoSymbol)))
+    pg.setBounds(new Rectangle(new EPoint(2,2),dimension(size)))
   }
   def blink(c:Boolean) {
     this.setXOR(c)
   }
 }
-trait TextEditFigure extends RectangleFigure with Item with RectFeedback {
+trait TextEditFigure extends Figure with Item with RectFeedback {
   def text: String;
+  setFont(Display.getCurrent.getSystemFont) // FIXME https://bugs.eclipse.org/bugs/show_bug.cgi?id=308964
   val pg = new FlowPage()
   pg.setForegroundColor(ColorConstants.black)
-  pg.setBounds(new Rectangle(2, 2, 40, 20))
   val fl = new TextFlow()
   pg.add(fl)
   add(pg)
@@ -123,7 +146,7 @@ trait TextEditFigure extends RectangleFigure with Item with RectFeedback {
       })
       val b = getClientArea.getCopy
       translateToAbsolute(b)
-      textC.setBounds(b.x + 1, b.y + 1, b.width - 2, b.height - 2)
+      textC.setBounds(b.x + 1, b.y + 1, math.max(b.width-1,40), b.height - 2)
       textC.setBackground(ColorConstants.white)
       textC.setVisible(true)
       textC.selectAll()

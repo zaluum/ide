@@ -95,9 +95,9 @@ trait CopyTransformer extends Transformer {
       }
     case PortDef(name, typeName, dir, inPos, extPos) ⇒
       PortDef(name, typeName, dir, inPos, extPos)
-    case v@ValDef(name, typeName, pos, size, guiPos, guiSize, params, consParams,consTypes) ⇒
+    case v:ValDef ⇒
       atOwner(v.symbol) {
-        ValDef(name, typeName, pos, size, guiPos, guiSize, transformTrees(params), consParams,consTypes)
+        v.copy(params = transformTrees(v.params))
       }
     case p: Param ⇒ p.copy()
     case c@ConnectionDef(a, b, wp) ⇒
@@ -260,6 +260,7 @@ case class ValRef(name: Name) extends RefTree
 case class ThisRef() extends SymTree
 case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends RefTree
 case class Param(key: Name, value: String) extends Tree
+case class LabelDesc(description:String, pos:Vector2)
 case class ValDef(
   name: Name,
   typeName: Name,
@@ -269,7 +270,10 @@ case class ValDef(
   guiSize: Option[Dimension],
   params: List[Tree], 
   constructorParams:List[String],
-  constructorTypes:List[Name]) extends DefTree with Positionable {
+  constructorTypes:List[Name],
+  label : Option[LabelDesc],
+  labelGui : Option[LabelDesc]
+  ) extends DefTree with Positionable {
   def localTypeDecl = tpe match {
     case NoSymbol ⇒ None
     case b: BoxTypeSymbol ⇒ if (b.isLocal) Some(b.decl.asInstanceOf[BoxDef]) else None

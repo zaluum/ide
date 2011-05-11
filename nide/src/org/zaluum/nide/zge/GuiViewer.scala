@@ -64,7 +64,14 @@ class GuiViewer(parent: Composite, controller: Controller, val global: ZaluumPro
                 f.updateValDef(v)
                 items += f
                 f.show()
+                v.labelGui foreach { l =>
+                  val lbl = new LabelItem(GuiViewer.this, gui=true)
+                  lbl.updateValDef(v)
+                  items += lbl
+                  lbl.show()
+                }
             }
+          
           case childBox: BoxDef ⇒ updateBoxDef(childBox)
           case _ ⇒
         }

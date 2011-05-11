@@ -96,6 +96,7 @@ trait ContainerItem extends Item {
       edges.values.toSet)
   }
   val boxes = Buffer[ValDefItem]()
+  val labels = Buffer[LabelItem]()
   def boxDef: BoxDef
   val junctions = Buffer[PointFigure]()
   val connections = Buffer[ConnectionFigure]()
@@ -109,11 +110,19 @@ trait ContainerItem extends Item {
   }
   def updateBoxes(changes: Map[Tree, Tree]) {
     val remove = Buffer[ValDefItem]()
-    for (bf ← boxes) {
+    for (bf ← boxes ++ labels) {
       changes.get(bf.valDef) match {
         case Some(t: ValDef) ⇒
           bf match {
             case o: OpenBoxFigure ⇒ o.updateOpenBox(t, changes)
+            case l: LabelItem ⇒
+              t.label match {
+                case Some(ld) ⇒
+                  l.updateValDef(t)
+                case None ⇒
+                  l.hide()
+                  remove += l
+              }
             case s: ValDefItem ⇒ s.updateValDef(t)
           }
         case _ ⇒
@@ -122,25 +131,32 @@ trait ContainerItem extends Item {
       }
     }
     boxes.filterNot(remove.contains)
+    labels.filterNot(remove.contains)
     val news = boxDef.vals filterNot (remove contains) collect { case v: ValDef ⇒ v }
     news foreach { v ⇒
       val f = v.scope.lookupBoxTypeLocal(v.typeName) match {
         case Some(tpe) ⇒
-          val o = new OpenBoxFigure(ContainerItem.this,
-            viewer,
-            viewerResources)
+          val o = new OpenBoxFigure(ContainerItem.this, viewer, viewerResources)
           o.updateOpenBox(v, Map())
           o
         case None ⇒
-          val f = if (v.tpe.name == Name(classOf[org.zaluum.basic.Direct].getName))
+          val valf = if (v.tpe.name == Name(classOf[org.zaluum.basic.Direct].getName))
             new DirectValFigure(ContainerItem.this)
           else
             new ImageValFigure(ContainerItem.this)
-          f.updateValDef(v)
-          f
+          valf.updateValDef(v)
+          valf
       }
       if (showing) f.show
       boxes += f
+    }
+    news foreach { v ⇒
+      v.label foreach { _ ⇒
+        val l = new LabelItem(ContainerItem.this)
+        if (showing) l.show
+        l.updateValDef(v)
+        labels += l
+      }
     }
   }
   def updatePorts(changes: Map[Tree, Tree])
@@ -192,7 +208,7 @@ class OpenBoxFigure(
     updateContents(changes)
     showArrowsIfNotBigEnough
   }
-  def blink(b:Boolean) {
+  def blink(b: Boolean) {
     backgroundColor = if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal
   }
   import PositionConstants._

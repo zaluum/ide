@@ -18,11 +18,18 @@ object Serializer {
     p.setVisual(false) // TODO
     p.build
   }
-
+  def proto(l:LabelDesc) : BoxFileProtos.Label = {
+    BoxFileProtos.Label.newBuilder
+      .setDescription(l.description)
+      .setPos(proto(l.pos.toPoint))
+      .build
+  }
   def proto(p: ValDef): BoxFileProtos.Instance = {
     import scala.collection.JavaConversions._
     val b = BoxFileProtos.Instance.newBuilder
     p.params collect { case p: Param ⇒ p } sortBy { _.key.str } foreach { p ⇒ b.addParameter(proto(p)) }
+    p.label foreach { l => b.setLabel(proto(l))}
+    p.labelGui foreach { l => b.setLabelGui(proto(l))}
     b.setGuiPos(proto(p.guiPos.getOrElse { Point(0, 0) }))
       .setGuiSize(proto(p.guiSize.getOrElse { Dimension(50, 50) }))
       .setClassName(p.typeName.str)
