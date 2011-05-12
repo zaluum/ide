@@ -15,7 +15,7 @@ import scala.util.control.Exception._
 trait EclipseUtils {
   def jProject: IJavaProject
   def project = jProject.getProject
-  def visitSourceZaluums : Seq[IFile] = {
+  def allSourceZaluums : Seq[IFile] = {
     val b= Buffer[IFile]()
     project.accept(
       new IResourceVisitor {

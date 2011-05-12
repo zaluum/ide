@@ -29,7 +29,7 @@ class ZaluumLoader(val zProject: ZaluumProject) extends EclipseUtils {
     }
 
   def index: Seq[Name] = indexZaluum ++ indexJava
-  private def indexZaluum = for (f ← visitSourceZaluums; cl ← toClassName(f)) yield cl
+  private def indexZaluum = for (f ← allSourceZaluums; cl ← toClassName(f)) yield cl
   private def indexJava = search(patternAnnotation(classOf[Box].getName), jProject) { t ⇒
     Name(t.getFullyQualifiedName)
   }

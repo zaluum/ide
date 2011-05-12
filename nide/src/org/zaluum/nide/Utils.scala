@@ -82,6 +82,15 @@ class ResetableLazy[A](calc: =>A) {
     cached.get
   }
 }
+class Cached[A](compute: =>Option[A]) {
+  private var value : Option[A] = None
+  def apply() = {
+    if (value == None) value=compute
+    value
+  }
+  def replace(a:A) { value = Some(a)} 
+  def reset() {value=None}
+}
 class Cache[A,B](compute : A=>Option[B]) {
   private var map = Map[A,B]()
   def get(a:A) : Option[B] = {
