@@ -1,7 +1,14 @@
 package org.zaluum.nide.eclipse;
+
+import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.resources.{ IProjectNature, IProjectDescription, IProject, ICommand }
 object ZaluumNature {
   val NATURE_ID = "org.zaluum.nide.zaluumNature";
+   def hasZaluumNature(project:IProject) = {
+    try {
+      project.hasNature(NATURE_ID);
+    } catch {case e: CoreException => false}
+  }
 }
 class ZaluumNature extends IProjectNature {
 
@@ -12,11 +19,11 @@ class ZaluumNature extends IProjectNature {
 
     if (commands.exists(_.getBuilderName == ZaluumBuilder.BUILDER_ID))
       return ;
-    val newCommands = commands.toBuffer
+  /*  val newCommands = commands.toBuffer
     val command = description.newCommand();
     command.setBuilderName(ZaluumBuilder.BUILDER_ID);
-    newCommands += command
-    description.setBuildSpec(newCommands.toArray);
+    newCommands += command*/
+    //description.setBuildSpec(newCommands.toArray);
     project.setDescription(description, null);
   }
 
@@ -33,5 +40,6 @@ class ZaluumNature extends IProjectNature {
   def setProject(project: IProject) {
     this.project = project;
   }
+ 
 
 }

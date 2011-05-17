@@ -12,9 +12,9 @@ public class PID {
 	@In public double timeStep = 0.01;
 	@Out public double out = 0.0;
 	@Out public double err = 0.0;
-	
 	double lastErr = 0.0;
 	double i = 0.0;
+	
 	public void apply() {
 		err =  setPoint - signal;
 		double derr = (err-lastErr)/timeStep;

@@ -343,4 +343,12 @@
             name="Zaluum Editing">
       </context>
    </extension>
+   <extension point="org.eclipse.core.contenttype.contentTypes">
+	    <content-type
+           base-type="org.eclipse.jdt.core.javaSource"
+           file-extensions="zaluum"
+           id="org.zaluum.nide.zaluumSource"
+           name="Zaluum Source File (for Zaluum Projects)"
+           priority="high"/>
+   </extension>
 </plugin>
