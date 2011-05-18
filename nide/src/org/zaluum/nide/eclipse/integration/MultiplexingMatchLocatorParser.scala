@@ -31,15 +31,14 @@ import org.eclipse.jdt.internal.core.search.matching.MatchLocatorParser;
  */
 class MultiplexingMatchLocatorParser(problemReporter : ProblemReporter , locator : MatchLocator ) extends MatchLocatorParser(problemReporter, locator) {
 
-  val zaluumParser = new model.ZaluumMockParser(locator.options, problemReporter, false);
+  val zaluumParser = new model.ZaluumMockParser(locator.options, problemReporter);
 	
   override def dietParse(sourceUnit : ICompilationUnit , compilationResult : CompilationResult ) : CompilationUnitDeclaration = {
 		if (ContentTypeUtils.isZaluumLikeFileName(sourceUnit.getFileName())) {
 			// FIXASC Is it ok to use a new parser here everytime? If we don't we sometimes recurse back into the first one
 			// FIXASC ought to reuse to ensure types end up in same groovy CU
-			return new ZaluumMockParser(zaluumParser.options, zaluumParser.problemReporter, false).dietParse(
+			return new ZaluumMockParser(zaluumParser.options, zaluumParser.problemReporter).dietParse(
           sourceUnit, compilationResult);
-		  null
 		} else {
 			return super.dietParse(sourceUnit, compilationResult);
 		}

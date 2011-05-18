@@ -6,49 +6,48 @@ import org.zaluum.nide.eclipse.ZaluumNature
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory
 import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies
 import org.codehaus.jdt.groovy.integration.EventHandler
-import org.eclipse.core.resources.IProject;
-import org.eclipse.jdt.core.WorkingCopyOwner;
-import org.eclipse.jdt.core.search.SearchPattern;
-import org.eclipse.jdt.core.search.SearchRequestor;
-import org.eclipse.jdt.internal.compiler.CompilationResult;
-import org.eclipse.jdt.internal.compiler.IProblemFactory;
-import org.eclipse.jdt.internal.compiler.ISourceElementRequestor;
-import org.eclipse.jdt.internal.compiler.SourceElementParser;
-import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
-import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
-import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
-import org.eclipse.jdt.internal.compiler.parser.Parser;
-import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
-import org.eclipse.jdt.internal.core.BinaryType;
-import org.eclipse.jdt.internal.core.CompilationUnit;
-import org.eclipse.jdt.internal.core.PackageFragment;
-import org.eclipse.jdt.internal.core.search.indexing.IndexingParser;
-import org.eclipse.jdt.internal.core.search.matching.ImportMatchLocatorParser;
-import org.eclipse.jdt.internal.core.search.matching.MatchLocator;
-import org.eclipse.jdt.internal.core.search.matching.MatchLocatorParser;
-import org.eclipse.jdt.internal.core.search.matching.PossibleMatch;
-
+import org.eclipse.core.resources.IProject
+import org.eclipse.jdt.core.WorkingCopyOwner
+import org.eclipse.jdt.core.search.SearchPattern
+import org.eclipse.jdt.core.search.SearchRequestor
+import org.eclipse.jdt.internal.compiler.CompilationResult
+import org.eclipse.jdt.internal.compiler.IProblemFactory
+import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
+import org.eclipse.jdt.internal.compiler.SourceElementParser
+import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
+import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
+import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
+import org.eclipse.jdt.internal.compiler.parser.Parser
+import org.eclipse.jdt.internal.compiler.problem.ProblemReporter
+import org.eclipse.jdt.internal.core.BinaryType
+import org.eclipse.jdt.internal.core.CompilationUnit
+import org.eclipse.jdt.internal.core.PackageFragment
+import org.eclipse.jdt.internal.core.search.indexing.IndexingParser
+import org.eclipse.jdt.internal.core.search.matching.ImportMatchLocatorParser
+import org.eclipse.jdt.internal.core.search.matching.MatchLocator
+import org.eclipse.jdt.internal.core.search.matching.MatchLocatorParser
+import org.eclipse.jdt.internal.core.search.matching.PossibleMatch
 import org.codehaus.jdt.groovy.integration.LanguageSupport
 import model.ZaluumCompilationUnit
+import java.nio.charset.Charset
+import org.zaluum.nide.eclipse.ZaluumBuilder
+import java.io.ByteArrayInputStream
+import org.zaluum.nide.compiler.Name
 
 class ZaluumLanguageSupport extends LanguageSupport {
 
   def getParser(requestor: Object, compilerOptions: CompilerOptions, problemReporter: ProblemReporter, parseLiteralExpressionsAsConstants: Boolean, variant: Int): Parser = {
     println("getParser variant = " + variant)
-    if (variant == 1) {
+    if (variant == 1)
       new MultiplexingParser(requestor, compilerOptions, problemReporter, parseLiteralExpressionsAsConstants);
-    } else if (variant == 2) {
+    else
       new MultiplexingCommentRecorderParser(requestor, compilerOptions, problemReporter,
         parseLiteralExpressionsAsConstants);
-    } else { // (variant == 3) { similar to '2' but does not allow transforms
-      new MultiplexingCommentRecorderParser(requestor, compilerOptions, problemReporter,
-        parseLiteralExpressionsAsConstants, false);
-    }
+
   }
 
   def getIndexingParser(requestor: ISourceElementRequestor, problemFactory: IProblemFactory, options: CompilerOptions, reportLocalDeclarations: Boolean,
     optimizeStringLiterals: Boolean, useSourceJavadocParser: Boolean): IndexingParser = {
-    println("getindeinxinparser")
     new MultiplexingIndexingParser(requestor, problemFactory, options, reportLocalDeclarations, optimizeStringLiterals,
       useSourceJavadocParser);
   }
@@ -81,11 +80,11 @@ class ZaluumLanguageSupport extends LanguageSupport {
       return new CompilationUnit(parent, name, owner);
     }
   }
-
+  // XXX when is it used?
   def newCompilationUnitDeclaration(unit: ICompilationUnit, problemReporter: ProblemReporter, compilationResult: CompilationResult, sourceLength: Int): CompilationUnitDeclaration = {
     if (ContentTypeUtils.isZaluumLikeFileName(compilationResult.getFileName())) {
-      compilationResult.lineSeparatorPositions = Array(1,1)
-      new ZaluumCompilationUnitDeclaration(problemReporter, compilationResult, sourceLength, null)
+      compilationResult.lineSeparatorPositions = Array(1, 1)
+       new ZaluumCompilationUnitDeclaration(problemReporter, compilationResult,  sourceLength, unit, null )
     } else {
       new CompilationUnitDeclaration(problemReporter, compilationResult, sourceLength);
     }
@@ -117,10 +116,10 @@ class ZaluumLanguageSupport extends LanguageSupport {
    */
   def isSourceFile(fileName: String, isInterestingProject: Boolean): Boolean = {
     if (isInterestingProject) {
-       Util.isJavaLikeFileName(fileName);
+      Util.isJavaLikeFileName(fileName);
     } else {
-       Util.isJavaLikeFileName(fileName) && !fileName.endsWith(".zaluum");      
-       // return ContentTypeUtils.isJavaLikeButNotGroovyLikeExtension(fileName);
+      Util.isJavaLikeFileName(fileName) && !fileName.endsWith(".zaluum");
+      // return ContentTypeUtils.isJavaLikeButNotGroovyLikeExtension(fileName);
     }
   }
 

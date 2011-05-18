@@ -67,7 +67,7 @@ class MultiplexingIndexingParser
 
 			// FIXASC Is it ok to use a new parser here everytime? If we don't we sometimes recurse back into the first one
 			val cud =  new ZaluumMockParser(this.options,
-					problemReporter, false).dietParse(unit, compilationResult).asInstanceOf[ZaluumCompilationUnitDeclaration];
+					problemReporter).dietParse(unit, compilationResult).asInstanceOf[ZaluumCompilationUnitDeclaration];
 
 			val sourceEnds = createSourceEnds(cud);
 			val visitor = new ZaluumIndexingVisitor(requestor);

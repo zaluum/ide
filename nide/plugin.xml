@@ -155,6 +155,9 @@
             icon="icons/composed_16.png"
             id="org.zaluum.nide.editor"
             name="Zaluum">
+         <contentTypeBinding
+               contentTypeId="org.zaluum.nide.zaluumSource">
+         </contentTypeBinding>
       </editor>
    <!--   <editor
             class="org.zaluum.nide.debug.DebugEditor"
@@ -346,6 +349,7 @@
    <extension point="org.eclipse.core.contenttype.contentTypes">
 	    <content-type
            base-type="org.eclipse.jdt.core.javaSource"
+           default-charset="ISO-8859-1"
            file-extensions="zaluum"
            id="org.zaluum.nide.zaluumSource"
            name="Zaluum Source File (for Zaluum Projects)"

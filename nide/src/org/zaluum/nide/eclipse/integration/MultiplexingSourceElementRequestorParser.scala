@@ -43,10 +43,12 @@ class MultiplexingSourceElementRequestorParser(
   problemFactory: IProblemFactory,
   options: CompilerOptions,
   reportLocalDeclarations: Boolean,
-  optimizeStringLiterals: Boolean) extends SourceElementParser(requestor, problemFactory, options, reportLocalDeclarations, optimizeStringLiterals) {
+  optimizeStringLiterals: Boolean) 
+  extends SourceElementParser(requestor, problemFactory, options, reportLocalDeclarations, optimizeStringLiterals) {
+  
   reportReferenceInfo = false
   notifier = new SourceElementNotifier(requestor, reportLocalDeclarations);
-  val parser = new ZaluumMockParser(requestor, this.options, problemReporter, false)
+  val parser = new ZaluumMockParser(requestor, this.options, problemReporter)
   override def parseCompilationUnit(unit: ICompilationUnit, fullParse: Boolean, pm: IProgressMonitor): CompilationUnitDeclaration = {
 
     if (ContentTypeUtils.isZaluumLikeFileName(unit.getFileName())) {
@@ -59,14 +61,14 @@ class MultiplexingSourceElementRequestorParser(
 
       // FIXASC Is it ok to use a new parser here everytime? If we don't we sometimes recurse back into the first one
       // FIXASC ought to reuse to ensure types end up in same groovy CU
-      val cud = new ZaluumMockParser(this.parser.requestor, this.options, problemReporter, false)
+      val cud = new ZaluumMockParser(this.parser.requestor, this.options, problemReporter)
         .dietParse(unit, compilationResult);
 
       val sourceEnds = createSourceEnds(cud);
 
       notifier.notifySourceElementRequestor(cud, 0, unit.getContents().length, reportReferenceInfo, sourceEnds,
         /* We don't care about the @category tag, so pass empty map */ Collections.EMPTY_MAP);
-      return null;
+      return cud;
     } else {
       return super.parseCompilationUnit(unit, fullParse, pm);
     }

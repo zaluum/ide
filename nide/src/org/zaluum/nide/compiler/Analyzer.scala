@@ -135,7 +135,7 @@ trait ReporterAdapter {
   def reporter: Reporter
   def error(str: String, tree: Tree) = reporter.report(str, Some(location(tree)))
 }
-class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalScope) {
+class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope) {
   def globLocation(t: Tree) = Location(toCompile.pathOf(t).getOrElse(throw new Exception("error")))
   class Namer(initOwner: Symbol) extends Traverser(initOwner) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
@@ -145,7 +145,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
     def defineVal(symbol: Symbol, tree: Tree): Symbol =
       define(symbol, currentScope, currentScope.lookupVal(symbol.name).isDefined, tree)
     def definePort(symbol: Symbol, tree: Tree): Symbol =
-      define(symbol, currentScope, currentScope.lookupPort(symbol.name).isDefined, tree)
+      define(symbol, currentScope, /* FIXME currentScope.lookupPort(symbol.name).isDefined*/ false, tree)
     def define[S <: Symbol](symbol: S, scope: Scope, dupl: Boolean, tree: Tree): S = {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
       symbol.scope = scope
@@ -165,16 +165,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
           bs.constructors = List(new Constructor(bs,List()))
           tree.tpe = sym
           // FIXME reported errors do not show in the editor (valdef)
-          superName foreach { sn ⇒
-            currentScope.lookupBoxType(sn) match {
-              case Some(bs: BoxTypeSymbol) ⇒
-                sym._superSymbol = Some(bs)
-                if (!bs.okOverride) 
-                  error ("Super box " + sn.str + " has no 'void contents()' to override or has other abstract methods.", tree)
-              case None ⇒
-                error("Super box type not found " + sn, tree)
-            }
-          }
+          
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
           definePort(new PortSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], name, extPos, dir), tree) // owner of a port is boxtypesymbol
         case v : ValDef ⇒
@@ -191,6 +182,17 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
     override def traverse(tree: Tree) {
       super.traverse(tree)
       tree match {
+        case b: BoxDef =>
+          b.superName foreach { sn ⇒
+            currentScope.lookupBoxType(sn) match {
+              case Some(bs: BoxTypeSymbol) ⇒
+               b.symbol.asInstanceOf[BoxTypeSymbol]._superSymbol = Some(bs)
+                if (!bs.okOverride) 
+                  error ("Super box " + sn.str + " has no 'void contents()' to override or has other abstract methods.", tree)
+              case None ⇒
+                error("Super box type not found " + sn, tree)
+            }
+          }
         case PortDef(name, typeName, in, inPos, extPos) ⇒
           tree.symbol.tpe = currentScope.lookupType(typeName) getOrElse {
             error("Port type not found " + typeName, tree); NoSymbol
@@ -360,7 +362,20 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: LocalS
       }
     }
   }
-  def shallowCompile() : Tree = { 
+  def runNamer() : Tree = {
+    val root=global.root
+    new Namer(root).traverse(toCompile)
+    toCompile
+  }
+  def runResolve() : Tree = {
+    new Resolver(global.root).traverse(toCompile)
+    toCompile
+  }
+  def runCheck() : Tree = {
+    new CheckConnections(toCompile,global.root).check()
+    toCompile
+  }
+  def shallowCompile() : Tree = {
     val root=global.root
     new Namer(root).traverse(toCompile)
     new Resolver(root).traverse(toCompile) // XXX make it shallower

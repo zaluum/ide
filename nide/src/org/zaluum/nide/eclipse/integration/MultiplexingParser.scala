@@ -28,11 +28,11 @@ import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
 class MultiplexingParser(requestor : Object , compilerOptions : CompilerOptions , problemReporter : ProblemReporter ,
       optimizeStringLiterals : Boolean ) extends Parser(problemReporter, optimizeStringLiterals) {
 
-  val zaluumParser = new ZaluumMockParser(requestor, compilerOptions, problemReporter, true);
+  val zaluumParser = new ZaluumMockParser(requestor, compilerOptions, problemReporter);
 	
   override def dietParse(sourceUnit : ICompilationUnit , compilationResult : CompilationResult ) : CompilationUnitDeclaration = {
 		if (ContentTypeUtils.isZaluumLikeFileName(sourceUnit.getFileName())) {
-		  println ("diet parse " + sourceUnit.getFileName.mkString)
+		  println ("multiplex parse " + sourceUnit.getFileName.mkString)
 			return zaluumParser.dietParse(sourceUnit, compilationResult);
 		} else {
 			return super.dietParse(sourceUnit, compilationResult);

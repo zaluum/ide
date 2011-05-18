@@ -51,7 +51,6 @@
 <unit id="org.eclipse.equinox.server.simple.feature.group" version="1.0.0.v20100510-44DF8s734C48662444"/>
 <repository location="http://download.eclipse.org/eclipse/updates/3.6"/>
 </location>
-<location path="${project_loc:targetplatform}/third" type="Directory"/>
 <location includeAllPlatforms="true" includeMode="slicer" type="InstallableUnit">
 <unit id="org.eclipse.draw2d.feature.group" version="3.6.2.v20110128-0100-4517w3122123901211"/>
 <unit id="org.eclipse.draw2d.sdk.feature.group" version="3.6.2.v20110128-0100-7A7G38yE6F08CAO499J539958x42"/>
@@ -62,5 +61,6 @@
 <unit id="org.eclipse.equinox.weaving.sdk.feature.group" version="1.0.0.v20090817"/>
 <repository location="http://download.eclipse.org/tools/ajdt/36/dev/update"/>
 </location>
+<location path="${project_loc:targetplatform}/third" type="Directory"/>
 </locations>
 </target>

@@ -45,8 +45,8 @@ import ICompilationUnit._
 import java.util.{ Map ⇒ JMap }
 
 class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: WorkingCopyOwner) extends CompilationUnit(parent, name, owner) {
-  override def buildStructure(info: OpenableElementInfo, pm: IProgressMonitor,
-    newElements: JMap[_, _], _underlyingResource: IResource): Boolean = {
+  
+  override def buildStructure(info: OpenableElementInfo, pm: IProgressMonitor, newElements: JMap[_, _], _underlyingResource: IResource): Boolean = {
     println("build structure")
     var underlyingResource = _underlyingResource
     if (!isOnBuildPath) return false
@@ -54,7 +54,7 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
     if (getBufferManager.getBuffer(this) == null) {
       openBuffer(pm, unitInfo)
     };
-    val requestor: ZaluumCompilationUnitStructureRequestor = new ZaluumCompilationUnitStructureRequestor(this, unitInfo, newElements);
+    val requestor = new ZaluumCompilationUnitStructureRequestor(this, unitInfo, newElements);
     val perWorkingCopyInfo = getPerWorkingCopyInfo();
     val project = getJavaProject.asInstanceOf[JavaProject]
     var problems: java.util.HashMap[Any, Any] = null
