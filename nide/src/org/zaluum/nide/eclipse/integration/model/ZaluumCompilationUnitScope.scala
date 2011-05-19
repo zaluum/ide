@@ -16,6 +16,7 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
   }
+
   val cache = Map[Name, BoxTypeSymbol]()
   val cacheJava = Map[TypeBinding, JavaType]()
   def getJavaType(name: Name): Option[JavaType] = {
@@ -83,18 +84,36 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
               }
               if (hasAnnotation(classOf[org.zaluum.annotation.In])) createPort(true)
               else if (hasAnnotation(classOf[org.zaluum.annotation.Out])) createPort(false)
-            }
-            
-            for (m <- r.availableMethods) {
-              val mName = m.selector.mkString
-              if (mName.startsWith("set") && m.parameters.size == 1 && m.returnType == TypeBinding.VOID)
-                getJavaType(m.parameters.head) foreach { ptpe =>
-                  val p = new ParamSymbol(bs, Name(mName))
-                  p.tpe = ptpe
-                  bs.enter(p)
+              if (fname == "_widget") {
+                f.`type` match {
+                  case r: ReferenceBinding ⇒
+                    bs.visualClass = Some(Name(aToString(r.compoundName)))
+                  case _ ⇒
                 }
+              }
             }
-            bs.constructors = List(new Constructor(bs, List()))
+            for (m ← r.availableMethods) {
+              val mName = m.selector.mkString
+              if (m.isConstructor && m.isPublic) {
+                  val params = for (p ← m.parameters) yield {
+                    val s = if (m.selector == null) "?" else m.selector.mkString
+                    val ps = new ParamSymbol(bs, Name(s))
+                    ps.tpe = getJavaType(p).getOrElse(NoSymbol)
+                    ps
+                  }
+                  bs.constructors = new Constructor(bs, params.toList) :: bs.constructors
+              } else {
+                if (mName.startsWith("set") && m.parameters.size == 1 && m.returnType == TypeBinding.VOID) {
+                  getJavaType(m.parameters.head) foreach { ptpe ⇒
+                    val p = new ParamSymbol(bs, Name(mName))
+                    p.tpe = ptpe
+                    bs.enter(p)
+                  }
+                }
+              }
+            }
+            if (bs.constructors.isEmpty)
+              bs.constructors = List(new Constructor(bs, List())) 
             cache += (name -> bs)
             Some(bs)
           } else {

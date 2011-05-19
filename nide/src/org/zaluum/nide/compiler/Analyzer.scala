@@ -187,8 +187,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
             currentScope.lookupBoxType(sn) match {
               case Some(bs: BoxTypeSymbol) ⇒
                b.symbol.asInstanceOf[BoxTypeSymbol]._superSymbol = Some(bs)
-                if (!bs.okOverride) 
-                  error ("Super box " + sn.str + " has no 'void contents()' to override or has other abstract methods.", tree)
+               /* if (!bs.okOverride) 
+                  error ("Super box " + sn.str + " has no 'void contents()' to override or has other abstract methods.", tree)*/
               case None ⇒
                 error("Super box type not found " + sn, tree)
             }

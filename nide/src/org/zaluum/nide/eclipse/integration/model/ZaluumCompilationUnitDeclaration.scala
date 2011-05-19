@@ -98,6 +98,11 @@ class ZaluumCompilationUnitDeclaration(
   }
   def zaluumScope = scope.asInstanceOf[ZaluumCompilationUnitScope]
 
+  def mainNameArr = toMainName(compilationResult.getFileName)
+  import JDTInternalUtils._
+  def pkgName = aToString(sourceUnit.getPackageName())
+  lazy val fqName = List(pkgName,new String(mainNameArr)).mkString(".")
+
   def populateCompilationUnitDeclaration() {
     val contents = new String(sourceUnit.getContents)
     val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
@@ -105,14 +110,13 @@ class ZaluumCompilationUnitDeclaration(
     val reporter = new Reporter() {
       override def report(str: String, mark: Option[Location] = None) {
         super.report(str, mark)
+        ignoreFurtherInvestigation = true
         createProblem(str)
       }
     }
     val scope = JDTScope
     a = new Analyzer(reporter, tree, scope)
     a.runNamer()
-    println("filename = " + getFileName.mkString)
-    //createProblem("taat")
     createPackageDeclaration()
     createTypeDeclarations()
   }
@@ -128,15 +132,11 @@ class ZaluumCompilationUnitDeclaration(
     currentPackage.declarationSourceEnd = currentPackage.sourceEnd
     currentPackage.declarationEnd = currentPackage.sourceEnd
   }
-  def mainNameArr = toMainName(compilationResult.getFileName)
-  import JDTInternalUtils._
-  def pkgName = aToString(sourceUnit.getPackageName())
-  lazy val fqName = List(pkgName,new String(mainNameArr)).mkString(".")
   def createTypeDeclarations() {
     types = Array(createTypeDeclaration(tree, None))
   }
   def createTypeDeclaration(b: BoxDef, outer: Option[TypeDeclaration]): TypeDeclaration = {
-    val typeDeclaration = new ZaluumTypeDeclaration(compilationResult)
+    val typeDeclaration = new ZaluumTypeDeclaration(compilationResult,b)
     outer match {
       case Some(o) ⇒
         typeDeclaration.name = b.name.str.toCharArray
@@ -150,6 +150,7 @@ class ZaluumCompilationUnitDeclaration(
     tree.superName foreach { n ⇒
       typeDeclaration.superclass = createTypeReference(n.str)
     }
+    
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
     typeDeclaration.fields = createFieldDeclarations(b)
@@ -204,16 +205,20 @@ class ZaluumCompilationUnitDeclaration(
     }
   }
 
-  def className = "org.zaluum.example." + mainNameArr.mkString
-
-  def path = className.replace('.', '/')
 
   override def generateCode() {
-    val binding: SourceTypeBinding = this.types(0).binding
-    val classTree = new TreeToClass(tree, a.global).run()
-    compilationResult.record(binding.constantPoolName(),
-      new ZaluumClassFile(className, ByteCodeGen.dump(classTree), binding, path))
-
+    def generate(tpe : ZaluumTypeDeclaration, enclosing:Option[ZaluumTypeDeclaration]) {
+      val binding: SourceTypeBinding = tpe.binding
+      val boxDef = tpe.b
+      val classTree = new TreeToClass(boxDef, a.global).run()
+      val name = binding.constantPoolName()
+      compilationResult.record(name,
+        new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.','/')))
+      for (child <- tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
+    }
+    println("generate")
+    if (!hasErrors())
+      generate(types(0).asInstanceOf[ZaluumTypeDeclaration],None)
     /*tree match {
       case b: BoxDef ⇒ b.defs foreach { case c: BoxDef ⇒ generate(c) }
     }
