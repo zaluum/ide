@@ -57,6 +57,7 @@ import org.zaluum.nide.compiler.Scope
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.BinaryTypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.Binding
 
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
@@ -69,81 +70,45 @@ class ZaluumCompilationUnitDeclaration(
 
   var tree: BoxDef = _
   var a: Analyzer = _
-  /*def processToPhase(phase:Int) = {
-    println("process to phase " + phase)
-    phase match {
-      case 0 =>
-        val contents = new String(sourceUnit.getContents)
-        val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??    
-        tree = ZaluumBuilder.readTree(new ByteArrayInputStream(byteContents), Name(mainNameArr.mkString))
-        println(tree)
-      case _ =>
-        
-    }
-    true
-  }*/
-  class JDTScope extends Scope {
+
+  object JDTScope extends RootSymbol {
     def alreadyDefinedBoxType(name: Name): Boolean = false
     private def fail = throw new UnsupportedOperationException()
-    def lookupPort(name: Name): Option[Symbol] = fail
-    def lookupVal(name: Name): Option[Symbol] = fail
+    var boxes = Map[Name, BoxTypeSymbol]()
     def lookupType(name: Name): Option[Type] = {
-      val tpe = scope.getType(name.str.toArray)
-      if (tpe != null) {
-        tpe match {
-          case r: ReferenceBinding ⇒ 
-            val nme= r.compoundName.mkString
-            Some(new JavaType(root, Name(nme)))
-            
-          case _ ⇒ None
-        }
-      } else None
+      zaluumScope.getJavaType(name)
     }
     def lookupBoxType(name: Name): Option[Type] = {
-      val compoundname = name.str.split('.').map{_.toCharArray}
-      val tpe = scope.getType(compoundname,compoundname.length)
-      if (tpe!=null) {
-        tpe match {
-          //case z: ZaluumTypeDeclaration => None
-          case p : ProblemReferenceBinding => 
-            println(p.toString)
-            None
-          case r : ReferenceBinding =>
-            println("store annotations = "+ compilerOptions.storeAnnotations)
-            println("annotations " + r.compoundName.map(_.mkString).mkString(".") + r.getAnnotations.length)
-            println("methods " + r.getClass + " " + r.methods().length)
-            println("r " + r )
-            r.getAnnotations foreach { a => 
-              val atpe = a.getAnnotationType
-              println ("atpe " + atpe.compoundName.mkString)
-              false
-            }
-            None
-          case _ => None
-        }
-      }else None
+      boxes.get(name).orElse {
+        zaluumScope.getBoxType(name)
+      }
     }
-    def lookupBoxTypeLocal(name: Name): Option[Type] = fail
-    def enter[S <: Symbol](sym: S): S = {
+    override def enter[S <: Symbol](sym: S): S = {
+      sym match {
+        case b: BoxTypeSymbol ⇒
+          println("entered " + sym.name)
+          boxes += (b.name -> b)
+        case _ ⇒ // nothing
+      }
       sym
     }
-    val root: Symbol = new Symbol {
-      def owner = this
-      scope = JDTScope.this
-      def name = Name("")
-    }
   }
+  override def buildCompilationUnitScope(lookupEnvironment: LookupEnvironment) = {
+    new ZaluumCompilationUnitScope(this, lookupEnvironment)
+  }
+  def zaluumScope = scope.asInstanceOf[ZaluumCompilationUnitScope]
+
   def populateCompilationUnitDeclaration() {
     val contents = new String(sourceUnit.getContents)
-    val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??    
-    tree = ZaluumBuilder.readTree(new ByteArrayInputStream(byteContents), Name(mainNameArr.mkString))
+    val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
+    tree = ZaluumBuilder.readTree(new ByteArrayInputStream(byteContents), Name(fqName))
     val reporter = new Reporter() {
-      override def report(str:String, mark:Option[Location] = None ) {
-        super.report(str,mark)
+      override def report(str: String, mark: Option[Location] = None) {
+        super.report(str, mark)
         createProblem(str)
       }
     }
-    val scope = new JDTScope    
+    val scope = JDTScope
     a = new Analyzer(reporter, tree, scope)
     a.runNamer()
     println("filename = " + getFileName.mkString)
@@ -151,7 +116,8 @@ class ZaluumCompilationUnitDeclaration(
     createPackageDeclaration()
     createTypeDeclarations()
   }
-  def createProblem (msg:String) {
+
+  def createProblem(msg: String) {
     val p = new DefaultProblemFactory().createProblem(getFileName, 0, Array(msg), 0, Array(msg), ProblemSeverities.Error, 0, 1, 1, 1)
     problemReporter.record(p, compilationResult, this)
   }
@@ -163,28 +129,48 @@ class ZaluumCompilationUnitDeclaration(
     currentPackage.declarationEnd = currentPackage.sourceEnd
   }
   def mainNameArr = toMainName(compilationResult.getFileName)
+  import JDTInternalUtils._
+  def pkgName = aToString(sourceUnit.getPackageName())
+  lazy val fqName = List(pkgName,new String(mainNameArr)).mkString(".")
   def createTypeDeclarations() {
-    val typeDeclarations = Buffer[TypeDeclaration]()
-    typeDeclarations += createTypeDeclaration(tree)
-    types = typeDeclarations.toArray
+    types = Array(createTypeDeclaration(tree, None))
   }
-  def createTypeDeclaration(b:BoxDef) = {
+  def createTypeDeclaration(b: BoxDef, outer: Option[TypeDeclaration]): TypeDeclaration = {
     val typeDeclaration = new ZaluumTypeDeclaration(compilationResult)
-    typeDeclaration.name = mainNameArr
-    typeDeclaration.modifiers = Opcodes.ACC_PUBLIC
-    tree.superName foreach { n =>
+    outer match {
+      case Some(o) ⇒
+        typeDeclaration.name = b.name.str.toCharArray
+        typeDeclaration.bits |= ASTNode.IsMemberType
+        println(typeDeclaration.toString + " " + typeDeclaration.modifiers)
+        typeDeclaration.modifiers = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
+      case None ⇒
+        typeDeclaration.name = mainNameArr
+        typeDeclaration.modifiers = Opcodes.ACC_PUBLIC
+    }
+    tree.superName foreach { n ⇒
       typeDeclaration.superclass = createTypeReference(n.str)
     }
+    typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
     typeDeclaration.fields = createFieldDeclarations(b)
+    val children = for (
+      t ← b.defs;
+      val benc = t.asInstanceOf[BoxDef]
+    ) yield {
+      val encDec = createTypeDeclaration(benc, Some(typeDeclaration))
+      encDec.enclosingType = typeDeclaration
+      encDec
+    }
+
+    typeDeclaration.memberTypes = children.toArray
     typeDeclaration
   }
-  def createMethodAndConstructorDeclarations(b:BoxDef): Array[AbstractMethodDeclaration] = {
+  def createMethodAndConstructorDeclarations(b: BoxDef): Array[AbstractMethodDeclaration] = {
     val constructor = new ConstructorDeclaration(compilationResult)
     constructor.bits |= ASTNode.IsDefaultConstructor
     constructor.modifiers = ClassFileConstants.AccPublic
     constructor.selector = b.name.str.toCharArray
-    
+
     val ref = createTypeReference("void")
     //val arg = new Argument("par".toCharArray, NON_EXISTENT_POSITION, ref, ClassFileConstants.AccPublic)
     val meth = new MethodDeclaration(compilationResult)
@@ -196,10 +182,10 @@ class ZaluumCompilationUnitDeclaration(
 
     Array(constructor, meth)
   }
-  def createFieldDeclarations(b:BoxDef): Array[FieldDeclaration] = {
+  def createFieldDeclarations(b: BoxDef): Array[FieldDeclaration] = {
     val res = Buffer[FieldDeclaration]()
-    for (t<-b.vals; val v = t.asInstanceOf[ValDef] ){
-      val f = new FieldDeclaration(v.name.str.toCharArray,0,0)
+    for (t ← b.vals; val v = t.asInstanceOf[ValDef]) {
+      val f = new FieldDeclaration(v.name.str.toCharArray, 0, 0)
       f.modifiers = Opcodes.ACC_PUBLIC
       f.`type` = createTypeReference(v.typeName.str)
       res += f
@@ -217,52 +203,31 @@ class ZaluumCompilationUnitDeclaration(
       new QualifiedTypeReference(compoundName, Array.fill(compoundName.length)(NON_EXISTENT_POSITION))
     }
   }
-  
+
   def className = "org.zaluum.example." + mainNameArr.mkString
+
   def path = className.replace('.', '/')
+
   override def generateCode() {
-    println("generate code" + className)
-    val classbytes = Array[Byte]()
     val binding: SourceTypeBinding = this.types(0).binding
-    println("binding = " + binding)
-    compilationResult.record(className.toCharArray,
-      new ZaluumClassFile(className, simpleCode, binding, path))
-  }
-  def simpleCode = {
-    import org.objectweb.asm._
-    import Opcodes._
-    val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
-    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, path, null, null, null);
-    {
-      val mv = cw.visitMethod(ACC_PUBLIC, "meth", "(I)V", null, null)
-      mv.visitCode()
-      val l0 = new Label();
-      mv.visitLabel(l0);
+    val classTree = new TreeToClass(tree, a.global).run()
+    compilationResult.record(binding.constantPoolName(),
+      new ZaluumClassFile(className, ByteCodeGen.dump(classTree), binding, path))
 
-      mv.visitInsn(RETURN);
-      val lend = new Label();
-      mv.visitLabel(lend);
-      mv.visitLocalVariable("this", "L" + path + ";", null, l0, lend, 0);
-      mv.visitMaxs(-1, -1);
-      mv.visitEnd();
+    /*tree match {
+      case b: BoxDef ⇒ b.defs foreach { case c: BoxDef ⇒ generate(c) }
     }
-    {
-      val mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null)
-      mv.visitCode()
-      val l0 = new Label();
-      mv.visitLabel(l0);
-      mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
-      mv.visitInsn(RETURN);
-      val lend = new Label();
-      mv.visitLabel(lend);
-      mv.visitLocalVariable("this", "L" + path + ";", null, l0, lend, 0);
-      mv.visitMaxs(-1, -1);
-      mv.visitEnd();
-    }
-    cw.visitEnd()
-    cw.toByteArray
 
+    def generateInner(tree: Tree) {
+      val sym = tree.symbol.asInstanceOf[BoxTypeSymbol]
+      /*println("/*** analyzedTree")
+          PrettyPrinter.print(analyzedTree,0)
+          println("***/")*/
+      tree match {
+        case b: BoxDef ⇒ b.defs foreach { case c: BoxDef ⇒ generate(c) }
+      }
+    }
+    generate(tree)*/
   }
   override def resolve() {
     println("resolve " + this)

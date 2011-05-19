@@ -18,6 +18,7 @@ case object NoSymbol extends Symbol with Type {
 class JavaType(val owner: Symbol, val name: Name) extends Symbol with Type {
   scope = owner.scope
   def descriptor = "L" + name.internal + ";"
+  override def toString = "JavaType(" + name + "@" +hashCode + ")"
 }
 class PrimitiveJavaType(owner: Symbol, name: Name, override val descriptor: String) extends JavaType(owner, name)
 class ClassJavaType(val owner: Symbol, val name: Name) extends Type {
