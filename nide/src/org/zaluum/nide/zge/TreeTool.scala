@@ -153,7 +153,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       enterSingle(initContainer)
       state = this
       this.tpeName = tpename
-      tpe = controller.global.lookupBoxType(tpeName);
+      tpe = viewer.global.lookupBoxType(tpeName);
       val img = viewer.imageFactory(tpeName);
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));

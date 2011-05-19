@@ -16,7 +16,7 @@
 
 package org.zaluum.nide.eclipse.integration;
 
-import org.zaluum.nide.eclipse.integration.model.ZaluumMockParser
+import org.zaluum.nide.eclipse.integration.model.ZaluumParser
 import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
@@ -31,13 +31,13 @@ import org.eclipse.jdt.internal.core.search.matching.MatchLocatorParser;
  */
 class MultiplexingMatchLocatorParser(problemReporter : ProblemReporter , locator : MatchLocator ) extends MatchLocatorParser(problemReporter, locator) {
 
-  val zaluumParser = new model.ZaluumMockParser(locator.options, problemReporter);
+  val zaluumParser = new model.ZaluumParser(locator.options, problemReporter);
 	
   override def dietParse(sourceUnit : ICompilationUnit , compilationResult : CompilationResult ) : CompilationUnitDeclaration = {
 		if (ContentTypeUtils.isZaluumLikeFileName(sourceUnit.getFileName())) {
 			// FIXASC Is it ok to use a new parser here everytime? If we don't we sometimes recurse back into the first one
 			// FIXASC ought to reuse to ensure types end up in same groovy CU
-			return new ZaluumMockParser(zaluumParser.options, zaluumParser.problemReporter).dietParse(
+			return new ZaluumParser(zaluumParser.options, zaluumParser.problemReporter).dietParse(
           sourceUnit, compilationResult);
 		} else {
 			return super.dietParse(sourceUnit, compilationResult);

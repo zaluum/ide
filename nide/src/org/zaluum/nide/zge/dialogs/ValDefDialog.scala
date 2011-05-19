@@ -36,7 +36,7 @@ class ValDefDialog(viewer: Viewer, val vs: ValSymbol) extends Dialog(viewer.shel
     }
   }
   def initial = v.typeName.str
-  def proj = viewer.controller.global
+  def proj = viewer.global
   def proposals = proj.index.map{_.str}.sorted.toArray
   override def createDialogArea(parent: Composite): Control = {
     val sup = super.createDialogArea(parent).asInstanceOf[Composite];

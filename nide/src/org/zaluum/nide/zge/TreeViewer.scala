@@ -23,8 +23,8 @@ trait ViewerResources { // XXX rename
 class TreeViewer(parent: Composite, controller: Controller, val global: ZaluumProject, editor: GraphicalEditor)
   extends ItemViewer(parent, controller) with ContainerItem with ViewerResources with ClipboardViewer {
   /*TOOLS*/
-  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
-  val palette = new Palette(this, parent.getShell, controller.global)
+  lazy val imageFactory = new ImageFactory(parent.getDisplay, global)
+  val palette = new Palette(this, parent.getShell, global)
   /*MODEL*/
   def tree = controller.tree.asInstanceOf[BoxDef]
   def boxDef = tree

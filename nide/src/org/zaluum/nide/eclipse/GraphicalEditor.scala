@@ -35,6 +35,11 @@ import org.eclipse.ui.{ IEditorSite, IEditorInput, IEditorPart }
 import org.eclipse.ui.ide.IGotoMarker
 import org.eclipse.ui.part.{ EditorPart, FileEditorInput }
 import org.zaluum.nide.zge.{ Viewer, Controller }
+import org.eclipse.jdt.core.JavaCore
+import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
+import org.eclipse.jdt.core.dom.ASTParser
+import org.eclipse.jdt.core.dom.AST
 
 class GraphicalEditor extends EditorPart with IGotoMarker {
 
@@ -43,9 +48,10 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def controller = viewer.controller
 
   def doSave(monitor: IProgressMonitor) {
-    val proto = Serializer.proto(viewer.tree.asInstanceOf[BoxDef])
+    /*val proto = Serializer.proto(viewer.tree.asInstanceOf[BoxDef])
     val in = new ByteArrayInputStream(proto.toByteArray)
-    inputFile.setContents(in, true, true, monitor);
+    inputFile.setContents(in, true, true, monitor);*/
+    controller.cu.commitWorkingCopy(true,monitor)
     controller.markSaved()
     firePropertyChange(IEditorPart.PROP_DIRTY)
   }
@@ -69,14 +75,11 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def zproject = ZaluumModelMananger.getOrCreate(project)
   def input = inputFile.getContents(true)
   def createPartControl(parent: Composite) {
-    val zp = zproject.get // XXX better
-    val className = zp.toClassName(inputFile).getOrElse { throw new Exception("Cannot find class name for this file") }
-    val proto = BoxFileProtos.BoxClassDef.parseFrom(input)
-    val tree = Parser.parse(proto, Some(className))
-    input.close()
-    val controller = new Controller(tree, zp)
+    val zp = zproject.get
+    val cu = JavaCore.createCompilationUnitFrom(inputFile)
+    val controller = new Controller(cu)
     controller.addListener(fireDirty)
-    viewer = new TreeViewer(parent, controller, zp, this)
+    viewer = new TreeViewer(parent, controller, zp,this)
     controller.registerViewer(viewer)
     getEditorSite().setSelectionProvider(selectionProvider);
     // TODO reopen
@@ -120,7 +123,6 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   override def dispose() {
     controller.removeListener(fireDirty)
     viewer.dispose()
-    controller.dispose()
     shell foreach { s ⇒ if (!s.isDisposed) s.dispose }
   }
   override def gotoMarker(marker: IMarker) {

@@ -9,9 +9,11 @@ import org.eclipse.draw2d.{FigureCanvas, FreeformViewport, LightweightSystem}
 import org.eclipse.swt.graphics.Cursor
 import org.eclipse.swt.widgets.Composite
 import scala.collection.JavaConversions._
+import org.zaluum.nide.eclipse.ZaluumProject
 
 abstract class Viewer(parent: Composite, val controller: Controller) extends FreeformViewport {
   def shell = parent.getShell
+  def global: ZaluumProject
   def display = shell.getDisplay
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)

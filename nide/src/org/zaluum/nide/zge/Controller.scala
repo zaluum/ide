@@ -6,8 +6,19 @@ import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.compiler._
 import scala.collection.mutable.{ Buffer, Stack }
 import org.zaluum.nide.Utils.inSWT
-class Controller(private var nowTree: Tree, val global: ZaluumProject) {
+import org.eclipse.jdt.internal.core.CompilationUnit
+import org.eclipse.jdt.core.dom.ASTParser
+import org.eclipse.jdt.core.dom.AST
+import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
+import org.eclipse.text.edits.TextEdit
+import org.eclipse.text.edits.ReplaceEdit
+import java.nio.charset.Charset
+import org.eclipse.jdt.core.ICompilationUnit
+class Controller(val cu: ICompilationUnit) {
+  var nowTree : Tree = _
+  cu.becomeWorkingCopy(null)
   private var viewers = Buffer[Viewer]()
+  
   def registerViewer(viewer: Viewer) {
     viewers += viewer
     viewer.refresh()
@@ -28,18 +39,12 @@ class Controller(private var nowTree: Tree, val global: ZaluumProject) {
       recompile
     }
   }
-  global.addObserver(observer)
-  def dispose() { global.removeObserver(observer) }
   def refreshTools() { viewers foreach { _.tool.refresh() } }
   def blink(s:SelectionSubject, fromViewer:Viewer) {
     viewers filterNot {_==fromViewer} foreach { _.blink(s) }
   }
   def tree = nowTree
   val reporter = new Reporter()
-  def compile() = {
-    val scope = new FakeGlobalScope(global)
-    nowTree = new Analyzer(reporter, tree.asInstanceOf[BoxDef], scope).compile()
-  }
   type DMap = Map[SelectionSubject, SelectionSubject]
   case class Mutation(before: Tree, d: DMap, now: Tree)
   var undoStack = Stack[Mutation]()
@@ -52,9 +57,15 @@ class Controller(private var nowTree: Tree, val global: ZaluumProject) {
     nowTree = c(tree)
     undoStack.push(Mutation(before, c.map, nowTree))
     redoStack.clear
+    replaceWorkingCopyContents()
     update(c.map)
   }
-  def usedTypes : Seq[Type] = {
+  def replaceWorkingCopyContents() {
+    val p = Serializer.proto(nowTree.asInstanceOf[BoxDef]);
+    val str =  new String(p.toByteArray,Charset.forName("ISO-8859-1"))
+    cu.applyTextEdit(new ReplaceEdit(0,cu.getBuffer.getLength,str ),null)    
+  }
+  /*def usedTypes : Seq[Type] = {
     val b = scala.collection.mutable.Set[Type]()
     val t = new Traverser(global) {
       override def traverse(tree:Tree) = {
@@ -67,15 +78,28 @@ class Controller(private var nowTree: Tree, val global: ZaluumProject) {
     }
     t.traverse(nowTree)
     b.toSeq
-  }
+  }*/
   def noChangeMap = {
     var map:DMap = Map()
-    new Traverser(global) {
+    new Traverser(null) {
       override def traverse(tree:Tree) = {
         map += (tree->tree)
       }
     }
     map
+  }
+  def compile(){
+    val parser = ASTParser.newParser(AST.JLS3)
+    parser.setKind(ASTParser.K_COMPILATION_UNIT)
+    parser.setSource(cu)
+    parser.setResolveBindings(true)
+    parser.setIgnoreMethodBodies(true)
+    val domcu = parser.createAST(null)
+    domcu match {
+      case z:ZaluumDomCompilationUnit =>
+        nowTree = z.tree
+      case _ => throw new Exception()
+    }
   }
   def recompile {
     update(noChangeMap)

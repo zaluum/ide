@@ -11,7 +11,7 @@
  *******************************************************************************/
 package org.zaluum.nide.eclipse.integration;
 
-import org.zaluum.nide.eclipse.integration.model.ZaluumMockParser
+import org.zaluum.nide.eclipse.integration.model.ZaluumParser
 import org.eclipse.jdt.internal.compiler.CompilationResult;
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
@@ -28,7 +28,7 @@ import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
 class MultiplexingParser(requestor : Object , compilerOptions : CompilerOptions , problemReporter : ProblemReporter ,
       optimizeStringLiterals : Boolean ) extends Parser(problemReporter, optimizeStringLiterals) {
 
-  val zaluumParser = new ZaluumMockParser(requestor, compilerOptions, problemReporter);
+  val zaluumParser = new ZaluumParser(requestor, compilerOptions, problemReporter);
 	
   override def dietParse(sourceUnit : ICompilationUnit , compilationResult : CompilationResult ) : CompilationUnitDeclaration = {
 		if (ContentTypeUtils.isZaluumLikeFileName(sourceUnit.getFileName())) {

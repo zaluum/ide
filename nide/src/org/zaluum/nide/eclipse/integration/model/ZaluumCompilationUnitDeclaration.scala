@@ -96,12 +96,16 @@ class ZaluumCompilationUnitDeclaration(
   override def buildCompilationUnitScope(lookupEnvironment: LookupEnvironment) = {
     new ZaluumCompilationUnitScope(this, lookupEnvironment)
   }
+  override def getSpecialDomCompilationUnit(ast: org.eclipse.jdt.core.dom.AST): org.eclipse.jdt.core.dom.CompilationUnit = {
+    println("new dom")
+    new ZaluumDomCompilationUnit(ast, tree)
+  }
   def zaluumScope = scope.asInstanceOf[ZaluumCompilationUnitScope]
 
   def mainNameArr = toMainName(compilationResult.getFileName)
   import JDTInternalUtils._
   def pkgName = aToString(sourceUnit.getPackageName())
-  lazy val fqName = List(pkgName,new String(mainNameArr)).mkString(".")
+  lazy val fqName = List(pkgName, new String(mainNameArr)).mkString(".")
 
   def populateCompilationUnitDeclaration() {
     val contents = new String(sourceUnit.getContents)
@@ -136,7 +140,7 @@ class ZaluumCompilationUnitDeclaration(
     types = Array(createTypeDeclaration(tree, None))
   }
   def createTypeDeclaration(b: BoxDef, outer: Option[TypeDeclaration]): TypeDeclaration = {
-    val typeDeclaration = new ZaluumTypeDeclaration(compilationResult,b)
+    val typeDeclaration = new ZaluumTypeDeclaration(compilationResult, b)
     outer match {
       case Some(o) ⇒
         typeDeclaration.name = b.name.str.toCharArray
@@ -150,7 +154,7 @@ class ZaluumCompilationUnitDeclaration(
     tree.superName foreach { n ⇒
       typeDeclaration.superclass = createTypeReference(n.str)
     }
-    
+
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
     typeDeclaration.fields = createFieldDeclarations(b)
@@ -205,20 +209,20 @@ class ZaluumCompilationUnitDeclaration(
     }
   }
 
-
   override def generateCode() {
-    def generate(tpe : ZaluumTypeDeclaration, enclosing:Option[ZaluumTypeDeclaration]) {
+    def generate(tpe: ZaluumTypeDeclaration, enclosing: Option[ZaluumTypeDeclaration]) {
       val binding: SourceTypeBinding = tpe.binding
       val boxDef = tpe.b
       val classTree = new TreeToClass(boxDef, a.global).run()
       val name = binding.constantPoolName()
       compilationResult.record(name,
-        new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.','/')))
-      for (child <- tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
+        new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.', '/')))
+      for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
     }
-    println("generate")
-    if (!hasErrors())
-      generate(types(0).asInstanceOf[ZaluumTypeDeclaration],None)
+    if (!ignoreFurtherInvestigation && !ignoreMethodBodies) {
+      println("generate")
+      generate(types(0).asInstanceOf[ZaluumTypeDeclaration], None)
+    }
     /*tree match {
       case b: BoxDef ⇒ b.defs foreach { case c: BoxDef ⇒ generate(c) }
     }
@@ -239,8 +243,10 @@ class ZaluumCompilationUnitDeclaration(
     a.runResolve()
   }
   override def analyseCode() {
-    println("analyse " + this)
-    a.runCheck()
+    if (!ignoreFurtherInvestigation) {
+      println("analyse " + this)
+      a.runCheck()
+    }
   }
   override def abort(abortLevel: Int, problem: CategorizedProblem) {
     super.abort(abortLevel, problem)

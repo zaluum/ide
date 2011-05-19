@@ -118,6 +118,7 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
     // create AST
     if (createAST) {
       try {
+        println("creating ast")
         val ast = AST.convertCompilationUnit(AST.JLS3, compilationUnitDeclaration, options, computeProblems, source, reconcileFlags, pm)
         ReflectionUtils.setPrivateField(classOf[ASTHolderCUInfo], "ast", info, ast)
       } catch {

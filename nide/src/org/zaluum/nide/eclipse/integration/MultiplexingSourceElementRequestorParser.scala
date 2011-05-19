@@ -13,7 +13,7 @@
  */
 package org.zaluum.nide.eclipse.integration;
 
-import org.zaluum.nide.eclipse.integration.model.ZaluumMockParser
+import org.zaluum.nide.eclipse.integration.model.ZaluumParser
 import java.util.Collections;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -48,7 +48,7 @@ class MultiplexingSourceElementRequestorParser(
   
   reportReferenceInfo = false
   notifier = new SourceElementNotifier(requestor, reportLocalDeclarations);
-  val parser = new ZaluumMockParser(requestor, this.options, problemReporter)
+  val parser = new ZaluumParser(requestor, this.options, problemReporter)
   override def parseCompilationUnit(unit: ICompilationUnit, fullParse: Boolean, pm: IProgressMonitor): CompilationUnitDeclaration = {
 
     if (ContentTypeUtils.isZaluumLikeFileName(unit.getFileName())) {
@@ -61,7 +61,7 @@ class MultiplexingSourceElementRequestorParser(
 
       // FIXASC Is it ok to use a new parser here everytime? If we don't we sometimes recurse back into the first one
       // FIXASC ought to reuse to ensure types end up in same groovy CU
-      val cud = new ZaluumMockParser(this.parser.requestor, this.options, problemReporter)
+      val cud = new ZaluumParser(this.parser.requestor, this.options, problemReporter)
         .dietParse(unit, compilationResult);
 
       val sourceEnds = createSourceEnds(cud);

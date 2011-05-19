@@ -17,7 +17,7 @@ import org.zaluum.nide.eclipse.ZaluumProject
 class GuiViewer(parent: Composite, controller: Controller, val global: ZaluumProject)
   extends ItemViewer(parent, controller) with ContainerItem with ViewerResources {
   /*TOOLS*/
-  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.global)
+  lazy val imageFactory = new ImageFactory(parent.getDisplay, global)
   val items = Buffer[Item]()
   val feed = null
   def pos = Point(0,0)

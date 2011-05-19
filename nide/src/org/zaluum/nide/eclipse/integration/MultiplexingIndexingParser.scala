@@ -26,7 +26,7 @@ import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import org.eclipse.jdt.internal.compiler.util.HashtableOfObjectToInt
 import org.eclipse.jdt.internal.core.search.indexing.IndexingParser
-import model.ZaluumMockParser
+import model.ZaluumParser
 import model.ZaluumCompilationUnit
 import model.ZaluumCompilationUnitDeclaration
 
@@ -66,7 +66,7 @@ class MultiplexingIndexingParser
 			val compilationResult = new CompilationResult(unit, 0, 0, this.options.maxProblemsPerUnit);
 
 			// FIXASC Is it ok to use a new parser here everytime? If we don't we sometimes recurse back into the first one
-			val cud =  new ZaluumMockParser(this.options,
+			val cud =  new ZaluumParser(this.options,
 					problemReporter).dietParse(unit, compilationResult).asInstanceOf[ZaluumCompilationUnitDeclaration];
 
 			val sourceEnds = createSourceEnds(cud);

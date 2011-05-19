@@ -31,7 +31,7 @@ import java.io.ByteArrayInputStream
 import org.zaluum.nide.compiler.Name
 import java.io.FileOutputStream
 
-class ZaluumMockParser(var requestor : Object , val options : CompilerOptions , val problemReporter : ProblemReporter) {
+class ZaluumParser(var requestor : Object , val options : CompilerOptions , val problemReporter : ProblemReporter) {
   def this (options : CompilerOptions, problemReporter : ProblemReporter) {
     this(null, options, problemReporter);
   }
@@ -40,12 +40,12 @@ class ZaluumMockParser(var requestor : Object , val options : CompilerOptions , 
     compilationResult.lineSeparatorPositions = Array(1,1)
     
     val zcud = new ZaluumCompilationUnitDeclaration(problemReporter,compilationResult, 
-        sourceCode.size, sourceUnit,/*groovyCU,groovySU,*/ options)
+        sourceCode.size, sourceUnit, options)
     zcud.populateCompilationUnitDeclaration()
-    for (decl <- zcud.types) {
+/*    for (decl <- zcud.types) {
       val zDecl = decl.asInstanceOf[ZaluumTypeDeclaration]
-      //resolver.record(zDecl)
-    }
+      resolver.record(zDecl)
+    }*/
     zcud
     
   }
