@@ -1,0 +1,3 @@
+[submodule "groovy-eclipse"]
+	path = groovy-eclipse
+	url = /home/frede/devel/zaluum-third/groovy-eclipse.git/
