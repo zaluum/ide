@@ -32,7 +32,6 @@ class MultiplexingParser(requestor : Object , compilerOptions : CompilerOptions 
 	
   override def dietParse(sourceUnit : ICompilationUnit , compilationResult : CompilationResult ) : CompilationUnitDeclaration = {
 		if (ContentTypeUtils.isZaluumLikeFileName(sourceUnit.getFileName())) {
-		  println ("multiplex parse " + sourceUnit.getFileName.mkString)
 			return zaluumParser.dietParse(sourceUnit, compilationResult);
 		} else {
 			return super.dietParse(sourceUnit, compilationResult);

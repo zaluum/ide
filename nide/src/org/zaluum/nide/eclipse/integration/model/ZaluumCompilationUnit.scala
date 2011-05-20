@@ -47,7 +47,6 @@ import java.util.{ Map ⇒ JMap }
 class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: WorkingCopyOwner) extends CompilationUnit(parent, name, owner) {
   
   override def buildStructure(info: OpenableElementInfo, pm: IProgressMonitor, newElements: JMap[_, _], _underlyingResource: IResource): Boolean = {
-    println("build structure")
     var underlyingResource = _underlyingResource
     if (!isOnBuildPath) return false
     val unitInfo = info.asInstanceOf[CompilationUnitElementInfo]
@@ -118,7 +117,6 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
     // create AST
     if (createAST) {
       try {
-        println("creating ast")
         val ast = AST.convertCompilationUnit(AST.JLS3, compilationUnitDeclaration, options, computeProblems, source, reconcileFlags, pm)
         ReflectionUtils.setPrivateField(classOf[ASTHolderCUInfo], "ast", info, ast)
       } catch {

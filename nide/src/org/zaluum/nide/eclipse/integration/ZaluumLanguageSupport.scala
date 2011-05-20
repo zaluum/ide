@@ -37,7 +37,6 @@ import org.zaluum.nide.compiler.Name
 class ZaluumLanguageSupport extends LanguageSupport {
 
   def getParser(requestor: Object, compilerOptions: CompilerOptions, problemReporter: ProblemReporter, parseLiteralExpressionsAsConstants: Boolean, variant: Int): Parser = {
-    println("getParser variant = " + variant)
     if (variant == 1)
       new MultiplexingParser(requestor, compilerOptions, problemReporter, parseLiteralExpressionsAsConstants);
     else
@@ -53,19 +52,16 @@ class ZaluumLanguageSupport extends LanguageSupport {
   }
 
   def getMatchLocatorParserParser(problemReporter: ProblemReporter, locator: MatchLocator): MatchLocatorParser = {
-    println("getMatchlocatprParser")
     new MultiplexingMatchLocatorParser(problemReporter, locator);
   }
 
   def getImportMatchLocatorParserParser(problemReporter: ProblemReporter, locator: MatchLocator): ImportMatchLocatorParser = {
-    println("getimportmathlocator")
     new MultiplexingImportMatchLocatorParser(problemReporter, locator);
   }
 
   def getSourceElementParser(requestor: ISourceElementRequestor, problemFactory: IProblemFactory,
     options: CompilerOptions, reportLocalDeclarations: Boolean, optimizeStringLiterals: Boolean,
     useSourceJavadocParser: Boolean): SourceElementParser = {
-    println("getsourcelementparser")
     val problemReporter = new ProblemReporter(DefaultErrorHandlingPolicies.proceedWithAllProblems(), options,
       new DefaultProblemFactory());
     new MultiplexingSourceElementRequestorParser(problemReporter, requestor, problemFactory, options,

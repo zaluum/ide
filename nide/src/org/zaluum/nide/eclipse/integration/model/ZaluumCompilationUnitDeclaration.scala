@@ -86,7 +86,6 @@ class ZaluumCompilationUnitDeclaration(
     override def enter[S <: Symbol](sym: S): S = {
       sym match {
         case b: BoxTypeSymbol ⇒
-          println("entered " + sym.name)
           boxes += (b.name -> b)
         case _ ⇒ // nothing
       }
@@ -97,7 +96,6 @@ class ZaluumCompilationUnitDeclaration(
     new ZaluumCompilationUnitScope(this, lookupEnvironment)
   }
   override def getSpecialDomCompilationUnit(ast: org.eclipse.jdt.core.dom.AST): org.eclipse.jdt.core.dom.CompilationUnit = {
-    println("new dom")
     new ZaluumDomCompilationUnit(ast, tree)
   }
   def zaluumScope = scope.asInstanceOf[ZaluumCompilationUnitScope]
@@ -145,7 +143,6 @@ class ZaluumCompilationUnitDeclaration(
       case Some(o) ⇒
         typeDeclaration.name = b.name.str.toCharArray
         typeDeclaration.bits |= ASTNode.IsMemberType
-        println(typeDeclaration.toString + " " + typeDeclaration.modifiers)
         typeDeclaration.modifiers = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
       case None ⇒
         typeDeclaration.name = mainNameArr
@@ -154,7 +151,7 @@ class ZaluumCompilationUnitDeclaration(
     tree.superName foreach { n ⇒
       typeDeclaration.superclass = createTypeReference(n.str)
     }
-
+    
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
     typeDeclaration.fields = createFieldDeclarations(b)
@@ -220,7 +217,6 @@ class ZaluumCompilationUnitDeclaration(
       for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
     }
     if (!ignoreFurtherInvestigation && !ignoreMethodBodies) {
-      println("generate")
       generate(types(0).asInstanceOf[ZaluumTypeDeclaration], None)
     }
     /*tree match {
@@ -239,12 +235,10 @@ class ZaluumCompilationUnitDeclaration(
     generate(tree)*/
   }
   override def resolve() {
-    println("resolve " + this)
     a.runResolve()
   }
   override def analyseCode() {
     if (!ignoreFurtherInvestigation) {
-      println("analyse " + this)
       a.runCheck()
     }
   }

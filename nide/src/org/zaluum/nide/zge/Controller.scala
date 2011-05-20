@@ -16,6 +16,7 @@ import java.nio.charset.Charset
 import org.eclipse.jdt.core.ICompilationUnit
 class Controller(val cu: ICompilationUnit) {
   var nowTree : Tree = _
+  println("cu parent " + cu.getParent.getClass)
   cu.becomeWorkingCopy(null)
   private var viewers = Buffer[Viewer]()
   
@@ -57,13 +58,15 @@ class Controller(val cu: ICompilationUnit) {
     nowTree = c(tree)
     undoStack.push(Mutation(before, c.map, nowTree))
     redoStack.clear
-    replaceWorkingCopyContents()
     update(c.map)
   }
   def replaceWorkingCopyContents() {
     val p = Serializer.proto(nowTree.asInstanceOf[BoxDef]);
     val str =  new String(p.toByteArray,Charset.forName("ISO-8859-1"))
     cu.applyTextEdit(new ReplaceEdit(0,cu.getBuffer.getLength,str ),null)    
+  }
+  def dispose() {
+    cu.discardWorkingCopy()
   }
   /*def usedTypes : Seq[Type] = {
     val b = scala.collection.mutable.Set[Type]()
@@ -105,6 +108,7 @@ class Controller(val cu: ICompilationUnit) {
     update(noChangeMap)
   }
   private def update(m: DMap) {
+    replaceWorkingCopyContents()
     compile()
     PrettyPrinter.print(nowTree, 0)
     updateViewers(m)

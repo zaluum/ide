@@ -157,7 +157,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     override def traverse(tree: Tree) {
       tree match {
         case BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
-          println("analyzing " + name)
+          //println("analyzing " + name)
           val cl = Some(Name(classOf[JPanel].getName))
           val newSym = new BoxTypeSymbol(currentOwner, name, superName, image, cl)
           val sym = defineBox(newSym, tree)

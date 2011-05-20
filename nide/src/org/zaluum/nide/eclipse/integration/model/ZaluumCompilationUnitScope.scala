@@ -52,7 +52,6 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
     }
   }
   def getBoxType(name: Name): Option[BoxTypeSymbol] = {
-    println("asking for " + name)
     cache.get(name).orElse {
       val compoundName = stringToA(name.str)
       getType(compoundName, compoundName.length) match {
@@ -117,7 +116,7 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
             cache += (name -> bs)
             Some(bs)
           } else {
-            println(name + " is not a box")
+           // println(name + " is not a box")
             None
           }
         case _ ⇒ None

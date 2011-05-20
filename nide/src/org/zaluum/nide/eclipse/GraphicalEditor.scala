@@ -48,9 +48,6 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   def controller = viewer.controller
 
   def doSave(monitor: IProgressMonitor) {
-    /*val proto = Serializer.proto(viewer.tree.asInstanceOf[BoxDef])
-    val in = new ByteArrayInputStream(proto.toByteArray)
-    inputFile.setContents(in, true, true, monitor);*/
     controller.cu.commitWorkingCopy(true,monitor)
     controller.markSaved()
     firePropertyChange(IEditorPart.PROP_DIRTY)
@@ -122,6 +119,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   }
   override def dispose() {
     controller.removeListener(fireDirty)
+    controller.dispose()
     viewer.dispose()
     shell foreach { s ⇒ if (!s.isDisposed) s.dispose }
   }
