@@ -1,3 +1,6 @@
 [submodule "groovy-eclipse"]
 	path = groovy-eclipse
 	url = /home/frede/devel/zaluum-third/groovy-eclipse.git/
+[submodule "jchart2d"]
+	path = jchart2d
+	url = git://jchart2d.git.sourceforge.net/gitroot/jchart2d/jchart2d
