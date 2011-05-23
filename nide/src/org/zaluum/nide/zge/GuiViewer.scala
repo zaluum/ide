@@ -13,11 +13,11 @@ import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler._
 import scala.collection.mutable.Buffer
 import org.eclipse.draw2d.{IFigure,LayoutListener}
-import org.zaluum.nide.eclipse.ZaluumProject
-class GuiViewer(parent: Composite, controller: Controller, val global: ZaluumProject)
+
+class GuiViewer(parent: Composite, controller: Controller)
   extends ItemViewer(parent, controller) with ContainerItem with ViewerResources {
   /*TOOLS*/
-  lazy val imageFactory = new ImageFactory(parent.getDisplay, global)
+  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.zproject)
   val items = Buffer[Item]()
   val feed = null
   def pos = Point(0,0)
@@ -26,7 +26,7 @@ class GuiViewer(parent: Composite, controller: Controller, val global: ZaluumPro
   /*MODEL*/
   def tree = controller.tree.asInstanceOf[BoxDef]
   def boxDef = tree
-  def owner = global.root
+  def owner = null//global.root
   background.setForegroundColor(ColorConstants.white)
   background.setBackgroundColor(ColorConstants.lightGray)
   /*LAYERS*/
@@ -60,7 +60,7 @@ class GuiViewer(parent: Composite, controller: Controller, val global: ZaluumPro
             val sym = v.symbol.asInstanceOf[ValSymbol]
             val tpe = sym.tpe.asInstanceOf[BoxTypeSymbol]
             if (!tpe.isLocal && tpe.visualClass.isDefined) {
-                val f = new SwingFigure(GuiViewer.this,global.classLoader)
+                val f = new SwingFigure(GuiViewer.this,controller.zproject.classLoader)
                 f.updateValDef(v)
                 items += f
                 f.show()

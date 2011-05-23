@@ -15,7 +15,7 @@ object Colorizer {
       case Name("double") => ColorConstants.orange
       case Name("boolean") => ColorConstants.red
       case Name("char") => ColorConstants.green
-      case _ => ColorConstants.black
+      case a => ColorConstants.black
     }
     case a => ColorConstants.gray
   }

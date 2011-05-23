@@ -116,7 +116,6 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
             cache += (name -> bs)
             Some(bs)
           } else {
-           // println(name + " is not a box")
             None
           }
         case _ ⇒ None

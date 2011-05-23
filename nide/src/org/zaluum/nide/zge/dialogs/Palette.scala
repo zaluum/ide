@@ -8,14 +8,13 @@ import org.eclipse.swt.SWT
 import org.eclipse.ui.forms.events.{ExpansionAdapter, ExpansionEvent}
 import org.eclipse.ui.forms.widgets.ExpandableComposite
 import org.zaluum.nide.compiler.{In, Out, PortDir, Shift, Name}
-import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.zge.SWTScala._
 import org.zaluum.nide.zge._
 object Palette {
   val w = 400
   val h = 300
 }
-class Palette(viewer: TreeViewer, mainShell: Shell, proj: ZaluumProject) extends ScrollPopup(mainShell) {
+class Palette(viewer: TreeViewer, mainShell: Shell) extends ScrollPopup(mainShell) {
   def name = "Palette"
   def columns = 5
   var container: ContainerItem = _
@@ -44,6 +43,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell, proj: ZaluumProject) extends
       });
       (content,expand)
   }
+  def zproject = viewer.controller.zproject
   def populate(top: Composite, scroll: ScrolledComposite) {
     {
       val lay = new GridLayout
@@ -78,16 +78,16 @@ class Palette(viewer: TreeViewer, mainShell: Shell, proj: ZaluumProject) extends
       portDecl(ports, Shift, "Shift port")
     portsBar.setExpanded(true)
     // PACKAGES
-    val grouped = proj.index.groupBy(n ⇒ n.str.splitAt(n.str.lastIndexOf("."))._1)
-    for ((packName, contents) ← grouped.toList.sortWith(_._1 < _._1)) {
+    val grouped = zproject.index.groupBy(proxy ⇒ proxy.name.str.splitAt(proxy.name.str.lastIndexOf("."))._1)
+    for ((packName, proxies) ← grouped.toList.sortWith(_._1 < _._1)) {
       val (content,_) = newBar(packName,top)
-      for (name ← contents.sortBy(_.str)) {
-        val img = viewer.imageFactory(name)
-        val b = createButton(content, name.str, img)
+      for (boxProxy ← proxies.sortBy(_.name.str)) {
+        val img = viewer.imageFactory(boxProxy.name)
+        val b = createButton(content, boxProxy.name.str, img)
         addOnDispose(b) { img.dispose }
         addReaction(b) {
           viewer.tool.state.abort()
-          viewer.tool.creating.enter(name, container)
+          viewer.tool.creating.enter(boxProxy.name, container)
           viewer.canvas.setFocus()
           hide()
         }

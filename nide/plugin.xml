@@ -150,7 +150,7 @@
       <editor
             class="org.zaluum.nide.eclipse.GraphicalEditor"
             contributorClass="org.zaluum.nide.eclipse.BaseActionBarContributor"
-            default="false"
+            default="true"
             extensions="zaluum"
             icon="icons/composed_16.png"
             id="org.zaluum.nide.editor"
@@ -214,17 +214,6 @@
       </decorator>
    </extension>
    <extension
-         id="zaluumBuilder"
-         name="Zaluum Project Builder"
-         point="org.eclipse.core.resources.builders">
-      <builder
-            hasNature="true">
-         <run
-               class="org.zaluum.nide.eclipse.ZaluumBuilder">
-         </run>
-      </builder>
-   </extension>
-   <extension
          id="zaluumNature"
          name="Zaluum Project Nature"
          point="org.eclipse.core.resources.natures">
@@ -233,9 +222,6 @@
                class="org.zaluum.nide.eclipse.ZaluumNature">
          </run>
       </runtime>
-      <builder
-            id="org.zaluum.nide.zaluumBuilder">
-      </builder>
    </extension>
    <extension
          point="org.eclipse.ui.popupMenus">

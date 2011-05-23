@@ -2,7 +2,6 @@ package org.zaluum.nide.zge
 
 import org.eclipse.jface.viewers.StructuredSelection
 import org.eclipse.jdt.core.IJavaElement
-import org.zaluum.nide.eclipse.ZaluumProject
 import org.eclipse.core.runtime.IAdaptable
 import org.eclipse.jdt.core.JavaCore
 import org.zaluum.nide.eclipse.GraphicalEditor
@@ -20,15 +19,15 @@ import org.zaluum.nide.compiler._
 trait ViewerResources { // XXX rename
   def imageFactory: ImageFactory
 }
-class TreeViewer(parent: Composite, controller: Controller, val global: ZaluumProject, editor: GraphicalEditor)
+class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
   extends ItemViewer(parent, controller) with ContainerItem with ViewerResources with ClipboardViewer {
   /*TOOLS*/
-  lazy val imageFactory = new ImageFactory(parent.getDisplay, global)
-  val palette = new Palette(this, parent.getShell, global)
+  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.zproject)
+  val palette = new Palette(this, parent.getShell)
   /*MODEL*/
   def tree = controller.tree.asInstanceOf[BoxDef]
   def boxDef = tree
-  def owner = global.root
+  def owner = null
   def viewer = this
   /*LAYERS*/
   def viewerResources = this
@@ -97,7 +96,7 @@ class TreeViewer(parent: Composite, controller: Controller, val global: ZaluumPr
   def itemToIType(i:Item) = {
     i match {
       case v:ValDefItem if (v.valSym.tpe!=NoSymbol) =>
-        global.jProject.findType(v.valSym.tpe.name.str)
+        controller.zproject.jProject.findType(v.valSym.tpe.name.str)
       case _ => null
     }
   }

@@ -12,12 +12,13 @@
 package org.zaluum.nide.eclipse.integration;
 
 import org.zaluum.nide.eclipse.integration.model.ZaluumParser
-import org.eclipse.jdt.internal.compiler.CompilationResult;
-import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
-import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
-import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
-import org.eclipse.jdt.internal.compiler.parser.Parser;
+import org.eclipse.jdt.internal.compiler.CompilationResult
+import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
+import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
+import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
+import org.eclipse.jdt.internal.compiler.parser.Parser
 import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
+import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
 
 /**
  * The multiplexing parser can delegate file parsing to multiple parsers. In this scenario it subtypes 'Parser' (which is the Java

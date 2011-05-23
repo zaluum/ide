@@ -25,16 +25,13 @@ import org.eclipse.jdt.internal.compiler.problem.ProblemReporter
 import org.eclipse.jdt.internal.core.builder.BatchImageBuilder
 import org.eclipse.jdt.internal.core.builder.BuildNotifier
 import org.eclipse.jdt.internal.core.builder.SourceFile
-import org.zaluum.nide.eclipse.ZaluumBuilder
 import java.nio.charset.Charset
 import java.io.ByteArrayInputStream
 import org.zaluum.nide.compiler.Name
 import java.io.FileOutputStream
+import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
 
-class ZaluumParser(var requestor : Object , val options : CompilerOptions , val problemReporter : ProblemReporter) {
-  def this (options : CompilerOptions, problemReporter : ProblemReporter) {
-    this(null, options, problemReporter);
-  }
+class ZaluumParser(val requestor : Object , val options : CompilerOptions , val problemReporter : ProblemReporter) {
   def dietParse(sourceUnit : ICompilationUnit, compilationResult: CompilationResult) : CompilationUnitDeclaration = {
     val sourceCode = sourceUnit.getContents
     compilationResult.lineSeparatorPositions = Array(1,1)
@@ -42,10 +39,6 @@ class ZaluumParser(var requestor : Object , val options : CompilerOptions , val 
     val zcud = new ZaluumCompilationUnitDeclaration(problemReporter,compilationResult, 
         sourceCode.size, sourceUnit, options)
     zcud.populateCompilationUnitDeclaration()
-/*    for (decl <- zcud.types) {
-      val zDecl = decl.asInstanceOf[ZaluumTypeDeclaration]
-      resolver.record(zDecl)
-    }*/
     zcud
     
   }

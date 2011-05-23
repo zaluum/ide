@@ -2,7 +2,6 @@ package org.zaluum.nide.zge
 
 import org.zaluum.nide.Subject
 import org.zaluum.nide.Observer
-import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.compiler._
 import scala.collection.mutable.{ Buffer, Stack }
 import org.zaluum.nide.Utils.inSWT
@@ -14,9 +13,10 @@ import org.eclipse.text.edits.TextEdit
 import org.eclipse.text.edits.ReplaceEdit
 import java.nio.charset.Charset
 import org.eclipse.jdt.core.ICompilationUnit
-class Controller(val cu: ICompilationUnit) {
+import org.eclipse.jdt.core.IJavaProject
+import org.zaluum.nide.eclipse.ZaluumProject
+class Controller(val cu: ICompilationUnit, val zproject : ZaluumProject) {
   var nowTree : Tree = _
-  println("cu parent " + cu.getParent.getClass)
   cu.becomeWorkingCopy(null)
   private var viewers = Buffer[Viewer]()
   
@@ -110,7 +110,7 @@ class Controller(val cu: ICompilationUnit) {
   private def update(m: DMap) {
     replaceWorkingCopyContents()
     compile()
-    PrettyPrinter.print(nowTree, 0)
+    //PrettyPrinter.print(nowTree, 0)
     updateViewers(m)
     notifyListeners
     refreshTools

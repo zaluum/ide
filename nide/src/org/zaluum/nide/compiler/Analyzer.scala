@@ -375,19 +375,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     new CheckConnections(toCompile,global.root).check()
     toCompile
   }
-  def shallowCompile() : Tree = {
-    val root=global.root
-    new Namer(root).traverse(toCompile)
-    new Resolver(root).traverse(toCompile) // XXX make it shallower
-    toCompile 
-  }
-  def compile(): Tree = {
-    val root = global.root
-    new Namer(root).traverse(toCompile)
-    new Resolver(root).traverse(toCompile)
-    new CheckConnections(toCompile, root).check()
-    toCompile
-  }
 }
 trait ConnectionHelper extends ReporterAdapter {
   implicit def reporter: Reporter

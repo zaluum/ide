@@ -47,7 +47,6 @@ import org.eclipse.jdt.internal.compiler.problem.ProblemSeverities
 import org.eclipse.jdt.internal.core.util.Util
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
 import org.zaluum.nide.compiler._
-import org.zaluum.nide.eclipse.ZaluumBuilder
 import java.nio.charset.Charset
 import java.io.ByteArrayInputStream
 import org.objectweb.asm.Opcodes
@@ -58,6 +57,15 @@ import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.BinaryTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.Binding
+import org.eclipse.jdt.internal.compiler.ast.NormalAnnotation
+import org.zaluum.annotation.Box
+import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
+import org.eclipse.core.runtime.Path
+import org.eclipse.core.runtime.Platform
+import org.eclipse.ui.PlatformUI
+import org.eclipse.jdt.core.JavaCore
+import org.eclipse.core.resources.ResourcesPlugin
+import org.zaluum.nide.eclipse.EclipseUtils
 
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
@@ -92,6 +100,7 @@ class ZaluumCompilationUnitDeclaration(
       sym
     }
   }
+
   override def buildCompilationUnitScope(lookupEnvironment: LookupEnvironment) = {
     new ZaluumCompilationUnitScope(this, lookupEnvironment)
   }
@@ -102,13 +111,26 @@ class ZaluumCompilationUnitDeclaration(
 
   def mainNameArr = toMainName(compilationResult.getFileName)
   import JDTInternalUtils._
-  def pkgName = aToString(sourceUnit.getPackageName())
+  def pkgName = {
+    Option(sourceUnit.getPackageName) match {
+      case Some(pkg) ⇒ aToString(pkg)
+      case None ⇒
+        val path = new Path(sourceUnit.getFileName.mkString)
+        val opkg = for (
+          res ← EclipseUtils.pathToResource(path);
+          jp ← Option(JavaCore.create(res.getProject));
+          val e = new EclipseUtils {   def jProject = jp };
+          pkg <- e.extractPackageName(res)
+        ) yield pkg
+        opkg.get
+    }
+  }
   lazy val fqName = List(pkgName, new String(mainNameArr)).mkString(".")
 
   def populateCompilationUnitDeclaration() {
     val contents = new String(sourceUnit.getContents)
     val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
-    tree = ZaluumBuilder.readTree(new ByteArrayInputStream(byteContents), Name(fqName))
+    tree = Parser.readTree(new ByteArrayInputStream(byteContents), Name(fqName))
     val reporter = new Reporter() {
       override def report(str: String, mark: Option[Location] = None) {
         super.report(str, mark)
@@ -128,8 +150,8 @@ class ZaluumCompilationUnitDeclaration(
     problemReporter.record(p, compilationResult, this)
   }
   def createPackageDeclaration() {
-    val pkg = sourceUnit.getPackageName
-    currentPackage = new ImportReference(pkg, positionsFor(pkg, 0, 1), true, ClassFileConstants.AccDefault)
+    val pkgArr = stringToA(pkgName)
+    currentPackage = new ImportReference(pkgArr, positionsFor(pkgArr, 0, pkgName.length), true, ClassFileConstants.AccDefault)
     currentPackage.declarationSourceStart = currentPackage.sourceStart
     currentPackage.declarationSourceEnd = currentPackage.sourceEnd
     currentPackage.declarationEnd = currentPackage.sourceEnd
@@ -147,11 +169,13 @@ class ZaluumCompilationUnitDeclaration(
       case None ⇒
         typeDeclaration.name = mainNameArr
         typeDeclaration.modifiers = Opcodes.ACC_PUBLIC
+        val annotation = new MarkerAnnotation(createTypeReference(classOf[Box].getName), -1)
+        typeDeclaration.annotations = Array(annotation);
+
     }
     tree.superName foreach { n ⇒
       typeDeclaration.superclass = createTypeReference(n.str)
     }
-    
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
     typeDeclaration.fields = createFieldDeclarations(b)
@@ -219,28 +243,12 @@ class ZaluumCompilationUnitDeclaration(
     if (!ignoreFurtherInvestigation && !ignoreMethodBodies) {
       generate(types(0).asInstanceOf[ZaluumTypeDeclaration], None)
     }
-    /*tree match {
-      case b: BoxDef ⇒ b.defs foreach { case c: BoxDef ⇒ generate(c) }
-    }
-
-    def generateInner(tree: Tree) {
-      val sym = tree.symbol.asInstanceOf[BoxTypeSymbol]
-      /*println("/*** analyzedTree")
-          PrettyPrinter.print(analyzedTree,0)
-          println("***/")*/
-      tree match {
-        case b: BoxDef ⇒ b.defs foreach { case c: BoxDef ⇒ generate(c) }
-      }
-    }
-    generate(tree)*/
   }
   override def resolve() {
     a.runResolve()
+    a.runCheck()
   }
   override def analyseCode() {
-    if (!ignoreFurtherInvestigation) {
-      a.runCheck()
-    }
   }
   override def abort(abortLevel: Int, problem: CategorizedProblem) {
     super.abort(abortLevel, problem)

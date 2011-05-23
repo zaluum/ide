@@ -5,7 +5,12 @@ import org.zaluum.nide.zge.V
 import org.zaluum.nide.zge.H
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.JavaConversions._
+import java.io.InputStream
 object Parser {
+  def readTree(i: InputStream, className: Name) = {
+    val proto = BoxFileProtos.BoxClassDef.parseFrom(i)
+    parse(proto, Some(className))
+  }
   def parse(b: BoxFileProtos.BoxClassDef, name: Option[Name] = None): BoxDef = {
     BoxDef(name.getOrElse(Name(b.getClassName)),
       superName = if (b.hasSuper) Some(Name(b.getSuper)) else None,

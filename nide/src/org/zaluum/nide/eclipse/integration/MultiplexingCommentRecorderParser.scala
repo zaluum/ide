@@ -1,12 +1,13 @@
 package org.zaluum.nide.eclipse.integration;
 
 import org.zaluum.nide.eclipse.integration.model.ZaluumParser
-import org.eclipse.jdt.internal.compiler.CompilationResult;
-import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
-import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
-import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
-import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
+import org.eclipse.jdt.internal.compiler.CompilationResult
+import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
+import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
+import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
+import org.eclipse.jdt.internal.compiler.problem.ProblemReporter
 import org.eclipse.jdt.internal.core.util.CommentRecorderParser;
+import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
 
 class MultiplexingCommentRecorderParser(requestor: Object , val compilerOptions:CompilerOptions , problemReporter:ProblemReporter ,
       optimizeStringLiterals:Boolean) extends 

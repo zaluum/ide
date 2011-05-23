@@ -30,9 +30,14 @@ import org.eclipse.jdt.internal.core.search.matching.PossibleMatch
 import org.codehaus.jdt.groovy.integration.LanguageSupport
 import model.ZaluumCompilationUnit
 import java.nio.charset.Charset
-import org.zaluum.nide.eclipse.ZaluumBuilder
 import java.io.ByteArrayInputStream
 import org.zaluum.nide.compiler.Name
+import org.eclipse.jdt.internal.core.search.matching.TypeDeclarationPattern
+import org.eclipse.jdt.core.search.TypeDeclarationMatch
+import org.eclipse.jdt.core.search.SearchMatch
+import org.eclipse.jdt.internal.core.search.matching.TypeReferencePattern
+import org.eclipse.jdt.core.search.TypeReferenceMatch
+import org.eclipse.jdt.internal.core.SourceType
 
 class ZaluumLanguageSupport extends LanguageSupport {
 
@@ -80,7 +85,7 @@ class ZaluumLanguageSupport extends LanguageSupport {
   def newCompilationUnitDeclaration(unit: ICompilationUnit, problemReporter: ProblemReporter, compilationResult: CompilationResult, sourceLength: Int): CompilationUnitDeclaration = {
     if (ContentTypeUtils.isZaluumLikeFileName(compilationResult.getFileName())) {
       compilationResult.lineSeparatorPositions = Array(1, 1)
-       new ZaluumCompilationUnitDeclaration(problemReporter, compilationResult,  sourceLength, unit, null )
+      new ZaluumCompilationUnitDeclaration(problemReporter, compilationResult, sourceLength, unit, null)
     } else {
       new CompilationUnitDeclaration(problemReporter, compilationResult, sourceLength);
     }
@@ -144,7 +149,42 @@ class ZaluumLanguageSupport extends LanguageSupport {
    * @param requestor the requestor to send any completed search results to
    * @return true iff the search was performed
    */
-  def maybePerformDelegatedSearch(possibleMatch: PossibleMatch, pattern: SearchPattern, requestor: SearchRequestor) = false
+  def maybePerformDelegatedSearch(possibleMatch: PossibleMatch, pattern: SearchPattern, requestor: SearchRequestor) = {
+    /* The standard JDT part uses the matchlocatorparser to call 
+     * this.patternLocator.match(paramReferences[i], this.nodeSet);
+     * We cannot reuse this because we are not reusing the jdt parser
+     * 
+     * Indexing Parser requestor creates possibleMatches
+     * When searching MatchLocatorParser are created. They should invoke
+     * this.patternLocator.match(paramReferences[i], this.nodeSet);
+     * MatchLocator#report converts to requestor.acceptSearchMatch
+     * Here we are bypassing the patternLocator.match and reporting directly 
+     * with the requestor
+     * */
+    if (possibleMatch.openable != null && possibleMatch.openable.exists()) {
+      val participant = possibleMatch.document.getParticipant()
+      possibleMatch.openable match {
+        // TODO FAKED search results
+        case z: ZaluumCompilationUnit ⇒
+          pattern match {
+            case dec: TypeDeclarationPattern ⇒
+              val tpe = z.findPrimaryType
+              if (dec.simpleName.mkString.equalsIgnoreCase(tpe.getElementName)){   
+                requestor.acceptSearchMatch(new TypeDeclarationMatch(z, SearchMatch.A_ACCURATE, 0, 0, participant, z.getResource()));
+                true
+              }else false
+            
+            case ref: TypeReferencePattern ⇒
+              if (ref.getIndexKey.mkString.equalsIgnoreCase("box")){   
+                requestor.acceptSearchMatch(new TypeReferenceMatch(z.findPrimaryType, SearchMatch.A_ACCURATE, 0, 0, false,participant, z.getResource()))
+                true
+              }else false
+            case _ ⇒ false
+          }
+      }
+    } else false
+    false
+  }
 
   def getEventHandler(): EventHandler = new ZaluumEventHandler()
 

@@ -40,6 +40,7 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
 import org.eclipse.jdt.core.dom.ASTParser
 import org.eclipse.jdt.core.dom.AST
+import org.eclipse.jdt.internal.core.JavaModelManager
 
 class GraphicalEditor extends EditorPart with IGotoMarker {
 
@@ -69,14 +70,14 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
 
   def inputFile = getEditorInput.asInstanceOf[FileEditorInput].getFile
   def project = inputFile.getProject
-  def zproject = ZaluumModelMananger.getOrCreate(project)
+  def jproject = JavaCore.create(project)
   def input = inputFile.getContents(true)
   def createPartControl(parent: Composite) {
-    val zp = zproject.get
     val cu = JavaCore.createCompilationUnitFrom(inputFile)
-    val controller = new Controller(cu)
+    val zProject = new ZaluumProject(jproject)
+    val controller = new Controller(cu, zProject)
     controller.addListener(fireDirty)
-    viewer = new TreeViewer(parent, controller, zp,this)
+    viewer = new TreeViewer(parent, controller,this)
     controller.registerViewer(viewer)
     getEditorSite().setSelectionProvider(selectionProvider);
     // TODO reopen
@@ -102,7 +103,7 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
       val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE | SWT.RESIZE)
       newshell.setLayout(new FillLayout)
       newshell.setText(getTitle + " GUI");
-      val guiViewer = new GuiViewer(newshell, controller, zproject.get)
+      val guiViewer = new GuiViewer(newshell, controller)
       controller.registerViewer(guiViewer)
       newshell.layout()
       newshell.open()

@@ -11,7 +11,14 @@ import org.eclipse.core.runtime.IPath
 import org.eclipse.core.resources.{ IFile, IResourceVisitor, IResource, IContainer }
 import org.eclipse.jdt.core.{ IJavaProject, IClasspathEntry }
 import scala.util.control.Exception._
-
+import org.eclipse.core.resources.ResourcesPlugin
+import org.eclipse.core.resources.IProject
+import org.eclipse.jdt.core.JavaCore
+object EclipseUtils {
+  def pathToResource(path:IPath) = {
+    Option(ResourcesPlugin.getWorkspace.getRoot.findMember(path))
+  }
+}
 trait EclipseUtils {
   def jProject: IJavaProject
   def project = jProject.getProject
@@ -28,6 +35,13 @@ trait EclipseUtils {
         }
       })
     b.toSeq
+  }
+  def extractPackageName(res:IResource) : Option[String] = {
+    sourcePaths find { _.isPrefixOf(res.getFullPath) } map { sp =>
+      val path = res.getFullPath
+      val pkgPath = path.removeFirstSegments(sp.segmentCount).removeFileExtension.removeLastSegments(1)
+      pkgPath.segments.mkString(".")
+    }
   }
   def isSourceCP(e: IClasspathEntry) = e.getEntryKind == IClasspathEntry.CPE_SOURCE
   def sourcePaths = jProject.getResolvedClasspath(true) collect { case p if isSourceCP(p) ⇒ p.getPath }

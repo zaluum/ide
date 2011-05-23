@@ -13,6 +13,7 @@ import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle, Dimension ⇒ 
 import org.zaluum.nide.compiler.{ _ }
 import scala.collection.JavaConversions._
 import org.zaluum.basic.LoopBox
+import org.zaluum.nide.eclipse.BoxTypeProxy
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -148,12 +149,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
     var tpeName: Name = _
-    var tpe: Option[BoxTypeSymbol] = None
+    var tpe: Option[BoxTypeProxy] = None
     def enter(tpename: Name, initContainer: ContainerItem) {
       enterSingle(initContainer)
       state = this
       this.tpeName = tpename
-      tpe = viewer.global.lookupBoxType(tpeName);
+      tpe = controller.zproject.getBoxSymbol(tpeName);
       val img = viewer.imageFactory(tpeName);
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));

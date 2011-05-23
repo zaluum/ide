@@ -16,11 +16,13 @@ import org.eclipse.swt.graphics.{ Image, GC, Font, Point }
 import org.eclipse.swt.layout.{ GridLayout, FillLayout }
 import org.eclipse.swt.widgets.{ Display, Shell, Composite }
 import org.zaluum.nide.icons.Icons
+import org.zaluum.nide.eclipse.ZaluumProject
+import org.eclipse.core.resources.IProject
 
-class ImageFactory(val display: Display, bcp: ClassPath) {
+class ImageFactory(val display: Display, zp: ZaluumProject) {
   def notFound = ImageDescriptor.createFromFile(classOf[Icons], "notFound.png").createImage()
   def load(resource: String) = {
-    val url = bcp.getResource(resource);
+    val url = zp.getResource(resource);
     url map { u ⇒
       ImageDescriptor.createFromURL(u).createImage()
     }
