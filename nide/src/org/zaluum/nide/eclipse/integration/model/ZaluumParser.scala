@@ -31,7 +31,7 @@ import org.zaluum.nide.compiler.Name
 import java.io.FileOutputStream
 import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
 
-class ZaluumParser(val requestor : Object , val options : CompilerOptions , val problemReporter : ProblemReporter) {
+class ZaluumParser(val options : CompilerOptions , val problemReporter : ProblemReporter) {
   def dietParse(sourceUnit : ICompilationUnit, compilationResult: CompilationResult) : CompilationUnitDeclaration = {
     val sourceCode = sourceUnit.getContents
     compilationResult.lineSeparatorPositions = Array(1,1)

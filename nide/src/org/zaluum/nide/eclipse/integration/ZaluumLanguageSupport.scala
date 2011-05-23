@@ -43,9 +43,9 @@ class ZaluumLanguageSupport extends LanguageSupport {
 
   def getParser(requestor: Object, compilerOptions: CompilerOptions, problemReporter: ProblemReporter, parseLiteralExpressionsAsConstants: Boolean, variant: Int): Parser = {
     if (variant == 1)
-      new MultiplexingParser(requestor, compilerOptions, problemReporter, parseLiteralExpressionsAsConstants);
+      new MultiplexingParser(compilerOptions, problemReporter, parseLiteralExpressionsAsConstants);
     else
-      new MultiplexingCommentRecorderParser(requestor, compilerOptions, problemReporter,
+      new MultiplexingCommentRecorderParser(compilerOptions, problemReporter,
         parseLiteralExpressionsAsConstants);
 
   }
