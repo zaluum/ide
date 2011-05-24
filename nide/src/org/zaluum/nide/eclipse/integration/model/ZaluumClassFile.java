@@ -275,10 +275,9 @@ class ZaluumClassFile extends ClassFile {
 		throw new UnsupportedOperationException();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void traverse(MethodBinding methodBinding, int maxLocals, byte[] bytecodes, int codeOffset, int codeLength,
-			ArrayList frames, boolean isClinit) {
+			@SuppressWarnings("rawtypes") ArrayList frames, boolean isClinit) {
 		throw new UnsupportedOperationException();
 	}
 

@@ -48,7 +48,7 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
   
   override def buildStructure(info: OpenableElementInfo, pm: IProgressMonitor, newElements: JMap[_, _], _underlyingResource: IResource): Boolean = {
     var underlyingResource = _underlyingResource
-    if (!isOnBuildPath) return false
+    //if (!isOnBuildPath) return false
     val unitInfo = info.asInstanceOf[CompilationUnitElementInfo]
     if (getBufferManager.getBuffer(this) == null) {
       openBuffer(pm, unitInfo)
@@ -130,8 +130,15 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
     }
     unitInfo.isStructureKnown
   }
-  def isOnBuildPath = true // TODO
-  //override def org.eclipse.jdt.code.dom.CompilationUnit reconcile(int astLevel)
+  // No idea why it's useful
+  override def cloneCachingContents() = {
+    new ZaluumCompilationUnit(parent,name,owner) {
+      val cachedContents = ZaluumCompilationUnit.this.getContents
+      override def getContents() = cachedContents
+      override def originalFromClone = ZaluumCompilationUnit.this
+      override def getFileName = ZaluumCompilationUnit.this.getFileName
+    }
+  }
   override def getAdapter(adapter:Class[_]) = { 
     if (adapter == classOf[ZaluumCompilationUnit]) this
     else super.getAdapter(adapter)
@@ -144,12 +151,12 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
   def withoutDotZaluum(str:String) = {
     if (str.endsWith(".zaluum")) str.dropRight(".zaluum".length) else str
   }
-  override def rename(newName:String, force:Boolean, monitor:IProgressMonitor) {
+  /*override def rename(newName:String, force:Boolean, monitor:IProgressMonitor) {
     super.rename(newName,force,monitor)
     // see groovy
     if (isWorkingCopy)
       discardWorkingCopy
-  }
+  }*/
   override protected def codeComplete(cu :org.eclipse.jdt.internal.compiler.env.ICompilationUnit,
       unitToSkip : org.eclipse.jdt.internal.compiler.env.ICompilationUnit, position : Int, requestor : CompletionRequestor,
       owner : WorkingCopyOwner, typeRoot : ITypeRoot, monitor :  IProgressMonitor) {

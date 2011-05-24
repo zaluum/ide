@@ -1,43 +1,22 @@
 package org.zaluum.nide.eclipse.integration
 
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
-import org.eclipse.jdt.internal.core.util.Util
-import org.zaluum.nide.eclipse.ZaluumNature
-import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory
-import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies
-import org.codehaus.jdt.groovy.integration.EventHandler
+import model.ZaluumCompilationUnit
+import org.codehaus.jdt.groovy.integration.{LanguageSupport, EventHandler}
 import org.eclipse.core.resources.IProject
+import org.eclipse.jdt.core.search.{TypeReferenceMatch, SearchMatch, TypeDeclarationMatch, SearchRequestor, SearchPattern}
 import org.eclipse.jdt.core.WorkingCopyOwner
-import org.eclipse.jdt.core.search.SearchPattern
-import org.eclipse.jdt.core.search.SearchRequestor
-import org.eclipse.jdt.internal.compiler.CompilationResult
-import org.eclipse.jdt.internal.compiler.IProblemFactory
-import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
-import org.eclipse.jdt.internal.compiler.SourceElementParser
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import org.eclipse.jdt.internal.compiler.parser.Parser
-import org.eclipse.jdt.internal.compiler.problem.ProblemReporter
-import org.eclipse.jdt.internal.core.BinaryType
-import org.eclipse.jdt.internal.core.CompilationUnit
-import org.eclipse.jdt.internal.core.PackageFragment
+import org.eclipse.jdt.internal.compiler.problem.{ProblemReporter, DefaultProblemFactory}
+import org.eclipse.jdt.internal.compiler.{SourceElementParser, ISourceElementRequestor, IProblemFactory, CompilationResult, DefaultErrorHandlingPolicies}
 import org.eclipse.jdt.internal.core.search.indexing.IndexingParser
-import org.eclipse.jdt.internal.core.search.matching.ImportMatchLocatorParser
-import org.eclipse.jdt.internal.core.search.matching.MatchLocator
-import org.eclipse.jdt.internal.core.search.matching.MatchLocatorParser
-import org.eclipse.jdt.internal.core.search.matching.PossibleMatch
-import org.codehaus.jdt.groovy.integration.LanguageSupport
-import model.ZaluumCompilationUnit
-import java.nio.charset.Charset
-import java.io.ByteArrayInputStream
-import org.zaluum.nide.compiler.Name
-import org.eclipse.jdt.internal.core.search.matching.TypeDeclarationPattern
-import org.eclipse.jdt.core.search.TypeDeclarationMatch
-import org.eclipse.jdt.core.search.SearchMatch
-import org.eclipse.jdt.internal.core.search.matching.TypeReferencePattern
-import org.eclipse.jdt.core.search.TypeReferenceMatch
-import org.eclipse.jdt.internal.core.SourceType
+import org.eclipse.jdt.internal.core.search.matching.{TypeReferencePattern, TypeDeclarationPattern, PossibleMatch, MatchLocatorParser, MatchLocator, ImportMatchLocatorParser}
+import org.eclipse.jdt.internal.core.util.Util
+import org.eclipse.jdt.internal.core.{PackageFragment, CompilationUnit, BinaryType}
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
+import org.zaluum.nide.eclipse.ZaluumNature
 
 class ZaluumLanguageSupport extends LanguageSupport {
 
