@@ -6,8 +6,10 @@ import org.eclipse.jface.action.IAction
 import org.eclipse.jface.viewers.{ IStructuredSelection, ISelection }
 import org.eclipse.ui.{ IWorkbenchPart, IObjectActionDelegate }
 import scala.collection.JavaConversions._
+import org.eclipse.core.resources.IncrementalProjectBuilder
+import org.eclipse.core.resources.IResource
 
-class ToggleNatureAction extends IObjectActionDelegate {
+abstract class ProjectAction extends IObjectActionDelegate {
 
   private var selection: ISelection = _
 
@@ -20,7 +22,7 @@ class ToggleNatureAction extends IObjectActionDelegate {
             case adapt: IAdaptable ⇒ Some(adapt.getAdapter(classOf[IProject]).asInstanceOf[IProject])
             case _ ⇒ None
           }
-          project foreach { toggleNature(_) }
+          project foreach { projectAction(_) }
         }
     }
   }
@@ -30,21 +32,19 @@ class ToggleNatureAction extends IObjectActionDelegate {
   }
 
   def setActivePart(action: IAction, targetPart: IWorkbenchPart) {}
-
-  private def toggleNature(project: IProject) {
-    val description = project.getDescription()
-    val natures = description.getNatureIds()
-    val newNatures =
-      if (natures.exists(_ == ZaluumNature.NATURE_ID)) {
-        natures filter { _ != ZaluumNature.NATURE_ID }
-      } else {
-        // Add the nature
-        val buf = natures.toBuffer
-        buf += ZaluumNature.NATURE_ID
-        buf.toArray
-      }
-    description.setNatureIds(newNatures);
-    project.setDescription(description, null);
+  protected def projectAction(p: IProject)
+}
+class RemoveZaluumAction extends ProjectAction {
+  override protected def projectAction(p: IProject) {
+    ZaluumNature.removeNature(p)
+    p.build(IncrementalProjectBuilder.FULL_BUILD, null)
+    p.refreshLocal(IResource.DEPTH_INFINITE,null)
   }
-
+}
+class AddZaluumAction extends ProjectAction {
+  override protected def projectAction(p: IProject) {
+    ZaluumNature.addNature(p)
+    p.build(IncrementalProjectBuilder.FULL_BUILD, null)
+    p.refreshLocal(IResource.DEPTH_INFINITE,null)
+  }
 }

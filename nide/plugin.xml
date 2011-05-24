@@ -4,90 +4,46 @@
    <extension
          point="org.eclipse.ui.themes">
       <themeElementCategory
-            id="org.zaluum.nide.themeElementCategory1"
-            label="Boxes">
+            id="org.zaluum.nide.themementCategory1"
+            label="Zaluum">
          <description>
-            Boxes color preferences
+            Zaluum editor color preferences
          </description>
       </themeElementCategory>
       <colorDefinition
-            categoryId="org.zaluum.nide.themeElementCategory1"
-            id="org.zaluum.nide.standardBackground"
-            label="BoxStandard background color"
+            categoryId="org.zaluum.nide.themementCategory1"
+            id="org.zaluum.nide.boxBackgroundColor"
+            label="Box default background color"
             value="250,250,250">
          <description>
-            FSM background color
-         </description>
-      </colorDefinition>
-      <colorDefinition
-            categoryId="org.zaluum.nide.themeElementCategory1"
-            id="org.zaluum.nide.composedBackground"
-            label="Composed background color"
-            value="210,240,240">
-         <description>
-            Composed box background color
-         </description>
-      </colorDefinition>
-      <colorDefinition
-            categoryId="org.zaluum.nide.themeElementCategory1"
-            id="org.zaluum.nide.fsmBackground"
-            label="FSM background color"
-            value="210,240,210">
-         <description>
-            FSM background color
-         </description>
-      </colorDefinition>
-      <colorDefinition
-            categoryId="org.zaluum.nide.themeElementCategory1"
-            id="org.zaluum.nide.MathBoxBackground"
-            label="MathBox background color"
-            value="200,200,10">
-         <description>
-            MathBox background color
+            Box default background color
          </description>
       </colorDefinition>
       <fontDefinition
-            categoryId="org.zaluum.nide.themeElementCategory1"
+            categoryId="org.zaluum.nide.themementCategory1"
             id="org.zaluum.nide.fontDefinition"
             label="Box font"
             value="Monospace-regular-8">
         <description>
-            Box font title
+            Default font for boxes
         </description>
       </fontDefinition>
       <colorDefinition
-            categoryId="org.zaluum.nide.themeElementCategory1"
-            id="org.zaluum.nide.stateBackground"
-            label="State background color"
-            value="220,230,240">
-         <description>
-            State background color
-         </description>
-      </colorDefinition>
-      <colorDefinition
-            categoryId="org.zaluum.nide.themeElementCategory1"
+            categoryId="org.zaluum.nide.themementCategory1"
             id="org.zaluum.nide.gridColor"
             label="Grid color"
             value="240,240,240">
          <description>
-            Composed box background color
+            Grid color
          </description>
       </colorDefinition>
       <fontDefinition
-            categoryId="org.zaluum.nide.themeElementCategory1"
-            id="org.zaluum.nide.debugFont"
-            label="Box debug font">
-         <description>
-            Debug font
-         </description>
-      </fontDefinition>
-      <fontDefinition
-            categoryId="org.zaluum.nide.themeElementCategory1"
+            categoryId="org.zaluum.nide.themementCategory1"
             id="org.zaluum.nide.fontConstant"
-            label="Constant Box font"
+            label="Literal value font"
             value="Monospace-regular-12">
          <description>
-            Box font title
+            Font used for direct edit literals
          </description>
       </fontDefinition>
    </extension>
@@ -127,7 +83,7 @@
          </property>
          <property
                name="windowImages"
-               value="icons/16.gif,icons/32.gif,icons/48.gif,icons/64.gif,icons/128x128.gif">
+               value="icons/zaluum_icon_16.gif,icons/zaluum_icon_32.gif,icons/zaluum_icon_48.gif,icons/zaluum_icon_64.gif,icons/zaluum_icon_128.gif">
          </property>
       </product>
    </extension>   
@@ -152,9 +108,9 @@
             contributorClass="org.zaluum.nide.eclipse.BaseActionBarContributor"
             default="true"
             extensions="zaluum"
-            icon="icons/composed_16.png"
+            icon="icons/zaluum_icon_16.gif"
             id="org.zaluum.nide.editor"
-            name="Zaluum">
+            name="Zaluum Editor">
          <contentTypeBinding
                contentTypeId="org.zaluum.nide.zaluumSource">
          </contentTypeBinding>
@@ -178,65 +134,101 @@
       <wizard
             category="org.zaluum.nide"
             class="org.zaluum.nide.eclipse.BoxWizard"
+            finalPerspective="org.eclipse.jdt.ui.JavaPerspective"
+            icon="icons/zaluum_icon_16.gif"
             id="org.zaluum.nide.eclipse.BoxWizard"
-            name="Box file">
+            name="Zaluum file">
+         <description>
+            Create a new Zaluum file
+         </description>
       </wizard>
-   </extension>
-   <extension point="org.eclipse.ui.perspectives">
-      <perspective
-            class="org.zaluum.nide.eclipse.BoxPerspective"
-            icon="icons/composed_16.png"
-            id="zaluum.BoxPerspective"
-            name="Box Perspective">
-      </perspective>
-      <perspective
-            class="org.zaluum.nide.eclipse.DebugPerspective"
-            icon="icons/debug.png"
-            id="zaluum.DebugPerspective"
-            name="Debug Perspective">
-      </perspective>
-   </extension>
-   <extension
-         point="org.eclipse.ui.decorators">
-      <decorator
-            adaptable="true"
-            icon="icons/projectDecorator.png"
-            id="zaluum.projectDecorator"
-            label="Project Decorator"
-            lightweight="true"
-            location="TOP_RIGHT"
-            state="true">
-         <enablement>
-            <objectClass
-                  name="org.eclipse.core.resources.IProject">
-            </objectClass>
-         </enablement>
-      </decorator>
-   </extension>
-   <extension
-         id="zaluumNature"
-         name="Zaluum Project Nature"
-         point="org.eclipse.core.resources.natures">
-      <runtime>
-         <run
-               class="org.zaluum.nide.eclipse.ZaluumNature">
-         </run>
-      </runtime>
+      <wizard
+            category="org.zaluum.nide"
+            class="org.zaluum.nide.eclipse.ZaluumProjectWizard"
+            icon="icons/zaluum_new_project.gif"
+            id="org.zaluum.nide.eclipse.ProjectWizard"
+            name="Zaluum Project"
+            project="true">
+         <description>
+            Create a new Zaluum project
+         </description>
+      </wizard>
+      <primaryWizard
+            id="org.zaluum.nide.eclipse.BoxWizard">
+      </primaryWizard>
+      <primaryWizard
+            id="org.zaluum.nide.eclipse.ProjectWizard">
+      </primaryWizard>
    </extension>
    <extension
          point="org.eclipse.ui.popupMenus">
       <objectContribution
             adaptable="true"
-            id="org.zaluum.nide.contribution1"
+            id="org.zaluum.nide.zaluumContributions"
             nameFilter="*"
             objectClass="org.eclipse.core.resources.IProject">
          <action
-               class="org.zaluum.nide.eclipse.ToggleNatureAction"
-               enablesFor="+"
+               class="org.zaluum.nide.eclipse.RemoveZaluumAction"
+               enablesFor="1"
                id="org.zaluum.nide.addRemoveNatureAction"
-               label="Add/Remove Zaluum Nature"
-               menubarPath="additions">
+               label="Remove Zaluum Nature"
+               menubarPath="zaluum/actions">
          </action>
+         <visibility>
+            <objectState
+                  name="nature"
+                  value="org.zaluum.nide.zaluumNature">
+            </objectState>
+         </visibility>
+      </objectContribution>
+      <objectContribution
+            adaptable="true"
+            id="org.zaluum.nide.zaluumMenu"
+            objectClass="org.eclipse.core.resources.IProject">
+         <menu
+               id="zaluum"
+               label="Zaluum"
+               path="additions">
+            <separator
+                  name="defaultGroup">
+            </separator>
+         </menu>
+         <visibility>
+            <objectState
+                  name="nature"
+                  value="org.zaluum.nide.zaluumNature">
+            </objectState>
+         </visibility>
+      </objectContribution>
+      <objectContribution
+            adaptable="true"
+            id="org.zaluum.nide.nonZaluum"
+            objectClass="org.eclipse.core.resources.IProject">
+         <action
+               class="org.zaluum.nide.eclipse.AddZaluumAction"
+               enablesFor="1"
+               id="org.zaluum.nide.eclipse.addZaluumNature"
+               label="Convert to Zaluum Project"
+               menubarPath="org.eclipse.ui.projectConfigure/additions">
+         </action>
+         <visibility>
+            <and>
+               <objectState
+                     name="open"
+                     value="true">
+               </objectState>
+               <objectState
+                     name="nature"
+                     value="org.eclipse.jdt.core.javanature">
+               </objectState>
+               <not>
+                  <objectState
+                        name="nature"
+                        value="org.zaluum.nide.zaluumNature">
+                  </objectState>
+               </not>
+            </and>
+         </visibility>
       </objectContribution>
    </extension>
    <extension
@@ -280,7 +272,7 @@
                id="org.zaluum.nide.toolbars.zaluumToolbar">
             <command
                   commandId="org.zaluum.nide.commands.openGUICommand"
-                  icon="icons/16.gif"
+                  icon="icons/zaluum_icon_16.gif"
                   id="org.zaluum.nide.toolbars.openGUICommand"
                   tooltip="Open GUI">
                <visibleWhen
@@ -295,6 +287,22 @@
             </command>
          </toolbar>
       </menuContribution>
+   </extension>
+   <extension
+         id="zaluumNature"
+         name="Zaluum Project Nature"
+         point="org.eclipse.core.resources.natures">
+      <runtime>
+         <run
+               class="org.zaluum.nide.eclipse.ZaluumNature">
+         </run>
+      </runtime>
+      <requires-nature
+            id="org.eclipse.jdt.core.javanature">
+      </requires-nature>
+      <content-type
+            id="org.zaluum.nide.zaluumSource">
+      </content-type>
    </extension>
    <extension
          point="org.eclipse.ui.bindings">
@@ -316,6 +324,23 @@
             id="org.zaluum.nide.commands.openGUICommand"
             name="Open GUI View">
       </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="org.zaluum.nide.zaluumElementCreation"
+            label="Zaluum Element Creation"
+            visible="true">
+         <action
+               class="org.zaluum.nide.eclipse.OpenZaluumProjectWizardAction"
+               icon="icons/zaluum_new_project.gif"
+               id="org.zaluum.nide.zaluumProject"
+               label="Zaluum Project..."
+               style="push"
+               toolbarPath="org.eclipse.jdt.ui.JavaElementCreationActionSet/JavaWizards"
+               tooltip="New Zaluum Project">
+         </action>
+      </actionSet>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
@@ -340,5 +365,68 @@
            id="org.zaluum.nide.zaluumSource"
            name="Zaluum Source File (for Zaluum Projects)"
            priority="high"/>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <actionSet
+               id="org.zaluum.nide.zaluumElementCreation">
+         </actionSet>
+         <newWizardShortcut
+               id="org.zaluum.nide.eclipse.BoxWizard">
+         </newWizardShortcut>
+         <newWizardShortcut
+               id="org.zaluum.nide.eclipse.ProjectWizard">
+         </newWizardShortcut>
+      </perspectiveExtension>
+      <perspectiveExtension
+            targetID="org.eclipse.pde.ui.PDEPerspective">
+         <actionSet
+               id="org.zaluum.nide.zaluumElementCreation">
+         </actionSet>
+      </perspectiveExtension>
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaBrowsingPerspective">
+         <newWizardShortcut
+               id="org.zaluum.nide.eclipse.BoxWizard">
+         </newWizardShortcut>
+         <newWizardShortcut
+               id="org.zaluum.nide.eclipse.ProjectWizard">
+         </newWizardShortcut>
+         <actionSet
+               id="org.zaluum.nide.zaluumElementCreation">
+         </actionSet>
+      </perspectiveExtension>
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaHierarchyPerspective">
+         <newWizardShortcut
+               id="org.zaluum.nide.eclipse.BoxWizard">
+         </newWizardShortcut>
+         <newWizardShortcut
+               id="org.zaluum.nide.eclipse.ProjectWizard">
+         </newWizardShortcut>
+         <actionSet
+               id="org.zaluum.nide.zaluumElementCreation">
+         </actionSet>
+      </perspectiveExtension>
+   </extension>
+   <extension
+         point="org.eclipse.ui.ide.projectNatureImages">
+      <image
+            icon="icons/zaluum_project_overlay.png"
+            id="nide.natureImage"
+            natureId="org.zaluum.nide.zaluumNature">
+      </image>
+   </extension>
+   <extension
+         point="org.eclipse.ui.decorators">
+      <decorator
+            class="org.zaluum.nide.eclipse.ZaluumImageDecorator"
+            id="nide.sourceDecorator"
+            label="Zaluum Source File"
+            lightweight="false"
+            state="true">
+      </decorator>
    </extension>
 </plugin>
