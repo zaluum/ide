@@ -64,82 +64,6 @@ import java.nio.charset.Charset
 import org.eclipse.jdt.internal.ui.JavaPluginImages
 import org.eclipse.jdt.internal.ui.JavaPlugin
 
-class BoxWizard extends Wizard with INewWizard {
-
-  var page: ZaluumWizardPage = null;
-  private var selection: IStructuredSelection = _
-  private var workbench: IWorkbench = _
-
-  def init(workbench: IWorkbench, currentSelection: IStructuredSelection) {
-    this.workbench = workbench;
-    selection = currentSelection;
-  }
-
-  def performFinish = page.finish()
-
-  override def addPages() {
-    page = new BoxWizardPage(workbench, selection);
-    addPage(page);
-  }
-
-}
-
-object ZaluumWizardPage {
-  var fileCount = 1
-}
-abstract class ZaluumWizardPage(
-  pageName: String,
-  selection: IStructuredSelection,
-  val workbench: IWorkbench)
-  extends WizardNewFileCreationPage(pageName, selection) {
-  setDescription()
-
-  def setDescription()
-
-  def finish(): Boolean = {
-    val newFile = createNewFile();
-    if (newFile == null)
-      false
-    else {
-      val dwindow = workbench.getActiveWorkbenchWindow();
-      val page = dwindow.getActivePage();
-      if (page != null)
-        IDE.openEditor(page, newFile, true);
-      ZaluumWizardPage.fileCount += 1
-      true
-    }
-  }
-
-}
-
-class BoxWizardPage(
-  workbench: IWorkbench,
-  selection: IStructuredSelection)
-  extends ZaluumWizardPage("boxPage", selection, workbench) {
-
-  override def createControl(parent: Composite) {
-    super.createControl(parent);
-    this.setFileName("emptyModel" + ZaluumWizardPage.fileCount + ".zaluum");
-    val composite = getControl().asInstanceOf[Composite];
-    new Label(composite, SWT.NONE);
-    setPageComplete(validatePage());
-  }
-  import com.google.common.base.Charsets
-  //TODO def className = BoxClassName.parse(this.getFileName) // FIXME
-  override protected def getInitialContents = {
-    val model = BoxDef(Name(""), None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
-    new java.io.ByteArrayInputStream(Serializer.proto(model).toByteArray)
-  }
-
-  def setDescription() {
-    this.setTitle("New Zaluum Wizard");
-    this.setDescription("Creates a new box model file");
-    //this.setImageDescriptor(ImageDescriptor.createFromFile(Icons.class,
-    //   "icons/banner_64.png")); //$NON-NLS-1$
-  }
-
-}
-
 class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
   setDefaultPageImageDescriptor(null)
   setDialogSettings(Activator.getDefault.getDialogSettings)
@@ -153,7 +77,7 @@ class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
     firstPage = new NewJavaProjectWizardPageOne
     addPage(firstPage)
     firstPage.setTitle("Create Zaluum Project")
-    firstPage.setDescription("Create a new Zaluum project")
+    firstPage.setDescription("Create a new Zaluum Project")
     secondPage = new NewJavaProjectWizardPageTwo(firstPage)
     secondPage.setTitle("Build settings")
     secondPage.setDescription("Build settings")
@@ -179,7 +103,7 @@ class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
     res
   }
   override def handleFinishException(shell: Shell, e: InvocationTargetException) {
-    ExceptionHandler.handle(e, getShell, "New Zaluum Project Error", "New Zaluum Project Error")
+    ExceptionHandler.handle(e, getShell, "Error creating Zaluum Project", "An error occoured while creating the Zaluum Project")
   }
   private def finalizeNewProject(project: IProject) = {
     // add zaluum runtime
@@ -201,31 +125,28 @@ class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
     secondPage.getJavaProject
   }
 }
-
-class OpenZaluumProjectWizardAction extends AbstractOpenWizardAction with IWorkbenchWindowActionDelegate {
+abstract class OpenWizardAction extends AbstractOpenWizardAction with IWorkbenchWindowActionDelegate {
 
   def dispose(): Unit = {}
-
   def init(window: IWorkbenchWindow) {
     setShell(window.getShell)
   }
-
   def run(action: IAction): Unit = { super.run() }
-
   def selectionChanged(action: IAction, selection: ISelection): Unit = {
     selection match {
       case i: IStructuredSelection ⇒ setSelection(i)
       case _ ⇒ setSelection(StructuredSelection.EMPTY)
     }
   }
-
-  protected def createWizard(): INewWizard = { new ZaluumProjectWizard() }
-
-  override def doCreateProjectFirstOnEmptyWorkspace(shell: Shell) = true
-
 }
-
-class NewClassWizard extends NewElementWizard {
+class OpenZaluumProjectWizardAction extends OpenWizardAction {
+  protected def createWizard(): INewWizard = { new ZaluumProjectWizard() }
+  override def doCreateProjectFirstOnEmptyWorkspace(shell: Shell) = true
+}
+class OpenZaluumNewClassWizardAction extends OpenWizardAction {
+  protected def createWizard(): INewWizard = { new ZaluumNewClassWizard() }  
+}
+class ZaluumNewClassWizard extends NewElementWizard {
   var fPage: ZNewClassWizardPage = _
 
   setDefaultPageImageDescriptor(JavaPluginImages.DESC_WIZBAN_NEWCLASS);
@@ -271,16 +192,16 @@ class ZNewClassWizardPage extends NewClassWizardPage {
 
   override protected def getCompilationUnitName(typeName: String) = typeName + ".zaluum"
 
- override def createControl(parent : Composite) {
+  override def createControl(parent: Composite) {
     initializeDialogUnits(parent);
 
-    val composite= new Composite(parent, SWT.NONE);
+    val composite = new Composite(parent, SWT.NONE);
     composite.setFont(parent.getFont());
 
-    val nColumns= 4;
+    val nColumns = 4;
 
-    val layout= new org.eclipse.swt.layout.GridLayout();
-    layout.numColumns= nColumns;
+    val layout = new org.eclipse.swt.layout.GridLayout();
+    layout.numColumns = nColumns;
     composite.setLayout(layout);
 
     createContainerControls(composite, nColumns);
@@ -297,7 +218,7 @@ class ZNewClassWizardPage extends NewClassWizardPage {
     org.eclipse.jface.dialogs.Dialog.applyDialogFont(composite);
     PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, org.eclipse.jdt.internal.ui.IJavaHelpContextIds.NEW_CLASS_WIZARD_PAGE);
   }
-  
+
   override protected def createTypeMembers(tpe: IType,
     imports: NewTypeWizardPage.ImportsManager, monitor: IProgressMonitor) {
     super.createTypeMembers(tpe, imports, monitor);
@@ -333,7 +254,7 @@ class ZNewClassWizardPage extends NewClassWizardPage {
 
     val typeName = getTypeNameWithoutParameters();
     // must not exist as a .zaluum file
-    if (!isEnclosingTypeSelected() && (status.getSeverity() < IStatus.ERROR)) {
+    if (status.getSeverity() < IStatus.ERROR) {
       if (pack != null) {
         var tpe: IType = null;
         try {
@@ -347,11 +268,7 @@ class ZNewClassWizardPage extends NewClassWizardPage {
             .setError(NewWizardMessages.NewTypeWizardPage_error_TypeNameExists);
         }
       }
-    }
-
-    // lastly, check exclusion filters to see if Groovy files are allowed in
-    // the source folder
-    if (status.getSeverity() < IStatus.ERROR) {
+      // check exclusion filters
       try {
         val entry = pack
           .getParent().asInstanceOf[IPackageFragmentRoot].getRawClasspathEntry().asInstanceOf[ClasspathEntry];

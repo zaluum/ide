@@ -133,11 +133,11 @@
       </category>
       <wizard
             category="org.zaluum.nide"
-            class="org.zaluum.nide.eclipse.NewClassWizard"
+            class="org.zaluum.nide.eclipse.ZaluumNewClassWizard"
             finalPerspective="org.eclipse.jdt.ui.JavaPerspective"
-            icon="icons/zaluum_icon_16.gif"
+            icon="icons/zaluum_new_class.gif"
             id="org.zaluum.nide.eclipse.BoxWizard"
-            name="Zaluum file">
+            name="Zaluum Class">
          <description>
             Create a new Zaluum file
          </description>
@@ -272,7 +272,7 @@
                id="org.zaluum.nide.toolbars.zaluumToolbar">
             <command
                   commandId="org.zaluum.nide.commands.openGUICommand"
-                  icon="icons/zaluum_icon_16.gif"
+                  icon="icons/zaluum_open_gui.gif"
                   id="org.zaluum.nide.toolbars.openGUICommand"
                   tooltip="Open GUI">
                <visibleWhen
@@ -339,6 +339,15 @@
                style="push"
                toolbarPath="org.eclipse.jdt.ui.JavaElementCreationActionSet/JavaWizards"
                tooltip="New Zaluum Project">
+         </action>
+         <action
+               class="org.zaluum.nide.eclipse.OpenZaluumNewClassWizardAction"
+               icon="icons/zaluum_new_class.gif"
+               id="org.zaluum.nide.zaluumClass"
+               label="Zaluum Class..."
+               style="push"
+               toolbarPath="org.eclipse.jdt.ui.JavaElementCreationActionSet/JavaWizards"
+               tooltip="New Zaluum Class">
          </action>
       </actionSet>
    </extension>

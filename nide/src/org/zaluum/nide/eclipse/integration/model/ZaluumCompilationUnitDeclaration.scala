@@ -233,12 +233,14 @@ class ZaluumCompilationUnitDeclaration(
   override def generateCode() {
     def generate(tpe: ZaluumTypeDeclaration, enclosing: Option[ZaluumTypeDeclaration]) {
       val binding: SourceTypeBinding = tpe.binding
-      val boxDef = tpe.b
-      val classTree = new TreeToClass(boxDef, a.global).run()
-      val name = binding.constantPoolName()
-      compilationResult.record(name,
-        new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.', '/')))
-      for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
+      if (binding!=null){
+        val boxDef = tpe.b
+        val classTree = new TreeToClass(boxDef, a.global).run()
+        val name = binding.constantPoolName()
+        compilationResult.record(name,
+          new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.', '/')))
+        for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
+      }
     }
     if (!ignoreFurtherInvestigation && !ignoreMethodBodies) {
       generate(types(0).asInstanceOf[ZaluumTypeDeclaration], None)
