@@ -126,7 +126,10 @@ abstract class Transformer extends OwnerHelper[Tree] {
     trees mapConserve (transform(_))
 }
 object Location {
-  def parse(str: String) = Location(str.split("/").map { _.toInt }.toList)
+  def parse(str: String) = {
+    Location(List(0)) // FIXME
+    //Location(str.split("/").map { _.toInt }.toList)
+  }
 }
 case class Location(path: List[Int]) {
   override def toString = path.mkString("/")

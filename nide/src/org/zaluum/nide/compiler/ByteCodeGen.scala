@@ -2,6 +2,7 @@ package org.zaluum.nide.compiler
 
 import org.objectweb.asm._
 import Opcodes._
+import org.zaluum.annotation.Box
 object ByteCodeGen {
   def descriptor(n: Name) = n match {
     case Name("byte") => "B"
@@ -17,6 +18,7 @@ object ByteCodeGen {
   def dump(bc: BoxClass): Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
     cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, bc.superName.internal, null);
+    cw.visitAnnotation(descriptor(Name(classOf[Box].getName)),true).visitEnd
     var mv: MethodVisitor = null
     val thisDescriptor = descriptor(bc.name)
     def emitMethod(name: String, signature: String, tree: Tree, constructor: Boolean) {
@@ -39,8 +41,12 @@ object ByteCodeGen {
     def emit(tree: Tree): Unit = {
       tree match {
         case EmptyTree ⇒
-        case FieldDef(name, tpe) ⇒
-          cw.visitField(ACC_PUBLIC, name.str, descriptor(tpe), null, null).visitEnd()
+        case FieldDef(name, tpe, annotation) ⇒
+          val f = cw.visitField(ACC_PUBLIC, name.str, descriptor(tpe), null, null)
+          annotation foreach { name =>
+            f.visitAnnotation(descriptor(name),true).visitEnd()
+          }
+          f.visitEnd
         case ConstructorMethod(c) ⇒
           emitMethod("<init>", "()V", tree, true)
         case Method(name, signature, stats) ⇒

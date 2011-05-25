@@ -66,6 +66,7 @@ import org.eclipse.ui.PlatformUI
 import org.eclipse.jdt.core.JavaCore
 import org.eclipse.core.resources.ResourcesPlugin
 import org.zaluum.nide.eclipse.EclipseUtils
+import javax.swing.JPanel
 
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
@@ -210,12 +211,31 @@ class ZaluumCompilationUnitDeclaration(
   }
   def createFieldDeclarations(b: BoxDef): Array[FieldDeclaration] = {
     val res = Buffer[FieldDeclaration]()
+    //vals
     for (t ← b.vals; val v = t.asInstanceOf[ValDef]) {
       val f = new FieldDeclaration(v.name.str.toCharArray, 0, 0)
       f.modifiers = Opcodes.ACC_PUBLIC
       f.`type` = createTypeReference(v.typeName.str)
       res += f
     }
+    //ports
+    for (t <- b.ports; val p = t.asInstanceOf[PortDef]) {
+      val f = new FieldDeclaration(p.name.str.toCharArray ,0 ,0)
+      f.modifiers = Opcodes.ACC_PUBLIC
+      f.`type` = createTypeReference(p.typeName.str)
+      val cl = p.dir match {
+        case Out => classOf[org.zaluum.annotation.Out].getName
+        case _ => classOf[org.zaluum.annotation.In].getName
+      }
+      val annotation = new MarkerAnnotation(createTypeReference(cl), -1)
+      f.annotations = Array(annotation)
+      res += f
+    }
+    //widget
+    val f = new FieldDeclaration("_widget".toCharArray,0,0) // TODO 
+    f.modifiers = Opcodes.ACC_PUBLIC
+    f.`type` = createTypeReference(classOf[JPanel].getName)
+    res += f
     res.toArray
   }
   def createTypeReference(name: String): TypeReference = {
