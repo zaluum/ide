@@ -109,12 +109,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     
     override def menu() {
       itemUnderMouse match {
-        case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation) // TODO Dispose?
-        case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show(swtMouseLocation)
+        case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show() // TODO Dispose?
+        case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show()
         case Some(o: OpenBoxFigure) ⇒ ValDefMenu.show(viewer, o)
         case Some(l: LabelItem) => ValDefMenu.show(viewer, l)
         case Some(b: ValFigure) ⇒ ValDefMenu.show(viewer, b);
-        case _ ⇒ viewer.palette.show(swtMouseLocation, current)
+        case _ ⇒ viewer.palette.show(current)
       }
     }
   }

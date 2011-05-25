@@ -19,6 +19,7 @@ import org.eclipse.jdt.core.{ ICompilationUnit, IJavaElement, IJavaElementDelta,
 import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch }
 import org.eclipse.jdt.internal.core.JavaModelManager
 import scala.util.control.Exception._
+import org.eclipse.core.runtime.IProgressMonitor
 object JDTUtils {
   def allMethodsOf(t: IType) = {
     val hier = t.newSupertypeHierarchy(new NullProgressMonitor)
@@ -81,7 +82,7 @@ object AnnotationUtils {
   }
 }
 object SearchUtils {
-  def search[A](pattern: SearchPattern, jproject: IJavaProject)(processor: (IType ⇒ A)): List[A] = {
+  def search[A](pattern: SearchPattern, jproject: IJavaProject, monitor:IProgressMonitor = null)(processor: (IType ⇒ A)): List[A] = {
     val searchScope = SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject))
     val search = new SearchEngine()
     val participants = Array(SearchEngine.getDefaultSearchParticipant())
@@ -98,7 +99,7 @@ object SearchUtils {
         }
       }
     }
-    search.search(pattern, participants, searchScope, searchRequestor, null)
+    search.search(pattern, participants, searchScope, searchRequestor, monitor)
     list
   }
   def classAndInterface(str: String) = SearchPattern.createPattern(str,

@@ -4,6 +4,7 @@ import org.zaluum.nide.compiler.{Name,BoxTypeSymbol}
 import org.zaluum.annotation.Box
 import org.eclipse.jdt.core.IType
 import org.eclipse.jdt.core.Flags
+import org.eclipse.core.runtime.IProgressMonitor
 
 case class BoxTypeProxy(name:Name, abstractCl:Boolean)
 class ZaluumProject(val jProject: IJavaProject) extends GlobalClassPath{
@@ -15,9 +16,9 @@ class ZaluumProject(val jProject: IJavaProject) extends GlobalClassPath{
         None
     }
   }
-  def index : Seq[BoxTypeProxy] = {
+  def index(monitor:IProgressMonitor=null) : Seq[BoxTypeProxy] = {
     import SearchUtils._
-    val l = search(patternAnnotation(classOf[Box].getName),jProject) { a => a }
+    val l = search(patternAnnotation(classOf[Box].getName),jProject,monitor) { a => a }
     l flatMap (typeToProxy(_))
   }
   def typeToProxy(t:IType) : Option[BoxTypeProxy] = {

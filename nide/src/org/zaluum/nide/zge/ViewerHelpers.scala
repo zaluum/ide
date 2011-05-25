@@ -119,8 +119,8 @@ abstract class ScrollPopup(mainShell: Shell) {
     override def getDefaultLocation(iniSize: Point) = loc
     override def getDefaultSize() = size
   }
-  def show(loc: Point) {
-    this.loc = loc
+  def show() {
+    this.loc = Display.getCurrent.getCursorLocation
     popup.open;
 
   }

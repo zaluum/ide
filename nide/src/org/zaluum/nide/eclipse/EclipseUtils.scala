@@ -14,9 +14,26 @@ import scala.util.control.Exception._
 import org.eclipse.core.resources.ResourcesPlugin
 import org.eclipse.core.resources.IProject
 import org.eclipse.jdt.core.JavaCore
+import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.ui.PlatformUI
+import org.eclipse.jface.operation.IRunnableWithProgress
+import org.eclipse.core.runtime.Platform
 object EclipseUtils {
   def pathToResource(path:IPath) = {
     Option(ResourcesPlugin.getWorkspace.getRoot.findMember(path))
+  }
+  def withProgress[A >: Null](name:String)(body : IProgressMonitor => A) : A = {
+    var a : A = null
+    val ps = PlatformUI.getWorkbench().getProgressService
+    val run = new IRunnableWithProgress() {
+       def run(monitor: IProgressMonitor) {
+         monitor.setTaskName(name)
+         a = body(monitor)
+         monitor.done;
+       }
+    }
+    ps.busyCursorWhile(run)
+    a
   }
 }
 trait EclipseUtils {
