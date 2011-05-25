@@ -133,7 +133,7 @@
       </category>
       <wizard
             category="org.zaluum.nide"
-            class="org.zaluum.nide.eclipse.BoxWizard"
+            class="org.zaluum.nide.eclipse.NewClassWizard"
             finalPerspective="org.eclipse.jdt.ui.JavaPerspective"
             icon="icons/zaluum_icon_16.gif"
             id="org.zaluum.nide.eclipse.BoxWizard"

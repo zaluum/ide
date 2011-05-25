@@ -8,8 +8,14 @@ import scala.collection.JavaConversions._
 import java.io.InputStream
 object Parser {
   def readTree(i: InputStream, className: Name) = {
+    try{
     val proto = BoxFileProtos.BoxClassDef.parseFrom(i)
     parse(proto, Some(className))
+    }catch {
+      case e=> 
+      // TODO fixme better handling 
+      BoxDef(Name(""), None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
+    }
   }
   def parse(b: BoxFileProtos.BoxClassDef, name: Option[Name] = None): BoxDef = {
     BoxDef(name.getOrElse(Name(b.getClassName)),
