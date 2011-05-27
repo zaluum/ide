@@ -10,10 +10,7 @@ case class BoxTypeProxy(name:Name, abstractCl:Boolean)
 class ZaluumProject(val jProject: IJavaProject) extends GlobalClassPath{
   def getBoxSymbol(name:Name) : Option[BoxTypeProxy] = {
     Option(jProject.findType(name.str)) flatMap {
-      j =>
-        j.getAnnotations foreach {println(_)}
-        // FIXME
-        None
+      j => typeToProxy(j)
     }
   }
   def index(monitor:IProgressMonitor=null) : Seq[BoxTypeProxy] = {

@@ -17,7 +17,7 @@ import org.eclipse.jdt.core.IJavaProject
 import org.zaluum.nide.eclipse.ZaluumProject
 class Controller(val cu: ICompilationUnit, val zproject : ZaluumProject) {
   var nowTree : Tree = _
-  cu.becomeWorkingCopy(null)
+  
   private var viewers = Buffer[Viewer]()
   
   def registerViewer(viewer: Viewer) {
@@ -61,12 +61,18 @@ class Controller(val cu: ICompilationUnit, val zproject : ZaluumProject) {
     update(c.map)
   }
   def replaceWorkingCopyContents() {
-    val p = Serializer.proto(nowTree.asInstanceOf[BoxDef]);
-    val str =  new String(p.toByteArray,Charset.forName("ISO-8859-1"))
-    cu.applyTextEdit(new ReplaceEdit(0,cu.getBuffer.getLength,str ),null)    
+    if (isDirty){
+      if (!cu.isWorkingCopy) cu.becomeWorkingCopy(null)
+        val p = Serializer.proto(nowTree.asInstanceOf[BoxDef]);
+      val str =  new String(p.toByteArray,Charset.forName("ISO-8859-1"))
+      cu.applyTextEdit(new ReplaceEdit(0,cu.getBuffer.getLength,str ),null)
+    }else{
+      if (cu.isWorkingCopy) cu.discardWorkingCopy
+    }
   }
   def dispose() {
-    cu.discardWorkingCopy()
+    if (cu.isWorkingCopy)
+      cu.discardWorkingCopy()
   }
   /*def usedTypes : Seq[Type] = {
     val b = scala.collection.mutable.Set[Type]()

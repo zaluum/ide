@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="org/zaluum/example/a.zaluum" kind="src" path="src"/>
+	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="/home/frede/devel/zaluum/runtime/bin"/>
 	<classpathentry kind="lib" path="/home/frede/devel/libs/guava-r09/guava-r09.jar" sourcepath="/home/frede/devel/libs/guava-r09/guava-src-r09.zip"/>
@@ -9,5 +9,6 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="/home/frede/devel/libs/rxtx-2.2pre2-bins/x86_64-unknown-linux-gnu"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/home/frede/devel/zaluum/targetplatform/third/jchart2d_1.0.0.201006071545.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

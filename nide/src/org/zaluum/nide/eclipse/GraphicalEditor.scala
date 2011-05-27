@@ -1,60 +1,33 @@
 package org.zaluum.nide.eclipse
 
-import org.eclipse.jface.viewers.StructuredSelection
-import org.eclipse.jdt.ui.JavaUI
-import org.eclipse.jdt.internal.ui.JavaPlugin
-import org.eclipse.ui.PlatformUI
-import org.eclipse.jdt.core.IType
-import org.eclipse.ui.internal.part.SelectionProviderAdapter
-import org.zaluum.nide.Subject
-import org.zaluum.nide.Observer
-import org.zaluum.nide.zge.GuiViewer
-import org.zaluum.nide.compiler.Parser
-import org.zaluum.nide.zge.TreeViewer
-import org.zaluum.nide.compiler.BoxDef
-import org.zaluum.nide.compiler.Serializer
-import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.compiler.Location
-import org.zaluum.nide.protobuf.BoxFileProtos
-import org.eclipse.swt.events.DisposeEvent
-import org.eclipse.ui.contexts.IContextService
-import org.eclipse.swt.events.ShellEvent
-import org.eclipse.swt.events.ShellAdapter
-import org.eclipse.swt.events.ShellListener
-import org.eclipse.swt.events.DisposeListener
-import org.eclipse.ui.handlers.HandlerUtil
-import org.eclipse.core.commands.AbstractHandler
-import org.eclipse.core.commands.ExecutionEvent
-import java.io.ByteArrayInputStream
-import org.eclipse.core.resources.{ IFile, IMarker }
+import org.eclipse.core.commands.{ExecutionEvent, AbstractHandler}
+import org.eclipse.core.resources.{IFile, IMarker}
 import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.swt.SWT
+import org.eclipse.jdt.core.{JavaCore, IType}
+import org.eclipse.jface.viewers.StructuredSelection
+import org.eclipse.swt.events.{DisposeListener, DisposeEvent}
 import org.eclipse.swt.layout.FillLayout
-import org.eclipse.swt.widgets.{ Composite, Shell }
-import org.eclipse.ui.{ IEditorSite, IEditorInput, IEditorPart }
+import org.eclipse.swt.widgets.{Composite, Shell}
+import org.eclipse.swt.SWT
+import org.eclipse.ui.contexts.IContextService
+import org.eclipse.ui.handlers.HandlerUtil
 import org.eclipse.ui.ide.IGotoMarker
-import org.eclipse.ui.part.{ EditorPart, FileEditorInput }
-import org.zaluum.nide.zge.{ Viewer, Controller }
-import org.eclipse.jdt.core.JavaCore
-import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
-import org.eclipse.jdt.core.dom.ASTParser
-import org.eclipse.jdt.core.dom.AST
-import org.eclipse.jdt.internal.core.JavaModelManager
+import org.eclipse.ui.part.{EditorPart, FileEditorInput}
+import org.eclipse.ui.{IEditorSite, IEditorInput, IEditorPart}
+import org.zaluum.nide.compiler.Location
+import org.zaluum.nide.zge.{Viewer, Controller, TreeViewer, GuiViewer}
 
-class GraphicalEditor extends EditorPart with IGotoMarker {
+class GraphicalEditor extends BaseEditor with IGotoMarker {
 
   var viewer: TreeViewer = _
   var shell: Option[Shell] = None
   def controller = viewer.controller
 
   def doSave(monitor: IProgressMonitor) {
-    controller.cu.commitWorkingCopy(true,monitor)
+    controller.cu.commitWorkingCopy(true, monitor)
     controller.markSaved()
     firePropertyChange(IEditorPart.PROP_DIRTY)
   }
-
-  def doSaveAs() {}
 
   def init(site: IEditorSite, input: IEditorInput) {
     setSite(site)
@@ -66,18 +39,12 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
 
   def isDirty(): Boolean = { controller.isDirty }
 
-  def isSaveAsAllowed(): Boolean = { false }
-
-  def inputFile = getEditorInput.asInstanceOf[FileEditorInput].getFile
-  def project = inputFile.getProject
-  def jproject = JavaCore.create(project)
-  def input = inputFile.getContents(true)
   def createPartControl(parent: Composite) {
     val cu = JavaCore.createCompilationUnitFrom(inputFile)
     val zProject = new ZaluumProject(jproject)
     val controller = new Controller(cu, zProject)
-    controller.addListener(fireDirty)
-    viewer = new TreeViewer(parent, controller,this)
+    controller.addListener(fireDirtyClosure)
+    viewer = new TreeViewer(parent, controller, this)
     controller.registerViewer(viewer)
     getEditorSite().setSelectionProvider(selectionProvider);
     // TODO reopen
@@ -96,7 +63,6 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
   }
   def setSelection(i: IType) { selectionProvider.setSelection(adaptItem(i)) }
   private lazy val selectionProvider = new SelectionProvider()
-  val fireDirty: () ⇒ Unit = () ⇒ firePropertyChange(IEditorPart.PROP_DIRTY)
   def setFocus() { viewer.canvas.setFocus }
   def openGUI() {
     if (!shell.isDefined) {
@@ -119,7 +85,8 @@ class GraphicalEditor extends EditorPart with IGotoMarker {
     }
   }
   override def dispose() {
-    controller.removeListener(fireDirty)
+    super.dispose()
+    controller.removeListener(fireDirtyClosure)
     controller.dispose()
     viewer.dispose()
     shell foreach { s ⇒ if (!s.isDisposed) s.dispose }
