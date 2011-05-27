@@ -9,9 +9,7 @@ import org.eclipse.core.runtime.IProgressMonitor
 case class BoxTypeProxy(name:Name, abstractCl:Boolean)
 class ZaluumProject(val jProject: IJavaProject) extends GlobalClassPath{
   def getBoxSymbol(name:Name) : Option[BoxTypeProxy] = {
-    Option(jProject.findType(name.str)) flatMap {
-      j => typeToProxy(j)
-    }
+    Option(jProject.findType(name.str)) flatMap { typeToProxy(_) }
   }
   def index(monitor:IProgressMonitor=null) : Seq[BoxTypeProxy] = {
     import SearchUtils._

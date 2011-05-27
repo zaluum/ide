@@ -7,14 +7,6 @@ import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import scala.collection.mutable.Buffer
 
-/* TODO  def isValidJavaIdentifier(s: String) = {
-    s != null &&
-      s.length != 0 &&
-      Character.isJavaIdentifierStart(s(0)) &&
-      s.view(1, s.length).forall { Character.isJavaIdentifierPart(_) }
-  }
-  */
-
 class CompilationException extends Exception
 class Reporter {
   case class Error(msg: String, mark: Option[Location])
@@ -157,7 +149,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     override def traverse(tree: Tree) {
       tree match {
         case BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
-          //println("analyzing " + name)
           val cl = Some(Name(classOf[JPanel].getName))
           val newSym = new BoxTypeSymbol(currentOwner, name, superName, image, cl)
           val sym = defineBox(newSym, tree)

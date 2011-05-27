@@ -56,69 +56,60 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
       val compoundName = stringToA(name.str)
       getType(compoundName, compoundName.length) match {
         case r: ReferenceBinding ⇒
-          def isBox = {
-            r.getAnnotations exists { a ⇒
-              val aName = aToString(a.getAnnotationType.compoundName)
-              classOf[Box].getName == aName
+          // should not check for Box annotation to let boxes inherit non annotated classes
+          val sper = aToString(r.superclass().compoundName)
+          val sperO = sper match {
+            case null ⇒ None
+            case "java.lang.Object" ⇒ None
+            case other ⇒ Some(Name(other))
+          }
+          val bs = new BoxTypeSymbol(cud.a.global.root, name, sperO, None, None, r.isAbstract)
+          bs.scope = cud.a.global
+          for (f ← r.fields()) {
+            val fname = f.name.mkString
+            def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
+              aToString(a.getAnnotationType.compoundName) == c.getName
+            }
+            def createPort(in: Boolean) = {
+              val port = new PortSymbol(bs, Name(fname), Point(0, 0), if (in) In else Out)
+              port.tpe = getJavaType(f.`type`).getOrElse(NoSymbol)
+              bs.enter(port)
+            }
+            if (hasAnnotation(classOf[org.zaluum.annotation.In])) createPort(true)
+            else if (hasAnnotation(classOf[org.zaluum.annotation.Out])) createPort(false)
+            if (fname == "_widget") {
+              f.`type` match {
+                case r: ReferenceBinding ⇒
+                  bs.visualClass = Some(Name(aToString(r.compoundName)))
+                case _ ⇒
+              }
             }
           }
-          if (isBox) {
-            val sper = aToString(r.superclass().compoundName)
-            val sperO = sper match {
-              case null ⇒ None
-              case "java.lang.Object" ⇒ None
-              case other ⇒ Some(Name(other))
-            }
-            val bs = new BoxTypeSymbol(cud.a.global.root, name, sperO, None, None, r.isAbstract)
-            bs.scope = cud.a.global
-            for (f ← r.fields()) {
-              val fname = f.name.mkString
-              def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
-                aToString(a.getAnnotationType.compoundName) == c.getName
+          for (m ← r.availableMethods) {
+            val mName = m.selector.mkString
+            if (m.isConstructor && m.isPublic) {
+              val params = for (p ← m.parameters) yield {
+                val s = if (m.selector == null) "?" else m.selector.mkString
+                val ps = new ParamSymbol(bs, Name(s))
+                ps.tpe = getJavaType(p).getOrElse(NoSymbol)
+                ps
               }
-              def createPort(in: Boolean) = {
-                val port = new PortSymbol(bs, Name(fname), Point(0, 0), if (in) In else Out)
-                port.tpe = getJavaType(f.`type`).getOrElse(NoSymbol)
-                bs.enter(port)
-              }
-              if (hasAnnotation(classOf[org.zaluum.annotation.In])) createPort(true)
-              else if (hasAnnotation(classOf[org.zaluum.annotation.Out])) createPort(false)
-              if (fname == "_widget") {
-                f.`type` match {
-                  case r: ReferenceBinding ⇒
-                    bs.visualClass = Some(Name(aToString(r.compoundName)))
-                  case _ ⇒
+              bs.constructors = new Constructor(bs, params.toList) :: bs.constructors
+            } else {
+              if (mName.startsWith("set") && m.parameters.size == 1 && m.returnType == TypeBinding.VOID) {
+                getJavaType(m.parameters.head) foreach { ptpe ⇒
+                  val p = new ParamSymbol(bs, Name(mName))
+                  p.tpe = ptpe
+                  bs.enter(p)
                 }
               }
             }
-            for (m ← r.availableMethods) {
-              val mName = m.selector.mkString
-              if (m.isConstructor && m.isPublic) {
-                  val params = for (p ← m.parameters) yield {
-                    val s = if (m.selector == null) "?" else m.selector.mkString
-                    val ps = new ParamSymbol(bs, Name(s))
-                    ps.tpe = getJavaType(p).getOrElse(NoSymbol)
-                    ps
-                  }
-                  bs.constructors = new Constructor(bs, params.toList) :: bs.constructors
-              } else {
-                if (mName.startsWith("set") && m.parameters.size == 1 && m.returnType == TypeBinding.VOID) {
-                  getJavaType(m.parameters.head) foreach { ptpe ⇒
-                    val p = new ParamSymbol(bs, Name(mName))
-                    p.tpe = ptpe
-                    bs.enter(p)
-                  }
-                }
-              }
-            }
-            if (bs.constructors.isEmpty)
-              bs.constructors = List(new Constructor(bs, List())) 
-            cache += (name -> bs)
-            Some(bs)
-          } else {
-            None
           }
-        case _ ⇒ None
+          if (bs.constructors.isEmpty)
+            bs.constructors = List(new Constructor(bs, List()))
+          cache += (name -> bs)
+          Some(bs)
+        case a ⇒ None
       }
     }
   }
