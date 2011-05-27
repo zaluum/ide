@@ -14,11 +14,18 @@ import org.eclipse.swt.widgets.Control
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{ SelectionAdapter, SelectionEvent, DisposeListener, DisposeEvent, KeyListener, KeyEvent }
 import org.eclipse.swt.widgets.{ Button, Text, Listener, Event }
+import org.eclipse.swt.events.ModifyListener
+import org.eclipse.swt.events.ModifyEvent
 object SWTScala {
   def addReaction(b: { def addSelectionListener(l: SelectionListener) })(r: ⇒ Unit) {
     b.addSelectionListener(new SelectionAdapter() {
       override def widgetSelected(e: SelectionEvent) { r }
     })
+  }
+  def addModifyReaction(b:{ def addModifyListener(l :  ModifyListener) })(r: => Unit) {
+    b.addModifyListener(new ModifyListener {  
+      def modifyText(e: ModifyEvent) { r }
+    });
   }
   def addOnDispose(c: { def addDisposeListener(l: DisposeListener) })(r: ⇒ Unit) {
     c.addDisposeListener(new DisposeListener() {

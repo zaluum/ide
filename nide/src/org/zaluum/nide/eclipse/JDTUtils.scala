@@ -20,6 +20,7 @@ import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequesto
 import org.eclipse.jdt.internal.core.JavaModelManager
 import scala.util.control.Exception._
 import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.jdt.core.search.IJavaSearchScope
 object JDTUtils {
   def allMethodsOf(t: IType) = {
     val hier = t.newSupertypeHierarchy(new NullProgressMonitor)
@@ -35,10 +36,10 @@ object JDTUtils {
     for (m ← allMethodsOf(t)) process(m)
     methods.toList
   }
-  def abstractMethodsOf (t:IType) = {
+  def abstractMethodsOf(t: IType) = {
     visibleMethodsOf(t).filter(isAbstract(_))
   }
-  def publicMethodsOf(t:IType) = {
+  def publicMethodsOf(t: IType) = {
     visibleMethodsOf(t).filter(isPublic(_))
   }
   def isAbstract(t: IMember) = Flags.isAbstract(t.getFlags)
@@ -82,15 +83,15 @@ object AnnotationUtils {
   }
 }
 object SearchUtils {
-  def search[A](pattern: SearchPattern, jproject: IJavaProject, monitor:IProgressMonitor = null)(processor: (IType ⇒ A)): List[A] = {
-    val searchScope = SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject))
+
+  def search(pattern: SearchPattern, searchScope: IJavaSearchScope, monitor: IProgressMonitor = null): List[IType] = {
     val search = new SearchEngine()
     val participants = Array(SearchEngine.getDefaultSearchParticipant())
-    var list = List[A]()
+    var list = List[IType]()
     val searchRequestor = new SearchRequestor() {
       def acceptSearchMatch(matchh: SearchMatch) {
         def processElement(a: AnyRef) = a match {
-          case t: IType ⇒ list = processor(t) :: list
+          case t: IType ⇒ list = t :: list
           case other ⇒
         }
         matchh match {
@@ -102,6 +103,12 @@ object SearchUtils {
     search.search(pattern, participants, searchScope, searchRequestor, monitor)
     list
   }
+  def projectScope(jproject: IJavaProject) =
+    SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject))
+
+  def sourcesScope(jproject: IJavaProject) =
+    SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject), IJavaSearchScope.SOURCES)
+
   def classAndInterface(str: String) = SearchPattern.createPattern(str,
     IJavaSearchConstants.CLASS_AND_INTERFACE,
     IJavaSearchConstants.DECLARATIONS,

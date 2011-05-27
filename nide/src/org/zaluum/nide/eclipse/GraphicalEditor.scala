@@ -16,6 +16,7 @@ import org.eclipse.ui.part.{EditorPart, FileEditorInput}
 import org.eclipse.ui.{IEditorSite, IEditorInput, IEditorPart}
 import org.zaluum.nide.compiler.Location
 import org.zaluum.nide.zge.{Viewer, Controller, TreeViewer, GuiViewer}
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
 
 class GraphicalEditor extends BaseEditor with IGotoMarker {
 
@@ -98,6 +99,7 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
   }
   override def getAdapter(cl: Class[_]) = {
     if (cl == classOf[IGotoMarker]) this
+    else if (cl == classOf[ZaluumCompilationUnit]) controller.cu
     else super.getAdapter(cl)
   }
 }

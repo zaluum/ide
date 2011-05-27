@@ -289,7 +289,7 @@
       </menuContribution>
    </extension>
    <extension
-         id="zaluumNature"
+         id="org.zaluum.nide.zaluumNature"
          name="Zaluum Project Nature"
          point="org.eclipse.core.resources.natures">
       <runtime>
@@ -437,5 +437,76 @@
             lightweight="false"
             state="true">
       </decorator>
+   </extension>
+   <extension
+         point="org.eclipse.debug.core.launchConfigurationTypes">
+      <launchConfigurationType
+            delegate="org.zaluum.nide.eclipse.launch.ZaluumLaunchDelegate"
+            delegateDescription="The Zaluum launcher supports running Zaluum applications."
+            delegateName="Zaluum Launcher"
+            id="org.zaluum.nide.launchZaluumConfigurationType"
+            modes="run"
+            name="Zaluum Application"
+            sourceLocatorId="org.eclipse.jdt.launching.sourceLocator.JavaSourceLookupDirector"
+            sourcePathComputerId="org.eclipse.jdt.launching.sourceLookup.javaSourcePathComputer">
+      </launchConfigurationType>
+   </extension>
+   <extension
+         point="org.eclipse.debug.ui.launchConfigurationTypeImages">
+      <launchConfigurationTypeImage
+            configTypeID="org.zaluum.nide.launchZaluumConfigurationType"
+            icon="icons/zaluum_icon_16.gif"
+            id="nide.zaluumLaunchConfigurationTypeImage">
+      </launchConfigurationTypeImage>
+   </extension>
+   <extension
+         point="org.eclipse.debug.ui.launchConfigurationTabGroups">
+      <launchConfigurationTabGroup
+            class="org.zaluum.nide.eclipse.launch.ZaluumLaunchConfigurationTabGroup"
+            description="Launch a Zaluum Application"
+            id="org.zaluum.nide.eclipse.launch.zaluumLaunchConfigurationTabGroup"
+            type="org.zaluum.nide.launchZaluumConfigurationType">
+      </launchConfigurationTabGroup>
+   </extension>
+   <extension
+         point="org.eclipse.debug.ui.launchShortcuts">
+      <shortcut
+            class="org.zaluum.nide.eclipse.launch.ZaluumLaunchShortcut"
+            description="Launch a Zaluum in the given project"
+            icon="icons/zaluum_icon_16.gif"
+            id="org.zaluum.nide.eclipse.launch.zaluumLaunchShortcut"
+            label="Zaluum Application"
+            modes="run">
+         <description
+               description="Run Zaluum for the current file"
+               mode="run">
+         </description>
+         <configurationType
+               id="org.zaluum.nide.launchZaluumConfigurationType">
+         </configurationType>
+         <contextualLaunch>
+            <enablement>
+               <count
+                     value="1">
+               </count>
+               <iterate>
+                  <or>
+                     <and>
+                        <adapt
+                              type="org.eclipse.core.resources.IProject">
+                        </adapt>
+                        <test
+                              property="org.eclipse.debug.ui.projectNature"
+                              value="org.zaluum.nide.zaluumNature">
+                        </test>
+                     </and>
+                     <instanceof
+                           value="org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit">
+                     </instanceof>
+                  </or>
+               </iterate>
+            </enablement>
+         </contextualLaunch>
+      </shortcut>
    </extension>
 </plugin>

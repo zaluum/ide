@@ -13,7 +13,7 @@ class ZaluumProject(val jProject: IJavaProject) extends GlobalClassPath{
   }
   def index(monitor:IProgressMonitor=null) : Seq[BoxTypeProxy] = {
     import SearchUtils._
-    val l = search(patternAnnotation(classOf[Box].getName),jProject,monitor) { a => a }
+    val l = search(patternAnnotation(classOf[Box].getName),projectScope(jProject),monitor)
     l flatMap (typeToProxy(_))
   }
   def typeToProxy(t:IType) : Option[BoxTypeProxy] = {
