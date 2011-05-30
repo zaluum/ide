@@ -8,10 +8,11 @@ import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import scala.collection.mutable.Buffer
 
 class CompilationException extends Exception
+
 class Reporter {
-  case class Error(msg: String, mark: Option[Location])
+  case class Error(msg: String, mark: Option[Int])
   val errors = Buffer[Error]()
-  def report(str: String, mark: Option[Location] = None) {
+  def report(str: String, mark: Option[Int] = None) {
     errors += Error(str, mark)
   }
   def check() {
@@ -20,11 +21,11 @@ class Reporter {
   }
   def fail = throw new CompilationException()
 
-  def fail(err: String, mark: Option[Location] = None): Nothing = {
+  def fail(err: String, mark: Option[Int] = None): Nothing = {
     report(err)
     fail
   }
-  def apply(assertion: Boolean, res: ⇒ String, mark: Option[Location] = None, fail: Boolean = false) {
+  def apply(assertion: Boolean, res: ⇒ String, mark: Option[Int] = None, fail: Boolean = false) {
     if (!assertion) report(res) // TODO mark
     if (fail) check()
   }
@@ -123,12 +124,12 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   def root = enclosingScope.root
 }
 trait ReporterAdapter {
-  def location(tree: Tree): Location
+  def location(tree: Tree): Int
   def reporter: Reporter
   def error(str: String, tree: Tree) = reporter.report(str, Some(location(tree)))
 }
 class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope) {
-  def globLocation(t: Tree) = Location(toCompile.pathOf(t).getOrElse(throw new Exception("error")))
+  def globLocation(t: Tree) = t.line
   class Namer(initOwner: Symbol) extends Traverser(initOwner) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)

@@ -57,11 +57,13 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
       getType(compoundName, compoundName.length) match {
         case r: ReferenceBinding ⇒
           // should not check for Box annotation to let boxes inherit non annotated classes
-          val sper = aToString(r.superclass().compoundName)
-          val sperO = sper match {
+          val sperO = r.superclass match {
             case null ⇒ None
-            case "java.lang.Object" ⇒ None
-            case other ⇒ Some(Name(other))
+            case spr ⇒ aToString(spr.compoundName) match {
+              case null ⇒ None
+              case "java.lang.Object" ⇒ None
+              case other ⇒ Some(Name(other))
+            }
           }
           val bs = new BoxTypeSymbol(cud.a.global.root, name, sperO, None, None, r.isAbstract)
           bs.scope = cud.a.global

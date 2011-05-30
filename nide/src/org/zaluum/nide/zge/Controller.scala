@@ -15,11 +15,13 @@ import java.nio.charset.Charset
 import org.eclipse.jdt.core.ICompilationUnit
 import org.eclipse.jdt.core.IJavaProject
 import org.zaluum.nide.eclipse.ZaluumProject
-class Controller(val cu: ICompilationUnit, val zproject : ZaluumProject) {
-  var nowTree : Tree = _
-  
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
+import org.zaluum.nide.eclipse.integration.model.ZaluumASTParser
+class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
+  private var nowTree: Tree = _
+
   private var viewers = Buffer[Viewer]()
-  
+
   def registerViewer(viewer: Viewer) {
     viewers += viewer
     viewer.refresh()
@@ -28,21 +30,22 @@ class Controller(val cu: ICompilationUnit, val zproject : ZaluumProject) {
     viewers -= viewer
   }
   def updateViewers(map: Map[SelectionSubject, SelectionSubject]) {
-    viewers foreach { v ⇒ 
-      inSWT{
-        v.remapSelection(map); 
-        v.refresh(); 
+    viewers foreach { v ⇒
+      inSWT {
+        v.remapSelection(map);
+        v.refresh();
       }(v.display)
     }
   }
-  val observer = new Observer {
+  private val observer = new Observer {
     def receiveUpdate(subject: Subject) {
-      recompile
+      //recompile
+      update(noChangeMap)
     }
   }
   def refreshTools() { viewers foreach { _.tool.refresh() } }
-  def blink(s:SelectionSubject, fromViewer:Viewer) {
-    viewers filterNot {_==fromViewer} foreach { _.blink(s) }
+  def blink(s: SelectionSubject, fromViewer: Viewer) {
+    viewers filterNot { _ == fromViewer } foreach { _.blink(s) }
   }
   def tree = nowTree
   val reporter = new Reporter()
@@ -55,18 +58,33 @@ class Controller(val cu: ICompilationUnit, val zproject : ZaluumProject) {
   def markSaved() { mark = undoStack.elems.headOption }
   def exec(c: MapTransformer) {
     val before = nowTree
-    nowTree = c(tree)
+    nowTree = c(tree).asInstanceOf[BoxDef]
     undoStack.push(Mutation(before, c.map, nowTree))
     redoStack.clear
     update(c.map)
   }
+  // uses a special parser to keep the mutated tree.
+  def compile(parse : Boolean) = {
+    val parser = if (parse) ASTParser.newParser(AST.JLS3)
+      else new ZaluumASTParser(AST.JLS3, nowTree)
+    parser.setKind(ASTParser.K_COMPILATION_UNIT)
+    parser.setSource(cu)
+    parser.setResolveBindings(true)
+    parser.setIgnoreMethodBodies(true)
+    val domcu = parser.createAST(null)
+    nowTree = domcu match {
+      case z: ZaluumDomCompilationUnit ⇒
+        z.tree
+      case _ ⇒ throw new Exception()
+    }
+  }
   def replaceWorkingCopyContents() {
-    if (isDirty){
+    if (isDirty) {
       if (!cu.isWorkingCopy) cu.becomeWorkingCopy(null)
-        val p = Serializer.proto(nowTree.asInstanceOf[BoxDef]);
-      val str =  new String(p.toByteArray,Charset.forName("ISO-8859-1"))
-      cu.applyTextEdit(new ReplaceEdit(0,cu.getBuffer.getLength,str ),null)
-    }else{
+      val p = Serializer.proto(nowTree.asInstanceOf[BoxDef]);
+      val str = new String(p.toByteArray, Charset.forName("ISO-8859-1"))
+      cu.applyTextEdit(new ReplaceEdit(0, cu.getBuffer.getLength, str), null)
+    } else {
       if (cu.isWorkingCopy) cu.discardWorkingCopy
     }
   }
@@ -89,33 +107,21 @@ class Controller(val cu: ICompilationUnit, val zproject : ZaluumProject) {
     b.toSeq
   }*/
   def noChangeMap = {
-    var map:DMap = Map()
+    var map: DMap = Map()
     new Traverser(null) {
-      override def traverse(tree:Tree) = {
-        map += (tree->tree)
+      override def traverse(tree: Tree) = {
+        map += (tree -> tree)
       }
     }
     map
-  }
-  def compile(){
-    val parser = ASTParser.newParser(AST.JLS3)
-    parser.setKind(ASTParser.K_COMPILATION_UNIT)
-    parser.setSource(cu)
-    parser.setResolveBindings(true)
-    parser.setIgnoreMethodBodies(true)
-    val domcu = parser.createAST(null)
-    domcu match {
-      case z:ZaluumDomCompilationUnit =>
-        nowTree = z.tree
-      case _ => throw new Exception()
-    }
   }
   def recompile {
     update(noChangeMap)
   }
   private def update(m: DMap) {
+    nowTree.assignLine(1)
     replaceWorkingCopyContents()
-    compile()
+    compile(false)
     //PrettyPrinter.print(nowTree, 0)
     updateViewers(m)
     notifyListeners
@@ -139,6 +145,41 @@ class Controller(val cu: ICompilationUnit, val zproject : ZaluumProject) {
       update(mutation.d)
     }
   }
+  def nonDirtyTree = mark match {
+    case Some(markMut) ⇒ markMut.now
+    case None ⇒ undoStack.lastOption match {
+      case Some(mut) ⇒ mut.before
+      case None ⇒ nowTree
+    }
+  }
+  def fromSaveMutations = { // returns the mutations to go from saved state to nowTree
+    mark match {
+      case None ⇒ undoStack.toList reverse
+      case Some(m) ⇒
+        val dropped = undoStack.toList.reverse dropWhile (_ != m)
+        if (dropped.isEmpty) List() else dropped.drop(1)
+    }
+  }
+  def nonDirtyToNow(t: Tree): Option[Tree] = {
+    var mutatedt = t
+    fromSaveMutations foreach { mutation ⇒
+      mutation.d.get(mutatedt) match {
+        case Some(mt: Tree) ⇒
+          if (mutation == undoStack.head)
+            return Some(mt);
+          else
+            mutatedt = mt;
+        case a ⇒
+          return None
+      }
+    }
+    Some(t)
+  }
+  def findPath(line: Int) = { // walk current mutations to map line numbers
+    val l = nonDirtyTree.findPath(line)
+    l flatMap { nonDirtyToNow(_) }
+  }
+  
   var listeners = Set[() ⇒ Unit]()
   def addListener(action: () ⇒ Unit) {
     listeners += action
@@ -149,6 +190,6 @@ class Controller(val cu: ICompilationUnit, val zproject : ZaluumProject) {
   def notifyListeners() {
     listeners foreach { _() }
   }
-  compile()
+  compile(true)
 }
 

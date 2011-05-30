@@ -10,7 +10,9 @@ object Parser {
   def readTree(i: InputStream, className: Name) = {
     try{
     val proto = BoxFileProtos.BoxClassDef.parseFrom(i)
-    parse(proto, Some(className))
+    val a = parse(proto, Some(className))
+    a.assignLine(1)
+    a
     }catch {
       case e=> 
       // TODO fixme better handling 

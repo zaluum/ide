@@ -23,7 +23,7 @@ case class ALoad(i:Int) extends Tree
 case class AStore(i:Int) extends Tree
 class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
-  def location(t: Tree) = Location(List(0))
+  def location(t: Tree) = 0 // FIXMELocation(List(0))
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
       case b @ BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒

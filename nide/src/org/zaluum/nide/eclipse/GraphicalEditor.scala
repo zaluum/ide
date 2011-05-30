@@ -14,7 +14,6 @@ import org.eclipse.ui.handlers.HandlerUtil
 import org.eclipse.ui.ide.IGotoMarker
 import org.eclipse.ui.part.{EditorPart, FileEditorInput}
 import org.eclipse.ui.{IEditorSite, IEditorInput, IEditorPart}
-import org.zaluum.nide.compiler.Location
 import org.zaluum.nide.zge.{Viewer, Controller, TreeViewer, GuiViewer}
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
 
@@ -93,9 +92,9 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
     shell foreach { s ⇒ if (!s.isDisposed) s.dispose }
   }
   override def gotoMarker(marker: IMarker) {
-    val str = marker.getAttribute("BLAME").asInstanceOf[String]
-    viewer.gotoMarker(Location.parse(str))
-    setFocus
+    val lne = marker.getAttribute(IMarker.LINE_NUMBER).asInstanceOf[Int]
+    viewer.gotoMarker(lne)
+    this.setFocus
   }
   override def getAdapter(cl: Class[_]) = {
     if (cl == classOf[IGotoMarker]) this

@@ -127,16 +127,27 @@ class ZaluumCompilationUnitDeclaration(
     }
   }
   lazy val fqName = List(pkgName, new String(mainNameArr)).mkString(".")
-
+  
+  private def createLineSeparator() = {
+    // one char per line
+    val treeSize = tree.children.size + 1
+    compilationResult.lineSeparatorPositions = Array.range(1, (treeSize*2)+1 , 2)
+  }
   def populateCompilationUnitDeclaration() {
-    val contents = new String(sourceUnit.getContents)
-    val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
-    tree = Parser.readTree(new ByteArrayInputStream(byteContents), Name(fqName))
+    sourceUnit match {
+      case p : PreParsedZaluumCompilationUnit =>
+        tree = p.tree.asInstanceOf[BoxDef]
+      case _ =>
+        val contents = new String(sourceUnit.getContents)
+        val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
+        tree = Parser.readTree(new ByteArrayInputStream(byteContents), Name(fqName))
+    }
+    createLineSeparator()
     val reporter = new Reporter() {
-      override def report(str: String, mark: Option[Location] = None) {
+      override def report(str: String, mark: Option[Int] = None) {
         super.report(str, mark)
         ignoreFurtherInvestigation = true
-        createProblem(str)
+        createProblem(str, mark.getOrElse(-1))
       }
     }
     val scope = JDTScope
@@ -146,13 +157,13 @@ class ZaluumCompilationUnitDeclaration(
     createTypeDeclarations()
   }
 
-  def createProblem(msg: String) {
-    val p = new DefaultProblemFactory().createProblem(getFileName, 0, Array(msg), 0, Array(msg), ProblemSeverities.Error, 0, 1, 1, 1)
+  def createProblem(msg: String, line:Int) {
+    val p = new DefaultProblemFactory().createProblem(getFileName, 0, Array(msg), 0, Array(msg), ProblemSeverities.Error, 0, 1, line, 1)
     problemReporter.record(p, compilationResult, this)
   }
   def createPackageDeclaration() {
     val pkgArr = stringToA(pkgName)
-    currentPackage = new ImportReference(pkgArr, positionsFor(pkgArr, 0, pkgName.length), true, ClassFileConstants.AccDefault)
+    currentPackage = new ImportReference(pkgArr, Array.fill(pkgArr.length)(0), true, ClassFileConstants.AccDefault)
     currentPackage.declarationSourceStart = currentPackage.sourceStart
     currentPackage.declarationSourceEnd = currentPackage.sourceEnd
     currentPackage.declarationEnd = currentPackage.sourceEnd
@@ -170,12 +181,12 @@ class ZaluumCompilationUnitDeclaration(
       case None ⇒
         typeDeclaration.name = mainNameArr
         typeDeclaration.modifiers = Opcodes.ACC_PUBLIC
-        val annotation = new MarkerAnnotation(createTypeReference(classOf[Box].getName), -1)
+        val annotation = new MarkerAnnotation(createTypeReference(classOf[Box].getName,b), start(b))
         typeDeclaration.annotations = Array(annotation);
 
     }
     tree.superName foreach { n ⇒
-      typeDeclaration.superclass = createTypeReference(n.str)
+      typeDeclaration.superclass = createTypeReference(n.str,b)
     }
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
@@ -188,9 +199,22 @@ class ZaluumCompilationUnitDeclaration(
       encDec.enclosingType = typeDeclaration
       encDec
     }
-
+    
     typeDeclaration.memberTypes = children.toArray
+    typeDeclaration.declarationSourceEnd = end(b);
+    typeDeclaration.declarationSourceStart = start(b);
+    typeDeclaration.bodyStart = start(b);
+    typeDeclaration.bodyEnd = end(b);
+    typeDeclaration.sourceStart = start(b);
+    typeDeclaration.sourceEnd = end(b);
+
     typeDeclaration
+  }
+  def start(t:Tree) = {
+    (t.line-1)*2
+  }
+  def end(t:Tree) = {
+    start(t) +1 
   }
   def createMethodAndConstructorDeclarations(b: BoxDef): Array[AbstractMethodDeclaration] = {
     val constructor = new ConstructorDeclaration(compilationResult)
@@ -198,49 +222,54 @@ class ZaluumCompilationUnitDeclaration(
     constructor.modifiers = ClassFileConstants.AccPublic
     constructor.selector = b.name.str.toCharArray
 
-    val ref = createTypeReference("void")
+    val ref = createTypeReference("void",b)
     //val arg = new Argument("par".toCharArray, NON_EXISTENT_POSITION, ref, ClassFileConstants.AccPublic)
     val meth = new MethodDeclaration(compilationResult)
     meth.modifiers = ClassFileConstants.AccPublic
     meth.selector = "apply".toCharArray
     //meth.arguments = Array(arg)
-    meth.returnType = createTypeReference("void")
+    meth.returnType = createTypeReference("void",b)
     meth.thrownExceptions = null
-
+    meth.sourceStart = start(b)
+    meth.sourceEnd = end(b) 
+    meth.bodyStart = start(b)
+    meth.bodyEnd = end(b)
+    meth.declarationSourceStart = start(b)
+    meth.declarationSourceEnd = end(b)
     Array(constructor, meth)
   }
   def createFieldDeclarations(b: BoxDef): Array[FieldDeclaration] = {
     val res = Buffer[FieldDeclaration]()
     //vals
     for (t ← b.vals; val v = t.asInstanceOf[ValDef]) {
-      val f = new FieldDeclaration(v.name.str.toCharArray, 0, 0)
+      val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v))
       f.modifiers = Opcodes.ACC_PUBLIC
-      f.`type` = createTypeReference(v.typeName.str)
+      f.`type` = createTypeReference(v.typeName.str,v)
       res += f
     }
     //ports
     for (t <- b.ports; val p = t.asInstanceOf[PortDef]) {
-      val f = new FieldDeclaration(p.name.str.toCharArray ,0 ,0)
+      val f = new FieldDeclaration(p.name.str.toCharArray , start(p) ,end(p))
       f.modifiers = Opcodes.ACC_PUBLIC
-      f.`type` = createTypeReference(p.typeName.str)
+      f.`type` = createTypeReference(p.typeName.str,p)
       val cl = p.dir match {
         case Out => classOf[org.zaluum.annotation.Out].getName
         case _ => classOf[org.zaluum.annotation.In].getName
       }
-      val annotation = new MarkerAnnotation(createTypeReference(cl), -1)
+      val annotation = new MarkerAnnotation(createTypeReference(cl,p), start(p))
       f.annotations = Array(annotation)
       res += f
     }
     //widget
-    val f = new FieldDeclaration("_widget".toCharArray,0,0) // TODO 
+    val f = new FieldDeclaration("_widget".toCharArray,start(b),end(b)) // TODO 
     f.modifiers = Opcodes.ACC_PUBLIC
-    f.`type` = createTypeReference(classOf[JPanel].getName)
+    f.`type` = createTypeReference(classOf[JPanel].getName,b)
     res += f
     res.toArray
   }
-  def createTypeReference(name: String): TypeReference = {
+  def createTypeReference(name: String, t:Tree): TypeReference = {
     // array todo
-    if (nameToPrimitiveTypeId.contains(name)) {
+    val tpe = if (nameToPrimitiveTypeId.contains(name)) {
       TypeReference.baseTypeReference(nameToPrimitiveTypeId(name), 0)
     } else if (!name.contains('.')) {
       new SingleTypeReference(name.toCharArray, NON_EXISTENT_POSITION)
@@ -248,6 +277,9 @@ class ZaluumCompilationUnitDeclaration(
       val compoundName = CharOperation.splitOn('.', name.toCharArray)
       new QualifiedTypeReference(compoundName, Array.fill(compoundName.length)(NON_EXISTENT_POSITION))
     }
+    tpe.sourceStart =start(t)
+    tpe.sourceEnd = end(t)
+    tpe
   }
 
   override def generateCode() {

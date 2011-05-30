@@ -10,17 +10,33 @@ abstract class Tree extends Product with SelectionSubject {
   var tpe: Type = NoSymbol
   var symbol: Symbol = NoSymbol
   var scope: Scope = null
+  var line : Int = 0
   def hasSymbol = false
   def isDef = false
   def isEmpty = false
-  def findPath(l: List[Int]): Option[Tree] = {
-    if (l.isEmpty) Some(this)
-    else children.lift(l.head).flatMap { _.findPath(l.tail) }
+  private def findPath0(l:Int) : (Option[Tree],Int) = {
+    if (l<=0) (None,0)
+    else if (l==1) (Some(this),1)
+    else {
+      var visited = 1
+      for (c<-children) {
+        val (t, visits) = c.findPath0(l-visited)
+        visited += visits
+        if (t.isDefined) {
+          return (t,visited)
+        }
+      }
+      (None,visited)
+    }
   }
-  def pathOf(t: Tree): Option[List[Int]] = {
-    if (t == this) Some(List())
-    else children.view.map { _.pathOf(t) }.zipWithIndex.
-      collect { case (Some(p), i) ⇒ i :: p }.headOption
+  def findPath(l: Int): Option[Tree] = findPath0(l)._1
+  def assignLine(l:Int) : Int = {
+    this.line = l
+    var x = l+1
+    for (c<-children) {
+      x = c.assignLine(x)
+    }
+    x
   }
   def children: List[Tree] = {
     def subtrees(x: Any): List[Tree] = x match {
@@ -125,16 +141,6 @@ abstract class Transformer extends OwnerHelper[Tree] {
   protected def transformTrees(trees: List[Tree]): List[Tree] =
     trees mapConserve (transform(_))
 }
-object Location {
-  def parse(str: String) = {
-    Location(List(0)) // FIXME
-    //Location(str.split("/").map { _.toInt }.toList)
-  }
-}
-case class Location(path: List[Int]) {
-  override def toString = path.mkString("/")
-}
-
 // Traverser
 abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
   currentOwner = initSymbol
