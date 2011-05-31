@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
-Bundle-Name: Drivers_robotis
-Bundle-SymbolicName: org.zaluum.drivers.robotis
-Bundle-Version: 1.0.0.qualifier
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
-Require-Bundle: org.scala-ide.scala.library;bundle-version="2.8.0"
-Export-Package: org.zaluum.drivers.robotis
-Import-Package: org.osgi.framework;version="1.5.0"
