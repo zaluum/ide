@@ -3,29 +3,25 @@ Bundle-ManifestVersion: 2
 Bundle-Name: NIde
 Bundle-SymbolicName: org.zaluum.nide;singleton:=true
 Bundle-Version: 1.0.0.qualifier
-Require-Bundle: org.scala-ide.scala.library;bundle-version="2.9.0",
- org.scala-ide.scala.compiler;bundle-version="2.9.0",
- com.google.common;bundle-version="1.0.0",
+Require-Bundle: org.zaluum.runtime;bundle-version="1.0.0",
+ org.scala-ide.scala.library;bundle-version="2.9.0",
+ com.google.protobuf;bundle-version="2.3.0",
+ org.zaluum.nide.protobuf;bundle-version="1.0.0",
+ org.junit4;bundle-version="4.5.0",
+ com.ibm.icu,
+ org.apache.commons.logging;bundle-version="1.0.4",
  org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.jface.text,
  org.eclipse.core.resources,
  org.eclipse.ui.editors,
  org.eclipse.ui.ide,
- com.ibm.icu,
  org.eclipse.help,
  org.eclipse.core.filesystem,
  org.eclipse.ui.views,
- com.google.protobuf;bundle-version="2.3.0",
- org.zaluum.nide.protobuf;bundle-version="1.0.0",
- jgrapht;bundle-version="0.8.1",
- javassist.osgi;bundle-version="3.6.0",
- org.apache.commons.logging;bundle-version="1.0.4",
- org.eclipse.jdt.core;bundle-version="3.5.2",
+ org.eclipse.jdt.core;bundle-version="[3.6.2.zaluum1,3.6.2.zaluum1]",
  org.eclipse.jdt.ui;bundle-version="3.5.2",
  org.eclipse.jdt.apt.core;bundle-version="3.3.202",
- org.zaluum.runtime;bundle-version="1.0.0",
- org.junit4;bundle-version="4.5.0",
  org.eclipse.draw2d;bundle-version="3.6.2",
  org.eclipse.ui.forms;bundle-version="3.5.2",
  org.eclipse.debug.core;bundle-version="3.6.0",
@@ -33,17 +29,12 @@ Require-Bundle: org.scala-ide.scala.library;bundle-version="2.9.0",
  org.eclipse.jdt.launching;bundle-version="3.5.200",
  org.eclipse.jdt.debug.ui;bundle-version="3.5.2",
  org.eclipse.core.variables;bundle-version="3.2.400",
- org.eclipse.ui.console;bundle-version="3.5.0"
-Bundle-ActivationPolicy: lazy
+ org.eclipse.ui.console;bundle-version="3.5.0",
+ jgrapht;bundle-version="0.8.1",
+ org.objectweb.asm;bundle-version="3.2.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6,
  J2SE-1.5
+Bundle-ClassPath: ., libs/miglayout-3.7.4-swt.jar
 Bundle-Activator: org.zaluum.nide.Activator
+Bundle-ActivationPolicy: lazy
 Eclipse-RegisterBuddy: org.eclipse.jdt.core
-Bundle-ClassPath: .,
- libs/annovention-0.1.jar,
- libs/asm-3.3.1.jar,
- libs/asm-commons-3.3.1.jar,
- libs/scala-arm_2.8.1.jar,
- libs/scalax-io-core_2.8.1.jar,
- libs/scalax-io-file_2.8.1.jar,
- libs/miglayout-3.7.4-swt.jar

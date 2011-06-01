@@ -3,8 +3,15 @@
    <description name="Zaluum update site">
       Zaluum plugin
    </description>
-   <feature url="features/org.zaluum.nide.feature_1.0.0.201104150006.jar" id="org.zaluum.nide.feature" version="1.0.0.201104150006">
-      <category name="zaluum"/>
+   <feature url="features/org.zaluum.jdt.patch_1.0.0.jar" id="org.zaluum.jdt.patch" version="1.0.0" patch="true">
+      <category name="org.zaluum.eclipse"/>
    </feature>
-   <category-def name="zaluum" label="Zaluum"/>
+   <feature url="features/org.zaluum.nide.feature_1.0.0.qualifier.jar" id="org.zaluum.nide.feature" version="1.0.0.qualifier">
+      <category name="org.zaluum.eclipse"/>
+   </feature>
+   <category-def name="org.zaluum.eclipse" label="Zaluum Eclipse Plugin">
+      <description>
+         Provides the required plugins to work with Zaluum files.
+      </description>
+   </category-def>
 </site>

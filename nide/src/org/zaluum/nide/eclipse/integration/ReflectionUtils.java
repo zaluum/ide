@@ -17,10 +17,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.zaluum.nide.Activator;
-
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.internal.compiler.ast.Annotation;
 import org.eclipse.jdt.internal.core.JavaElement;
@@ -59,9 +55,11 @@ public class ReflectionUtils {
 			}
 			return field.get(target);
 		} catch (Exception e) {
-			Activator.getDefault().getLog()
-					.log(new Status(IStatus.ERROR, /*Activator.PLUGIN_ID*/"id", "Error getting private field '" + fieldName //$NON-NLS-1$
+			/*Activator.getDefault().getLog()
+					.log(new Status(IStatus.ERROR, "id", "Error getting private field '" + fieldName //$NON-NLS-1$
 							+ "' on class " + clazz, e)); //$NON-NLS-1$
+							*/
+							e.printStackTrace();
 		}
 		return null;
 	}
@@ -77,9 +75,10 @@ public class ReflectionUtils {
 			}
 			field.set(target, newValue);
 		} catch (Exception e) {
-			Activator.getDefault().getLog()
-					.log(new Status(IStatus.ERROR, /*Activator.PLUGIN_ID*/"id", "Error setting private field '" + fieldName //$NON-NLS-1$
-							+ "' on class " + clazz, e)); //$NON-NLS-1$
+			/*Activator.getDefault().getLog()
+					.log(new Status(IStatus.ERROR, "id", "Error setting private field '" + fieldName //$NON-NLS-1$
+							+ "' on class " + clazz, e)); //$NON-NLS-1$*/
+		  e.printStackTrace();
 		}
 	}
 
@@ -94,9 +93,12 @@ public class ReflectionUtils {
 			method.setAccessible(true);
 			return method.invoke(target, args);
 		} catch (Exception e) {
+		  /*
 			Activator.getDefault().getLog()
-					.log(new Status(IStatus.ERROR, /*Activator.PLUGIN_ID*/"id", "Error executing private method '" + methodName //$NON-NLS-1$
+					.log(new Status(IStatus.ERROR, "id", "Error executing private method '" + methodName //$NON-NLS-1$
 							+ "' on class " + clazz, e)); //$NON-NLS-1$
+							*/
+		  e.printStackTrace();
 		}
 		return null;
 	}
@@ -151,9 +153,10 @@ public class ReflectionUtils {
 						start + varName.length() - 1, returnTypeSignature, new Annotation[0], 0, false);
 				return localVariable;
 			} catch (Exception e1) {
-				Activator.getDefault().getLog()
-						.log(new Status(IStatus.ERROR, /*Activator.PLUGIN_ID*/"id", "Error creating local variable'" + varName //$NON-NLS-1$
-								+ "' in element " + parent.getHandleIdentifier(), e)); //$NON-NLS-1$
+				/*Activator.getDefault().getLog()
+						.log(new Status(IStatus.ERROR, "id", "Error creating local variable'" + varName //$NON-NLS-1$
+								+ "' in element " + parent.getHandleIdentifier(), e)); //$NON-NLS-1$*/
+				e.printStackTrace();
 				return null;
 			}
 		}

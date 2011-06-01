@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.zaluum</groupId>
+  <artifactId>zaluum-ide</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>The Zaluum IDE for Eclipse</name>
+  <packaging>pom</packaging>
+
+  <properties>
+    <scala.version>2.8.0</scala.version>
+    <tycho.version>0.9.0</tycho.version>
+    <sbt.version>0.9.0-SNAPSHOT</sbt.version>
+    <maven.compiler.source>1.5</maven.compiler.source>
+    <maven.compiler.target>1.5</maven.compiler.target>
+    <encoding>UTF-8</encoding>
+  </properties>
+
+  <prerequisites>
+    <maven>3.0</maven>
+  </prerequisites>
+
+  <modules>
+     <module>../nide</module> 
+     <module>../nide-feature</module> 
+     <module>../runtime</module> 
+     <module>../groovy-eclipse/jdt-patch/e36/org.eclipse.jdt.core</module> 
+     <module>../nide-protobuf</module> 
+    <!--<module>../jchart2d</module>-->
+    <module>../jdt-feature</module> 
+    <module>../updatesite</module> 
+  </modules>
+
+  <build>
+    <sourceDirectory>${basedir}/src</sourceDirectory>
+    <testSourceDirectory>${basedir}/test</testSourceDirectory>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>2.4.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>2.4.3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>2.1</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.sonatype.tycho</groupId>
+        <artifactId>tycho-maven-plugin</artifactId>
+        <version>${tycho.version}</version>
+        <extensions>true</extensions>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho.version}</version>
+        <configuration>
+          <resolver>p2</resolver>
+        </configuration>
+      </plugin>
+      <plugin>
+        <!-- TODO remove workaround when
+             https://issues.sonatype.org/browse/TYCHO-473
+             is fixed -->
+        <groupId>org.sonatype.tycho</groupId>
+        <artifactId>maven-osgi-source-plugin</artifactId>
+        <version>${tycho.version}</version>
+        <executions>
+          <execution>
+            <id>attach-source</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>plugin-source</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- for setting a better qualifier -->
+      <plugin>
+        <groupId>org.sonatype.tycho</groupId>
+        <artifactId>maven-osgi-packaging-plugin</artifactId>
+        <version>${tycho.version}</version>
+        <configuration>
+          <format>yyyyMMddHHmm'${version.tag}-${git.hash}'</format> 
+          <archiveSite>true</archiveSite>
+        </configuration>
+      </plugin>    
+    </plugins>
+  </build>
+  <repositories>
+    <repository>
+      <id>Helios Updates</id>
+      <name>Eclipse Helios Updates p2 repository</name>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/eclipse/updates/3.6</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+     <repository>
+      <id>Helios</id>
+      <name>Eclipse Helios p2 repository</name>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/releases/helios/</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+    <repository>
+      <id>GEF</id>
+      <name>Eclipse GEF p2 repository</name>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/tools/gef/updates/releases/</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+    <repository>
+      <id>Local</id>
+      <name>Local target platform</name>
+      <layout>p2</layout>
+      <url>http://127.0.0.1/repo/</url>
+      <snapshots><enabled>true</enabled></snapshots>
+    </repository>
+    <repository>
+      <id>scala-tools.release</id>
+      <name>Scala Tools maven release repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+    <!--<repository>
+      <id>scala-tools.snapshot</id>
+      <name>Scala Tools maven snapshot repository</name>
+      <url>http://scala-tools.org/repo-snapshots</url>
+      <snapshots>
+        <updatePolicy>daily</updatePolicy>
+      </snapshots>
+    </repository>-->
+  </repositories>
+  <pluginRepositories>
+    <!--<pluginRepository>
+      <id>org.sonatype.tycho</id>
+      <name>Tycho snapshot repository</name>
+      <url>https://repository.sonatype.org/content/repositories/snapshots</url>
+      <snapshots>
+        <updatePolicy>daily</updatePolicy>
+      </snapshots>
+    </pluginRepository>-->
+    <pluginRepository>
+      <id>scala-tools.release</id>
+      <name>Scala Tools maven release repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </pluginRepository>
+    <!--<pluginRepository>
+      <id>scala-tools.snapshot</id>
+      <name>Scala Tools maven snapshot repository</name>
+      <url>http://scala-tools.org/repo-snapshots</url>
+    </pluginRepository>-->
+  </pluginRepositories>
+  <profiles>
+    <profile>
+      <id>scala-2.9.0</id>
+      <activation>
+        <property>
+          <name>scala.version</name>
+          <value>2.9.0</value>
+        </property>
+      </activation>
+      <repositories>
+        <repository>
+          <id>scala-toolchain-2.9.0.final</id>
+          <name>Scala Toolchain 2.9.0.final p2 repository</name>
+          <layout>p2</layout>
+          <url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-2.9.0.final</url>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+</project>

@@ -10,12 +10,12 @@ public class MyRangePolicy extends ARangePolicy{
 		super();
 		this.minMax = minMax;
 	}
-	@Override 
+	//@Override 
 	public double getMax(double chartMin, double chartMax) {
 		return Math.max(chartMax, minMax);
 	}
 
-	@Override
+	//@Override
 	public double getMin(double chartMin, double chartMax) {
 		return chartMin;
 	}

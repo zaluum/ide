@@ -11,3 +11,4 @@ Export-Package: org.zaluum.annotation,
  org.zaluum.widget
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: jchart2d;bundle-version="1.0.0"
+

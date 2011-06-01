@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (c) 2009 Codehaus.org, SpringSource, and others.
+    All rights reserved. This program and the accompanying materials
+    are made available under the terms of the Eclipse Public License v1.0
+    which accompanies this distribution, and is available at
+    http://www.eclipse.org/legal/epl-v10.html
+   
+    Contributors:
+        Andrew Eisenberg - modified for Groovy Eclipse 2.0
+ -->
+<feature
+      id="org.zaluum.jdt.patch"
+      label="JDT Core patch for Zaluum-Eclipse plugin"
+      version="1.0.0"
+      provider-name="Zaluum"
+      plugin="org.zaluum.nide">
+
+   <description url="zaluum.com">
+      The JDT Core patch for Zaluum-Eclipse provides integration with the JDT and the Java compiler.  
+   </description>
+
+   <copyright>
+     %copyright
+   </copyright>
+
+   <license url="%licenseURL">
+	%license
+   </license>
+
+   <requires>
+      <import feature="org.eclipse.jdt" version="3.6.2.r362_v20101117-0800-7z8XFW6FLFlmjJcvz03jyeFBLS_F" patch="true"/>
+   </requires> 
+
+   <plugin
+         id="org.eclipse.jdt.core"
+         download-size="0"
+         install-size="0"
+         version="3.6.2.zaluum1"
+         unpack="false"/>
+
+</feature>

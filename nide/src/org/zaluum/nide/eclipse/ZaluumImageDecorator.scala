@@ -18,43 +18,36 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.internal.decorators.DecoratorManager;
 
-@SuppressWarnings("restriction")
-public class ZaluumImageDecorator implements ILabelDecorator {
-
-    private ImageDescriptorRegistry fRegistry;
-    private TreeHierarchyLayoutProblemsDecorator problemsDecorator;
-    private DecoratorManager decman;
-    private boolean preventRecursion = false;
+class ZaluumImageDecorator extends ILabelDecorator {
+    private var fRegistry : ImageDescriptorRegistry =_ 
+    private val problemsDecorator = new TreeHierarchyLayoutProblemsDecorator();
+    private var decman = WorkbenchPlugin.getDefault().getDecoratorManager();
+    private var preventRecursion= false;
 
 
-    private static final String ZALUUM_NATURE = "org.zaluum.nide.zaluumNature"; //$NON-NLS-1$
+    val ZALUUM_NATURE = "org.zaluum.nide.zaluumNature"; //$NON-NLS-1$
 
-
-    public ZaluumImageDecorator() {
-        problemsDecorator = new TreeHierarchyLayoutProblemsDecorator();
-        decman = WorkbenchPlugin.getDefault().getDecoratorManager();
-    }
-
-    public Image decorateImage(Image image, Object element) {
+    def decorateImage(origimage : Image , element: Object ) : Image = {
         if (preventRecursion) {
             return null;
         }
-
-        boolean isApplicable = false;
-        if (element instanceof ICompilationUnit) {
-            IResource r = ((ICompilationUnit) element).getResource();
+        var image:Image = null
+        var isApplicable = false;
+        element match {
+          case cu : ICompilationUnit =>
+            val r = cu.getResource
             if (r.getName().endsWith(".zaluum")) {
-                image = getJavaElementImageDescriptor(image, r);
+                image = getJavaElementImageDescriptor(origimage, r);
                 isApplicable = true;
             }
-        } else if (element instanceof IFile && ((IResource) element).getName().endsWith(".zaluum")) {
-            image = getJavaElementImageDescriptor(image, (IResource) element);
+          case f : IFile if (f.getName.endsWith(".zaluum")) =>
+            image = getJavaElementImageDescriptor(image, f);
             isApplicable = true;
-        } else if (element instanceof String) {
-            // a request where an IResource cannot be found (probably from opening an svn or cvs file)
+          case s:String =>
             image = getImageLabel(new JavaElementImageDescriptor(ZaluumPluginImages.DESC_ZALUUM_FILE, 0, JavaElementImageProvider.SMALL_SIZE));
             isApplicable = true;
-        }
+          case _ =>
+        }   
 
         if (isApplicable) {
             preventRecursion = true;
@@ -73,39 +66,37 @@ public class ZaluumImageDecorator implements ILabelDecorator {
         }
         return null;
     }
-    private Image getJavaElementImageDescriptor(Image image, IResource resource) {
+    private def getJavaElementImageDescriptor(image: Image , resource:IResource ) : Image = {
 
-        int flags;
+        var flags = 0
         if (image != null) {
-            Rectangle rect = image.getBounds();
-            flags = (rect.width == 16) ? JavaElementImageProvider.SMALL_ICONS : 0;
+            val rect = image.getBounds();
+            flags = if (rect.width == 16) JavaElementImageProvider.SMALL_ICONS else 0;
         } else {
             flags = JavaElementImageProvider.SMALL_ICONS;
         }
-        Point size= useSmallSize(flags) ? JavaElementImageProvider.SMALL_SIZE : JavaElementImageProvider.BIG_SIZE;
-        ImageDescriptor desc;
+        val size= if (useSmallSize(flags)) JavaElementImageProvider.SMALL_SIZE else JavaElementImageProvider.BIG_SIZE;
+        var desc : ImageDescriptor = null
         try {
             if (resource.getProject().hasNature(ZALUUM_NATURE)) {
                desc = ZaluumPluginImages.DESC_ZALUUM_FILE;
             } else {
                 desc = ZaluumPluginImages.DESC_ZALUUM_FILE_NO_BUILD;
             }
-        } catch (CoreException e) {
+        } catch { case e:CoreException =>
           desc = ZaluumPluginImages.DESC_ZALUUM_FILE_NO_BUILD;
         }
         return getImageLabel(new JavaElementImageDescriptor(desc, 0, size));
     }
-    private static boolean useSmallSize(int flags) {
-        return (flags & JavaElementImageProvider.SMALL_ICONS) != 0;
-    }
+    private def useSmallSize(flags : Int ) = (flags & JavaElementImageProvider.SMALL_ICONS) != 0;
 
-    private Image getImageLabel(ImageDescriptor descriptor){
+    private def getImageLabel(descriptor : ImageDescriptor ) :Image  ={
         if (descriptor == null)
             return null;
         return getRegistry().get(descriptor);
     }
 
-    private ImageDescriptorRegistry getRegistry() {
+    private def  getRegistry() : ImageDescriptorRegistry ={
         if (fRegistry == null) {
             fRegistry= JavaPlugin.getImageDescriptorRegistry();
         }
@@ -113,20 +104,14 @@ public class ZaluumImageDecorator implements ILabelDecorator {
     }
 
 
-    public void addListener(ILabelProviderListener listener) {
+    def addListener(listener:ILabelProviderListener ) {}
+
+    def dispose()  {}
+
+    def isLabelProperty(element : Object , property: String )  = false
+
+    def removeListener( listener : ILabelProviderListener)  {
     }
 
-    public void dispose()  {
-    }
-
-    public boolean isLabelProperty(Object element, String property)  {
-        return false;
-    }
-
-    public void removeListener(ILabelProviderListener listener)  {
-    }
-
-    public String decorateText(String text, Object element) {
-        return null;
-    }
+    def decorateText(text : String , element : Object ) = null
 }

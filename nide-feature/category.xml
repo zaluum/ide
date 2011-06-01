@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/org.zaluum.nide.feature_1.0.0.qualifier.jar" id="org.zaluum.nide.feature" version="1.0.0.qualifier">
+      <category name="org.zaluum.eclipse"/>
+   </feature>
+   <feature url="features/org.zaluum.jdt.patch_2.5.1.qualifier.jar" id="org.zaluum.jdt.patch" version="2.5.1.qualifier" patch="true">
+      <category name="org.zaluum.eclipse"/>
+   </feature>
+   <category-def name="org.zaluum.eclipse" label="Zaluum Eclipse Plugin"/>
+</site>

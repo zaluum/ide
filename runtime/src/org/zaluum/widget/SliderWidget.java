@@ -1,7 +1,6 @@
 package org.zaluum.widget;
 
 import javax.swing.JSlider;
-
 import org.zaluum.annotation.Box;
 import org.zaluum.annotation.Out;
 
