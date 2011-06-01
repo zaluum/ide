@@ -72,7 +72,6 @@ trait ZaluumParseCompilationUnit extends SourceElementParser with FixEnds with P
       val cud = new ZaluumParser(compilerOptions, problemReporterAccessor).dietParse(unit, compilationResult).asInstanceOf[ZaluumCompilationUnitDeclaration];
       val sourceEnds = createSourceEnds(cud);
       // TODO FAKED index entries
-      withCUD(cud)
       notifierAccessor.notifySourceElementRequestor(cud, 0, unit.getContents().length, reportLocalDeclarationsAccessor, sourceEnds,
         /* We don't care about the @category tag, so pass empty map */ Collections.EMPTY_MAP);
       cud;

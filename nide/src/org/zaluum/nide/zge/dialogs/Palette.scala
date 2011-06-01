@@ -68,7 +68,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell) extends ScrollPopup(mainShel
       b
     }
     def portDecl(content: Composite, dir: PortDir, desc: String) {
-      val b = createButton(content, "Port " + desc, viewer.imageFactory.load(PortDeclFigure.img(dir)).get)
+      val b = createButton(content, "Port " + desc, viewer.imageFactory.load(PortDeclFigure.img(dir)).get) // FIXME not working if runtime jar is not in classpath
       addOnDispose(b) { b.getImage.dispose() }
       addReaction(b) {
         viewer.tool.state.abort()
