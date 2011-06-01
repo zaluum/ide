@@ -8,16 +8,16 @@ import scala.collection.JavaConversions._
 import java.io.InputStream
 object Parser {
   def readTree(i: InputStream, className: Name) = {
-    try{
-    val proto = BoxFileProtos.BoxClassDef.parseFrom(i)
-    val a = parse(proto, Some(className))
+    val a = try {
+      val proto = BoxFileProtos.BoxClassDef.parseFrom(i)
+      parse(proto, Some(className))
+    } catch {
+      case e ⇒
+        // TODO fixme better handling 
+        BoxDef(Name(""), None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
+    }
     a.assignLine(1)
     a
-    }catch {
-      case e=> 
-      // TODO fixme better handling 
-      BoxDef(Name(""), None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
-    }
   }
   def parse(b: BoxFileProtos.BoxClassDef, name: Option[Name] = None): BoxDef = {
     BoxDef(name.getOrElse(Name(b.getClassName)),
@@ -33,13 +33,13 @@ object Parser {
   def parse(r: BoxFileProtos.Junction): Junction = {
     Junction(Name(r.getName), parse(r.getPos))
   }
-  def parse(l:BoxFileProtos.Label) : LabelDesc =  
+  def parse(l: BoxFileProtos.Label): LabelDesc =
     LabelDesc(l.getDescription, parse(l.getPos).toVector)
   def parse(i: BoxFileProtos.Instance): ValDef = {
     val guiPos = if (i.hasGuiPos) Some(parse(i.getGuiPos)) else None
     val guiSize = if (i.hasGuiSize) Some(parseDim(i.getGuiSize)) else None
     val size = if (i.hasSize) Some(parseDim(i.getSize)) else None
-    
+
     val lbl = if (i.hasLabel) Some(parse(i.getLabel)) else None
     val lblgui = if (i.hasLabelGui) Some(parse(i.getLabelGui)) else None
     ValDef(
