@@ -200,9 +200,9 @@ object PrettyPrinter {
       print(")" + sym(b), deep)
     case v: ValDef ⇒
       print("ValDef(" + List(v.name, v.pos, v.size, v.typeName, v.guiPos, v.guiSize).mkString(","), deep)
-      print(v.params, deep + 1)
-      print(v.constructorParams.mkString(","), deep +1)
-      print("("+ v.constructorTypes.mkString(",") +")" , deep +1)
+      print("params: " + v.params, deep + 1)
+      print("constructors:" + v.constructorParams.mkString(","), deep +1)
+      print("constructorTypes:("+ v.constructorTypes.mkString(",") +")" , deep +1)
       print(")" + sym(v), deep)
     case p: Param ⇒
       print(p.toString + sym(p), deep)

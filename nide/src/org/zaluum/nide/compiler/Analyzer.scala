@@ -6,7 +6,7 @@ import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import scala.collection.mutable.Buffer
-
+import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
 class CompilationException extends Exception
 
 class Reporter {
@@ -40,25 +40,25 @@ case class Name(str: String) {
   def internal = str.replace('.', '/')
 }
 object Literals {
-  def parse(value : String, tpe:Name) : Option[Any] = {
+  def parse(value: String, tpe: Name): Option[Any] = {
     try {
       Some(tpe match {
-        case Name("byte") => value.toByte
-        case Name("short") => value.toShort
-        case Name("int") => value.toInt
-        case Name("float") => value.toFloat
-        case Name("double") => value.toDouble
-        case Name("boolean") => value.toBoolean
-        case Name("java.lang.String") => value
-        case Name("char") => value.charAt(0)
+        case Name("byte") ⇒ value.toByte
+        case Name("short") ⇒ value.toShort
+        case Name("int") ⇒ value.toInt
+        case Name("float") ⇒ value.toFloat
+        case Name("double") ⇒ value.toDouble
+        case Name("boolean") ⇒ value.toBoolean
+        case Name("java.lang.String") ⇒ value
+        case Name("char") ⇒ value.charAt(0)
       })
-    }catch {
-      case e => None
+    } catch {
+      case e ⇒ None
     }
   }
 }
 trait Scope {
-  def alreadyDefinedBoxType(name:Name):Boolean
+  def alreadyDefinedBoxType(name: Name): Boolean
   def lookupPort(name: Name): Option[Symbol]
   def lookupVal(name: Name): Option[Symbol]
   def lookupType(name: Name): Option[Type]
@@ -67,11 +67,11 @@ trait Scope {
   def enter[S <: Symbol](sym: S): S
   def root: Symbol
 }
-trait RootSymbol extends Scope with Symbol{
+trait RootSymbol extends Scope with Symbol {
   val owner = NoSymbol
   val name = null
   scope = this
-  private def fail = throw new  UnsupportedOperationException()
+  private def fail = throw new UnsupportedOperationException()
   def lookupPort(name: Name): Option[Symbol] = fail
   def lookupVal(name: Name): Option[Symbol] = fail
   def lookupBoxTypeLocal(name: Name): Option[Type] = fail
@@ -103,11 +103,11 @@ class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for
 class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   protected var ports = Map[Name, Symbol]()
   protected var vals = Map[Name, Symbol]()
-  protected var boxes = Map[Name, Type]()  
+  protected var boxes = Map[Name, Type]()
   def lookupPort(name: Name): Option[Symbol] = ports.get(name)
   def lookupVal(name: Name): Option[Symbol] = vals.get(name)
   def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name)
-  def alreadyDefinedBoxType(name:Name) : Boolean = boxes.get(name).isDefined
+  def alreadyDefinedBoxType(name: Name): Boolean = boxes.get(name).isDefined
   def lookupBoxType(name: Name): Option[Type] =
     boxes.get(name) orElse { enclosingScope.lookupBoxType(name) }
   def lookupBoxTypeLocal(name: Name): Option[Type] = boxes.get(name)
@@ -154,13 +154,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           val newSym = new BoxTypeSymbol(currentOwner, name, superName, image, cl)
           val sym = defineBox(newSym, tree)
           val bs = sym.asInstanceOf[BoxTypeSymbol]
-          bs.constructors = List(new Constructor(bs,List()))
+          bs.constructors = List(new Constructor(bs, List()))
           tree.tpe = sym
-          // FIXME reported errors do not show in the editor (valdef)
-          
+        // FIXME reported errors do not show in the editor (valdef)
+
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
           definePort(new PortSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], name, extPos, dir), tree) // owner of a port is boxtypesymbol
-        case v : ValDef ⇒
+        case v: ValDef ⇒
           defineVal(new ValSymbol(currentOwner, v.name), tree)
         case _ ⇒
           tree.scope = currentScope
@@ -171,80 +171,83 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
   class Resolver(global: Symbol) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
+    private def catchAbort[T](b: ⇒ Option[T]): Option[T] = 
+      try { b } catch { case e: AbortCompilation ⇒ None }
     override def traverse(tree: Tree) {
       super.traverse(tree)
       tree match {
-        case b: BoxDef =>
+        case b: BoxDef ⇒
           b.superName foreach { sn ⇒
-            currentScope.lookupBoxType(sn) match {
+            catchAbort(currentScope.lookupBoxType(sn)) match {
               case Some(bs: BoxTypeSymbol) ⇒
-               b.symbol.asInstanceOf[BoxTypeSymbol]._superSymbol = Some(bs)
-               /* if (!bs.okOverride) 
+                b.symbol.asInstanceOf[BoxTypeSymbol]._superSymbol = Some(bs)
+              /* if (!bs.okOverride) 
                   error ("Super box " + sn.str + " has no 'void contents()' to override or has other abstract methods.", tree)*/
               case None ⇒
                 error("Super box type not found " + sn, tree)
             }
           }
         case PortDef(name, typeName, in, inPos, extPos) ⇒
-          tree.symbol.tpe = currentScope.lookupType(typeName) getOrElse {
+          tree.symbol.tpe = catchAbort(currentScope.lookupType(typeName)) getOrElse {
             error("Port type not found " + typeName, tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case v : ValDef ⇒
+        case v: ValDef ⇒
           val vsym = v.symbol.asInstanceOf[ValSymbol]
-          currentScope.lookupBoxType(v.typeName) match {
-            case Some(bs:BoxTypeSymbol) =>
+          catchAbort(currentScope.lookupBoxType(v.typeName)) match {
+            case Some(bs: BoxTypeSymbol) ⇒
               v.symbol.tpe = bs
               // Constructor
-              val consSign = v.constructorTypes map { name => 
+              val consSign = v.constructorTypes map { name ⇒
                 currentScope.lookupType(name) getOrElse {
                   error("Constructor type " + name + " not found", tree)
                   NoSymbol
                 }
               }
-              bs.constructors.find { _.matchesSignature(consSign)} match {
-                case Some(cons) => 
+              bs.constructors.find { _.matchesSignature(consSign) } match {
+                case Some(cons) ⇒
                   vsym.constructor = Some(cons)
-                  vsym.constructorParams = v.constructorParams.zip(consSign) map {case (value,tpe) =>
-                    val parsed = Literals.parse(value,tpe.name) getOrElse {
-                      error("Cannot parse literal \"" + value + "\" to " + tpe.name.str,tree)
-                      null
-                    }
-                    (parsed,tpe)
+                  vsym.constructorParams = v.constructorParams.zip(consSign) map {
+                    case (value, tpe) ⇒
+                      val parsed = Literals.parse(value, tpe.name) getOrElse {
+                        error("Cannot parse literal \"" + value + "\" to " + tpe.name.str, tree)
+                        null
+                      }
+                      (parsed, tpe)
                   }
-                case None => 
-                  error("Cannot find constructor for box " + v.typeName.str + 
-                    " with signature (" +v.constructorTypes.map{_.str}.mkString(", ") + ")", tree )
+                case None ⇒
+                  error("Cannot find constructor for box " + v.typeName.str +
+                    " with signature (" + v.constructorTypes.map { _.str }.mkString(", ") + ")", tree)
               }
               // params
-              for (p <- v.params.asInstanceOf[List[Param]]) {
-                bs.params.find { _.name == p.key} match {
-                  case Some(parSym) => 
+              for (p ← v.params.asInstanceOf[List[Param]]) {
+                bs.params.find { _.name == p.key } match {
+                  case Some(parSym) ⇒
                     val toType = parSym.tpe.name
-                    val parsed = Literals.parse(p.value,toType) getOrElse {
-                      error("Cannot parse literal \"" + p.value + "\" to " + toType.str + " in parameter " + p.key,tree)
+                    val parsed = Literals.parse(p.value, toType) getOrElse {
+                      error("Cannot parse literal \"" + p.value + "\" to " + toType.str + " in parameter " + p.key, tree)
                       null
                     }
                     vsym.params += (parSym -> parsed)
-                  case None => error("Cannot find parameter " + p.key,tree)
+                  case None ⇒ error("Cannot find parameter " + p.key, tree)
                 }
               }
               vsym.params
-            case _ =>
+            case a ⇒
               v.symbol.tpe = NoSymbol
               error("Box class " + v.typeName + " not found", tree);
           }
           // constructor match
           tree.tpe = tree.symbol.tpe
         case ValRef(name) ⇒
-          tree.symbol = currentScope.lookupVal(name) getOrElse {
+          tree.symbol = catchAbort(currentScope.lookupVal(name)) getOrElse {
             error("Box not found " + name, tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
         case p @ PortRef(fromTree, name, in) ⇒ // TODO filter in?
           tree.symbol = fromTree.tpe match {
             case b: BoxTypeSymbol ⇒
-              b.lookupPort(name).getOrElse {
+              catchAbort(b.lookupPort(name)).getOrElse {
                 error("Port not found " + name + " in box type " + b, tree);
                 NoSymbol
               }
@@ -354,17 +357,17 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
       }
     }
   }
-  def runNamer() : Tree = {
-    val root=global.root
+  def runNamer(): Tree = {
+    val root = global.root
     new Namer(root).traverse(toCompile)
     toCompile
   }
-  def runResolve() : Tree = {
+  def runResolve(): Tree = {
     new Resolver(global.root).traverse(toCompile)
     toCompile
   }
-  def runCheck() : Tree = {
-    new CheckConnections(toCompile,global.root).check()
+  def runCheck(): Tree = {
+    new CheckConnections(toCompile, global.root).check()
     toCompile
   }
 }
