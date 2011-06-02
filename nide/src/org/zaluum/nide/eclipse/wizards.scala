@@ -63,6 +63,10 @@ import org.zaluum.nide.eclipse.integration.ReflectionUtils
 import java.nio.charset.Charset
 import org.eclipse.jdt.internal.ui.JavaPluginImages
 import org.eclipse.jdt.internal.ui.JavaPlugin
+import org.eclipse.jdt.core.IClasspathEntry
+import org.eclipse.jdt.core.JavaCore
+import org.eclipse.core.runtime.Path
+import scala.collection.mutable.ArrayBuffer
 
 class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
   setDefaultPageImageDescriptor(null)
@@ -74,11 +78,17 @@ class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
 
   override def addPages {
     super.addPages()
-    firstPage = new NewJavaProjectWizardPageOne
+    firstPage = new NewJavaProjectWizardPageOne() {
+    override def getDefaultClasspathEntries() : Array[IClasspathEntry] = {
+        val others = ArrayBuffer(super.getDefaultClasspathEntries : _*)
+        others += JavaCore.newContainerEntry(Path.fromPortableString(Activator.plugin.zaluumLibId))
+        others.toArray
+      }
+    }
     addPage(firstPage)
     firstPage.setTitle("Create Zaluum Project")
     firstPage.setDescription("Create a new Zaluum Project")
-    secondPage = new NewJavaProjectWizardPageTwo(firstPage)
+    secondPage = new NewJavaProjectWizardPageTwo(firstPage) 
     secondPage.setTitle("Build settings")
     secondPage.setDescription("Build settings")
     addPage(secondPage)
