@@ -38,3 +38,4 @@ Bundle-ClassPath: ., libs/miglayout-3.7.4-swt.jar
 Bundle-Activator: org.zaluum.nide.Activator
 Bundle-ActivationPolicy: lazy
 Eclipse-RegisterBuddy: org.eclipse.jdt.core
+Export-Package: org.zaluum.nide.icons

@@ -309,6 +309,14 @@ class ZaluumCompilationUnitDeclaration(
   override def resolve() {
     a.runResolve()
     a.runCheck()
+    checkZaluumLibraryPresent()
+  }
+  def checkZaluumLibraryPresent() {
+    // add a descriptive error to help users
+    val errors = compilationResult.getErrors
+    if (errors!=null && errors.exists (_.getMessage == "org.zaluum cannot be resolved to a type") ){
+      createProblem("Zaluum Runtime library is not in the classpath. Add org.zaluum.runtime jar to fix this problem.",1)
+    }
   }
   override def analyseCode() {
   }

@@ -224,7 +224,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       enterSingle(initContainer)
       state = this
       this.dir = dir
-      val img = viewer.imageFactory.load(PortDeclFigure.img(dir)).get
+      val img = viewer.imageFactory.portImg(dir)
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
       img.dispose()

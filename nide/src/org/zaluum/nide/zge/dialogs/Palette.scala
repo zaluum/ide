@@ -17,6 +17,7 @@ import org.eclipse.jface.operation.IRunnableWithProgress
 import org.eclipse.core.runtime.IProgressMonitor
 import org.zaluum.nide.eclipse.EclipseUtils
 import org.zaluum.nide.eclipse.BoxTypeProxy
+
 object Palette {
   val w = 400
   val h = 300
@@ -68,7 +69,7 @@ class Palette(viewer: TreeViewer, mainShell: Shell) extends ScrollPopup(mainShel
       b
     }
     def portDecl(content: Composite, dir: PortDir, desc: String) {
-      val b = createButton(content, "Port " + desc, viewer.imageFactory.load(PortDeclFigure.img(dir)).get) // FIXME not working if runtime jar is not in classpath
+      val b = createButton(content, "Port " + desc, viewer.imageFactory.portImg(dir)) 
       addOnDispose(b) { b.getImage.dispose() }
       addReaction(b) {
         viewer.tool.state.abort()

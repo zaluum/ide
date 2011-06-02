@@ -21,6 +21,15 @@ import org.eclipse.core.resources.IProject
 
 class ImageFactory(val display: Display, zp: ZaluumProject) {
   def notFound = ImageDescriptor.createFromFile(classOf[Icons], "notFound.png").createImage()
+  def portDeclIn = ImageDescriptor.createFromFile(classOf[Icons], "portDeclIn.png").createImage()
+  def portDeclOut = ImageDescriptor.createFromFile(classOf[Icons], "portDeclOut.png").createImage()
+  def portDeclShift = ImageDescriptor.createFromFile(classOf[Icons], "portDeclShift.png").createImage()
+
+  def portImg(dir:PortDir) = dir match {
+    case In => portDeclIn
+    case Out => portDeclOut
+    case Shift => portDeclShift
+  }
   def load(resource: String) = {
     val url = zp.getResource(resource);
     url map { u ⇒
