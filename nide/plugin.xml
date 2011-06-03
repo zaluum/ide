@@ -540,4 +540,22 @@
             productId="org.zaluum.nide.zaluum">
       </introProductBinding>
    </extension>
+   <extension
+         point="org.eclipse.ui.intro.configExtension">
+      <configExtension
+            configId="org.eclipse.ui.intro.universalConfig"
+            content="$nl$/intro/overviewExtensionContent.xml"/>  
+        
+      <configExtension
+            configId="org.eclipse.ui.intro.universalConfig"
+            content="$nl$/intro/tutorialsExtensionContent.xml"/>  
+      
+      <configExtension
+            configId="org.eclipse.ui.intro.universalConfig"
+            content="$nl$/intro/samplesExtensionContent.xml"/>
+            
+      <configExtension
+            configId="org.eclipse.ui.intro.universalConfig"
+            content="$nl$/intro/whatsnewExtensionContent.xml"/>
+   </extension>
 </plugin>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<introContent>
+  <!-- Extension to the SDK Samples Page. -->
+  <extensionContent id="org.zaluum" name="Zaluum editor" alt-style="css/samples.properties" style="css/samples.css" path="samples/@">
+    <group label="Zaluum" id="jdt" style-id="content-group">
+       <text style-id="group-description">The following samples demonstrate how to start into the Zaluum Editor.</text>
+       <link label="Zaluum editor" url="http://www.zaluum.com" id="java-editor" style-id="content-link">
+          <text>Sample project </text>
+       </link>
+    </group>
+  </extensionContent>
+</introContent>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?NLS TYPE="org.eclipse.help.toc"?>
 
-<toc label="Boxes Editor User&apos;s Manual" link_to="content_main" topic="html/toc.html">
+<toc label="Zaluum Editor User&apos;s Manualanual" link_to="content_main" topic="html/toc.html">
    <topic href="html/files/files.html" label="Files">
       <topic href="html/files/boxfile.html" label="Box File">
       </topic>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<introContent>
+  <!-- Extension to the SDK Overview Page. -->
+  <extensionContent id="org.zaluum" name="Zaluum development" alt-style="css/overview.properties" style="css/overview.css" path="overview/@">
+     <group id="content-group" style-id="content-group">
+    	<link style-id="content-link" label="Zaluum development" url="http://www.zaluum.com" id="java">
+      		<text>Get familiar with developing Zaluum programs using Eclipse</text>
+    	</link>
+     </group>
+  </extensionContent>
+</introContent>
