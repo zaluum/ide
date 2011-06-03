@@ -85,6 +85,15 @@
                name="windowImages"
                value="icons/zaluum_icon_16.gif,icons/zaluum_icon_32.gif,icons/zaluum_icon_48.gif,icons/zaluum_icon_64.gif,icons/zaluum_icon_128.gif">
          </property>
+         <property
+            name="introTitle"
+            value="Welcome to Zaluum"/>
+         <property
+            name="introBrandingImage"
+            value="product:icons/zaluum_icon_64.gif"/>
+      	  <property
+            name="introBrandingImageText"
+            value="Zaluum"/>
       </product>
    </extension>   
    <extension
@@ -523,5 +532,12 @@
             id="org.zaluum.ZALUUM_CONTAINER"
             name="Zaluum Library Container">
       </classpathContainerPage>
+   </extension>
+   <extension
+         point="org.eclipse.ui.intro">
+      <introProductBinding
+            introId="org.eclipse.ui.intro.universal"
+            productId="org.zaluum.nide.zaluum">
+      </introProductBinding>
    </extension>
 </plugin>
