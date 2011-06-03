@@ -4,21 +4,20 @@
 <product name="Zaluum Editor" uid="zaluum" id="org.zaluum.nide.zaluum" application="org.eclipse.ui.ide.workbench" version="1.0.0.qualifier" useFeatures="true" includeLaunchers="false">
 
    <aboutInfo>
-      <image path="/nide/icons/about.gif"/>
+      <image path="/nide/icons/zaluum_about.gif"/>
       <text>
          Visit http://www.zaluum.com
       </text>
    </aboutInfo>
 
    <configIni use="default">
-      <linux>/ide-feature/config.ini</linux>
+      <linux>/nide-feature/config.ini</linux>
       <macosx>/ide-feature/config.ini</macosx>
       <solaris>/ide-feature/config.ini</solaris>
       <win32>/ide-feature/config.ini</win32>
    </configIni>
 
    <launcherArgs>
-      <programArgs>-console -consoleLog -debug</programArgs>
       <vmArgs>-Xms128m
 -Xmx512m
 -XX:PermSize=128m
@@ -26,7 +25,7 @@
       <vmArgsMac>-XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts</vmArgsMac>
    </launcherArgs>
 
-   <windowImages i16="/nide/icons/16.gif" i32="/nide/icons/32.gif" i48="/nide/icons/48.gif" i64="/nide/icons/64.gif" i128="/nide/icons/128x128.gif"/>
+   <windowImages i16="/nide/icons/zaluum_icon_16.gif" i32="/nide/icons/zaluum_icon_32.gif" i48="/nide/icons/zaluum_icon_48.gif" i64="/nide/icons/zaluum_icon_64.gif" i128="/nide/icons/zaluum_icon_128.gif"/>
 
    <splash
       location="org.zaluum.nide"
@@ -40,23 +39,12 @@
       </win>
    </launcher>
 
+
    <vm>
    </vm>
 
    <license>
         <url>http://www.zaluum.com/license</url>
-        <text>
-   Zaluum is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as
-published by the Free Software Foundation, either version 3 of the License,
-or (at your option) any later version.
-Zaluum is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-You should have received a copy of the GNU Lesser General Public License
-along with Zaluum.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
-         </text>
    </license>
 
    <plugins>
@@ -119,7 +107,7 @@ along with Zaluum.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
       <plugin id="org.eclipse.equinox.security"/>
       <plugin id="org.eclipse.equinox.security.macosx" fragment="true"/>
       <plugin id="org.eclipse.equinox.security.win32.x86" fragment="true"/>
-      <plugin id="org.eclipse.gef"/>
+      <plugin id="org.eclipse.gef" fragment=""/>
       <plugin id="org.eclipse.help"/>
       <plugin id="org.eclipse.help.base"/>
       <plugin id="org.eclipse.jface"/>
@@ -176,6 +164,15 @@ along with Zaluum.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
    </plugins>
 
    <features>
+      <feature id="org.eclipse.draw2d" version="3.6.2.v20110128-0100-4517w3122123901211"/>
+      <feature id="org.eclipse.equinox.p2.discovery.feature" version="1.0.1.R36x_v20110210-4-09oB5865H6L02434"/>
+      <feature id="org.eclipse.equinox.p2.user.ui" version="2.0.1.r361_v20100903-897HFa-FX0z-z-ntoaavz0JPX628"/>
+      <feature id="org.eclipse.platform" version="3.6.2.r362_v20110210-9gF78Gs1FrIGnHDHWkEcopoN8AmxeZflGDGKQi"/>
+      <feature id="org.eclipse.help" version="1.2.1.r362_v20101111-7e7jEVFDr6xg-LSlC_z0w1D"/>
+      <feature id="org.eclipse.rcp" version="3.6.2.r362_v20101104-9SAxFMKFkSAqi8axkv1ZjegmiBLY"/>
+      <feature id="org.eclipse.equinox.executable" version="3.4.2.R36x_v20110125-7N7K7bF8zk1BAKMh0iz0t94miBLY"/>
+      <feature id="org.zaluum.jdt.patch" version="1.0.0"/>
+      <feature id="org.eclipse.jdt" version="3.6.2.r362_v20101117-0800-7z8XFW6FLFlmjJcvz03jyeFBLS_F"/>
       <feature id="org.zaluum.nide.feature" version="1.0.0.qualifier"/>
    </features>
 

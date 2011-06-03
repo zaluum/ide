@@ -79,7 +79,7 @@
          </property>
          <property
                name="aboutImage"
-               value="icons/about.gif">
+               value="icons/zaluum_about.gif">
          </property>
          <property
                name="windowImages"

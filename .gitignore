@@ -1,6 +1,7 @@
 bin/
 .scala_dependencies
 targetplatform/repo/
+targetplatform/product/
 targetplatform/featureExport
 updatesite/*.jar
 updatesite/features
