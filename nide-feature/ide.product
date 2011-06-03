@@ -11,7 +11,6 @@
    </aboutInfo>
 
    <configIni use="default">
-      <linux>/nide-feature/config.ini</linux>
       <macosx>/ide-feature/config.ini</macosx>
       <solaris>/ide-feature/config.ini</solaris>
       <win32>/ide-feature/config.ini</win32>
@@ -38,7 +37,6 @@
          <bmp/>
       </win>
    </launcher>
-
 
    <vm>
    </vm>
@@ -177,7 +175,12 @@
    </features>
 
    <configurations>
-      <plugin id="org.eclipse.equinox.ds" autoStart="false" startLevel="0" />
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="4" />
+      <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.ds" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.event" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.p2.reconciler.dropins" autoStart="true" startLevel="4" />
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
    </configurations>
 
 </product>
