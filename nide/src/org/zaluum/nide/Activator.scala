@@ -10,6 +10,9 @@ import org.eclipse.core.runtime.Status
 import scala.util.control.ControlThrowable
 import org.eclipse.core.runtime.IStatus
 import java.net.URL
+import org.eclipse.core.runtime.IPath
+import org.eclipse.osgi.service.resolver.BundleDescription
+import scala.collection.mutable.Buffer
 
 object Activator {
   val PLUGIN_ID: String = "org.zaluum.nide"
@@ -20,6 +23,7 @@ object Activator {
   def getDefault(): Activator = {
     return plugin;
   }
+  val NameExtractor = """.*/([^_^/^\\]+)_.*""".r
 }
 
 class Activator extends AbstractUIPlugin {
@@ -27,39 +31,68 @@ class Activator extends AbstractUIPlugin {
   override def start(context: BundleContext) = {
     super.start(context);
     Activator.plugin = this;
-    
+
   }
-  def bundleToPath(bundle: Bundle) = {
-    if (bundle==null) None else {
-      val rootEntry = {
-        if (bundle.getEntry("/org") == null) 
-          bundle.getEntry("/bin/")
-        else
-          bundle.getEntry("/")
+
+  protected def urlToPath(o: Option[URL]) = o map { x ⇒ Path.fromOSString(FileLocator.toFileURL(x).getPath) }
+  def urlForBundleName(bundleName: String) = {
+    val bundle = Platform.getBundle(bundleName)
+    if (bundle != null) {
+      if (bundle.getEntry("/bin/") != null) { // detect if it's a project dir or a jar
+        // it is a directory
+        Option(bundle.getEntry("/bin/")) /* XXX looks like src dir is silently unsupported Some(bundle.getEntry("/src/"))*/ // dir
+      } else {
+        // it's a jar.
+        if (bundle.getLocation.startsWith("reference:file:")) { // try to find the .jar file
+          // FIXME works in windows???
+          val url = new URL(bundle.getLocation.drop("reference:".length))
+          Option(url)
+        } else {
+          Option(bundle.getEntry("/"))
+        }
       }
-      Option(rootEntry) map { x => Path.fromOSString(FileLocator.toFileURL(x).getPath)}
+    } else None
+  }
+  def libEntries = {
+    if (System.getProperty("zaluum.noEmbeddedClasspath") != null) {
+      val l:List[(IPath,Option[IPath])] = 
+        List(urlForBundleName("org.zaluum.runtime")) flatMap { urlToPath(_) } map { (_,None)}
+      l
+    }else {
+      embeddedLib
     }
   }
-  val zaluumLib = "ZALUUM_CONTAINER"
-  val zaluumLibId = "org.zaluum." + zaluumLib 
-  def libZaluumRuntimeBundle = Platform.getBundle("org.zaluum.runtime")
-  def libZaluumRuntime = bundleToPath(libZaluumRuntimeBundle)
-  def libZaluumRuntimeSrc = bundleToPath(Platform.getBundle("org.zaluum.runtime.source"))
-
-  /*def runtimeJars = {
-    val en = getBundle.findEntries("libs/runtime", "*.jar", false).asInstanceOf[java.util.Enumeration[URL]]
-    //println("runtime jars " + en)
+  def embeddedLib : List[(IPath, Option[IPath])]= {
+    val path = "embedded-libs/plugins"
+    val paths = nideBundle.getEntryPaths(path)
     import scala.collection.JavaConversions._
-    for (
-      enum ← Option(en).toList;
-      e ← enum;
-      val f = e.getFile;
-      if (!f.contains(".source_") && !f.contains("javadoc"))
-    ) yield {
-      FileLocator.resolve(e)
+    val bins = Buffer[String]()
+    val srcs = Buffer[String]()
+    for (p ← paths.asInstanceOf[java.util.Enumeration[String]]) {
+      if (p.contains(".source")) srcs += p
+      else bins += p
     }
-  }*/
-
+    val result = Buffer[(IPath, Option[IPath])]()
+    for (bin ← bins) {
+      bin match {
+        case Activator.NameExtractor(name) ⇒
+          val src = srcs.find { _.contains(name + ".source") }
+          def stringToPath(p: String) = urlToPath(Option(nideBundle.getEntry(p)))
+          stringToPath(bin) match {
+            case Some(p) => 
+              result += ((p,src flatMap { s ⇒ stringToPath(s) }))
+            case None =>
+          }
+        case _ ⇒
+      }
+    }
+    println(result)
+    result.toList
+  }
+  def version = "1.0.0"
+  val zaluumLib = "ZALUUM_CONTAINER"
+  val zaluumLibId = "org.zaluum." + zaluumLib
+  val nideBundle = Platform.getBundle("org.zaluum.nide")
 
   override def initializeImageRegistry(reg: ImageRegistry) = {
     super.initializeImageRegistry(reg);
@@ -72,29 +105,29 @@ class Activator extends AbstractUIPlugin {
   override def getImageRegistry(): ImageRegistry = {
     return super.getImageRegistry();
   }
-  def logError(t : Throwable) : Unit = logError(t.getClass + ":" + t.getMessage, t)
-  
-  def logError(msg : String, t : Throwable) : Unit = {
-    val t1 = if (t != null) t else { val ex = new Exception ; ex.fillInStackTrace ; ex }
+  def logError(t: Throwable): Unit = logError(t.getClass + ":" + t.getMessage, t)
+
+  def logError(msg: String, t: Throwable): Unit = {
+    val t1 = if (t != null) t else { val ex = new Exception; ex.fillInStackTrace; ex }
     val status1 = new Status(IStatus.ERROR, pluginId, IStatus.ERROR, msg, t1)
     getLog.log(status1)
 
     val status = t match {
-      case ce : ControlThrowable =>
-        val t2 = { val ex = new Exception ; ex.fillInStackTrace ; ex }
+      case ce: ControlThrowable ⇒
+        val t2 = { val ex = new Exception; ex.fillInStackTrace; ex }
         val status2 = new Status(
           IStatus.ERROR, pluginId, IStatus.ERROR,
-          "Incorrectly logged ControlThrowable: "+ce.getClass.getSimpleName+"("+ce.getMessage+")", t2)
+          "Incorrectly logged ControlThrowable: " + ce.getClass.getSimpleName + "(" + ce.getMessage + ")", t2)
         getLog.log(status2)
-      case _ =>
+      case _ ⇒
     }
   }
-  
-  final def check[T](f : => T) =
+
+  final def check[T](f: ⇒ T) =
     try {
       Some(f)
     } catch {
-      case e : Throwable =>
+      case e: Throwable ⇒
         logError(e)
         None
     }

@@ -16,18 +16,11 @@ import org.eclipse.swt.SWT
 
 class ZaluumClasspathContainerInitializer extends ClasspathContainerInitializer {
   def entries = {
-    val plugin = Activator.plugin
-    import plugin._
-    Array(JavaCore.newLibraryEntry(libZaluumRuntime.get, libZaluumRuntimeSrc.getOrElse(null), null))
+    Activator.plugin.libEntries.map {
+      case (bin,src)=> 
+       JavaCore.newLibraryEntry(bin, src.getOrElse(null), null) 
+    }.toArray
   }
-  /*def entries = {
-    val plugin = Activator.plugin
-    import plugin._
-    plugin.runtimeJars map { url =>
-      val sourceAttach = plugin.locateSourceAttachment(url) map { surl => new Path(surl.getPath)} getOrElse (null) 
-      JavaCore.newLibraryEntry(new Path(url.getPath), sourceAttach, null)
-    } toArray
-  }*/
   def initialize(containerPath: IPath, project: IJavaProject): Unit = {
     val fix = entries
      JavaCore.setClasspathContainer(containerPath, 
@@ -35,7 +28,7 @@ class ZaluumClasspathContainerInitializer extends ClasspathContainerInitializer 
             Array(new IClasspathContainer {
               def getPath = containerPath
               def getClasspathEntries = fix
-              def getDescription = "Zaluum Library Container ["+Activator.plugin.libZaluumRuntimeBundle.getVersion.toString+"]"
+              def getDescription = "Zaluum Library Container ["+Activator.plugin.version+"]"
               def getKind = IClasspathContainer.K_APPLICATION
             }), null);
   }

@@ -104,10 +104,10 @@ object SearchUtils {
     list
   }
   def projectScope(jproject: IJavaProject) =
-    SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject))
+    SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject),IJavaSearchScope.APPLICATION_LIBRARIES | IJavaSearchScope.SOURCES | IJavaSearchScope.REFERENCED_PROJECTS)
 
   def sourcesScope(jproject: IJavaProject) =
-    SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject), IJavaSearchScope.SOURCES)
+    SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject), IJavaSearchScope.SOURCES | IJavaSearchScope.APPLICATION_LIBRARIES)
 
   def classAndInterface(str: String) = SearchPattern.createPattern(str,
     IJavaSearchConstants.CLASS_AND_INTERFACE,

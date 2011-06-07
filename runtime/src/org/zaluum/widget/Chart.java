@@ -24,7 +24,6 @@ public class Chart {
     _widget.getAxisX().setPaintScale(true);
     _widget.getAxisX().setRangePolicy(new MyRangePolicy(2000));
     _widget.setPaintLabels(false);
-    //_widget = new ChartPanel(chart);
   }
   public void apply() {
     trace.addPoint(i++, data);

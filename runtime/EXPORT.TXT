@@ -1,0 +1,2 @@
+* Ant task does not have a export source bundle parameter
+http://dev.eclipse.org/viewcvs/viewvc.cgi/pde/ui/org.eclipse.pde.core/src_ant/org/eclipse/pde/internal/core/ant/BaseExportTask.java?view=markup
