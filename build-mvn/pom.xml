@@ -30,6 +30,7 @@
     <!--<module>../jchart2d</module>-->
     <module>../jdt-feature</module> 
     <module>../updatesite</module> 
+<!--     <module>../product</module> -->
   </modules>
 
   <build>

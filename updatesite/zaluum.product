@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pde version="3.5"?>
+
+<product name="Zaluum Editor" uid="zaluum.product" id="org.zaluum.nide.zaluum" application="org.eclipse.ui.ide.workbench" version="1.0.0.qualifier" useFeatures="true" includeLaunchers="true">
+
+   <aboutInfo>
+      <image path="/nide/icons/zaluum_about.gif"/>
+      <text>
+         Visit http://www.zaluum.com
+      </text>
+   </aboutInfo>
+
+   <configIni use="default">
+      <macosx>/ide-feature/config.ini</macosx>
+      <solaris>/ide-feature/config.ini</solaris>
+      <win32>/ide-feature/config.ini</win32>
+   </configIni>
+
+   <launcherArgs>
+      <vmArgs>-Xms128m
+-Xmx512m
+-XX:PermSize=128m
+-XX:MaxPermSize=256m</vmArgs>
+      <vmArgsMac>-XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts</vmArgsMac>
+   </launcherArgs>
+
+   <windowImages i16="/nide/icons/zaluum_icon_16.gif" i32="/nide/icons/zaluum_icon_32.gif" i48="/nide/icons/zaluum_icon_48.gif" i64="/nide/icons/zaluum_icon_64.gif" i128="/nide/icons/zaluum_icon_128.gif"/>
+
+   <splash
+      location="org.zaluum.nide"
+      startupProgressRect="5,275,445,15"
+      startupMessageRect="7,252,445,20"
+      startupForegroundColor="000000" />
+   <launcher name="zaluum">
+      <solaris/>
+      <win useIco="false">
+         <bmp/>
+      </win>
+   </launcher>
+
+   <vm>
+   </vm>
+
+   <license>
+        <url>http://www.zaluum.com/license</url>
+   </license>
+
+   <plugins>
+   </plugins>
+
+   <features>
+      <feature id="org.eclipse.platform"/>
+   </features>
+
+   <configurations>
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="4" />
+      <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.ds" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.event" autoStart="true" startLevel="2" />
+      <plugin id="org.eclipse.equinox.p2.reconciler.dropins" autoStart="true" startLevel="4" />
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1" />
+   </configurations>
+
+</product>

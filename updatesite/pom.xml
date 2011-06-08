@@ -9,5 +9,5 @@
     <relativePath>../build-mvn/pom.xml</relativePath>
   </parent>
   <artifactId>org.zaluum.update-site</artifactId>
-  <packaging>eclipse-update-site</packaging>
+  <packaging>eclipse-repository</packaging>
 </project>
