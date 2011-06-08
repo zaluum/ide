@@ -36,8 +36,8 @@
         </executions>
         <configuration>
           <jvmArgs>
-            <jvmArg>-Xms512m</jvmArg>
-            <jvmArg>-Xmx1024m</jvmArg>
+            <jvmArg>-Xms128m</jvmArg>
+            <jvmArg>-Xmx800m</jvmArg>
           </jvmArgs>
         </configuration>
       </plugin>
