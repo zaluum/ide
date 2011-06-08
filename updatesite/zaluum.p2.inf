@@ -1,27 +1,7 @@
-requires.1.namespace = org.eclipse.equinox.p2.iu
-requires.1.name = org.eclipse.draw2d.feature.group
-requires.1.range = [3.6.2, 3.7.0)
-
-requires.2.namespace = org.eclipse.equinox.p2.iu
-requires.2.name = org.eclipse.equinox.p2.discovery.feature.feature.group
-requires.2.range = [1.0.1, 1.1.0)
-
-requires.3.namespace = org.eclipse.equinox.p2.iu
-requires.3.name = org.eclipse.equinox.p2.user.ui.feature.group
-requires.3.range = [2.0.1, 2.1.0)
-
-requires.4.namespace = org.eclipse.equinox.p2.iu
-requires.4.name = org.eclipse.help.feature.group
-requires.4.range = [1.2.1, 1.3.0)
-
-requires.5.namespace = org.eclipse.equinox.p2.iu
-requires.5.name = org.eclipse.jdt.feature.group
-requires.5.range = [3.6.2, 4.0.0)
-
-requires.6.namespace = org.eclipse.equinox.p2.iu
-requires.6.name = org.zaluum.nide.feature.feature.group
-requires.6.range = [1.0.0, 2.0.0)
-
-requires.7.namespace = org.eclipse.equinox.p2.iu
-requires.7.name = org.zaluum.jdt.patch.feature.group
-requires.7.range = [1.0.0, 2.0.0)
+instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/releases/helios,type:0,name:Eclipse Helios,enabled:true); \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/releases/helios,type:1,name:Eclipse Helios,enabled:true); \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/eclipse/updates/3.6,type:0,name:Eclipse Helios,enabled:true); \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/eclipse/updates/3.6,type:1,name:Eclipse Helios,enabled:true); \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//127.0.0.1/repo,type:0,name:Local Zaluum Repo,enabled:true); \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//127.0.0.1/repo,type:1,name:Local Zaluum Repo,enabled:true); 
+  
