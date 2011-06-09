@@ -1,5 +1,6 @@
 bin/
 .scala_dependencies
+embeddedlib/lib/
 targetplatform/repo/
 targetplatform/product/
 targetplatform/featureExport

@@ -23,7 +23,7 @@ object Activator {
   def getDefault(): Activator = {
     return plugin;
   }
-  val NameExtractor = """.*/([^_^/^\\]+)_.*""".r
+  val NameExtractor = """.*/([^_^/^\\^-]+)-.*""".r
 }
 
 class Activator extends AbstractUIPlugin {
@@ -63,21 +63,22 @@ class Activator extends AbstractUIPlugin {
     }
   }
   def embeddedLib : List[(IPath, Option[IPath])]= {
-    val path = "embedded-libs/plugins"
-    val paths = nideBundle.getEntryPaths(path)
+    val path = "lib/"
+    val paths = embeddedBundle.getEntryPaths(path)
     import scala.collection.JavaConversions._
     val bins = Buffer[String]()
     val srcs = Buffer[String]()
     for (p ← paths.asInstanceOf[java.util.Enumeration[String]]) {
-      if (p.contains(".source")) srcs += p
+      if (p.contains("source")) srcs += p
       else bins += p
+      println (p)
     }
     val result = Buffer[(IPath, Option[IPath])]()
     for (bin ← bins) {
       bin match {
         case Activator.NameExtractor(name) ⇒
-          val src = srcs.find { _.contains(name + ".source") }
-          def stringToPath(p: String) = urlToPath(Option(nideBundle.getEntry(p)))
+          val src = srcs.find {s =>  s.contains(name) && s.contains("source") }
+          def stringToPath(p: String) = urlToPath(Option(embeddedBundle.getEntry(p)))
           stringToPath(bin) match {
             case Some(p) => 
               result += ((p,src flatMap { s ⇒ stringToPath(s) }))
@@ -92,7 +93,7 @@ class Activator extends AbstractUIPlugin {
   def version = "1.0.0"
   val zaluumLib = "ZALUUM_CONTAINER"
   val zaluumLibId = "org.zaluum." + zaluumLib
-  val nideBundle = Platform.getBundle("org.zaluum.nide")
+  val embeddedBundle = Platform.getBundle("org.zaluum.embeddedlib")
 
   override def initializeImageRegistry(reg: ImageRegistry) = {
     super.initializeImageRegistry(reg);

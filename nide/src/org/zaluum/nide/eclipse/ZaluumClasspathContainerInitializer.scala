@@ -32,9 +32,7 @@ class ZaluumClasspathContainerInitializer extends ClasspathContainerInitializer 
               def getKind = IClasspathContainer.K_APPLICATION
             }), null);
   }
-
 }
-
 
 abstract class ZaluumClasspathContainerPage(id : String, name : String, title : String, desc : String) extends NewElementWizardPage(name) with IClasspathContainerPage {
   val fContainerEntryResult = JavaCore.newContainerEntry(new Path(id))
