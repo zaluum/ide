@@ -13,7 +13,7 @@ COMMENTS
 
 TODO
 -> investigate P2 Profile
-
+-> use target.platform
 PROBLEMS
 Failed to execute goal org.sonatype.tycho:maven-osgi-compiler-plugin:0.9.0:compile (default-compile) on project org.zaluum.runtime: Compilation failure: Compilation failure:
 [ERROR] /home/frede/devel/zaluum/runtime/src/org/zaluum/widget/MyRangePolicy.java (at line 3):[-1,-1]
