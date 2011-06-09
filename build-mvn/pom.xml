@@ -15,6 +15,8 @@
     <maven.compiler.source>1.5</maven.compiler.source>
     <maven.compiler.target>1.5</maven.compiler.target>
     <encoding>UTF-8</encoding>
+    <!-- Uncomment to release -->
+    <forceContextQualifier>R1</forceContextQualifier>
   </properties>
 
   <prerequisites>
@@ -27,10 +29,8 @@
      <module>../runtime</module> 
      <module>../groovy-eclipse/jdt-patch/e36/org.eclipse.jdt.core</module> 
      <module>../nide-protobuf</module> 
-    <!--<module>../jchart2d</module>-->
     <module>../jdt-feature</module> 
     <module>../updatesite</module> 
-<!--     <module>../product</module> -->
   </modules>
 
   <build>
@@ -107,20 +107,6 @@
           </environments>
 	</configuration>
       </plugin>
-     <!-- <plugin>
-        <groupId>org.sonatype.tycho</groupId>
-        <artifactId>maven-osgi-source-plugin</artifactId>
-        <version>${tycho.version}</version>
-        <executions>
-          <execution>
-            <id>attach-source</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>plugin-source</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>-->
       <!-- for setting a better qualifier -->
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
@@ -128,7 +114,6 @@
         <version>${tycho.version}</version>
         <configuration>
           <format>yyyyMMddHHmm'${version.tag}-${git.hash}'</format> 
-          <archiveSite>true</archiveSite>
         </configuration>
       </plugin>    
     </plugins>
@@ -147,15 +132,7 @@
       <name>Eclipse Helios p2 repository</name>
       <layout>p2</layout>
       <url>http://127.0.0.1/heliosMirror</url>
-
  <!--<url>http://download.eclipse.org/releases/helios/</url>-->
-      <snapshots><enabled>false</enabled></snapshots>
-    </repository>
-    <repository>
-      <id>GEF</id>
-      <name>Eclipse GEF p2 repository</name>
-      <layout>p2</layout>
-      <url>http://download.eclipse.org/tools/gef/updates/releases/</url>
       <snapshots><enabled>false</enabled></snapshots>
     </repository>
     <repository>
@@ -171,14 +148,6 @@
       <url>http://scala-tools.org/repo-releases</url>
       <snapshots><enabled>false</enabled></snapshots>
     </repository>
-    <!--<repository>
-      <id>scala-tools.snapshot</id>
-      <name>Scala Tools maven snapshot repository</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
-      <snapshots>
-        <updatePolicy>daily</updatePolicy>
-      </snapshots>
-    </repository>-->
   </repositories>
   <pluginRepositories>
 <!--    <pluginRepository>
@@ -195,11 +164,6 @@
       <url>http://scala-tools.org/repo-releases</url>
       <snapshots><enabled>false</enabled></snapshots>
     </pluginRepository>
-    <!--<pluginRepository>
-      <id>scala-tools.snapshot</id>
-      <name>Scala Tools maven snapshot repository</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
-    </pluginRepository>-->
   </pluginRepositories>
   <profiles>
     <profile>
@@ -215,7 +179,8 @@
           <id>scala-toolchain-2.9.0.final</id>
           <name>Scala Toolchain 2.9.0.final p2 repository</name>
           <layout>p2</layout>
-          <url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-2.9.0.final</url>
+	  <url>http://127.0.0.1/scalaToolsMirror</url>
+	  <!--<url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-2.9.0.final</url>-->
         </repository>
       </repositories>
     </profile>

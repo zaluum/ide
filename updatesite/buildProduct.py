@@ -22,11 +22,14 @@ def main():
   parser.add_option("-e", "--eclipse", dest="eclipseCmd",
 		  default='/home/frede/devel/eclipse3.6/eclipse',
 		  help="Point to eclipse binary")
+  parser.add_option("-o", "--os", dest="os")
+  parser.add_option("-w", "--ws", dest="ws")
+  parser.add_option("-a", "--arch", dest="arch")  
   options, args = parser.parse_args()
+
   def exportProduct(osStr,wsStr,archStr):
     currentdir = os.getcwd()
     destination = currentdir + "/target/products/zaluum.product/" + osStr + "/" + wsStr + "/" + archStr + "/zaluum"
-    # Merging branch requires latest merged master
     def callDirector(iu,extraOpts):
       c = options.eclipseCmd + """ -application org.eclipse.equinox.p2.director -nosplash -consolelog -repository http://127.0.0.1/3.6UpdatesMirror,http://download.eclipse.org/tools/gef/updates/releases/,http://127.0.0.1/heliosMirror,http://127.0.0.1/repo/,file:"""+currentdir+"""/target/repository/ -installIU """+ iu + """ -destination """+ destination + extraOpts 
       output,_ = call_command(c)
@@ -36,8 +39,15 @@ def main():
       logging.info("Installing " + feature) 
       callDirector(feature,"")
     logging.info('Done ' + osStr + " " + wsStr + " " + archStr) 
-  for o in oses:
-    exportProduct(o[0],o[1],o[2])
+
+  if (options.os and options.ws and options.arch):
+    print "Exporting for "
+    exportProduct(options.os,options.ws,options.arch)
+  else:
+    print "Exporting all oses"
+    for o in oses:
+      exportProduct(o[0],o[1],o[2])
+
 def call_command(command):
   process = subprocess.Popen(command.split(' '),
 			      stdout=subprocess.PIPE,

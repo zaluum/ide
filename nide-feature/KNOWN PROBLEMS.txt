@@ -1,5 +1,4 @@
 -* if Jchart2d is open runtime compilation fails
--* nide project must have "bin" included in build properties to avoid scala files going into the .jar uncompiled.
+-* INVALID since Tycho -> nide project must have "bin" included in build properties to avoid scala files going into the .jar uncompiled.
  see http://www.coconut-palm-software.com/the_new_visual_editor/doku.php?id=blog:using_scala_to_create_eclipse_rcp_applications
  for a potential solution
- * plugin_customization.ini
