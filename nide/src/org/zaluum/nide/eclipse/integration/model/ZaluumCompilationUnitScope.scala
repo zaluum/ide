@@ -7,11 +7,20 @@ import org.eclipse.jdt.internal.compiler.lookup.Scope
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.zaluum.nide.compiler._
 import org.eclipse.jdt.internal.compiler.lookup.BinaryTypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding
 import org.zaluum.annotation.Box
 import JDTInternalUtils._
 import scala.collection.mutable.Map
 import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.eclipse.jdt.core.compiler.CharOperation
+import org.eclipse.jdt.internal.compiler.env.ISourceType
+import org.eclipse.jdt.core.Signature
+import org.eclipse.jdt.core.JavaModelException
+import org.eclipse.jdt.internal.core.SourceMethod
+import org.eclipse.jdt.internal.core.SourceMethodElementInfo
+import org.eclipse.jdt.internal.core.SourceTypeElementInfo
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cud, lookupEnvironment) {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
@@ -51,6 +60,56 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
       jtpe
     }
   }
+  def findMethodParameterNamesSource(m: MethodBinding, sourceType: SourceTypeBinding) : Option[Array[String]] = {
+    if (sourceType.scope != null) {
+      val parsedType = sourceType.scope.referenceContext
+      if (parsedType != null) {
+        val methodDecl = parsedType.declarationOf(m.original());
+        if (methodDecl != null) {
+          val arguments = methodDecl.arguments;
+          val names = for (a ← arguments) yield { a.name.mkString }
+          return Some(names)
+        }
+      }
+    }
+    None
+  }
+  private def findMethodParameterNamesBinary(m: MethodBinding, rb: ReferenceBinding): Option[Array[String]] = {
+    environment.nameEnvironment.findType(rb.compoundName) match {
+      case null ⇒ None
+      case answer if answer.isSourceType && answer.getSourceTypes()(0) != null ⇒
+        val sourceType = answer.getSourceTypes()(0);
+        val typeHandle = sourceType.asInstanceOf[SourceTypeElementInfo].getHandle();
+        val signature = for (e ← m.parameters) yield {
+          e.signature.mkString
+        }
+        val searchedMethod = typeHandle.getMethod(String.valueOf(m.selector), signature);
+        val foundMethods = typeHandle.findMethods(searchedMethod);
+        if (foundMethods != null && foundMethods.length == 1) {
+          try {
+            val names = foundMethods(0).asInstanceOf[SourceMethod]
+              .getElementInfo.asInstanceOf[SourceMethodElementInfo]
+              .getArgumentNames().map { _.mkString }
+            Some(names)
+          } catch { case e: JavaModelException ⇒ None }
+        } else None
+      case answer if answer.isBinaryType ⇒
+        answer.getBinaryType.getMethods.find { candidate ⇒
+          candidate.getSelector.mkString == m.selector.mkString && 
+          candidate.getMethodDescriptor.mkString == m.signature.mkString
+        } map { foundM ⇒ foundM.getArgumentNames map { _.mkString } }
+    }
+  }
+  private def findMethodParameterNames(m: MethodBinding): Option[Array[String]] = {
+    val erasure = m.declaringClass.erasure();
+    erasure match {
+      case sourceType: SourceTypeBinding ⇒ 
+        findMethodParameterNamesSource(m, sourceType)
+      case rb: ReferenceBinding ⇒ 
+        findMethodParameterNamesBinary(m,rb)
+      case _ ⇒ None
+    }
+  }
   def getBoxType(name: Name): Option[BoxTypeSymbol] = {
     cache.get(name).orElse {
       val compoundName = stringToA(name.str)
@@ -87,12 +146,15 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
               }
             }
           }
+
           for (m ← r.availableMethods) {
+            val parameterNames = findMethodParameterNames(m) getOrElse {
+              (for (i <- 0 until m.parameters.length) yield "$"+i).toArray
+            }
             val mName = m.selector.mkString
             if (m.isConstructor && m.isPublic) {
-              val params = for (p ← m.parameters) yield {
-                val s = if (m.selector == null) "?" else m.selector.mkString
-                val ps = new ParamSymbol(bs, Name(s))
+              val params = for ((p,name) ← m.parameters zip parameterNames) yield {
+                val ps = new ParamSymbol(bs, Name(name))
                 ps.tpe = getJavaType(p).getOrElse(NoSymbol)
                 ps
               }

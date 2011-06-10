@@ -71,7 +71,6 @@ class Activator extends AbstractUIPlugin {
     for (p ← paths.asInstanceOf[java.util.Enumeration[String]]) {
       if (p.contains("source")) srcs += p
       else bins += p
-      println (p)
     }
     val result = Buffer[(IPath, Option[IPath])]()
     for (bin ← bins) {
@@ -86,8 +85,7 @@ class Activator extends AbstractUIPlugin {
           }
         case _ ⇒
       }
-    }
-    println(result)
+    } 
     result.toList
   }
   def version = "1.0.0"

@@ -52,9 +52,9 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
       col.setText(str);
       col.setWidth(w);
     }
-    newColumn("Name", 150)
     newColumn("Type", 150)
     newColumn("Value", 150)
+    newColumn("Name", 150)
     table
   }
   class Loader(loader: ⇒ Iterable[AnyRef]) extends IStructuredContentProvider {
