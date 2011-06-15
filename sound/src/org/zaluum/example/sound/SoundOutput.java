@@ -2,8 +2,6 @@ package org.zaluum.example.sound;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.DataLine;
-import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Mixer.Info;
@@ -19,7 +17,6 @@ public class SoundOutput {
 	@Out double deltaTime;
 	static final int channels = 2;
 	static final int bits = 16;
-	//static final int bufferSize = 4096;
 	static final float sampleRate = 44000.0f;
 	AudioFormat format = new AudioFormat(sampleRate, bits, channels, true, true);
 	SourceDataLine sndOut;
@@ -27,16 +24,17 @@ public class SoundOutput {
 	int bufferCount = 0;
 	public SoundOutput() throws LineUnavailableException {
 		sndOut = AudioSystem.getSourceDataLine(format);
-		int bufferSize = format.getFrameSize() * Math.round(format.getSampleRate()/10);
+		
+		int bufferSize = 4096;//format.getFrameSize() * Math.round(format.getSampleRate()/10);
 		sndOut.open(format,bufferSize);
-		System.out.println(sndOut.getBufferSize());
+		System.out.println(sndOut.getBufferSize() + " sampleRate: " + format.getSampleRate());
 		buffer = new byte[sndOut.getBufferSize()];
 		deltaTime = 1/sampleRate;
 		sndOut.start();
 	}
 	
 	public void apply() {
-		int s = (int)(32767.0f*in);
+		int s = (int)(32767.0f*Math.min(1.0,Math.max(-1.0, in)));
 		byte msb = (byte) (s >>>8);
 		byte lsb = (byte) s;
 		buffer[bufferCount++]=msb;

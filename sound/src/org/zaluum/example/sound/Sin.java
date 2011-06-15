@@ -8,6 +8,6 @@ public class Sin {
 	@In double t;
 	@Out double sin;
 	public void apply() {
-	  sin =Math.sin(t*2*Math.PI)*0.4;
+	  sin =Math.sin(t*2*Math.PI)*0.2;
 	}
 }
