@@ -4,21 +4,26 @@ import org.objectweb.asm._
 import Opcodes._
 import org.zaluum.annotation.Box
 object ByteCodeGen {
-  def descriptor(n: Name) = n match {
-    case Name("byte") => "B"
-    case Name("short") => "S"
-    case Name("int") => "I"
-    case Name("long") => "J"
-    case Name("float") => "F"
-    case Name("double") => "D"
-    case Name("boolean") => "Z"
-    case Name("char") => "C"
-    case _ ⇒ "L" + n.internal + ";"
-  }
+  def descriptor(n: Name) : String =
+    n.asArray match {
+      case Some((arrTpe, dim)) ⇒ ("["*dim) + descriptor(arrTpe) 
+      case None ⇒
+        n match {
+          case Name("byte") ⇒ "B"
+          case Name("short") ⇒ "S"
+          case Name("int") ⇒ "I"
+          case Name("long") ⇒ "J"
+          case Name("float") ⇒ "F"
+          case Name("double") ⇒ "D"
+          case Name("boolean") ⇒ "Z"
+          case Name("char") ⇒ "C"
+          case _ ⇒ "L" + n.internal + ";"
+        }
+    }
   def dump(bc: BoxClass): Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
     cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, bc.superName.internal, null);
-    cw.visitAnnotation(descriptor(Name(classOf[Box].getName)),true).visitEnd
+    cw.visitAnnotation(descriptor(Name(classOf[Box].getName)), true).visitEnd
     var mv: MethodVisitor = null
     val thisDescriptor = descriptor(bc.name)
     def emitMethod(name: String, signature: String, tree: Tree, constructor: Boolean) {
@@ -43,8 +48,8 @@ object ByteCodeGen {
         case EmptyTree ⇒
         case FieldDef(name, tpe, annotation) ⇒
           val f = cw.visitField(ACC_PUBLIC, name.str, descriptor(tpe), null, null)
-          annotation foreach { name =>
-            f.visitAnnotation(descriptor(name),true).visitEnd()
+          annotation foreach { name ⇒
+            f.visitAnnotation(descriptor(name), true).visitEnd()
           }
           f.visitEnd
         case ConstructorMethod(c) ⇒
@@ -54,7 +59,7 @@ object ByteCodeGen {
         case New(typeName, param, signature) ⇒
           mv.visitTypeInsn(NEW, typeName.internal);
           mv.visitInsn(DUP);
-          for (p<-param) emit(p)
+          for (p ← param) emit(p)
           mv.visitMethodInsn(INVOKESPECIAL, typeName.internal, "<init>", signature);
         case NullConst ⇒
           mv.visitInsn(ACONST_NULL)
@@ -78,24 +83,24 @@ object ByteCodeGen {
           mv.visitMethodInsn(INVOKEVIRTUAL, fromClass.internal, meth, descriptor)
         case Pop ⇒
           mv.visitInsn(POP)
-        case AStore(i:Int) => 
-          mv.visitVarInsn(ASTORE,i)
-        case ALoad(i:Int) =>
-          mv.visitVarInsn(ALOAD,i)
-        case Const(d:Any) =>
+        case AStore(i: Int) ⇒
+          mv.visitVarInsn(ASTORE, i)
+        case ALoad(i: Int) ⇒
+          mv.visitVarInsn(ALOAD, i)
+        case Const(d: Any) ⇒
           val v = d match {
-            case b:Byte => b.asInstanceOf[Int] // FIXME ?
-            case s:Short=> s.asInstanceOf[Int]
-            case b:Boolean => b.asInstanceOf[Int]
-            case _ => d
+            case b: Byte ⇒ b.asInstanceOf[Int] // FIXME ?
+            case s: Short ⇒ s.asInstanceOf[Int]
+            case b: Boolean ⇒ b.asInstanceOf[Int]
+            case _ ⇒ d
           }
           mv.visitLdcInsn(v)
-        case Return(t) =>
+        case Return(t) ⇒
           emit(t)
           mv.visitInsn(IRETURN)
-        case True => 
+        case True ⇒
           mv.visitInsn(ICONST_1)
-        case Dup => 
+        case Dup ⇒
           mv.visitInsn(DUP)
       }
     }

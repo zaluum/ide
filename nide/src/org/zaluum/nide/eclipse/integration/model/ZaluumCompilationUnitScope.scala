@@ -21,13 +21,14 @@ import org.eclipse.jdt.internal.core.SourceMethod
 import org.eclipse.jdt.internal.core.SourceMethodElementInfo
 import org.eclipse.jdt.internal.core.SourceTypeElementInfo
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cud, lookupEnvironment) {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
   }
 
   val cache = Map[Name, BoxTypeSymbol]()
-  val cacheJava = Map[TypeBinding, JavaType]()
+  val cacheJava = Map[TypeBinding, ClassJavaType]()
   def getJavaType(name: Name): Option[JavaType] = {
     val tpe = if (name.str.contains(".")) {
       val compoundName = stringToA(name.str)
@@ -38,10 +39,15 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
     getJavaType(tpe)
   }
   def getJavaType(tpe: TypeBinding): Option[JavaType] = {
-    cacheJava.get(tpe).orElse {
-      val jtpe = tpe match {
-        case r: ReferenceBinding ⇒ Some(new JavaType(cud.JDTScope, Name(aToString(r.compoundName))))
-        case b: BaseTypeBinding ⇒ b.simpleName.mkString match {
+    tpe match {
+      case r: ReferenceBinding ⇒
+        cacheJava.get(tpe).orElse {
+          val jtpe = new ClassJavaType(cud.JDTScope, Name(aToString(r.compoundName)))
+          cacheJava += (tpe -> jtpe)
+          Some(jtpe)
+        }
+      case b: BaseTypeBinding ⇒
+        b.simpleName.mkString match {
           case "byte" ⇒ Some(cud.JDTScope.primitives.byte)
           case "short" ⇒ Some(cud.JDTScope.primitives.short)
           case "int" ⇒ Some(cud.JDTScope.primitives.int)
@@ -52,23 +58,23 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
           case "char" ⇒ Some(cud.JDTScope.primitives.char)
           case _ ⇒ None
         }
-        case _ ⇒ None
-      }
-      jtpe foreach { j ⇒
-        cacheJava += (tpe -> j)
-      }
-      jtpe
+      case a:ArrayBinding =>
+        getJavaType(a.leafComponentType) map { leaf =>
+          new ArrayType(cud.JDTScope, leaf, a.dimensions)
+        }
     }
   }
-  def findMethodParameterNamesSource(m: MethodBinding, sourceType: SourceTypeBinding) : Option[Array[String]] = {
+  def findMethodParameterNamesSource(m: MethodBinding, sourceType: SourceTypeBinding): Option[Array[String]] = {
     if (sourceType.scope != null) {
       val parsedType = sourceType.scope.referenceContext
       if (parsedType != null) {
         val methodDecl = parsedType.declarationOf(m.original());
         if (methodDecl != null) {
           val arguments = methodDecl.arguments;
-          val names = for (a ← arguments) yield { a.name.mkString }
-          return Some(names)
+          if (arguments!=null){
+            val names = for (a ← arguments) yield { a.name.mkString }
+            return Some(names)
+          }
         }
       }
     }
@@ -95,18 +101,18 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
         } else None
       case answer if answer.isBinaryType ⇒
         answer.getBinaryType.getMethods.find { candidate ⇒
-          candidate.getSelector.mkString == m.selector.mkString && 
-          candidate.getMethodDescriptor.mkString == m.signature.mkString
+          candidate.getSelector.mkString == m.selector.mkString &&
+            candidate.getMethodDescriptor.mkString == m.signature.mkString
         } map { foundM ⇒ foundM.getArgumentNames map { _.mkString } }
     }
   }
   private def findMethodParameterNames(m: MethodBinding): Option[Array[String]] = {
     val erasure = m.declaringClass.erasure();
     erasure match {
-      case sourceType: SourceTypeBinding ⇒ 
+      case sourceType: SourceTypeBinding ⇒
         findMethodParameterNamesSource(m, sourceType)
-      case rb: ReferenceBinding ⇒ 
-        findMethodParameterNamesBinary(m,rb)
+      case rb: ReferenceBinding ⇒
+        findMethodParameterNamesBinary(m, rb)
       case _ ⇒ None
     }
   }
@@ -149,11 +155,11 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
 
           for (m ← r.availableMethods) {
             val parameterNames = findMethodParameterNames(m) getOrElse {
-              (for (i <- 0 until m.parameters.length) yield "$"+i).toArray
+              (for (i ← 0 until m.parameters.length) yield "$" + i).toArray
             }
             val mName = m.selector.mkString
             if (m.isConstructor && m.isPublic) {
-              val params = for ((p,name) ← m.parameters zip parameterNames) yield {
+              val params = for ((p, name) ← m.parameters zip parameterNames) yield {
                 val ps = new ParamSymbol(bs, Name(name))
                 ps.tpe = getJavaType(p).getOrElse(NoSymbol)
                 ps

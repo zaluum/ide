@@ -71,6 +71,7 @@ trait ZaluumParseCompilationUnit extends SourceElementParser with FixEnds with P
       val compilationResult = new CompilationResult(unit, 0, 0, compilerOptions.maxProblemsPerUnit);
       val cud = new ZaluumParser(compilerOptions, problemReporterAccessor).dietParse(unit, compilationResult).asInstanceOf[ZaluumCompilationUnitDeclaration];
       val sourceEnds = createSourceEnds(cud);
+      withCUD(cud)
       // TODO FAKED index entries
       notifierAccessor.notifySourceElementRequestor(cud, 0, unit.getContents().length, reportLocalDeclarationsAccessor, sourceEnds,
         /* We don't care about the @category tag, so pass empty map */ Collections.EMPTY_MAP);
@@ -93,8 +94,8 @@ class MultiplexingIndexingParser(r: ISourceElementRequestor,
   override def withCUD(cud: ZaluumCompilationUnitDeclaration) = {
     import JDTInternalUtils._
     requestor.acceptPackage(cud.currentPackage)
-    requestor.acceptTypeReference(stringToA(cud.fqName), 40, 41)
-    requestor.acceptAnnotationTypeReference(stringToA(classOf[Box].getName), 42, 43)
+    requestor.acceptTypeReference(stringToA(cud.fqName), 0, 1)
+    requestor.acceptAnnotationTypeReference(stringToA(classOf[Box].getName), 2, 3)
   }
 }
 

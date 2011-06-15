@@ -32,12 +32,36 @@ class Reporter {
   def apply() = check()
   override def toString = errors.toString
 }
-
 case class Name(str: String) {
   def classNameWithoutPackage = str.split('.').last
   def toRelativePath: String = str.replace('.', '/')
   def toRelativePathClass = toRelativePath + ".class"
   def internal = str.replace('.', '/')
+  def asArray: Option[(Name, Int)] = {
+    val i = str.indexOf('[')
+    if (i == -1) None
+    else {
+      val name = str.substring(0, i).trim
+      var dim = 0
+      var readOpen = false
+      for (j ← i until str.length) {
+        str(j) match {
+          case ' ' ⇒
+          case '[' ⇒
+            dim += 1
+            if (readOpen) return None
+            readOpen = true
+          case ']' ⇒
+            if (!readOpen) return None
+            readOpen = false
+          case _ ⇒ return None
+        }
+      }
+      if (!readOpen && dim > 0 && name.length > 0)
+        Some((Name(name), dim))
+      else None
+    }
+  }
 }
 object Literals {
   def parse(value: String, tpe: Name): Option[Any] = {
@@ -171,7 +195,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
   class Resolver(global: Symbol) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
-    private def catchAbort[T](b: ⇒ Option[T]): Option[T] = 
+    private def catchAbort[T](b: ⇒ Option[T]): Option[T] =
       try { b } catch { case e: AbortCompilation ⇒ None }
     override def traverse(tree: Tree) {
       super.traverse(tree)
