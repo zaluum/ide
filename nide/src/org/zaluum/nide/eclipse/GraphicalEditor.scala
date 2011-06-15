@@ -1,21 +1,22 @@
 package org.zaluum.nide.eclipse
 
-import org.eclipse.core.commands.{ExecutionEvent, AbstractHandler}
+import org.eclipse.core.commands.{AbstractHandler, ExecutionEvent}
 import org.eclipse.core.resources.{IFile, IMarker}
 import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.jdt.core.{JavaCore, IType}
 import org.eclipse.jface.viewers.StructuredSelection
-import org.eclipse.swt.events.{DisposeListener, DisposeEvent}
+import org.eclipse.swt.events.{DisposeEvent, DisposeListener}
 import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.widgets.{Composite, Shell}
 import org.eclipse.swt.SWT
 import org.eclipse.ui.contexts.IContextService
 import org.eclipse.ui.handlers.HandlerUtil
 import org.eclipse.ui.ide.IGotoMarker
-import org.eclipse.ui.part.{EditorPart, FileEditorInput}
-import org.eclipse.ui.{IEditorSite, IEditorInput, IEditorPart}
-import org.zaluum.nide.zge.{Viewer, Controller, TreeViewer, GuiViewer}
+import org.eclipse.ui.part.EditorPart
+import org.eclipse.ui.{IEditorInput, IEditorPart, IEditorSite}
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
+import org.zaluum.nide.zge.{Controller, GuiViewer, TreeViewer, Viewer}
+import org.eclipse.jdt.core.IType
+import org.eclipse.jdt.core.JavaCore
 
 class GraphicalEditor extends BaseEditor with IGotoMarker {
 

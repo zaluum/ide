@@ -144,7 +144,7 @@ abstract class Transformer extends OwnerHelper[Tree] {
 // Traverser
 abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
   currentOwner = initSymbol
-  currentScope = initSymbol.scope
+  currentScope = if (initSymbol!=null) initSymbol.scope else null
   def traverse(tree: Tree): Unit = {
     tree match {
       case EmptyTree ⇒

@@ -1,22 +1,16 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.Subject
-import org.zaluum.nide.Observer
-import org.zaluum.nide.compiler._
-import scala.collection.mutable.{ Buffer, Stack }
-import org.zaluum.nide.Utils.inSWT
-import org.eclipse.jdt.internal.core.CompilationUnit
-import org.eclipse.jdt.core.dom.ASTParser
-import org.eclipse.jdt.core.dom.AST
-import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
-import org.eclipse.text.edits.TextEdit
-import org.eclipse.text.edits.ReplaceEdit
 import java.nio.charset.Charset
-import org.eclipse.jdt.core.ICompilationUnit
-import org.eclipse.jdt.core.IJavaProject
-import org.zaluum.nide.eclipse.ZaluumProject
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
+import org.eclipse.jdt.core.dom.{AST, ASTParser}
+import org.eclipse.jdt.core.{ElementChangedEvent, ICompilationUnit, IElementChangedListener, IJavaElement, IJavaElementDelta, IJavaProject, JavaCore}
+import org.eclipse.text.edits.ReplaceEdit
+import org.zaluum.nide.Utils.inSWT
+import org.zaluum.nide.compiler._
 import org.zaluum.nide.eclipse.integration.model.ZaluumASTParser
+import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
+import org.zaluum.nide.eclipse.ZaluumProject
+import scala.collection.mutable.{Buffer, Stack}
+
 class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
   private var nowTree: Tree = _
 
@@ -35,12 +29,6 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
         v.remapSelection(map);
         v.refresh();
       }(v.display)
-    }
-  }
-  private val observer = new Observer {
-    def receiveUpdate(subject: Subject) {
-      //recompile
-      update(noChangeMap)
     }
   }
   def refreshTools() { viewers foreach { _.tool.refresh() } }
@@ -91,6 +79,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
   def dispose() {
     if (cu.isWorkingCopy)
       cu.discardWorkingCopy()
+    JavaCore.removeElementChangedListener(coreListener)
   }
   /*def usedTypes : Seq[Type] = {
     val b = scala.collection.mutable.Set[Type]()
@@ -115,12 +104,12 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
     }
     map
   }
-  def recompile {
-    update(noChangeMap)
-  }
   private def update(m: DMap) {
     nowTree.assignLine(1)
     replaceWorkingCopyContents()
+    recompile(m)
+  }
+  private def recompile(m: DMap) {
     compile(false)
     //PrettyPrinter.print(nowTree, 0)
     updateViewers(m)
@@ -179,7 +168,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
     val l = nonDirtyTree.findPath(line)
     l flatMap { nonDirtyToNow(_) }
   }
-  
+  // listeners 
   var listeners = Set[() ⇒ Unit]()
   def addListener(action: () ⇒ Unit) {
     listeners += action
@@ -190,6 +179,39 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
   def notifyListeners() {
     listeners foreach { _() }
   }
+  // core listener
+  val coreListener = new IElementChangedListener() {
+    def isDeltaElemUpdated(delta: IJavaElementDelta) : Boolean = {
+      def isPrimaryResource = (delta.getFlags & IJavaElementDelta.F_PRIMARY_RESOURCE) != 0
+      def isJavaProject = delta.getElement.getElementType == IJavaElement.JAVA_PROJECT
+      def isJavaCompilationUnit = delta.getElement.getElementType == IJavaElement.COMPILATION_UNIT
+      def isAdded = delta.getKind == IJavaElementDelta.ADDED
+      def isRemoved = delta.getKind == IJavaElementDelta.REMOVED
+      def isChanged = delta.getKind == IJavaElementDelta.CHANGED;
+      def parseChildren = { delta.getAffectedChildren exists { isDeltaElemUpdated(_) } }
+      // TODO look for used types  
+      if (isPrimaryResource && isJavaProject){
+        val jproj = delta.getElement.asInstanceOf[IJavaProject]
+        if (isAdded) true
+        else if (isRemoved) true
+        else parseChildren
+      }else if (isPrimaryResource && isJavaCompilationUnit){
+        if (isChanged || isRemoved) {
+          val res = delta.getElement.getResource
+          true
+        }else{
+          parseChildren
+        }
+      }else
+        parseChildren
+    }
+    def elementChanged(event: ElementChangedEvent) { 
+      if (isDeltaElemUpdated(event.getDelta)) 
+        recompile(noChangeMap) 
+    }
+  }
+  // init
   compile(true)
+  JavaCore.addElementChangedListener(coreListener)
 }
 
