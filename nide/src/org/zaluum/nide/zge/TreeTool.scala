@@ -132,10 +132,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       feed.show()
       move()
     }
-    def move() { feed.setInnerLocation(point(currentMouseLocation)) }
+    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
     def abort { exit() }
     def drag {}
-    def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, currentMouseLocation))
+    def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, snap(currentMouseLocation)))
     def buttonDown() {}
     def exit() {
       feed.hide();
@@ -161,7 +161,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       img.dispose()
       feed.show()
     }
-    def move() { feed.setInnerLocation(point(currentMouseLocation)) }
+    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
     def abort() { exit() }
     def drag() {}
     private def newInstance(dst: Point) = {
@@ -201,7 +201,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     def buttonUp() {
-      val dst = Point(currentMouseLocation.x, currentMouseLocation.y)
+      val dst = snap(currentMouseLocation)
       val command = tpe match {
         case Some(b) if b.abstractCl ⇒ newClass(dst)
         case _ ⇒ newInstance(dst)
@@ -232,12 +232,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     var feed: ItemFeedbackFigure = _
     var dir: PortDir = In
-    def move() { feed.setInnerLocation(point(currentMouseLocation)) }
+    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
     def abort() { exit() }
     def drag() {}
     def buttonUp() {
       // execute
-      val pos = Point(currentMouseLocation.x, currentMouseLocation.y)
+      val pos = snap(currentMouseLocation)
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒

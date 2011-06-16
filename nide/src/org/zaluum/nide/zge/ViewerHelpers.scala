@@ -138,9 +138,9 @@ abstract class ScrollPopup(mainShell: Shell) {
   }
 }
 object DotPainter {
-  def dotFill(graphics: Graphics, b: Rectangle) {
+  def dotFill(graphics: Graphics, b: Rectangle, dx : Int , dy:Int) {
     graphics.fillRectangle(b);
-    for (i ← 0 to b.width by 15; j ← 0 to b.height by 15) {
+    for (i ← 0 to b.width by dx; j ← 0 to b.height by dy) {
       graphics.drawPoint(i, j);
     }
   }

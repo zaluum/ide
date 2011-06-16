@@ -7,7 +7,9 @@ import org.eclipse.draw2d.{ Figure, IFigure }
 import org.zaluum.nide.compiler.Point
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events._
-
+object Tool {
+  val gridSize = 6
+}
 abstract class Tool(viewer: Viewer) {
   def viewport = viewer
   def canvas = viewer.canvas
@@ -70,6 +72,11 @@ abstract class Tool(viewer: Viewer) {
   var state: ToolState = _
   var stateMask = 0
   var absMouseLocation = Point(0, 0)
+
+  def snap(p:Point) : Point = {
+    def snap(a:Int) = (math.round(a / Tool.gridSize) * Tool.gridSize).asInstanceOf[Int]
+    Point(snap(p.x), snap(p.y))
+  }
   var swtMouseLocation = new org.eclipse.swt.graphics.Point(0, 0)
   def updateMouse(me: MouseEvent) {
     stateMask = me.stateMask
@@ -79,6 +86,7 @@ abstract class Tool(viewer: Viewer) {
     val absMouse = new org.eclipse.draw2d.geometry.Point(me.x, me.y)
     viewport.translateFromParent(absMouse);
     absMouseLocation = Point(absMouse.x, absMouse.y)
+    
   }
 
   def leftButton(me: MouseEvent) = me.button == 1

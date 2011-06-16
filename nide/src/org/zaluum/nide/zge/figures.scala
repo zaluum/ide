@@ -110,7 +110,7 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
 }
 class DirectValFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure {
   def size = {
-    pg.getPreferredSize().ensureMin(Dimension(20,20)) + Vector2(5,0)
+    pg.getPreferredSize().ensureMin(Dimension(Tool.gridSize*3,Tool.gridSize*3)) + Vector2(Tool.gridSize,0)
   }
   def param = valDef.params.headOption.asInstanceOf[Option[Param]]
   def text = param.map {_.value}.getOrElse{"0"}
@@ -146,7 +146,7 @@ trait TextEditFigure extends Figure with Item with RectFeedback {
       })
       val b = getClientArea.getCopy
       translateToAbsolute(b)
-      textC.setBounds(b.x + 1, b.y + 1, math.max(b.width-1,40), b.height - 2)
+      textC.setBounds(b.x + 1, b.y + 1, math.max(b.width-1,Tool.gridSize*8), b.height - 2)
       textC.setBackground(ColorConstants.white)
       textC.setVisible(true)
       textC.selectAll()
@@ -162,7 +162,7 @@ trait TextEditFigure extends Figure with Item with RectFeedback {
 }
 class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Figure with ValDefItem with ResizableFeedback {
   setOpaque(true)
-  def size = valDef.guiSize getOrElse { Dimension(15, 15) }
+  def size = valDef.guiSize getOrElse { Dimension(Tool.gridSize*5, Tool.gridSize*5) }
   override def pos = valDef.guiPos getOrElse { Point(0, 0) }
   def myLayer = container.layer
   var component: Option[JComponent] = None

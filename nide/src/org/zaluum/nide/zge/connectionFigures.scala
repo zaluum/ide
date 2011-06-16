@@ -151,7 +151,6 @@ class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Item {
     paint
   }
   override def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {}
-  override def moveDeltaFeed(delta: Vector2) {}
   override def moveFeed(p: Point) {}
   override def selectionSubject = e.srcCon
 }

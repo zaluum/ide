@@ -217,6 +217,7 @@ trait ConnectionsTool {
       val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })
       var edges = g.edges
       var vertexs = g.vertexs
+      // FIXME correctly snap line moves
       // move lines
       for ((c, lines) ← groups; e ← g.edges; if (e.srcCon == Some(c))) {
         edges = edges - e + e.move(lines, delta)
@@ -238,7 +239,7 @@ trait ConnectionsTool {
       }
       // update edge vertexs
       for (v ← movedJunctions.view ++ movedEnds) {
-        val newv = v.move(delta)
+        val newv = v.move(snap(v.p +delta))
         vertexs = vertexs - v + newv
         edges = for (e ← edges) yield {
           assert(!(e.a == v && e.b == v))
@@ -271,9 +272,9 @@ trait ConnectionsTool {
               connections,
               junctions)
           case v: ValDef if (valdefs.contains(v)) ⇒
-            v.copy(pos = v.pos + delta, params = transformTrees(v.params))
+            v.copy(pos = snap(v.pos + delta), params = transformTrees(v.params))
           case p: PortDef if (portdefs.contains(p)) ⇒
-            p.copy(inPos = p.inPos + delta)
+            p.copy(inPos = snap(p.inPos + delta))
 
         }
       }
@@ -282,9 +283,9 @@ trait ConnectionsTool {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { viewer.selectedItems foreach { _.moveDeltaFeed(delta) } }
+    def move() { viewer.selectedItems foreach { f=> f.moveFeed(snap(f.pos + delta)) } }
     def abort() {
-      viewer.selectedItems foreach { _.moveDeltaFeed(Vector2(0, 0)) }
+      viewer.selectedItems foreach { f=> f.moveFeed(f.pos) }
       exit()
     }
   }

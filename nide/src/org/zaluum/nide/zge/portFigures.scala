@@ -52,9 +52,10 @@ class OpenPortDeclFigure(val openBox: OpenBoxFigure) extends RectangleFigure wit
   def sym = tree.symbol.asInstanceOf[PortSymbol]
   def container = openBox.container
   def myLayer = container.portsLayer
-  val size = Dimension(10, 10)
+  val size = Dimension(openBox.getInsets.left,openBox.getInsets.left)
+  
   // tree.extPos must be (0,relY)
-  def xDisplacement = if (left) Vector2(0, 0) else Vector2(openBox.size.w - 7, 0)
+  def xDisplacement = if (left) Vector2(0, 0) else Vector2(openBox.size.w - size.w, 0)
   def absDisplacement = Vector2(openBox.pos.x, openBox.pos.y)
   def relPos = extPos + xDisplacement
   def pos = extPos + xDisplacement + absDisplacement // abs coordinates
@@ -76,10 +77,11 @@ class OpenPortDeclFigure(val openBox: OpenBoxFigure) extends RectangleFigure wit
     updateSize()
     val valsym = openBox.valDef.symbol.asInstanceOf[ValSymbol]
     // external
-    val extDisplacement = if (left) Vector2(-7, 0) else Vector2(7, 0)
+    val extDisplacement = if (left) Vector2(-size.w, 0) else Vector2(size.w, 0)
     extPort.update(getBounds.getCenter + extDisplacement, sym, valsym, left)
     // internal
-    def inDisplacement = if (left) Vector2(7, 0) else Vector2(-7, 0)
+    def inDisplacement = if (left) Vector2(intPort.size.w/2, -openBox.getInsets.top + size.h/2) 
+      else Vector2(-(size.w+intPort.size.w/2), -openBox.getInsets.top + size.h/2)
     intPort.update(relPos + inDisplacement, sym, openBox.symbol, !left)
   }
   this.setOpaque(true);
@@ -119,6 +121,6 @@ class PortDeclFigure(val tree: PortDef, container: ContainerItem) extends PortHo
   override def selectionSubject = Some(tree)
 }
 class PortSymbolFigure(val sym: PortSymbol, openBox: OpenBoxFigure) extends PortHolderFigure(openBox) {
-  def pos = MPoint(openBox.getSize.w - 60, openBox.getSize.h - 30)
+  def pos = MPoint(openBox.getSize.w - Tool.gridSize*10, openBox.getSize.h - Tool.gridSize*5)
   def dir = sym.dir
 }

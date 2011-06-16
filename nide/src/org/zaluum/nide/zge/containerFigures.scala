@@ -178,8 +178,8 @@ trait ContainerItem extends Item {
   }
 }
 object OpenBoxFigure {
-  val backgroundNormal = ColorConstants.lightGray
-  val backgroundBlink = ColorConstants.white
+  val backgroundNormal = ColorConstants.white
+  val backgroundBlink = ColorConstants.lightGray 
 }
 class OpenBoxFigure(
   val container: ContainerItem,
@@ -187,7 +187,7 @@ class OpenBoxFigure(
   val viewerResources: ViewerResources) extends Figure with ValDefItem with ResizableFeedback with ContainerItem with Transparent {
   // Item
   def myLayer = container.layer
-  def size = valDef.size getOrElse Dimension(100, 100)
+  def size = valDef.size getOrElse Dimension(Tool.gridSize*16, Tool.gridSize*16)
   // layers
   val inners = new LayeredPane
   val layer = new Layer
@@ -195,9 +195,9 @@ class OpenBoxFigure(
   val connectionsLayer = new Layer
   val pointsLayer = new Layer
   val feedbackLayer = new Layer
-  val background = new Layer
+  val background = new Layer 
   // ContainerItem
-  var backgroundColor = OpenBoxFigure.backgroundNormal
+  background.setBackgroundColor(ColorConstants.white)
   def helpers = portDecls ++ portSymbols
   val portDecls = Buffer[OpenPortDeclFigure]()
   val portSymbols = Buffer[PortSymbolFigure]()
@@ -209,7 +209,7 @@ class OpenBoxFigure(
     showArrowsIfNotBigEnough
   }
   def blink(b: Boolean) {
-    backgroundColor = if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal
+    background.setBackgroundColor (if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal)
   }
   import PositionConstants._
   private def newTriangle(pos: Int) = {
@@ -326,11 +326,11 @@ class OpenBoxFigure(
   }
   inners.add(background)
   inners.add(layer)
-  inners.add(pointsLayer)
-  inners.add(portsLayer)
   inners.add(connectionsLayer)
+  inners.add(portsLayer)
+  inners.add(pointsLayer)
   inners.add(feedbackLayer)
   add(inners);
-  setBorder(new LineBorder(ColorConstants.gray, 5))
+  setBorder(new LineBorder(ColorConstants.gray, Tool.gridSize))
 
 }

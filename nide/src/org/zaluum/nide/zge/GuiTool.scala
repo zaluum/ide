@@ -164,9 +164,9 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { viewer.selectedItems foreach { _.moveDeltaFeed(delta) } }
+    def move() { viewer.selectedItems foreach { f=> f.moveFeed(snap(f.pos + delta)) } }
     def abort() {
-      viewer.selectedItems foreach { _.moveDeltaFeed(Vector2(0, 0)) }
+      viewer.selectedItems foreach { f=> f.moveFeed(f.pos) }
       exit()
     }
     def currentMouseLocation = GuiTool.this.currentMouseLocation

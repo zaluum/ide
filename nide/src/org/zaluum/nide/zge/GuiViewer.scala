@@ -41,11 +41,11 @@ class GuiViewer(parent: Composite, controller: Controller)
   def remapSelection(m: PartialFunction[SelectionSubject, SelectionSubject]) {
     selection.refresh(m);
   }
-  val backRect = new RectangleFigure()  {
-    override def fillShape(g:Graphics) {
+  val backRect = new RectangleFigure()  /*{
+    /*override def fillShape(g:Graphics) {
       DotPainter.dotFill(g,getBounds)
-    }
-  }
+    }*/
+  }*/
   def updatePorts(changes:Map[Tree,Tree]){}
   backRect.setForegroundColor(ColorConstants.red)
   backRect.setBackgroundColor(ColorConstants.white)

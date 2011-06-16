@@ -68,9 +68,9 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { fig.moveDeltaFeed(clampDelta) }
+    def move() { fig.moveFeed(snap (fig.pos + clampDelta)) }
     def abort() {
-      fig.moveDeltaFeed(Vector2(0, 0))
+      fig.moveFeed(fig.pos)
       exit()
     }  }  
   // Direct edit
@@ -178,7 +178,8 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def buttonUp {
       val newBounds = handle.deltaAdd(delta, itf.getBounds);
       val newPos = newBounds.getLocation
-      val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(15, 15))
+      val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(48, 48))
+      // TODO snap
       itf match {
         case vd: ValDefItem =>
           controller.exec(command(newPos, newSize,vd.valDef))

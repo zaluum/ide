@@ -166,10 +166,16 @@ trait Item extends Hover {
   def moveFeed(loc: MPoint) {
     feed.setInnerLocation(point(loc))
   }
-  def moveDeltaFeed(delta: Vector2) {
+  /*def feedCenterVector = {
+    Vector2((feed.getSize.w-size.w)/2, (feed.getSize.h-size.h)/2)
+  }
+  def moveCenteredFeed(loc : MPoint) {
+    moveFeed(loc + feedCenterVector)    
+  }*/
+ /* def moveDeltaFeed(delta: Vector2) {
     val loc = pos + delta
     feed.setInnerLocation(point(loc))
-  }
+  }*/
   def blink(on:Boolean) 
   def blink() { 
     blink(true);

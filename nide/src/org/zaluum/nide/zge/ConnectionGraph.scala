@@ -6,35 +6,35 @@ import scala.annotation.tailrec
 trait Vertex {
   def p: Point
   def isEnd = false
-  def move(v: Vector2): Vertex
+  def move(p: Point) :Vertex
   def isComplete : Boolean
   //override def toString = "v(" + p + ")"
 }
 class CreatingVertex(val p: Point) extends Vertex {
   override def isEnd = true
-  def move(v: Vector2) = new CreatingVertex(p + v)
+  def move(q: Point) = new CreatingVertex(q)
   def isComplete = true
 }
 class Joint(val p: Point) extends Vertex {
   override def toString = "joint(" + p + " " + hashCode + ")"
-  def move(v: Vector2) = new Joint(p + v)
+  def move(q: Point) = new Joint(q)
   def isComplete = true
 }
 class PortVertex(val key:PortKey,val p: Point) extends Vertex {
   override def isEnd = true
-  def move(v: Vector2) = new PortVertex(key, p + v)
+  def move(q: Point) = new PortVertex(key, q)
   override def toString = "PortVertex(" + key + ")"
   def isComplete = true
 }
 class MissingPortVertex(val key:PortKey, val p :Point) extends Vertex {
   override def isEnd = true
-  def move(v: Vector2) = new MissingPortVertex(key, p + v)
+  def move(q: Point) = new MissingPortVertex(key, q)
   override def toString = "PortVertex(" + key + ")"
   def isComplete = false
 }
 class EmptyVertex(val p:Point) extends Vertex {
   override def isEnd = true
-  def move(v:Vector2) = new EmptyVertex(p+v)
+  def move(q:Point) = new EmptyVertex(q)
   override def toString = "EmptyVertex("+p+")"
   def isComplete = false
 }
@@ -168,7 +168,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
   def untangle: Edge = {
     //convert to graph and search shortest path
     case class VertexWP(p: Point) extends Vertex {
-      def move(v: Vector2) = VertexWP(p + v)
+      def move(q: Point) = VertexWP(q)
       def isComplete = false
     }
     val fakeVertexs: Set[Vertex] = points.map { VertexWP(_) }.toSet

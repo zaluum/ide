@@ -15,15 +15,16 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   val portsLayer = new FreeformLayer
   val pointsLayer = new FreeformLayer
   val connectionsLayer = new FreeformLayer
-  val background = new FreeformLayer {
+  val background = new FreeformLayer/* {
     override def paintFigure(g:Graphics) { DotPainter.dotFill(g,getBounds) }
-  }
+  }*/
   val layer = new FreeformLayer
 
   val innerLayers = new ScalableFreeformLayeredPane()
   val marquee = new RectangleFigure;
   {
     canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
+    background.setOpaque(true);
     background.setBackgroundColor(ColorConstants.white)
     background.setForegroundColor(ColorConstants.blue)
     innerLayers.add(background)
