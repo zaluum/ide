@@ -30,13 +30,22 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
   val cache = Map[Name, BoxTypeSymbol]()
   val cacheJava = Map[TypeBinding, ClassJavaType]()
   def getJavaType(name: Name): Option[JavaType] = {
-    val tpe = if (name.str.contains(".")) {
-      val compoundName = stringToA(name.str)
-      getType(compoundName, compoundName.length)
-    } else {
-      getType(name.str.toCharArray)
+    val arr = name.asArray
+    if (arr.isDefined){
+      val (leafname,dim) = arr.get
+      getJavaType(leafname) map { l=>
+       new ArrayType(cud.JDTScope, l , dim)
+      }
+    }else {
+      val tpe =
+        if (name.str.contains(".")) {
+        val compoundName = stringToA(name.str)
+        getType(compoundName, compoundName.length)
+      } else {
+        getType(name.str.toCharArray)
+      }
+      getJavaType(tpe)
     }
-    getJavaType(tpe)
   }
   def getJavaType(tpe: TypeBinding): Option[JavaType] = {
     tpe match {

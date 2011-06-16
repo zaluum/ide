@@ -120,24 +120,24 @@ class ZaluumCompilationUnitDeclaration(
         val opkg = for (
           res ← EclipseUtils.pathToResource(path);
           jp ← Option(JavaCore.create(res.getProject));
-          val e = new EclipseUtils {   def jProject = jp };
-          pkg <- e.extractPackageName(res)
+          val e = new EclipseUtils { def jProject = jp };
+          pkg ← e.extractPackageName(res)
         ) yield pkg
         opkg.get
     }
   }
   lazy val fqName = List(pkgName, new String(mainNameArr)).mkString(".")
-  
+
   private def createLineSeparator() = {
     // one char per line
     val treeSize = tree.children.size + 1
-    compilationResult.lineSeparatorPositions = Array.range(1, (treeSize*2)+1 , 2)
+    compilationResult.lineSeparatorPositions = Array.range(1, (treeSize * 2) + 1, 2)
   }
   def populateCompilationUnitDeclaration() {
     sourceUnit match {
-      case p : PreParsedZaluumCompilationUnit =>
+      case p: PreParsedZaluumCompilationUnit ⇒
         tree = p.tree.asInstanceOf[BoxDef]
-      case _ =>
+      case _ ⇒
         val contents = new String(sourceUnit.getContents)
         val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
         tree = Parser.readTree(new ByteArrayInputStream(byteContents), Name(fqName))
@@ -157,7 +157,7 @@ class ZaluumCompilationUnitDeclaration(
     createTypeDeclarations()
   }
 
-  def createProblem(msg: String, line:Int) {
+  def createProblem(msg: String, line: Int) {
     val p = new DefaultProblemFactory().createProblem(getFileName, 0, Array(msg), 0, Array(msg), ProblemSeverities.Error, 0, 1, line, 1)
     problemReporter.record(p, compilationResult, this)
   }
@@ -181,12 +181,12 @@ class ZaluumCompilationUnitDeclaration(
       case None ⇒
         typeDeclaration.name = mainNameArr
         typeDeclaration.modifiers = Opcodes.ACC_PUBLIC
-        val annotation = new MarkerAnnotation(createTypeReference(classOf[Box].getName,b), start(b))
+        val annotation = new MarkerAnnotation(createTypeReference(Name(classOf[Box].getName), b), start(b))
         typeDeclaration.annotations = Array(annotation);
 
     }
     tree.superName foreach { n ⇒
-      typeDeclaration.superclass = createTypeReference(n.str,b)
+      typeDeclaration.superclass = createTypeReference(n, b)
     }
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
@@ -199,7 +199,7 @@ class ZaluumCompilationUnitDeclaration(
       encDec.enclosingType = typeDeclaration
       encDec
     }
-    
+
     typeDeclaration.memberTypes = children.toArray
     typeDeclaration.declarationSourceEnd = end(b);
     typeDeclaration.declarationSourceStart = start(b);
@@ -210,11 +210,11 @@ class ZaluumCompilationUnitDeclaration(
 
     typeDeclaration
   }
-  def start(t:Tree) = {
-    (t.line-1)*2
+  def start(t: Tree) = {
+    (t.line - 1) * 2
   }
-  def end(t:Tree) = {
-    start(t) +1 
+  def end(t: Tree) = {
+    start(t) + 1
   }
   def createMethodAndConstructorDeclarations(b: BoxDef): Array[AbstractMethodDeclaration] = {
     val constructor = new ConstructorDeclaration(compilationResult)
@@ -222,16 +222,16 @@ class ZaluumCompilationUnitDeclaration(
     constructor.modifiers = ClassFileConstants.AccPublic
     constructor.selector = b.name.str.toCharArray
 
-    val ref = createTypeReference("void",b)
+    val ref = createTypeReference(Name("void"), b)
     //val arg = new Argument("par".toCharArray, NON_EXISTENT_POSITION, ref, ClassFileConstants.AccPublic)
     val meth = new MethodDeclaration(compilationResult)
     meth.modifiers = ClassFileConstants.AccPublic
     meth.selector = "apply".toCharArray
     //meth.arguments = Array(arg)
-    meth.returnType = createTypeReference("void",b)
+    meth.returnType = createTypeReference(Name("void"), b)
     meth.thrownExceptions = null
     meth.sourceStart = start(b)
-    meth.sourceEnd = end(b) 
+    meth.sourceEnd = end(b)
     meth.bodyStart = start(b)
     meth.bodyEnd = end(b)
     meth.declarationSourceStart = start(b)
@@ -244,25 +244,25 @@ class ZaluumCompilationUnitDeclaration(
     for (t ← b.vals; val v = t.asInstanceOf[ValDef]) {
       val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v))
       f.modifiers = Opcodes.ACC_PUBLIC
-      f.`type` = createTypeReference(v.typeName.str,v)
+      f.`type` = createTypeReference(v.typeName, v)
       res += f
     }
     //ports
-    for (t <- b.ports; val p = t.asInstanceOf[PortDef]) {
-      val f = new FieldDeclaration(p.name.str.toCharArray , start(p) ,end(p))
+    for (t ← b.ports; val p = t.asInstanceOf[PortDef]) {
+      val f = new FieldDeclaration(p.name.str.toCharArray, start(p), end(p))
       f.modifiers = Opcodes.ACC_PUBLIC
-      f.`type` = createTypeReference(p.typeName.str,p)
+      f.`type` = createTypeReference(p.typeName, p)
       val cl = p.dir match {
-        case Out => classOf[org.zaluum.annotation.Out].getName
-        case _ => classOf[org.zaluum.annotation.In].getName
+        case Out ⇒ classOf[org.zaluum.annotation.Out].getName
+        case _ ⇒ classOf[org.zaluum.annotation.In].getName
       }
-      val annotation = new MarkerAnnotation(createTypeReference(cl,p), start(p))
+      val annotation = new MarkerAnnotation(createTypeReference(Name(cl), p), start(p))
       f.annotations = Array(annotation)
       res += f
     }
     //widget
     {
-      val f = new FieldDeclaration("_widget".toCharArray,0,1) // really ugly
+      val f = new FieldDeclaration("_widget".toCharArray, 0, 1) // really ugly
       f.modifiersSourceStart = 0
       f.declarationEnd = 1
       f.endPart1Position = 1
@@ -270,22 +270,27 @@ class ZaluumCompilationUnitDeclaration(
       f.declarationSourceStart = 0
       f.declarationSourceEnd = 1
       f.modifiers = Opcodes.ACC_PUBLIC
-      f.`type` = createTypeReference(classOf[JPanel].getName,b)
+      f.`type` = createTypeReference(Name(classOf[JPanel].getName), b)
       res += f
     }
     res.toArray
   }
-  def createTypeReference(name: String, t:Tree): TypeReference = {
-    // array todo
-    val tpe = if (nameToPrimitiveTypeId.contains(name)) {
-      TypeReference.baseTypeReference(nameToPrimitiveTypeId(name), 0)
-    } else if (!name.contains('.')) {
-      new SingleTypeReference(name.toCharArray, NON_EXISTENT_POSITION)
-    } else {
-      val compoundName = CharOperation.splitOn('.', name.toCharArray)
-      new QualifiedTypeReference(compoundName, Array.fill(compoundName.length)(NON_EXISTENT_POSITION))
-    }
-    tpe.sourceStart =start(t)
+  def createTypeReference(name: Name, t: Tree): TypeReference = {
+    val tpe =
+      name.asArray match {
+        case Some((leaf, dim)) ⇒
+          new ArrayTypeReference(leaf.str.toCharArray, dim, NON_EXISTENT_POSITION);
+        case None ⇒
+          if (nameToPrimitiveTypeId.contains(name.str)) {
+            TypeReference.baseTypeReference(nameToPrimitiveTypeId(name.str), 0)
+          } else if (!name.str.contains('.')) {
+            new SingleTypeReference(name.str.toCharArray, NON_EXISTENT_POSITION)
+          } else {
+            val compoundName = CharOperation.splitOn('.', name.str.toCharArray)
+            new QualifiedTypeReference(compoundName, Array.fill(compoundName.length)(NON_EXISTENT_POSITION))
+          }
+      }
+    tpe.sourceStart = start(t)
     tpe.sourceEnd = end(t)
     tpe
   }
@@ -293,7 +298,7 @@ class ZaluumCompilationUnitDeclaration(
   override def generateCode() {
     def generate(tpe: ZaluumTypeDeclaration, enclosing: Option[ZaluumTypeDeclaration]) {
       val binding: SourceTypeBinding = tpe.binding
-      if (binding!=null){
+      if (binding != null) {
         val boxDef = tpe.b
         val classTree = new TreeToClass(boxDef, a.global).run()
         val name = binding.constantPoolName()
@@ -314,8 +319,8 @@ class ZaluumCompilationUnitDeclaration(
   def checkZaluumLibraryPresent() {
     // add a descriptive error to help users
     val errors = compilationResult.getErrors
-    if (errors!=null && errors.exists (_.getMessage == "org.zaluum cannot be resolved to a type") ){
-      createProblem("Zaluum Runtime library is not in the classpath. Add org.zaluum.runtime jar to fix this problem.",1)
+    if (errors != null && errors.exists(_.getMessage == "org.zaluum cannot be resolved to a type")) {
+      createProblem("Zaluum Runtime library is not in the classpath. Add org.zaluum.runtime jar to fix this problem.", 1)
     }
   }
   override def analyseCode() {

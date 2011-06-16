@@ -25,31 +25,36 @@ public class WavSoundInput {
 	byte[] buffer;
 	AudioInputStream audioInputStream;
 	boolean end = false;
-
+	private final String file;
 	public WavSoundInput(String file) throws LineUnavailableException,
 			UnsupportedAudioFileException, IOException {
-		AudioInputStream ais = AudioSystem.getAudioInputStream(new File(
-				file));
-		audioInputStream = AudioSystem.getAudioInputStream(format, ais);
+		
+		this.file = file;
 		buffer = new byte[format.getFrameSize()];
+		open();
 	}
-
+	public void open() throws UnsupportedAudioFileException, IOException {
+		AudioInputStream ais = AudioSystem.getAudioInputStream(new File(file));
+		audioInputStream = AudioSystem.getAudioInputStream(format, ais);
+	}
 	public void apply() {
-		if (!end) {
-			try {
-				int read = audioInputStream.read(buffer);
-				if (read == -1) {
-					out = 0;
-					end = true;
-				} else {
-					int sample = (short)(((int)buffer[0] & 0xff) << 8) + ((int)buffer[1] & 0xff);
-					out = (sample) / 32767.0;
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
+		try {
+			int read = audioInputStream.read(buffer);
+			if (read == -1) {
+				audioInputStream.close();
+				open();
 				out = 0;
-				end = true;
+			} else {
+				int sample = (short) (((int) buffer[0] & 0xff) << 8)
+						+ ((int) buffer[1] & 0xff);
+				out = (sample) / 32767.0;
 			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			out = 0;
+		} catch (UnsupportedAudioFileException e) {
+			e.printStackTrace();
+			out = 0;
 		}
 	}
 

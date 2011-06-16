@@ -50,7 +50,9 @@ trait ValFigure extends ValDefItem with HasPorts {
       case b: BoxTypeSymbol ⇒
         val bports = b.portsWithSuper.values collect { case s: PortSymbol ⇒ s }
         def isIn(p: PortSymbol) = p.dir == In
-        val (ins, outs) = bports.partition { isIn(_) } // SHIFT?
+        val (unsortedins, unsortedouts) = bports.partition { isIn(_) } // SHIFT?
+        val ins = unsortedins.toList.sortBy(_.name.str);
+        val outs = unsortedouts.toList.sortBy(_.name.str);
         def space(s: PortSymbol) = if (isIn(s)) size.h / (ins.size + 1) else size.h / (outs.size + 1)
         def createPort(s: PortSymbol, i: Int) {
           val p = new PortFigure(container)

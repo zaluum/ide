@@ -9,5 +9,6 @@ Export-Package: org.zaluum.annotation,
  org.zaluum.math,
  org.zaluum.widget
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Require-Bundle: jchart2d;bundle-version="1.0.0"
+Require-Bundle: jchart2d;bundle-version="1.0.0",
+ org.apache.commons.math;bundle-version="2.2.0"
 

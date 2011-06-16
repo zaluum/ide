@@ -53,12 +53,13 @@ class Activator extends AbstractUIPlugin {
       }
     } else None
   }
+  val noEmbeddedEntries = List("org.zaluum.runtime", "jchart2d", "org.apache.commons.math")
   def libEntries = {
     val prop = System.getProperty("zaluum.noEmbeddedClasspath")
     if (prop != null && prop=="true") {
       println("DEBUG: no embedded classPath")
       val l:List[(IPath,Option[IPath])] = 
-        List(urlForBundleName("org.zaluum.runtime"),urlForBundleName("jchart2d")) flatMap { urlToPath(_) } map { (_,None)}
+        noEmbeddedEntries map { urlForBundleName(_) } flatMap { urlToPath(_) } map { (_,None)}
       l
     }else {
       embeddedLib

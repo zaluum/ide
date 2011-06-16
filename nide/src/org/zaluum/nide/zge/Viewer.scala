@@ -12,7 +12,7 @@ import scala.collection.JavaConversions._
 
 abstract class Viewer(parent: Composite, val controller: Controller) extends FreeformViewport {
   def shell = parent.getShell
-  def display = shell.getDisplay
+  lazy val display = shell.getDisplay
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
   def focus = parent.setFocus

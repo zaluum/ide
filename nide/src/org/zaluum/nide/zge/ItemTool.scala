@@ -178,7 +178,8 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def buttonUp {
       val newBounds = handle.deltaAdd(delta, itf.getBounds);
       val newPos = newBounds.getLocation
-      val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(48, 48))
+      
+      val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(24, 24))
       // TODO snap
       itf match {
         case vd: ValDefItem =>
