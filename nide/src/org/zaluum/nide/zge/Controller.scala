@@ -10,8 +10,9 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumASTParser
 import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
 import org.zaluum.nide.eclipse.ZaluumProject
 import scala.collection.mutable.{Buffer, Stack}
+import org.eclipse.swt.widgets.Display
 
-class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
+class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit val display:Display) {
   private var nowTree: Tree = _
 
   private var viewers = Buffer[Viewer]()
@@ -28,7 +29,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
       inSWT {
         v.remapSelection(map);
         v.refresh();
-      }(v.display)
+      }
     }
   }
   def refreshTools() { viewers foreach { _.tool.refresh() } }
@@ -177,7 +178,9 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject) {
     listeners -= action
   }
   def notifyListeners() {
-    listeners foreach { _() }
+    inSWT{
+      listeners foreach { _() }
+    }
   }
   // core listener
   val coreListener = new IElementChangedListener() {

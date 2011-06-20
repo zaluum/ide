@@ -15,14 +15,17 @@ import draw2dConversions._
 import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline, Graphics }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.Image
+import org.eclipse.swt.graphics.{Image,Font,GC}
 import org.zaluum.nide.compiler._
 import scala.collection.mutable.Buffer
 import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
 import javax.swing.JButton
 import javax.swing.JComponent
+import javax.swing.JPanel
 import java.awt.{ Graphics ⇒ AG }
 import java.awt.image.BufferedImage
+import javax.swing.BoxLayout
+import org.eclipse.draw2d.FigureUtilities
 
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item {
@@ -181,6 +184,7 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Fig
     }
     component = for (
       c ← valDef.tpe.asInstanceOf[BoxTypeSymbol].visualClass;
+      if c.str!=classOf[JPanel].getName;
       cl ← forName(c.str);
       i ← instance(cl)
     ) yield i
@@ -200,20 +204,34 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Fig
   }
   override def paintFigure(g: Graphics) {
     val rect = getClientArea()
-    val aimage = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB)
-    val ag = aimage.createGraphics
-    component foreach { c ⇒
-      c.setBounds(0, 0, rect.width, rect.height);
-      c.doLayout
-      c.paint(ag)
-    }
-    val imageData = SWTUtils.convertAWTImageToSWT(aimage)
-    val image = new org.eclipse.swt.graphics.Image(Display.getCurrent(), imageData)
     g.setXORMode(blinkOn)
-    g.drawImage(image, rect.x, rect.y)
+    component match {
+      case Some(c)=>
+        val aimage = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB)
+        val ag = aimage.createGraphics
+        c.setBounds(0, 0, rect.width, rect.height);
+        c.doLayout
+        c.paint(ag)
+        val imageData = SWTUtils.convertAWTImageToSWT(aimage)
+        val image = new org.eclipse.swt.graphics.Image(Display.getCurrent(), imageData)
+        g.drawImage(image, rect.x, rect.y)
+        image.dispose()
+        ag.dispose();
+      case None=>
+        g.setForegroundColor(ColorConstants.lightGray)
+        g.fillRectangle(rect)
+        g.setForegroundColor(ColorConstants.gray)
+        val data = g.getFont.getFontData
+        for (d<-data){
+          d.setHeight(rect.height/2)
+        }
+        val font = new Font(Display.getCurrent,data)
+        g.setFont(font)
+        val dim = FigureUtilities.getStringExtents("?", font)
+        g.drawText("?",rect.getCenter.x-dim.width/2,rect.getCenter.y-dim.height/2)
+        font.dispose()
+    }
     g.setForegroundColor(ColorConstants.lightGray)
     g.drawRectangle(rect.getCopy.expand(-1,-1))
-    ag.dispose();
-    image.dispose()
   }
 }

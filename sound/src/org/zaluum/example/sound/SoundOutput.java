@@ -17,7 +17,7 @@ public class SoundOutput {
 	@Out double deltaTime;
 	static final int channels = 2;
 	static final int bits = 16;
-	static final float sampleRate = 44000.0f;
+	static final float sampleRate = 44100.0f;
 	AudioFormat format = new AudioFormat(sampleRate, bits, channels, true, true);
 	SourceDataLine sndOut;
 	byte[] buffer;

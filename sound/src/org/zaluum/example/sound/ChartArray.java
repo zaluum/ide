@@ -24,7 +24,7 @@ public class ChartArray {
     trace.setColor(Color.BLUE);
     _widget.addTrace(trace);
     _widget.getAxisX().setPaintScale(true);
-    _widget.getAxisY().setRangePolicy(new RangePolicyMinimumViewport(new Range(0,0.2)));
+    _widget.getAxisY().setRangePolicy(new RangePolicyMinimumViewport(new Range(0,0.01)));
     //_widget.getAxisX().setRangePolicy(new MyRangePolicy(2000));
     _widget.setPaintLabels(false);
   }

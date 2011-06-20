@@ -46,8 +46,9 @@ object ByteCodeGen {
     def emit(tree: Tree): Unit = {
       tree match {
         case EmptyTree ⇒
-        case FieldDef(name, tpe, annotation) ⇒
-          val f = cw.visitField(ACC_PUBLIC, name.str, descriptor(tpe), null, null)
+        case FieldDef(name, tpe, annotation,priv) ⇒
+          // FIXME not really private field always public
+          val f = cw.visitField(if (priv) ACC_PUBLIC else ACC_PUBLIC, name.str, descriptor(tpe), null, null)
           annotation foreach { name ⇒
             f.visitAnnotation(descriptor(name), true).visitEnd()
           }

@@ -4,7 +4,7 @@ import javax.swing.JLabel
 import org.zaluum.basic.RunnableBox
 
 case class BoxClass(name: Name, superName: Name, contents: List[Tree]) extends Tree
-case class FieldDef(name: Name, typeName: Name, annotation : Option[Name]) extends Tree
+case class FieldDef(name: Name, typeName: Name, annotation : Option[Name],priv:Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
 case class Method(name: Name, signature: String, stats: List[Tree]) extends Tree
@@ -47,7 +47,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         val tpe = b.tpe.asInstanceOf[BoxTypeSymbol]
         val baseFields = (vals ++ ports).map { field(_) }
         val fields = vClass(b) map { vn ⇒
-          FieldDef(Name("_widget"), vn, None) :: baseFields
+          FieldDef(Name("_widget"), vn, None,false) :: baseFields
         } getOrElse { baseFields }
         val baseMethods = List(cons(b), appl(b))
         BoxClass(
@@ -62,10 +62,10 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
           case Out => classOf[org.zaluum.annotation.Out]
           case _ => classOf[org.zaluum.annotation.In]
         }
-        FieldDef(name, t.symbol.tpe.name, Some(Name(a.getName)))
+        FieldDef(name, t.symbol.tpe.name, Some(Name(a.getName)),false)
       case v: ValDef ⇒
         val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
-        FieldDef(v.name, t.symbol.tpe.asInstanceOf[BoxTypeSymbol].fqName,None)
+        FieldDef(v.name, t.symbol.tpe.asInstanceOf[BoxTypeSymbol].fqName,None,true)
     }
     def cons(b: BoxDef) = {
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]

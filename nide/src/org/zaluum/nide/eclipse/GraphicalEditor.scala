@@ -43,7 +43,7 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
   def createPartControl(parent: Composite) {
     val cu = JavaCore.createCompilationUnitFrom(inputFile)
     val zProject = new ZaluumProject(jproject)
-    val controller = new Controller(cu, zProject)
+    val controller = new Controller(cu, zProject,parent.getDisplay)
     controller.addListener(fireDirtyClosure)
     viewer = new TreeViewer(parent, controller, this)
     controller.registerViewer(viewer)

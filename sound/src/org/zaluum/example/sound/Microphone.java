@@ -11,7 +11,7 @@ import org.zaluum.annotation.Out;
 public class Microphone {
 	@Out
 	double out;
-	AudioFormat format = new AudioFormat(44000.0f, 16, 1, true, true);
+	AudioFormat format = new AudioFormat(44100.0f, 16, 1, true, true);
 	TargetDataLine microphone;
 
 	public Microphone() throws LineUnavailableException {

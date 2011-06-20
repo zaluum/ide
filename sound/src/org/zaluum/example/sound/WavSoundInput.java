@@ -20,8 +20,8 @@ public class WavSoundInput {
 	double out;
 	static final int channels = 2;
 	static final int bits = 16;
-	static final float sampleRate = 44000.0f;
-	AudioFormat format = new AudioFormat(sampleRate, bits, channels, true, true);
+	static final float sampleRate = 44100.0f;
+	AudioFormat format = new AudioFormat(sampleRate, bits, channels, true, false);
 	byte[] buffer;
 	AudioInputStream audioInputStream;
 	boolean end = false;
@@ -45,8 +45,8 @@ public class WavSoundInput {
 				open();
 				out = 0;
 			} else {
-				int sample = (short) (((int) buffer[0] & 0xff) << 8)
-						+ ((int) buffer[1] & 0xff);
+				int sample = (short) (((int) buffer[1] & 0xff) << 8)
+						+ ((int) buffer[0] & 0xff);
 				out = (sample) / 32767.0;
 			}
 		} catch (IOException e) {

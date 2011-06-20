@@ -1,0 +1,69 @@
+NOW
+compiler
+-peta el paquet default
+-mirar la visibilitat del port (protected/public) al compilar
+-compilador amb parametres out apply(in in in)
+-downcast automàtic
+-pensar sistema upcasting
+-@Apply marks apply method to invoke
+
+icons
+-better icon set
+-Wrap text on automatic icons
+-Automatic icon grows/shrinks depending on number of ports
+-mida lletra icona en altres pcs
+-Ensure icon disposal
+
+palette
+-Palette as tree with eclipse filters
+-pin palette
+-palette background must be white-gray
+-Cache palette/ background search
+-Search in palette
+-Javadoc on palette 
+
+editor
+-change port names
+-Background of an empty file not plain white ("start here" text?)
+-al connectar o desconnectar cables de vegades fa coses rares
+-double click or ctrl click goes to definition
+-GUI deep preview
+-when a visual component moves, resize the canvas size
+-Mark errors on presentation compiler? ex. no constructor found.
+-write javadoc on zaluum files
+-Zoom
+-show/hide grid
+-snap correctly
+-align tool
+-visual only boxes
+-notes/ visual only on diagram
+
+complex
+-If box, Switch, and other boxes with special visual support.
+-Swing thread synchronization / refresh rate
+-External port position selection
+-Better port colors. @Color?
+-Generic +-*/ and others. Box templates. (Box.class with Object inputs or special marker interface type. Box$int.class specialized)
+-Extensible in/out with unfolded array inputs
+-Feedback connections
+-declare constructor on zaluum, use as parameter in instances
+-com gestionar excepcions?
+-refactor boxes into class
+-java search full support/refactor support
+
+library
+-Graphing widget properties. Color/etc( see labview)
+-tutorials/docs/etc
+-sound output clicks?
+
+LATER
+-groovy compatible/scala compatible
+-fer possible que es pugui passar al constructor una o més boxes per emplenar el diagrama. S'ha de tenir eina per posar una interficie sense new al diagrama.
+-diferent directors
+-editor icones
+-multi-threading
+-testing harness
+-standalone compiler
+MUCH LATER
+-code generation
+-map reduce/other outputs.
