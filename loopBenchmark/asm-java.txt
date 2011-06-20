@@ -1,0 +1,138 @@
+Java HotSpot(TM) 64-Bit Server VM warning: PrintAssembly is enabled; turning on DebugNonSafepoints to gain additional output
+Loaded disassembler from hsdis-amd64.so
+Decoding compiled method 0x00007fd082d33cd0:
+Code:
+[Constants]
+  0x00007fd082d33e40 (offset:    0): 0x00000000   0x40c3880000000000
+  0x00007fd082d33e44 (offset:    4): 0x40c38800
+  0x00007fd082d33e48 (offset:    8): 0x00000000   0x40f86a0000000000
+  0x00007fd082d33e4c (offset:   12): 0x40f86a00
+  0x00007fd082d33e50 (offset:   16): 0x00000000   0x3ff0000000000000
+  0x00007fd082d33e54 (offset:   20): 0x3ff00000
+  0x00007fd082d33e58 (offset:   24): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007fd082d33e5c (offset:   28): 0xf4f4f4f4
+[Disassembling for mach='i386:x86-64']
+[Entry Point]
+[Verified Entry Point]
+  # {method} 'apply' '()V' in 'org/zaluum/benchmark/JavaLoop'
+  0x00007fd082d33e60: callq  0x00007fd0876e18b0  ;   {no_reloc}
+  0x00007fd082d33e65: nopw   0x0(%rax,%rax,1)
+  0x00007fd082d33e70: mov    %eax,-0x6000(%rsp)
+  0x00007fd082d33e77: push   %rbp
+  0x00007fd082d33e78: sub    $0x10,%rsp
+  0x00007fd082d33e7c: mov    (%rsi),%rbx
+  0x00007fd082d33e7f: mov    %rsi,%rdi
+  0x00007fd082d33e82: mov    $0x7fd08776ccd0,%r10
+  0x00007fd082d33e8c: callq  *%r10
+  0x00007fd082d33e8f: mov    0x8(%rbx),%r10d    ; implicit exception: dispatches to 0x00007fd082d33f61
+  0x00007fd082d33e93: cmp    $0xbd049fc8,%r10d  ;   {oop('org/zaluum/benchmark/JavaLoop')}
+  0x00007fd082d33e9a: jne    0x00007fd082d33f4d  ;*aload_0
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@21 (line 12)
+  0x00007fd082d33ea0: movsd  0x10(%rbx),%xmm0   ;*getfield a
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@43 (line 8)
+  0x00007fd082d33ea5: movsd  -0x6d(%rip),%xmm1        # 0x00007fd082d33e40
+                                                ;   {section_word}
+  0x00007fd082d33ead: movsd  -0x6d(%rip),%xmm2        # 0x00007fd082d33e48
+                                                ;   {section_word}
+  0x00007fd082d33eb5: movsd  -0x6d(%rip),%xmm3        # 0x00007fd082d33e50
+                                                ;   {section_word}
+  0x00007fd082d33ebd: addsd  0x18(%rbx),%xmm3   ;*dadd
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@27 (line 12)
+  0x00007fd082d33ec2: movsd  %xmm3,0x18(%rbx)   ;*putfield b
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@28 (line 12)
+  0x00007fd082d33ec7: jmp    0x00007fd082d33ee0
+  0x00007fd082d33ec9: nopl   0x0(%rax)
+  0x00007fd082d33ed0: addsd  -0x88(%rip),%xmm3        # 0x00007fd082d33e50
+                                                ;*dadd
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@27 (line 12)
+                                                ;   {section_word}
+  0x00007fd082d33ed8: movsd  %xmm3,0x18(%rbx)   ;*putfield b
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@28 (line 12)
+  0x00007fd082d33edd: xchg   %ax,%ax            ;*iflt
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@39 (line 11)
+  0x00007fd082d33ee0: ucomisd %xmm3,%xmm1
+  0x00007fd082d33ee4: mov    $0xffffffff,%r10d
+  0x00007fd082d33eea: jp     0x00007fd082d33ef6
+  0x00007fd082d33eec: jb     0x00007fd082d33ef6
+  0x00007fd082d33eee: setne  %r10b
+  0x00007fd082d33ef2: movzbl %r10b,%r10d
+  0x00007fd082d33ef6: neg    %r10d              ; OopMap{rbx=Oop off=153}
+                                                ;*iflt
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@39 (line 11)
+  0x00007fd082d33ef9: test   %eax,0x5b49101(%rip)        # 0x00007fd08887d000
+                                                ;   {poll}
+  0x00007fd082d33eff: ucomisd %xmm3,%xmm1
+  0x00007fd082d33f03: ja     0x00007fd082d33ed0  ;*iflt
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@50 (line 8)
+  0x00007fd082d33f05: ucomisd %xmm0,%xmm2
+  0x00007fd082d33f09: mov    $0xffffffff,%r11d
+  0x00007fd082d33f0f: jp     0x00007fd082d33f1b
+  0x00007fd082d33f11: jb     0x00007fd082d33f1b
+  0x00007fd082d33f13: setne  %r11b
+  0x00007fd082d33f17: movzbl %r11b,%r11d
+  0x00007fd082d33f1b: neg    %r11d              ; OopMap{rbx=Oop off=190}
+                                                ;*iflt
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@50 (line 8)
+  0x00007fd082d33f1e: test   %eax,0x5b490dc(%rip)        # 0x00007fd08887d000
+                                                ;   {poll}
+  0x00007fd082d33f24: ucomisd %xmm0,%xmm2
+  0x00007fd082d33f28: jbe    0x00007fd082d33f41  ;*iflt
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@50 (line 8)
+  0x00007fd082d33f2a: mov    %r12,0x18(%rbx)    ;*putfield b
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@15 (line 10)
+  0x00007fd082d33f2e: addsd  -0xe6(%rip),%xmm0        # 0x00007fd082d33e50
+                                                ;*dadd
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@9 (line 9)
+                                                ;   {section_word}
+  0x00007fd082d33f36: movsd  %xmm0,0x10(%rbx)   ;*putfield a
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@10 (line 9)
+  0x00007fd082d33f3b: xorpd  %xmm3,%xmm3
+  0x00007fd082d33f3f: jmp    0x00007fd082d33ee0
+  0x00007fd082d33f41: add    $0x10,%rsp
+  0x00007fd082d33f45: pop    %rbp
+  0x00007fd082d33f46: test   %eax,0x5b490b4(%rip)        # 0x00007fd08887d000
+                                                ;   {poll_return}
+  0x00007fd082d33f4c: retq   
+  0x00007fd082d33f4d: mov    $0xffffffad,%esi
+  0x00007fd082d33f52: mov    %rbx,%rbp
+  0x00007fd082d33f55: xchg   %ax,%ax
+  0x00007fd082d33f57: callq  0x00007fd082d0cb60  ; OopMap{rbp=Oop off=252}
+                                                ;*aload_0
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@21 (line 12)
+                                                ;   {runtime_call}
+  0x00007fd082d33f5c: callq  0x00007fd0876e18b0  ;*getfield b
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@23 (line 12)
+                                                ;   {runtime_call}
+  0x00007fd082d33f61: mov    $0xfffffff6,%esi
+  0x00007fd082d33f66: nop    
+  0x00007fd082d33f67: callq  0x00007fd082d0cb60  ; OopMap{off=268}
+                                                ;*getfield b
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@23 (line 12)
+                                                ;   {runtime_call}
+  0x00007fd082d33f6c: callq  0x00007fd0876e18b0  ;*getfield a
+                                                ; - org.zaluum.benchmark.JavaLoop::apply@43 (line 8)
+                                                ;   {runtime_call}
+  0x00007fd082d33f71: hlt    
+  0x00007fd082d33f72: hlt    
+  0x00007fd082d33f73: hlt    
+  0x00007fd082d33f74: hlt    
+  0x00007fd082d33f75: hlt    
+  0x00007fd082d33f76: hlt    
+  0x00007fd082d33f77: hlt    
+  0x00007fd082d33f78: hlt    
+  0x00007fd082d33f79: hlt    
+  0x00007fd082d33f7a: hlt    
+  0x00007fd082d33f7b: hlt    
+  0x00007fd082d33f7c: hlt    
+  0x00007fd082d33f7d: hlt    
+  0x00007fd082d33f7e: hlt    
+  0x00007fd082d33f7f: hlt    
+[Exception Handler]
+[Stub Code]
+  0x00007fd082d33f80: jmpq   0x00007fd082d321a0  ;   {no_reloc}
+[Deopt Handler Code]
+  0x00007fd082d33f85: callq  0x00007fd082d33f8a
+  0x00007fd082d33f8a: subq   $0x5,(%rsp)
+  0x00007fd082d33f8f: jmpq   0x00007fd082d0c7c0  ;   {runtime_call}
+  0x00007fd082d33f94: add    %al,(%rax)
+  0x00007fd082d33f96: add    %al,(%rax)

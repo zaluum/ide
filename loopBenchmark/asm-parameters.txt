@@ -1,0 +1,1370 @@
+Java HotSpot(TM) 64-Bit Server VM warning: PrintAssembly is enabled; turning on DebugNonSafepoints to gain additional output
+Loaded disassembler from hsdis-amd64.so
+Decoding compiled method 0x00007f70df41a1d0:
+Code:
+[Disassembling for mach='i386:x86-64']
+[Entry Point]
+[Constants]
+  # {method} 'apply' '()V' in 'org/zaluum/benchmark/parameters/Const'
+  #           [sp+0x20]  (sp of caller)
+  0x00007f70df41a300: mov    0x8(%rsi),%r10d
+  0x00007f70df41a304: cmp    %r10,%rax
+  0x00007f70df41a307: jne    0x00007f70df3f0620  ;   {runtime_call}
+  0x00007f70df41a30d: xchg   %ax,%ax
+[Verified Entry Point]
+  0x00007f70df41a310: push   %rbp
+  0x00007f70df41a311: sub    $0x10,%rsp
+  0x00007f70df41a315: nop                       ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.Const::apply@-1 (line 9)
+  0x00007f70df41a316: add    $0x10,%rsp
+  0x00007f70df41a31a: pop    %rbp
+  0x00007f70df41a31b: test   %eax,0x5b47cdf(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll_return}
+  0x00007f70df41a321: retq   
+  0x00007f70df41a322: hlt    
+  0x00007f70df41a323: hlt    
+  0x00007f70df41a324: hlt    
+  0x00007f70df41a325: hlt    
+  0x00007f70df41a326: hlt    
+  0x00007f70df41a327: hlt    
+  0x00007f70df41a328: hlt    
+  0x00007f70df41a329: hlt    
+  0x00007f70df41a32a: hlt    
+  0x00007f70df41a32b: hlt    
+  0x00007f70df41a32c: hlt    
+  0x00007f70df41a32d: hlt    
+  0x00007f70df41a32e: hlt    
+  0x00007f70df41a32f: hlt    
+  0x00007f70df41a330: hlt    
+  0x00007f70df41a331: hlt    
+  0x00007f70df41a332: hlt    
+  0x00007f70df41a333: hlt    
+  0x00007f70df41a334: hlt    
+  0x00007f70df41a335: hlt    
+  0x00007f70df41a336: hlt    
+  0x00007f70df41a337: hlt    
+  0x00007f70df41a338: hlt    
+  0x00007f70df41a339: hlt    
+  0x00007f70df41a33a: hlt    
+  0x00007f70df41a33b: hlt    
+  0x00007f70df41a33c: hlt    
+  0x00007f70df41a33d: hlt    
+  0x00007f70df41a33e: hlt    
+  0x00007f70df41a33f: hlt    
+[Exception Handler]
+[Stub Code]
+  0x00007f70df41a340: jmpq   0x00007f70df4173a0  ;   {no_reloc}
+[Deopt Handler Code]
+  0x00007f70df41a345: callq  0x00007f70df41a34a
+  0x00007f70df41a34a: subq   $0x5,(%rsp)
+  0x00007f70df41a34f: jmpq   0x00007f70df3f17c0  ;   {runtime_call}
+  0x00007f70df41a354: add    %al,(%rax)
+  0x00007f70df41a356: add    %al,(%rax)
+Decoding compiled method 0x00007f70df41a3d0:
+Code:
+[Disassembling for mach='i386:x86-64']
+[Entry Point]
+[Constants]
+  # {method} 'apply' '(DD)V' in 'org/zaluum/benchmark/parameters/Sum'
+  # this:     rsi:rsi   = 'org/zaluum/benchmark/parameters/Sum'
+  # parm0:    xmm0:xmm0   = double
+  # parm1:    xmm1:xmm1   = double
+  #           [sp+0x20]  (sp of caller)
+  0x00007f70df41a500: mov    0x8(%rsi),%r10d
+  0x00007f70df41a504: cmp    %r10,%rax
+  0x00007f70df41a507: jne    0x00007f70df3f0620  ;   {runtime_call}
+  0x00007f70df41a50d: xchg   %ax,%ax
+[Verified Entry Point]
+  0x00007f70df41a510: push   %rbp
+  0x00007f70df41a511: sub    $0x10,%rsp
+  0x00007f70df41a515: nop                       ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@-1 (line 6)
+  0x00007f70df41a516: addsd  %xmm1,%xmm0
+  0x00007f70df41a51a: movsd  %xmm0,0x10(%rsi)   ;*putfield s
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@4 (line 6)
+  0x00007f70df41a51f: add    $0x10,%rsp
+  0x00007f70df41a523: pop    %rbp
+  0x00007f70df41a524: test   %eax,0x5b47ad6(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll_return}
+  0x00007f70df41a52a: retq   
+  0x00007f70df41a52b: hlt    
+  0x00007f70df41a52c: hlt    
+  0x00007f70df41a52d: hlt    
+  0x00007f70df41a52e: hlt    
+  0x00007f70df41a52f: hlt    
+  0x00007f70df41a530: hlt    
+  0x00007f70df41a531: hlt    
+  0x00007f70df41a532: hlt    
+  0x00007f70df41a533: hlt    
+  0x00007f70df41a534: hlt    
+  0x00007f70df41a535: hlt    
+  0x00007f70df41a536: hlt    
+  0x00007f70df41a537: hlt    
+  0x00007f70df41a538: hlt    
+  0x00007f70df41a539: hlt    
+  0x00007f70df41a53a: hlt    
+  0x00007f70df41a53b: hlt    
+  0x00007f70df41a53c: hlt    
+  0x00007f70df41a53d: hlt    
+  0x00007f70df41a53e: hlt    
+  0x00007f70df41a53f: hlt    
+[Exception Handler]
+[Stub Code]
+  0x00007f70df41a540: jmpq   0x00007f70df4173a0  ;   {no_reloc}
+[Deopt Handler Code]
+  0x00007f70df41a545: callq  0x00007f70df41a54a
+  0x00007f70df41a54a: subq   $0x5,(%rsp)
+  0x00007f70df41a54f: jmpq   0x00007f70df3f17c0  ;   {runtime_call}
+  0x00007f70df41a554: add    %al,(%rax)
+  0x00007f70df41a556: add    %al,(%rax)
+Decoding compiled method 0x00007f70df41a5d0:
+Code:
+[Disassembling for mach='i386:x86-64']
+[Entry Point]
+[Constants]
+  # {method} 'apply' '(DD)V' in 'org/zaluum/benchmark/parameters/Lt'
+  # this:     rsi:rsi   = 'org/zaluum/benchmark/parameters/Lt'
+  # parm0:    xmm0:xmm0   = double
+  # parm1:    xmm1:xmm1   = double
+  #           [sp+0x20]  (sp of caller)
+  0x00007f70df41a700: mov    0x8(%rsi),%r10d
+  0x00007f70df41a704: cmp    %r10,%rax
+  0x00007f70df41a707: jne    0x00007f70df3f0620  ;   {runtime_call}
+  0x00007f70df41a70d: xchg   %ax,%ax
+[Verified Entry Point]
+  0x00007f70df41a710: push   %rbp
+  0x00007f70df41a711: sub    $0x10,%rsp
+  0x00007f70df41a715: nop                       ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@-1 (line 6)
+  0x00007f70df41a716: ucomisd %xmm0,%xmm1
+  0x00007f70df41a71a: jbe    0x00007f70df41a732  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+  0x00007f70df41a71c: mov    $0x1,%r10d
+  0x00007f70df41a722: mov    %r10b,0xc(%rsi)    ;*putfield out
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@12 (line 6)
+  0x00007f70df41a726: add    $0x10,%rsp
+  0x00007f70df41a72a: pop    %rbp
+  0x00007f70df41a72b: test   %eax,0x5b478cf(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll_return}
+  0x00007f70df41a731: retq   
+  0x00007f70df41a732: xor    %r10d,%r10d
+  0x00007f70df41a735: jmp    0x00007f70df41a722
+  0x00007f70df41a737: hlt    
+  0x00007f70df41a738: hlt    
+  0x00007f70df41a739: hlt    
+  0x00007f70df41a73a: hlt    
+  0x00007f70df41a73b: hlt    
+  0x00007f70df41a73c: hlt    
+  0x00007f70df41a73d: hlt    
+  0x00007f70df41a73e: hlt    
+  0x00007f70df41a73f: hlt    
+[Exception Handler]
+[Stub Code]
+  0x00007f70df41a740: jmpq   0x00007f70df4173a0  ;   {no_reloc}
+[Deopt Handler Code]
+  0x00007f70df41a745: callq  0x00007f70df41a74a
+  0x00007f70df41a74a: subq   $0x5,(%rsp)
+  0x00007f70df41a74f: jmpq   0x00007f70df3f17c0  ;   {runtime_call}
+  0x00007f70df41a754: add    %al,(%rax)
+  0x00007f70df41a756: add    %al,(%rax)
+Decoding compiled method 0x00007f70df418f50:
+Code:
+[Constants]
+  0x00007f70df4190a0 (offset:    0): 0x00000000   0x40c3880000000000
+  0x00007f70df4190a4 (offset:    4): 0x40c38800
+  0x00007f70df4190a8 (offset:    8): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df4190ac (offset:   12): 0xf4f4f4f4
+  0x00007f70df4190b0 (offset:   16): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df4190b4 (offset:   20): 0xf4f4f4f4
+  0x00007f70df4190b8 (offset:   24): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df4190bc (offset:   28): 0xf4f4f4f4
+[Disassembling for mach='i386:x86-64']
+[Entry Point]
+  # {method} 'contents' '()V' in 'org/zaluum/benchmark/parameters/InnerLoop'
+  #           [sp+0x30]  (sp of caller)
+  0x00007f70df4190c0: mov    0x8(%rsi),%r10d    ;   {no_reloc}
+  0x00007f70df4190c4: cmp    %r10,%rax
+  0x00007f70df4190c7: jne    0x00007f70df3f0620  ;   {runtime_call}
+  0x00007f70df4190cd: xchg   %ax,%ax
+[Verified Entry Point]
+  0x00007f70df4190d0: mov    %eax,-0x6000(%rsp)
+  0x00007f70df4190d7: push   %rbp
+  0x00007f70df4190d8: sub    $0x20,%rsp         ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@-1 (line 12)
+  0x00007f70df4190dc: mov    0x1c(%rsi),%r10d   ;*getfield one
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@1 (line 12)
+  0x00007f70df4190e0: movsd  0x10(%r10),%xmm0   ;*getfield a
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@19 (line 13)
+                                                ; implicit exception: dispatches to 0x00007f70df419166
+  0x00007f70df4190e6: movsd  0x10(%rsi),%xmm1   ;*getfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@12 (line 13)
+  0x00007f70df4190eb: mov    0x18(%rsi),%r11d   ;*getfield sum
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@8 (line 13)
+  0x00007f70df4190ef: test   %r11d,%r11d
+  0x00007f70df4190f2: je     0x00007f70df419130  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+  0x00007f70df4190f4: addsd  %xmm0,%xmm1        ;*dadd
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@3 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+  0x00007f70df4190f8: movsd  %xmm1,0x10(%rsi)   ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@33 (line 14)
+  0x00007f70df4190fd: movsd  %xmm1,0x10(%r11)   ;*putfield s
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+  0x00007f70df419103: mov    0xc(%rsi),%r11d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@37 (line 15)
+  0x00007f70df419107: test   %r11d,%r11d
+  0x00007f70df41910a: je     0x00007f70df41914d  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+  0x00007f70df41910c: movsd  -0x74(%rip),%xmm0        # 0x00007f70df4190a0
+                                                ;   {section_word}
+  0x00007f70df419114: ucomisd %xmm1,%xmm0
+  0x00007f70df419118: jbe    0x00007f70df419161  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+  0x00007f70df41911a: mov    $0x1,%r10d
+  0x00007f70df419120: mov    %r10b,0xc(%r11)    ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@-1 (line 12)
+  0x00007f70df419124: add    $0x20,%rsp
+  0x00007f70df419128: pop    %rbp
+  0x00007f70df419129: test   %eax,0x5b48ed1(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll_return}
+  0x00007f70df41912f: retq   
+  0x00007f70df419130: movsd  %xmm1,0x8(%rsp)
+  0x00007f70df419136: mov    $0xfffffff6,%esi
+  0x00007f70df41913b: movsd  %xmm0,(%rsp)
+  0x00007f70df419140: xchg   %ax,%ax
+  0x00007f70df419143: callq  0x00007f70df3f1b60  ; OopMap{off=136}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ;   {runtime_call}
+  0x00007f70df419148: callq  0x00007f70e3dc68b0  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ;   {runtime_call}
+  0x00007f70df41914d: movsd  %xmm1,(%rsp)
+  0x00007f70df419152: mov    $0xfffffff6,%esi
+  0x00007f70df419157: callq  0x00007f70df3f1b60  ; OopMap{off=156}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ;   {runtime_call}
+  0x00007f70df41915c: callq  0x00007f70e3dc68b0  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ;   {runtime_call}
+  0x00007f70df419161: xor    %r10d,%r10d
+  0x00007f70df419164: jmp    0x00007f70df419120
+  0x00007f70df419166: mov    $0xfffffff6,%esi
+  0x00007f70df41916b: callq  0x00007f70df3f1b60  ; OopMap{off=176}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@4 (line 12)
+                                                ;   {runtime_call}
+  0x00007f70df419170: callq  0x00007f70e3dc68b0  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@4 (line 12)
+                                                ;   {runtime_call}
+  0x00007f70df419175: hlt    
+  0x00007f70df419176: hlt    
+  0x00007f70df419177: hlt    
+  0x00007f70df419178: hlt    
+  0x00007f70df419179: hlt    
+  0x00007f70df41917a: hlt    
+  0x00007f70df41917b: hlt    
+  0x00007f70df41917c: hlt    
+  0x00007f70df41917d: hlt    
+  0x00007f70df41917e: hlt    
+  0x00007f70df41917f: hlt    
+[Exception Handler]
+[Stub Code]
+  0x00007f70df419180: jmpq   0x00007f70df4173a0  ;   {no_reloc}
+[Deopt Handler Code]
+  0x00007f70df419185: callq  0x00007f70df41918a
+  0x00007f70df41918a: subq   $0x5,(%rsp)
+  0x00007f70df41918f: jmpq   0x00007f70df3f17c0  ;   {runtime_call}
+  0x00007f70df419194: add    %al,(%rax)
+  0x00007f70df419196: add    %al,(%rax)
+Decoding compiled method 0x00007f70df4177d0:
+Code:
+[Disassembling for mach='i386:x86-64']
+[Entry Point]
+[Constants]
+  # {method} 'cond' '()Z' in 'org/zaluum/benchmark/parameters/InnerLoop'
+  #           [sp+0x20]  (sp of caller)
+  0x00007f70df417900: mov    0x8(%rsi),%r10d
+  0x00007f70df417904: cmp    %r10,%rax
+  0x00007f70df417907: jne    0x00007f70df3f0620  ;   {runtime_call}
+  0x00007f70df41790d: xchg   %ax,%ax
+[Verified Entry Point]
+  0x00007f70df417910: mov    %eax,-0x6000(%rsp)
+  0x00007f70df417917: push   %rbp
+  0x00007f70df417918: sub    $0x10,%rsp         ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@-1 (line 20)
+  0x00007f70df41791c: mov    0xc(%rsi),%r11d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@1 (line 20)
+  0x00007f70df417920: movzbl 0xc(%r11),%eax     ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@4 (line 20)
+                                                ; implicit exception: dispatches to 0x00007f70df417931
+  0x00007f70df417925: add    $0x10,%rsp
+  0x00007f70df417929: pop    %rbp
+  0x00007f70df41792a: test   %eax,0x5b4a6d0(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll_return}
+  0x00007f70df417930: retq   
+  0x00007f70df417931: mov    $0xfffffff6,%esi
+  0x00007f70df417936: nop    
+  0x00007f70df417937: callq  0x00007f70df3f1b60  ; OopMap{off=60}
+                                                ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@4 (line 20)
+                                                ;   {runtime_call}
+  0x00007f70df41793c: callq  0x00007f70e3dc68b0  ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@4 (line 20)
+                                                ;   {runtime_call}
+  0x00007f70df417941: hlt    
+  0x00007f70df417942: hlt    
+  0x00007f70df417943: hlt    
+  0x00007f70df417944: hlt    
+  0x00007f70df417945: hlt    
+  0x00007f70df417946: hlt    
+  0x00007f70df417947: hlt    
+  0x00007f70df417948: hlt    
+  0x00007f70df417949: hlt    
+  0x00007f70df41794a: hlt    
+  0x00007f70df41794b: hlt    
+  0x00007f70df41794c: hlt    
+  0x00007f70df41794d: hlt    
+  0x00007f70df41794e: hlt    
+  0x00007f70df41794f: hlt    
+  0x00007f70df417950: hlt    
+  0x00007f70df417951: hlt    
+  0x00007f70df417952: hlt    
+  0x00007f70df417953: hlt    
+  0x00007f70df417954: hlt    
+  0x00007f70df417955: hlt    
+  0x00007f70df417956: hlt    
+  0x00007f70df417957: hlt    
+  0x00007f70df417958: hlt    
+  0x00007f70df417959: hlt    
+  0x00007f70df41795a: hlt    
+  0x00007f70df41795b: hlt    
+  0x00007f70df41795c: hlt    
+  0x00007f70df41795d: hlt    
+  0x00007f70df41795e: hlt    
+  0x00007f70df41795f: hlt    
+[Exception Handler]
+[Stub Code]
+  0x00007f70df417960: jmpq   0x00007f70df4173a0  ;   {no_reloc}
+[Deopt Handler Code]
+  0x00007f70df417965: callq  0x00007f70df41796a
+  0x00007f70df41796a: subq   $0x5,(%rsp)
+  0x00007f70df41796f: jmpq   0x00007f70df3f17c0  ;   {runtime_call}
+  0x00007f70df417974: add    %al,(%rax)
+  0x00007f70df417976: add    %al,(%rax)
+Decoding compiled method 0x00007f70df4193d0:
+Code:
+[Constants]
+  0x00007f70df419540 (offset:    0): 0x00000000   0x40c3880000000000
+  0x00007f70df419544 (offset:    4): 0x40c38800
+  0x00007f70df419548 (offset:    8): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df41954c (offset:   12): 0xf4f4f4f4
+  0x00007f70df419550 (offset:   16): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df419554 (offset:   20): 0xf4f4f4f4
+  0x00007f70df419558 (offset:   24): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df41955c (offset:   28): 0xf4f4f4f4
+[Disassembling for mach='i386:x86-64']
+[Entry Point]
+  # {method} 'apply' '()V' in 'org/zaluum/benchmark/parameters/Loop'
+  #           [sp+0x30]  (sp of caller)
+  0x00007f70df419560: mov    0x8(%rsi),%r10d    ;   {no_reloc}
+  0x00007f70df419564: cmp    %r10,%rax
+  0x00007f70df419567: jne    0x00007f70df3f0620  ;   {runtime_call}
+  0x00007f70df41956d: xchg   %ax,%ax
+[Verified Entry Point]
+  0x00007f70df419570: mov    %eax,-0x6000(%rsp)
+  0x00007f70df419577: push   %rbp
+  0x00007f70df419578: sub    $0x20,%rsp         ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41957c: mov    %rsi,%rbp
+  0x00007f70df41957f: mov    0x8(%rsi),%ecx
+  0x00007f70df419582: movsd  -0x4a(%rip),%xmm2        # 0x00007f70df419540
+                                                ;   {section_word}
+  0x00007f70df41958a: cmp    $0xbd04d0b0,%ecx   ;   {oop('org/zaluum/benchmark/parameters/InnerLoop')}
+  0x00007f70df419590: jne    0x00007f70df41965c
+  0x00007f70df419596: mov    %rsi,%r10          ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df419599: mov    0x1c(%r10),%r11d   ;*getfield one
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@1 (line 12)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41959d: movsd  0x10(%r11),%xmm0   ;*getfield a
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@19 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ; implicit exception: dispatches to 0x00007f70df4196e9
+  0x00007f70df4195a3: movsd  0x10(%r10),%xmm1   ;*getfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@12 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4195a9: mov    0x18(%r10),%r8d    ;*getfield sum
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@8 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4195ad: test   %r8d,%r8d
+  0x00007f70df4195b0: je     0x00007f70df419682  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4195b6: addsd  %xmm0,%xmm1        ;*dadd
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@3 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4195ba: movsd  %xmm1,0x10(%r10)   ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@33 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4195c0: movsd  %xmm1,0x10(%r8)    ;*putfield s
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4195c6: mov    0xc(%r10),%r11d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@37 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4195ca: test   %r11d,%r11d
+  0x00007f70df4195cd: je     0x00007f70df41969d  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4195d3: ucomisd %xmm1,%xmm2
+  0x00007f70df4195d7: jbe    0x00007f70df4196d1  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4195dd: mov    $0x1,%r10d
+  0x00007f70df4195e3: mov    %r10b,0xc(%r11)    ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df4195e7: cmp    $0xbd04d0b0,%ecx   ;   {oop('org/zaluum/benchmark/parameters/InnerLoop')}
+  0x00007f70df4195ed: jne    0x00007f70df4196c1  ;*invokevirtual cond
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+  0x00007f70df4195f3: mov    0xc(%rbp),%r11d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@1 (line 20)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+  0x00007f70df4195f7: movzbl 0xc(%r11),%r10d    ; implicit exception: dispatches to 0x00007f70df4196d9
+  0x00007f70df4195fc: test   %r10d,%r10d
+  0x00007f70df4195ff: je     0x00007f70df41964c  ;*ifne
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@8 (line 7)
+  0x00007f70df419601: mov    0x1c(%rbp),%r10d   ;*getfield one
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@1 (line 12)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df419605: test   %r10d,%r10d
+  0x00007f70df419608: je     0x00007f70df4196b1  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df41960e: mov    0x18(%rbp),%r8d    ;*getfield sum
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@8 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df419612: test   %r8d,%r8d
+  0x00007f70df419615: je     0x00007f70df4196b1
+  0x00007f70df41961b: movsd  0x10(%rbp),%xmm0   ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df419620: addsd  0x10(%r10),%xmm0   ;*dadd
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@3 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df419626: ucomisd %xmm0,%xmm2
+  0x00007f70df41962a: jbe    0x00007f70df419658  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41962c: mov    $0x1,%ecx
+  0x00007f70df419631: mov    %cl,0xc(%r11)      ;*putfield out
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@12 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df419635: movsd  %xmm0,0x10(%rbp)   ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@33 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41963a: movsd  %xmm0,0x10(%r8)    ; OopMap{r10=NarrowOop r11=NarrowOop r8=NarrowOop rbp=Oop off=224}
+                                                ;*ifne
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@8 (line 7)
+  0x00007f70df419640: test   %eax,0x5b489ba(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll}
+  0x00007f70df419646: ucomisd %xmm0,%xmm2
+  0x00007f70df41964a: ja     0x00007f70df419620  ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41964c: add    $0x20,%rsp
+  0x00007f70df419650: pop    %rbp
+  0x00007f70df419651: test   %eax,0x5b489a9(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll_return}
+  0x00007f70df419657: retq   
+  0x00007f70df419658: xor    %ecx,%ecx
+  0x00007f70df41965a: jmp    0x00007f70df419631
+  0x00007f70df41965c: mov    %ecx,0x8(%rsp)
+  0x00007f70df419660: movsd  %xmm2,(%rsp)
+  0x00007f70df419665: mov    $0xffffffffffffffff,%rax  ;   {oop(NULL)}
+  0x00007f70df41966f: callq  0x00007f70df3f0a20  ; OopMap{rbp=Oop [8]=NarrowOop off=276}
+                                                ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {virtual_call}
+  0x00007f70df419674: movsd  (%rsp),%xmm2
+  0x00007f70df419679: mov    0x8(%rsp),%ecx
+  0x00007f70df41967d: jmpq   0x00007f70df4195e7
+  0x00007f70df419682: movsd  %xmm1,0x8(%rsp)
+  0x00007f70df419688: movsd  %xmm0,(%rsp)
+  0x00007f70df41968d: mov    $0xfffffff6,%esi
+  0x00007f70df419692: nop    
+  0x00007f70df419693: callq  0x00007f70df3f1b60  ; OopMap{off=312}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df419698: callq  0x00007f70e3dc68b0  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41969d: movsd  %xmm1,(%rsp)
+  0x00007f70df4196a2: mov    $0xfffffff6,%esi
+  0x00007f70df4196a7: callq  0x00007f70df3f1b60  ; OopMap{off=332}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4196ac: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df4196b1: mov    $0xffffff86,%esi
+  0x00007f70df4196b6: nop    
+  0x00007f70df4196b7: callq  0x00007f70df3f1b60  ; OopMap{rbp=Oop off=348}
+                                                ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4196bc: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df4196c1: mov    $0xffffffde,%esi
+  0x00007f70df4196c6: nop    
+  0x00007f70df4196c7: callq  0x00007f70df3f1b60  ; OopMap{rbp=Oop off=364}
+                                                ;*invokevirtual cond
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df4196cc: callq  0x00007f70e3dc68b0  ;*invokevirtual cond
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df4196d1: xor    %r10d,%r10d
+  0x00007f70df4196d4: jmpq   0x00007f70df4195e3  ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@4 (line 20)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+  0x00007f70df4196d9: mov    $0xfffffff6,%esi
+  0x00007f70df4196de: nop    
+  0x00007f70df4196df: callq  0x00007f70df3f1b60  ; OopMap{off=388}
+                                                ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@4 (line 20)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df4196e4: callq  0x00007f70e3dc68b0  ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@4 (line 20)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df4196e9: mov    $0xfffffff6,%esi
+  0x00007f70df4196ee: nop    
+  0x00007f70df4196ef: callq  0x00007f70df3f1b60  ; OopMap{off=404}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@4 (line 12)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4196f4: callq  0x00007f70e3dc68b0  ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4196f9: mov    %rax,%rsi
+  0x00007f70df4196fc: add    $0x20,%rsp
+  0x00007f70df419700: pop    %rbp
+  0x00007f70df419701: jmpq   0x00007f70df416ba0  ;   {runtime_call}
+  0x00007f70df419706: hlt    
+  0x00007f70df419707: hlt    
+  0x00007f70df419708: hlt    
+  0x00007f70df419709: hlt    
+  0x00007f70df41970a: hlt    
+  0x00007f70df41970b: hlt    
+  0x00007f70df41970c: hlt    
+  0x00007f70df41970d: hlt    
+  0x00007f70df41970e: hlt    
+  0x00007f70df41970f: hlt    
+  0x00007f70df419710: hlt    
+  0x00007f70df419711: hlt    
+  0x00007f70df419712: hlt    
+  0x00007f70df419713: hlt    
+  0x00007f70df419714: hlt    
+  0x00007f70df419715: hlt    
+  0x00007f70df419716: hlt    
+  0x00007f70df419717: hlt    
+  0x00007f70df419718: hlt    
+  0x00007f70df419719: hlt    
+  0x00007f70df41971a: hlt    
+  0x00007f70df41971b: hlt    
+  0x00007f70df41971c: hlt    
+  0x00007f70df41971d: hlt    
+  0x00007f70df41971e: hlt    
+  0x00007f70df41971f: hlt    
+[Exception Handler]
+[Stub Code]
+  0x00007f70df419720: jmpq   0x00007f70df4173a0  ;   {no_reloc}
+[Deopt Handler Code]
+  0x00007f70df419725: callq  0x00007f70df41972a
+  0x00007f70df41972a: subq   $0x5,(%rsp)
+  0x00007f70df41972f: jmpq   0x00007f70df3f17c0  ;   {runtime_call}
+  0x00007f70df419734: add    %al,(%rax)
+  0x00007f70df419736: add    %al,(%rax)
+Decoding compiled method 0x00007f70df417fd0:
+Code:
+[Constants]
+  0x00007f70df418140 (offset:    0): 0x00000000   0x40c3880000000000
+  0x00007f70df418144 (offset:    4): 0x40c38800
+  0x00007f70df418148 (offset:    8): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df41814c (offset:   12): 0xf4f4f4f4
+  0x00007f70df418150 (offset:   16): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df418154 (offset:   20): 0xf4f4f4f4
+  0x00007f70df418158 (offset:   24): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df41815c (offset:   28): 0xf4f4f4f4
+[Disassembling for mach='i386:x86-64']
+[Entry Point]
+[Verified Entry Point]
+  # {method} 'apply' '()V' in 'org/zaluum/benchmark/parameters/Loop'
+  0x00007f70df418160: callq  0x00007f70e3dc68b0  ;   {no_reloc}
+  0x00007f70df418165: nopw   0x0(%rax,%rax,1)
+  0x00007f70df418170: mov    %eax,-0x6000(%rsp)
+  0x00007f70df418177: push   %rbp
+  0x00007f70df418178: sub    $0x20,%rsp
+  0x00007f70df41817c: mov    (%rsi),%rbp
+  0x00007f70df41817f: mov    %rsi,%rdi
+  0x00007f70df418182: mov    $0x7f70e3e51cd0,%r10
+  0x00007f70df41818c: callq  *%r10
+  0x00007f70df41818f: mov    0x8(%rbp),%r11d    ; implicit exception: dispatches to 0x00007f70df4182c9
+  0x00007f70df418193: mov    0x40(%r11),%r10
+  0x00007f70df418197: mov    $0xbd04a790,%r11   ;   {oop('org/zaluum/benchmark/parameters/Loop')}
+  0x00007f70df4181a1: cmp    %r11,%r10
+  0x00007f70df4181a4: jne    0x00007f70df4182b1  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df4181aa: mov    0x8(%rbp),%r11d
+  0x00007f70df4181ae: cmp    $0xbd04d0b0,%r11d  ;   {oop('org/zaluum/benchmark/parameters/InnerLoop')}
+  0x00007f70df4181b5: jne    0x00007f70df41825c  ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181bb: mov    0x1c(%rbp),%r11d   ;*getfield one
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@1 (line 12)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181bf: movsd  0x10(%r11),%xmm0   ;*getfield a
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@19 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ; implicit exception: dispatches to 0x00007f70df4182d9
+  0x00007f70df4181c5: movsd  0x10(%rbp),%xmm1   ;*getfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@12 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181ca: mov    0x18(%rbp),%r10d   ;*getfield sum
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@8 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181ce: test   %r10d,%r10d
+  0x00007f70df4181d1: je     0x00007f70df418281  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181d7: addsd  %xmm0,%xmm1        ;*dadd
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@3 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181db: movsd  %xmm1,0x10(%rbp)   ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@33 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181e0: movsd  %xmm1,0x10(%r10)   ;*putfield s
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181e6: mov    0xc(%rbp),%r11d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@37 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181ea: test   %r11d,%r11d
+  0x00007f70df4181ed: je     0x00007f70df41829d  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df4181f3: movsd  -0xbb(%rip),%xmm2        # 0x00007f70df418140
+                                                ;   {section_word}
+  0x00007f70df4181fb: ucomisd %xmm1,%xmm2
+  0x00007f70df4181ff: jbe    0x00007f70df4182c1  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df418205: mov    $0x1,%r9d
+  0x00007f70df41820b: mov    %r9b,0xc(%r11)     ;*putfield out
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@12 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41820f: ucomisd %xmm1,%xmm2
+  0x00007f70df418213: jbe    0x00007f70df41824b  ;*ifne
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@8 (line 7)
+  0x00007f70df418215: nopw   0x0(%rax,%rax,1)   ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df418220: addsd  %xmm0,%xmm1        ;*dadd
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@3 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df418224: ucomisd %xmm1,%xmm2
+  0x00007f70df418228: jbe    0x00007f70df418257  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41822a: mov    $0x1,%r8d
+  0x00007f70df418230: mov    %r8b,0xc(%r11)     ;*putfield out
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@12 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df418234: movsd  %xmm1,0x10(%rbp)   ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@33 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df418239: movsd  %xmm1,0x10(%r10)   ; OopMap{r10=NarrowOop r11=NarrowOop rbp=Oop off=223}
+                                                ;*ifne
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@8 (line 7)
+  0x00007f70df41823f: test   %eax,0x5b49dbb(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll}
+  0x00007f70df418245: ucomisd %xmm1,%xmm2
+  0x00007f70df418249: ja     0x00007f70df418220  ;*return
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@11 (line 10)
+  0x00007f70df41824b: add    $0x20,%rsp
+  0x00007f70df41824f: pop    %rbp
+  0x00007f70df418250: test   %eax,0x5b49daa(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll_return}
+  0x00007f70df418256: retq   
+  0x00007f70df418257: xor    %r8d,%r8d
+  0x00007f70df41825a: jmp    0x00007f70df418230
+  0x00007f70df41825c: mov    %rbp,%rsi
+  0x00007f70df41825f: xchg   %ax,%ax
+  0x00007f70df418261: mov    $0xffffffffffffffff,%rax  ;   {oop(NULL)}
+  0x00007f70df41826b: callq  0x00007f70df3f0a20  ; OopMap{rbp=Oop off=272}
+                                                ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {virtual_call}
+  0x00007f70df418270: mov    $0xffffffde,%esi
+  0x00007f70df418275: xchg   %ax,%ax
+  0x00007f70df418277: callq  0x00007f70df3f1b60  ; OopMap{rbp=Oop off=284}
+                                                ;*invokevirtual cond
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df41827c: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df418281: mov    $0xfffffff6,%esi
+  0x00007f70df418286: movsd  %xmm1,(%rsp)
+  0x00007f70df41828b: movsd  %xmm0,0x8(%rsp)
+  0x00007f70df418291: xchg   %ax,%ax
+  0x00007f70df418293: callq  0x00007f70df3f1b60  ; OopMap{off=312}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df418298: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df41829d: mov    $0xfffffff6,%esi
+  0x00007f70df4182a2: movsd  %xmm1,(%rsp)
+  0x00007f70df4182a7: callq  0x00007f70df3f1b60  ; OopMap{off=332}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4182ac: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df4182b1: mov    $0xffffffad,%esi
+  0x00007f70df4182b6: nop    
+  0x00007f70df4182b7: callq  0x00007f70df3f1b60  ; OopMap{rbp=Oop off=348}
+                                                ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4182bc: callq  0x00007f70e3dc68b0  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4182c1: xor    %r9d,%r9d
+  0x00007f70df4182c4: jmpq   0x00007f70df41820b
+  0x00007f70df4182c9: mov    $0xfffffff6,%esi
+  0x00007f70df4182ce: nop    
+  0x00007f70df4182cf: callq  0x00007f70df3f1b60  ; OopMap{off=372}
+                                                ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4182d4: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df4182d9: mov    $0xfffffff6,%esi
+  0x00007f70df4182de: nop    
+  0x00007f70df4182df: callq  0x00007f70df3f1b60  ; OopMap{off=388}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@4 (line 12)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4182e4: callq  0x00007f70e3dc68b0  ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df4182e9: mov    %rax,%rsi
+  0x00007f70df4182ec: add    $0x20,%rsp
+  0x00007f70df4182f0: pop    %rbp
+  0x00007f70df4182f1: jmpq   0x00007f70df416ba0  ;   {runtime_call}
+  0x00007f70df4182f6: hlt    
+  0x00007f70df4182f7: hlt    
+  0x00007f70df4182f8: hlt    
+  0x00007f70df4182f9: hlt    
+  0x00007f70df4182fa: hlt    
+  0x00007f70df4182fb: hlt    
+  0x00007f70df4182fc: hlt    
+  0x00007f70df4182fd: hlt    
+  0x00007f70df4182fe: hlt    
+  0x00007f70df4182ff: hlt    
+[Exception Handler]
+[Stub Code]
+  0x00007f70df418300: jmpq   0x00007f70df4173a0  ;   {no_reloc}
+[Deopt Handler Code]
+  0x00007f70df418305: callq  0x00007f70df41830a
+  0x00007f70df41830a: subq   $0x5,(%rsp)
+  0x00007f70df41830f: jmpq   0x00007f70df3f17c0  ;   {runtime_call}
+  0x00007f70df418314: add    %al,(%rax)
+  0x00007f70df418316: add    %al,(%rax)
+Decoding compiled method 0x00007f70df41bf50:
+Code:
+[Constants]
+  0x00007f70df41c120 (offset:    0): 0x00000000   0x40f86a0000000000
+  0x00007f70df41c124 (offset:    4): 0x40f86a00
+  0x00007f70df41c128 (offset:    8): 0x00000000   0x40c3880000000000
+  0x00007f70df41c12c (offset:   12): 0x40c38800
+  0x00007f70df41c130 (offset:   16): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df41c134 (offset:   20): 0xf4f4f4f4
+  0x00007f70df41c138 (offset:   24): 0xf4f4f4f4   0xf4f4f4f4f4f4f4f4
+  0x00007f70df41c13c (offset:   28): 0xf4f4f4f4
+[Disassembling for mach='i386:x86-64']
+[Entry Point]
+[Verified Entry Point]
+  # {method} 'apply' '()V' in 'org/zaluum/benchmark/parameters/Loop'
+  0x00007f70df41c140: callq  0x00007f70e3dc68b0  ;   {no_reloc}
+  0x00007f70df41c145: nopw   0x0(%rax,%rax,1)
+  0x00007f70df41c150: mov    %eax,-0x6000(%rsp)
+  0x00007f70df41c157: push   %rbp
+  0x00007f70df41c158: sub    $0x30,%rsp
+  0x00007f70df41c15c: mov    (%rsi),%rbx
+  0x00007f70df41c15f: mov    %rsi,%rdi
+  0x00007f70df41c162: mov    $0x7f70e3e51cd0,%r10
+  0x00007f70df41c16c: callq  *%r10
+  0x00007f70df41c16f: mov    0x8(%rbx),%r10d    ; implicit exception: dispatches to 0x00007f70df41c507
+  0x00007f70df41c173: mov    0x40(%r10),%r10
+  0x00007f70df41c177: mov    $0xbd04a790,%r11   ;   {oop('org/zaluum/benchmark/parameters/Loop')}
+  0x00007f70df41c181: cmp    %r11,%r10
+  0x00007f70df41c184: jne    0x00007f70df41c40e  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df41c18a: mov    0x8(%rbx),%r10d
+  0x00007f70df41c18e: movsd  -0x76(%rip),%xmm2        # 0x00007f70df41c120
+                                                ;   {section_word}
+  0x00007f70df41c196: movsd  -0x76(%rip),%xmm3        # 0x00007f70df41c128
+                                                ;   {section_word}
+  0x00007f70df41c19e: cmp    $0xbd04d0b0,%r10d  ;   {oop('org/zaluum/benchmark/parameters/InnerLoop')}
+  0x00007f70df41c1a5: je     0x00007f70df41c231
+  0x00007f70df41c1ab: cmp    $0xbd04aa00,%r10d  ;   {oop('org/zaluum/benchmark/parameters/OuterLoop')}
+  0x00007f70df41c1b2: jne    0x00007f70df41c4a9  ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1b8: mov    %rbx,0x10(%rsp)
+  0x00007f70df41c1bd: mov    0x1c(%rbx),%r11d   ;*getfield one
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@1 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1c1: movsd  0x10(%r11),%xmm0   ;*getfield a
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@19 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ; implicit exception: dispatches to 0x00007f70df41c549
+  0x00007f70df41c1c7: movsd  0x10(%rbx),%xmm1   ;*getfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@12 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1cc: mov    0x18(%rbx),%r10d   ;*getfield sum
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@8 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1d0: test   %r10d,%r10d
+  0x00007f70df41c1d3: je     0x00007f70df41c469  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@22 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1d9: addsd  %xmm0,%xmm1        ;*dadd
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@3 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@22 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1dd: movsd  %xmm1,0x10(%rbx)   ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@33 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1e2: movsd  %xmm1,0x10(%r10)   ;*putfield s
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@22 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1e8: mov    0xc(%rbx),%r10d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@37 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1ec: test   %r10d,%r10d
+  0x00007f70df41c1ef: je     0x00007f70df41c485  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1f5: ucomisd %xmm1,%xmm2
+  0x00007f70df41c1f9: jbe    0x00007f70df41c4bd  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c1ff: mov    $0x1,%r8d
+  0x00007f70df41c205: mov    %r8b,0xc(%r10)     ;*putfield out
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@12 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c209: mov    0x20(%rbx),%r10d   ;*getfield loop
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@54 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c20d: mov    %r12,0x10(%r10)    ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@58 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ; implicit exception: dispatches to 0x00007f70df41c559
+  0x00007f70df41c211: movsd  %xmm3,0x8(%rsp)
+  0x00007f70df41c217: movsd  %xmm2,(%rsp)       ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c21c: mov    %r10,%rsi
+  0x00007f70df41c21f: callq  0x00007f70df3f0820  ; OopMap{[16]=Oop off=228}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@65 (line 18)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {optimized virtual_call}
+  0x00007f70df41c224: movsd  (%rsp),%xmm2
+  0x00007f70df41c229: movsd  0x8(%rsp),%xmm3
+  0x00007f70df41c22f: jmp    0x00007f70df41c282  ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c231: mov    %rbx,0x10(%rsp)
+  0x00007f70df41c236: mov    0x1c(%rbx),%r10d   ;*getfield one
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@1 (line 12)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c23a: movsd  0x10(%r10),%xmm0   ;*getfield a
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@19 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+                                                ; implicit exception: dispatches to 0x00007f70df41c519
+  0x00007f70df41c240: movsd  0x10(%rbx),%xmm1   ;*getfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@12 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c245: mov    0x18(%rbx),%r11d   ;*getfield sum
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@8 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c249: test   %r11d,%r11d
+  0x00007f70df41c24c: je     0x00007f70df41c421  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c252: addsd  %xmm0,%xmm1        ;*dadd
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@3 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c256: movsd  %xmm1,0x10(%r11)   ;*putfield s
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c25c: movsd  %xmm1,0x10(%rbx)   ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@33 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c261: mov    0xc(%rbx),%r11d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@37 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c265: test   %r11d,%r11d
+  0x00007f70df41c268: je     0x00007f70df41c43d  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c26e: ucomisd %xmm1,%xmm3
+  0x00007f70df41c272: jbe    0x00007f70df41c461  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c278: mov    $0x1,%r10d
+  0x00007f70df41c27e: mov    %r10b,0xc(%r11)    ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c282: mov    0x10(%rsp),%r10
+  0x00007f70df41c287: mov    0x8(%r10),%r10d
+  0x00007f70df41c28b: cmp    $0xbd04d0b0,%r10d  ;   {oop('org/zaluum/benchmark/parameters/InnerLoop')}
+  0x00007f70df41c292: je     0x00007f70df41c2b1
+  0x00007f70df41c294: cmp    $0xbd04aa00,%r10d  ;   {oop('org/zaluum/benchmark/parameters/OuterLoop')}
+  0x00007f70df41c29b: jne    0x00007f70df41c499
+  0x00007f70df41c2a1: mov    0x10(%rsp),%r11    ;*invokevirtual cond
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+  0x00007f70df41c2a6: mov    0xc(%r11),%r11d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::cond@1 (line 23)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+  0x00007f70df41c2aa: movzbl 0xc(%r11),%r8d     ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::cond@4 (line 23)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ; implicit exception: dispatches to 0x00007f70df41c539
+  0x00007f70df41c2af: jmp    0x00007f70df41c2bf
+  0x00007f70df41c2b1: mov    0x10(%rsp),%r11    ;*invokevirtual cond
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+  0x00007f70df41c2b6: mov    0xc(%r11),%r11d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@1 (line 20)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c2ba: movzbl 0xc(%r11),%r8d     ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+                                                ; implicit exception: dispatches to 0x00007f70df41c529
+  0x00007f70df41c2bf: test   %r8d,%r8d
+  0x00007f70df41c2c2: je     0x00007f70df41c352  ;*ifne
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@8 (line 7)
+  0x00007f70df41c2c8: cmp    $0xbd04d0b0,%r10d  ;   {oop('org/zaluum/benchmark/parameters/InnerLoop')}
+  0x00007f70df41c2cf: je     0x00007f70df41c2ec
+  0x00007f70df41c2d1: cmp    $0xbd04aa00,%r10d  ;   {oop('org/zaluum/benchmark/parameters/OuterLoop')}
+  0x00007f70df41c2d8: jne    0x00007f70df41c451  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df41c2de: mov    0x10(%rsp),%rbp    ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c2e3: mov    0xc(%rbp),%r10d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@37 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c2e7: jmpq   0x00007f70df41c365
+  0x00007f70df41c2ec: mov    0x10(%rsp),%r10    ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c2f1: mov    0x1c(%r10),%r8d    ;*getfield one
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@1 (line 12)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c2f5: test   %r8d,%r8d
+  0x00007f70df41c2f8: je     0x00007f70df41c451  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df41c2fe: mov    0x18(%r10),%r9d    ;*getfield sum
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@8 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c302: test   %r9d,%r9d
+  0x00007f70df41c305: je     0x00007f70df41c451  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df41c30b: mov    0xc(%r10),%ecx     ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@37 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c30f: test   %ecx,%ecx
+  0x00007f70df41c311: je     0x00007f70df41c451  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df41c317: movsd  0x10(%r10),%xmm0   ;*getfield shift
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@12 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c31d: xchg   %ax,%ax            ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df41c320: addsd  0x10(%r8),%xmm0    ;*dadd
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@3 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c326: ucomisd %xmm0,%xmm3
+  0x00007f70df41c32a: jbe    0x00007f70df41c3d1  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c330: mov    $0x1,%r11d
+  0x00007f70df41c336: mov    %r11b,0xc(%rcx)    ;*putfield out
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@12 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c33a: movsd  %xmm0,0x10(%r9)    ;*putfield s
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c340: movsd  %xmm0,0x10(%r10)   ; OopMap{r10=Oop r8=NarrowOop r9=NarrowOop rcx=NarrowOop [16]=Oop off=518}
+                                                ;*ifne
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@8 (line 7)
+  0x00007f70df41c346: test   %eax,0x5b45cb4(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll}
+  0x00007f70df41c34c: ucomisd %xmm0,%xmm3
+  0x00007f70df41c350: ja     0x00007f70df41c320  ;*return
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@11 (line 10)
+  0x00007f70df41c352: add    $0x30,%rsp
+  0x00007f70df41c356: pop    %rbp
+  0x00007f70df41c357: test   %eax,0x5b45ca3(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll_return}
+  0x00007f70df41c35d: retq   
+  0x00007f70df41c35e: xchg   %ax,%ax
+  0x00007f70df41c360: movsd  (%rsp),%xmm2       ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+  0x00007f70df41c365: mov    0x1c(%rbp),%r8d    ;*getfield one
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@1 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c369: movsd  0x10(%r8),%xmm0    ;*getfield a
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@19 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ; implicit exception: dispatches to 0x00007f70df41c4c5
+  0x00007f70df41c36f: movsd  0x10(%rbp),%xmm1   ;*getfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@12 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c374: mov    0x18(%rbp),%r11d   ;*getfield sum
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@8 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c378: test   %r11d,%r11d
+  0x00007f70df41c37b: je     0x00007f70df41c3d9  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@22 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c37d: addsd  %xmm0,%xmm1        ;*dadd
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@3 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@22 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c381: movsd  %xmm1,0x10(%rbp)   ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@33 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c386: movsd  %xmm1,0x10(%r11)   ;*putfield s
+                                                ; - org.zaluum.benchmark.parameters.Sum::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@22 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c38c: test   %r10d,%r10d
+  0x00007f70df41c38f: je     0x00007f70df41c3f5  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c391: ucomisd %xmm1,%xmm2
+  0x00007f70df41c395: jbe    0x00007f70df41c409  ;*ifge
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@4 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c397: mov    $0x1,%r11d
+  0x00007f70df41c39d: mov    %r11b,0xc(%r10)    ;*putfield out
+                                                ; - org.zaluum.benchmark.parameters.Lt::apply@12 (line 6)
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c3a1: mov    0x20(%rbp),%r11d   ;*getfield loop
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@54 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c3a5: mov    %r12,0x10(%r11)    ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@58 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ; implicit exception: dispatches to 0x00007f70df41c4d5
+  0x00007f70df41c3a9: movsd  %xmm2,(%rsp)       ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c3ae: mov    %r11,%rsi          ;*getfield loop
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@54 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c3b1: xchg   %ax,%ax
+  0x00007f70df41c3b3: callq  0x00007f70df3f0820  ; OopMap{rbp=Oop [16]=Oop off=632}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@65 (line 18)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {optimized virtual_call}
+  0x00007f70df41c3b8: mov    0xc(%rbp),%r10d    ;*getfield lt
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::cond@1 (line 23)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+  0x00007f70df41c3bc: movzbl 0xc(%r10),%r8d     ; OopMap{r10=NarrowOop rbp=Oop [16]=Oop off=641}
+                                                ;*ifne
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@8 (line 7)
+                                                ; implicit exception: dispatches to 0x00007f70df41c4e5
+  0x00007f70df41c3c1: test   %eax,0x5b45c39(%rip)        # 0x00007f70e4f62000
+                                                ;   {poll}
+  0x00007f70df41c3c7: test   %r8d,%r8d
+  0x00007f70df41c3ca: jne    0x00007f70df41c360  ;*ifne
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@8 (line 7)
+  0x00007f70df41c3cc: jmpq   0x00007f70df41c352
+  0x00007f70df41c3d1: xor    %r11d,%r11d
+  0x00007f70df41c3d4: jmpq   0x00007f70df41c336
+  0x00007f70df41c3d9: mov    $0xfffffff6,%esi
+  0x00007f70df41c3de: movsd  %xmm1,(%rsp)
+  0x00007f70df41c3e3: movsd  %xmm0,0x8(%rsp)
+  0x00007f70df41c3e9: xchg   %ax,%ax
+  0x00007f70df41c3eb: callq  0x00007f70df3f1b60  ; OopMap{off=688}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@22 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c3f0: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df41c3f5: mov    $0xfffffff6,%esi
+  0x00007f70df41c3fa: movsd  %xmm1,(%rsp)
+  0x00007f70df41c3ff: callq  0x00007f70df3f1b60  ; OopMap{off=708}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c404: callq  0x00007f70e3dc68b0  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c409: xor    %r11d,%r11d
+  0x00007f70df41c40c: jmp    0x00007f70df41c39d
+  0x00007f70df41c40e: mov    $0xffffffad,%esi
+  0x00007f70df41c413: mov    %rbx,%rbp
+  0x00007f70df41c416: nop    
+  0x00007f70df41c417: callq  0x00007f70df3f1b60  ; OopMap{rbp=Oop off=732}
+                                                ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c41c: callq  0x00007f70e3dc68b0  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c421: movsd  %xmm1,0x8(%rsp)
+  0x00007f70df41c427: movsd  %xmm0,(%rsp)       ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c42c: mov    $0xfffffff6,%esi
+  0x00007f70df41c431: xchg   %ax,%ax
+  0x00007f70df41c433: callq  0x00007f70df3f1b60  ; OopMap{off=760}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c438: callq  0x00007f70e3dc68b0  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@22 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c43d: movsd  %xmm1,(%rsp)       ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c442: mov    $0xfffffff6,%esi
+  0x00007f70df41c447: callq  0x00007f70df3f1b60  ; OopMap{off=780}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@50 (line 15)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c44c: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df41c451: mov    $0xffffff86,%esi
+  0x00007f70df41c456: nop    
+  0x00007f70df41c457: callq  0x00007f70df3f1b60  ; OopMap{[16]=Oop off=796}
+                                                ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c45c: callq  0x00007f70e3dc68b0  ;*aload_0
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@0 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c461: xor    %r10d,%r10d
+  0x00007f70df41c464: jmpq   0x00007f70df41c27e
+  0x00007f70df41c469: movsd  %xmm1,0x8(%rsp)
+  0x00007f70df41c46f: movsd  %xmm0,(%rsp)
+  0x00007f70df41c474: mov    $0xfffffff6,%esi
+  0x00007f70df41c479: xchg   %ax,%ax
+  0x00007f70df41c47b: callq  0x00007f70df3f1b60  ; OopMap{off=832}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@22 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c480: callq  0x00007f70e3dc68b0  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@22 (line 14)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c485: movsd  %xmm1,(%rsp)
+  0x00007f70df41c48a: mov    $0xfffffff6,%esi
+  0x00007f70df41c48f: callq  0x00007f70df3f1b60  ; OopMap{off=852}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@50 (line 16)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c494: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df41c499: mov    $0xffffffc6,%esi
+  0x00007f70df41c49e: nop    
+  0x00007f70df41c49f: callq  0x00007f70df3f1b60  ; OopMap{[16]=Oop off=868}
+                                                ;*invokevirtual cond
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df41c4a4: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df41c4a9: mov    $0xffffffc6,%esi
+  0x00007f70df41c4ae: mov    %rbx,(%rsp)
+  0x00007f70df41c4b2: nop    
+  0x00007f70df41c4b3: callq  0x00007f70df3f1b60  ; OopMap{[0]=Oop off=888}
+                                                ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c4b8: callq  0x00007f70e3dc68b0  ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c4bd: xor    %r8d,%r8d
+  0x00007f70df41c4c0: jmpq   0x00007f70df41c205
+  0x00007f70df41c4c5: mov    $0xfffffff6,%esi
+  0x00007f70df41c4ca: nop    
+  0x00007f70df41c4cb: callq  0x00007f70df3f1b60  ; OopMap{off=912}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@4 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c4d0: callq  0x00007f70e3dc68b0  ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@58 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c4d5: mov    $0xfffffff6,%esi
+  0x00007f70df41c4da: nop    
+  0x00007f70df41c4db: callq  0x00007f70df3f1b60  ; OopMap{off=928}
+                                                ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@58 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c4e0: callq  0x00007f70e3dc68b0  ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@58 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c4e5: mov    $0xfffffff6,%esi
+  0x00007f70df41c4ea: nop    
+  0x00007f70df41c4eb: callq  0x00007f70df3f1b60  ; OopMap{off=944}
+                                                ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::cond@4 (line 23)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df41c4f0: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df41c4f5: mov    %rax,%rsi
+  0x00007f70df41c4f8: jmp    0x00007f70df41c4fd  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@65 (line 18)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+  0x00007f70df41c4fa: mov    %rax,%rsi          ;*synchronization entry
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+  0x00007f70df41c4fd: add    $0x30,%rsp
+  0x00007f70df41c501: pop    %rbp
+  0x00007f70df41c502: jmpq   0x00007f70df416ba0  ;   {runtime_call}
+  0x00007f70df41c507: mov    $0xfffffff6,%esi
+  0x00007f70df41c50c: xchg   %ax,%ax
+  0x00007f70df41c50f: callq  0x00007f70df3f1b60  ; OopMap{off=980}
+                                                ;*invokevirtual contents
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c514: callq  0x00007f70e3dc68b0  ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@4 (line 12)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c519: mov    $0xfffffff6,%esi
+  0x00007f70df41c51e: nop    
+  0x00007f70df41c51f: callq  0x00007f70df3f1b60  ; OopMap{off=996}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::contents@4 (line 12)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c524: callq  0x00007f70e3dc68b0  ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@4 (line 20)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@-1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c529: mov    $0xfffffff6,%esi
+  0x00007f70df41c52e: nop    
+  0x00007f70df41c52f: callq  0x00007f70df3f1b60  ; OopMap{off=1012}
+                                                ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.InnerLoop::cond@4 (line 20)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df41c534: callq  0x00007f70e3dc68b0  ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::cond@4 (line 23)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df41c539: mov    $0xfffffff6,%esi
+  0x00007f70df41c53e: nop    
+  0x00007f70df41c53f: callq  0x00007f70df3f1b60  ; OopMap{off=1028}
+                                                ;*getfield out
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::cond@4 (line 23)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@5 (line 9)
+                                                ;   {runtime_call}
+  0x00007f70df41c544: callq  0x00007f70e3dc68b0  ;   {runtime_call}
+  0x00007f70df41c549: mov    $0xfffffff6,%esi
+  0x00007f70df41c54e: nop    
+  0x00007f70df41c54f: callq  0x00007f70df3f1b60  ; OopMap{off=1044}
+                                                ;*invokevirtual apply
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@4 (line 13)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c554: callq  0x00007f70e3dc68b0  ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@58 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c559: mov    $0xfffffff6,%esi
+  0x00007f70df41c55e: nop    
+  0x00007f70df41c55f: callq  0x00007f70df3f1b60  ; OopMap{off=1060}
+                                                ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@58 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c564: callq  0x00007f70e3dc68b0  ;*putfield shift
+                                                ; - org.zaluum.benchmark.parameters.OuterLoop::contents@58 (line 17)
+                                                ; - org.zaluum.benchmark.parameters.Loop::apply@1 (line 8)
+                                                ;   {runtime_call}
+  0x00007f70df41c569: hlt    
+  0x00007f70df41c56a: hlt    
+  0x00007f70df41c56b: hlt    
+  0x00007f70df41c56c: hlt    
+  0x00007f70df41c56d: hlt    
+  0x00007f70df41c56e: hlt    
+  0x00007f70df41c56f: hlt    
+  0x00007f70df41c570: hlt    
+  0x00007f70df41c571: hlt    
+  0x00007f70df41c572: hlt    
+  0x00007f70df41c573: hlt    
+  0x00007f70df41c574: hlt    
+  0x00007f70df41c575: hlt    
+  0x00007f70df41c576: hlt    
+  0x00007f70df41c577: hlt    
+  0x00007f70df41c578: hlt    
+  0x00007f70df41c579: hlt    
+  0x00007f70df41c57a: hlt    
+  0x00007f70df41c57b: hlt    
+  0x00007f70df41c57c: hlt    
+  0x00007f70df41c57d: hlt    
+  0x00007f70df41c57e: hlt    
+  0x00007f70df41c57f: hlt    
+[Stub Code]
+  0x00007f70df41c580: mov    $0x0,%rbx          ;   {no_reloc}
+  0x00007f70df41c58a: jmpq   0x00007f70df41c58a  ;   {runtime_call}
+  0x00007f70df41c58f: mov    $0x0,%rbx          ;   {static_stub}
+  0x00007f70df41c599: jmpq   0x00007f70df41c599  ;   {runtime_call}
+[Exception Handler]
+  0x00007f70df41c59e: jmpq   0x00007f70df4173a0  ;   {runtime_call}
+[Deopt Handler Code]
+  0x00007f70df41c5a3: callq  0x00007f70df41c5a8
+  0x00007f70df41c5a8: subq   $0x5,(%rsp)
+  0x00007f70df41c5ad: jmpq   0x00007f70df3f17c0  ;   {runtime_call}
+  0x00007f70df41c5b2: add    %al,(%rax)
+  0x00007f70df41c5b4: add    %al,(%rax)
+  0x00007f70df41c5b6: add    %al,(%rax)
