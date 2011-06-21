@@ -117,12 +117,13 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
         val command = new EditTransformer {
           val trans: PartialFunction[Tree, Tree] = {
             case b: BoxDef if (b == viewer.boxDef) ⇒
-              BoxDef(b.name, b.superName, guiSize = Some(newSize), b.image,
-                transformTrees(b.defs),
-                transformTrees(b.vals),
-                transformTrees(b.ports),
-                transformTrees(b.connections),
-                transformTrees(b.junctions))
+              b.copy(
+                guiSize = Some(newSize),
+                defs=transformTrees(b.defs),
+                vals=transformTrees(b.vals),
+                ports=transformTrees(b.ports),
+                connections=transformTrees(b.connections),
+                junctions=transformTrees(b.junctions))
           }
         }
         controller.exec(command)

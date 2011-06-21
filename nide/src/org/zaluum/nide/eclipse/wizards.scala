@@ -326,7 +326,7 @@ class ZNewClassWizardPage extends NewClassWizardPage {
       monitor.worked(1);
     }
     def getInitialContents = {
-      val model = BoxDef(Name(""), None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
+      val model = BoxDef(Name(""), Name(pack.getElementName),None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
       val bytes = Serializer.proto(model).toByteArray
       new String(bytes, Charset.forName("ISO-8859-1"))
     }

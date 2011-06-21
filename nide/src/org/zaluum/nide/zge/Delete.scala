@@ -37,12 +37,12 @@ object Delete {
           val removedEdges = for (e <- gb.edges; c <- e.srcCon; if isRemoved(c)) yield e
           val removedg =  removedEdges.foldLeft (gb)((gg,e) => gg.remove(e))
           val (newCons, newJunc) = removedg.prune.clean.toTree
-          BoxDef(b.name, b.superName, b.guiSize, b.image,
-            transformTrees(b.defs filterNot { removedDefs contains(_) }),
-            transformTrees(b.vals filterNot { valDefs contains (_) }) ,
-            transformTrees(b.ports filterNot { portDefs contains(_)} ),
-            newCons,
-            newJunc) 
+          b.copy(
+            defs=transformTrees(b.defs filterNot { removedDefs contains(_) }),
+            vals=transformTrees(b.vals filterNot { valDefs contains (_) }) ,
+            ports=transformTrees(b.ports filterNot { portDefs contains(_)} ),
+            connections=newCons,
+            junctions=newJunc) 
       }
     }
   }

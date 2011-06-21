@@ -14,6 +14,7 @@ message BoxClassDef {
 	repeated Connection connection =8; 
 	repeated Junction junction =9;
 	optional string super = 10;
+	optional string package = 11;
 }
 message Instance {
 	required string name = 1;

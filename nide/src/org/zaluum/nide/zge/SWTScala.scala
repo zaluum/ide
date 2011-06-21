@@ -43,6 +43,12 @@ object SWTScala {
     l.setLayoutData(layout)
     l
   }
+  def newButton(c:Composite, txt:String="", style:Int=SWT.PUSH, layout:AnyRef=null) = {
+    val b = new Button(c,style)
+    b.setText(txt)
+    b.setLayoutData(layout)
+    b
+  }
   def newText(c: Composite, txt: String = "", style: Int = SWT.SINGLE, layout: AnyRef = null) = {
     val t = new Text(c, style)
     t.setText(txt)

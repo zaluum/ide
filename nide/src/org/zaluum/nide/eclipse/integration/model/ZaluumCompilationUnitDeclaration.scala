@@ -110,24 +110,10 @@ class ZaluumCompilationUnitDeclaration(
   }
   def zaluumScope = scope.asInstanceOf[ZaluumCompilationUnitScope]
 
-  def mainNameArr = toMainName(compilationResult.getFileName)
+  def fileMainName = toMainName(compilationResult.getFileName).mkString
   import JDTInternalUtils._
-  def pkgName = {
-    Option(sourceUnit.getPackageName) match {
-      case Some(pkg) ⇒ aToString(pkg)
-      case None ⇒
-        val path = new Path(sourceUnit.getFileName.mkString)
-        val opkg = for (
-          res ← EclipseUtils.pathToResource(path);
-          jp ← Option(JavaCore.create(res.getProject));
-          val e = new EclipseUtils { def jProject = jp };
-          pkg ← e.extractPackageName(res)
-        ) yield pkg
-        opkg.get
-    }
-  }
-  lazy val fqName = List(pkgName, new String(mainNameArr)).mkString(".")
-
+  
+  def fqName= aToString(currentPackage.getImportName) + tree.name.str
   private def createLineSeparator() = {
     // one char per line
     val treeSize = tree.children.size + 1
@@ -140,7 +126,7 @@ class ZaluumCompilationUnitDeclaration(
       case _ ⇒
         val contents = new String(sourceUnit.getContents)
         val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
-        tree = Parser.readTree(new ByteArrayInputStream(byteContents), Name(fqName))
+        tree = Parser.readTree(new ByteArrayInputStream(byteContents),Name(fileMainName))
     }
     createLineSeparator()
     val reporter = new Reporter() {
@@ -162,7 +148,7 @@ class ZaluumCompilationUnitDeclaration(
     problemReporter.record(p, compilationResult, this)
   }
   def createPackageDeclaration() {
-    val pkgArr = stringToA(pkgName)
+    val pkgArr = stringToA(tree.pkg.str)
     currentPackage = new ImportReference(pkgArr, Array.fill(pkgArr.length)(0), true, ClassFileConstants.AccDefault)
     currentPackage.declarationSourceStart = currentPackage.sourceStart
     currentPackage.declarationSourceEnd = currentPackage.sourceEnd
@@ -173,13 +159,12 @@ class ZaluumCompilationUnitDeclaration(
   }
   def createTypeDeclaration(b: BoxDef, outer: Option[TypeDeclaration]): TypeDeclaration = {
     val typeDeclaration = new ZaluumTypeDeclaration(compilationResult, b)
+    typeDeclaration.name = b.name.str.toCharArray
     outer match {
       case Some(o) ⇒
-        typeDeclaration.name = b.name.str.toCharArray
         typeDeclaration.bits |= ASTNode.IsMemberType
         typeDeclaration.modifiers = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
       case None ⇒
-        typeDeclaration.name = mainNameArr
         typeDeclaration.modifiers = Opcodes.ACC_PUBLIC
         val annotation = new MarkerAnnotation(createTypeReference(Name(classOf[Box].getName), b), start(b))
         typeDeclaration.annotations = Array(annotation);
@@ -199,7 +184,6 @@ class ZaluumCompilationUnitDeclaration(
       encDec.enclosingType = typeDeclaration
       encDec
     }
-
     typeDeclaration.memberTypes = children.toArray
     typeDeclaration.declarationSourceEnd = end(b);
     typeDeclaration.declarationSourceStart = start(b);

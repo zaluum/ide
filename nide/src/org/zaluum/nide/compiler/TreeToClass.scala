@@ -26,15 +26,15 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
-      case b @ BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
+      case b : BoxDef ⇒
         val orderVals = b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder map { _.decl }
         atOwner(b.symbol) {
-          BoxDef(name, superName, guiSize, image,
-            transformTrees(defs),
-            transformTrees(orderVals),
-            transformTrees(ports),
-            transformTrees(connections),
-            transformTrees(junctions))
+          b.copy(
+            defs=transformTrees(b.defs),
+            vals=transformTrees(orderVals),
+            ports=transformTrees(b.ports),
+            connections=transformTrees(b.connections),
+            junctions=transformTrees(b.junctions))
         }
     }
   }
@@ -43,9 +43,9 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       bd.symbol.asInstanceOf[BoxTypeSymbol].visualClass
     }
     def apply(t: Tree) = t match {
-      case b @ BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
+      case b : BoxDef⇒
         val tpe = b.tpe.asInstanceOf[BoxTypeSymbol]
-        val baseFields = (vals ++ ports).map { field(_) }
+        val baseFields = (b.vals ++ b.ports).map { field(_) }
         val fields = vClass(b) map { vn ⇒
           FieldDef(Name("_widget"), vn, None,false) :: baseFields
         } getOrElse { baseFields }
@@ -53,7 +53,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
         BoxClass(
           tpe.fqName,
           // TODO check super-name
-          superName getOrElse { Name(classOf[RunnableBox].getName) },
+          b.superName getOrElse { Name(classOf[RunnableBox].getName) },
           baseMethods ++ fields)
     }
     def field(t: Tree) = t match {

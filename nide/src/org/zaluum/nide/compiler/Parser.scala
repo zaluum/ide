@@ -14,13 +14,14 @@ object Parser {
     } catch {
       case e ⇒
         // TODO fixme better handling 
-        BoxDef(Name(""), None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
+        BoxDef(Name(""), Name(""), None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
     }
     a.assignLine(1)
     a
   }
   def parse(b: BoxFileProtos.BoxClassDef, name: Option[Name] = None): BoxDef = {
     BoxDef(name.getOrElse(Name(b.getClassName)),
+      pkg = if (b.hasPackage) Name(b.getPackage) else Name(""),
       superName = if (b.hasSuper) Some(Name(b.getSuper)) else None,
       guiSize = if (b.hasGuiSize) Some(parseDim(b.getGuiSize)) else None,
       image = if (b.hasImageName) Some(b.getImageName) else None,

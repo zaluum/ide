@@ -85,6 +85,7 @@ case class Clump(var junctions: Set[Junction], var ports: Set[PortKey], var conn
 class BoxTypeSymbol(
   val owner: Symbol,
   val name: Name,
+  val pkg: Name,
   val superName: Option[Name],
   val image: Option[String],
   var visualClass: Option[Name],
@@ -169,7 +170,7 @@ class BoxTypeSymbol(
   var executionOrder = List[ValSymbol]()
   def fqName: Name = owner match {
     case bown: BoxTypeSymbol ⇒ Name(bown.fqName.str + "$" + name.str)
-    case _ ⇒ name
+    case _ ⇒ if (pkg!="") Name(pkg.str+"."+name.str) else name
   }
   def isLocal = owner.isInstanceOf[BoxTypeSymbol]
   // override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"

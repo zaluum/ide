@@ -26,24 +26,24 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
   }
-
+  def getExpectedPackageName = this.referenceContext.compilationResult.compilationUnit.getPackageName();
   val cache = Map[Name, BoxTypeSymbol]()
   val cacheJava = Map[TypeBinding, ClassJavaType]()
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray
-    if (arr.isDefined){
-      val (leafname,dim) = arr.get
-      getJavaType(leafname) map { l=>
-       new ArrayType(cud.JDTScope, l , dim)
+    if (arr.isDefined) {
+      val (leafname, dim) = arr.get
+      getJavaType(leafname) map { l ⇒
+        new ArrayType(cud.JDTScope, l, dim)
       }
-    }else {
+    } else {
       val tpe =
         if (name.str.contains(".")) {
-        val compoundName = stringToA(name.str)
-        getType(compoundName, compoundName.length)
-      } else {
-        getType(name.str.toCharArray)
-      }
+          val compoundName = stringToA(name.str)
+          getType(compoundName, compoundName.length)
+        } else {
+          getType(name.str.toCharArray)
+        }
       getJavaType(tpe)
     }
   }
@@ -67,8 +67,8 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
           case "char" ⇒ Some(cud.JDTScope.primitives.char)
           case _ ⇒ None
         }
-      case a:ArrayBinding =>
-        getJavaType(a.leafComponentType) map { leaf =>
+      case a: ArrayBinding ⇒
+        getJavaType(a.leafComponentType) map { leaf ⇒
           new ArrayType(cud.JDTScope, leaf, a.dimensions)
         }
     }
@@ -80,7 +80,7 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
         val methodDecl = parsedType.declarationOf(m.original());
         if (methodDecl != null) {
           val arguments = methodDecl.arguments;
-          if (arguments!=null){
+          if (arguments != null) {
             val names = for (a ← arguments) yield { a.name.mkString }
             return Some(names)
           }
@@ -139,7 +139,12 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
               case other ⇒ Some(Name(other))
             }
           }
-          val bs = new BoxTypeSymbol(cud.a.global.root, name, sperO, None, None, r.isAbstract)
+          
+          val srcName = Name(r.compoundName.last.mkString)
+          val pkgName = Name(aToString(r.fPackage.compoundName))
+          val bs = new BoxTypeSymbol(
+            cud.a.global.root, srcName, pkgName,
+            sperO, None, None, r.isAbstract)
           bs.scope = cud.a.global
           for (f ← r.fields()) {
             val fname = f.name.mkString

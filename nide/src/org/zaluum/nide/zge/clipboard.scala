@@ -54,12 +54,12 @@ case class Clipboard(boxes: List[BoxDef], valDefs: List[ValDef], ports: List[Por
         case b: BoxDef if b == c.boxDef ⇒
           val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
           val renamed = renameRelocate(tpe, currentMouseLocation)
-          BoxDef(b.name, b.superName, guiSize = b.guiSize, b.image,
-            transformTrees(b.defs) ++ renamed.boxes,
-            transformTrees(b.vals) ++ renamed.valDefs,
-            transformTrees(b.ports) ++ renamed.ports,
-            transformTrees(b.connections) ++ renamed.connections,
-            transformTrees(b.junctions))
+          b.copy(
+            defs=transformTrees(b.defs) ++ renamed.boxes,
+            vals=transformTrees(b.vals) ++ renamed.valDefs,
+            ports=transformTrees(b.ports) ++ renamed.ports,
+            connections=transformTrees(b.connections) ++ renamed.connections,
+            junctions=transformTrees(b.junctions))
       }
     }
   }

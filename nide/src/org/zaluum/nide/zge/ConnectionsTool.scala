@@ -89,12 +89,12 @@ trait ConnectionsTool {
           new EditTransformer {
             val trans: PartialFunction[Tree, Tree] = {
               case b: BoxDef if (b == initContainer.boxDef) ⇒
-                BoxDef(b.name, b.superName, b.guiSize, b.image,
-                  transformTrees(b.defs),
-                  transformTrees(b.vals),
-                  transformTrees(b.ports),
-                  connections,
-                  junctions)
+                b.copy(
+                  defs=transformTrees(b.defs),
+                  vals=transformTrees(b.vals),
+                  ports=transformTrees(b.ports),
+                  connections=connections,
+                  junctions=junctions)
             }
           })
       } else exit()
@@ -265,12 +265,12 @@ trait ConnectionsTool {
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if (b == initContainer.boxDef) ⇒
-            BoxDef(b.name, b.superName, b.guiSize, b.image,
-              transformTrees(b.defs),
-              transformTrees(b.vals),
-              transformTrees(b.ports),
-              connections,
-              junctions)
+            b.copy(
+              defs=transformTrees(b.defs),
+              vals=transformTrees(b.vals),
+              ports=transformTrees(b.ports),
+              connections=connections,
+              junctions=junctions)
           case v: ValDef if (valdefs.contains(v)) ⇒
             v.copy(pos = snap(v.pos + delta), params = transformTrees(v.params))
           case p: PortDef if (portdefs.contains(p)) ⇒

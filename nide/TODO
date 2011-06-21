@@ -24,6 +24,7 @@ palette
 
 editor
 -change port names
+-make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 -Background of an empty file not plain white ("start here" text?)
 -al connectar o desconnectar cables de vegades fa coses rares
 -double click or ctrl click goes to definition
@@ -37,8 +38,9 @@ editor
 -align tool
 -visual only boxes
 -notes/ visual only on diagram
-
+ 
 complex
+-box unbox support
 -If box, Switch, and other boxes with special visual support.
 -Swing thread synchronization / refresh rate
 -External port position selection

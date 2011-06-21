@@ -103,6 +103,10 @@ class Palette(viewer: TreeViewer, mainShell: Shell) extends ScrollPopup(mainShel
         }
       }
     }
-
+    // properties
+    val b = newButton(top, "Properties...")
+    addReaction(b) {
+      new BoxDefDialog(viewer, viewer.boxDef).open()
+    }
   }
 }

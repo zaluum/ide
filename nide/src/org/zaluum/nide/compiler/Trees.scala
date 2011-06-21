@@ -100,14 +100,13 @@ trait CopySymbolTransformer extends Transformer {
 trait CopyTransformer extends Transformer {
   val defaultTransform: PartialFunction[Tree, Tree] = {
     case e@EmptyTree ⇒ e
-    case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
+    case b:BoxDef⇒
       atOwner(b.symbol) {
-        BoxDef(name, superName, guiSize, image,
-          transformTrees(defs),
-          transformTrees(vals),
-          transformTrees(ports),
-          transformTrees(connections),
-          transformTrees(junctions))
+      b.copy(defs = transformTrees(b.defs),
+          vals = transformTrees(b.vals),
+          ports = transformTrees(b.ports),
+          connections= transformTrees(b.connections),
+          junctions = transformTrees(b.junctions))
       }
     case PortDef(name, typeName, dir, inPos, extPos) ⇒
       PortDef(name, typeName, dir, inPos, extPos)
@@ -149,13 +148,13 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
     tree match {
       case EmptyTree ⇒
         ;
-      case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
+      case b:BoxDef⇒
         atOwner(tree.symbol) {
-          traverseTrees(defs)
-          traverseTrees(vals)
-          traverseTrees(ports)
-          traverseTrees(connections)
-          traverseTrees(junctions)
+          traverseTrees(b.defs)
+          traverseTrees(b.vals)
+          traverseTrees(b.ports)
+          traverseTrees(b.connections)
+          traverseTrees(b.junctions)
         }
       case v: ValDef ⇒
         atOwner(tree.symbol) {
@@ -189,14 +188,14 @@ object PrettyPrinter {
   def sym(tree: Tree) = " sym= " + tree.symbol + " tpe= " + tree.tpe
   def print(tree: Tree, deep: Int): Unit = tree match {
     case EmptyTree ⇒ print("EmptyTree", deep)
-    case b@BoxDef(name, superName, guiSize, image, defs, vals, ports, connections, junctions) ⇒
-      print("BoxDef(" + name + " extends " + superName + ", " + image, deep)
-      print(guiSize.toString, deep + 1)
-      print(defs, deep + 1)
-      print(vals, deep + 1)
-      print(ports, deep + 1)
-      print(connections, deep + 1)
-      print(junctions, deep + 1)
+    case b:BoxDef ⇒
+      print("BoxDef(" + b.pkg + " " + b.name + " extends " + b.superName + ", " + b.image, deep)
+      print(b.guiSize.toString, deep + 1)
+      print(b.defs, deep + 1)
+      print(b.vals, deep + 1)
+      print(b.ports, deep + 1)
+      print(b.connections, deep + 1)
+      print(b.junctions, deep + 1)
       print(")" + sym(b), deep)
     case v: ValDef ⇒
       print("ValDef(" + List(v.name, v.pos, v.size, v.typeName, v.guiPos, v.guiSize).mkString(","), deep)
@@ -250,7 +249,7 @@ case object EmptyTree extends Tree {
 }
 
 /* Definition */
-case class BoxDef(name: Name, superName: Option[Name],
+case class BoxDef(name: Name, pkg:Name, superName: Option[Name],
   guiSize: Option[Dimension],
   image: Option[String],
   defs: List[Tree],
