@@ -1,20 +1,21 @@
 package org.zaluum.nide.eclipse.integration
 
 import model.ZaluumCompilationUnit
-import org.codehaus.jdt.groovy.integration.{LanguageSupport, EventHandler}
+import org.codehaus.jdt.groovy.integration.{EventHandler, LanguageSupport}
 import org.eclipse.core.resources.IProject
-import org.eclipse.jdt.core.search.{TypeReferenceMatch, SearchMatch, TypeDeclarationMatch, SearchRequestor, SearchPattern}
+import org.eclipse.jdt.core.search.{SearchMatch, SearchPattern, SearchRequestor, TypeDeclarationMatch, TypeReferenceMatch}
 import org.eclipse.jdt.core.WorkingCopyOwner
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import org.eclipse.jdt.internal.compiler.parser.Parser
-import org.eclipse.jdt.internal.compiler.problem.{ProblemReporter, DefaultProblemFactory}
-import org.eclipse.jdt.internal.compiler.{SourceElementParser, ISourceElementRequestor, IProblemFactory, CompilationResult, DefaultErrorHandlingPolicies}
+import org.eclipse.jdt.internal.compiler.problem.{DefaultProblemFactory, ProblemReporter}
+import org.eclipse.jdt.internal.compiler.{CompilationResult, DefaultErrorHandlingPolicies, IProblemFactory, ISourceElementRequestor, SourceElementParser}
 import org.eclipse.jdt.internal.core.search.indexing.IndexingParser
-import org.eclipse.jdt.internal.core.search.matching.{TypeReferencePattern, TypeDeclarationPattern, PossibleMatch, MatchLocatorParser, MatchLocator, ImportMatchLocatorParser}
+import org.eclipse.jdt.internal.core.search.matching.{ImportMatchLocatorParser, MatchLocator, MatchLocatorParser, PossibleMatch, TypeDeclarationPattern, TypeReferencePattern}
 import org.eclipse.jdt.internal.core.util.Util
-import org.eclipse.jdt.internal.core.{PackageFragment, CompilationUnit, BinaryType}
+import org.eclipse.jdt.internal.core.{BinaryType, CompilationUnit, PackageFragment}
+import org.eclipse.text.edits.TextEdit
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
 import org.zaluum.nide.eclipse.ZaluumNature
 
@@ -168,4 +169,25 @@ class ZaluumLanguageSupport extends LanguageSupport {
   def getEventHandler(): EventHandler = new ZaluumEventHandler()
 
   def filterNonSourceMembers(binaryType: BinaryType) {}
+  
+  def updateContent(cu: org.eclipse.jdt.core.ICompilationUnit ,  destPackageName : Array[String], currPackageName : Array[String],
+      newName: String) : TextEdit = {
+    val packageDecls = cu.getPackageDeclarations();
+    val doPackage = !Util.equalArraysOrNull(currPackageName.asInstanceOf[Array[Object]], destPackageName.asInstanceOf[Array[Object]])
+    val doName = newName != null;
+    import org.zaluum.nide.compiler.{Name,Serializer}
+    if (doPackage || doName) {
+      cu match {
+        case c:CompilationUnit =>
+            val s = c.getSource
+            val name = if (newName!=null) newName else cu.getElementName.split('.').last
+            val tree = org.zaluum.nide.compiler.Parser.readTree(s,Name(name));
+            val refactored = tree.copy ( name = Name(name), pkg = Name(destPackageName.mkString(".")))
+            val str = Serializer.writeToIsoString(Serializer.proto(refactored))
+            return new org.eclipse.text.edits.ReplaceEdit(0,s.length,str);
+        case _ =>
+      }
+    }
+    null;
+ }
 }

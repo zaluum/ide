@@ -70,8 +70,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
   def replaceWorkingCopyContents() {
     if (isDirty) {
       if (!cu.isWorkingCopy) cu.becomeWorkingCopy(null)
-      val p = Serializer.proto(nowTree.asInstanceOf[BoxDef]);
-      val str = new String(p.toByteArray, Charset.forName("ISO-8859-1"))
+      val str = Serializer.writeToIsoString(Serializer.proto(nowTree.asInstanceOf[BoxDef]));
       cu.applyTextEdit(new ReplaceEdit(0, cu.getBuffer.getLength, str), null)
     } else {
       if (cu.isWorkingCopy) cu.discardWorkingCopy

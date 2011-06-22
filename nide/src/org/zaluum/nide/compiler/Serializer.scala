@@ -3,7 +3,11 @@ package org.zaluum.nide.compiler
 import org.zaluum.nide.zge.Clipboard
 import org.zaluum.nide.zge.H
 import org.zaluum.nide.protobuf.BoxFileProtos
+import java.nio.charset.Charset
 object Serializer {
+  def writeToIsoString(d : BoxFileProtos.BoxClassDef) : String= 
+    new String(d.toByteArray,Charset.forName("ISO-8859-1"))
+  
   def proto(b: BoxDef): BoxFileProtos.BoxClassDef = {
     val p = BoxFileProtos.BoxClassDef.newBuilder
     p.setClassName(b.name.str)

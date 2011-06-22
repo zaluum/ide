@@ -6,8 +6,10 @@ import org.zaluum.nide.zge.H
 import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.JavaConversions._
 import java.io.InputStream
+import java.nio.charset.Charset
+import java.io.ByteArrayInputStream
 object Parser {
-  def readTree(i: InputStream, className: Name) = {
+  def readTree(i: InputStream, className: Name) : BoxDef= {
     val a = try {
       val proto = BoxFileProtos.BoxClassDef.parseFrom(i)
       parse(proto, Some(className))
@@ -18,6 +20,10 @@ object Parser {
     }
     a.assignLine(1)
     a
+  }
+  def readTree(isoString:String, className: Name) : BoxDef = {
+    val byteContents = isoString.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
+    readTree(new ByteArrayInputStream(byteContents),className)
   }
   def parse(b: BoxFileProtos.BoxClassDef, name: Option[Name] = None): BoxDef = {
     BoxDef(name.getOrElse(Name(b.getClassName)),

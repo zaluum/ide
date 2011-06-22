@@ -141,7 +141,7 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
           }
           
           val srcName = Name(r.compoundName.last.mkString)
-          val pkgName = Name(aToString(r.fPackage.compoundName))
+          val pkgName = Name(r.qualifiedPackageName.mkString) 
           val bs = new BoxTypeSymbol(
             cud.a.global.root, srcName, pkgName,
             sperO, None, None, r.isAbstract)

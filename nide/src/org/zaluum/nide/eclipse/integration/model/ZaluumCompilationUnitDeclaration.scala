@@ -125,8 +125,7 @@ class ZaluumCompilationUnitDeclaration(
         tree = p.tree.asInstanceOf[BoxDef]
       case _ ⇒
         val contents = new String(sourceUnit.getContents)
-        val byteContents = contents.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
-        tree = Parser.readTree(new ByteArrayInputStream(byteContents),Name(fileMainName))
+        tree = Parser.readTree(contents, Name(fileMainName))
     }
     createLineSeparator()
     val reporter = new Reporter() {

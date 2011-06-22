@@ -53,10 +53,19 @@ complex
 -refactor boxes into class
 -java search full support/refactor support
 
+
 library
 -Graphing widget properties. Color/etc( see labview)
 -tutorials/docs/etc
 -sound output clicks?
+
+refactor
+- org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester
+- org.eclipse.jdt.internal.corext.refactoring.reorg.ReorgUtils.getJavaElements .getResources
+- org.eclipse.jdt.internal.core.util.Util. isJavaLikeFileName
+- org.eclipse.jdt.internal.core.CopyResourceElementsOperation
+- org.eclipse.jdt.internal.core.CreatePackageDeclaration
+- ICompilationUnit create...
 
 LATER
 -groovy compatible/scala compatible

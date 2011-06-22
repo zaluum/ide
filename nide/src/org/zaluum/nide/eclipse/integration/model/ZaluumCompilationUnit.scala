@@ -151,12 +151,6 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
   def withoutDotZaluum(str:String) = {
     if (str.endsWith(".zaluum")) str.dropRight(".zaluum".length) else str
   }
-  /*override def rename(newName:String, force:Boolean, monitor:IProgressMonitor) {
-    super.rename(newName,force,monitor)
-    // see groovy
-    if (isWorkingCopy)
-      discardWorkingCopy
-  }*/
   override protected def codeComplete(cu :org.eclipse.jdt.internal.compiler.env.ICompilationUnit,
       unitToSkip : org.eclipse.jdt.internal.compiler.env.ICompilationUnit, position : Int, requestor : CompletionRequestor,
       owner : WorkingCopyOwner, typeRoot : ITypeRoot, monitor :  IProgressMonitor) {
