@@ -5,12 +5,21 @@ import java.io.File
 import java.io.FileFilter
 
 object Compile {
+  val rt = "/home/frede/devel/jdk1.7.0/jre/lib/rt.jar"
+  val embedded = new File("/home/frede/devel/zaluum/embedded-lib/lib/")
+  val libs = if (embedded.exists && embedded.isDirectory) {
+    embedded.listFiles() filter { _.getName.endsWith(".jar")} map {_.getAbsolutePath} toList 
+  }else List()
+  def runTest(path:String) {
+    val src = path + "/src"
+    val cp = (src :: rt :: libs)
+    val target = path + "/target"
+    val options = "-d " + target +
+        " -cp " + cp.mkString(":") + " test1/src/Test1.java test1/src/Test2.zaluum";
+    println(options)
+    BatchCompiler.compile(options, new PrintWriter(System.out), new PrintWriter(System.err), null);    
+  }
   def main(args:Array[String]){
-    val rt = "/home/frede/devel/jdk1.7.0/jre/lib/rt.jar"
-    val embedded = new File("/home/frede/devel/zaluum/embedded-lib/lib/")
-    val libs = if (embedded.exists && embedded.isDirectory) {
-      embedded.listFiles() filter { _.getName.endsWith(".jar")} mkString (":")
-    }else ""
-    BatchCompiler.compile("-verbose -d testout -cp test1:" + libs + ":" + rt + " test1/Test1.java test1/Test2.zaluum", new PrintWriter(System.out), new PrintWriter(System.err), null);
+    runTest("test1")
   }
 }

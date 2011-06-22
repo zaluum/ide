@@ -41,3 +41,5 @@ Bundle-Activator: org.zaluum.nide.Activator
 Bundle-ActivationPolicy: lazy
 Eclipse-RegisterBuddy: org.eclipse.jdt.core
 Export-Package: org.zaluum.nide.icons
+Import-Package: org.apache.tools.ant.taskdefs,
+ org.apache.tools.ant.util

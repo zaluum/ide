@@ -11,4 +11,4 @@ target/
 .directory
 logs.zip
 *~
-testing/testout
+testing/**/build
