@@ -16,6 +16,7 @@ object Parser {
     } catch {
       case e ⇒
         // TODO fixme better handling 
+        println("PARSING ERROR!")
         BoxDef(Name(""), Name(""), None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
     }
     a.assignLine(1)
