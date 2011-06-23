@@ -39,6 +39,9 @@ editor
 -visual only boxes
 -notes/ visual only on diagram
  
+ ant 
+f org.apache.tools.ant.taskdefs.compilers.CompilerAdapterFactory current classloading scheme doesn't allow to load the JDT compiler from <classpath>. It must be on ant -lib classpath.
+ 
 complex
 -box unbox support
 -If box, Switch, and other boxes with special visual support.

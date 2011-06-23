@@ -8,27 +8,29 @@
 	<property name="dist" location="dist" />
 
 	<target name="init">
+		<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
 		<property name="eclipseBase" value="/home/frede/devel/eclipse3.6/plugins" />
 		<property name="scalaLib" value="/home/frede/.m2/repository/p2/osgi/bundle/org.scala-ide.scala.library/2.9.0.final/org.scala-ide.scala.library-2.9.0.final.jar" />
 		<property name="srcBase" value="/home/frede/devel/zaluum"/>
 		<property name="nideBase" value="${srcBase}/nide"/>
 		<property name="jdtBase" value="${srcBase}/groovy-eclipse/jdt-patch/e36/org.eclipse.jdt.core"/>
-
+		
 		<path id="zjavac.classpath">
-			<pathelement path="${eclipseBase}/org.eclipse.core.runtime_3.6.0.v20100505.jar" />
-			<pathelement path="${scalaLib}"/>
-			<pathelement path="${jdtBase}/antbin" />
-			<pathelement path="${nideBase}/bin" />
-			<pathelement path="${jdtBase}/bin" />
-			<pathelement path="${eclipseBase}/org.eclipse.osgi_3.6.2.R36x_v20110210.jar" />
-			<pathelement path="${eclipseBase}/org.eclipse.core.resources_3.6.1.R36x_v20110131-1630.jar" />
-			<pathelement path="${eclipseBase}/org.eclipse.core.filesystem_1.3.1.R36x_v20100727-0745.jar" />
-			<pathelement path="${eclipseBase}/org.eclipse.equinox.common_3.6.0.v20100503.jar" />
-			<pathelement path="${eclipseBase}/org.eclipse.core.jobs_3.5.1.R36x_v20100824.jar" />
-			<pathelement path="${eclipseBase}/org.eclipse.text_3.5.0.v20100601-1300.jar" />
+			<!--<pathelement path="${jdtBase}/antbin" />-->
+			<pathelement location="/home/frede/devel/zaluum/groovy-eclipse/jdt-patch/e36/org.eclipse.jdt.core/antbin"/>
+			<pathelement location="${eclipseBase}/org.eclipse.core.runtime_3.6.0.v20100505.jar" />
+			<pathelement location="${scalaLib}"/>
+			<pathelement location="${nideBase}/bin" />
+			<pathelement location="${jdtBase}/bin" />
+			<pathelement location="${eclipseBase}/org.eclipse.osgi_3.6.2.R36x_v20110210.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.core.resources_3.6.1.R36x_v20110131-1630.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.core.filesystem_1.3.1.R36x_v20100727-0745.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.equinox.common_3.6.0.v20100503.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.core.jobs_3.5.1.R36x_v20100824.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.text_3.5.0.v20100601-1300.jar" />
 		</path>
-		<taskdef name="zjavac" classname="org.zaluum.nide.ZaluumJDTCompileTask">
-			<!--<classpath refid="zjavac.classpath" />--> 
+		<taskdef name="zjavac" classname="org.zaluum.nide.ZaluumJDTCompileTask" >
+			<classpath refid="zjavac.classpath" /> 
 		</taskdef>
 		<!-- Create the time stamp -->
 		<tstamp />
@@ -38,10 +40,9 @@
 
 	<target name="compile" depends="init" description="compile the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
-		<zjavac srcdir="${src}" destdir="${build}" >
+		<zjavac srcdir="${src}" destdir="${build}" includeantruntime="true">
 			<!--<classpath refid="zjavac.classpath"/>-->
-			<compilerarg compiler="org.eclipse.jdt.core.JDTCompilerAdapter" line="-1.5 -warn:+boxing"/>
+			<!--<compilerarg compiler="org.eclipse.jdt.core.JDTCompilerAdapter" line="-1.5 -warn:+boxing"/>-->
 		</zjavac>
 	</target>
 
