@@ -148,10 +148,12 @@ class ZaluumCompilationUnitDeclaration(
   }
   def createPackageDeclaration() {
     val pkgArr = stringToA(tree.pkg.str)
-    currentPackage = new ImportReference(pkgArr, Array.fill(pkgArr.length)(0), true, ClassFileConstants.AccDefault)
-    currentPackage.declarationSourceStart = currentPackage.sourceStart
-    currentPackage.declarationSourceEnd = currentPackage.sourceEnd
-    currentPackage.declarationEnd = currentPackage.sourceEnd
+    if (tree.pkg.str != "" ) {
+      currentPackage = new ImportReference(pkgArr, Array.fill(pkgArr.length)(0), true, ClassFileConstants.AccDefault)
+      currentPackage.declarationSourceStart = currentPackage.sourceStart
+      currentPackage.declarationSourceEnd = currentPackage.sourceEnd
+      currentPackage.declarationEnd = currentPackage.sourceEnd
+    }
   }
   def createTypeDeclarations() {
     types = Array(createTypeDeclaration(tree, None))

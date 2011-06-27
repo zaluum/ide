@@ -28,14 +28,14 @@ object Compile {
     val target = new File(path, "target")
     val filesToCompile = javasOrZaluums(path) map { f ⇒ f.getPath } mkString (" ")
     val compilationCheck = new File(path, "compilation.check");
-    val options = "-d " + target.getPath +
+    val options = "-source 1.5 -target 1.5 -d " + target.getPath +
       " -cp " + cp.mkString(":") + " " + filesToCompile;
     if (target.exists) target.delete
     target.mkdir
     //msg(" compiling with: \n\t" + options)
     val out = new StringWriter()
     val err = new StringWriter()
-    val okComp = BatchCompiler.compile(options, new PrintWriter(out, true), new PrintWriter(err, true), null);
+    val okComp = BatchCompiler.compile(options, new PrintWriter(System.out), new PrintWriter(err, true), null);
     out.flush
     err.flush
     val errStr = err.toString
@@ -86,6 +86,7 @@ object Compile {
           } catch {
             case e ⇒
               error(" execution failed: " + e.toString)
+              e.printStackTrace
               false
           }
         case None ⇒

@@ -331,11 +331,14 @@ class ZNewClassWizardPage extends NewClassWizardPage {
     }
     val cuName = getCompilationUnitName(getTypeNameWithoutParameters())
     val contents = getInitialContents
-    val cu = pack.createCompilationUnit(cuName, "", true, monitor)
-
+    val cu = pack.createCompilationUnit(cuName, contents, true, monitor)
     val res = cu.getResource.asInstanceOf[IFile]
     res.setCharset("ISO-8859-1", null)
+    try{
     cu.becomeWorkingCopy(null)
+    } catch { case e => 
+      // TODO first creatCompilationUnit has bad encoding.  
+    }
     cu.applyTextEdit(new ReplaceEdit(0, cu.getBuffer.getLength, contents), null)
     cu.commitWorkingCopy(true, new SubProgressMonitor(monitor, 1));
     cu.discardWorkingCopy
