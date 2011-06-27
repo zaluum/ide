@@ -146,7 +146,7 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
             cud.a.global.root, srcName, pkgName,
             sperO, None, None, r.isAbstract)
           bs.scope = cud.a.global
-          for (f ← r.fields()) {
+          for (f ← r.fields(); if f.isPublic && !f.isStatic) {
             val fname = f.name.mkString
             def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
               aToString(a.getAnnotationType.compoundName) == c.getName

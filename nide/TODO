@@ -1,10 +1,10 @@
 NOW
 compiler
--mirar la visibilitat del port (protected/public) al compilar
 -compilador amb parametres out apply(in in in)
 -downcast automàtic
 -pensar sistema upcasting
 -@Apply marks apply method to invoke
+-comprovar si hi ha metode apply
 
 icons
 -better icon set
@@ -42,6 +42,7 @@ editor
 f org.apache.tools.ant.taskdefs.compilers.CompilerAdapterFactory current classloading scheme doesn't allow to load the JDT compiler from <classpath>. It must be on ant -lib classpath.
  
 complex
+-mirar la visibilitat del port (protected/public) al compilar. Visualitzar el port depenent de si es accessible o no.
 -box unbox support
 -If box, Switch, and other boxes with special visual support.
 -Swing thread synchronization / refresh rate

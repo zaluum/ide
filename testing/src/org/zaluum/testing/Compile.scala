@@ -42,7 +42,7 @@ object Compile {
     if (!okComp) {
       val f = new File(target, "compilation.check")
       f.createNewFile;
-      val w = new PrintWriter(f)
+      val w = new PrintWriter(f, "utf-8")
       w.print(errStr)
       w.flush
       w.close
@@ -54,7 +54,9 @@ object Compile {
       error("failed: Compilation failed but no compilation.check is present")
       false
     } else if (compilationCheck.exists && !okComp) {
-      if (Source.fromFile(compilationCheck, "utf-8").mkString != errStr) {
+      val fromFile = Source.fromFile(compilationCheck, "utf-8").mkString
+
+      if (fromFile != errStr) {
         error("failed: Compilation result is not equal to compilation.check")
         false
       } else {
@@ -116,7 +118,7 @@ object Compile {
       if (runTest(d)) ok += 1
       run += 1
     }
-    println ("RUN: " + run + " OK: " + ok + " FAIL: " + (run-ok))
+    println("RUN: " + run + " OK: " + ok + " FAIL: " + (run - ok))
 
   }
 }

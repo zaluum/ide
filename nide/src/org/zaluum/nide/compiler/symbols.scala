@@ -8,7 +8,7 @@ trait Symbol {
   var decl: Tree = EmptyTree
   var tpe: Type = NoSymbol
   var scope: Scope = null
-  override def toString = "Symbol(" + (if (name != null) super.toString else "NoSymbol") + ")"
+  override def toString = "Symbol(" + (if (name != null) name.str else "NoSymbol") + ")"
 }
 trait Type extends Symbol
 case object NoSymbol extends Symbol with Type {
@@ -19,7 +19,7 @@ abstract class JavaType(val owner: Symbol) extends Symbol with Type {
   scope = owner.scope
   def name: Name
   def descriptor: String
-  override def toString = "JavaType(" + name + "@" + hashCode + ")"
+  override def toString = "JavaType(" + name + ")"
 }
 class PrimitiveJavaType(owner: Symbol, val name: Name, override val descriptor: String) extends JavaType(owner) {
 
