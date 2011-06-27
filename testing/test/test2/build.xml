@@ -1,0 +1,53 @@
+<project name="Simple test" default="compile" basedir=".">
+	<description>
+        simple example build file
+    </description>
+	<!-- set global properties for this build -->
+	<property name="src" location="src" />
+	<property name="build" location="build" />
+	<property name="dist" location="dist" />
+
+	<target name="init">
+		<property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+		<property name="eclipseBase" value="/home/frede/devel/eclipse3.6/plugins" />
+		<property name="scalaLib" value="/home/frede/.m2/repository/p2/osgi/bundle/org.scala-ide.scala.library/2.9.0.final/org.scala-ide.scala.library-2.9.0.final.jar" />
+		<property name="srcBase" value="/home/frede/devel/zaluum"/>
+		<property name="nideBase" value="${srcBase}/nide"/>
+		<property name="jdtBase" value="${srcBase}/groovy-eclipse/jdt-patch/e36/org.eclipse.jdt.core"/>
+		
+		<path id="zjavac.classpath">
+			<!--<pathelement path="${jdtBase}/antbin" />-->
+			<pathelement location="/home/frede/devel/zaluum/groovy-eclipse/jdt-patch/e36/org.eclipse.jdt.core/antbin"/>
+			<pathelement location="${eclipseBase}/org.eclipse.core.runtime_3.6.0.v20100505.jar" />
+			<pathelement location="${scalaLib}"/>
+			<pathelement location="${nideBase}/bin" />
+			<pathelement location="${jdtBase}/bin" />
+			<pathelement location="${eclipseBase}/org.eclipse.osgi_3.6.2.R36x_v20110210.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.core.resources_3.6.1.R36x_v20110131-1630.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.core.filesystem_1.3.1.R36x_v20100727-0745.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.equinox.common_3.6.0.v20100503.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.core.jobs_3.5.1.R36x_v20100824.jar" />
+			<pathelement location="${eclipseBase}/org.eclipse.text_3.5.0.v20100601-1300.jar" />
+		</path>
+		<taskdef name="zjavac" classname="org.zaluum.nide.ZaluumJDTCompileTask" >
+			<classpath refid="zjavac.classpath" /> 
+		</taskdef>
+		<!-- Create the time stamp -->
+		<tstamp />
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}" />
+	</target>
+
+	<target name="compile" depends="init" description="compile the source ">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<zjavac srcdir="${src}" destdir="${build}" includeantruntime="true">
+			<!--<classpath refid="zjavac.classpath"/>-->
+			<!--<compilerarg compiler="org.eclipse.jdt.core.JDTCompilerAdapter" line="-1.5 -warn:+boxing"/>-->
+		</zjavac>
+	</target>
+
+
+	<target name="clean" description="clean up">
+		<delete dir="${build}" />
+	</target>
+</project>
