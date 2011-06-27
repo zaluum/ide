@@ -22,6 +22,7 @@ import org.eclipse.jdt.internal.core.SourceMethodElementInfo
 import org.eclipse.jdt.internal.core.SourceTypeElementInfo
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cud, lookupEnvironment) {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
@@ -125,6 +126,12 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
       case _ ⇒ None
     }
   }
+  def allFieldsFor(r:ReferenceBinding) : List[FieldBinding]= {
+    r.fields.toList ++ {if (r.superclass!=null) allFieldsFor(r.superclass) else List()}
+  }
+  def allMethodsFor(r:ReferenceBinding) : List[MethodBinding]= {
+    r.methods.toList ++ {if (r.superclass!=null) allMethodsFor(r.superclass) else List()}
+  }
   def getBoxType(name: Name): Option[BoxTypeSymbol] = {
     cache.get(name).orElse {
       val compoundName = stringToA(name.str)
@@ -146,7 +153,7 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
             cud.a.global.root, srcName, pkgName,
             sperO, None, None, r.isAbstract)
           bs.scope = cud.a.global
-          for (f ← r.fields(); if f.isPublic && !f.isStatic) {
+          for (f ← allFieldsFor(r); if f.isPublic && !f.isStatic) {
             val fname = f.name.mkString
             def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
               aToString(a.getAnnotationType.compoundName) == c.getName
@@ -166,8 +173,8 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
               }
             }
           }
-
-          for (m ← r.availableMethods) {
+          
+          for (m ← allMethodsFor(r)) {
             val parameterNames = findMethodParameterNames(m) getOrElse {
               (for (i ← 0 until m.parameters.length) yield "$" + i).toArray
             }
@@ -186,6 +193,8 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
                   p.tpe = ptpe
                   bs.enter(p)
                 }
+              }else if (mName == "apply" && !m.isStatic && !m.isAbstract && m.parameters.size==0 && m.returnType == TypeBinding.VOID) {
+                bs.hasApply= true
               }
             }
           }

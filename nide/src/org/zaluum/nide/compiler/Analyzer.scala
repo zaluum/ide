@@ -176,6 +176,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
         case b:BoxDef ⇒
           val cl = Some(Name(classOf[JPanel].getName))
           val newSym = new BoxTypeSymbol(currentOwner, b.name, b.pkg, b.superName, b.image, cl)
+          newSym.hasApply=true
           val sym = defineBox(newSym, tree)
           val bs = sym.asInstanceOf[BoxTypeSymbol]
           bs.constructors = List(new Constructor(bs, List()))
@@ -221,6 +222,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           catchAbort(currentScope.lookupBoxType(v.typeName)) match {
             case Some(bs: BoxTypeSymbol) ⇒
               v.symbol.tpe = bs
+              if (!bs.hasApply) {
+                error("Box " + v.typeName.str + " has no apply method", tree)
+              }
               // Constructor
               val consSign = v.constructorTypes map { name ⇒
                 currentScope.lookupType(name) getOrElse {

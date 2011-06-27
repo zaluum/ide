@@ -5,7 +5,7 @@ import org.zaluum.annotation.In;
 
 @Box
 public class DynamicFIR extends AbstractFIRBox {
-	@In double[] coeficients; 
+	@In public double[] coeficients; 
 	public DynamicFIR(int len) {
 		super(len); 
 	}

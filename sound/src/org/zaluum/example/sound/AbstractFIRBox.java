@@ -4,8 +4,8 @@ import org.zaluum.annotation.In;
 import org.zaluum.annotation.Out;
 
 public abstract class AbstractFIRBox {
-	@In double in;
-	@Out double out;
+	@In public double in;
+	@Out public double out;
 	
 	private final double[] buffer;
 	private int count;

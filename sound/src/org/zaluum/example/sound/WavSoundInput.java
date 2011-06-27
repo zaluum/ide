@@ -17,7 +17,7 @@ import org.zaluum.annotation.Out;
 @Box
 public class WavSoundInput {
 	@Out
-	double out;
+	public double out;
 	static final int channels = 2;
 	static final int bits = 16;
 	static final float sampleRate = 44100.0f;

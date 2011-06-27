@@ -6,15 +6,15 @@ import org.zaluum.annotation.Out;
 
 @Box
 public class Equalizer {
-	@Out double[] impulseResponse;
-	@In double i0;
-	@In double i1;
-	@In double i2;
-	@In double i3;
-	@In double i4;
-	@In double i5;
-	@In double i6;
-	@In double i7;
+	@Out public double[] impulseResponse;
+	@In public double i0;
+	@In public double i1;
+	@In public double i2;
+	@In public double i3;
+	@In public double i4;
+	@In public double i5;
+	@In public double i6;
+	@In public double i7;
 	private double[] data;
 	private final double scale; 
 	public Equalizer(int samples) {

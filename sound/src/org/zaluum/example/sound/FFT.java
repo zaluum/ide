@@ -8,8 +8,8 @@ import org.zaluum.annotation.Out;
 
 @Box
 public class FFT {
-	@In double[] params;
-	@Out double[] transformed;
+	@In public double[] params;
+	@Out public double[] transformed;
 	private double[] cached;
 	public void apply(){
 		if (Arrays.equals(params, cached)) return;

@@ -90,6 +90,7 @@ class BoxTypeSymbol(
   val image: Option[String],
   var visualClass: Option[Name],
   val abstractCl: Boolean = false) extends LocalScope(owner.scope) with Symbol with Type {
+  var hasApply = false
   def declaredPorts = ports
   def portsWithSuper: Map[Name, Symbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def declaredVals = vals

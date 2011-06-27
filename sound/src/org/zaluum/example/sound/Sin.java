@@ -5,8 +5,8 @@ import org.zaluum.annotation.In;
 import org.zaluum.annotation.Out;
 @Box
 public class Sin {
-	@In double t;
-	@Out double sin;
+	@In public double t;
+	@Out public double sin;
 	public void apply() {
 	  sin =Math.sin(t*2*Math.PI)*0.2;
 	}

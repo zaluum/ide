@@ -1,10 +1,11 @@
 NOW
 compiler
+-pot heradar un port un .zaluum?
 -compilador amb parametres out apply(in in in)
 -downcast automàtic
 -pensar sistema upcasting
 -@Apply marks apply method to invoke
--comprovar si hi ha metode apply
+
 
 icons
 -better icon set
@@ -83,3 +84,4 @@ MUCH LATER
 DONE!
 -testing harness
 -peta el paquet default
+-comprovar si hi ha metode apply
