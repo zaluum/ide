@@ -8,13 +8,13 @@ import java.net.URLClassLoader
 import scala.io.Source
 
 object Compile {
-  val rt = "/home/frede/devel/jdk1.7.0/jre/lib/rt.jar"
+  val rt = "/home/frede/devel/jdk1.7.0/jre/lib/rt.jar" // TODO remove absolute path
   val embedded = new File("/home/frede/devel/zaluum/embedded-lib/lib/")
   val libs = if (embedded.exists && embedded.isDirectory) {
     embedded.listFiles() filter { _.getName.endsWith(".jar") } map { _.getAbsolutePath } toList
   } else List()
 
-  def runTest(path: File) {
+  def runTest(path: File): Boolean = {
     def msg(msg: String) = {
       println(path + " " + msg)
     }
@@ -32,7 +32,7 @@ object Compile {
       " -cp " + cp.mkString(":") + " " + filesToCompile;
     if (target.exists) target.delete
     target.mkdir
-    msg(" compiling with: \n\t" + options)
+    //msg(" compiling with: \n\t" + options)
     val out = new StringWriter()
     val err = new StringWriter()
     val okComp = BatchCompiler.compile(options, new PrintWriter(out, true), new PrintWriter(err, true), null);
@@ -58,11 +58,9 @@ object Compile {
         error("failed: Compilation result is not equal to compilation.check")
         false
       } else {
-        msg("ok")
         true
       }
     } else {
-      msg(" ok")
       true
     }
     // run test
@@ -81,15 +79,20 @@ object Compile {
             val loader = new URLClassLoader(Array(target.toURI.toURL), Thread.currentThread.getContextClassLoader)
             val cl: Class[_] = loader.loadClass(c)
             val m = cl.getMethod("test")
-            msg("running " + m)
+            //msg("running ")
             m.invoke(null, Array(): _*)
-            msg("execution success")
+            msg("ok")
+            true
           } catch {
-            case e ⇒ error(" execution failed: " + e.toString)
+            case e ⇒
+              error(" execution failed: " + e.toString)
+              false
           }
         case None ⇒
+          msg("ok (no runtime test)")
+          true
       }
-    }
+    } else false
   }
 
   def dirs(f: File): List[File] = {
@@ -106,10 +109,13 @@ object Compile {
     } else List()
   }
   def main(args: Array[String]) {
-    val pos = new File("test")
-    for (d ← dirs(pos)) {
-      runTest(d)
+    var run = 0;
+    var ok = 0;
+    for (d ← dirs(new File("."))) {
+      if (runTest(d)) ok += 1
+      run += 1
     }
+    println ("RUN: " + run + " OK: " + ok + " FAIL: " + (run-ok))
 
   }
 }

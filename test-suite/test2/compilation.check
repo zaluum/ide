@@ -1,5 +1,5 @@
 ----------
-1. ERROR in test/test2/src/Test1.java (at line 2)
+1. ERROR in ./test2/src/Test1.java (at line 2)
 	sdf
 	^^^
 Syntax error on token "sdf", delete this token
