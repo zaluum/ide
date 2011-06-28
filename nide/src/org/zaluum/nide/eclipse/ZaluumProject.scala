@@ -1,13 +1,25 @@
 package org.zaluum.nide.eclipse
 import org.eclipse.jdt.core.IJavaProject
 import org.zaluum.nide.compiler.{Name,BoxTypeSymbol}
-import org.zaluum.annotation.Box
 import org.eclipse.jdt.core.IType
 import org.eclipse.jdt.core.Flags
 import org.eclipse.core.runtime.IProgressMonitor
+import org.zaluum.annotation.Box
+import scala.collection.mutable.WeakHashMap
 
-case class BoxTypeProxy(name:Name, abstractCl:Boolean)
-class ZaluumProject(val jProject: IJavaProject) extends GlobalClassPath{
+case class BoxTypeProxy(name:Name, abstractCl:Boolean) {
+  def split = name.str.splitAt(name.str.lastIndexOf("."))
+  def pkgName = split._1 
+  def simpleName = split._2.drop(1)
+}
+
+object ZaluumProjectManager {
+  private val m = WeakHashMap[IJavaProject,ZaluumProject]()
+  def getZaluumProject(jProject: IJavaProject) = {
+    m.getOrElseUpdate(jProject, new ZaluumProject(jProject))
+  }
+}
+class ZaluumProject private[eclipse] (val jProject: IJavaProject) extends GlobalClassPath{
   def getBoxSymbol(name:Name) : Option[BoxTypeProxy] = {
     Option(jProject.findType(name.str)) flatMap { typeToProxy(_) }
   }

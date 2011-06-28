@@ -6,7 +6,6 @@ compiler
 -pensar sistema upcasting
 -@Apply marks apply method to invoke
 
-
 icons
 -better icon set
 -Wrap text on automatic icons
@@ -15,7 +14,7 @@ icons
 -Ensure icon disposal
 
 palette
--Palette as tree with eclipse filters
+-view palette icons - dispose properly
 -pin palette
 -palette background must be white-gray
 -Cache palette/ background search
@@ -85,3 +84,4 @@ DONE!
 -testing harness
 -peta el paquet default
 -comprovar si hi ha metode apply
+-Palette as tree with eclipse filters

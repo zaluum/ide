@@ -18,7 +18,7 @@ import org.zaluum.nide.eclipse.BoxTypeProxy
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
   val connectionLineDistance = 2
-  object selecting extends Selecting with DeleteState with ClipboardState {
+  object selecting extends Selecting with DeleteState with ClipboardState with DropState{
     var port: Option[PortFigure] = None
     override def doubleClick() {
       itemUnderMouse match {
@@ -96,6 +96,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           }
         case (None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
+    }
+    def drop(s:String) {
+      creating.enter(Name(s),current)
     }
     def delete() {
       controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.graphOf))

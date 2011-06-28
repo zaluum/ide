@@ -3,6 +3,7 @@ package org.zaluum.nide.eclipse
 import org.eclipse.core.commands.{AbstractHandler, ExecutionEvent}
 import org.eclipse.core.resources.{IFile, IMarker}
 import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.jdt.core.{IType, JavaCore}
 import org.eclipse.jface.viewers.StructuredSelection
 import org.eclipse.swt.events.{DisposeEvent, DisposeListener}
 import org.eclipse.swt.layout.FillLayout
@@ -15,8 +16,6 @@ import org.eclipse.ui.part.EditorPart
 import org.eclipse.ui.{IEditorInput, IEditorPart, IEditorSite}
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
 import org.zaluum.nide.zge.{Controller, GuiViewer, TreeViewer, Viewer}
-import org.eclipse.jdt.core.IType
-import org.eclipse.jdt.core.JavaCore
 
 class GraphicalEditor extends BaseEditor with IGotoMarker {
 
@@ -39,10 +38,10 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
   }
 
   def isDirty(): Boolean = { controller.isDirty }
-
+  def zproject = controller.zproject
   def createPartControl(parent: Composite) {
     val cu = JavaCore.createCompilationUnitFrom(inputFile)
-    val zProject = new ZaluumProject(jproject)
+    val zProject = ZaluumProjectManager.getZaluumProject(jproject) 
     val controller = new Controller(cu, zProject,parent.getDisplay)
     controller.addListener(fireDirtyClosure)
     viewer = new TreeViewer(parent, controller, this)

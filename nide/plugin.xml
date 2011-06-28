@@ -558,4 +558,20 @@
             configId="org.eclipse.ui.intro.universalConfig"
             content="$nl$/intro/whatsnewExtensionContent.xml"/>
    </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="zaluum.view"
+            name="Zaluum">
+      </category>
+      <view
+            allowMultiple="false"
+            category="zaluum.view"
+            class="org.zaluum.nide.zge.PaletteView"
+            icon="icons/zaluum_icon_16.gif"
+            id="nide.paletteView"
+            name="Palette"
+            restorable="true">
+      </view>
+   </extension>
 </plugin>

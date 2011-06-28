@@ -78,6 +78,14 @@ abstract class Tool(viewer: Viewer) {
     Point(snap(p.x), snap(p.y))
   }
   var swtMouseLocation = new org.eclipse.swt.graphics.Point(0, 0)
+  def updateMouseWithDisplayCoordinates(x:Int, y:Int) {
+    swtMouseLocation.x = x
+    swtMouseLocation.y = y
+    val canvasLocation = canvas.getDisplay.map(null, canvas, swtMouseLocation)
+    val absMouse = new org.eclipse.draw2d.geometry.Point(canvasLocation.x, canvasLocation.y)
+    viewport.translateFromParent(absMouse);
+    absMouseLocation = Point(absMouse.x, absMouse.y)
+  }
   def updateMouse(me: MouseEvent) {
     stateMask = me.stateMask
     swtMouseLocation.x = me.x
@@ -86,7 +94,6 @@ abstract class Tool(viewer: Viewer) {
     val absMouse = new org.eclipse.draw2d.geometry.Point(me.x, me.y)
     viewport.translateFromParent(absMouse);
     absMouseLocation = Point(absMouse.x, absMouse.y)
-    
   }
 
   def leftButton(me: MouseEvent) = me.button == 1
@@ -95,10 +102,21 @@ abstract class Tool(viewer: Viewer) {
   trait DeleteState {
     def delete()
   }
+  trait DropState {
+    def drop(s:String)
+  }
   def handleDel() {
     state match {
       case d: DeleteState ⇒ d.delete()
       case _ ⇒
+    }
+  }
+  def handleDrop(x:Int,y:Int, s:String) {
+    updateMouseWithDisplayCoordinates(x,y)
+    state.move()
+    state match {
+      case d: DropState => d.drop(s)
+      case _ =>
     }
   }
   trait ClipboardState {

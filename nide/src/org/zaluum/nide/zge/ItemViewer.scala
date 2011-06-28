@@ -8,6 +8,11 @@ import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.{ Composite, MessageBox }
 import scala.collection.JavaConversions._
+import org.eclipse.swt.dnd.DropTarget
+import org.eclipse.swt.dnd.DND
+import org.eclipse.swt.dnd.TextTransfer
+import org.eclipse.swt.dnd.DropTargetAdapter
+import org.eclipse.swt.dnd.DropTargetEvent
 
 abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with ContainerItem {
   /*SWT*/
@@ -15,7 +20,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   val portsLayer = new FreeformLayer
   val pointsLayer = new FreeformLayer
   val connectionsLayer = new FreeformLayer
-  val background = new FreeformLayer/* {
+  val background = new FreeformLayer /* {
     override def paintFigure(g:Graphics) { DotPainter.dotFill(g,getBounds) }
   }*/
   val layer = new FreeformLayer
@@ -24,6 +29,16 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   val marquee = new RectangleFigure;
   {
     canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
+    val dt = new DropTarget(viewer.canvas, DND.DROP_MOVE);
+    dt.setTransfer(Array(TextTransfer.getInstance()));
+    dt.addDropListener(new DropTargetAdapter() {
+      override def dragEnter(event:DropTargetEvent) {        
+        canvas.setFocus
+      }
+      override def drop(event: DropTargetEvent) {
+        tool.handleDrop(event.x, event.y,event.data.asInstanceOf[String])
+      }
+    })
     background.setOpaque(true);
     background.setBackgroundColor(ColorConstants.white)
     background.setForegroundColor(ColorConstants.blue)
@@ -41,20 +56,21 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   }
   import RichFigure._
   override def dispose() {
-    this.deepChildren foreach { _ match {
-        case a : AutoDisposeImageFigure => a.disposeImage()
-        case _ =>
+    this.deepChildren foreach {
+      _ match {
+        case a: AutoDisposeImageFigure ⇒ a.disposeImage()
+        case _ ⇒
       }
     }
     super.dispose()
   }
   /*DEFS*/
-  def blink(s:SelectionSubject) {
-    this.deepChildren.find { 
-      case i : Item => i.selectionSubject == Some(s) 
-      case _=> false
+  def blink(s: SelectionSubject) {
+    this.deepChildren.find {
+      case i: Item ⇒ i.selectionSubject == Some(s)
+      case _ ⇒ false
     } foreach {
-      case i: Item => i.blink();
+      case i: Item ⇒ i.blink();
     }
   }
   def showMarquee() { feedbackLayer.add(marquee) }
@@ -62,6 +78,6 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   def hideMarquee() { feedbackLayer.remove(marquee) }
   def selectedItems: Set[Item]
   val selection = new SelectionManager[SelectionSubject]()
-  def blink(b:Boolean) {}
-  
+  def blink(b: Boolean) {}
+
 }
