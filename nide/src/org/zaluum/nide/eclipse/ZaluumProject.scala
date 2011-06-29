@@ -1,4 +1,5 @@
 package org.zaluum.nide.eclipse
+
 import org.eclipse.jdt.core.IJavaProject
 import org.zaluum.nide.compiler.{Name,BoxTypeSymbol}
 import org.eclipse.jdt.core.IType
@@ -6,6 +7,8 @@ import org.eclipse.jdt.core.Flags
 import org.eclipse.core.runtime.IProgressMonitor
 import org.zaluum.annotation.Box
 import scala.collection.mutable.WeakHashMap
+import org.zaluum.nide.zge.ImageFactory
+import org.eclipse.swt.widgets.Display
 
 case class BoxTypeProxy(name:Name, abstractCl:Boolean) {
   def split = name.str.splitAt(name.str.lastIndexOf("."))
@@ -20,6 +23,7 @@ object ZaluumProjectManager {
   }
 }
 class ZaluumProject private[eclipse] (val jProject: IJavaProject) extends GlobalClassPath{
+  lazy val imageFactory = new ImageFactory(this)
   def getBoxSymbol(name:Name) : Option[BoxTypeProxy] = {
     Option(jProject.findType(name.str)) flatMap { typeToProxy(_) }
   }

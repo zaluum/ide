@@ -1,6 +1,6 @@
 NOW
 compiler
--pot heradar un port un .zaluum?
+-pot heredar un port un .zaluum?
 -compilador amb parametres out apply(in in in)
 -downcast automàtic
 -pensar sistema upcasting
@@ -14,8 +14,6 @@ icons
 -Ensure icon disposal
 
 palette
--view palette icons - dispose properly
--pin palette
 -palette background must be white-gray
 -Cache palette/ background search
 -Search in palette

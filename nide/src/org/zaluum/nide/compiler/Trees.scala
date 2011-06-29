@@ -249,7 +249,8 @@ case object EmptyTree extends Tree {
 }
 
 /* Definition */
-case class BoxDef(name: Name, pkg:Name, superName: Option[Name],
+case class BoxDef(name: Name, // simple name
+  pkg:Name, superName: Option[Name],
   guiSize: Option[Dimension],
   image: Option[String],
   defs: List[Tree],

@@ -1,5 +1,10 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.jface.resource.LocalResourceManager
+import org.eclipse.swt.graphics.Device
+import org.eclipse.jface.resource.DeviceResourceDescriptor
+import org.eclipse.jface.resource.JFaceResources
+import org.eclipse.jface.resource.ResourceManager
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.IFigure
@@ -19,55 +24,7 @@ import org.zaluum.nide.icons.Icons
 import org.zaluum.nide.eclipse.ZaluumProject
 import org.eclipse.core.resources.IProject
 
-class ImageFactory(val display: Display, zp: ZaluumProject) {
-  def notFound = ImageDescriptor.createFromFile(classOf[Icons], "notFound.png").createImage()
-  def portDeclIn = ImageDescriptor.createFromFile(classOf[Icons], "portDeclIn.png").createImage()
-  def portDeclOut = ImageDescriptor.createFromFile(classOf[Icons], "portDeclOut.png").createImage()
-  def portDeclShift = ImageDescriptor.createFromFile(classOf[Icons], "portDeclShift.png").createImage()
 
-  def portImg(dir:PortDir) = dir match {
-    case In => portDeclIn
-    case Out => portDeclOut
-    case Shift => portDeclShift
-  }
-  def load(resource: String) = {
-    val url = zp.getResource(resource);
-    url map { u ⇒
-      ImageDescriptor.createFromURL(u).createImage()
-    }
-  }
-  def apply(name : Name) : Image = {
-    imageFor(None,name);
-  }
-  def apply(tpe: Type): Image = {
-    tpe match {
-      case b: BoxTypeSymbol ⇒ imageFor(b.image, b.name)
-      case _ ⇒ notFound
-    }
-  }
-  private def imageFor(image: Option[String], name: Name) = {
-    def defaultImage(name: Name) = name.toRelativePath + ".png";
-    def fallbackImage(name: Name) = load(defaultImage(name)).getOrElse { generateImage(name.classNameWithoutPackage) }
-    image.flatMap { load(_) }.getOrElse(fallbackImage(name))
-  }
-  def apply(typeTree: Tree): Image = {
-    typeTree match {
-      case b: BoxDef ⇒ imageFor(b.image, b.name)
-      case _ ⇒ notFound
-    }
-  }
-  private def generateImage(txt: String): Image = {
-    val img = new Image(display, 48, 48);
-    val gc = new GC(img)
-    val font = new Font(display, "Arial", 6, SWT.NONE);
-    gc.setFont(font)
-    gc.drawRectangle(0, 0, 47, 47)
-    gc.drawText(txt, 1, 20);
-    gc.dispose
-    font.dispose
-    img
-  }
-}
 class SelectionManager[A] {
   protected var selected = Set[A]()
   def currentSelected = selected
@@ -108,7 +65,7 @@ abstract class ScrollPopup(mainShell: Shell) {
   def name: String
   def columns: Int
   def size = new Point(400, 300)
-  def populate(content: Composite,scroll:ScrolledComposite)
+  def populate(content: Composite, scroll: ScrolledComposite)
   val popup = new PopupDialog(mainShell, SWT.ON_TOP, true,
     true, true,
     false, false,
@@ -121,8 +78,8 @@ abstract class ScrollPopup(mainShell: Shell) {
       val content = new Composite(scroll, SWT.NONE);
       content.setBackground(ColorConstants.blue)
       scroll.setContent(content);
-      populate(content,scroll)
-      content.setSize(content.computeSize(SWT.DEFAULT,SWT.DEFAULT))
+      populate(content, scroll)
+      content.setSize(content.computeSize(SWT.DEFAULT, SWT.DEFAULT))
       composite
     }
     override def getDefaultLocation(iniSize: Point) = loc
@@ -138,7 +95,7 @@ abstract class ScrollPopup(mainShell: Shell) {
   }
 }
 object DotPainter {
-  def dotFill(graphics: Graphics, b: Rectangle, dx : Int , dy:Int) {
+  def dotFill(graphics: Graphics, b: Rectangle, dx: Int, dy: Int) {
     graphics.fillRectangle(b);
     for (i ← 0 to b.width by dx; j ← 0 to b.height by dy) {
       graphics.drawPoint(i, j);

@@ -569,7 +569,7 @@
             category="zaluum.view"
             class="org.zaluum.nide.zge.PaletteView"
             icon="icons/zaluum_icon_16.gif"
-            id="nide.paletteView"
+            id="org.zaluum.nide.paletteView"
             name="Palette"
             restorable="true">
       </view>

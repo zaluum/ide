@@ -1,5 +1,7 @@
 package org.zaluum.nide.eclipse
 
+import org.eclipse.ui.IWorkbenchPage
+import org.zaluum.nide.zge.PaletteView
 import org.eclipse.core.commands.{AbstractHandler, ExecutionEvent}
 import org.eclipse.core.resources.{IFile, IMarker}
 import org.eclipse.core.runtime.IProgressMonitor
@@ -47,6 +49,7 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
     viewer = new TreeViewer(parent, controller, this)
     controller.registerViewer(viewer)
     getEditorSite().setSelectionProvider(selectionProvider);
+    getSite().getPage().showView(PaletteView.ID,null,IWorkbenchPage.VIEW_VISIBLE);
     // TODO reopen
   }
   def adaptItem(i: IType): StructuredSelection = {

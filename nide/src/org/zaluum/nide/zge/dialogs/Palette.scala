@@ -69,8 +69,9 @@ class Palette(viewer: TreeViewer, mainShell: Shell) extends ScrollPopup(mainShel
       b
     }
     def portDecl(content: Composite, dir: PortDir, desc: String) {
-      val b = createButton(content, "Port " + desc, viewer.imageFactory.portImg(dir)) 
-      addOnDispose(b) { b.getImage.dispose() }
+      val (img,idesc) = zproject.imageFactory.portImg(dir)
+      val b = createButton(content, "Port " + desc,img)
+      addOnDispose(b) { zproject.imageFactory.destroy(idesc) }
       addReaction(b) {
         viewer.tool.state.abort()
         viewer.tool.creatingPort.enter(dir, container)
@@ -86,15 +87,15 @@ class Palette(viewer: TreeViewer, mainShell: Shell) extends ScrollPopup(mainShel
       portDecl(ports, Shift, "Shift port")
     portsBar.setExpanded(true)
     // PACKAGES
-    val grouped = EclipseUtils.withProgress[Map[String,Seq[BoxTypeProxy]]]("Fetching palette") { monitor ⇒
+    val grouped = EclipseUtils.withProgress[Map[String, Seq[BoxTypeProxy]]]("Fetching palette") { monitor ⇒
       zproject.index(monitor).groupBy(proxy ⇒ proxy.name.str.splitAt(proxy.name.str.lastIndexOf("."))._1)
     }
     for ((packName, proxies) ← grouped.toList.sortWith(_._1 < _._1)) {
       val (content, _) = newBar(packName, top)
       for (boxProxy ← proxies.sortBy(_.name.str)) {
-        val img = viewer.imageFactory(boxProxy.name)
+       val (img,imgDesc) = zproject.imageFactory(boxProxy.name)
         val b = createButton(content, boxProxy.name.str, img)
-        addOnDispose(b) { img.dispose }
+        addOnDispose(b) { zproject.imageFactory.destroy(imgDesc) }
         addReaction(b) {
           viewer.tool.state.abort()
           viewer.tool.creating.enter(boxProxy.name, container)

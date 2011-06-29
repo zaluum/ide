@@ -17,6 +17,7 @@ import org.zaluum.nide.eclipse.BoxTypeProxy
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
+  def zproject = viewer.controller.zproject
   val connectionLineDistance = 2
   object selecting extends Selecting with DeleteState with ClipboardState with DropState{
     var port: Option[PortFigure] = None
@@ -158,10 +159,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       state = this
       this.tpeName = tpename
       tpe = controller.zproject.getBoxSymbol(tpeName);
-      val img = viewer.imageFactory(tpeName);
+      val (img,desc) = zproject.imageFactory(tpeName);
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
-      img.dispose()
+      zproject.imageFactory.destroy(desc)
       feed.show()
     }
     def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
@@ -227,10 +228,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       enterSingle(initContainer)
       state = this
       this.dir = dir
-      val img = viewer.imageFactory.portImg(dir)
+      val (img,desc) = zproject.imageFactory.portImg(dir)
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
-      img.dispose()
+      zproject.imageFactory.destroy(desc)
       feed.show()
     }
     var feed: ItemFeedbackFigure = _

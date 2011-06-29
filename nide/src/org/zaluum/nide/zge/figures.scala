@@ -1,5 +1,6 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.jface.resource.DeviceResourceDescriptor
 import org.eclipse.draw2d.Label
 import org.eclipse.draw2d.Shape
 import org.eclipse.swt.graphics.Color
@@ -91,15 +92,20 @@ class LabelItem(val container:ContainerItem, gui:Boolean=false) extends Figure w
   def updateValPorts () {}
 }
 trait AutoDisposeImageFigure extends ImageFigure {
+  var desc : DeviceResourceDescriptor = null
+  def imageFactory : ImageFactory
   def disposeImage() {
-    if (getImage != null) getImage.dispose
+    if (desc!=null)
+      imageFactory.destroy(desc)
   }
 }
 class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
+  def imageFactory = container.viewer.zproject.imageFactory
   def updateMe() {
     disposeImage()
-    val newImg = container.viewerResources.imageFactory(valDef.tpe)
+    val (newImg,newDesc) = imageFactory(valDef.tpe)
+    desc = newDesc
     setImage(newImg)
   }
   override def paintFigure(gc:Graphics) {

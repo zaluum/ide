@@ -15,9 +15,9 @@ import scala.collection.mutable.Buffer
 import org.eclipse.draw2d.{IFigure,LayoutListener}
 
 class GuiViewer(parent: Composite, controller: Controller)
-  extends ItemViewer(parent, controller) with ContainerItem with ViewerResources {
+  extends ItemViewer(parent, controller) with ContainerItem {
   /*TOOLS*/
-  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.zproject)
+  def zproject = controller.zproject
   val items = Buffer[Item]()
   val feed = null
   def pos = Point(0,0)

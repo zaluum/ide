@@ -84,9 +84,9 @@ case class ValPortKeySym(box: BoxTypeSymbol, valSym: ValSymbol, port: PortSymbol
 case class Clump(var junctions: Set[Junction], var ports: Set[PortKey], var connections: Set[ConnectionDef])
 class BoxTypeSymbol(
   val owner: Symbol,
-  val name: Name,
-  val pkg: Name,
-  val superName: Option[Name],
+  val simpleName: Name, //Class name without package
+  val pkg: Name, // pkgdecl
+  val superName: Option[Name], //fqname
   val image: Option[String],
   var visualClass: Option[Name],
   val abstractCl: Boolean = false) extends LocalScope(owner.scope) with Symbol with Type {
@@ -94,6 +94,11 @@ class BoxTypeSymbol(
   def declaredPorts = ports
   def portsWithSuper: Map[Name, Symbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def declaredVals = vals
+  def name = if (pkg.str!="") Name(pkg.str+"."+simpleName.str) else simpleName // TODO this is not a full name for inner classes!
+  def fqName: Name = owner match { // this is
+    case bown: BoxTypeSymbol ⇒ Name(bown.fqName.str + "$" + simpleName.str)
+    case _ ⇒ name
+  }
   object connections extends Namer {
     var junctions = Set[Junction]()
     def usedNames = junctions map { _.name.str }
@@ -169,10 +174,7 @@ class BoxTypeSymbol(
   def IOInOrder = ports.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[IOSymbol]]
   def params = ports.values collect { case p: ParamSymbol ⇒ p }
   var executionOrder = List[ValSymbol]()
-  def fqName: Name = owner match {
-    case bown: BoxTypeSymbol ⇒ Name(bown.fqName.str + "$" + name.str)
-    case _ ⇒ if (pkg!="") Name(pkg.str+"."+name.str) else name
-  }
+  
   def isLocal = owner.isInstanceOf[BoxTypeSymbol]
   // override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"
   override def lookupPort(name: Name): Option[Symbol] =

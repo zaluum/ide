@@ -27,7 +27,6 @@ import RichFigure._
 
 trait ContainerItem extends Item {
   def viewer: Viewer
-  def viewerResources: ViewerResources
   def layer: Figure
   def background: Figure
   def connectionsLayer: Figure
@@ -136,7 +135,7 @@ trait ContainerItem extends Item {
     news foreach { v ⇒
       val f = v.scope.lookupBoxTypeLocal(v.typeName) match {
         case Some(tpe) ⇒
-          val o = new OpenBoxFigure(ContainerItem.this, viewer, viewerResources)
+          val o = new OpenBoxFigure(ContainerItem.this, viewer)
           o.updateOpenBox(v, Map())
           o
         case None ⇒
@@ -183,8 +182,7 @@ object OpenBoxFigure {
 }
 class OpenBoxFigure(
   val container: ContainerItem,
-  val viewer: Viewer,
-  val viewerResources: ViewerResources) extends Figure with ValDefItem with ResizableFeedback with ContainerItem with Transparent {
+  val viewer: Viewer) extends Figure with ValDefItem with ResizableFeedback with ContainerItem with Transparent {
   // Item
   def myLayer = container.layer
   def size = valDef.size getOrElse Dimension(Tool.gridSize*16, Tool.gridSize*16)

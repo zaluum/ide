@@ -16,13 +16,9 @@ import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.compiler._
 
-trait ViewerResources { // XXX rename
-  def imageFactory: ImageFactory
-}
 class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
-  extends ItemViewer(parent, controller) with ContainerItem with ViewerResources with ClipboardViewer {
+  extends ItemViewer(parent, controller) with ContainerItem with ClipboardViewer {
   /*TOOLS*/
-  lazy val imageFactory = new ImageFactory(parent.getDisplay, controller.zproject)
   val palette = new Palette(this, parent.getShell)
   /*MODEL*/
   def tree = controller.tree.asInstanceOf[BoxDef]
@@ -30,9 +26,8 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def owner = null
   def viewer = this
   /*LAYERS*/
-  def viewerResources = this
   val tool: TreeTool = new TreeTool(this)
-
+  def zproject = controller.zproject
   def gotoMarker(l: Int) {
     controller.findPath(l) foreach { t ⇒
       selection.updateSelection(Set(t), false)

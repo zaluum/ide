@@ -101,10 +101,12 @@ abstract class PortHolderFigure(val container: ContainerItem) extends AutoDispos
   def dir: PortDir
   var size = Dimension(50, 20)
   val port = new PortFigure(container)
+  def imageFactory = container.viewer.zproject.imageFactory
   ports += port
   def update() {
     disposeImage()
-    val image = container.viewerResources.imageFactory.portImg(dir)
+    val (image,newdesc) = container.viewer.zproject.imageFactory.portImg(dir)
+    desc = newdesc
     setImage(image)
     size = Dimension(image.getBounds.width, image.getBounds.height)
     updateSize()
