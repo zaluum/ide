@@ -17,7 +17,7 @@ object Parser {
       case e ⇒
         // TODO fixme better handling
         //e.printStackTrace;
-        println("PARSING ERROR!" +e )
+        println("PARSING ERROR! " +e )
         BoxDef(Name(""), Name(""), None, guiSize = Some(Dimension(250, 250)), None, List(), List(), List(), List(), List())
     }
     a.assignLine(1)

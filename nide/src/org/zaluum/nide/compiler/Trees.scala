@@ -265,7 +265,7 @@ object PortDir {
     case Shift.str => Shift
   }
 }
-sealed class PortDir(val str:String, val desc:String) 
+sealed abstract class PortDir(val str:String, val desc:String) 
 case object In extends PortDir("<in>", "Port In") 
 case object Out extends PortDir("<out>", "Port Out")
 case object Shift extends PortDir("<shift>", "Port Shift")

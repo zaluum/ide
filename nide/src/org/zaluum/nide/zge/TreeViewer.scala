@@ -5,7 +5,6 @@ import org.eclipse.jdt.core.IJavaElement
 import org.eclipse.core.runtime.IAdaptable
 import org.eclipse.jdt.core.JavaCore
 import org.zaluum.nide.eclipse.GraphicalEditor
-import org.zaluum.nide.zge.dialogs.Palette
 import org.eclipse.swt.dnd.ByteArrayTransfer
 import org.eclipse.swt.dnd.Transfer
 import org.eclipse.draw2d.Graphics
@@ -18,8 +17,6 @@ import org.zaluum.nide.compiler._
 
 class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
   extends ItemViewer(parent, controller) with ContainerItem with ClipboardViewer {
-  /*TOOLS*/
-  val palette = new Palette(this, parent.getShell)
   /*MODEL*/
   def tree = controller.tree.asInstanceOf[BoxDef]
   def boxDef = tree

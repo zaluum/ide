@@ -123,7 +123,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case Some(o: OpenBoxFigure) ⇒ ValDefMenu.show(viewer, o)
         case Some(l: LabelItem) => ValDefMenu.show(viewer, l)
         case Some(b: ValFigure) ⇒ ValDefMenu.show(viewer, b);
-        case _ ⇒ viewer.palette.show(current)
+        case _ ⇒ 
       }
     }
   }
