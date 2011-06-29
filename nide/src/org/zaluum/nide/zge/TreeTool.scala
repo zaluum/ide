@@ -99,7 +99,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     def drop(s:String) {
-      creating.enter(Name(s),current)
+      s match {
+        case In.str => creatingPort.enter(In,current)
+        case Out.str => creatingPort.enter(Out,current)
+        case Shift.str => creatingPort.enter(Shift,current)
+        case _ =>  creating.enter(Name(s),current)
+      }
     }
     def delete() {
       controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.graphOf))

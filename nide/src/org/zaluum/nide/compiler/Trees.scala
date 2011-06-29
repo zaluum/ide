@@ -258,10 +258,17 @@ case class BoxDef(name: Name, // simple name
   ports: List[Tree],
   connections: List[Tree],
   junctions: List[Tree]) extends DefTree
-sealed trait PortDir
-case object In extends PortDir
-case object Out extends PortDir
-case object Shift extends PortDir
+object PortDir {
+  def fromStr(str:String) = str match {
+    case In.str => In
+    case Out.str => Out
+    case Shift.str => Shift
+  }
+}
+sealed class PortDir(val str:String, val desc:String) 
+case object In extends PortDir("<in>", "Port In") 
+case object Out extends PortDir("<out>", "Port Out")
+case object Shift extends PortDir("<shift>", "Port Shift")
 case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPos: Point) extends DefTree with Positionable {
   def pos = inPos
 }
