@@ -27,6 +27,7 @@ import java.awt.{ Graphics ⇒ AG }
 import java.awt.image.BufferedImage
 import javax.swing.BoxLayout
 import org.eclipse.draw2d.FigureUtilities
+import org.zaluum.nide.Activator
 
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item {
@@ -136,7 +137,7 @@ class DirectValFigure(val container: ContainerItem) extends RectangleFigure with
 }
 trait TextEditFigure extends Figure with Item with RectFeedback {
   def text: String;
-  setFont(Display.getCurrent.getSystemFont) // FIXME https://bugs.eclipse.org/bugs/show_bug.cgi?id=308964
+  setFont(Activator.getDefault.directEditFont) // https://bugs.eclipse.org/bugs/show_bug.cgi?id=308964
   val pg = new FlowPage()
   pg.setForegroundColor(ColorConstants.black)
   val fl = new TextFlow()

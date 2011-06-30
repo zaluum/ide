@@ -1,5 +1,9 @@
 package org.zaluum.nide.zge
 
+import org.zaluum.nide.Activator
+import org.eclipse.ui.PlatformUI
+import org.eclipse.core.runtime.Platform
+import org.eclipse.swt.graphics.TextLayout
 import org.eclipse.swt.widgets.Control
 import org.eclipse.jface.resource.LocalResourceManager
 import org.eclipse.swt.graphics.Device
@@ -76,12 +80,16 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
     def createResource(device: Device): Object = {
       val img = new Image(device, 48, 48);
       val gc = new GC(img)
-      val font = new Font(device, "Arial", 6, SWT.NONE);
-      gc.setFont(font)
+      val t = new TextLayout(device)
+      val font = Activator.getDefault.generatedIconFont
+      t.setText(name.classNameWithoutPackage)
+      t.setAlignment(SWT.CENTER)
+      t.setFont(font)
+      t.setWidth(47)
       gc.drawRectangle(0, 0, 47, 47)
-      gc.drawText(name.str, 1, 20);
+      t.draw(gc,0,math.max(0,(47-t.getBounds.height)/2))
+      t.dispose
       gc.dispose
-      font.dispose
       img
     }
 

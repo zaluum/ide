@@ -8,13 +8,9 @@ compiler
 
 icons
 -better icon set
--Wrap text on automatic icons
 -Automatic icon grows/shrinks depending on number of ports
--mida lletra icona en altres pcs
--Ensure icon disposal
 
 palette
--palette background must be white-gray
 -Cache palette/ background search
 -Search in palette
 -Javadoc on palette 
@@ -27,7 +23,6 @@ editor
 -double click or ctrl click goes to definition
 -GUI deep preview
 -when a visual component moves, resize the canvas size
--Mark errors on presentation compiler? ex. no constructor found.
 -write javadoc on zaluum files
 -Zoom
 -show/hide grid
@@ -35,9 +30,10 @@ editor
 -align tool
 -visual only boxes
 -notes/ visual only on diagram
+-re layout on box movement
  
- ant 
-f org.apache.tools.ant.taskdefs.compilers.CompilerAdapterFactory current classloading scheme doesn't allow to load the JDT compiler from <classpath>. It must be on ant -lib classpath.
+ant 
+-automate build proguard ant
  
 complex
 -mirar la visibilitat del port (protected/public) al compilar. Visualitzar el port depenent de si es accessible o no.
@@ -69,6 +65,7 @@ refactor
 
 LATER
 -groovy compatible/scala compatible
+-Mark errors on presentation compiler? ex. no constructor found.
 -fer possible que es pugui passar al constructor una o més boxes per emplenar el diagrama. S'ha de tenir eina per posar una interficie sense new al diagrama.
 -diferent directors
 -editor icones
@@ -83,3 +80,8 @@ DONE!
 -peta el paquet default
 -comprovar si hi ha metode apply
 -Palette as tree with eclipse filters
+-Wrap text on automatic icons
+-mida lletra icona en altres pcs
+-Ensure icon disposal
+- org.apache.tools.ant.taskdefs.compilers.CompilerAdapterFactory current classloading scheme doesn't allow to load the JDT compiler from <classpath>. It must be on ant -lib classpath.
+-proguard ant

@@ -1,4 +1,6 @@
 package org.zaluum.nide
+
+import org.eclipse.ui.PlatformUI
 import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.ui.plugin.AbstractUIPlugin
 import org.osgi.framework.BundleContext
@@ -33,7 +35,14 @@ class Activator extends AbstractUIPlugin {
     Activator.plugin = this;
 
   }
-
+  def generatedIconFont = getFont("org.zaluum.nide.fonts.generatedIconFont") 
+  def directEditFont = getFont("org.zaluum.nide.fonts.directEditFont")
+  def getFont(str:String) = {
+    val themeManager = PlatformUI.getWorkbench().getThemeManager();
+    val currentTheme = themeManager.getCurrentTheme();
+    val fontRegistry = currentTheme.getFontRegistry();
+    fontRegistry.get(str);
+  }
   protected def urlToPath(o: Option[URL]) = o map { x ⇒ Path.fromOSString(FileLocator.toFileURL(x).getPath) }
   def urlForBundleName(bundleName: String) = {
     val bundle = Platform.getBundle(bundleName)
