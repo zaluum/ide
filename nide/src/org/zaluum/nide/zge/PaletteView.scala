@@ -1,47 +1,22 @@
 package org.zaluum.nide.zge
 
-import scala.annotation.migration
 import scala.collection.mutable.Buffer
 
 import org.eclipse.core.runtime.jobs.Job
-import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.core.runtime.Status
-import org.eclipse.jdt.core.IJavaElementDelta._
-import org.eclipse.jdt.core.ElementChangedEvent
-import org.eclipse.jdt.core.ICompilationUnit
-import org.eclipse.jdt.core.IElementChangedListener
-import org.eclipse.jdt.core.IJavaElementDelta
-import org.eclipse.jdt.core.JavaCore
+import org.eclipse.core.runtime.{Status, IProgressMonitor}
+import org.eclipse.jdt.core.IJavaElementDelta.{F_SUPER_TYPES, F_RESOLVED_CLASSPATH_CHANGED, F_REORDER, F_PRIMARY_WORKING_COPY, F_CLASSPATH_CHANGED, F_ARCHIVE_CONTENT_CHANGED, F_ADDED_TO_CLASSPATH}
+import org.eclipse.jdt.core.{JavaCore, IJavaElementDelta, IElementChangedListener, ICompilationUnit, ElementChangedEvent}
 import org.eclipse.jdt.internal.ui.JavaPluginImages
-import org.eclipse.jface.viewers.IStructuredSelection
-import org.eclipse.jface.viewers.ITreeContentProvider
-import org.eclipse.jface.viewers.LabelProvider
-import org.eclipse.jface.viewers.{TreeViewer => JTreeViewer}
-import org.eclipse.jface.viewers.{Viewer => JViewer}
-import org.eclipse.jface.viewers.ViewerSorter
-import org.eclipse.swt.dnd.DND
-import org.eclipse.swt.dnd.DragSource
-import org.eclipse.swt.dnd.DragSourceAdapter
-import org.eclipse.swt.dnd.DragSourceEvent
-import org.eclipse.swt.dnd.TextTransfer
+import org.eclipse.jface.viewers.{ViewerSorter, Viewer => JViewer, TreeViewerColumn, TreeViewer => JTreeViewer, StructuredSelection, SelectionChangedEvent, ITreeContentProvider, IStructuredSelection, ISelectionChangedListener, ColumnViewerToolTipSupport, ColumnLabelProvider}
+import org.eclipse.swt.dnd.{TextTransfer, DragSourceEvent, DragSourceAdapter, DragSource, DND}
 import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.layout.FillLayout
-import org.eclipse.swt.widgets.Composite
-import org.eclipse.swt.widgets.Label
+import org.eclipse.swt.widgets.{Label, Composite}
 import org.eclipse.swt.SWT
-import org.eclipse.ui.part.PageBook
-import org.eclipse.ui.part.ViewPart
-import org.eclipse.ui.IEditorPart
-import org.eclipse.ui.IPartListener
-import org.eclipse.ui.IWorkbenchPart
-import org.zaluum.nide.compiler.In
-import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.compiler.Out
-import org.zaluum.nide.compiler.PortDir
-import org.zaluum.nide.compiler.Shift
-import org.zaluum.nide.eclipse.BoxTypeProxy
-import org.zaluum.nide.eclipse.GraphicalEditor
-import org.zaluum.nide.eclipse.ZaluumProject
+import org.eclipse.ui.part.{ViewPart, PageBook}
+import org.eclipse.ui.{IWorkbenchPart, IPartListener, IEditorPart}
+import org.zaluum.nide.compiler.{Shift, PortDir, Out, Name, In}
+import org.zaluum.nide.eclipse.{ZaluumProject, SelectionProvider, GraphicalEditor, BoxTypeProxy}
 import org.zaluum.nide.Utils
 
 object PaletteView {
@@ -52,6 +27,7 @@ class PaletteView extends ViewPart {
   var map = Map[GraphicalEditor, Page]()
   var jmap = Map[ZaluumProject, Page]()
   var defaultPage: Composite = _
+  lazy val selectionProvider = new SelectionProvider()
   def createPartControl(parent: Composite) {
     pageBook = new PageBook(parent, SWT.None)
     defaultPage = new Composite(pageBook, SWT.NULL);
@@ -64,6 +40,7 @@ class PaletteView extends ViewPart {
     else
       pageBook.showPage(defaultPage)
     page.addPartListener(partListener);
+    getViewSite.setSelectionProvider(selectionProvider);
   }
   def show(p: Page) = pageBook.showPage(p.control)
   override def dispose() {
@@ -89,7 +66,7 @@ class PaletteView extends ViewPart {
             map += (g -> p)
             show(p)
           case None ⇒
-            val newPage = new Page(g.zproject, pageBook)
+            val newPage = new Page(g.zproject, this)
             map += (g -> newPage)
             jmap += (g.zproject -> newPage)
             show(newPage)
@@ -132,27 +109,49 @@ object Page {
   type ProxyMap = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]
 }
 
-class Page(val zproject: ZaluumProject, comp: Composite) extends PageDND with PageCoreListener {
-  lazy val viewer = new JTreeViewer(comp, SWT.H_SCROLL | SWT.V_SCROLL);
+class Page(val zproject: ZaluumProject, paletteView:PaletteView) extends PageDND with PageCoreListener {
+  lazy val viewer = new JTreeViewer(paletteView.pageBook, SWT.H_SCROLL | SWT.V_SCROLL);
   implicit def display = viewer.getControl.getDisplay
   def control = viewer.getControl
   val imgFactory = new ImageFactory(zproject.imageFactory, viewer.getControl)
   val proxies = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]()
   viewer.setContentProvider(new FolderProvider());
-  viewer.setLabelProvider(new LabelProvider() {
-    override def getText(element: Object): String = element match {
+  {
+    val a = new TreeViewerColumn(viewer,SWT.LEFT)
+    a.setLabelProvider(new ColumnLabelProvider()  {
+      override def getImage(a:AnyRef) = image(a) 
+      override def getText(a:AnyRef) = text(a)
+      override def getToolTipImage(a:AnyRef) = image(a) 
+      override def getToolTipText(a:AnyRef) = text(a)
+    })
+    a.getColumn.setWidth(250)
+    ColumnViewerToolTipSupport.enableFor(viewer);
+  }
+  def text(element: Object): String = element match {
       case s: String ⇒ s
       case b: BoxTypeProxy ⇒ b.simpleName
     }
-    override def getImage(element: Object): Image = element match {
+  def image(element: Object): Image = element match {
       case Page.portsPkg ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
       case f: String ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
-      case b: BoxTypeProxy if (b.pkgName==Page.portsPkg)⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1
-      case b: BoxTypeProxy ⇒ imgFactory(b.name)._1
+      case b: BoxTypeProxy if (b.pkgName==Page.portsPkg)⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1 // XXX destroy
+      case b: BoxTypeProxy ⇒ imgFactory(b.name)._1 // XXX destroy
     }
-  });
   viewer.setSorter(new ViewerSorter())
   viewer.setInput(proxies);
+  viewer.addPostSelectionChangedListener(new ISelectionChangedListener {
+    def selectionChanged( event : SelectionChangedEvent) {
+      val s = event.getSelection.asInstanceOf[IStructuredSelection]
+      s.getFirstElement match {
+        case b:BoxTypeProxy =>
+          try {
+            val t = zproject.jProject.findType(b.name.str);
+            paletteView.selectionProvider.setSelection (SelectionProvider.adaptType(t))
+          }catch {case e=>}
+        case _=> paletteView.selectionProvider.setSelection(StructuredSelection.EMPTY)
+      }
+    }
+  });
   reload()
 
   // Methods 

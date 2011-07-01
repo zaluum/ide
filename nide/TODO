@@ -11,8 +11,6 @@ icons
 -Automatic icon grows/shrinks depending on number of ports
 
 palette
--Cache palette/ background search
--Javadoc on palette 
 
 editor
 -change port names
@@ -87,3 +85,5 @@ DONE!
 -proguard ant
 -automate build proguard ant
 -standalone compiler
+-Cache palette/ background search
+-Javadoc on palette 

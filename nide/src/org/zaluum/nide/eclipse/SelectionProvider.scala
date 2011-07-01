@@ -2,7 +2,21 @@ package org.zaluum.nide.eclipse
 
 import org.eclipse.jface.viewers.{ IStructuredSelection, IPostSelectionProvider, SelectionChangedEvent, ISelection, ISelectionProvider, StructuredSelection, ISelectionChangedListener }
 import org.eclipse.jface.util.SafeRunnable
-
+import org.eclipse.jdt.core.IType
+object SelectionProvider {
+  def adaptType(i: IType): StructuredSelection = {
+    val El = classOf[org.eclipse.jdt.core.IJavaElement]
+    val adaptable = new org.eclipse.core.runtime.IAdaptable() {
+      def getAdapter(cl: Class[_]) = {
+        cl match {
+          case El ⇒ i
+          case _ ⇒ null
+        }
+      }
+    }
+    new StructuredSelection(adaptable)
+  }
+}
 class SelectionProvider extends ISelectionProvider with IPostSelectionProvider {
   private var list = List[ISelectionChangedListener]()
   private var post = List[ISelectionChangedListener]()

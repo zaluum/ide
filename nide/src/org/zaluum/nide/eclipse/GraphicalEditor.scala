@@ -52,19 +52,8 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
     getSite().getPage().showView(PaletteView.ID,null,IWorkbenchPage.VIEW_VISIBLE);
     // TODO reopen
   }
-  def adaptItem(i: IType): StructuredSelection = {
-    val El = classOf[org.eclipse.jdt.core.IJavaElement]
-    val adaptable = new org.eclipse.core.runtime.IAdaptable() {
-      def getAdapter(cl: Class[_]) = {
-        cl match {
-          case El ⇒ i
-          case _ ⇒ null
-        }
-      }
-    }
-    new StructuredSelection(adaptable)
-  }
-  def setSelection(i: IType) { selectionProvider.setSelection(adaptItem(i)) }
+  
+  def setSelection(i: IType) { selectionProvider.setSelection(SelectionProvider.adaptType(i)) }
   private lazy val selectionProvider = new SelectionProvider()
   def setFocus() { viewer.canvas.setFocus }
   def openGUI() {
