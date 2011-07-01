@@ -32,6 +32,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
       focus
     }
   }
+  def onFocus {editor.showPalette()}
   // Viewer doesn't have any visual representation
   override def updateSize() {}
   val feed = null

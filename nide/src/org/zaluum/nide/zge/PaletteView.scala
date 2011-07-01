@@ -168,7 +168,8 @@ class Page(val zproject: ZaluumProject, paletteView:PaletteView) extends PageDND
   def reload() = {
     val j = Utils.job("Update palette") { monitor ⇒
       load(monitor)
-      Utils.inSWT { Page.this.synchronized { viewer.refresh() } }
+      if (!control.isDisposed)
+        Utils.inSWT { Page.this.synchronized { viewer.refresh() } }
       Status.OK_STATUS
     }
     j.setPriority(Job.SHORT);

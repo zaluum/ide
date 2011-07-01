@@ -37,6 +37,7 @@ class GuiViewer(parent: Composite, controller: Controller)
   override def dispose() {
     super.dispose()
   }
+  def onFocus {}
   import RichFigure._
   def remapSelection(m: PartialFunction[SelectionSubject, SelectionSubject]) {
     selection.refresh(m);

@@ -351,6 +351,13 @@
          <newWizardShortcut
                id="org.zaluum.nide.eclipse.ProjectWizard">
          </newWizardShortcut>
+         <view
+               id="org.zaluum.nide.paletteView"
+               minimized="false"
+               relationship="stack"
+               relative="org.eclipse.ui.views.ContentOutline"
+               visible="true">
+         </view>
       </perspectiveExtension>
       <perspectiveExtension
             targetID="org.eclipse.pde.ui.PDEPerspective">
