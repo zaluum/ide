@@ -4,7 +4,7 @@ compiler
 -compilador amb parametres out apply(in in in)
 -downcast automàtic
 -pensar sistema upcasting
--@Apply marks apply method to invoke
+-@Apply marks method to invoke
 
 icons
 -better icon set
@@ -12,7 +12,6 @@ icons
 
 palette
 -Cache palette/ background search
--Search in palette
 -Javadoc on palette 
 
 editor
@@ -33,7 +32,7 @@ editor
 -re layout on box movement
  
 ant 
--automate build proguard ant
+
  
 complex
 -mirar la visibilitat del port (protected/public) al compilar. Visualitzar el port depenent de si es accessible o no.
@@ -70,7 +69,8 @@ LATER
 -diferent directors
 -editor icones
 -multi-threading
--standalone compiler
+
+-Search in palette
 MUCH LATER
 -code generation
 -map reduce/other outputs.
@@ -85,3 +85,5 @@ DONE!
 -Ensure icon disposal
 - org.apache.tools.ant.taskdefs.compilers.CompilerAdapterFactory current classloading scheme doesn't allow to load the JDT compiler from <classpath>. It must be on ant -lib classpath.
 -proguard ant
+-automate build proguard ant
+-standalone compiler

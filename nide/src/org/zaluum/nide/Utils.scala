@@ -7,6 +7,9 @@ import org.eclipse.jface.fieldassist.IContentProposalProvider
 import org.eclipse.jface.fieldassist.IContentProposal
 import scala.collection.JavaConversions._
 import scala.collection.mutable._
+import org.eclipse.core.runtime.jobs.Job
+import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.core.runtime.IStatus
 object Utils {
 
   def loadIcons(ir: ImageRegistry, base: Class[_], keys: String*) = {
@@ -35,6 +38,10 @@ object Utils {
       else display).asyncExec(new Runnable { override def run { toRun } })
     }
   }
+   def job (name:String)(a: IProgressMonitor => IStatus) = 
+    new Job(name) {
+     protected def run(monitor : IProgressMonitor) : IStatus = a(monitor) 
+    }
 }
 
 class EditCPP(val c: Array[String]) extends IContentProposalProvider() {

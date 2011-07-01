@@ -1,40 +1,48 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.compiler.PortDir
-import scala.collection.immutable.SortedMap
-import org.eclipse.ui.IEditorPart
-import org.eclipse.jface.resource.DeviceResourceDescriptor
-import org.eclipse.swt.widgets.TreeItem
-import org.eclipse.swt.events.TreeEvent
-import org.eclipse.swt.events.TreeListener
-import org.eclipse.swt.widgets.Tree
-import org.eclipse.jface.viewers.TreeExpansionEvent
-import org.eclipse.jface.viewers.ITreeViewerListener
-import org.eclipse.jdt.core.IJavaProject
-import org.eclipse.jface.viewers.ArrayContentProvider
-import org.eclipse.jface.viewers.LabelProvider
-import org.eclipse.jface.viewers.{ TreeViewer ⇒ JTreeViewer, Viewer ⇒ JViewer }
-import org.eclipse.swt.layout.FillLayout
-import org.eclipse.swt.widgets.{ Composite, Control, Label }
-import org.eclipse.swt.SWT
-import org.eclipse.ui.part.ViewPart
-import org.eclipse.ui.{ IPartListener, IWorkbenchPart }
-import org.zaluum.nide.eclipse.{ GraphicalEditor, EclipseUtils }
-import org.eclipse.jface.viewers.ListViewer
-import org.eclipse.ui.part.PageBook
-import org.eclipse.jface.viewers.ITreeContentProvider
-import org.zaluum.nide.eclipse.BoxTypeProxy
-import org.zaluum.nide.eclipse.ZaluumProject
-import org.eclipse.swt.graphics.Image
+import scala.annotation.migration
+import scala.collection.mutable.Buffer
+
+import org.eclipse.core.runtime.jobs.Job
+import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.core.runtime.Status
+import org.eclipse.jdt.core.IJavaElementDelta._
+import org.eclipse.jdt.core.ElementChangedEvent
+import org.eclipse.jdt.core.ICompilationUnit
+import org.eclipse.jdt.core.IElementChangedListener
+import org.eclipse.jdt.core.IJavaElementDelta
+import org.eclipse.jdt.core.JavaCore
 import org.eclipse.jdt.internal.ui.JavaPluginImages
-import org.eclipse.swt.dnd.DragSource
-import org.eclipse.swt.dnd.Transfer
+import org.eclipse.jface.viewers.IStructuredSelection
+import org.eclipse.jface.viewers.ITreeContentProvider
+import org.eclipse.jface.viewers.LabelProvider
+import org.eclipse.jface.viewers.{TreeViewer => JTreeViewer}
+import org.eclipse.jface.viewers.{Viewer => JViewer}
+import org.eclipse.jface.viewers.ViewerSorter
 import org.eclipse.swt.dnd.DND
-import org.eclipse.swt.dnd.TextTransfer
+import org.eclipse.swt.dnd.DragSource
 import org.eclipse.swt.dnd.DragSourceAdapter
 import org.eclipse.swt.dnd.DragSourceEvent
-import org.eclipse.jface.viewers.IStructuredSelection
-import org.zaluum.nide.compiler.{In,Out,Shift}
+import org.eclipse.swt.dnd.TextTransfer
+import org.eclipse.swt.graphics.Image
+import org.eclipse.swt.layout.FillLayout
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets.Label
+import org.eclipse.swt.SWT
+import org.eclipse.ui.part.PageBook
+import org.eclipse.ui.part.ViewPart
+import org.eclipse.ui.IEditorPart
+import org.eclipse.ui.IPartListener
+import org.eclipse.ui.IWorkbenchPart
+import org.zaluum.nide.compiler.In
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Out
+import org.zaluum.nide.compiler.PortDir
+import org.zaluum.nide.compiler.Shift
+import org.zaluum.nide.eclipse.BoxTypeProxy
+import org.zaluum.nide.eclipse.GraphicalEditor
+import org.zaluum.nide.eclipse.ZaluumProject
+import org.zaluum.nide.Utils
 
 object PaletteView {
   val ID = "org.zaluum.nide.paletteView"
@@ -112,29 +120,71 @@ class PaletteView extends ViewPart {
   }
 
 }
+
+/* PAGE */
 object Page {
-  case class Folder(name: String, contents: Array[AnyRef])
-  val ports = Folder("<ports>", Array[AnyRef](In, Out, Shift))
+  val portsPkg = "<ports>"
+  def portToProxy(port: PortDir) = new BoxTypeProxy(Name(port.str), true) {
+    override def pkgName = portsPkg
+    override def simpleName = port.str
+  }
+  val ports = (portsPkg -> Buffer(portToProxy(In), portToProxy(Out), portToProxy(Shift)))
+  type ProxyMap = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]
 }
-class Page(val zproject: ZaluumProject, comp: Composite) {
-  val viewer = new JTreeViewer(comp, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+
+class Page(val zproject: ZaluumProject, comp: Composite) extends PageDND with PageCoreListener {
+  lazy val viewer = new JTreeViewer(comp, SWT.H_SCROLL | SWT.V_SCROLL);
+  implicit def display = viewer.getControl.getDisplay
+  def control = viewer.getControl
   val imgFactory = new ImageFactory(zproject.imageFactory, viewer.getControl)
-  viewer.setContentProvider(provider);
+  val proxies = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]()
+  viewer.setContentProvider(new FolderProvider());
   viewer.setLabelProvider(new LabelProvider() {
     override def getText(element: Object): String = element match {
       case s: String ⇒ s
       case b: BoxTypeProxy ⇒ b.simpleName
-      case p: PortDir => p.desc
     }
     override def getImage(element: Object): Image = element match {
-      case s: String if (s==Page.ports.name)⇒
-         JavaPluginImages.get(JavaPluginImages.IMG_OBJS_IMPDECL)
-      case s: String ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
+      case Page.portsPkg ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
+      case f: String ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
+      case b: BoxTypeProxy if (b.pkgName==Page.portsPkg)⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1
       case b: BoxTypeProxy ⇒ imgFactory(b.name)._1
-      case p: PortDir => imgFactory.portImg(p)._1
     }
   });
-  viewer.setInput(Array());
+  viewer.setSorter(new ViewerSorter())
+  viewer.setInput(proxies);
+  reload()
+
+  // Methods 
+  private def addProxy(b: BoxTypeProxy) {
+    if (proxies.contains(b.pkgName))
+      proxies(b.pkgName) += b
+    else proxies += (b.pkgName -> Buffer(b))
+  }
+  def load(monitor:IProgressMonitor) = Page.this.synchronized {
+    proxies.clear
+    for (b ← zproject.index(monitor)) { addProxy(b) }
+    proxies += Page.ports
+  }
+  def reload() = {
+    val j = Utils.job("Update palette") { monitor ⇒
+      load(monitor)
+      Utils.inSWT { Page.this.synchronized { viewer.refresh() } }
+      Status.OK_STATUS
+    }
+    j.setPriority(Job.SHORT);
+    j.schedule(); // start as soon as possible
+  }
+
+  override def dispose() {
+    super.dispose()
+    control.dispose();
+    imgFactory.destroyAll()
+  }
+
+}
+trait PageDND {
+  self : Page =>
   val ds = new DragSource(viewer.getControl, DND.DROP_MOVE);
   ds.setTransfer(Array(TextTransfer.getInstance()));
   ds.addDragListener(new DragSourceAdapter() {
@@ -142,7 +192,7 @@ class Page(val zproject: ZaluumProject, comp: Composite) {
     override def dragStart(event: DragSourceEvent) {
       element match {
         case b: BoxTypeProxy ⇒
-        case p:PortDir =>
+        case p: PortDir ⇒
         case _ ⇒
           event.doit = false
       }
@@ -151,61 +201,73 @@ class Page(val zproject: ZaluumProject, comp: Composite) {
       element match {
         case b: BoxTypeProxy ⇒
           event.data = b.name.str
-        case p:PortDir=>  event.data = p.str
+        case p: PortDir ⇒ event.data = p.str
         case _ ⇒
           event.doit = false
       }
     }
   });
 
-  def control = viewer.getControl
+}
+trait PageCoreListener {
+  self: Page ⇒
+  object coreListener extends IElementChangedListener {
+    def elementChanged(event: ElementChangedEvent) {
+      if (event.getType == ElementChangedEvent.POST_CHANGE)
+        processDeltaSimple(event.getDelta)
+    }
+  }
+  JavaCore.addElementChangedListener(coreListener)
+  def processDeltaSimple(delta: IJavaElementDelta) {
+    val interestingFlags = F_ADDED_TO_CLASSPATH | F_CLASSPATH_CHANGED |
+      F_ARCHIVE_CONTENT_CHANGED | F_RESOLVED_CLASSPATH_CHANGED |
+      F_SUPER_TYPES | F_REORDER
+    delta.getKind match {
+      case IJavaElementDelta.ADDED ⇒ reload()
+      case IJavaElementDelta.REMOVED ⇒ reload()
+      case IJavaElementDelta.CHANGED ⇒
+        delta.getElement match {
+          case cu: ICompilationUnit if (delta.getFlags & F_PRIMARY_WORKING_COPY) == 0 ⇒ reload()
+          case _ if (delta.getFlags & interestingFlags) != 0 ⇒ reload()
+          case _ ⇒ for (d ← delta.getAffectedChildren) processDeltaSimple(d)
+        }
+    }
+  }
   def dispose() {
-    viewer.getControl.dispose();
+    JavaCore.removeElementChangedListener(coreListener)
   }
-  lazy val provider = new ITreeContentProvider {
-    def dispose() {}
-    def inputChanged(viewer: JViewer, o: Object, newi: Object) {}
-
-    def fetchGrouped() = {
-      val grouped = /*EclipseUtils.withProgress[Map[String, Seq[BoxTypeProxy]]]("Fetching palette") { monitor ⇒*/
-        zproject.index( /*monitor*/ null).groupBy(_.pkgName)
-      //}
-      val classes = for (pkg ← grouped.keys.toList.sorted) yield {
-        Page.Folder(pkg, grouped(pkg).sortBy(_.simpleName).toArray)
-      }
-      Page.ports :: classes
-    }
-    var grouped = fetchGrouped()
-
-    def getElements(inputElement: AnyRef): Array[AnyRef] = {
-      grouped.map(_.name).toArray
-    }
-
-    def getChildren(parentElement: AnyRef): Array[AnyRef] = {
-      parentElement match {
-        case g: Map[_, _] ⇒ getElements(parentElement)
-        case key: String ⇒
-          val pkg = grouped.find(_.name == key)
-          pkg map { p ⇒ (p.contents) } get
-        case _ ⇒ Array()
-      }
-    }
-
-    def getParent(element: AnyRef): AnyRef = {
-      element match {
-        case key: String ⇒ grouped
-        case b: BoxTypeProxy ⇒ b.pkgName
-        case p: PortDir ⇒ Page.ports.name
-        case _ ⇒ null
-      }
-    }
-
-    def hasChildren(element: AnyRef): Boolean = {
-      element match {
-        case g: Map[_, _] ⇒ true
-        case key: String ⇒ true
-        case _ ⇒ false
-      }
-    };
+}
+class FolderProvider extends ITreeContentProvider {
+  def dispose() {}
+  var proxyMap: Page.ProxyMap = _
+  def inputChanged(viewer: JViewer, o: Object, newi: Object) {
+    proxyMap = newi.asInstanceOf[Page.ProxyMap]
   }
+
+  def getElements(inputElement: AnyRef): Array[AnyRef] = {
+    inputElement.asInstanceOf[Page.ProxyMap].keys.toArray
+  }
+
+  def getChildren(parentElement: AnyRef): Array[AnyRef] = {
+    parentElement match {
+      case m: Map[_, _] ⇒ getElements(m)
+      case fld: String ⇒ proxyMap(fld).toArray
+      case _ ⇒ Array()
+    }
+  }
+
+  def getParent(element: AnyRef): AnyRef = {
+    element match {
+      case b: BoxTypeProxy ⇒ b.pkgName
+      case _ ⇒ null
+    }
+  }
+
+  def hasChildren(element: AnyRef): Boolean = {
+    element match {
+      case m: Map[_, _] ⇒ true
+      case key: String ⇒ true
+      case _ ⇒ false
+    }
+  };
 }

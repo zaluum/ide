@@ -44,7 +44,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
     case Shift ⇒ (rm.createImage(portDeclShift), portDeclShift)
   }
   def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
-  def destroyAll = rm.dispose();
+  def destroyAll() = rm.dispose();
   def apply(name: Name): (Image, DeviceResourceDescriptor) = imageFor(None, name);
   def apply(tpe: Type): (Image, DeviceResourceDescriptor) = {
     tpe match {
