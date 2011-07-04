@@ -14,6 +14,7 @@ import org.zaluum.nide.compiler.{ _ }
 import scala.collection.JavaConversions._
 import org.zaluum.basic.LoopBox
 import org.zaluum.nide.eclipse.BoxTypeProxy
+import org.eclipse.draw2d.MarginBorder
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -311,8 +312,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   class PortTrack extends OverTrack[PortFigure] {
     class TooltipLabel extends RectangleFigure {
       val l = new Label
+      l.setBorder(new MarginBorder(4,4,4,4));
       l.setFont(viewer.display.getSystemFont)
       setBackgroundColor(ColorConstants.tooltipBackground)
+      setForegroundColor(ColorConstants.tooltipForeground)
+      l.setForegroundColor(ColorConstants.tooltipForeground)
       add(l)
       def setText(s: String) { l.setText(s) }
       override def getPreferredSize(x: Int, y: Int) = l.getPreferredSize(x, y)

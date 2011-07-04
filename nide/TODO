@@ -30,6 +30,8 @@ icons
 	-Automatic icon grows/shrinks depending on number of ports
 
 bugs
+	-s'ha d'engegar RCP en unity amb UBUNTU_MENUPROXY=0
+	-sembla que xulrunner dona algun problema d'alt consum de cpu. xulrunner 2 no?
 	-make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	-al connectar o desconnectar cables de vegades fa coses rares
 
