@@ -19,7 +19,6 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
 
   def registerViewer(viewer: Viewer) {
     viewers += viewer
-    viewer.refresh()
   }
   def unregisterViewer(viewer: Viewer) {
     viewers -= viewer

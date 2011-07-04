@@ -1,89 +1,98 @@
 NOW
-compiler
--pot heredar un port un .zaluum?
--compilador amb parametres out apply(in in in)
--downcast automàtic
--pensar sistema upcasting
--@Apply marks method to invoke
 
+conversions de tipus
+	-downcast automàtic
+	-box unbox support
+	-pensar sistema upcasting
+	-connectar subclasses Dog->Animal (isAssignable?)
+
+classes base model 
+	-compilador amb parametres out apply(in in in)
+	-GUI deep preview -> metode per inicialitzar gui sense la box?
+	-@Apply marks method to invoke
+	*suport per a boxes especialitzades (operacions matematiques)
+		-Generic +-*/ and others. Box templates. (Box.class with Object inputs or special marker interface type. Box$int.class specialized)
+	*herencia de .zaluums? 
+	-visual only boxes
+	-write javadoc on zaluum files
+	-Extensible in/out with unfolded array inputs
+	-If box, Switch, and other boxes with special visual support.
+	-Feedback connections
+	-com gestionar excepcions?
+	-declare constructor on zaluum, use as parameter in instances
+	
+generacio codi
+	-backend soot? backend JDT? suport per multi backend? (generacio codi c/hadoop?)
+	-suport per a multiples directors (multi-threading)
+	-Swing thread synchronization / refresh rate
+	
 icons
--better icon set
--Automatic icon grows/shrinks depending on number of ports
+	-Automatic icon grows/shrinks depending on number of ports
 
-palette
+bugs
+	-make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
+	-al connectar o desconnectar cables de vegades fa coses rares
 
-editor
--change port names
--make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
--Background of an empty file not plain white ("start here" text?)
--al connectar o desconnectar cables de vegades fa coses rares
--double click or ctrl click goes to definition
--GUI deep preview
--when a visual component moves, resize the canvas size
--write javadoc on zaluum files
--Zoom
--show/hide grid
--snap correctly
--align tool
--visual only boxes
--notes/ visual only on diagram
--re layout on box movement
- 
-ant 
-
- 
-complex
--mirar la visibilitat del port (protected/public) al compilar. Visualitzar el port depenent de si es accessible o no.
--box unbox support
--If box, Switch, and other boxes with special visual support.
--Swing thread synchronization / refresh rate
--External port position selection
--Better port colors. @Color?
--Generic +-*/ and others. Box templates. (Box.class with Object inputs or special marker interface type. Box$int.class specialized)
--Extensible in/out with unfolded array inputs
--Feedback connections
--declare constructor on zaluum, use as parameter in instances
--com gestionar excepcions?
--refactor boxes into class
--java search full support/refactor support
+usabilitat
+	-bad tooltip colors with dark theme
+	-quan es vol moure un fil, costa de que no s'activi el de fer extensions
+	-change port names
+	-when a visual component moves, resize the canvas size
+	-show/hide grid
+	-snap correctly
+	-notes/ visual only on diagram
+	-re layout on box movement
 
 library
--Graphing widget properties. Color/etc( see labview)
--tutorials/docs/etc
--sound output clicks?
-
-refactor
-- org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester
-- org.eclipse.jdt.internal.corext.refactoring.reorg.ReorgUtils.getJavaElements .getResources
-- org.eclipse.jdt.internal.core.util.Util. isJavaLikeFileName
-- org.eclipse.jdt.internal.core.CopyResourceElementsOperation
-- org.eclipse.jdt.internal.core.CreatePackageDeclaration
-- ICompilationUnit create...
+	-Graphing widget properties. Color/etc( see labview)
+	-tutorials/docs/etc
+	-sound output clicks?
 
 LATER
--groovy compatible/scala compatible
--Mark errors on presentation compiler? ex. no constructor found.
--fer possible que es pugui passar al constructor una o més boxes per emplenar el diagrama. S'ha de tenir eina per posar una interficie sense new al diagrama.
--diferent directors
--editor icones
--multi-threading
+	-java search full support/refactor support
+	-refactor some boxes into a new subsystem
+	-mirar la visibilitat del port (protected/public) al compilar. Visualitzar el port depenent de si es accessible o no.
+	-Better port colors. @Color?
+	-External port position selection
+	-revisar format protobuf (simplificar, fer servir text pla?)	
+	-align tool
+	-double click or ctrl click goes to definition
+	-refactor
+		- org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester
+		- org.eclipse.jdt.internal.corext.refactoring.reorg.ReorgUtils.getJavaElements .getResources
+		- org.eclipse.jdt.internal.core.util.Util. isJavaLikeFileName
+		- org.eclipse.jdt.internal.core.CopyResourceElementsOperation
+		- org.eclipse.jdt.internal.core.CreatePackageDeclaration
+		- ICompilationUnit create...
+	
+	-fondo workbench com talend amb fletxes que indiquen com començar
+	-better icon set
+	-Zoom
+	-groovy compatible/scala compatible
+	-Mark errors on presentation compiler? ex. no constructor found.
+	-fer possible que es pugui passar al constructor una o més boxes per emplenar el diagrama. S'ha de tenir eina per posar una interficie sense new al diagrama.
+	-diferent directors
+	-editor icones
+	-multi-threading
+	-Search in palette
 
--Search in palette
 MUCH LATER
--code generation
--map reduce/other outputs.
+	-code generation
+	-map reduce/other outputs.
 
 DONE!
--testing harness
--peta el paquet default
--comprovar si hi ha metode apply
--Palette as tree with eclipse filters
--Wrap text on automatic icons
--mida lletra icona en altres pcs
--Ensure icon disposal
-- org.apache.tools.ant.taskdefs.compilers.CompilerAdapterFactory current classloading scheme doesn't allow to load the JDT compiler from <classpath>. It must be on ant -lib classpath.
--proguard ant
--automate build proguard ant
--standalone compiler
--Cache palette/ background search
--Javadoc on palette 
+	-testing harness
+	-peta el paquet default
+	-comprovar si hi ha metode apply
+	-Palette as tree with eclipse filters
+	-Wrap text on automatic icons
+	-mida lletra icona en altres pcs
+	-Ensure icon disposal
+	- org.apache.tools.ant.taskdefs.compilers.CompilerAdapterFactory current classloading scheme doesn't allow to load the JDT compiler from <classpath>. It must be on ant -lib classpath.
+	-proguard ant
+	-automate build proguard ant
+	-standalone compiler
+	-Cache palette/ background search
+	-Javadoc on palette 
+	-Background of an empty file not plain white ("start here" text?)
+	

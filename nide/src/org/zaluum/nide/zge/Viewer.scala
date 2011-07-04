@@ -12,6 +12,8 @@ import scala.collection.JavaConversions._
 import org.zaluum.nide.eclipse.ZaluumProject
 import org.eclipse.swt.events.FocusListener
 import org.eclipse.swt.events.FocusEvent
+import org.eclipse.swt.events.ControlListener
+import org.eclipse.swt.events.ControlEvent
 
 abstract class Viewer(parent: Composite, val controller: Controller) extends FreeformViewport {
   def shell = parent.getShell
@@ -19,10 +21,15 @@ abstract class Viewer(parent: Composite, val controller: Controller) extends Fre
   lazy val display = shell.getDisplay
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)
+  canvas.addControlListener(new ControlListener() {
+    def controlResized(e : ControlEvent) { onResize() }
+    def controlMoved(e:ControlEvent) {}
+  }); 
   canvas.addFocusListener(new FocusListener {
     def focusGained(e:FocusEvent) { onFocus()}
     def focusLost(e:FocusEvent) { onFocusLost() }
   })
+  def onResize() :Unit
   def onFocus(): Unit
   def onFocusLost() : Unit = {}
   def focus = parent.setFocus

@@ -50,6 +50,7 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
     controller.addListener(fireDirtyClosure)
     viewer = new TreeViewer(parent, controller, this)
     controller.registerViewer(viewer)
+    // the first viewer.refresh comes from onResize
     // TODO reopen
   }
 

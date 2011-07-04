@@ -14,6 +14,12 @@ import scala.collection.mutable.Buffer
 import org.eclipse.jface.resource.ImageRegistry
 import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.compiler._
+import org.eclipse.draw2d.Label
+import org.eclipse.draw2d.geometry.Rectangle
+import org.eclipse.draw2d.ScalableFreeformLayeredPane
+import org.eclipse.draw2d.ColorConstants
+import org.zaluum.nide.Activator
+import org.eclipse.swt.SWT
 
 class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
   extends ItemViewer(parent, controller) with ContainerItem with ClipboardViewer {
@@ -33,6 +39,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
     }
   }
   def onFocus {editor.showPalette()}
+  def onResize { refresh() }
   // Viewer doesn't have any visual representation
   override def updateSize() {}
   val feed = null
@@ -92,8 +99,33 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
       case _ => null
     }
   }
+  val emptyLabel = new Label("Empty File. Start by dropping items from the palette...")
+  emptyLabel.setForegroundColor(ColorConstants.lightGray)
+  emptyLabel.setFont(Activator.getDefault.directEditFont)
+  def showEmptyLabel() = {
+    val x = getBounds.width/2
+    val y = getBounds.height/2
+    val d = emptyLabel.getPreferredSize();
+    val dx = d.width/2
+    val dy = d.height/2
+    emptyLabel.setBounds(new Rectangle(x-dx,y-dy,d.width,d.height))
+    this.feedbackLayer.add(emptyLabel)
+  }
+  def hideEmptyLabel() = {
+    if (feedbackLayer.getChildren.contains(emptyLabel))
+      feedbackLayer.remove(emptyLabel)
+  }
+  def deepChildrenWithoutLayers = this.deepChildren.filter { 
+    _ match { 
+      case _:FreeformLayer=>false
+      case _:ScalableFreeformLayeredPane=>false
+      case _ => true
+    }
+  }
   def refresh() {
+    hideEmptyLabel()
     updateContents(Map()) // FIXME
+    if (deepChildrenWithoutLayers.isEmpty) showEmptyLabel()
     selectedItems foreach { _.showFeedback() }
     selectedItems.headOption foreach { i => editor.setSelection(itemToIType(i)) }
     /*for (s <- selectedItems; ss <- s.selectionSubject) {
