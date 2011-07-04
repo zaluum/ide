@@ -149,6 +149,7 @@ trait TextEditFigure extends Figure with Item with RectFeedback {
     if (textCellEditor == null) {
       textCellEditor = new TextCellEditor(container.viewer.canvas)
       val textC = textCellEditor.getControl().asInstanceOf[Text]
+      textC.setFont(Activator.getDefault.directEditFont)
       textC.setText(text)
       textCellEditor.activate()
       textCellEditor.addListener(new ICellEditorListener() {

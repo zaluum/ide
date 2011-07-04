@@ -36,7 +36,6 @@ bugs
 	-al connectar o desconnectar cables de vegades fa coses rares
 
 usabilitat
-	-bad tooltip colors with dark theme
 	-quan es vol moure un fil, costa de que no s'activi el de fer extensions
 	-change port names
 	-when a visual component moves, resize the canvas size
@@ -97,4 +96,4 @@ DONE!
 	-Cache palette/ background search
 	-Javadoc on palette 
 	-Background of an empty file not plain white ("start here" text?)
-	
+	-bad tooltip colors with dark theme
