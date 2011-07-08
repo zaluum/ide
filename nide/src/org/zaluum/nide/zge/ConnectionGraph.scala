@@ -20,13 +20,13 @@ class Joint(val p: Point) extends Vertex {
   def move(q: Point) = new Joint(q)
   def isComplete = true
 }
-class PortVertex(val key:PortKey,val p: Point) extends Vertex {
+class PortVertex(val ps:PortSide,val p: Point) extends Vertex {
   override def isEnd = true
-  def move(q: Point) = new PortVertex(key, q)
-  override def toString = "PortVertex(" + key + ")"
+  def move(q: Point) = new PortVertex(ps, q)
+  override def toString = "PortVertex(" + ps + ")"
   def isComplete = true
 }
-class MissingPortVertex(val key:PortKey, val p :Point) extends Vertex {
+class MissingPortVertex(val key:PortSide, val p :Point) extends Vertex {
   override def isEnd = true
   def move(q: Point) = new MissingPortVertex(key, q)
   override def toString = "PortVertex(" + key + ")"
@@ -511,7 +511,7 @@ abstract class ConnectionGraph {
     }
     val connections: List[Tree] = edges.map { e ⇒
       def vertexRef(v: Vertex): Tree = v match {
-        case p: PortVertex ⇒ p.key.toRef
+        case p: PortVertex ⇒ p.ps.toRef
         case m: MissingPortVertex => m.key.toRef
         case e : EmptyVertex => EmptyTree 
         case v : Joint ⇒ JunctionRef(map(v).name)

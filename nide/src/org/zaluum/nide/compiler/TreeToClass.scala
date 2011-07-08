@@ -7,14 +7,14 @@ case class BoxClass(name: Name, superName: Name, contents: List[Tree]) extends T
 case class FieldDef(name: Name, typeName: Name, annotation: Option[Name], priv: Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
-case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String,String,Int)]) extends Tree
+case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)]) extends Tree
 case class Assign(lhs: Tree, rhs: Tree) extends Tree
-case class Sum(a:Tree,b:Tree) extends Tree
+case class Sum(a: Tree, b: Tree) extends Tree
 case class Select(a: Tree, b: Tree) extends Tree
 case object This extends Tree
 case object Pop extends Tree
 case object NullConst extends Tree
-case class LocalRef(id:Int, typeName:Name) extends Tree
+case class LocalRef(id: Int, typeName: Name) extends Tree
 case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Tree
 case class Invoke(obj: Tree, meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
 case class Const(i: Any) extends Tree
@@ -23,7 +23,7 @@ case object True extends Tree
 case object Dup extends Tree
 case class ALoad(i: Int) extends Tree
 case class AStore(i: Int) extends Tree
-class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with ReporterAdapter {
+class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
@@ -164,7 +164,7 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
     }
     def createLabel(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       val v = vs.decl.asInstanceOf[ValDef]
-      val mainTpe = mainBox.symbol.asInstanceOf[BoxTypeSymbol] 
+      val mainTpe = mainBox.symbol.asInstanceOf[BoxTypeSymbol]
       v.labelGui match {
         case Some(lbl) ⇒
           val jlabel = new JLabel(lbl.description) // TODO better way to get size
@@ -208,36 +208,33 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
       // create locals for expressions
       var locals = 1; // 0 for "this"
-      val localsMap = b.vals collect { case v:ValDef => v} flatMap { 
-        _.tpe match {
-          case b: BoxTypeSymbol => List() 
-          case s : SumExprType => 
-            s.ports.values map {
-              (_-> { locals = locals+1; locals})
+      println (bs.valsInOrder)
+      val localsMap = bs.valsInOrder flatMap { v =>
+        v.tpe match {
+          case b: BoxTypeSymbol => List()
+          case s: SumExprType =>
+            v.portSides map {
+              (_ -> { locals = locals + 1; locals })
             }
           case _ => List()
-        } 
-      } toMap;
-      println(localsMap)
-      def toRef(p: AnyRef): Tree = p match {
-          case b: BoxTypeSymbol ⇒ This
-          case p: PortSymbol => LocalRef(localsMap(p), Name("int"))
-          case v: ValSymbol ⇒ Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
-          case ValPortKey(from, portName, in) ⇒
-            val vfrom = b.vals.view.collect { case v: ValDef ⇒ v.symbol } find { _.name == from } get
-            val pfrom = vfrom.tpe.asInstanceOf[BoxType].lookupPort(portName).get.asInstanceOf[PortSymbol]
-            vfrom.tpe match {
-              case b:BoxTypeSymbol =>
-                Select(toRef(vfrom), FieldRef(portName, pfrom.tpe.name, vfrom.tpe.asInstanceOf[BoxTypeSymbol].fqName))
-              case _=> 
-                LocalRef(localsMap(pfrom), Name("int"))
-            }
-          case BoxPortKey(portName, in) ⇒
-            val pfrom = bs.lookupPort(portName).get
-            Select(This, FieldRef(portName, pfrom.tpe.name, bs.fqName))
         }
+      } toMap;
+      def toRef(p: PortSide): Tree = 
+          if (p.fromInside) {
+            Select(This, FieldRef(p.pi.portSymbol.name, p.pi.portSymbol.tpe.name, bs.fqName))
+          } else {
+            val vfrom = p.pi.valSymbol
+            val ps = p.pi.portSymbol
+            vfrom.tpe match {
+              case b: BoxTypeSymbol =>
+                Select(toRefVal(vfrom), FieldRef(ps.name, ps.tpe.name, vfrom.tpe.asInstanceOf[BoxTypeSymbol].fqName))
+              case _ =>
+                LocalRef(localsMap(p), Name("int"))
+            }
+          }
+      def toRefVal(v:ValSymbol) = Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
       // propagate initial inputs
-      def execConnection(c: (PortKey, Set[PortKey])) = {
+      def execConnection(c: (PortSide, Set[PortSide])) = {
         val (out, ins) = c
         ins.toList map { in ⇒
           Assign(toRef(in), toRef(out))
@@ -247,33 +244,36 @@ class TreeToClass(t: Tree, global: Scope) extends ConnectionHelper with Reporter
       def propagateInitialInputs = {
         val initialConnections = {
           connections.flow collect {
-            case c @ (a: BoxPortKey, _) ⇒ c
+            case c @ (a: PortSide, _) ⇒ c
           } toList
         }
         initialConnections flatMap { execConnection(_) }
       }
       // execute in order
       def runOne(v: ValDef) = {
+        val vs =v.symbol.asInstanceOf[ValSymbol]
         def outConnections = connections.flow collect {
-          case c @ (p @ ValPortKey(name, _, in), ins) if (name == v.name) ⇒ c
+          case c@(ps,_) if (ps.pi.valSymbol == vs) ⇒ c
         } toList
         val outs = outConnections flatMap { execConnection(_) }
         val invoke = v.tpe match {
-          case bs: BoxTypeSymbol => 
+          case bs: BoxTypeSymbol =>
             val tpe = v.tpe.asInstanceOf[BoxTypeSymbol].fqName
             Invoke(
-                Select(This, FieldRef(v.name, tpe, bs.fqName)),
-                "apply",
-                List(),
-                tpe,
-            "()V")
-          case s : SumExprType =>
-            Assign(toRef(s.c),Sum(toRef(s.a),toRef(s.b)))
+              Select(This, FieldRef(v.name, tpe, bs.fqName)),
+              "apply",
+              List(),
+              tpe,
+              "()V")
+          case s: SumExprType =>
+            val vs = v.symbol.asInstanceOf[ValSymbol]
+            def toPs(p:PortSymbol) = vs.findPortSide(p).get
+            Assign(toRef(toPs(s.c)), Sum(toRef(toPs(s.a)), toRef(toPs(s.b))))
         }
         invoke :: outs
       }
       val invokes = b.vals flatMap { case v: ValDef ⇒ runOne(v) }
-      val localsDecl = localsMap map { case (a,i) => (a.name.str,"I",i)} toList;
+      val localsDecl = localsMap map { case (a, i) => (a.pi.portSymbol.name.str, "I", i) } toList;
       Method(Name("contents"), "()V", propagateInitialInputs ++ invokes, localsDecl)
 
     }

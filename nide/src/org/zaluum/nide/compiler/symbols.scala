@@ -44,49 +44,7 @@ class ClassJavaType(owner: Symbol, val name: Name) extends JavaType(owner) {
   def descriptor = "L" + name.internal + ";"
 
 }
-object PortKey {
-  def create(p: PortRef): PortKey = p.fromRef match {
-    case t: ThisRef ⇒ BoxPortKey(p.name, p.in)
-    case v: ValRef ⇒ ValPortKey(v.name, p.name, p.in)
-  }
-}
-// from can be BoxTypeSymbol if it is "this" or ValSymbol
-sealed trait PortKey {
-  def toRef: PortRef
-  def resolve(b: BoxType): Option[PortKeySym]
-}
-case class BoxPortKey(port: Name, in: Boolean) extends PortKey {
-  def toRef = PortRef(ThisRef(), port, in)
-  def resolve(bs: BoxType) = bs.lookupPort(port) collect { case p: PortSymbol ⇒ BoxPortKeySym(bs, p) }
-}
-case class ValPortKey(from: Name, port: Name, in: Boolean) extends PortKey {
-  def toRef = PortRef(ValRef(from), port, in)
-  def resolve(b: BoxType) = {
-    b match {
-      case bs: BoxTypeSymbol =>
-        bs.lookupVal(from) match {
-          case Some(v: ValSymbol) ⇒
-            v.tpe match {
-              case b: BoxType ⇒ b.lookupPort(port) match {
-                case Some(p: PortSymbol) ⇒ Some(ValPortKeySym(bs, v, p))
-                case _ ⇒ None
-              }
-              case _ ⇒ None
-            }
-          case _ ⇒ None
-        }
-      case _ => None
-    }
-
-  }
-}
-sealed trait PortKeySym {
-  def box: BoxType
-  def port: PortSymbol
-}
-case class BoxPortKeySym(box: BoxType, port: PortSymbol) extends PortKeySym
-case class ValPortKeySym(box: BoxType, valSym: ValSymbol, port: PortSymbol) extends PortKeySym
-case class Clump(var junctions: Set[Junction], var ports: Set[PortKey], var connections: Set[ConnectionDef])
+case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef])
 trait BoxType extends Symbol with Type {
   protected def ports: Map[Name, Symbol]
   def declaredPorts = ports
@@ -101,7 +59,7 @@ class BoxTypeSymbol(
   val image: Option[String],
   var visualClass: Option[Name],
   val abstractCl: Boolean = false) extends LocalScope(owner.scope) with BoxType {
-
+  var thisVal : ValSymbol = _
   var hasApply = false
   override def portsWithSuper: Map[Name, Symbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def declaredVals = vals
@@ -113,20 +71,20 @@ class BoxTypeSymbol(
   object connections extends Namer {
     var junctions = Set[Junction]()
     def usedNames = junctions map { _.name.str }
-    var flow = Map[PortKey, Set[PortKey]]()
+    var flow = Map[PortSide, Set[PortSide]]()
     var clumps = Buffer[Clump]()
     def clumpOf(c: ConnectionDef) = clumps find { _.connections.contains(c) }
-    def clumpOf(p: PortKey) = clumps find { _.ports.contains(p) }
+    def clumpOf(p: PortSide) = clumps find { _.ports.contains(p) }
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
-      val pk = PortKey.create(a)
+      val pk = PortSide.find(a,BoxTypeSymbol.this).get
       val newClump = merge(clumpOf(pk), clumpOf(j))
       newClump.connections += c
       newClump.ports += pk
       newClump.junctions += j
     }
     def addPorts(a: PortRef, b: PortRef, c: ConnectionDef) {
-      val (as, bs) = (PortKey.create(a), PortKey.create(b))
+      val (as, bs) = (PortSide.find(a,BoxTypeSymbol.this).get, PortSide.find(b,BoxTypeSymbol.this).get)
       val newClump = merge(clumpOf(as), clumpOf(bs))
       newClump.connections += c
       newClump.ports ++= Set(as, bs)
@@ -181,7 +139,7 @@ class BoxTypeSymbol(
   var okOverride = false
   var constructors = List[Constructor]()
   var source: String = "" // TODO
-  def valsInOrder = boxes.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[ValSymbol]]
+  def valsInOrder = vals.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[ValSymbol]]
   def IOInOrder = ports.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[IOSymbol]]
   def params = ports.values collect { case p: ParamSymbol ⇒ p }
   var executionOrder = List[ValSymbol]()
@@ -207,7 +165,7 @@ class IOSymbol(val owner: BoxType, val name: Name, val dir: PortDir) extends Sym
   def box = owner
 }
 class PortSymbol(owner: BoxType, name: Name, val extPos: Point, dir: PortDir) extends IOSymbol(owner, name, dir) {
-  //override def toString = "PortSymbol(" + name + ")"
+  override def toString = "PortSymbol(" + name + ")"
 }
 class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
   override def toString = {
@@ -224,10 +182,38 @@ class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
 class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name, In) {
   override def toString = "ParamSymbol(" + name + ")"
 }
+class PortInstance(val portSymbol:PortSymbol,val valSymbol:ValSymbol) {
+  def name = portSymbol.name
+  override def toString = "PortInstance("+portSymbol+", "+valSymbol+")"
+}
+object PortSide {
+  def find(p:PortRef, bs:BoxTypeSymbol) = {
+    p.fromRef match {
+    	case t: ThisRef ⇒ bs.thisVal.findPortSide(p)
+    	case v: ValRef ⇒ for (vs <- bs.lookupVal(v.name); ps <- vs.asInstanceOf[ValSymbol].findPortSide(p)) yield ps
+    }
+  }
+}
+class PortSide(val pi:PortInstance, val in:Boolean, val fromInside:Boolean) {
+  def isIn = if (fromInside) !in else in
+  def name = pi.name
+  def toRef = {
+    if (fromInside) PortRef(ThisRef(),name,in) // ok?
+    else PortRef(ValRef(pi.valSymbol.name), name,in)
+  }
+  override def toString() = "PortSide(" + pi.toString + ", in="+in+", fromInside="+fromInside+")"
+}
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
   var params = Map[ParamSymbol, Any]()
   var constructor: Option[Constructor] = None
   var constructorParams = List[(Any, Type)]()
-  // override def toString = "ValSymbol(" + name + ")"
+  var portInstances = List[PortInstance]()
+  var portSides = List[PortSide]()
+  def findPortSide(pr:PortRef) = 
+    portSides.find(ps => ps.pi.portSymbol.name==pr.name && ps.in== pr.in)
+  def findPortSide(p:PortSymbol) = 
+    portSides.find(ps => ps.pi.portSymbol==p)
+    
+  override def toString = "ValSymbol(" + name + ")"
 }
 

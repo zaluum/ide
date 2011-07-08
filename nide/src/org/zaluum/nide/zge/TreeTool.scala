@@ -323,9 +323,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       override def setSize(x: Int, y: Int) = { l.setSize(x, y); super.setSize(x, y) }
     }
     lazy val tooltip = new TooltipLabel
-    def showTip(p: PortFigure) {
-      val abs = p.anchor.getCopy
-      tooltip.setText(p.sym.name.str + " : " + p.sym.tpe.name.str)
+    def showTip(pf: PortFigure) {
+      val abs = pf.anchor.getCopy
+      tooltip.setText(pf.ps.name.str + " : " + pf.ps.pi.portSymbol.tpe.name.str)
       viewer.feedbackLayer.add(tooltip)
 
     }

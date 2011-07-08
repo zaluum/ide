@@ -14,20 +14,13 @@ class PortFigure(val container:ContainerItem) extends Ellipse with Hover{
   def anchor = getBounds.getCenter
   private var ipos = MPoint(0, 0)
   var in = false
-  var sym: PortSymbol = _
-  var fromSym: Symbol = _ 
-  var portKey : PortKey= _
-  def update(ipos: MPoint, sym: PortSymbol, fromSym: Symbol, in: Boolean) {
+  var ps:PortSide = _
+  def update(ipos: MPoint, ps: PortSide) {
+    this.ps = ps
     this.ipos = ipos
-    this.fromSym = fromSym
-    this.sym = sym
     this.in = in
-    portKey = fromSym match {
-      case s:ValSymbol => ValPortKey(fromSym.name, sym.name, in)
-      case b:BoxTypeSymbol => BoxPortKey(sym.name,in)
-    }
     setBounds(new Rectangle(pos.x,pos.y,size.w,size.h))
-    setBackgroundColor(Colorizer.color(sym.tpe))
+    setBackgroundColor(Colorizer.color(ps.pi.portSymbol.tpe))
     setBounds(new Rectangle(pos.x,pos.y,size.w,size.h))
   }
   var _hover = false
@@ -40,7 +33,7 @@ class PortFigure(val container:ContainerItem) extends Ellipse with Hover{
       setForegroundColor(ColorConstants.black)
   }
   override def toString() =
-    "PortFigure(" + sym + " " + fromSym + ")"
+    "PortFigure(" + ps + ")"
   setAntialias(1)
   hover = false
   //setAlpha(50)
@@ -69,20 +62,20 @@ class OpenPortDeclFigure(val openBox: OpenBoxFigure) extends RectangleFigure wit
   def blink(b:Boolean) {
     setXOR(b)
   }
-  def update(t: PortDef, left: Boolean) {
-    this.tree = t
+  def update(ps: PortSide, left: Boolean) {
+    this.tree = ps.pi.portSymbol.decl.asInstanceOf[PortDef];
     this.left = left
+    val valSym = openBox.valSym 
     setBackgroundColor(Colorizer.color(sym.tpe))
     setForegroundColor(if (dir == Shift) ColorConstants.yellow else ColorConstants.white)
     updateSize()
-    val valsym = openBox.valDef.symbol.asInstanceOf[ValSymbol]
     // external
     val extDisplacement = if (left) Vector2(-size.w, 0) else Vector2(size.w, 0)
-    extPort.update(getBounds.getCenter + extDisplacement, sym, valsym, left)
+    extPort.update(getBounds.getCenter + extDisplacement, ps)
     // internal
     def inDisplacement = if (left) Vector2(intPort.size.w/2, -openBox.getInsets.top + size.h/2) 
       else Vector2(-(size.w+intPort.size.w/2), -openBox.getInsets.top + size.h/2)
-    intPort.update(relPos + inDisplacement, sym, openBox.symbol, !left)
+    intPort.update(relPos + inDisplacement, ps)
   }
   this.setOpaque(true);
 }
@@ -95,7 +88,7 @@ object PortDeclFigure {
   }
 }
 abstract class PortHolderFigure(val container: ContainerItem) extends AutoDisposeImageFigure with Item with HasPorts with RectFeedback {
-  def sym: PortSymbol
+  def ps: PortSide
   def myLayer = container.layer
   def pos: MPoint
   def dir: PortDir
@@ -111,7 +104,7 @@ abstract class PortHolderFigure(val container: ContainerItem) extends AutoDispos
     size = Dimension(image.getBounds.width, image.getBounds.height)
     updateSize()
     val position = pos + (if (dir == In) Vector2(48, 8) else Vector2(0, 8))
-    port.update(position, sym, container.symbol, dir == In)
+    port.update(position, ps)
   }
   def blink(b:Boolean) {}
 
@@ -120,9 +113,11 @@ class PortDeclFigure(val tree: PortDef, container: ContainerItem) extends PortHo
   def pos = tree.inPos
   def dir = tree.dir
   def sym = tree.symbol.asInstanceOf[PortSymbol]
+  lazy val ps = sym.box.asInstanceOf[BoxTypeSymbol].thisVal.portSides.find {_.pi.portSymbol==sym}.get
   override def selectionSubject = Some(tree)
 }
 class PortSymbolFigure(val sym: PortSymbol, openBox: OpenBoxFigure) extends PortHolderFigure(openBox) {
   def pos = MPoint(openBox.getSize.w - Tool.gridSize*10, openBox.getSize.h - Tool.gridSize*5)
   def dir = sym.dir
+  lazy val ps = sym.box.asInstanceOf[BoxTypeSymbol].thisVal.portSides.find {_.pi.portSymbol==sym}.get
 }

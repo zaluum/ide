@@ -20,7 +20,7 @@ trait ConnectionsTool {
     self: SingleContainer ⇒
     var g: ConnectionGraph = null
     var edge: Edge = null
-    var paintedEdge : Edge = null
+    var paintedEdge: Edge = null
     var last: Point = null
     var dst: Option[Hover] = None
     var src: Option[Hover] = None
@@ -90,11 +90,11 @@ trait ConnectionsTool {
             val trans: PartialFunction[Tree, Tree] = {
               case b: BoxDef if (b == initContainer.boxDef) ⇒
                 b.copy(
-                  defs=transformTrees(b.defs),
-                  vals=transformTrees(b.vals),
-                  ports=transformTrees(b.ports),
-                  connections=connections,
-                  junctions=junctions)
+                  defs = transformTrees(b.defs),
+                  vals = transformTrees(b.vals),
+                  ports = transformTrees(b.ports),
+                  connections = connections,
+                  junctions = junctions)
             }
           })
       } else exit()
@@ -131,13 +131,13 @@ trait ConnectionsTool {
       portsTrack.hideTip
       selecting.enter()
     }
-    def paintCreatingEdge(e:Edge) = {
-      if (paintedEdge!=e) {
+    def paintCreatingEdge(e: Edge) = {
+      if (paintedEdge != e) {
         painter.paintCreatingRoute(e)
         paintedEdge = e
       }
-    } 
-    def move() {  
+    }
+    def move() {
       import math.abs
       portsTrack.update()
       dst foreach { _.hover = false }
@@ -230,16 +230,15 @@ trait ConnectionsTool {
       }
       // collect moved ends
       val movedEnds = vertexs.collect { case p: PortVertex ⇒ p }.filter { p ⇒
-        val res = p.key.resolve(initContainer.symbol)
-        res match {
-          case Some(v: ValPortKeySym) ⇒ valdefs.contains(v.valSym.decl)
-          case Some(t: BoxPortKeySym) ⇒ portdefs.contains(t.box.decl)
-          case _ ⇒ false
-        }
+        val pi = p.ps.pi
+        if (p.ps.fromInside) 
+          portdefs.contains(pi.valSymbol.tpe.decl)
+        else 
+          valdefs.contains(pi.valSymbol.decl)
       }
       // update edge vertexs
       for (v ← movedJunctions.view ++ movedEnds) {
-        val newv = v.move(snap(v.p +delta))
+        val newv = v.move(snap(v.p + delta))
         vertexs = vertexs - v + newv
         edges = for (e ← edges) yield {
           assert(!(e.a == v && e.b == v))
@@ -266,11 +265,11 @@ trait ConnectionsTool {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if (b == initContainer.boxDef) ⇒
             b.copy(
-              defs=transformTrees(b.defs),
-              vals=transformTrees(b.vals),
-              ports=transformTrees(b.ports),
-              connections=connections,
-              junctions=junctions)
+              defs = transformTrees(b.defs),
+              vals = transformTrees(b.vals),
+              ports = transformTrees(b.ports),
+              connections = connections,
+              junctions = junctions)
           case v: ValDef if (valdefs.contains(v)) ⇒
             v.copy(pos = snap(v.pos + delta), params = transformTrees(v.params))
           case p: PortDef if (portdefs.contains(p)) ⇒
@@ -283,9 +282,9 @@ trait ConnectionsTool {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { viewer.selectedItems foreach { f=> f.moveFeed(snap(f.pos + delta)) } }
+    def move() { viewer.selectedItems foreach { f => f.moveFeed(snap(f.pos + delta)) } }
     def abort() {
-      viewer.selectedItems foreach { f=> f.moveFeed(f.pos) }
+      viewer.selectedItems foreach { f => f.moveFeed(f.pos) }
       exit()
     }
   }

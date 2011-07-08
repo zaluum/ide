@@ -50,22 +50,20 @@ trait ContainerItem extends Item {
   }
   private def portFigures = portsLayer.getChildren.collect { case p: PortFigure ⇒ p }
   def findPortFigure(boxName: Name, portName: Name, in: Boolean): Option[PortFigure] = {
-    portFigures find { p ⇒
-      p.fromSym match {
-        case valSym: ValSymbol ⇒ (valSym.name == boxName && p.sym.name == portName && p.in == in)
-        case _ ⇒ false
-      }
+    portFigures find { pf ⇒
+      pf.ps.pi.valSymbol.name == boxName && pf.ps.name == portName && pf.in == in
     }
   }
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] = {
-    portFigures find { p ⇒ p.fromSym.isInstanceOf[BoxType] && p.sym.name == portName && p.in == in }
+    portFigures find { pf ⇒ pf.ps.fromInside && pf.ps.name == portName && pf.ps.in == in }
   }
 
   protected def createGraph: ConnectionGraph = {
-    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port.portKey, port.anchor) }
+    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒ new PortVertex(port.ps, port.anchor) }
     val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
-    val nonExistingPortVertex = scala.collection.mutable.Map[PortKey, MissingPortVertex]()
+    val nonExistingPortVertex = scala.collection.mutable.Map[PortSide, MissingPortVertex]()
     val emptyVertexs = Buffer[EmptyVertex]()
+
     val edges = boxDef.connections.map {
       case c: ConnectionDef ⇒
         def toVertex(t: Tree, start: Boolean): Vertex = {
@@ -74,11 +72,13 @@ trait ContainerItem extends Item {
             case JunctionRef(name) ⇒
               junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
             case p: PortRef ⇒
-              val key = PortKey.create(p)
+              val ps = PortSide.find(p, boxDef.symbol.asInstanceOf[BoxTypeSymbol]).get
+              portVertexs.find(_.ps == ps).get
+            /* FIXME val key = PortKey.create(p)
               portVertexs.find { _.key == key }
                 .getOrElse {
                   nonExistingPortVertex.getOrElseUpdate(key, new MissingPortVertex(key, pos))
-                }
+                }*/
             case EmptyTree ⇒
               val e = new EmptyVertex(pos)
               emptyVertexs += e
@@ -178,14 +178,14 @@ trait ContainerItem extends Item {
 }
 object OpenBoxFigure {
   val backgroundNormal = ColorConstants.white
-  val backgroundBlink = ColorConstants.lightGray 
+  val backgroundBlink = ColorConstants.lightGray
 }
 class OpenBoxFigure(
   val container: ContainerItem,
   val viewer: Viewer) extends Figure with ValDefItem with ResizableFeedback with ContainerItem with Transparent {
   // Item
   def myLayer = container.layer
-  def size = valDef.size getOrElse Dimension(Tool.gridSize*16, Tool.gridSize*16)
+  def size = valDef.size getOrElse Dimension(Tool.gridSize * 16, Tool.gridSize * 16)
   // layers
   val inners = new LayeredPane
   val layer = new Layer
@@ -193,7 +193,7 @@ class OpenBoxFigure(
   val connectionsLayer = new Layer
   val pointsLayer = new Layer
   val feedbackLayer = new Layer
-  val background = new Layer 
+  val background = new Layer
   // ContainerItem
   background.setBackgroundColor(ColorConstants.white)
   def helpers = portDecls ++ portSymbols
@@ -207,7 +207,7 @@ class OpenBoxFigure(
     showArrowsIfNotBigEnough
   }
   def blink(b: Boolean) {
-    background.setBackgroundColor (if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal)
+    background.setBackgroundColor(if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal)
   }
   import PositionConstants._
   private def newTriangle(pos: Int) = {
@@ -269,24 +269,21 @@ class OpenBoxFigure(
   def updatePorts(changes: Map[Tree, Tree]) {
     portDecls.foreach { _.hide() }
     portDecls.clear()
-    boxDef.children foreach {
-      _ match {
-        case p @ PortDef(name, typeName, in, inPos, extPos) ⇒
-          def newFig(left: Boolean) = {
-            val f = new OpenPortDeclFigure(OpenBoxFigure.this)
-            f.update(p, left)
-            portDecls += f
-            if (showing) f.show()
-          }
-          in match {
-            case In ⇒ newFig(true)
-            case Out ⇒ newFig(false)
-            case Shift ⇒ newFig(true); newFig(false)
-          }
-        case _ ⇒
+    val bs = boxDef.symbol.asInstanceOf[BoxTypeSymbol]
+    bs.thisVal.portSides foreach { ps =>
+      def newFig(left: Boolean) = {
+        val f = new OpenPortDeclFigure(OpenBoxFigure.this)
+        f.update(ps, left)
+        portDecls += f
+        if (showing) f.show()
+      }
+      ps.pi.portSymbol.dir match {
+        case In ⇒ newFig(true)
+        case Out ⇒ newFig(false)
+        case Shift ⇒ newFig(true); newFig(false)
       }
     }
-    portSymbols.foreach(_.hide)
+    /* FIXME portSymbols.foreach(_.hide)
     portSymbols.clear()
     // super ports
     boxDef.symbol match {
@@ -300,7 +297,7 @@ class OpenBoxFigure(
               if (showing) f.show()
           }
         }
-    }
+    }*/
   }
   override def paintClientArea(graphics: Graphics) {
     val rect = new Rectangle

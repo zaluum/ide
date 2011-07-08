@@ -126,10 +126,10 @@ class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for
 }
 class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   protected var ports = Map[Name, Symbol]()
-  protected var vals = Map[Name, Symbol]()
+  protected var vals = Map[Name, ValSymbol]()
   protected var boxes = Map[Name, Type]()
   def lookupPort(name: Name): Option[Symbol] = ports.get(name)
-  def lookupVal(name: Name): Option[Symbol] = vals.get(name)
+  def lookupVal(name: Name): Option[ValSymbol] = vals.get(name)
   def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name)
   def alreadyDefinedBoxType(name: Name): Boolean = boxes.get(name).isDefined
   def lookupBoxType(name: Name): Option[Type] =
@@ -140,7 +140,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
     sym match {
       case p: IOSymbol ⇒ ports += entry
       case b: BoxTypeSymbol ⇒ boxes += (sym.name -> b)
-      case v: ValSymbol ⇒ vals += entry
+      case v: ValSymbol ⇒ vals += (sym.name -> sym.asInstanceOf[ValSymbol])
     }
     sym
   }
@@ -173,10 +173,10 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     }
     override def traverse(tree: Tree) {
       tree match {
-        case b:BoxDef ⇒
+        case b: BoxDef ⇒
           val cl = Some(Name(classOf[JPanel].getName))
           val newSym = new BoxTypeSymbol(currentOwner, b.name, b.pkg, b.superName, b.image, cl)
-          newSym.hasApply=true
+          newSym.hasApply = true
           val sym = defineBox(newSym, tree)
           val bs = sym.asInstanceOf[BoxTypeSymbol]
           bs.constructors = List(new Constructor(bs, List()))
@@ -194,7 +194,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     }
   }
   object expressionTyper {
-    def apply(typeName:Name, owner:Symbol) : Option[BoxType] = typeName match {
+    def apply(typeName: Name, owner: Symbol): Option[BoxType] = typeName match {
       case Name("org.zaluum.math.Sum") => Some(new SumExprType(owner))
       case _ => None
     }
@@ -202,21 +202,39 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
   class Resolver(global: Symbol) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
+    def createPortInstances(bs: BoxType, vsym: ValSymbol, isThis:Boolean) = {
+      vsym.portInstances = (for (p <- bs.portsWithSuper.values; if p.isInstanceOf[PortSymbol]) yield {
+        new PortInstance(p.asInstanceOf[PortSymbol], vsym)
+      }).toList;
+      vsym.portSides = (for (pi <- vsym.portInstances) yield {
+        pi.portSymbol.dir match {
+          case In => List(new PortSide(pi,true, isThis))
+          case Out => List(new PortSide(pi,false, isThis))
+          case Shift => List(new PortSide(pi, true, isThis), new PortSide(pi,false, isThis))
+        }
+      }).flatMap(a=>a);
+    }
     private def catchAbort[T](b: ⇒ Option[T]): Option[T] =
       try { b } catch { case e: AbortCompilation ⇒ None }
     override def traverse(tree: Tree) {
       super.traverse(tree)
       tree match {
         case b: BoxDef ⇒
+          val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
           b.superName foreach { sn ⇒
             catchAbort(currentScope.lookupBoxType(sn)) match {
-              case Some(bs: BoxTypeSymbol) ⇒
-                b.symbol.asInstanceOf[BoxTypeSymbol]._superSymbol = Some(bs)
+              case Some(sbs: BoxTypeSymbol) ⇒
+                bs._superSymbol = Some(sbs)
               /* if (!bs.okOverride) 
                   error ("Super box " + sn.str + " has no 'void contents()' to override or has other abstract methods.", tree)*/
               case None ⇒
                 error("Super box type not found " + sn, tree)
             }
+          }
+          if (b == toCompile) {
+            bs.thisVal = new ValSymbol(currentOwner, Name("this"))
+            bs.thisVal.tpe = bs
+            createPortInstances(bs, bs.thisVal,true)
           }
         case PortDef(name, typeName, in, inPos, extPos) ⇒
           tree.symbol.tpe = catchAbort(currentScope.lookupType(typeName)) getOrElse {
@@ -225,7 +243,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
           val vsym = v.symbol.asInstanceOf[ValSymbol]
-          catchAbort(expressionTyper(v.typeName,currentOwner) orElse currentScope.lookupBoxType(v.typeName)) match {
+          catchAbort(expressionTyper(v.typeName, currentOwner) orElse currentScope.lookupBoxType(v.typeName)) match {
             case Some(bs: BoxTypeSymbol) ⇒
               v.symbol.tpe = bs
               if (!bs.hasApply) {
@@ -266,12 +284,14 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
                   case None ⇒ error("Cannot find parameter " + p.key, tree)
                 }
               }
+              createPortInstances(bs, vsym,false)
               vsym.params
-            case Some(b:SumExprType) =>
+            case Some(b: SumExprType) =>
               v.symbol.tpe = b
               b.a.tpe = currentScope.lookupType(Name("int")).get
               b.b.tpe = currentScope.lookupType(Name("int")).get
               b.c.tpe = currentScope.lookupType(Name("int")).get
+              createPortInstances(b, vsym,false)
             case a ⇒
               v.symbol.tpe = NoSymbol
               error("Box class " + v.typeName + " not found", tree);
@@ -304,9 +324,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
   class CheckConnections(b: BoxDef, owner: Symbol) {
     val bs = b.symbol.asInstanceOf[BoxTypeSymbol] // boxDefs always have boxtypesymbol
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
-    var usedInputs = Set[PortKey]()
+    var usedInputs = Set[PortSide]()
     def check() = Checker.traverse(b)
-    object Checker extends Traverser(owner) with ConnectionHelper with ReporterAdapter {
+    object Checker extends Traverser(owner) with ReporterAdapter {
       def location(tree: Tree) = globLocation(tree)
       def reporter = Analyzer.this.reporter
       override def traverse(tree: Tree) {
@@ -337,8 +357,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
       }
       private def check() {
         def checkClump(c: Clump) {
-          val ins = c.ports.filter(p ⇒ isIn(p, bs))
-          val outs = c.ports.filter(p ⇒ !isIn(p, bs))
+          val ins = c.ports.filter(p ⇒ p.isIn)
+          val outs = c.ports.filter(p ⇒ !p.isIn)
           if (outs.size == 0) error("No output connected", c.connections.head)
           else if (outs.size > 1) error("More than one output is connected", c.connections.head)
           else if (ins.size == 0) error("No inputs connected", c.connections.head)
@@ -346,7 +366,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
             if (!usedInputs.intersect(ins).isEmpty) error("input connected multiple times", c.connections.head) // TODO check online to identify offending connection 
             usedInputs ++= ins
             // check types
-            val types = for (pk ← c.ports; pks ← pk.resolve(bs)) yield pks.port.tpe
+            val types = for (ps ← c.ports) yield ps.pi.portSymbol.tpe
             if (types.size != 1) error("Connection with incompatible types " + types.mkString(","), c.connections.head)
             else {
               c.connections foreach { _.tpe = types.head }
@@ -355,22 +375,19 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
             // check graph consistency
             val out = outs.head
             bs.connections.flow += (out -> ins)
-            def addDag(vout: ValPortKeySym, vin: ValPortKeySym) {
+            def addDag(vout: PortInstance, vin: PortInstance) {
               try {
-                acyclic.addDagEdge(vout.valSym, vin.valSym);
+                acyclic.addDagEdge(vout.valSymbol, vin.valSymbol);
               } catch {
                 case e: CycleFoundException ⇒ error("cycle found ", c.connections.head)
                 case e: IllegalArgumentException ⇒ error("loop found", c.connections.head)
               }
             }
             import org.zaluum.nide.RichCast._
-            for {
-              voutg ← out.resolve(bs);
-              vout ← voutg.castOption[ValPortKeySym];
-              pkin ← ins;
-              ving ← pkin.resolve(bs);
-              vin ← ving.castOption[ValPortKeySym]
-            } (addDag(vout, vin))
+            for (in ← ins) {
+              if (!out.fromInside && !in.fromInside)
+            	addDag(out.pi, in.pi)
+            }
           }
         }
         b.connections.foreach {
@@ -381,7 +398,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
                   error("FATAL: junction does not exists " + j,con)
                 }*/
               case p: PortRef ⇒
-                PortKey.create(p).resolve(bs) match {
+                PortSide.find(p,bs) match {
                   case None ⇒ error("Cannot find port " + p, con)
                   case _ ⇒
                 }
@@ -408,21 +425,5 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
   def runCheck(): Tree = {
     new CheckConnections(toCompile, global.root).check()
     toCompile
-  }
-}
-trait ConnectionHelper extends ReporterAdapter {
-  implicit def reporter: Reporter
-  def isIn(ap: PortKey, bs: BoxTypeSymbol): Boolean = {
-    val resolved = ap.resolve(bs)
-    resolved.map { r ⇒
-      (r.port.dir, r) match {
-        case (In, v: ValPortKeySym) ⇒ true
-        case (In, b: BoxPortKeySym) ⇒ false
-        case (Out, v: ValPortKeySym) ⇒ false
-        case (Out, b: BoxPortKeySym) ⇒ true
-        case (Shift, v: ValPortKeySym) ⇒ ap.toRef.in // FIXME super ports don't have decl
-        case (Shift, b: BoxPortKeySym) ⇒ ap.toRef.in
-      }
-    }.getOrElse { true }
   }
 }

@@ -51,25 +51,21 @@ trait ValFigure extends ValDefItem with HasPorts {
   def updateValPorts() {
     for (p ← ports) container.portsLayer.remove(p)
     ports.clear
-    sym.tpe match {
-      case b: BoxType ⇒
-        val bports = b.portsWithSuper.values collect { case s: PortSymbol ⇒ s }
-        def isIn(p: PortSymbol) = p.dir == In
-        val (unsortedins, unsortedouts) = bports.partition { isIn(_) } // SHIFT?
-        val ins = unsortedins.toList.sortBy(_.name.str);
-        val outs = unsortedouts.toList.sortBy(_.name.str);
-        def space(s: PortSymbol) = if (isIn(s)) size.h / (ins.size + 1) else size.h / (outs.size + 1)
-        def createPort(s: PortSymbol, i: Int) {
-          val p = new PortFigure(container)
-          val x = if (isIn(s)) 0 else size.w
-          val point = Point(x, (i + 1) * space(s))
-          p.update(point + Vector2(getBounds.x, getBounds.y), s, sym, s.dir == In)
-          ports += p
-        }
-        for ((p, i) ← ins.zipWithIndex) createPort(p, i)
-        for ((p, i) ← outs.zipWithIndex) createPort(p, i)
-      case _ ⇒ List()
+    
+    val bports = sym.portSides ;
+    val (unsortedins, unsortedouts) = bports.partition { _.in } // SHIFT?
+    val ins = unsortedins.toList.sortBy(_.name.str);
+    val outs = unsortedouts.toList.sortBy(_.name.str);
+    def space(s: PortSide) = if (s.in) size.h / (ins.size + 1) else size.h / (outs.size + 1)
+    def createPort(s: PortSide, i: Int) {
+      val p = new PortFigure(container)
+      val x = if (s.in) 0 else size.w
+      val point = Point(x, (i + 1) * space(s))
+      p.update(point + Vector2(getBounds.x, getBounds.y), s)
+      ports += p
     }
+    for ((p, i) ← ins.zipWithIndex) createPort(p, i)
+    for ((p, i) ← outs.zipWithIndex) createPort(p, i)
 
   }
 }
