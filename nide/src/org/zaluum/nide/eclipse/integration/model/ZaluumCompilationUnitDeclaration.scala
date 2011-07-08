@@ -297,6 +297,7 @@ class ZaluumCompilationUnitDeclaration(
     }
   }
   override def resolve() {
+    super.resolve() // FIXME run or not?
     a.runResolve()
     a.runCheck()
     checkZaluumLibraryPresent()

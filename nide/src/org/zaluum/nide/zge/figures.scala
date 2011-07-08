@@ -16,7 +16,7 @@ import draw2dConversions._
 import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline, Graphics }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.{Image,Font,GC}
+import org.eclipse.swt.graphics.{ Image, Font, GC }
 import org.zaluum.nide.compiler._
 import scala.collection.mutable.Buffer
 import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
@@ -52,7 +52,7 @@ trait ValFigure extends ValDefItem with HasPorts {
     for (p ← ports) container.portsLayer.remove(p)
     ports.clear
     sym.tpe match {
-      case b: BoxTypeSymbol ⇒
+      case b: BoxType ⇒
         val bports = b.portsWithSuper.values collect { case s: PortSymbol ⇒ s }
         def isIn(p: PortSymbol) = p.dir == In
         val (unsortedins, unsortedouts) = bports.partition { isIn(_) } // SHIFT?
@@ -73,30 +73,30 @@ trait ValFigure extends ValDefItem with HasPorts {
 
   }
 }
-class LabelItem(val container:ContainerItem, gui:Boolean=false) extends Figure with TextEditFigure with ValDefItem with RectFeedback {
+class LabelItem(val container: ContainerItem, gui: Boolean = false) extends Figure with TextEditFigure with ValDefItem with RectFeedback {
   setForegroundColor(Colorizer.color(NoSymbol))
-  def blink(b:Boolean) {}
+  def blink(b: Boolean) {}
   def size = pg.getPreferredSize
-  def baseVector = Vector2(0,-size.h)
+  def baseVector = Vector2(0, -size.h)
   def lbl = if (gui) valDef.labelGui else valDef.label
   def text = {
     val fromTree = lbl.map(_.description).getOrElse("XXX")
-    if (fromTree=="") valDef.name.str else fromTree
+    if (fromTree == "") valDef.name.str else fromTree
   }
-  def basePos = if (gui) valDef.guiPos.getOrElse(Point(0,0)) else valDef.pos
-  override def pos = basePos + baseVector + (lbl.map { _.pos } getOrElse { Vector2(0,0) }) 
+  def basePos = if (gui) valDef.guiPos.getOrElse(Point(0, 0)) else valDef.pos
+  override def pos = basePos + baseVector + (lbl.map { _.pos } getOrElse { Vector2(0, 0) })
   def myLayer = container.layer
-  def updateMe()  { 
+  def updateMe() {
     fl.setText(text)
-    pg.setBounds(new Rectangle(new EPoint(0,0),dimension(size)))
+    pg.setBounds(new Rectangle(new EPoint(0, 0), dimension(size)))
   }
-  def updateValPorts () {}
+  def updateValPorts() {}
 }
 trait AutoDisposeImageFigure extends ImageFigure {
-  var desc : DeviceResourceDescriptor = null
-  def imageFactory : ImageFactory
+  var desc: DeviceResourceDescriptor = null
+  def imageFactory: ImageFactory
   def disposeImage() {
-    if (desc!=null)
+    if (desc != null)
       imageFactory.destroy(desc)
   }
 }
@@ -105,33 +105,33 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
   def imageFactory = container.viewer.zproject.imageFactory
   def updateMe() {
     disposeImage()
-    val (newImg,newDesc) = imageFactory(valDef.tpe)
+    val (newImg, newDesc) = imageFactory(valDef.tpe)
     desc = newDesc
     setImage(newImg)
   }
-  override def paintFigure(gc:Graphics) {
-    gc.setAlpha(if(blinkOn) 100 else 255);
-  //  gc.drawImage(getImage, getClientArea.x, getClientArea.y)
+  override def paintFigure(gc: Graphics) {
+    gc.setAlpha(if (blinkOn) 100 else 255);
+    //  gc.drawImage(getImage, getClientArea.x, getClientArea.y)
     super.paintFigure(gc)
   }
   var blinkOn = false
-  def blink(b:Boolean) {
+  def blink(b: Boolean) {
     blinkOn = b
     repaint()
   }
 }
 class DirectValFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure {
   def size = {
-    pg.getPreferredSize().ensureMin(Dimension(Tool.gridSize*3,Tool.gridSize*3)) + Vector2(Tool.gridSize,0)
+    pg.getPreferredSize().ensureMin(Dimension(Tool.gridSize * 3, Tool.gridSize * 3)) + Vector2(Tool.gridSize, 0)
   }
   def param = valDef.params.headOption.asInstanceOf[Option[Param]]
-  def text = param.map {_.value}.getOrElse{"0"}
+  def text = param.map { _.value }.getOrElse { "0" }
   def updateMe {
     fl.setText(text)
     setForegroundColor(Colorizer.color(param.map(_.tpe).getOrElse(NoSymbol)))
-    pg.setBounds(new Rectangle(new EPoint(2,2),dimension(size)))
+    pg.setBounds(new Rectangle(new EPoint(2, 2), dimension(size)))
   }
-  def blink(c:Boolean) {
+  def blink(c: Boolean) {
     this.setXOR(c)
   }
 }
@@ -159,7 +159,7 @@ trait TextEditFigure extends Figure with Item with RectFeedback {
       })
       val b = getClientArea.getCopy
       translateToAbsolute(b)
-      textC.setBounds(b.x + 1, b.y + 1, math.max(b.width-1,Tool.gridSize*8), b.height - 2)
+      textC.setBounds(b.x + 1, b.y + 1, math.max(b.width - 1, Tool.gridSize * 8), b.height - 2)
       textC.setBackground(ColorConstants.white)
       textC.setVisible(true)
       textC.selectAll()
@@ -175,7 +175,7 @@ trait TextEditFigure extends Figure with Item with RectFeedback {
 }
 class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Figure with ValDefItem with ResizableFeedback {
   setOpaque(true)
-  def size = valDef.guiSize getOrElse { Dimension(Tool.gridSize*5, Tool.gridSize*5) }
+  def size = valDef.guiSize getOrElse { Dimension(Tool.gridSize * 5, Tool.gridSize * 5) }
   override def pos = valDef.guiPos getOrElse { Point(0, 0) }
   def myLayer = container.layer
   var component: Option[JComponent] = None
@@ -190,19 +190,23 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Fig
         Some(cl.newInstance().asInstanceOf[JComponent])
       } catch { case e ⇒ e.printStackTrace; None }
     }
-    component = for (
-      c ← valDef.tpe.asInstanceOf[BoxTypeSymbol].visualClass;
-      if c.str!=classOf[JPanel].getName;
-      cl ← forName(c.str);
-      i ← instance(cl)
-    ) yield i
+    component = valDef.tpe match {
+      case bs: BoxTypeSymbol =>
+        for (
+          c ← bs.visualClass;
+          if c.str != classOf[JPanel].getName;
+          cl ← forName(c.str);
+          i ← instance(cl)
+        ) yield i
+      case _ => None
+    }
     super.updateValDef(valDef)
   }
   def updateMe() {}
   override def updateValPorts() {}
   override def selectionSubject = Some(valDef)
   var blinkOn = false
-  def blink(b:Boolean) {
+  def blink(b: Boolean) {
     blinkOn = b
     // raise the figure
     val p = getParent
@@ -214,7 +218,7 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Fig
     val rect = getClientArea()
     g.setXORMode(blinkOn)
     component match {
-      case Some(c)=>
+      case Some(c) =>
         val aimage = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB)
         val ag = aimage.createGraphics
         c.setBounds(0, 0, rect.width, rect.height);
@@ -225,21 +229,21 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Fig
         g.drawImage(image, rect.x, rect.y)
         image.dispose()
         ag.dispose();
-      case None=>
+      case None =>
         g.setForegroundColor(ColorConstants.lightGray)
         g.fillRectangle(rect)
         g.setForegroundColor(ColorConstants.gray)
         val data = g.getFont.getFontData
-        for (d<-data){
-          d.setHeight(rect.height/2)
+        for (d <- data) {
+          d.setHeight(rect.height / 2)
         }
-        val font = new Font(Display.getCurrent,data)
+        val font = new Font(Display.getCurrent, data)
         g.setFont(font)
         val dim = FigureUtilities.getStringExtents("?", font)
-        g.drawText("?",rect.getCenter.x-dim.width/2,rect.getCenter.y-dim.height/2)
+        g.drawText("?", rect.getCenter.x - dim.width / 2, rect.getCenter.y - dim.height / 2)
         font.dispose()
     }
     g.setForegroundColor(ColorConstants.lightGray)
-    g.drawRectangle(rect.getCopy.expand(-1,-1))
+    g.drawRectangle(rect.getCopy.expand(-1, -1))
   }
 }

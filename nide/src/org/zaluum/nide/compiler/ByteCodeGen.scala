@@ -26,7 +26,7 @@ object ByteCodeGen {
     cw.visitAnnotation(descriptor(Name(classOf[Box].getName)), true).visitEnd
     var mv: MethodVisitor = null
     val thisDescriptor = descriptor(bc.name)
-    def emitMethod(name: String, signature: String, tree: Tree, constructor: Boolean) {
+    def emitMethod(name: String, signature: String, tree: Tree, locals:List[(String,String,Int)], constructor: Boolean) {
       mv = cw.visitMethod(ACC_PUBLIC, name, signature, null, null);
       mv.visitCode();
       if (constructor) {
@@ -40,6 +40,9 @@ object ByteCodeGen {
       mv.visitInsn(RETURN);
       mv.visitLabel(lend);
       mv.visitLocalVariable("this", thisDescriptor, null, l0, lend, 0);
+      for ( (name,desc,i)<-locals) {
+    	mv.visitLocalVariable(name, desc, null, l0, lend, i);
+      }
       mv.visitMaxs(-1, -1);
       mv.visitEnd();
     }
@@ -54,9 +57,9 @@ object ByteCodeGen {
           }
           f.visitEnd
         case ConstructorMethod(c) ⇒
-          emitMethod("<init>", "()V", tree, true)
-        case Method(name, signature, stats) ⇒
-          emitMethod(name.str, signature, tree, false)
+          emitMethod("<init>", "()V", tree, List(), true)
+        case Method(name, signature, stats, locals) ⇒
+          emitMethod(name.str, signature, tree, locals, false)
         case New(typeName, param, signature) ⇒
           mv.visitTypeInsn(NEW, typeName.internal);
           mv.visitInsn(DUP);
@@ -64,8 +67,17 @@ object ByteCodeGen {
           mv.visitMethodInsn(INVOKESPECIAL, typeName.internal, "<init>", signature);
         case NullConst ⇒
           mv.visitInsn(ACONST_NULL)
+        case LocalRef(id,tpe) =>
+          mv.visitVarInsn(ILOAD,id)
+        case Sum(a,b) =>
+          emit(a)
+          emit(b)
+          mv.visitInsn(IADD)
         case Assign(lhs, rhs) ⇒
           lhs match {
+            case LocalRef(id,tpe) =>
+              emit(rhs)
+              mv.visitVarInsn(ISTORE, id)
             case Select(a, FieldRef(id, typeName, fromClass)) ⇒
               emit(a)
               emit(rhs)

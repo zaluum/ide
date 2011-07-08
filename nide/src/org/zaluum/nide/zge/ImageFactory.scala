@@ -49,6 +49,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def apply(tpe: Type): (Image, DeviceResourceDescriptor) = {
     tpe match {
       case b: BoxTypeSymbol ⇒ imageFor(b.image, b.name)
+      case b: BoxType ⇒ imageFor(None, b.name)
       case _ ⇒ (rm.createImage(notFound), notFound)
     }
   }

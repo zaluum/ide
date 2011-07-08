@@ -193,6 +193,12 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
       super.traverse(tree)
     }
   }
+  object expressionTyper {
+    def apply(typeName:Name, owner:Symbol) : Option[BoxType] = typeName match {
+      case Name("org.zaluum.math.Sum") => Some(new SumExprType(owner))
+      case _ => None
+    }
+  }
   class Resolver(global: Symbol) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
@@ -219,7 +225,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
           val vsym = v.symbol.asInstanceOf[ValSymbol]
-          catchAbort(currentScope.lookupBoxType(v.typeName)) match {
+          catchAbort(expressionTyper(v.typeName,currentOwner) orElse currentScope.lookupBoxType(v.typeName)) match {
             case Some(bs: BoxTypeSymbol) ⇒
               v.symbol.tpe = bs
               if (!bs.hasApply) {
@@ -261,6 +267,11 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
                 }
               }
               vsym.params
+            case Some(b:SumExprType) =>
+              v.symbol.tpe = b
+              b.a.tpe = currentScope.lookupType(Name("int")).get
+              b.b.tpe = currentScope.lookupType(Name("int")).get
+              b.c.tpe = currentScope.lookupType(Name("int")).get
             case a ⇒
               v.symbol.tpe = NoSymbol
               error("Box class " + v.typeName + " not found", tree);
@@ -274,7 +285,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           tree.tpe = tree.symbol.tpe
         case p @ PortRef(fromTree, name, in) ⇒ // TODO filter in?
           tree.symbol = fromTree.tpe match {
-            case b: BoxTypeSymbol ⇒
+            case b: BoxType ⇒
               catchAbort(b.lookupPort(name)).getOrElse {
                 error("Port not found " + name + " in box type " + b, tree);
                 NoSymbol

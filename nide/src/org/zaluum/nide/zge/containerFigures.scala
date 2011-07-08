@@ -58,7 +58,7 @@ trait ContainerItem extends Item {
     }
   }
   def findPortFigure(portName: Name, in: Boolean): Option[PortFigure] = {
-    portFigures find { p ⇒ p.fromSym.isInstanceOf[BoxTypeSymbol] && p.sym.name == portName && p.in == in }
+    portFigures find { p ⇒ p.fromSym.isInstanceOf[BoxType] && p.sym.name == portName && p.in == in }
   }
 
   protected def createGraph: ConnectionGraph = {

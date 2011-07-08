@@ -29,7 +29,7 @@ object Delete {
           connectsRemovedVal(c.a) || connectsRemovedVal(c.b) || connDefs.contains(c)
       }
       val removedDefs = valDefs map {_.symbol.asInstanceOf[ValSymbol].tpe} collect { 
-          case b:BoxTypeSymbol if (b.decl!=null)=> b.decl
+          case b:BoxType if (b.decl!=null)=> b.decl
       }
       val trans: PartialFunction[Tree, Tree] = {
         case b: BoxDef ⇒

@@ -26,8 +26,8 @@ class PrimitiveJavaType(owner: Symbol, val name: Name, override val descriptor: 
 }
 class ArrayType(owner: Symbol, val of: JavaType, val dim: Int) extends JavaType(owner) {
   assert(!of.isInstanceOf[ArrayType])
-  def descriptor = "["*dim + of.descriptor
-  def name = Name(of.name.str + "[]"*dim)
+  def descriptor = "[" * dim + of.descriptor
+  def name = Name(of.name.str + "[]" * dim)
   override def equals(that: Any) = {
     that match {
       case a: ArrayType ⇒ a.of == of && a.dim == dim && a.owner == owner
@@ -53,35 +53,46 @@ object PortKey {
 // from can be BoxTypeSymbol if it is "this" or ValSymbol
 sealed trait PortKey {
   def toRef: PortRef
-  def resolve(b: BoxTypeSymbol): Option[PortKeySym]
+  def resolve(b: BoxType): Option[PortKeySym]
 }
 case class BoxPortKey(port: Name, in: Boolean) extends PortKey {
   def toRef = PortRef(ThisRef(), port, in)
-  def resolve(bs: BoxTypeSymbol) = bs.lookupPort(port) collect { case p: PortSymbol ⇒ BoxPortKeySym(bs, p) }
+  def resolve(bs: BoxType) = bs.lookupPort(port) collect { case p: PortSymbol ⇒ BoxPortKeySym(bs, p) }
 }
 case class ValPortKey(from: Name, port: Name, in: Boolean) extends PortKey {
   def toRef = PortRef(ValRef(from), port, in)
-  def resolve(bs: BoxTypeSymbol) = {
-    bs.lookupVal(from) match {
-      case Some(v: ValSymbol) ⇒
-        v.tpe match {
-          case b: BoxTypeSymbol ⇒ b.lookupPort(port) match {
-            case Some(p: PortSymbol) ⇒ Some(ValPortKeySym(bs, v, p))
-            case _ ⇒ None
-          }
+  def resolve(b: BoxType) = {
+    b match {
+      case bs: BoxTypeSymbol =>
+        bs.lookupVal(from) match {
+          case Some(v: ValSymbol) ⇒
+            v.tpe match {
+              case b: BoxType ⇒ b.lookupPort(port) match {
+                case Some(p: PortSymbol) ⇒ Some(ValPortKeySym(bs, v, p))
+                case _ ⇒ None
+              }
+              case _ ⇒ None
+            }
           case _ ⇒ None
         }
-      case _ ⇒ None
+      case _ => None
     }
+
   }
 }
 sealed trait PortKeySym {
-  def box: BoxTypeSymbol
+  def box: BoxType
   def port: PortSymbol
 }
-case class BoxPortKeySym(box: BoxTypeSymbol, port: PortSymbol) extends PortKeySym
-case class ValPortKeySym(box: BoxTypeSymbol, valSym: ValSymbol, port: PortSymbol) extends PortKeySym
+case class BoxPortKeySym(box: BoxType, port: PortSymbol) extends PortKeySym
+case class ValPortKeySym(box: BoxType, valSym: ValSymbol, port: PortSymbol) extends PortKeySym
 case class Clump(var junctions: Set[Junction], var ports: Set[PortKey], var connections: Set[ConnectionDef])
+trait BoxType extends Symbol with Type {
+  protected def ports: Map[Name, Symbol]
+  def declaredPorts = ports
+  def portsWithSuper = ports
+  def lookupPort(name: Name): Option[Symbol]
+}
 class BoxTypeSymbol(
   val owner: Symbol,
   val simpleName: Name, //Class name without package
@@ -89,12 +100,12 @@ class BoxTypeSymbol(
   val superName: Option[Name], //fqname
   val image: Option[String],
   var visualClass: Option[Name],
-  val abstractCl: Boolean = false) extends LocalScope(owner.scope) with Symbol with Type {
+  val abstractCl: Boolean = false) extends LocalScope(owner.scope) with BoxType {
+
   var hasApply = false
-  def declaredPorts = ports
-  def portsWithSuper: Map[Name, Symbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
+  override def portsWithSuper: Map[Name, Symbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def declaredVals = vals
-  def name = if (pkg.str!="") Name(pkg.str+"."+simpleName.str) else simpleName // TODO this is not a full name for inner classes!
+  def name = if (pkg.str != "") Name(pkg.str + "." + simpleName.str) else simpleName // TODO this is not a full name for inner classes!
   def fqName: Name = owner match { // this is
     case bown: BoxTypeSymbol ⇒ Name(bown.fqName.str + "$" + simpleName.str)
     case _ ⇒ name
@@ -174,20 +185,28 @@ class BoxTypeSymbol(
   def IOInOrder = ports.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[IOSymbol]]
   def params = ports.values collect { case p: ParamSymbol ⇒ p }
   var executionOrder = List[ValSymbol]()
-  
+
   def isLocal = owner.isInstanceOf[BoxTypeSymbol]
   // override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"
   override def lookupPort(name: Name): Option[Symbol] =
     super.lookupPort(name) orElse (superSymbol flatMap { _.lookupPort(name) })
   tpe = this
 }
+class SumExprType(val owner: Symbol) extends BoxType {
+  val name = Name("Sum")
+  val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
+  val b = new PortSymbol(this, Name("b"), Point(0, 0), In)
+  val c = new PortSymbol(this, Name("c"), Point(0, 0), Out)
+  val ports = List(a, b, c) map { a => (a.name -> a) } toMap
+  def lookupPort(a: Name) = ports.get(a)
 
+}
 //class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 
 // TODO make two classes one that has values from the declaring tree and the other directly from symbol
-class IOSymbol(val owner: BoxTypeSymbol, val name: Name, val dir: PortDir) extends Symbol {
+class IOSymbol(val owner: BoxType, val name: Name, val dir: PortDir) extends Symbol {
   def box = owner
 }
-class PortSymbol(owner: BoxTypeSymbol, name: Name, val extPos: Point, dir: PortDir) extends IOSymbol(owner, name, dir) {
+class PortSymbol(owner: BoxType, name: Name, val extPos: Point, dir: PortDir) extends IOSymbol(owner, name, dir) {
   //override def toString = "PortSymbol(" + name + ")"
 }
 class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
