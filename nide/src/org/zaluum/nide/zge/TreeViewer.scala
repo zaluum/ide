@@ -39,7 +39,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
     }
   }
   def onFocus {editor.showPalette()}
-  def onResize { refresh() }
+  def onResize { refresh() } // FIXME this OnResize triggers when a tooltip expands the canvas
   // Viewer doesn't have any visual representation
   override def updateSize() {}
   val feed = null
@@ -53,13 +53,17 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def updatePorts(changes: Map[Tree, Tree]) {
     ports.foreach { _.hide }
     ports.clear
-    boxDef.children foreach {
-      _ match {
-        case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
-          val f = new PortDeclFigure(p, TreeViewer.this)
-          f.update()
-          ports += f
-        case _ ⇒
+    symbol.thisVal.portSides foreach { ps =>
+      ps.pi match {
+        case r:RealPortInstance =>
+          r.portSymbol.decl match {
+            case pd : PortDef => 
+	            val f = new PortDeclFigure(pd, ps, TreeViewer.this)
+	            f.update()
+	            ports += f
+            case _=>
+          }
+        case _ => 
       }
     }
     ports.foreach { _.show }

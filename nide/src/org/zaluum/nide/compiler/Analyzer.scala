@@ -202,17 +202,17 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
   class Resolver(global: Symbol) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
-    def createPortInstances(bs: BoxType, vsym: ValSymbol, isThis:Boolean) = {
+    def createPortInstances(bs: BoxType, vsym: ValSymbol, isThis: Boolean) = {
       vsym.portInstances = (for (p <- bs.portsWithSuper.values; if p.isInstanceOf[PortSymbol]) yield {
-        new PortInstance(p.asInstanceOf[PortSymbol], vsym)
+        new RealPortInstance(p.asInstanceOf[PortSymbol], vsym)
       }).toList;
-      vsym.portSides = (for (pi <- vsym.portInstances) yield {
+      vsym.portSides = (for (api <- vsym.portInstances; val pi = api.asInstanceOf[RealPortInstance]) yield {
         pi.portSymbol.dir match {
-          case In => List(new PortSide(pi,true, isThis))
-          case Out => List(new PortSide(pi,false, isThis))
-          case Shift => List(new PortSide(pi, true, isThis), new PortSide(pi,false, isThis))
+          case In => List(new PortSide(pi, true, isThis))
+          case Out => List(new PortSide(pi, false, isThis))
+          case Shift => List(new PortSide(pi, true, isThis), new PortSide(pi, false, isThis))
         }
-      }).flatMap(a=>a);
+      }).flatMap(a => a);
     }
     private def catchAbort[T](b: ⇒ Option[T]): Option[T] =
       try { b } catch { case e: AbortCompilation ⇒ None }
@@ -231,11 +231,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
                 error("Super box type not found " + sn, tree)
             }
           }
-          if (b == toCompile) {
-            bs.thisVal = new ValSymbol(currentOwner, Name("this"))
-            bs.thisVal.tpe = bs
-            createPortInstances(bs, bs.thisVal,true)
-          }
+          bs.thisVal = new ValSymbol(currentOwner, Name("this"))
+          bs.thisVal.tpe = bs
+          createPortInstances(bs, bs.thisVal, true)
         case PortDef(name, typeName, in, inPos, extPos) ⇒
           tree.symbol.tpe = catchAbort(currentScope.lookupType(typeName)) getOrElse {
             error("Port type not found " + typeName, tree); NoSymbol
@@ -284,14 +282,14 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
                   case None ⇒ error("Cannot find parameter " + p.key, tree)
                 }
               }
-              createPortInstances(bs, vsym,false)
+              createPortInstances(bs, vsym, false)
               vsym.params
             case Some(b: SumExprType) =>
               v.symbol.tpe = b
               b.a.tpe = currentScope.lookupType(Name("int")).get
               b.b.tpe = currentScope.lookupType(Name("int")).get
               b.c.tpe = currentScope.lookupType(Name("int")).get
-              createPortInstances(b, vsym,false)
+              createPortInstances(b, vsym, false)
             case a ⇒
               v.symbol.tpe = NoSymbol
               error("Box class " + v.typeName + " not found", tree);
@@ -351,14 +349,15 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
               error("incomplete connection " + a + "<->" + b, tree)
             } else {
               bs.connections.addConnection(c)
+              println(c)
             }
           case _ ⇒
         }
       }
       private def check() {
         def checkClump(c: Clump) {
-          val ins = c.ports.filter(p ⇒ p.isIn)
-          val outs = c.ports.filter(p ⇒ !p.isIn)
+          val ins = c.ports.filter(p ⇒ p.flowIn)
+          val outs = c.ports.filter(p ⇒ !p.flowIn)
           if (outs.size == 0) error("No output connected", c.connections.head)
           else if (outs.size > 1) error("More than one output is connected", c.connections.head)
           else if (ins.size == 0) error("No inputs connected", c.connections.head)
@@ -366,7 +365,12 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
             if (!usedInputs.intersect(ins).isEmpty) error("input connected multiple times", c.connections.head) // TODO check online to identify offending connection 
             usedInputs ++= ins
             // check types
-            val types = for (ps ← c.ports) yield ps.pi.portSymbol.tpe
+            val types = for (ps ← c.ports) yield {
+              ps.pi match {
+                case r: RealPortInstance => r.portSymbol.tpe
+                case _ => NoSymbol
+              }
+            }
             if (types.size != 1) error("Connection with incompatible types " + types.mkString(","), c.connections.head)
             else {
               c.connections foreach { _.tpe = types.head }
@@ -386,30 +390,31 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
             import org.zaluum.nide.RichCast._
             for (in ← ins) {
               if (!out.fromInside && !in.fromInside)
-            	addDag(out.pi, in.pi)
+                addDag(out.pi, in.pi)
             }
           }
         }
-        b.connections.foreach {
+        val resolved = b.connections.forall {
           case con: ConnectionDef ⇒
             def checkResolved(p: Tree) = p match {
-              case EmptyTree ⇒ error("Wire is not connected", con)
+              case EmptyTree ⇒ error("Wire is not connected", con); false
               case j: JunctionRef ⇒ /*if(!bs.junctions.exists {_.name == j.name}) {
                   error("FATAL: junction does not exists " + j,con)
-                }*/
+                }*/ true
               case p: PortRef ⇒
-                PortSide.find(p,bs) match {
-                  case None ⇒ error("Cannot find port " + p, con)
-                  case _ ⇒
+                PortSide.find(p, bs) match {
+                  case None ⇒ error("Cannot find port " + p, con); false
+                  case _ ⇒ true
                 }
             }
-            checkResolved(con.a)
-            checkResolved(con.b)
+            checkResolved(con.a) && checkResolved(con.b)
         }
-        bs.connections.clumps foreach { checkClump(_) }
-        import scala.collection.JavaConversions._
-        val topo = new TopologicalOrderIterator(acyclic);
-        bs.executionOrder = topo.toList
+        if (resolved) {
+          bs.connections.clumps foreach { checkClump(_) }
+          import scala.collection.JavaConversions._
+          val topo = new TopologicalOrderIterator(acyclic);
+          bs.executionOrder = topo.toList
+        }
       }
     }
   }

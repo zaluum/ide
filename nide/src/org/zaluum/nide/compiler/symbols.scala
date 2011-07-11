@@ -10,10 +10,13 @@ trait Symbol {
   var scope: Scope = null
   override def toString = "Symbol(" + (if (name != null) name.str else "NoSymbol") + ")"
 }
-trait Type extends Symbol
+trait Type extends Symbol {
+  def fqName : Name
+}
 case object NoSymbol extends Symbol with Type {
   val owner = NoSymbol
-  val name = null
+  val name = Name("NoSymbol") 
+  def fqName = name
 }
 abstract class JavaType(val owner: Symbol) extends Symbol with Type {
   scope = owner.scope
@@ -22,12 +25,13 @@ abstract class JavaType(val owner: Symbol) extends Symbol with Type {
   override def toString = "JavaType(" + name + ")"
 }
 class PrimitiveJavaType(owner: Symbol, val name: Name, override val descriptor: String) extends JavaType(owner) {
-
+	def fqName = name
 }
 class ArrayType(owner: Symbol, val of: JavaType, val dim: Int) extends JavaType(owner) {
   assert(!of.isInstanceOf[ArrayType])
   def descriptor = "[" * dim + of.descriptor
   def name = Name(of.name.str + "[]" * dim)
+  def fqName = name
   override def equals(that: Any) = {
     that match {
       case a: ArrayType ⇒ a.of == of && a.dim == dim && a.owner == owner
@@ -39,10 +43,10 @@ class ArrayType(owner: Symbol, val of: JavaType, val dim: Int) extends JavaType(
   }
   override def toString = "ArrayType(" + of.toString + ", " + dim + ")"
 }
-class ClassJavaType(owner: Symbol, val name: Name) extends JavaType(owner) {
+class ClassJavaType(owner: Symbol, val fqName: Name) extends JavaType(owner) {
   scope = owner.scope
   def descriptor = "L" + name.internal + ";"
-
+  def name = fqName
 }
 case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef])
 trait BoxType extends Symbol with Type {
@@ -53,20 +57,21 @@ trait BoxType extends Symbol with Type {
 }
 class BoxTypeSymbol(
   val owner: Symbol,
-  val simpleName: Name, //Class name without package
+  val name: Name, //Class name without package
   val pkg: Name, // pkgdecl
   val superName: Option[Name], //fqname
   val image: Option[String],
   var visualClass: Option[Name],
   val abstractCl: Boolean = false) extends LocalScope(owner.scope) with BoxType {
-  var thisVal : ValSymbol = _
+
+  var thisVal: ValSymbol = _
+  var missingVals = List[ValSymbol]()
   var hasApply = false
   override def portsWithSuper: Map[Name, Symbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def declaredVals = vals
-  def name = if (pkg.str != "") Name(pkg.str + "." + simpleName.str) else simpleName // TODO this is not a full name for inner classes!
   def fqName: Name = owner match { // this is
-    case bown: BoxTypeSymbol ⇒ Name(bown.fqName.str + "$" + simpleName.str)
-    case _ ⇒ name
+    case bown: BoxTypeSymbol ⇒ Name(bown.fqName.str + "$" + name.str)
+    case _ ⇒ if (pkg.str != "") Name(pkg.str + "." + name.str) else name 
   }
   object connections extends Namer {
     var junctions = Set[Junction]()
@@ -77,14 +82,14 @@ class BoxTypeSymbol(
     def clumpOf(p: PortSide) = clumps find { _.ports.contains(p) }
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
-      val pk = PortSide.find(a,BoxTypeSymbol.this).get
+      val pk = PortSide.findOrCreateMissing(a, BoxTypeSymbol.this)
       val newClump = merge(clumpOf(pk), clumpOf(j))
       newClump.connections += c
       newClump.ports += pk
       newClump.junctions += j
     }
     def addPorts(a: PortRef, b: PortRef, c: ConnectionDef) {
-      val (as, bs) = (PortSide.find(a,BoxTypeSymbol.this).get, PortSide.find(b,BoxTypeSymbol.this).get)
+      val (as, bs) = (PortSide.findOrCreateMissing(a, BoxTypeSymbol.this), PortSide.findOrCreateMissing(b, BoxTypeSymbol.this))
       val newClump = merge(clumpOf(as), clumpOf(bs))
       newClump.connections += c
       newClump.ports ++= Set(as, bs)
@@ -152,6 +157,7 @@ class BoxTypeSymbol(
 }
 class SumExprType(val owner: Symbol) extends BoxType {
   val name = Name("Sum")
+  def fqName = Name("org.zaluum.math.Sum")
   val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
   val b = new PortSymbol(this, Name("b"), Point(0, 0), In)
   val c = new PortSymbol(this, Name("c"), Point(0, 0), Out)
@@ -182,26 +188,54 @@ class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
 class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name, In) {
   override def toString = "ParamSymbol(" + name + ")"
 }
-class PortInstance(val portSymbol:PortSymbol,val valSymbol:ValSymbol) {
-  def name = portSymbol.name
-  override def toString = "PortInstance("+portSymbol+", "+valSymbol+")"
+sealed abstract class PortInstance(val valSymbol: ValSymbol) {
+  def name: Name
+  def tpe : Type
 }
+class RealPortInstance(val portSymbol: PortSymbol, valSymbol: ValSymbol) extends PortInstance(valSymbol) {
+  def name = portSymbol.name
+  def tpe = portSymbol.tpe
+  override def toString = "PortInstance(" + portSymbol + ", " + valSymbol + ")"
+}
+class MissingPortInstance(valSymbol: ValSymbol, val name: Name) extends PortInstance(valSymbol) {
+  def tpe = NoSymbol
+}
+
 object PortSide {
-  def find(p:PortRef, bs:BoxTypeSymbol) = {
+  def find(p: PortRef, bs: BoxTypeSymbol) = {
     p.fromRef match {
-    	case t: ThisRef ⇒ bs.thisVal.findPortSide(p)
-    	case v: ValRef ⇒ for (vs <- bs.lookupVal(v.name); ps <- vs.asInstanceOf[ValSymbol].findPortSide(p)) yield ps
+      case t: ThisRef ⇒ bs.thisVal.findPortSide(p)
+      case v: ValRef ⇒ for (vs <- bs.lookupVal(v.name); ps <- vs.findPortSide(p)) yield ps
+    }
+  }
+  def findOrCreateMissing(p: PortRef, bs: BoxTypeSymbol) = {
+    def createMissing(vs: ValSymbol,inside:Boolean) = {
+      val missing = new MissingPortInstance(vs, p.name)
+      val side = new PortSide(missing, p.in, inside)
+      vs.portInstances ::= missing
+      vs.portSides ::= side
+      side
+    }
+    p.fromRef match {
+      case t: ThisRef =>
+        bs.thisVal.findPortSide(p).getOrElse {
+          createMissing(bs.thisVal,true) 
+        }
+      case v: ValRef =>
+        val vs = bs.lookupVal(v.name).get // FIXME
+        vs.findPortSide(p).getOrElse { createMissing(vs,false) }
     }
   }
 }
-class PortSide(val pi:PortInstance, val in:Boolean, val fromInside:Boolean) {
-  def isIn = if (fromInside) !in else in
+class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolean) {
+  def flowIn = if (fromInside) !inPort else inPort
   def name = pi.name
   def toRef = {
-    if (fromInside) PortRef(ThisRef(),name,in) // ok?
-    else PortRef(ValRef(pi.valSymbol.name), name,in)
+    if (fromInside) PortRef(ThisRef(), name, inPort) // ok?
+    else PortRef(ValRef(pi.valSymbol.name), name, inPort)
   }
-  override def toString() = "PortSide(" + pi.toString + ", in="+in+", fromInside="+fromInside+")"
+  def realPi = pi.asInstanceOf[RealPortInstance]
+  override def toString() = "PortSide(" + pi.toString + ", in=" + inPort + ", fromInside=" + fromInside + ")"
 }
 class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
   var params = Map[ParamSymbol, Any]()
@@ -209,11 +243,15 @@ class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
   var constructorParams = List[(Any, Type)]()
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
-  def findPortSide(pr:PortRef) = 
-    portSides.find(ps => ps.pi.portSymbol.name==pr.name && ps.in== pr.in)
-  def findPortSide(p:PortSymbol) = 
-    portSides.find(ps => ps.pi.portSymbol==p)
-    
+  def findPortSide(pr: PortRef) =
+    portSides.find(ps => ps.pi.name == pr.name && ps.inPort == pr.in)
+  def findPortSide(p: PortSymbol) =
+    portSides.find(
+      ps => ps.pi match {
+        case r: RealPortInstance => r.portSymbol == p
+        case _ => false
+      })
+
   override def toString = "ValSymbol(" + name + ")"
 }
 

@@ -221,10 +221,10 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
       } toMap;
       def toRef(p: PortSide): Tree = 
           if (p.fromInside) {
-            Select(This, FieldRef(p.pi.portSymbol.name, p.pi.portSymbol.tpe.name, bs.fqName))
+            Select(This, FieldRef(p.realPi.portSymbol.name, p.realPi.portSymbol.tpe.name, bs.fqName))
           } else {
             val vfrom = p.pi.valSymbol
-            val ps = p.pi.portSymbol
+            val ps = p.realPi.portSymbol
             vfrom.tpe match {
               case b: BoxTypeSymbol =>
                 Select(toRefVal(vfrom), FieldRef(ps.name, ps.tpe.name, vfrom.tpe.asInstanceOf[BoxTypeSymbol].fqName))
@@ -273,7 +273,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
         invoke :: outs
       }
       val invokes = b.vals flatMap { case v: ValDef ⇒ runOne(v) }
-      val localsDecl = localsMap map { case (a, i) => (a.pi.portSymbol.name.str, "I", i) } toList;
+      val localsDecl = localsMap map { case (a, i) => (a.realPi.portSymbol.name.str, "I", i) } toList;
       Method(Name("contents"), "()V", propagateInitialInputs ++ invokes, localsDecl)
 
     }

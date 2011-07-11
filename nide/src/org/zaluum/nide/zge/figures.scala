@@ -53,13 +53,13 @@ trait ValFigure extends ValDefItem with HasPorts {
     ports.clear
     
     val bports = sym.portSides ;
-    val (unsortedins, unsortedouts) = bports.partition { _.in } // SHIFT?
+    val (unsortedins, unsortedouts) = bports.partition { _.inPort } // SHIFT?
     val ins = unsortedins.toList.sortBy(_.name.str);
     val outs = unsortedouts.toList.sortBy(_.name.str);
-    def space(s: PortSide) = if (s.in) size.h / (ins.size + 1) else size.h / (outs.size + 1)
+    def space(s: PortSide) = if (s.inPort) size.h / (ins.size + 1) else size.h / (outs.size + 1)
     def createPort(s: PortSide, i: Int) {
       val p = new PortFigure(container)
-      val x = if (s.in) 0 else size.w
+      val x = if (s.inPort) 0 else size.w
       val point = Point(x, (i + 1) * space(s))
       p.update(point + Vector2(getBounds.x, getBounds.y), s)
       ports += p

@@ -257,7 +257,9 @@ case class BoxDef(name: Name, // simple name
   vals: List[Tree],
   ports: List[Tree],
   connections: List[Tree],
-  junctions: List[Tree]) extends DefTree
+  junctions: List[Tree]) extends DefTree {
+  def sym = symbol.asInstanceOf[BoxTypeSymbol]
+}
 object PortDir {
   def fromStr(str:String) = str match {
     case In.str => In
@@ -294,6 +296,7 @@ case class ValDef(
     case NoSymbol ⇒ None
     case b: BoxTypeSymbol ⇒ if (b.isLocal) Some(b.decl.asInstanceOf[BoxDef]) else None
   }
+  def sym = symbol.asInstanceOf[ValSymbol]
 }
 //case class SizeDef(pos: Point, size: Dimension) extends Tree
 case class ConnectionDef(a: Tree, b: Tree, points: List[Point]) extends SymTree {
