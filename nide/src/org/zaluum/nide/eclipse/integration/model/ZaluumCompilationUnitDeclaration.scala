@@ -87,19 +87,17 @@ class ZaluumCompilationUnitDeclaration(
     def lookupType(name: Name): Option[Type] = {
       zaluumScope.getJavaType(name)
     }
-    def lookupBoxType(name: Name): Option[Type] = {
+    def lookupBoxType(name: Name): Option[BoxType] = {
       boxes.get(name).orElse {
         zaluumScope.getBoxType(name)
       }
     }
-    override def enter[S <: Symbol](sym: S): S = {
-      sym match {
-        case b: BoxTypeSymbol ⇒
-          boxes += (b.name -> b)
-        case _ ⇒ // nothing
-      }
-      sym
+    def enter(b:BoxTypeSymbol) {
+    	boxes += (b.name -> b)      
     }
+    def enter(p:PortSymbol) {}
+    def enter(a:ValSymbol) {}
+    def enter(p:ParamSymbol) {}
   }
 
   override def buildCompilationUnitScope(lookupEnvironment: LookupEnvironment) = {

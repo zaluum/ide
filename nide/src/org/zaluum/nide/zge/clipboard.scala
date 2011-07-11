@@ -36,7 +36,7 @@ case class Clipboard(boxes: List[BoxDef], valDefs: List[ValDef], ports: List[Por
         name = Name(rename(p.name.str)),
         inPos = p.inPos + minPos + pos.toVector)
     }
-    // Connections we only have ends PortRef(ValRef, name) or EmptyTree
+    // Connections. we only have ends PortRef(ValRef, name) or EmptyTree
     val newConnections = for (c ← connections) yield {
       def renameRef(t: Tree) = t match {
         case p: PortRef ⇒
@@ -52,7 +52,7 @@ case class Clipboard(boxes: List[BoxDef], valDefs: List[ValDef], ports: List[Por
     new EditTransformer() {
       val trans: PartialFunction[Tree, Tree] = {
         case b: BoxDef if b == c.boxDef ⇒
-          val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
+          val tpe = b.sym
           val renamed = renameRelocate(tpe, currentMouseLocation)
           b.copy(
             defs=transformTrees(b.defs) ++ renamed.boxes,

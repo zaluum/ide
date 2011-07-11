@@ -24,7 +24,7 @@ import org.eclipse.swt.SWT
 class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
   extends ItemViewer(parent, controller) with ContainerItem with ClipboardViewer {
   /*MODEL*/
-  def tree = controller.tree.asInstanceOf[BoxDef]
+  def tree = controller.tree
   def boxDef = tree
   def owner = null
   def viewer = this

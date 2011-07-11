@@ -29,7 +29,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
     val trans: PartialFunction[Tree, Tree] = {
       case b: BoxDef ⇒
-        val orderVals = b.symbol.asInstanceOf[BoxTypeSymbol].executionOrder map { _.decl }
+        val orderVals = b.sym.executionOrder map { _.decl }
         atOwner(b.symbol) {
           b.copy(
             defs = transformTrees(b.defs),
@@ -42,11 +42,11 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
   }
   object rewrite {
     def vClass(bd: BoxDef): Option[Name] = {
-      bd.symbol.asInstanceOf[BoxTypeSymbol].visualClass
+      bd.sym.visualClass
     }
     def apply(t: Tree) = t match {
       case b: BoxDef ⇒
-        val tpe = b.tpe.asInstanceOf[BoxTypeSymbol]
+        val tpe = b.tpe.asInstanceOf[BoxType]
         val baseFields = (b.vals ++ b.ports).flatMap { field(_) }
         val fields = vClass(b) map { vn ⇒
           FieldDef(Name("_widget"), vn, None, false) :: baseFields
@@ -66,19 +66,22 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
         }
         Some(FieldDef(name, t.symbol.tpe.name, Some(Name(a.getName)), false))
       case v: ValDef if (v.symbol.tpe.isInstanceOf[BoxTypeSymbol]) ⇒
-        val tpe = v.symbol.tpe.asInstanceOf[BoxTypeSymbol]
-        Some(FieldDef(v.name, t.symbol.tpe.asInstanceOf[BoxTypeSymbol].fqName, None, true))
+        v.sym.tpe match {
+          case bs: BoxTypeSymbol =>
+            Some(FieldDef(v.name, bs.fqName, None, true))
+          case _ => None
+        }
       case _ ⇒ None
     }
     def cons(b: BoxDef) = {
-      val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
+      val bs = b.sym
       // boxes
       val boxCreation: List[Tree] = b.vals flatMap {
         _ match {
           case v: ValDef ⇒
             v.symbol.tpe match {
               case tpe: BoxTypeSymbol ⇒
-                val vs = v.symbol.asInstanceOf[ValSymbol]
+                val vs = v.sym
                 val sig = vs.constructor.get.signature
                 val values = for ((v, t) ← vs.constructorParams) yield {
                   Const(v)
@@ -93,7 +96,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
       // params
       val params = b.vals collect { case v: ValDef ⇒ (v, v.symbol.tpe) } flatMap {
         case (valDef, valBs: BoxTypeSymbol) ⇒
-          val valSym = valDef.symbol.asInstanceOf[ValSymbol]
+          val valSym = valDef.sym
           valSym.params map {
             case (param, v) ⇒
               Invoke(
@@ -101,7 +104,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
                 param.name.str,
                 List(Const(v)),
                 valBs.fqName,
-                "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V")
+                "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V") // FIXME not always JavaType
           }
         case _ => List()
       }
@@ -125,7 +128,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
     val widgetName = Name("_widget")
     def fieldRef(v: ValSymbol) = {
       val tpe = v.tpe.asInstanceOf[BoxTypeSymbol]
-      val ownertpe = v.owner.asInstanceOf[BoxTypeSymbol]
+      val ownertpe = v.owner
       FieldRef(v.name, tpe.fqName, ownertpe.fqName)
     }
     def selectPath(path: List[ValSymbol]): Tree = {
@@ -139,7 +142,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
       val valDef = vs.decl.asInstanceOf[ValDef]
       vs.tpe match {
         case tpe: BoxTypeSymbol ⇒
-          val mainTpe = mainBox.symbol.asInstanceOf[BoxTypeSymbol]
+          val mainTpe = mainBox.sym
           tpe.visualClass map { cl ⇒
             val widgetSelect = Select(selectPath(path), FieldRef(widgetName, cl, tpe.fqName))
             List[Tree](
@@ -164,7 +167,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
     }
     def createLabel(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       val v = vs.decl.asInstanceOf[ValDef]
-      val mainTpe = mainBox.symbol.asInstanceOf[BoxTypeSymbol]
+      val mainTpe = mainBox.sym
       v.labelGui match {
         case Some(lbl) ⇒
           val jlabel = new JLabel(lbl.description) // TODO better way to get size
@@ -205,10 +208,10 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
       }
     }
     def appl(b: BoxDef): Method = {
-      val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
+      val bs = b.sym
       // create locals for expressions
       var locals = 1; // 0 for "this"
-      println (bs.valsInOrder)
+      println(bs.valsInOrder)
       val localsMap = bs.valsInOrder flatMap { v =>
         v.tpe match {
           case b: BoxTypeSymbol => List()
@@ -219,20 +222,21 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
           case _ => List()
         }
       } toMap;
-      def toRef(p: PortSide): Tree = 
-          if (p.fromInside) {
-            Select(This, FieldRef(p.realPi.portSymbol.name, p.realPi.portSymbol.tpe.name, bs.fqName))
-          } else {
-            val vfrom = p.pi.valSymbol
-            val ps = p.realPi.portSymbol
-            vfrom.tpe match {
-              case b: BoxTypeSymbol =>
-                Select(toRefVal(vfrom), FieldRef(ps.name, ps.tpe.name, vfrom.tpe.asInstanceOf[BoxTypeSymbol].fqName))
-              case _ =>
-                LocalRef(localsMap(p), Name("int"))
-            }
+      def toRef(p: PortSide): Tree =
+        if (p.fromInside) {
+          Select(This, FieldRef(p.realPi.portSymbol.name, p.realPi.portSymbol.tpe.name, bs.fqName))
+        } else {
+          val vfrom = p.pi.valSymbol
+          val ps = p.realPi.portSymbol
+          vfrom.tpe match {
+            case vfromBs: BoxTypeSymbol =>
+              Select(
+                  Select(This, FieldRef(vfrom.name, vfromBs.fqName, bs.fqName))
+                  , FieldRef(ps.name, ps.tpe.name, vfromBs.fqName))
+            case _ =>
+              LocalRef(localsMap(p), Name("int"))
           }
-      def toRefVal(v:ValSymbol) = Select(This, FieldRef(v.name, v.tpe.asInstanceOf[BoxTypeSymbol].fqName, bs.fqName))
+        }
       // propagate initial inputs
       def execConnection(c: (PortSide, Set[PortSide])) = {
         val (out, ins) = c
@@ -251,14 +255,14 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
       }
       // execute in order
       def runOne(v: ValDef) = {
-        val vs =v.symbol.asInstanceOf[ValSymbol]
+        val vs = v.sym
         def outConnections = connections.flow collect {
-          case c@(ps,_) if (ps.pi.valSymbol == vs) ⇒ c
+          case c @ (ps, _) if (ps.pi.valSymbol == vs) ⇒ c
         } toList
         val outs = outConnections flatMap { execConnection(_) }
         val invoke = v.tpe match {
-          case bs: BoxTypeSymbol =>
-            val tpe = v.tpe.asInstanceOf[BoxTypeSymbol].fqName
+          case vbs: BoxTypeSymbol =>
+            val tpe = vbs.fqName
             Invoke(
               Select(This, FieldRef(v.name, tpe, bs.fqName)),
               "apply",
@@ -266,8 +270,8 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
               tpe,
               "()V")
           case s: SumExprType =>
-            val vs = v.symbol.asInstanceOf[ValSymbol]
-            def toPs(p:PortSymbol) = vs.findPortSide(p).get
+            val vs = v.sym
+            def toPs(p: PortSymbol) = vs.findPortSide(p).get
             Assign(toRef(toPs(s.c)), Sum(toRef(toPs(s.a)), toRef(toPs(s.b))))
         }
         invoke :: outs

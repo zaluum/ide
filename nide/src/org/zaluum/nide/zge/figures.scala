@@ -32,7 +32,7 @@ import org.zaluum.nide.Activator
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item {
   var valDef: ValDef = _
-  def valSym = valDef.symbol.asInstanceOf[ValSymbol]
+  def valSym = valDef.sym
   def pos = valDef.pos
   override def selectionSubject = Some(valDef)
   def updateValDef(t: ValDef) {
@@ -46,7 +46,7 @@ trait ValDefItem extends Item {
 }
 
 trait ValFigure extends ValDefItem with HasPorts {
-  def sym = valDef.symbol.asInstanceOf[ValSymbol]
+  def sym = valDef.sym
   def myLayer = container.layer
   def updateValPorts() {
     for (p ← ports) container.portsLayer.remove(p)

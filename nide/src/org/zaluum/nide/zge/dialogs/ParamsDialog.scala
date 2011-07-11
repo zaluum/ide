@@ -125,7 +125,7 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   def createTableValue() = {
     val declared = v.params.asInstanceOf[List[Param]]
     def declaredValue(k:Name) =declared.find(_.key == k).map(_.value).getOrElse("")
-    val parSymbols = for (bs ← bso.toList; p ← bs.params) yield p
+    val parSymbols = for (bs ← bso.toList; p ← bs.paramsInOrder) yield p
     val withSymbol = for (p<-parSymbols; val key = p.name) yield { TableEntry(Some(p), key.str,declaredValue(key) ) }
     val unknown = for (Param(k,v) ← declared; if !parSymbols.exists(_.name==k)) yield { TableEntry(None, k.str, v) }
     withSymbol ++ unknown

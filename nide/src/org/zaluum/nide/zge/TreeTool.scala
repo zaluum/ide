@@ -178,7 +178,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
-            val name = Name(b.symbol.asInstanceOf[BoxTypeSymbol].freshName("box"))
+            val name = Name(b.sym.freshName("box"))
             b.copy(
               defs=transformTrees(b.defs),
               vals=ValDef(name, tpeName, dst, None, None, None, List(), List(), List(),None, None) :: transformTrees(b.vals),
@@ -192,7 +192,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
-            val sym = b.symbol.asInstanceOf[BoxTypeSymbol]
+            val sym = b.sym
             val name = Name(sym.freshName("box"))
             val className = Name(sym.freshName("C"))
             val newDef = BoxDef(className, b.pkg, Some(tpeName), guiSize = None, image = None, List(),
@@ -251,7 +251,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
-            val tpe = b.symbol.asInstanceOf[BoxTypeSymbol]
+            val tpe = b.sym
             val name = Name(tpe.freshName("port"))
             val p = PortDef(name, Name("double"), dir, pos, Point(0, pos.y))
             b.copy(

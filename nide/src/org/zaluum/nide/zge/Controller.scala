@@ -13,7 +13,7 @@ import scala.collection.mutable.{Buffer, Stack}
 import org.eclipse.swt.widgets.Display
 
 class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit val display:Display) {
-  private var nowTree: Tree = _
+  private var nowTree: BoxDef = _
 
   private var viewers = Buffer[Viewer]()
 
@@ -38,7 +38,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
   def tree = nowTree
   val reporter = new Reporter()
   type DMap = Map[SelectionSubject, SelectionSubject]
-  case class Mutation(before: Tree, d: DMap, now: Tree)
+  case class Mutation(before: BoxDef, d: DMap, now: BoxDef)
   var undoStack = Stack[Mutation]()
   var redoStack = Stack[Mutation]()
   var mark: Option[Mutation] = None
@@ -69,7 +69,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
   def replaceWorkingCopyContents() {
     if (isDirty) {
       if (!cu.isWorkingCopy) cu.becomeWorkingCopy(null)
-      val str = Serializer.writeToIsoString(Serializer.proto(nowTree.asInstanceOf[BoxDef]));
+      val str = Serializer.writeToIsoString(Serializer.proto(nowTree));
       cu.applyTextEdit(new ReplaceEdit(0, cu.getBuffer.getLength, str), null)
     } else {
       if (cu.isWorkingCopy) cu.discardWorkingCopy

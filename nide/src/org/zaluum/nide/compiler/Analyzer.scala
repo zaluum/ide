@@ -83,12 +83,15 @@ object Literals {
 }
 trait Scope {
   def alreadyDefinedBoxType(name: Name): Boolean
-  def lookupPort(name: Name): Option[Symbol]
-  def lookupVal(name: Name): Option[Symbol]
+  def lookupPort(name: Name): Option[PortSymbol]
+  def lookupVal(name: Name): Option[ValSymbol]
   def lookupType(name: Name): Option[Type]
-  def lookupBoxType(name: Name): Option[Type]
-  def lookupBoxTypeLocal(name: Name): Option[Type]
-  def enter[S <: Symbol](sym: S): S
+  def lookupBoxType(name: Name): Option[BoxType]
+  def lookupBoxTypeLocal(name: Name): Option[BoxType]
+  def enter(sym:ValSymbol) 
+  def enter(sym:PortSymbol) 
+  def enter(sym:ParamSymbol) 
+  def enter(sym:BoxTypeSymbol) 
   def root: Symbol
 }
 trait RootSymbol extends Scope with Symbol {
@@ -96,10 +99,10 @@ trait RootSymbol extends Scope with Symbol {
   val name = null
   scope = this
   private def fail = throw new UnsupportedOperationException()
-  def lookupPort(name: Name): Option[Symbol] = fail
-  def lookupVal(name: Name): Option[Symbol] = fail
-  def lookupBoxTypeLocal(name: Name): Option[Type] = fail
-  def enter[S <: Symbol](sym: S): S = fail
+  def lookupPort(name: Name): Option[PortSymbol] = fail
+  def lookupVal(name: Name): Option[ValSymbol] = fail
+  def lookupParam(name: Name): Option[ParamSymbol] = fail
+  def lookupBoxTypeLocal(name: Name): Option[BoxType] = fail
   def root: Symbol = this
   object primitives {
     private def n(str: String, desc: String) = new PrimitiveJavaType(root, Name(str), desc)
@@ -125,25 +128,22 @@ class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for
   override val root = fakeRoot
 }
 class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
-  protected var ports = Map[Name, Symbol]()
+  protected var ports = Map[Name, PortSymbol]()
+  protected var params = Map[Name, ParamSymbol]()
   protected var vals = Map[Name, ValSymbol]()
-  protected var boxes = Map[Name, Type]()
-  def lookupPort(name: Name): Option[Symbol] = ports.get(name)
+  protected var boxes = Map[Name, BoxType]()
+  def lookupPort(name: Name): Option[PortSymbol] = ports.get(name)
+  def lookupParam(name: Name): Option[ParamSymbol] = params.get(name)
   def lookupVal(name: Name): Option[ValSymbol] = vals.get(name)
   def lookupType(name: Name): Option[Type] = enclosingScope.lookupType(name)
   def alreadyDefinedBoxType(name: Name): Boolean = boxes.get(name).isDefined
-  def lookupBoxType(name: Name): Option[Type] =
+  def lookupBoxType(name: Name): Option[BoxType] =
     boxes.get(name) orElse { enclosingScope.lookupBoxType(name) }
-  def lookupBoxTypeLocal(name: Name): Option[Type] = boxes.get(name)
-  def enter[S <: Symbol](sym: S): S = {
-    val entry = (sym.name -> sym)
-    sym match {
-      case p: IOSymbol ⇒ ports += entry
-      case b: BoxTypeSymbol ⇒ boxes += (sym.name -> b)
-      case v: ValSymbol ⇒ vals += (sym.name -> sym.asInstanceOf[ValSymbol])
-    }
-    sym
-  }
+  def lookupBoxTypeLocal(name: Name): Option[BoxType] = boxes.get(name)
+  def enter(sym:ValSymbol) = { vals += (sym.name -> sym); sym }
+  def enter(sym:PortSymbol) = { ports+=(sym.name-> sym); sym }
+  def enter(sym:BoxTypeSymbol) = { boxes+=(sym.name->sym); sym }
+  def enter(sym:ParamSymbol) = { params += (sym.name->sym); sym }
   def usedNames = (boxes.keySet.map { _.str } ++ vals.keySet.map { _.str } ++ ports.keySet.map { _.str }).toSet
   def root = enclosingScope.root
 }
@@ -154,39 +154,46 @@ trait ReporterAdapter {
 }
 class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope) {
   def globLocation(t: Tree) = t.line
+  
   class Namer(initOwner: Symbol) extends Traverser(initOwner) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
-    def defineBox(symbol: BoxTypeSymbol, tree: Tree): BoxTypeSymbol =
-      define(symbol, currentScope, currentScope.alreadyDefinedBoxType(symbol.name), tree) // TODO check already defined in another file
-    def defineVal(symbol: Symbol, tree: Tree): Symbol =
-      define(symbol, currentScope, currentScope.lookupVal(symbol.name).isDefined, tree)
-    def definePort(symbol: Symbol, tree: Tree): Symbol =
-      define(symbol, currentScope, /* FIXME currentScope.lookupPort(symbol.name).isDefined*/ false, tree)
-    def define[S <: Symbol](symbol: S, scope: Scope, dupl: Boolean, tree: Tree): S = {
+    def defineBox(symbol: BoxTypeSymbol, tree: Tree) {
+  	  prepare(symbol, currentScope, tree, currentScope.alreadyDefinedBoxType(symbol.name)) {
+    	currentScope.enter(symbol)
+      }
+    }
+    def defineVal(symbol: ValSymbol, tree: Tree) {
+  	  prepare(symbol, currentScope, tree, currentScope.lookupVal(symbol.name).isDefined) {
+    	currentScope.enter(symbol)
+      }
+    }
+    def definePort(symbol: PortSymbol, tree: Tree) {
+   	  prepare(symbol, currentScope, tree, /* FIXME currentScope.lookupPort(symbol.name).isDefined*/ false) {
+    	currentScope.enter(symbol)
+      }
+    }
+    private def prepare(symbol:Symbol, scope:Scope, tree:Tree, dupl:Boolean)(block: =>Unit) {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
       symbol.scope = scope
       tree.scope = scope
       tree.symbol = symbol
       symbol.decl = tree
-      scope enter symbol
     }
     override def traverse(tree: Tree) {
       tree match {
         case b: BoxDef ⇒
           val cl = Some(Name(classOf[JPanel].getName))
-          val newSym = new BoxTypeSymbol(currentOwner, b.name, b.pkg, b.superName, b.image, cl)
-          newSym.hasApply = true
-          val sym = defineBox(newSym, tree)
-          val bs = sym.asInstanceOf[BoxTypeSymbol]
-          bs.constructors = List(new Constructor(bs, List()))
+          val sym = new BoxTypeSymbol(currentOwner, b.name, b.pkg, b.superName, b.image, cl)
+          sym.hasApply = true
+          defineBox(sym, tree)
+          sym.constructors = List(new Constructor(sym, List()))
           tree.tpe = sym
         // FIXME reported errors do not show in the editor (valdef)
-
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
-          definePort(new PortSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], name, extPos, dir), tree) // owner of a port is boxtypesymbol
+          definePort(new PortSymbol(currentOwner.asInstanceOf[BoxType], name, extPos, dir), tree) // owner of a port is boxtypesymbol
         case v: ValDef ⇒
-          defineVal(new ValSymbol(currentOwner, v.name), tree)
+          defineVal(new ValSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], v.name), tree)
         case _ ⇒
           tree.scope = currentScope
       }
@@ -203,10 +210,11 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
     def createPortInstances(bs: BoxType, vsym: ValSymbol, isThis: Boolean) = {
-      vsym.portInstances = (for (p <- bs.portsWithSuper.values; if p.isInstanceOf[PortSymbol]) yield {
-        new RealPortInstance(p.asInstanceOf[PortSymbol], vsym)
+      val rpis = (for (p <- bs.portsWithSuper.values; if p.isInstanceOf[PortSymbol]) yield {
+        new RealPortInstance(p, vsym)
       }).toList;
-      vsym.portSides = (for (api <- vsym.portInstances; val pi = api.asInstanceOf[RealPortInstance]) yield {
+      vsym.portInstances = rpis
+      vsym.portSides = (for (pi <- rpis) yield {
         pi.portSymbol.dir match {
           case In => List(new PortSide(pi, true, isThis))
           case Out => List(new PortSide(pi, false, isThis))
@@ -220,7 +228,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
       super.traverse(tree)
       tree match {
         case b: BoxDef ⇒
-          val bs = b.symbol.asInstanceOf[BoxTypeSymbol]
+          val bs = b.sym
           b.superName foreach { sn ⇒
             catchAbort(currentScope.lookupBoxType(sn)) match {
               case Some(sbs: BoxTypeSymbol) ⇒
@@ -231,7 +239,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
                 error("Super box type not found " + sn, tree)
             }
           }
-          bs.thisVal = new ValSymbol(currentOwner, Name("this"))
+          bs.thisVal = new ValSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], Name("this"))
           bs.thisVal.tpe = bs
           createPortInstances(bs, bs.thisVal, true)
         case PortDef(name, typeName, in, inPos, extPos) ⇒
@@ -240,7 +248,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           }
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
-          val vsym = v.symbol.asInstanceOf[ValSymbol]
+          val vsym = v.sym
           catchAbort(expressionTyper(v.typeName, currentOwner) orElse currentScope.lookupBoxType(v.typeName)) match {
             case Some(bs: BoxTypeSymbol) ⇒
               v.symbol.tpe = bs
@@ -271,7 +279,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
               }
               // params
               for (p ← v.params.asInstanceOf[List[Param]]) {
-                bs.params.find { _.name == p.key } match {
+                bs.lookupParam(p.key) match {
                   case Some(parSym) ⇒
                     val toType = parSym.tpe.name
                     val parsed = Literals.parse(p.value, toType) getOrElse {
@@ -320,7 +328,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
   }
 
   class CheckConnections(b: BoxDef, owner: Symbol) {
-    val bs = b.symbol.asInstanceOf[BoxTypeSymbol] // boxDefs always have boxtypesymbol
+    val bs = b.sym
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
     var usedInputs = Set[PortSide]()
     def check() = Checker.traverse(b)
@@ -338,7 +346,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
                 new CheckConnections(bDef, b.symbol).check()
             }
             check()
-          case v: ValDef ⇒ acyclic.addVertex(v.symbol.asInstanceOf[ValSymbol]) // valdefs always have symbol
+          case v: ValDef ⇒ acyclic.addVertex(v.sym) // valdefs always have symbol
           case j @ Junction(name, _) ⇒
             bs.connections.lookupJunction(name) match {
               case Some(j) ⇒ error("junction name already exists", j)

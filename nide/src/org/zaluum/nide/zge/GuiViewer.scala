@@ -24,7 +24,7 @@ class GuiViewer(parent: Composite, controller: Controller)
   def container = null
   def myLayer = null
   /*MODEL*/
-  def tree = controller.tree.asInstanceOf[BoxDef]
+  def tree = controller.tree
   def boxDef = tree
   def owner = null//global.root
   background.setForegroundColor(ColorConstants.white)
@@ -59,7 +59,7 @@ class GuiViewer(parent: Composite, controller: Controller)
       b.children foreach {
         _ match {
           case v: ValDef ⇒
-            val sym = v.symbol.asInstanceOf[ValSymbol]
+            val sym = v.sym
             val tpe = sym.tpe.asInstanceOf[BoxTypeSymbol]
             if (!tpe.isLocal && tpe.visualClass.isDefined) {
                 val f = new SwingFigure(GuiViewer.this,controller.zproject.classLoader)

@@ -77,7 +77,7 @@ trait ConnectionsTool {
      * This tries to simplify the connection searching for intersections
      */
     def endConnection() {
-      val bs = initContainer.boxDef.symbol.asInstanceOf[BoxTypeSymbol]
+      val bs = initContainer.boxDef.sym
       val wp = extend.points
       if (wp.distinct.size >= 2) {
         val vend = vertexFor(wp.last, dst)

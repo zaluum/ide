@@ -50,10 +50,10 @@ class ClassJavaType(owner: Symbol, val fqName: Name) extends JavaType(owner) {
 }
 case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef])
 trait BoxType extends Symbol with Type {
-  protected def ports: Map[Name, Symbol]
+  protected def ports: Map[Name, PortSymbol]
   def declaredPorts = ports
   def portsWithSuper = ports
-  def lookupPort(name: Name): Option[Symbol]
+  def lookupPort(name: Name): Option[PortSymbol]
 }
 class BoxTypeSymbol(
   val owner: Symbol,
@@ -67,7 +67,7 @@ class BoxTypeSymbol(
   var thisVal: ValSymbol = _
   var missingVals = List[ValSymbol]()
   var hasApply = false
-  override def portsWithSuper: Map[Name, Symbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
+  override def portsWithSuper: Map[Name, PortSymbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def declaredVals = vals
   def fqName: Name = owner match { // this is
     case bown: BoxTypeSymbol ⇒ Name(bown.fqName.str + "$" + name.str)
@@ -129,13 +129,13 @@ class BoxTypeSymbol(
       }
     }
   }
-  var _superSymbol: Option[BoxTypeSymbol] = None
+  var _superSymbol: Option[BoxType] = None
   def superSymbol = {
     _superSymbol match {
       case Some(s) ⇒ _superSymbol
       case None ⇒ superName match {
         case Some(sn) ⇒
-          _superSymbol = scope.lookupBoxType(sn).asInstanceOf[Option[BoxTypeSymbol]]
+          _superSymbol = scope.lookupBoxType(sn)
           _superSymbol
         case None ⇒ None
       }
@@ -144,14 +144,13 @@ class BoxTypeSymbol(
   var okOverride = false
   var constructors = List[Constructor]()
   var source: String = "" // TODO
-  def valsInOrder = vals.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[ValSymbol]]
-  def IOInOrder = ports.values.toList.sortWith(_.name.str < _.name.str).asInstanceOf[List[IOSymbol]]
-  def params = ports.values collect { case p: ParamSymbol ⇒ p }
+  def valsInOrder = vals.values.toList.sortBy(_.name.str)
+  def IOInOrder = (ports.values++params.values).toList.sortBy(_.name.str)
+  def paramsInOrder = params.values.toList.sortBy(_.name.str) 
   var executionOrder = List[ValSymbol]()
-
   def isLocal = owner.isInstanceOf[BoxTypeSymbol]
   // override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"
-  override def lookupPort(name: Name): Option[Symbol] =
+  override def lookupPort(name: Name): Option[PortSymbol] =
     super.lookupPort(name) orElse (superSymbol flatMap { _.lookupPort(name) })
   tpe = this
 }
@@ -237,7 +236,7 @@ class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolea
   def realPi = pi.asInstanceOf[RealPortInstance]
   override def toString() = "PortSide(" + pi.toString + ", in=" + inPort + ", fromInside=" + fromInside + ")"
 }
-class ValSymbol(val owner: Symbol, val name: Name) extends Symbol {
+class ValSymbol(val owner: BoxTypeSymbol, val name: Name) extends Symbol {
   var params = Map[ParamSymbol, Any]()
   var constructor: Option[Constructor] = None
   var constructorParams = List[(Any, Type)]()
