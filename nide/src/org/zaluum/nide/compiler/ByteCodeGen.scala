@@ -35,6 +35,7 @@ object ByteCodeGen {
       }
       val l0 = new Label();
       mv.visitLabel(l0);
+      
       tree.children foreach { emit(_) }
       val lend = new Label();
       mv.visitInsn(RETURN);
@@ -68,16 +69,16 @@ object ByteCodeGen {
         case NullConst ⇒
           mv.visitInsn(ACONST_NULL)
         case LocalRef(id,tpe) =>
-          mv.visitVarInsn(ILOAD,id)
+          mv.visitVarInsn(DLOAD,id)
         case Sum(a,b) =>
           emit(a)
           emit(b)
-          mv.visitInsn(IADD)
+          mv.visitInsn(DADD)
         case Assign(lhs, rhs) ⇒
           lhs match {
             case LocalRef(id,tpe) =>
               emit(rhs)
-              mv.visitVarInsn(ISTORE, id)
+              mv.visitVarInsn(DSTORE, id)
             case Select(a, FieldRef(id, typeName, fromClass)) ⇒
               emit(a)
               emit(rhs)

@@ -60,6 +60,24 @@ abstract class Tree extends Product with SelectionSubject {
     case t: Tree ⇒ this eq t
     case _ ⇒ false
   }
+  def print(depth : Int) : String = {
+    def print(a:Any) : String =  {
+      a match {
+        case t:Tree => t.print(depth+1)
+        case l:List[_] => l.map {print(_)}.mkString("\n")
+        case _ => (" "*(depth+1)) + a.toString
+      }
+    }
+    val prods = productIterator.toList
+    (" "*depth) + this.productPrefix + "(" +
+    (if (prods.isEmpty) ")"
+    else {
+      "\n" + (for (e<-prods) yield {
+        print(e)
+      }).mkString("\n") + 
+      "\n"+(" "*depth)+")"
+    })
+  }
 }
 
 trait SymTree extends Tree {

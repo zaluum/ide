@@ -13,8 +13,8 @@ import org.zaluum.annotation.Out;
 
 @Box
 public class SoundOutput {
-	@In double in;
-	@Out double deltaTime;
+	@In public double in;
+	@Out public double deltaTime;
 	static final int channels = 2;
 	static final int bits = 16;
 	static final float sampleRate = 44100.0f;

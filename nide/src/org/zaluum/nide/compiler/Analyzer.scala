@@ -139,7 +139,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   def alreadyDefinedBoxType(name: Name): Boolean = boxes.get(name).isDefined
   def lookupBoxType(name: Name): Option[BoxType] =
     boxes.get(name) orElse { enclosingScope.lookupBoxType(name) }
-  def lookupBoxTypeLocal(name: Name): Option[BoxType] = boxes.get(name)
+  def lookupBoxTypeLocal(name: Name): Option[BoxType] =  boxes.get(name)
   def enter(sym:ValSymbol) = { vals += (sym.name -> sym); sym }
   def enter(sym:PortSymbol) = { ports+=(sym.name-> sym); sym }
   def enter(sym:BoxTypeSymbol) = { boxes+=(sym.name->sym); sym }
@@ -179,6 +179,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
       tree.scope = scope
       tree.symbol = symbol
       symbol.decl = tree
+      block
     }
     override def traverse(tree: Tree) {
       tree match {
@@ -239,7 +240,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
                 error("Super box type not found " + sn, tree)
             }
           }
-          bs.thisVal = new ValSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], Name("this"))
+          bs.thisVal = new ValSymbol(bs, Name("this"))
           bs.thisVal.tpe = bs
           createPortInstances(bs, bs.thisVal, true)
         case PortDef(name, typeName, in, inPos, extPos) ⇒
@@ -294,9 +295,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
               vsym.params
             case Some(b: SumExprType) =>
               v.symbol.tpe = b
-              b.a.tpe = currentScope.lookupType(Name("int")).get
-              b.b.tpe = currentScope.lookupType(Name("int")).get
-              b.c.tpe = currentScope.lookupType(Name("int")).get
+              b.a.tpe = currentScope.lookupType(Name("double")).get
+              b.b.tpe = currentScope.lookupType(Name("double")).get
+              b.c.tpe = currentScope.lookupType(Name("double")).get
               createPortInstances(b, vsym, false)
             case a ⇒
               v.symbol.tpe = NoSymbol
@@ -357,7 +358,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
               error("incomplete connection " + a + "<->" + b, tree)
             } else {
               bs.connections.addConnection(c)
-              println(c)
             }
           case _ ⇒
         }

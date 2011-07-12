@@ -65,7 +65,11 @@ class BoxTypeSymbol(
   val abstractCl: Boolean = false) extends LocalScope(owner.scope) with BoxType {
 
   var thisVal: ValSymbol = _
-  var missingVals = List[ValSymbol]()
+  val missingVals = scala.collection.mutable.Map[Name,ValSymbol]()
+  def lookupValWithMissing(name:Name) = lookupVal(name).orElse { missingVals.get(name) }
+  def lookupValOrCreateMissing(name:Name) = lookupVal(name).getOrElse {
+    missingVals.getOrElseUpdate(name, new ValSymbol(this,name));
+  }
   var hasApply = false
   override def portsWithSuper: Map[Name, PortSymbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def declaredVals = vals
@@ -144,7 +148,7 @@ class BoxTypeSymbol(
   var okOverride = false
   var constructors = List[Constructor]()
   var source: String = "" // TODO
-  def valsInOrder = vals.values.toList.sortBy(_.name.str)
+  def valsInOrder = (vals.values ++ missingVals.values).toList.sortBy(_.name.str)
   def IOInOrder = (ports.values++params.values).toList.sortBy(_.name.str)
   def paramsInOrder = params.values.toList.sortBy(_.name.str) 
   var executionOrder = List[ValSymbol]()
@@ -204,7 +208,7 @@ object PortSide {
   def find(p: PortRef, bs: BoxTypeSymbol) = {
     p.fromRef match {
       case t: ThisRef ⇒ bs.thisVal.findPortSide(p)
-      case v: ValRef ⇒ for (vs <- bs.lookupVal(v.name); ps <- vs.findPortSide(p)) yield ps
+      case v: ValRef ⇒ for (vs <- bs.lookupValWithMissing(v.name); ps <- vs.findPortSide(p)) yield ps
     }
   }
   def findOrCreateMissing(p: PortRef, bs: BoxTypeSymbol) = {
@@ -221,7 +225,7 @@ object PortSide {
           createMissing(bs.thisVal,true) 
         }
       case v: ValRef =>
-        val vs = bs.lookupVal(v.name).get // FIXME
+        val vs = bs.lookupValOrCreateMissing(v.name)
         vs.findPortSide(p).getOrElse { createMissing(vs,false) }
     }
   }

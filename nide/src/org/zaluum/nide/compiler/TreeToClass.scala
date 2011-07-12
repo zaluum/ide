@@ -211,20 +211,21 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
       val bs = b.sym
       // create locals for expressions
       var locals = 1; // 0 for "this"
-      println(bs.valsInOrder)
       val localsMap = bs.valsInOrder flatMap { v =>
         v.tpe match {
           case b: BoxTypeSymbol => List()
           case s: SumExprType =>
             v.portSides map {
-              (_ -> { locals = locals + 1; locals })
+              (_ -> { val l = locals; locals = locals + 2; l })
             }
           case _ => List()
         }
       } toMap;
       def toRef(p: PortSide): Tree =
         if (p.fromInside) {
-          Select(This, FieldRef(p.realPi.portSymbol.name, p.realPi.portSymbol.tpe.name, bs.fqName))
+          Select(
+              This, 
+              FieldRef(p.realPi.portSymbol.name, p.realPi.portSymbol.tpe.name, bs.fqName))
         } else {
           val vfrom = p.pi.valSymbol
           val ps = p.realPi.portSymbol
@@ -234,7 +235,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
                   Select(This, FieldRef(vfrom.name, vfromBs.fqName, bs.fqName))
                   , FieldRef(ps.name, ps.tpe.name, vfromBs.fqName))
             case _ =>
-              LocalRef(localsMap(p), Name("int"))
+              LocalRef(localsMap(p), Name("double"))
           }
         }
       // propagate initial inputs
@@ -248,7 +249,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
       def propagateInitialInputs = {
         val initialConnections = {
           connections.flow collect {
-            case c @ (a: PortSide, _) ⇒ c
+            case c @ (a: PortSide, _) if (a.fromInside) ⇒ c
           } toList
         }
         initialConnections flatMap { execConnection(_) }
@@ -277,7 +278,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
         invoke :: outs
       }
       val invokes = b.vals flatMap { case v: ValDef ⇒ runOne(v) }
-      val localsDecl = localsMap map { case (a, i) => (a.realPi.portSymbol.name.str, "I", i) } toList;
+      val localsDecl = localsMap map { case (a, i) => (a.realPi.portSymbol.name.str, "D", i) } toList;
       Method(Name("contents"), "()V", propagateInitialInputs ++ invokes, localsDecl)
 
     }
