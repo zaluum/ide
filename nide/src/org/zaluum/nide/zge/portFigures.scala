@@ -20,7 +20,7 @@ class PortFigure(val container:ContainerItem) extends Ellipse with Hover{
     this.ipos = ipos
     this.in = in
     setBounds(new Rectangle(pos.x,pos.y,size.w,size.h))
-    setBackgroundColor(Colorizer.color(ps.pi.tpe))
+    setBackgroundColor(Colorizer.color(ps.pi.finalTpe))
     setBounds(new Rectangle(pos.x,pos.y,size.w,size.h))
   }
   var _hover = false
@@ -65,7 +65,7 @@ class OpenPortDeclFigure(val openBox: OpenBoxFigure) extends RectangleFigure wit
   def update(intPs: PortSide, extPs:PortSide, left: Boolean) {
     this.tree = intPs.realPi.portSymbol.decl.asInstanceOf[PortDef]; // ??? real
     this.left = left
-    setBackgroundColor(Colorizer.color(sym.tpe))
+    setBackgroundColor(Colorizer.color(intPs.pi.finalTpe))
     setForegroundColor(if (dir == Shift) ColorConstants.yellow else ColorConstants.white)
     updateSize()
     // external

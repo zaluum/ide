@@ -58,14 +58,14 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
         }
       case b: BaseTypeBinding ⇒
         b.simpleName.mkString match {
-          case "byte" ⇒ Some(cud.JDTScope.primitives.byte)
-          case "short" ⇒ Some(cud.JDTScope.primitives.short)
-          case "int" ⇒ Some(cud.JDTScope.primitives.int)
-          case "long" ⇒ Some(cud.JDTScope.primitives.long)
-          case "float" ⇒ Some(cud.JDTScope.primitives.float)
-          case "double" ⇒ Some(cud.JDTScope.primitives.double)
-          case "boolean" ⇒ Some(cud.JDTScope.primitives.boolean)
-          case "char" ⇒ Some(cud.JDTScope.primitives.char)
+          case "byte" ⇒ Some(primitives.Byte)
+          case "short" ⇒ Some(primitives.Short)
+          case "int" ⇒ Some(primitives.Int)
+          case "long" ⇒ Some(primitives.Long)
+          case "float" ⇒ Some(primitives.Float)
+          case "double" ⇒ Some(primitives.Double)
+          case "boolean" ⇒ Some(primitives.Boolean)
+          case "char" ⇒ Some(primitives.Char)
           case _ ⇒ None
         }
       case a: ArrayBinding ⇒

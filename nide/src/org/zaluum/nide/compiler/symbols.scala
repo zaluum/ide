@@ -12,6 +12,7 @@ trait Symbol {
 }
 trait Type extends Symbol {
   def fqName : Name
+  def javaSize =1
 }
 case object NoSymbol extends Symbol with Type {
   val owner = NoSymbol
@@ -19,12 +20,15 @@ case object NoSymbol extends Symbol with Type {
   def fqName = name
 }
 abstract class JavaType(val owner: Symbol) extends Symbol with Type {
-  scope = owner.scope
+  scope = if(owner!=null) owner.scope else null
   def name: Name
   def descriptor: String
   override def toString = "JavaType(" + name + ")"
 }
-class PrimitiveJavaType(owner: Symbol, val name: Name, override val descriptor: String) extends JavaType(owner) {
+class PrimitiveJavaType(
+    val name: Name, 
+    override val descriptor: String, 
+    override val javaSize : Int) extends JavaType(null) {
 	def fqName = name
 }
 class ArrayType(owner: Symbol, val of: JavaType, val dim: Int) extends JavaType(owner) {
@@ -80,7 +84,7 @@ class BoxTypeSymbol(
   object connections extends Namer {
     var junctions = Set[Junction]()
     def usedNames = junctions map { _.name.str }
-    var flow = Map[PortSide, Set[PortSide]]()
+    var flow = Map[RealPortInstance, Set[RealPortInstance]]()
     var clumps = Buffer[Clump]()
     def clumpOf(c: ConnectionDef) = clumps find { _.connections.contains(c) }
     def clumpOf(p: PortSide) = clumps find { _.ports.contains(p) }
@@ -158,16 +162,7 @@ class BoxTypeSymbol(
     super.lookupPort(name) orElse (superSymbol flatMap { _.lookupPort(name) })
   tpe = this
 }
-class SumExprType(val owner: Symbol) extends BoxType {
-  val name = Name("Sum")
-  def fqName = Name("org.zaluum.math.Sum")
-  val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
-  val b = new PortSymbol(this, Name("b"), Point(0, 0), In)
-  val c = new PortSymbol(this, Name("c"), Point(0, 0), Out)
-  val ports = List(a, b, c) map { a => (a.name -> a) } toMap
-  def lookupPort(a: Name) = ports.get(a)
 
-}
 //class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 
 // TODO make two classes one that has values from the declaring tree and the other directly from symbol
 class IOSymbol(val owner: BoxType, val name: Name, val dir: PortDir) extends Symbol {
@@ -194,14 +189,18 @@ class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name
 sealed abstract class PortInstance(val valSymbol: ValSymbol) {
   def name: Name
   def tpe : Type
+  def finalTpe : Type
 }
 class RealPortInstance(val portSymbol: PortSymbol, valSymbol: ValSymbol) extends PortInstance(valSymbol) {
   def name = portSymbol.name
   def tpe = portSymbol.tpe
+  var connectedFrom : Option[RealPortInstance] = None 
+  var finalTpe : Type = NoSymbol
   override def toString = "PortInstance(" + portSymbol + ", " + valSymbol + ")"
 }
 class MissingPortInstance(valSymbol: ValSymbol, val name: Name) extends PortInstance(valSymbol) {
   def tpe = NoSymbol
+  def finalTpe = NoSymbol
 }
 
 object PortSide {

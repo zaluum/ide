@@ -325,7 +325,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     lazy val tooltip = new TooltipLabel
     def showTip(pf: PortFigure) {
       val abs = pf.anchor.getCopy
-      tooltip.setText(pf.ps.name.str + " : " + pf.ps.pi.tpe.name.str)
+      tooltip.setText(pf.ps.name.str + " : " + pf.ps.pi.finalTpe.name.str)
       viewer.feedbackLayer.add(tooltip)
     }
     override def update {

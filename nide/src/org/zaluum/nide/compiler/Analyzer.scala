@@ -1,13 +1,8 @@
 package org.zaluum.nide.compiler
 
-import javax.swing.JPanel
-import org.jgrapht.traverse.TopologicalOrderIterator
-import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException
-import org.jgrapht.graph.DefaultEdge
-import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import scala.collection.mutable.Buffer
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
-class CompilationException extends Exception
+import javax.swing.JPanel
 
 class Reporter {
   case class Error(msg: String, mark: Option[Int])
@@ -88,10 +83,10 @@ trait Scope {
   def lookupType(name: Name): Option[Type]
   def lookupBoxType(name: Name): Option[BoxType]
   def lookupBoxTypeLocal(name: Name): Option[BoxType]
-  def enter(sym:ValSymbol) 
-  def enter(sym:PortSymbol) 
-  def enter(sym:ParamSymbol) 
-  def enter(sym:BoxTypeSymbol) 
+  def enter(sym: ValSymbol)
+  def enter(sym: PortSymbol)
+  def enter(sym: ParamSymbol)
+  def enter(sym: BoxTypeSymbol)
   def root: Symbol
 }
 trait RootSymbol extends Scope with Symbol {
@@ -104,21 +99,58 @@ trait RootSymbol extends Scope with Symbol {
   def lookupParam(name: Name): Option[ParamSymbol] = fail
   def lookupBoxTypeLocal(name: Name): Option[BoxType] = fail
   def root: Symbol = this
-  object primitives {
-    private def n(str: String, desc: String) = new PrimitiveJavaType(root, Name(str), desc)
-    val byte = n("byte", "B")
-    val short = n("short", "S")
-    val int = n("int", "I")
-    val long = n("long", "J")
-    val float = n("float", "F")
-    val double = n("double", "D")
-    val boolean = n("boolean", "Z")
-    val char = n("char", "C")
-    val allTypes = List(byte, short, int, long, float, double, boolean, char)
-    def find(desc: String) = allTypes.find(_.descriptor == desc)
-    def find(name: Name) = allTypes.find(_.name == name)
-  }
 }
+object primitives {
+  private def n(str: String, desc: String, size: Int = 1) = new PrimitiveJavaType(Name(str), desc, size)
+  val Byte = n("byte", "B")
+  val Short = n("short", "S")
+  val Int = n("int", "I")
+  val Long = n("long", "J", 2)
+  val Float = n("float", "F")
+  val Double = n("double", "D", 2)
+  val Boolean = n("boolean", "Z")
+  val Char = n("char", "C")
+  val allTypes = List(Byte, Short, Int, Long, Float, Double, Boolean, Char)
+  def widening(from: PrimitiveJavaType, to: PrimitiveJavaType) = {
+    from match {
+      case Byte => List(Short, Int, Long, Float, Double).contains(to)
+      case Short => List(Int, Long, Float, Double).contains(to)
+      case Char => List(Int, Long, Float, Double).contains(to)
+      case Int => List(Long, Float, Double).contains(to)
+      case Long => List(Float, Double).contains(to)
+      case Float => to == Double
+      case _ => false
+    }
+  }
+  def toOperationType(t: PrimitiveJavaType): PrimitiveJavaType = {
+    t match {
+      case Byte => Int
+      case Short => Int
+      case Char => Int
+      case Int => Int
+      case Long => Long
+      case Float => Float
+      case Double => Double
+    }
+  }
+  /** must be int long float or double (operationtype) */
+  def largerOperation(a: PrimitiveJavaType, b: PrimitiveJavaType): PrimitiveJavaType = {
+    val l = List(Int, Long, Float, Double)
+    l(math.max(l.indexOf(a), l.indexOf(b)))
+  }
+  def isNumeric(tpe: Type): Boolean = {
+    tpe match {
+      case p: PrimitiveJavaType if (p != primitives.Boolean) => true
+      case j: JavaType => false // TODO autobox
+      case _ => false
+    }
+  }
+  /** tpe must be numeric*/
+  def unbox(tpe: Type): PrimitiveJavaType = tpe.asInstanceOf[PrimitiveJavaType] // todo unbox
+  def find(desc: String) = allTypes.find(_.descriptor == desc)
+  def find(name: Name) = allTypes.find(_.name == name)
+}
+
 class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for presentation compiler
   case object fakeRoot extends Symbol {
     val owner = NoSymbol
@@ -139,11 +171,11 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   def alreadyDefinedBoxType(name: Name): Boolean = boxes.get(name).isDefined
   def lookupBoxType(name: Name): Option[BoxType] =
     boxes.get(name) orElse { enclosingScope.lookupBoxType(name) }
-  def lookupBoxTypeLocal(name: Name): Option[BoxType] =  boxes.get(name)
-  def enter(sym:ValSymbol) = { vals += (sym.name -> sym); sym }
-  def enter(sym:PortSymbol) = { ports+=(sym.name-> sym); sym }
-  def enter(sym:BoxTypeSymbol) = { boxes+=(sym.name->sym); sym }
-  def enter(sym:ParamSymbol) = { params += (sym.name->sym); sym }
+  def lookupBoxTypeLocal(name: Name): Option[BoxType] = boxes.get(name)
+  def enter(sym: ValSymbol) = { vals += (sym.name -> sym); sym }
+  def enter(sym: PortSymbol) = { ports += (sym.name -> sym); sym }
+  def enter(sym: BoxTypeSymbol) = { boxes += (sym.name -> sym); sym }
+  def enter(sym: ParamSymbol) = { params += (sym.name -> sym); sym }
   def usedNames = (boxes.keySet.map { _.str } ++ vals.keySet.map { _.str } ++ ports.keySet.map { _.str }).toSet
   def root = enclosingScope.root
 }
@@ -152,28 +184,28 @@ trait ReporterAdapter {
   def reporter: Reporter
   def error(str: String, tree: Tree) = reporter.report(str, Some(location(tree)))
 }
-class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope) {
+class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope) extends AnalyzerConnections {
   def globLocation(t: Tree) = t.line
-  
+
   class Namer(initOwner: Symbol) extends Traverser(initOwner) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
     def defineBox(symbol: BoxTypeSymbol, tree: Tree) {
-  	  prepare(symbol, currentScope, tree, currentScope.alreadyDefinedBoxType(symbol.name)) {
-    	currentScope.enter(symbol)
+      prepare(symbol, currentScope, tree, currentScope.alreadyDefinedBoxType(symbol.name)) {
+        currentScope.enter(symbol)
       }
     }
     def defineVal(symbol: ValSymbol, tree: Tree) {
-  	  prepare(symbol, currentScope, tree, currentScope.lookupVal(symbol.name).isDefined) {
-    	currentScope.enter(symbol)
+      prepare(symbol, currentScope, tree, currentScope.lookupVal(symbol.name).isDefined) {
+        currentScope.enter(symbol)
       }
     }
     def definePort(symbol: PortSymbol, tree: Tree) {
-   	  prepare(symbol, currentScope, tree, /* FIXME currentScope.lookupPort(symbol.name).isDefined*/ false) {
-    	currentScope.enter(symbol)
+      prepare(symbol, currentScope, tree, /* FIXME currentScope.lookupPort(symbol.name).isDefined*/ false) {
+        currentScope.enter(symbol)
       }
     }
-    private def prepare(symbol:Symbol, scope:Scope, tree:Tree, dupl:Boolean)(block: =>Unit) {
+    private def prepare(symbol: Symbol, scope: Scope, tree: Tree, dupl: Boolean)(block: => Unit) {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
       symbol.scope = scope
       tree.scope = scope
@@ -199,12 +231,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           tree.scope = currentScope
       }
       super.traverse(tree)
-    }
-  }
-  object expressionTyper {
-    def apply(typeName: Name, owner: Symbol): Option[BoxType] = typeName match {
-      case Name("org.zaluum.math.Sum") => Some(new SumExprType(owner))
-      case _ => None
     }
   }
   class Resolver(global: Symbol) extends Traverser(global) with ReporterAdapter {
@@ -250,7 +276,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
           val vsym = v.sym
-          catchAbort(expressionTyper(v.typeName, currentOwner) orElse currentScope.lookupBoxType(v.typeName)) match {
+          catchAbort(Expressions.find(v.typeName) orElse currentScope.lookupBoxType(v.typeName)) match {
             case Some(bs: BoxTypeSymbol) ⇒
               v.symbol.tpe = bs
               if (!bs.hasApply) {
@@ -293,11 +319,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
               }
               createPortInstances(bs, vsym, false)
               vsym.params
-            case Some(b: SumExprType) =>
+            case Some(b: ExprType) =>
               v.symbol.tpe = b
-              b.a.tpe = currentScope.lookupType(Name("double")).get
-              b.b.tpe = currentScope.lookupType(Name("double")).get
-              b.c.tpe = currentScope.lookupType(Name("double")).get
               createPortInstances(b, vsym, false)
             case a ⇒
               v.symbol.tpe = NoSymbol
@@ -328,104 +351,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     }
   }
 
-  class CheckConnections(b: BoxDef, owner: Symbol) {
-    val bs = b.sym
-    val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
-    var usedInputs = Set[PortSide]()
-    def check() = Checker.traverse(b)
-    object Checker extends Traverser(owner) with ReporterAdapter {
-      def location(tree: Tree) = globLocation(tree)
-      def reporter = Analyzer.this.reporter
-      override def traverse(tree: Tree) {
-        tree match {
-          case b: BoxDef ⇒
-            traverseTrees(b.vals)
-            traverseTrees(b.junctions)
-            traverseTrees(b.connections)
-            b.defs foreach {
-              case bDef: BoxDef ⇒
-                new CheckConnections(bDef, b.symbol).check()
-            }
-            check()
-          case v: ValDef ⇒ acyclic.addVertex(v.sym) // valdefs always have symbol
-          case j @ Junction(name, _) ⇒
-            bs.connections.lookupJunction(name) match {
-              case Some(j) ⇒ error("junction name already exists", j)
-              case None ⇒ bs.connections.junctions += j
-            }
-          case c @ ConnectionDef(a, b, waypoints) ⇒
-            if (a == EmptyTree || b.symbol == EmptyTree) {
-              error("incomplete connection " + a + "<->" + b, tree)
-            } else {
-              bs.connections.addConnection(c)
-            }
-          case _ ⇒
-        }
-      }
-      private def check() {
-        def checkClump(c: Clump) {
-          val ins = c.ports.filter(p ⇒ p.flowIn)
-          val outs = c.ports.filter(p ⇒ !p.flowIn)
-          if (outs.size == 0) error("No output connected", c.connections.head)
-          else if (outs.size > 1) error("More than one output is connected", c.connections.head)
-          else if (ins.size == 0) error("No inputs connected", c.connections.head)
-          else {
-            if (!usedInputs.intersect(ins).isEmpty) error("input connected multiple times", c.connections.head) // TODO check online to identify offending connection 
-            usedInputs ++= ins
-            // check types
-            val types = for (ps ← c.ports) yield {
-              ps.pi match {
-                case r: RealPortInstance => r.portSymbol.tpe
-                case _ => NoSymbol
-              }
-            }
-            if (types.size != 1) error("Connection with incompatible types " + types.mkString(","), c.connections.head)
-            else {
-              c.connections foreach { _.tpe = types.head }
-              c.junctions foreach { _.tpe = types.head }
-            }
-            // check graph consistency
-            val out = outs.head
-            bs.connections.flow += (out -> ins)
-            def addDag(vout: PortInstance, vin: PortInstance) {
-              try {
-                acyclic.addDagEdge(vout.valSymbol, vin.valSymbol);
-              } catch {
-                case e: CycleFoundException ⇒ error("cycle found ", c.connections.head)
-                case e: IllegalArgumentException ⇒ error("loop found", c.connections.head)
-              }
-            }
-            import org.zaluum.nide.RichCast._
-            for (in ← ins) {
-              if (!out.fromInside && !in.fromInside)
-                addDag(out.pi, in.pi)
-            }
-          }
-        }
-        val resolved = b.connections.forall {
-          case con: ConnectionDef ⇒
-            def checkResolved(p: Tree) = p match {
-              case EmptyTree ⇒ error("Wire is not connected", con); false
-              case j: JunctionRef ⇒ /*if(!bs.junctions.exists {_.name == j.name}) {
-                  error("FATAL: junction does not exists " + j,con)
-                }*/ true
-              case p: PortRef ⇒
-                PortSide.find(p, bs) match {
-                  case None ⇒ error("Cannot find port " + p, con); false
-                  case _ ⇒ true
-                }
-            }
-            checkResolved(con.a) && checkResolved(con.b)
-        }
-        if (resolved) {
-          bs.connections.clumps foreach { checkClump(_) }
-          import scala.collection.JavaConversions._
-          val topo = new TopologicalOrderIterator(acyclic);
-          bs.executionOrder = topo.toList
-        }
-      }
-    }
-  }
   def runNamer(): Tree = {
     val root = global.root
     new Namer(root).traverse(toCompile)
@@ -440,3 +365,4 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     toCompile
   }
 }
+class CompilationException extends Exception

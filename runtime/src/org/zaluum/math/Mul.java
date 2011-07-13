@@ -3,8 +3,6 @@ package org.zaluum.math;
 import org.zaluum.annotation.Box;
 
 @Box
-public class Mul extends DoubleOp2{
-  public void apply(){
-    o = a*b;
-  }
+public class Mul {
+  public void apply(){} // INTERNAL COMPILER
 }

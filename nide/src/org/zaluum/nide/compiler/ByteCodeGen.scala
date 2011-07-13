@@ -4,9 +4,9 @@ import org.objectweb.asm._
 import Opcodes._
 import org.zaluum.annotation.Box
 object ByteCodeGen {
-  def descriptor(n: Name) : String =
+  def descriptor(n: Name): String =
     n.asArray match {
-      case Some((arrTpe, dim)) ⇒ ("["*dim) + descriptor(arrTpe) 
+      case Some((arrTpe, dim)) ⇒ ("[" * dim) + descriptor(arrTpe)
       case None ⇒
         n match {
           case Name("byte") ⇒ "B"
@@ -26,7 +26,7 @@ object ByteCodeGen {
     cw.visitAnnotation(descriptor(Name(classOf[Box].getName)), true).visitEnd
     var mv: MethodVisitor = null
     val thisDescriptor = descriptor(bc.name)
-    def emitMethod(name: String, signature: String, tree: Tree, locals:List[(String,String,Int)], constructor: Boolean) {
+    def emitMethod(name: String, signature: String, tree: Tree, locals: List[(String, String, Int)], constructor: Boolean) {
       mv = cw.visitMethod(ACC_PUBLIC, name, signature, null, null);
       mv.visitCode();
       if (constructor) {
@@ -35,14 +35,14 @@ object ByteCodeGen {
       }
       val l0 = new Label();
       mv.visitLabel(l0);
-      
+
       tree.children foreach { emit(_) }
       val lend = new Label();
       mv.visitInsn(RETURN);
       mv.visitLabel(lend);
       mv.visitLocalVariable("this", thisDescriptor, null, l0, lend, 0);
-      for ( (name,desc,i)<-locals) {
-    	mv.visitLocalVariable(name, desc, null, l0, lend, i);
+      for ((name, desc, i) <- locals) {
+        mv.visitLocalVariable(name, desc, null, l0, lend, i);
       }
       mv.visitMaxs(-1, -1);
       mv.visitEnd();
@@ -50,7 +50,7 @@ object ByteCodeGen {
     def emit(tree: Tree): Unit = {
       tree match {
         case EmptyTree ⇒
-        case FieldDef(name, tpe, annotation,priv) ⇒
+        case FieldDef(name, tpe, annotation, priv) ⇒
           // FIXME not really private field always public
           val f = cw.visitField(if (priv) ACC_PUBLIC else ACC_PUBLIC, name.str, descriptor(tpe), null, null)
           annotation foreach { name ⇒
@@ -68,17 +68,13 @@ object ByteCodeGen {
           mv.visitMethodInsn(INVOKESPECIAL, typeName.internal, "<init>", signature);
         case NullConst ⇒
           mv.visitInsn(ACONST_NULL)
-        case LocalRef(id,tpe) =>
-          mv.visitVarInsn(DLOAD,id)
-        case Sum(a,b) =>
-          emit(a)
-          emit(b)
-          mv.visitInsn(DADD)
+        case LocalRef(id, tpe) =>
+          load(id,tpe)
         case Assign(lhs, rhs) ⇒
           lhs match {
-            case LocalRef(id,tpe) =>
+            case LocalRef(id, tpe) =>
               emit(rhs)
-              mv.visitVarInsn(DSTORE, id)
+              store(id,tpe)
             case Select(a, FieldRef(id, typeName, fromClass)) ⇒
               emit(a)
               emit(rhs)
@@ -103,7 +99,7 @@ object ByteCodeGen {
           mv.visitVarInsn(ALOAD, i)
         case Const(d: Any) ⇒
           val v = d match {
-            case b: Byte ⇒ b.asInstanceOf[Int] // FIXME ?
+            case b: Byte ⇒ b.asInstanceOf[Int] 
             case s: Short ⇒ s.asInstanceOf[Int]
             case b: Boolean ⇒ b.asInstanceOf[Int]
             case _ ⇒ d
@@ -116,6 +112,81 @@ object ByteCodeGen {
           mv.visitInsn(ICONST_1)
         case Dup ⇒
           mv.visitInsn(DUP)
+        case b: BinaryExpr =>
+          emitBinaryExpr(b)
+        case u: UnaryExpr =>
+          emitUnaryExpr(u)
+
+      }
+    }
+    def store(id:Int, t:Name) = {
+      t match {
+        case primitives.Int.name => mv.visitVarInsn(ISTORE,id)
+        case primitives.Long.name => mv.visitVarInsn(LSTORE,id)
+        case primitives.Double.name => mv.visitVarInsn(DSTORE,id)
+        case primitives.Float.name => mv.visitVarInsn(FSTORE,id)
+        case _=> mv.visitVarInsn(ASTORE,id)
+      }
+    }
+    def load(id:Int, t:Name) = {
+      t match {
+        case primitives.Int.name => mv.visitVarInsn(ILOAD,id)
+        case primitives.Long.name => mv.visitVarInsn(LLOAD,id)
+        case primitives.Double.name => mv.visitVarInsn(DLOAD,id)
+        case primitives.Float.name => mv.visitVarInsn(FLOAD,id)
+        case _=> mv.visitVarInsn(ALOAD,id) // FIXME array
+      }
+    }
+    def emitBinaryExpr(e: BinaryExpr) = {
+      emit(e.a)
+      emit(e.b)
+      import primitives._
+      e match {
+        case Add(a, b, Int) => mv.visitInsn(IADD)
+        case Add(a, b, Double) => mv.visitInsn(DADD)
+        case Add(a, b, Long) => mv.visitInsn(LADD)
+        case Add(a, b, Float) => mv.visitInsn(FADD)
+        
+        case Sub(a, b, Int) => mv.visitInsn(ISUB)
+        case Sub(a, b, Double) => mv.visitInsn(DSUB)
+        case Sub(a, b, Long) => mv.visitInsn(LSUB)
+        case Sub(a, b, Float) => mv.visitInsn(FSUB)
+
+        case Mul(a, b, Int) => mv.visitInsn(IMUL)
+        case Mul(a, b, Double) => mv.visitInsn(DMUL)
+        case Mul(a, b, Long) => mv.visitInsn(LMUL)
+        case Mul(a, b, Float) => mv.visitInsn(FMUL)
+
+        case Div(a, b, Int) => mv.visitInsn(IDIV)
+        case Div(a, b, Double) => mv.visitInsn(DDIV)
+        case Div(a, b, Long) => mv.visitInsn(LDIV)
+        case Div(a, b, Float) => mv.visitInsn(FDIV)
+
+        case Rem(a, b, Int) => mv.visitInsn(IREM)
+        case Rem(a, b, Double) => mv.visitInsn(DREM)
+        case Rem(a, b, Long) => mv.visitInsn(LREM)
+        case Rem(a, b, Float) => mv.visitInsn(FREM)
+
+      }
+    }
+    def emitUnaryExpr(e: UnaryExpr) = {
+      emit(e.a)
+      e match {
+        case e: I2B => mv.visitInsn(Opcodes.I2B)
+        case e: I2C => mv.visitInsn(Opcodes.I2C)
+        case e: I2D => mv.visitInsn(Opcodes.I2D)
+        case e: I2F => mv.visitInsn(Opcodes.I2F)
+        case e: I2L => mv.visitInsn(Opcodes.I2L)
+        case e: I2S => mv.visitInsn(Opcodes.I2S)
+        case e: F2D => mv.visitInsn(Opcodes.F2D)
+        case e: F2I => mv.visitInsn(Opcodes.F2I)
+        case e: F2L => mv.visitInsn(Opcodes.F2L)
+        case e: D2F => mv.visitInsn(Opcodes.D2F)
+        case e: D2I => mv.visitInsn(Opcodes.D2I)
+        case e: D2L => mv.visitInsn(Opcodes.D2L)
+        case e: L2D => mv.visitInsn(Opcodes.L2D)
+        case e: L2F => mv.visitInsn(Opcodes.L2F)
+        case e: L2I => mv.visitInsn(Opcodes.L2I)
       }
     }
     bc.children foreach { emit(_) }

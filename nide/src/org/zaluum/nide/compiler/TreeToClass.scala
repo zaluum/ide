@@ -3,19 +3,34 @@ package org.zaluum.nide.compiler
 import javax.swing.JLabel
 import org.zaluum.basic.RunnableBox
 
+trait BinaryExpr extends Tree { 
+	def a:Tree
+	def b:Tree
+}
+trait UnaryExpr extends Tree { 
+	def a:Tree
+}
+
 case class BoxClass(name: Name, superName: Name, contents: List[Tree]) extends Tree
 case class FieldDef(name: Name, typeName: Name, annotation: Option[Name], priv: Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
 case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)]) extends Tree
-case class Assign(lhs: Tree, rhs: Tree) extends Tree
-case class Sum(a: Tree, b: Tree) extends Tree
-case class Select(a: Tree, b: Tree) extends Tree
+case class Assign(lhs: Ref, rhs: Tree) extends Tree
+
+case class Add(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
+case class Sub(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
+case class Mul(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
+case class Div(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
+case class Rem(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
+
 case object This extends Tree
 case object Pop extends Tree
 case object NullConst extends Tree
-case class LocalRef(id: Int, typeName: Name) extends Tree
-case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Tree
+trait Ref extends Tree
+case class Select(a: Tree, b: Tree) extends Ref
+case class LocalRef(id: Int, typeName: Name) extends Ref
+case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Ref
 case class Invoke(obj: Tree, meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
 case class Const(i: Any) extends Tree
 case class Return(t: Tree) extends Tree
@@ -23,7 +38,23 @@ case object True extends Tree
 case object Dup extends Tree
 case class ALoad(i: Int) extends Tree
 case class AStore(i: Int) extends Tree
-class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
+case class I2B(a:Tree) extends UnaryExpr
+case class I2C(a:Tree) extends UnaryExpr
+case class I2D(a:Tree) extends UnaryExpr
+case class I2F(a:Tree) extends UnaryExpr
+case class I2L(a:Tree) extends UnaryExpr
+case class I2S(a:Tree) extends UnaryExpr
+case class F2D(a:Tree) extends UnaryExpr
+case class F2I(a:Tree) extends UnaryExpr
+case class F2L(a:Tree) extends UnaryExpr
+case class D2F(a:Tree) extends UnaryExpr
+case class D2I(a:Tree) extends UnaryExpr
+case class D2L(a:Tree) extends UnaryExpr
+case class L2D(a:Tree) extends UnaryExpr
+case class L2F(a:Tree) extends UnaryExpr
+case class L2I(a:Tree) extends UnaryExpr
+
+class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsToClass {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
@@ -206,81 +237,6 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter {
             case _ ⇒ List()
           }
       }
-    }
-    def appl(b: BoxDef): Method = {
-      val bs = b.sym
-      // create locals for expressions
-      var locals = 1; // 0 for "this"
-      val localsMap = bs.valsInOrder flatMap { v =>
-        v.tpe match {
-          case b: BoxTypeSymbol => List()
-          case s: SumExprType =>
-            v.portSides map {
-              (_ -> { val l = locals; locals = locals + 2; l })
-            }
-          case _ => List()
-        }
-      } toMap;
-      def toRef(p: PortSide): Tree =
-        if (p.fromInside) {
-          Select(
-              This, 
-              FieldRef(p.realPi.portSymbol.name, p.realPi.portSymbol.tpe.name, bs.fqName))
-        } else {
-          val vfrom = p.pi.valSymbol
-          val ps = p.realPi.portSymbol
-          vfrom.tpe match {
-            case vfromBs: BoxTypeSymbol =>
-              Select(
-                  Select(This, FieldRef(vfrom.name, vfromBs.fqName, bs.fqName))
-                  , FieldRef(ps.name, ps.tpe.name, vfromBs.fqName))
-            case _ =>
-              LocalRef(localsMap(p), Name("double"))
-          }
-        }
-      // propagate initial inputs
-      def execConnection(c: (PortSide, Set[PortSide])) = {
-        val (out, ins) = c
-        ins.toList map { in ⇒
-          Assign(toRef(in), toRef(out))
-        }
-      }
-      def connections = bs.connections
-      def propagateInitialInputs = {
-        val initialConnections = {
-          connections.flow collect {
-            case c @ (a: PortSide, _) if (a.fromInside) ⇒ c
-          } toList
-        }
-        initialConnections flatMap { execConnection(_) }
-      }
-      // execute in order
-      def runOne(v: ValDef) = {
-        val vs = v.sym
-        def outConnections = connections.flow collect {
-          case c @ (ps, _) if (ps.pi.valSymbol == vs) ⇒ c
-        } toList
-        val outs = outConnections flatMap { execConnection(_) }
-        val invoke = v.tpe match {
-          case vbs: BoxTypeSymbol =>
-            val tpe = vbs.fqName
-            Invoke(
-              Select(This, FieldRef(v.name, tpe, bs.fqName)),
-              "apply",
-              List(),
-              tpe,
-              "()V")
-          case s: SumExprType =>
-            val vs = v.sym
-            def toPs(p: PortSymbol) = vs.findPortSide(p).get
-            Assign(toRef(toPs(s.c)), Sum(toRef(toPs(s.a)), toRef(toPs(s.b))))
-        }
-        invoke :: outs
-      }
-      val invokes = b.vals flatMap { case v: ValDef ⇒ runOne(v) }
-      val localsDecl = localsMap map { case (a, i) => (a.realPi.portSymbol.name.str, "D", i) } toList;
-      Method(Name("contents"), "()V", propagateInitialInputs ++ invokes, localsDecl)
-
     }
   }
   def run() = {
