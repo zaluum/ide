@@ -1,4 +1,4 @@
-package org.zaluum.math;
+package org.zaluum.expr;
 
 import org.zaluum.annotation.Box;
 

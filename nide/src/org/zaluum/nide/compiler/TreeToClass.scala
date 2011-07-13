@@ -24,6 +24,14 @@ case class Mul(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
 case class Div(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
 case class Rem(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
 
+case class Lt (a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
+case class Lte(a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
+case class Gt (a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
+case class Gte(a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
+case class Eq (a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
+case class Neq(a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
+
+
 case object This extends Tree
 case object Pop extends Tree
 case object NullConst extends Tree

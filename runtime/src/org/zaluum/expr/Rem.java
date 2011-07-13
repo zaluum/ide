@@ -1,8 +1,8 @@
-package org.zaluum.math;
+package org.zaluum.expr;
 
 import org.zaluum.annotation.Box;
 
 @Box
-public class Mul {
+public class Rem {
   public void apply(){} // INTERNAL COMPILER
 }

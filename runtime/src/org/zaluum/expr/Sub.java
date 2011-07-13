@@ -1,8 +1,8 @@
-package org.zaluum.math;
+package org.zaluum.expr;
 
 import org.zaluum.annotation.Box;
 
 @Box
-public class Div {
+public class Sub {
   public void apply(){} // INTERNAL COMPILER
 }

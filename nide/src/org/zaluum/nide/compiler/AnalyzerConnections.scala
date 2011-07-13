@@ -131,7 +131,7 @@ trait AnalyzerConnections {
           }
         }
       }
-      def checkBinExprTypes(vs: ValSymbol) {
+      def checkExprTypes(vs: ValSymbol) {
         val s = vs.tpe.asInstanceOf[ExprType]
         import primitives._
         val (a, b, c) = s.portInstancesOf(vs)
@@ -139,7 +139,10 @@ trait AnalyzerConnections {
         def assignAll(tpe: Type) = {
           a.finalTpe = tpe
           b.finalTpe = tpe
-          c.finalTpe = tpe
+          s match {
+            case _:MathExprType => c.finalTpe = tpe
+            case _:CmpExprType => c.finalTpe = primitives.Boolean
+          }
         }
         (fromTpe(a), fromTpe(b)) match {
           case (NoSymbol, NoSymbol) =>
@@ -163,6 +166,7 @@ trait AnalyzerConnections {
               error("Wrong type " + a + b, vs.decl) // fixme
         }
       }
+      
       def checkTypes() {
         bs.thisVal.portInstances foreach { pi =>
           pi.asInstanceOf[RealPortInstance].finalTpe = pi.tpe
@@ -170,7 +174,7 @@ trait AnalyzerConnections {
         for (vs <- bs.valsInOrder) {
           vs.tpe match {
             case bs: BoxTypeSymbol => checkBoxTypes(vs)
-            case s: ExprType => checkBinExprTypes(vs)
+            case s: ExprType => checkExprTypes(vs)
           }
         }
         checkBoxTypes(bs.thisVal)

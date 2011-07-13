@@ -54,13 +54,14 @@ trait ContentsToClass {
           import primitives._
           val aTree = toRef(a)
           val bTree = toRef(b)
-          val etpe = c.finalTpe.asInstanceOf[PrimitiveJavaType]
+          val etpe = a.finalTpe.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
           val eTree = s match {
             case AddExprType => Add(aTree,bTree,etpe)
             case SubExprType => Sub(aTree,bTree,etpe)
             case MulExprType => Mul(aTree,bTree,etpe)
             case DivExprType => Div(aTree,bTree,etpe)
             case RemExprType => Rem(aTree,bTree,etpe)
+            case LtExprType => Lt(aTree,bTree,etpe)
           }
           Assign(toRef(c), eTree)
       }

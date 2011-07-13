@@ -121,19 +121,28 @@ object ByteCodeGen {
     }
     def store(id:Int, t:Name) = {
       t match {
-        case primitives.Int.name => mv.visitVarInsn(ISTORE,id)
+       
         case primitives.Long.name => mv.visitVarInsn(LSTORE,id)
         case primitives.Double.name => mv.visitVarInsn(DSTORE,id)
         case primitives.Float.name => mv.visitVarInsn(FSTORE,id)
+        case primitives.Int.name => mv.visitVarInsn(ISTORE,id)
+        case primitives.Boolean.name => mv.visitVarInsn(ISTORE,id)
+        case primitives.Byte.name => mv.visitVarInsn(ISTORE,id)
+        case primitives.Char.name => mv.visitVarInsn(ISTORE,id)
+        case primitives.Short.name => mv.visitVarInsn(ISTORE,id)
         case _=> mv.visitVarInsn(ASTORE,id)
+
       }
     }
     def load(id:Int, t:Name) = {
       t match {
-        case primitives.Int.name => mv.visitVarInsn(ILOAD,id)
         case primitives.Long.name => mv.visitVarInsn(LLOAD,id)
         case primitives.Double.name => mv.visitVarInsn(DLOAD,id)
         case primitives.Float.name => mv.visitVarInsn(FLOAD,id)
+        case primitives.Boolean.name => mv.visitVarInsn(ILOAD,id)
+        case primitives.Byte.name => mv.visitVarInsn(ILOAD,id)
+        case primitives.Char.name => mv.visitVarInsn(ILOAD,id)
+        case primitives.Short.name => mv.visitVarInsn(ILOAD,id)
         case _=> mv.visitVarInsn(ALOAD,id) // FIXME array
       }
     }
@@ -166,8 +175,37 @@ object ByteCodeGen {
         case Rem(a, b, Double) => mv.visitInsn(DREM)
         case Rem(a, b, Long) => mv.visitInsn(LREM)
         case Rem(a, b, Float) => mv.visitInsn(FREM)
-
+        
+        case Lt(a,b,Int) => emitIntCmp(IF_ICMPGE)
+        case Lte(a,b,Int) => emitIntCmp(IF_ICMPGT)
+        case Gt(a,b,Int) => emitIntCmp(IF_ICMPLE)
+        case Gte(a,b,Int) => emitIntCmp(IF_ICMPLT)
+        case Eq(a,b,Int) => emitIntCmp(IF_ICMPNE)
+        case Neq(a,b,Int) => emitIntCmp(IF_ICMPEQ)
+        
+        case Lt(a,b,t) => emitCmpg(t); emitIntCmp(IFGE)
+        case Lte(a,b,t) => emitCmpg(t);emitIntCmp(IFGT)
+        case Gt(a,b,t) => emitCmpg(t);emitIntCmp(IFLE)
+        case Gte(a,b,t) => emitCmpg(t);emitIntCmp(IFLT)
+        case Eq(a,b,t) => emitCmpg(t);emitIntCmp(IFNE)
+        case Neq(a,b,t) => emitCmpg(t);emitIntCmp(IFEQ)
+        
       }
+    }
+    def emitCmpg(t:PrimitiveJavaType) = t match {
+      case primitives.Double => mv.visitInsn(DCMPG)
+      case primitives.Float => mv.visitInsn(FCMPG)
+      case primitives.Long => mv.visitInsn(LCMP)
+    }
+    def emitIntCmp(negatedCmp : Int ) {
+          val falseL =  new Label()
+          val end = new Label()
+          mv.visitJumpInsn(negatedCmp,falseL)
+          mv.visitInsn(ICONST_1)
+          mv.visitJumpInsn(GOTO,end)
+          mv.visitLabel(falseL)
+          mv.visitInsn(ICONST_0)
+          mv.visitLabel(end)      
     }
     def emitUnaryExpr(e: UnaryExpr) = {
       emit(e.a)
