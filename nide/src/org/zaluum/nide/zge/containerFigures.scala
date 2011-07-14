@@ -124,7 +124,7 @@ trait ContainerItem extends Item {
           o.updateOpenBox(v, Map())
           o
         case None ⇒
-          val valf = if (v.tpe.fqName == Name(classOf[org.zaluum.basic.Direct].getName))
+          val valf = if (v.tpe.fqName == Name(classOf[org.zaluum.expr.Literal].getName))
             new DirectValFigure(ContainerItem.this)
           else
             new ImageValFigure(ContainerItem.this)

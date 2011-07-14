@@ -56,6 +56,22 @@ trait ContentsToClass {
         case c: CastExprType =>
           val (a, o) = c.unaryPortInstancesOf(vs)
           Assign(toRef(o), cast(a.finalTpe, o.finalTpe, toRef(a)))
+        case LiteralExprType => 
+          val o = LiteralExprType.outPort(vs)
+          val c = vs.params.headOption match {
+            case Some((t,v:String)) =>
+              o.finalTpe match {
+              	case primitives.Byte => Const(v.toByte,primitives.Byte)
+              	case primitives.Short => Const(v.toByte,primitives.Short)
+              	case primitives.Int => Const(v.toByte,primitives.Int)
+              	case primitives.Long => Const(v.toByte,primitives.Long)
+              	case primitives.Float => Const(v.toFloat,primitives.Float)
+              	case primitives.Double => Const(v.toDouble,primitives.Double)
+              	case primitives.String => Const(v,primitives.String)
+              }
+            case _ => Const(0,primitives.Byte)
+          }
+          Assign(toRef(o),c)
         case s: BinExprType =>
           val (a, b, o) = s.binaryPortInstancesOf(vs)
           val aTree = toRef(a)

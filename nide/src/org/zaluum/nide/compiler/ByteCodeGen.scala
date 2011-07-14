@@ -128,9 +128,9 @@ object ByteCodeGen {
             }
           } else {
             constTpe match {
-              case Byte => mv.visitLdcInsn(d.asInstanceOf[Int])
-              case Char => mv.visitLdcInsn(d.asInstanceOf[Int])
-              case Short => mv.visitLdcInsn(d.asInstanceOf[Int])
+              case Byte => mv.visitLdcInsn(d.asInstanceOf[Byte].toInt) // TODO make clear how to cast
+              case Char => mv.visitLdcInsn(d.asInstanceOf[Char].toInt)
+              case Short => mv.visitLdcInsn(d.asInstanceOf[Short].toInt)
               case Int => mv.visitLdcInsn(d.asInstanceOf[Int])
               case Long => mv.visitLdcInsn(d.asInstanceOf[Long])
               case Float => mv.visitLdcInsn(d.asInstanceOf[Float])

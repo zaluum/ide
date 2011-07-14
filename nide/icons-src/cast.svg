@@ -7,7 +7,6 @@
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="48"
@@ -15,24 +14,12 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.1 r9760"
-   sodipodi:docname="portDeclIn.svg"
-   inkscape:export-filename="/home/frede/devel/zaluum/nide/icons/portDeclIn.png"
+   sodipodi:docname="cast.svg"
+   inkscape:export-filename="/home/frede/devel/zaluum/runtime/src/org/zaluum/expr/ToByte.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90">
   <defs
      id="defs4">
-    <linearGradient
-       inkscape:collect="always"
-       id="linearGradient3771">
-      <stop
-         style="stop-color:#000000;stop-opacity:1;"
-         offset="0"
-         id="stop3773" />
-      <stop
-         style="stop-color:#000000;stop-opacity:0;"
-         offset="1"
-         id="stop3775" />
-    </linearGradient>
     <linearGradient
        id="linearGradient3761">
       <stop
@@ -51,16 +38,6 @@
        inkscape:vp_z="744.09448 : 526.18109 : 1"
        inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
        id="perspective10" />
-    <linearGradient
-       inkscape:collect="always"
-       xlink:href="#linearGradient3771"
-       id="linearGradient3777"
-       x1="-0.24909711"
-       y1="1044.6747"
-       x2="48.575897"
-       y2="1044.6747"
-       gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.99072878,0,0,0.8981405,0.47402418,106.16005)" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -69,17 +46,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="16"
-     inkscape:cx="23.859375"
+     inkscape:zoom="16.125"
+     inkscape:cx="24"
      inkscape:cy="6.1725706"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1280"
-     inkscape:window-height="1000"
-     inkscape:window-x="1440"
-     inkscape:window-y="24"
-     inkscape:window-maximized="1" />
+     inkscape:window-width="742"
+     inkscape:window-height="394"
+     inkscape:window-x="1714"
+     inkscape:window-y="181"
+     inkscape:window-maximized="0" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -98,8 +75,8 @@
      id="layer1"
      transform="translate(0,-1036.3622)">
     <path
-       style="fill:#d6d6d6;fill-opacity:1;stroke:url(#linearGradient3777);stroke-width:0.94141275;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
-       d="m 0.72170637,1036.9589 2.46788483,7.2974 -2.34449059,7.6342 45.03889639,-0.2245 2.221096,-7.1852 -2.714672,-7.4096 z"
+       style="fill:#d6d6d6;fill-opacity:1;stroke:#000000;stroke-width:0.93698925;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m 0.72170637,1036.9589 2.44474703,7.2974 -2.32250968,7.6342 44.61663228,-0.2245 2.200272,-7.1852 -2.689221,-7.4096 z"
        id="path2991"
        inkscape:connector-curvature="0" />
     <text
@@ -122,8 +99,8 @@
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan2989"
-         x="2.375"
+         x="24.669697"
          y="1048.4872"
-         style="font-size:13px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:DejaVu Sans Mono;-inkscape-font-specification:DejaVu Sans Mono;text-anchor:middle;text-align:center;letter-spacing:-0.78999998px">double</tspan></text>
+         style="font-size:13px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;letter-spacing:-0.78999996px;text-anchor:middle;font-family:DejaVu Sans Mono;-inkscape-font-specification:DejaVu Sans Mono">byte</tspan></text>
   </g>
 </svg>

@@ -71,6 +71,7 @@ trait BoxType extends Symbol with Type {
   def declaredPorts = ports
   def portsWithSuper = ports
   def lookupPort(name: Name): Option[PortSymbol]
+  def lookupParam(name:Name) : Option[ParamSymbol]
 }
 class BoxTypeSymbol(
   val owner: Symbol,

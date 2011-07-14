@@ -75,6 +75,32 @@ object Literals {
       case e ⇒ None
     }
   }
+  def parseNarrowestLiteral(v: String) = {
+    def parseIntOpt = try { Some(v.toInt) } catch { case e => None }
+    def parseDoubleOpt = try { Some(v.toDouble) } catch { case e => None }
+    if (v.endsWith("f") || v.endsWith("F")) {
+      try { Some((v.toFloat, primitives.Float)) } catch { case e => None }
+    } else if (v.endsWith("l") || v.endsWith("L")) {
+      try { Some((v.toLong, primitives.Long)) } catch { case e => None }
+    } else if (v.startsWith("\"") && v.endsWith("\"")) {
+      Some(v.substring(1, v.length - 1), primitives.String)
+    } else {
+      parseIntOpt match { // char?
+        case Some(i) => Some(narrowestInt(i))
+        case None =>
+          parseDoubleOpt match {
+            case Some(d) => Some(d, primitives.Double)
+            case None => Some(v, primitives.String)
+          }
+      }
+    }
+  }
+  def narrowestInt(i: Int): (Int, PrimitiveJavaType) = {
+    val p = if (i <= Byte.MaxValue && i >= Byte.MinValue) primitives.Byte
+    else if (i <= Short.MaxValue && i >= Short.MinValue) primitives.Short
+    else primitives.Int
+    (i, p)
+  }
 }
 trait Scope {
   def alreadyDefinedBoxType(name: Name): Boolean
@@ -110,7 +136,7 @@ object primitives {
   val Double = n("double", "D", 2)
   val Boolean = n("boolean", "Z")
   val Char = n("char", "C")
-  val String = n("string","Ljava/lang/String;") // FIXME
+  val String = n("string", "Ljava/lang/String;") // FIXME
   val allTypes = List(Byte, Short, Int, Long, Float, Double, Boolean, Char)
   def numericTypes = List(Byte, Short, Int, Long, Float, Double, Char)
   def widening(from: PrimitiveJavaType, to: PrimitiveJavaType) = {
@@ -142,7 +168,7 @@ object primitives {
   }
   def isNumeric(tpe: Type): Boolean = {
     tpe match {
-      case p: PrimitiveJavaType if (p != primitives.Boolean && p!=primitives.String) => true
+      case p: PrimitiveJavaType if (p != primitives.Boolean && p != primitives.String) => true
       case j: JavaType => false // TODO autobox
       case _ => false
     }
@@ -323,6 +349,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
               vsym.params
             case Some(b: ExprType) =>
               v.symbol.tpe = b
+              for (p ← v.params.asInstanceOf[List[Param]]) {
+                b.lookupParam(p.key) match {
+                  case Some(parSym) =>
+                    vsym.params += (parSym -> p.value) // FIXME always string?
+                  case None => error("Cannot find parameter " + p.key,tree)
+                }
+              }
               createPortInstances(b, vsym, false)
             case a ⇒
               v.symbol.tpe = NoSymbol

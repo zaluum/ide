@@ -83,7 +83,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       this.gui = gui
       e match {
         case d:DirectValFigure => 
-          d.edit(editDirectParam(d, Name("setParam"), _), exit _)
+          d.edit(editDirectParam(d, Name("literal"), _), exit _)
         case l:LabelItem => 
           l.edit(editLabel(l,_), exit _)
         case _=> exit

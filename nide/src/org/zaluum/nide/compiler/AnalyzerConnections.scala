@@ -195,6 +195,23 @@ trait AnalyzerConnections {
           case None => a.finalTpe = o.finalTpe
         }
       }
+      def checkLiteralExprType(vs: ValSymbol) {
+        val l = LiteralExprType
+        val o = l.outPort(vs)
+        val t = vs.params.headOption match {
+          case Some((p, vuntrimmed: String)) =>
+            Literals.parseNarrowestLiteral(vuntrimmed.trim)
+          case e => None
+        }
+        t match {
+          case Some((_,tpe)) => 
+            o.finalTpe=tpe
+          case None => 
+            o.finalTpe=NoSymbol; 
+            error("Cannot parse literal" , vs.decl)
+        }
+      }
+      
       def checkTypes() {
         bs.thisVal.portInstances foreach { pi =>
           pi.asInstanceOf[RealPortInstance].finalTpe = pi.tpe
@@ -204,6 +221,7 @@ trait AnalyzerConnections {
             case bs: BoxTypeSymbol => checkBoxTypes(vs)
             case b: BinExprType => checkBinExprTypes(vs)
             case e: CastExprType => checkCastExprTypes(vs)
+            case LiteralExprType => checkLiteralExprType(vs)
           }
         }
         checkBoxTypes(bs.thisVal)

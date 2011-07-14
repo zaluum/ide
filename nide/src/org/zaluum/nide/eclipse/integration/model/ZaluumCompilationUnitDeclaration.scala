@@ -92,12 +92,12 @@ class ZaluumCompilationUnitDeclaration(
         zaluumScope.getBoxType(name)
       }
     }
-    def enter(b:BoxTypeSymbol) {
-    	boxes += (b.name -> b)      
+    def enter(b: BoxTypeSymbol) {
+      boxes += (b.name -> b)
     }
-    def enter(p:PortSymbol) {}
-    def enter(a:ValSymbol) {}
-    def enter(p:ParamSymbol) {}
+    def enter(p: PortSymbol) {}
+    def enter(a: ValSymbol) {}
+    def enter(p: ParamSymbol) {}
   }
 
   override def buildCompilationUnitScope(lookupEnvironment: LookupEnvironment) = {
@@ -110,34 +110,36 @@ class ZaluumCompilationUnitDeclaration(
 
   def fileMainName = toMainName(compilationResult.getFileName).mkString
   import JDTInternalUtils._
-  
-  def fqName= aToString(currentPackage.getImportName) + tree.name.str
+
+  def fqName = aToString(currentPackage.getImportName) + tree.name.str
   private def createLineSeparator() = {
     // one char per line
     val treeSize = tree.children.size + 1
     compilationResult.lineSeparatorPositions = Array.range(1, (treeSize * 2) + 1, 2)
   }
   def populateCompilationUnitDeclaration() {
-    sourceUnit match {
-      case p: PreParsedZaluumCompilationUnit ⇒
-        tree = p.tree.asInstanceOf[BoxDef]
-      case _ ⇒
-        val contents = new String(sourceUnit.getContents)
-        tree = Parser.readTree(contents, Name(fileMainName))
-    }
-    createLineSeparator()
-    val reporter = new Reporter() {
-      override def report(str: String, mark: Option[Int] = None) {
-        super.report(str, mark)
-        ignoreFurtherInvestigation = true
-        createProblem(str, mark.getOrElse(-1))
+    try {
+      sourceUnit match {
+        case p: PreParsedZaluumCompilationUnit ⇒
+          tree = p.tree.asInstanceOf[BoxDef]
+        case _ ⇒
+          val contents = new String(sourceUnit.getContents)
+          tree = Parser.readTree(contents, Name(fileMainName))
       }
-    }
-    val scope = JDTScope
-    a = new Analyzer(reporter, tree, scope)
-    a.runNamer()
-    createPackageDeclaration()
-    createTypeDeclarations()
+      createLineSeparator()
+      val reporter = new Reporter() {
+        override def report(str: String, mark: Option[Int] = None) {
+          super.report(str, mark)
+          ignoreFurtherInvestigation = true
+          createProblem(str, mark.getOrElse(-1))
+        }
+      }
+      val scope = JDTScope
+      a = new Analyzer(reporter, tree, scope)
+      a.runNamer()
+      createPackageDeclaration()
+      createTypeDeclarations()
+    } catch { case e => e.printStackTrace }
   }
 
   def createProblem(msg: String, line: Int) {
@@ -146,7 +148,7 @@ class ZaluumCompilationUnitDeclaration(
   }
   def createPackageDeclaration() {
     val pkgArr = stringToA(tree.pkg.str)
-    if (tree.pkg.str != "" ) {
+    if (tree.pkg.str != "") {
       currentPackage = new ImportReference(pkgArr, Array.fill(pkgArr.length)(0), true, ClassFileConstants.AccDefault)
       currentPackage.declarationSourceStart = currentPackage.sourceStart
       currentPackage.declarationSourceEnd = currentPackage.sourceEnd
@@ -292,14 +294,18 @@ class ZaluumCompilationUnitDeclaration(
       }
     }
     if (!ignoreFurtherInvestigation && !ignoreMethodBodies) {
-      generate(types(0).asInstanceOf[ZaluumTypeDeclaration], None)
+      try {
+        generate(types(0).asInstanceOf[ZaluumTypeDeclaration], None)
+      } catch { case e => e.printStackTrace }
     }
   }
   override def resolve() {
     super.resolve() // FIXME run or not?
-    a.runResolve()
-    a.runCheck()
-    checkZaluumLibraryPresent()
+    try {
+      a.runResolve()
+      a.runCheck()
+      checkZaluumLibraryPresent()
+    } catch { case e => e.printStackTrace }
   }
   def checkZaluumLibraryPresent() {
     // add a descriptive error to help users
