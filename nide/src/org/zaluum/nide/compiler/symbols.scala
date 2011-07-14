@@ -52,7 +52,20 @@ class ClassJavaType(owner: Symbol, val fqName: Name) extends JavaType(owner) {
   def descriptor = "L" + name.internal + ";"
   def name = fqName
 }
-case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef])
+case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bs: BoxTypeSymbol) {
+  def findConnectionFor(pi: PortInstance) = {
+    connections.find { con =>
+      def isEnd(tree: Tree) = {
+        tree match {
+          case p: PortRef =>
+            PortSide.find(p, bs).exists(_.pi == pi)
+          case _ => false
+        }
+      }
+      isEnd(con.a) || isEnd(con.b)
+    }
+  }
+}
 trait BoxType extends Symbol with Type {
   protected def ports: Map[Name, PortSymbol]
   def declaredPorts = ports
@@ -121,7 +134,7 @@ class BoxTypeSymbol(
         case (Some(c1), None) ⇒ c1
         case (None, Some(c2)) ⇒ c2
         case (None, None) ⇒
-          val clump = Clump(Set(), Set(), Set())
+          val clump = Clump(Set(), Set(), Set(),BoxTypeSymbol.this)
           clumps += clump
           clump
       }
@@ -195,6 +208,7 @@ class RealPortInstance(val portSymbol: PortSymbol, valSymbol: ValSymbol) extends
   def name = portSymbol.name
   def tpe = portSymbol.tpe
   var connectedFrom: Option[RealPortInstance] = None
+  var blameConnection: Option[ConnectionDef] = None
   var finalTpe: Type = NoSymbol
   override def toString = "PortInstance(" + portSymbol + ", " + valSymbol + ")"
 }
@@ -246,7 +260,7 @@ class ValSymbol(val owner: BoxTypeSymbol, val name: Name) extends Symbol {
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
   def findPortInstance(p: PortSymbol): Option[RealPortInstance] = {
-    portInstances.view.collect { case r: RealPortInstance => r} find (_.portSymbol==p)
+    portInstances.view.collect { case r: RealPortInstance => r } find (_.portSymbol == p)
   }
   def findPortSide(pr: PortRef) =
     portSides.find(ps => ps.pi.name == pr.name && ps.inPort == pr.in)

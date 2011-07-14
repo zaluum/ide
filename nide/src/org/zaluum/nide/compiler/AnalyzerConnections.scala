@@ -85,11 +85,15 @@ trait AnalyzerConnections {
         // check graph consistency
         bs.connections.flow += (out -> ins)
         def addDag(vout: PortInstance, vin: PortInstance) {
+          def errorDag(str: String) {
+            error(str, c.findConnectionFor(vin) orElse (c.findConnectionFor(vout))
+              getOrElse (c.connections.head))
+          }
           try {
             acyclic.addDagEdge(vout.valSymbol, vin.valSymbol);
           } catch {
-            case e: CycleFoundException ⇒ error("cycle found ", c.connections.head)
-            case e: IllegalArgumentException ⇒ error("loop found", c.connections.head)
+            case e: CycleFoundException ⇒ errorDag("Cycle found.")
+            case e: IllegalArgumentException ⇒ errorDag("Loop connection found. Cannot connect a box to itself.")
           }
         }
         import org.zaluum.nide.RichCast._
@@ -104,8 +108,9 @@ trait AnalyzerConnections {
       def putTypes(c: Clump, ins: Set[RealPortInstance], out: RealPortInstance) {
         usedInputs ++= ins
         // check types
-        for (pi <- ins) {
-          pi.connectedFrom = Some(out)
+        for (in <- ins) {
+          in.connectedFrom = Some(out)
+          in.blameConnection = c.findConnectionFor(in)
         }
       }
       def checkAssignmentPossible(from: Type, to: Type): Boolean = {
@@ -123,16 +128,16 @@ trait AnalyzerConnections {
       def checkBoxTypes(vs: ValSymbol) {
         for (api <- vs.portInstances; val pi = api.asInstanceOf[RealPortInstance]) {
           pi.finalTpe = pi.tpe
-          if (pi.finalTpe == NoSymbol) error("Cannot find type ", vs.decl) // fixme better tree (connection)
+          if (pi.finalTpe == NoSymbol) error("Cannot find type of port " + pi.name.str, vs.decl)
           pi.connectedFrom foreach { from =>
             if (!checkAssignmentPossible(from.finalTpe, pi.finalTpe)) {
-              error("Invalid assignment", vs.decl) // fixme error on connection
+              error("Connection with incompatible types", pi.blameConnection.get)
             }
           }
         }
       }
       def checkBinExprTypes(vs: ValSymbol) {
-    	  import primitives._
+        import primitives._
         val s = vs.tpe.asInstanceOf[BinExprType]
         val (a, b, o) = s.binaryPortInstancesOf(vs)
         def fromTpe(p: RealPortInstance) = p.connectedFrom.map(_.finalTpe).getOrElse(NoSymbol)
@@ -140,8 +145,8 @@ trait AnalyzerConnections {
           a.finalTpe = tpe
           b.finalTpe = tpe
           s match {
-            case _:MathExprType => o.finalTpe = tpe
-            case _:CmpExprType => o.finalTpe = primitives.Boolean
+            case _: MathExprType => o.finalTpe = tpe
+            case _: CmpExprType => o.finalTpe = primitives.Boolean
           }
         }
         (fromTpe(a), fromTpe(b)) match {
@@ -150,41 +155,44 @@ trait AnalyzerConnections {
           case (NoSymbol, bt) =>
             if (isNumeric(bt))
               assignAll(toOperationType(unbox(bt)))
-            else
-              error("Wrong type " + b, vs.decl) // fixme
           case (at, NoSymbol) =>
             if (isNumeric(at))
               assignAll(toOperationType(unbox(at)))
-            else
-              error("Wrong type " + a, vs.decl) // fixme
           case (at, bt) =>
             if (isNumeric(at) && isNumeric(bt)) {
               val ao = toOperationType(unbox(at))
               val bo = toOperationType(unbox(bt))
               assignAll(largerOperation(ao, bo))
-            } else
-              error("Wrong type " + a + b, vs.decl) // fixme
+            }
         }
+        def checkNumeric(p: RealPortInstance) {
+          val tpe = fromTpe(p)
+          if (!isNumeric(tpe) && tpe != NoSymbol)
+            error("Type " + tpe.fqName.str + " is not numeric ", p.blameConnection.get)
+        }
+        checkNumeric(a)
+        checkNumeric(b)
+
       }
-      def checkCastExprTypes(vs:ValSymbol) {
+      def checkCastExprTypes(vs: ValSymbol) {
         import primitives._
         val e = vs.tpe.asInstanceOf[CastExprType]
-        val (a,o) = e.unaryPortInstancesOf(vs)
+        val (a, o) = e.unaryPortInstancesOf(vs)
         e match {
-          case ToByteType   => o.finalTpe = Byte
-          case ToShortType  => o.finalTpe = Short
-          case ToCharType   => o.finalTpe = Char
-          case ToIntType    => o.finalTpe = Int
-          case ToLongType   => o.finalTpe = Long
-          case ToFloatType  => o.finalTpe = Float
+          case ToByteType => o.finalTpe = Byte
+          case ToShortType => o.finalTpe = Short
+          case ToCharType => o.finalTpe = Char
+          case ToIntType => o.finalTpe = Int
+          case ToLongType => o.finalTpe = Long
+          case ToFloatType => o.finalTpe = Float
           case ToDoubleType => o.finalTpe = Double
         }
         a.connectedFrom.map(_.finalTpe) match {
           case Some(t) => t match {
-	          case j:PrimitiveJavaType if isNumeric(j)=> a.finalTpe = j
-	          case _ => a.finalTpe=o.finalTpe; error("Wrong type " + a,vs.decl)
+            case j: PrimitiveJavaType if isNumeric(j) => a.finalTpe = j
+            case _ => a.finalTpe = o.finalTpe; error("Cast between incompatible types", a.blameConnection.get)
           }
-          case None => a.finalTpe=o.finalTpe
+          case None => a.finalTpe = o.finalTpe
         }
       }
       def checkTypes() {
