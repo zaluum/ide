@@ -112,6 +112,7 @@ object primitives {
   val Char = n("char", "C")
   val String = n("string","Ljava/lang/String;") // FIXME
   val allTypes = List(Byte, Short, Int, Long, Float, Double, Boolean, Char)
+  def numericTypes = List(Byte, Short, Int, Long, Float, Double, Char)
   def widening(from: PrimitiveJavaType, to: PrimitiveJavaType) = {
     from match {
       case Byte => List(Short, Int, Long, Float, Double).contains(to)
@@ -141,7 +142,7 @@ object primitives {
   }
   def isNumeric(tpe: Type): Boolean = {
     tpe match {
-      case p: PrimitiveJavaType if (p != primitives.Boolean) => true
+      case p: PrimitiveJavaType if (p != primitives.Boolean && p!=primitives.String) => true
       case j: JavaType => false // TODO autobox
       case _ => false
     }

@@ -131,17 +131,17 @@ trait AnalyzerConnections {
           }
         }
       }
-      def checkExprTypes(vs: ValSymbol) {
-        val s = vs.tpe.asInstanceOf[ExprType]
-        import primitives._
-        val (a, b, c) = s.portInstancesOf(vs)
+      def checkBinExprTypes(vs: ValSymbol) {
+    	  import primitives._
+        val s = vs.tpe.asInstanceOf[BinExprType]
+        val (a, b, o) = s.binaryPortInstancesOf(vs)
         def fromTpe(p: RealPortInstance) = p.connectedFrom.map(_.finalTpe).getOrElse(NoSymbol)
         def assignAll(tpe: Type) = {
           a.finalTpe = tpe
           b.finalTpe = tpe
           s match {
-            case _:MathExprType => c.finalTpe = tpe
-            case _:CmpExprType => c.finalTpe = primitives.Boolean
+            case _:MathExprType => o.finalTpe = tpe
+            case _:CmpExprType => o.finalTpe = primitives.Boolean
           }
         }
         (fromTpe(a), fromTpe(b)) match {
@@ -166,7 +166,27 @@ trait AnalyzerConnections {
               error("Wrong type " + a + b, vs.decl) // fixme
         }
       }
-      
+      def checkCastExprTypes(vs:ValSymbol) {
+        import primitives._
+        val e = vs.tpe.asInstanceOf[CastExprType]
+        val (a,o) = e.unaryPortInstancesOf(vs)
+        e match {
+          case ToByteType   => o.finalTpe = Byte
+          case ToShortType  => o.finalTpe = Short
+          case ToCharType   => o.finalTpe = Char
+          case ToIntType    => o.finalTpe = Int
+          case ToLongType   => o.finalTpe = Long
+          case ToFloatType  => o.finalTpe = Float
+          case ToDoubleType => o.finalTpe = Double
+        }
+        a.connectedFrom.map(_.finalTpe) match {
+          case Some(t) => t match {
+	          case j:PrimitiveJavaType if isNumeric(j)=> a.finalTpe = j
+	          case _ => a.finalTpe=o.finalTpe; error("Wrong type " + a,vs.decl)
+          }
+          case None => a.finalTpe=o.finalTpe
+        }
+      }
       def checkTypes() {
         bs.thisVal.portInstances foreach { pi =>
           pi.asInstanceOf[RealPortInstance].finalTpe = pi.tpe
@@ -174,7 +194,8 @@ trait AnalyzerConnections {
         for (vs <- bs.valsInOrder) {
           vs.tpe match {
             case bs: BoxTypeSymbol => checkBoxTypes(vs)
-            case s: ExprType => checkExprTypes(vs)
+            case b: BinExprType => checkBinExprTypes(vs)
+            case e: CastExprType => checkCastExprTypes(vs)
           }
         }
         checkBoxTypes(bs.thisVal)

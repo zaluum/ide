@@ -40,9 +40,10 @@ trait ContentsToClass {
       val ins = for (ps <- vs.portSides; if (ps.flowIn); val i = ps.realPi) yield {
         i.connectedFrom match {
           case Some(o) => assign(i, o)
-          case None => Assign(toRef(i),Const(0,i.finalTpe))
+          case None => Assign(toRef(i), Const(0, i.finalTpe))
         }
       }
+      import primitives._
       val invoke = vs.tpe match {
         case vbs: BoxTypeSymbol =>
           val tpe = vbs.fqName
@@ -52,9 +53,11 @@ trait ContentsToClass {
             List(),
             tpe,
             "()V")
-        case s: ExprType =>
-          val (a, b, c) = s.portInstancesOf(vs)
-          import primitives._
+        case c: CastExprType =>
+          val (a, o) = c.unaryPortInstancesOf(vs)
+          Assign(toRef(o), cast(a.finalTpe, o.finalTpe, toRef(a)))
+        case s: BinExprType =>
+          val (a, b, o) = s.binaryPortInstancesOf(vs)
           val aTree = toRef(a)
           val bTree = toRef(b)
           val etpe = a.finalTpe.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
@@ -71,13 +74,14 @@ trait ContentsToClass {
             case EqExprType => Eq(aTree, bTree, etpe)
             case NeExprType => Ne(aTree, bTree, etpe)
           }
-          Assign(toRef(c), eTree)
+          Assign(toRef(o), eTree)
       }
       // propagate outputs
       val outs = for {
-          (from,to) <- connections.flow; 
-          if from.valSymbol==vs; 
-          a <- execConnection((from,to))} yield a
+        (from, to) <- connections.flow;
+        if from.valSymbol == vs;
+        a <- execConnection((from, to))
+      } yield a
       ins ::: invoke :: outs.toList
     }
     val invokes = bs.valsInOrder flatMap { runOne }
@@ -86,12 +90,10 @@ trait ContentsToClass {
   }
 
   def cast(from: Type, to: Type, t: Tree): Tree = {
-    if (to == from) t
-    else {
-      (from, to) match {
-        case (pf: PrimitiveJavaType, pt: PrimitiveJavaType) =>
-          primitiveCast(pf, pt, t)
-      }
+    (from, to) match {
+      case (from, to) if (from == to) => t
+      case (pf: PrimitiveJavaType, pt: PrimitiveJavaType) =>
+        primitiveCast(pf, pt, t)
     }
   }
 
