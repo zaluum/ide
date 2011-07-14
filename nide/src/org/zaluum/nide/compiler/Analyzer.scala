@@ -110,6 +110,7 @@ object primitives {
   val Double = n("double", "D", 2)
   val Boolean = n("boolean", "Z")
   val Char = n("char", "C")
+  val String = n("string","Ljava/lang/String;") // FIXME
   val allTypes = List(Byte, Short, Int, Long, Float, Double, Boolean, Char)
   def widening(from: PrimitiveJavaType, to: PrimitiveJavaType) = {
     from match {

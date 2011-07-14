@@ -36,10 +36,13 @@ trait ContentsToClass {
       }
     }
     def runOne(vs: ValSymbol) = {
-      def outConnections = connections.flow collect {
-        case c @ (pi, _) if (pi.valSymbol == vs) ⇒ c
-      } toList
-      val outs = outConnections flatMap { execConnection(_) }
+      // propagate inputs
+      val ins = for (ps <- vs.portSides; if (ps.flowIn); val i = ps.realPi) yield {
+        i.connectedFrom match {
+          case Some(o) => assign(i, o)
+          case None => Assign(toRef(i),Const(0,i.finalTpe))
+        }
+      }
       val invoke = vs.tpe match {
         case vbs: BoxTypeSymbol =>
           val tpe = vbs.fqName
@@ -56,28 +59,30 @@ trait ContentsToClass {
           val bTree = toRef(b)
           val etpe = a.finalTpe.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
           val eTree = s match {
-            case AddExprType => Add(aTree,bTree,etpe)
-            case SubExprType => Sub(aTree,bTree,etpe)
-            case MulExprType => Mul(aTree,bTree,etpe)
-            case DivExprType => Div(aTree,bTree,etpe)
-            case RemExprType => Rem(aTree,bTree,etpe)
-            case LtExprType => Lt(aTree,bTree,etpe)
+            case AddExprType => Add(aTree, bTree, etpe)
+            case SubExprType => Sub(aTree, bTree, etpe)
+            case MulExprType => Mul(aTree, bTree, etpe)
+            case DivExprType => Div(aTree, bTree, etpe)
+            case RemExprType => Rem(aTree, bTree, etpe)
+            case LtExprType => Lt(aTree, bTree, etpe)
+            case LeExprType => Le(aTree, bTree, etpe)
+            case GtExprType => Gt(aTree, bTree, etpe)
+            case GeExprType => Ge(aTree, bTree, etpe)
+            case EqExprType => Eq(aTree, bTree, etpe)
+            case NeExprType => Ne(aTree, bTree, etpe)
           }
           Assign(toRef(c), eTree)
       }
-      invoke :: outs
+      // propagate outputs
+      val outs = for {
+          (from,to) <- connections.flow; 
+          if from.valSymbol==vs; 
+          a <- execConnection((from,to))} yield a
+      ins ::: invoke :: outs.toList
     }
-    // start
-    // propagate initial inputs
-    val propagateInitialInputs = {
-      connections.flow collect {
-        case c @ (a, _) if (a.valSymbol == bs.thisVal) ⇒ c
-      } flatMap { execConnection(_) }
-    }
-    // execute in order
     val invokes = bs.valsInOrder flatMap { runOne }
     val localsDecl = localsMap map { case (a, i) => (a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i) } toList;
-    Method(Name("contents"), "()V", propagateInitialInputs.toList ++ invokes, localsDecl)
+    Method(Name("contents"), "()V", invokes, localsDecl)
   }
 
   def cast(from: Type, to: Type, t: Tree): Tree = {

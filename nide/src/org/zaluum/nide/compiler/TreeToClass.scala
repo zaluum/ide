@@ -25,11 +25,11 @@ case class Div(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
 case class Rem(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
 
 case class Lt (a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
-case class Lte(a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
+case class Le(a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
 case class Gt (a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
-case class Gte(a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
+case class Ge(a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
 case class Eq (a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
-case class Neq(a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
+case class Ne(a: Tree, b: Tree,t:PrimitiveJavaType) extends BinaryExpr
 
 
 case object This extends Tree
@@ -40,7 +40,7 @@ case class Select(a: Tree, b: Tree) extends Ref
 case class LocalRef(id: Int, typeName: Name) extends Ref
 case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Ref
 case class Invoke(obj: Tree, meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
-case class Const(i: Any) extends Tree
+case class Const(i: Any,constTpe:Type) extends Tree
 case class Return(t: Tree) extends Tree
 case object True extends Tree
 case object Dup extends Tree
@@ -123,7 +123,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
                 val vs = v.sym
                 val sig = vs.constructor.get.signature
                 val values = for ((v, t) ← vs.constructorParams) yield {
-                  Const(v)
+                  Const(v,t)
                 }
                 Some(Assign(
                   Select(This, FieldRef(v.name, tpe.fqName, bs.fqName)),
@@ -141,7 +141,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
               Invoke(
                 Select(This, FieldRef(valSym.name, valBs.fqName, bs.fqName)),
                 param.name.str,
-                List(Const(v)),
+                List(Const(v,param.tpe)),
                 valBs.fqName,
                 "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V") // FIXME not always JavaType
           }
@@ -155,8 +155,8 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
           Invoke(
             Select(This, FieldRef(widgetName, vn, bs.fqName)),
             "setSize",
-            List(Const(b.guiSize.map(_.w).getOrElse(100)),
-              Const(b.guiSize.map(_.h).getOrElse(100))),
+            List(Const(b.guiSize.map(_.w).getOrElse(100),primitives.Int),
+              Const(b.guiSize.map(_.h).getOrElse(100),primitives.Int)),
             Name("javax.swing.JComponent"),
             "(II)V"))
         widgetCreation ++ createWidgets(bs, List(), b)
@@ -188,10 +188,10 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
               Invoke(
                 widgetSelect,
                 "setBounds",
-                List(Const(valDef.guiPos.map(_.x).getOrElse(0)),
-                  Const(valDef.guiPos.map(_.y).getOrElse(0)),
-                  Const(valDef.guiSize.map(_.w).getOrElse(50)),
-                  Const(valDef.guiSize.map(_.h).getOrElse(50))),
+                List(Const(valDef.guiPos.map(_.x).getOrElse(0),primitives.Int),
+                  Const(valDef.guiPos.map(_.y).getOrElse(0),primitives.Int),
+                  Const(valDef.guiSize.map(_.w).getOrElse(50),primitives.Int),
+                  Const(valDef.guiSize.map(_.h).getOrElse(50),primitives.Int)),
                 Name("javax.swing.JComponent"),
                 "(IIII)V"),
               Invoke(
@@ -213,15 +213,15 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
           val jdim = jlabel.getPreferredSize
           val pos = v.guiPos.getOrElse(Point(0, 0)) + lbl.pos + Vector2(0, -jdim.height);
           List[Tree](
-            New(Name("javax.swing.JLabel"), List(Const(lbl.description)), "(Ljava/lang/String;)V"),
+            New(Name("javax.swing.JLabel"), List(Const(lbl.description,primitives.String)), "(Ljava/lang/String;)V"),
             AStore(1),
             Invoke(
               ALoad(1),
               "setBounds",
-              List(Const(pos.x),
-                Const(pos.y),
-                Const(jdim.width),
-                Const(jdim.height)),
+              List(Const(pos.x,primitives.Int),
+                Const(pos.y,primitives.Int),
+                Const(jdim.width,primitives.Int),
+                Const(jdim.height,primitives.Int)),
               Name("javax.swing.JComponent"),
               "(IIII)V"),
             Invoke(

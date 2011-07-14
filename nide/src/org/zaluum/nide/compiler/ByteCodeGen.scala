@@ -69,12 +69,12 @@ object ByteCodeGen {
         case NullConst ⇒
           mv.visitInsn(ACONST_NULL)
         case LocalRef(id, tpe) =>
-          load(id,tpe)
+          load(id, tpe)
         case Assign(lhs, rhs) ⇒
           lhs match {
             case LocalRef(id, tpe) =>
               emit(rhs)
-              store(id,tpe)
+              store(id, tpe)
             case Select(a, FieldRef(id, typeName, fromClass)) ⇒
               emit(a)
               emit(rhs)
@@ -97,14 +97,8 @@ object ByteCodeGen {
           mv.visitVarInsn(ASTORE, i)
         case ALoad(i: Int) ⇒
           mv.visitVarInsn(ALOAD, i)
-        case Const(d: Any) ⇒
-          val v = d match {
-            case b: Byte ⇒ b.asInstanceOf[Int] 
-            case s: Short ⇒ s.asInstanceOf[Int]
-            case b: Boolean ⇒ b.asInstanceOf[Int]
-            case _ ⇒ d
-          }
-          mv.visitLdcInsn(v)
+        case Const(d: Any, constTpe: Type) ⇒
+          emitConst(d,constTpe)
         case Return(t) ⇒
           emit(t)
           mv.visitInsn(IRETURN)
@@ -119,31 +113,58 @@ object ByteCodeGen {
 
       }
     }
-    def store(id:Int, t:Name) = {
+    def emitConst(d:Any, constTpe:Type) {
+      import primitives._
+          if (d == null || d == 0 ) {
+            constTpe match {
+              case Byte => mv.visitInsn(ICONST_0)
+              case Char => mv.visitInsn(ICONST_0)
+              case Short => mv.visitInsn(ICONST_0)
+              case Int => mv.visitInsn(ICONST_0)
+              case Long => mv.visitInsn(LCONST_0)
+              case Float => mv.visitInsn(FCONST_0)
+              case Double => mv.visitInsn(DCONST_0)
+              case _ => mv.visitInsn(ACONST_NULL)
+            }
+          } else {
+            constTpe match {
+              case Byte => mv.visitLdcInsn(d.asInstanceOf[Int])
+              case Char => mv.visitLdcInsn(d.asInstanceOf[Int])
+              case Short => mv.visitLdcInsn(d.asInstanceOf[Int])
+              case Int => mv.visitLdcInsn(d.asInstanceOf[Int])
+              case Long => mv.visitLdcInsn(d.asInstanceOf[Long])
+              case Float => mv.visitLdcInsn(d.asInstanceOf[Float])
+              case Double => mv.visitLdcInsn(d.asInstanceOf[Double])
+              case String => mv.visitLdcInsn(d.asInstanceOf[String])
+            }
+          }
+    }
+    def store(id: Int, t: Name) = {
       t match {
-       
-        case primitives.Long.name => mv.visitVarInsn(LSTORE,id)
-        case primitives.Double.name => mv.visitVarInsn(DSTORE,id)
-        case primitives.Float.name => mv.visitVarInsn(FSTORE,id)
-        case primitives.Int.name => mv.visitVarInsn(ISTORE,id)
-        case primitives.Boolean.name => mv.visitVarInsn(ISTORE,id)
-        case primitives.Byte.name => mv.visitVarInsn(ISTORE,id)
-        case primitives.Char.name => mv.visitVarInsn(ISTORE,id)
-        case primitives.Short.name => mv.visitVarInsn(ISTORE,id)
-        case _=> mv.visitVarInsn(ASTORE,id)
+
+        case primitives.Long.name => mv.visitVarInsn(LSTORE, id)
+        case primitives.Double.name => mv.visitVarInsn(DSTORE, id)
+        case primitives.Float.name => mv.visitVarInsn(FSTORE, id)
+        case primitives.Int.name => mv.visitVarInsn(ISTORE, id)
+        case primitives.Boolean.name => mv.visitVarInsn(ISTORE, id)
+        case primitives.Byte.name => mv.visitVarInsn(ISTORE, id)
+        case primitives.Char.name => mv.visitVarInsn(ISTORE, id)
+        case primitives.Short.name => mv.visitVarInsn(ISTORE, id)
+        case _ => mv.visitVarInsn(ASTORE, id)
 
       }
     }
-    def load(id:Int, t:Name) = {
+    def load(id: Int, t: Name) = {
       t match {
-        case primitives.Long.name => mv.visitVarInsn(LLOAD,id)
-        case primitives.Double.name => mv.visitVarInsn(DLOAD,id)
-        case primitives.Float.name => mv.visitVarInsn(FLOAD,id)
-        case primitives.Boolean.name => mv.visitVarInsn(ILOAD,id)
-        case primitives.Byte.name => mv.visitVarInsn(ILOAD,id)
-        case primitives.Char.name => mv.visitVarInsn(ILOAD,id)
-        case primitives.Short.name => mv.visitVarInsn(ILOAD,id)
-        case _=> mv.visitVarInsn(ALOAD,id) // FIXME array
+        case primitives.Long.name => mv.visitVarInsn(LLOAD, id)
+        case primitives.Double.name => mv.visitVarInsn(DLOAD, id)
+        case primitives.Float.name => mv.visitVarInsn(FLOAD, id)
+        case primitives.Int.name => mv.visitVarInsn(ILOAD, id)
+        case primitives.Boolean.name => mv.visitVarInsn(ILOAD, id)
+        case primitives.Byte.name => mv.visitVarInsn(ILOAD, id)
+        case primitives.Char.name => mv.visitVarInsn(ILOAD, id)
+        case primitives.Short.name => mv.visitVarInsn(ILOAD, id)
+        case _ => mv.visitVarInsn(ALOAD, id) // FIXME array
       }
     }
     def emitBinaryExpr(e: BinaryExpr) = {
@@ -155,7 +176,7 @@ object ByteCodeGen {
         case Add(a, b, Double) => mv.visitInsn(DADD)
         case Add(a, b, Long) => mv.visitInsn(LADD)
         case Add(a, b, Float) => mv.visitInsn(FADD)
-        
+
         case Sub(a, b, Int) => mv.visitInsn(ISUB)
         case Sub(a, b, Double) => mv.visitInsn(DSUB)
         case Sub(a, b, Long) => mv.visitInsn(LSUB)
@@ -175,37 +196,37 @@ object ByteCodeGen {
         case Rem(a, b, Double) => mv.visitInsn(DREM)
         case Rem(a, b, Long) => mv.visitInsn(LREM)
         case Rem(a, b, Float) => mv.visitInsn(FREM)
-        
-        case Lt(a,b,Int) => emitIntCmp(IF_ICMPGE)
-        case Lte(a,b,Int) => emitIntCmp(IF_ICMPGT)
-        case Gt(a,b,Int) => emitIntCmp(IF_ICMPLE)
-        case Gte(a,b,Int) => emitIntCmp(IF_ICMPLT)
-        case Eq(a,b,Int) => emitIntCmp(IF_ICMPNE)
-        case Neq(a,b,Int) => emitIntCmp(IF_ICMPEQ)
-        
-        case Lt(a,b,t) => emitCmpg(t); emitIntCmp(IFGE)
-        case Lte(a,b,t) => emitCmpg(t);emitIntCmp(IFGT)
-        case Gt(a,b,t) => emitCmpg(t);emitIntCmp(IFLE)
-        case Gte(a,b,t) => emitCmpg(t);emitIntCmp(IFLT)
-        case Eq(a,b,t) => emitCmpg(t);emitIntCmp(IFNE)
-        case Neq(a,b,t) => emitCmpg(t);emitIntCmp(IFEQ)
-        
+
+        case Lt(a, b, Int) => emitIntCmp(IF_ICMPGE)
+        case Le(a, b, Int) => emitIntCmp(IF_ICMPGT)
+        case Gt(a, b, Int) => emitIntCmp(IF_ICMPLE)
+        case Ge(a, b, Int) => emitIntCmp(IF_ICMPLT)
+        case Eq(a, b, Int) => emitIntCmp(IF_ICMPNE)
+        case Ne(a, b, Int) => emitIntCmp(IF_ICMPEQ)
+
+        case Lt(a, b, t) => emitCmpg(t); emitIntCmp(IFGE)
+        case Le(a, b, t) => emitCmpg(t); emitIntCmp(IFGT)
+        case Gt(a, b, t) => emitCmpg(t); emitIntCmp(IFLE)
+        case Ge(a, b, t) => emitCmpg(t); emitIntCmp(IFLT)
+        case Eq(a, b, t) => emitCmpg(t); emitIntCmp(IFNE)
+        case Ne(a, b, t) => emitCmpg(t); emitIntCmp(IFEQ)
+
       }
     }
-    def emitCmpg(t:PrimitiveJavaType) = t match {
+    def emitCmpg(t: PrimitiveJavaType) = t match {
       case primitives.Double => mv.visitInsn(DCMPG)
       case primitives.Float => mv.visitInsn(FCMPG)
       case primitives.Long => mv.visitInsn(LCMP)
     }
-    def emitIntCmp(negatedCmp : Int ) {
-          val falseL =  new Label()
-          val end = new Label()
-          mv.visitJumpInsn(negatedCmp,falseL)
-          mv.visitInsn(ICONST_1)
-          mv.visitJumpInsn(GOTO,end)
-          mv.visitLabel(falseL)
-          mv.visitInsn(ICONST_0)
-          mv.visitLabel(end)      
+    def emitIntCmp(negatedCmp: Int) {
+      val falseL = new Label()
+      val end = new Label()
+      mv.visitJumpInsn(negatedCmp, falseL)
+      mv.visitInsn(ICONST_1)
+      mv.visitJumpInsn(GOTO, end)
+      mv.visitLabel(falseL)
+      mv.visitInsn(ICONST_0)
+      mv.visitLabel(end)
     }
     def emitUnaryExpr(e: UnaryExpr) = {
       emit(e.a)
