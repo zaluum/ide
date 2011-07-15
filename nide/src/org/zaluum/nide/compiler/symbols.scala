@@ -166,7 +166,7 @@ class BoxTypeSymbol(
   var okOverride = false
   var constructors = List[Constructor]()
   var source: String = "" // TODO
-  def valsInOrder = (vals.values ++ missingVals.values).toList.sortBy(_.name.str)
+  def valsAlphabeticOrder = (vals.values ++ missingVals.values).toList.sortBy(_.name.str)
   def IOInOrder = (ports.values ++ params.values).toList.sortBy(_.name.str)
   def paramsInOrder = params.values.toList.sortBy(_.name.str)
   var executionOrder = List[ValSymbol]()
@@ -202,19 +202,16 @@ class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name
 }
 sealed abstract class PortInstance(val valSymbol: ValSymbol) {
   def name: Name
-  def tpe: Type
   def finalTpe: Type
 }
 class RealPortInstance(val portSymbol: PortSymbol, valSymbol: ValSymbol) extends PortInstance(valSymbol) {
   def name = portSymbol.name
-  def tpe = portSymbol.tpe
   var connectedFrom: Option[RealPortInstance] = None
   var blameConnection: Option[ConnectionDef] = None
   var finalTpe: Type = NoSymbol
   override def toString = "PortInstance(" + portSymbol + ", " + valSymbol + ")"
 }
 class MissingPortInstance(valSymbol: ValSymbol, val name: Name) extends PortInstance(valSymbol) {
-  def tpe = NoSymbol
   def finalTpe = NoSymbol
 }
 

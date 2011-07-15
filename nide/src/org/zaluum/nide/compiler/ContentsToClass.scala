@@ -128,7 +128,7 @@ trait ContentsToClass {
 
   def createLocalsMap(bs: BoxTypeSymbol) = {
     var locals = 1; // 0 for "this"
-    bs.valsInOrder flatMap { v =>
+    bs.valsAlphabeticOrder flatMap { v =>
       v.tpe match {
         case b: BoxTypeSymbol => List()
         case e: ExprType =>

@@ -127,7 +127,7 @@ trait AnalyzerConnections {
       }
       def checkBoxTypes(vs: ValSymbol) {
         for (api <- vs.portInstances; val pi = api.asInstanceOf[RealPortInstance]) {
-          pi.finalTpe = pi.tpe
+          pi.finalTpe = pi.portSymbol.tpe
           if (pi.finalTpe == NoSymbol) error("Cannot find type of port " + pi.name.str, vs.decl)
           pi.connectedFrom foreach { from =>
             if (!checkAssignmentPossible(from.finalTpe, pi.finalTpe)) {
@@ -263,8 +263,9 @@ trait AnalyzerConnections {
         }
       }
       def checkTypes() {
-        bs.thisVal.portInstances foreach { pi =>
-          pi.asInstanceOf[RealPortInstance].finalTpe = pi.tpe
+        bs.thisVal.portInstances foreach { api =>
+          val pi = api.asInstanceOf[RealPortInstance]
+          pi.finalTpe = pi.portSymbol.tpe
         }
         for (vs <- bs.executionOrder) {
           vs.tpe match {

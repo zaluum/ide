@@ -227,7 +227,7 @@ class ZaluumCompilationUnitDeclaration(
     val res = Buffer[FieldDeclaration]()
     //vals
     val bs = b.sym
-    for (vs ← bs.valsInOrder; if (vs.tpe.isInstanceOf[BoxTypeSymbol])) {
+    for (vs ← bs.valsAlphabeticOrder; if (vs.tpe.isInstanceOf[BoxTypeSymbol])) {
       val f = new FieldDeclaration(vs.name.str.toCharArray, start(vs.decl), end(vs.decl))
       f.modifiers = Opcodes.ACC_PUBLIC
       f.`type` = createTypeReference(vs.tpe.name, vs.decl)
