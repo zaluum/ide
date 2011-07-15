@@ -313,6 +313,7 @@ case class ValDef(
   def localTypeDecl = tpe match {
     case NoSymbol ⇒ None
     case b: BoxTypeSymbol ⇒ if (b.isLocal) Some(b.decl.asInstanceOf[BoxDef]) else None
+    case _ => None
   }
   def sym = symbol.asInstanceOf[ValSymbol]
 }

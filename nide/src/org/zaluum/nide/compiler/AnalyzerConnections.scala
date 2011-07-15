@@ -136,43 +136,62 @@ trait AnalyzerConnections {
           }
         }
       }
+      def fromTpe(p: RealPortInstance) = p.connectedFrom.map(_.finalTpe).getOrElse(NoSymbol)
       def checkBinExprTypes(vs: ValSymbol) {
         import primitives._
         val s = vs.tpe.asInstanceOf[BinExprType]
         val (a, b, o) = s.binaryPortInstancesOf(vs)
-        def fromTpe(p: RealPortInstance) = p.connectedFrom.map(_.finalTpe).getOrElse(NoSymbol)
-        def assignAll(tpe: Type) = {
+        def assignAll(tpe: Type, outTpe: Type) = {
           a.finalTpe = tpe
           b.finalTpe = tpe
-          s match {
-            case _: MathExprType => o.finalTpe = tpe
-            case _: CmpExprType => o.finalTpe = primitives.Boolean
-          }
+          o.finalTpe = outTpe
         }
-        (fromTpe(a), fromTpe(b)) match {
-          case (NoSymbol, NoSymbol) =>
-            assignAll(Int)
-          case (NoSymbol, bt) =>
-            if (isNumeric(bt))
-              assignAll(toOperationType(unbox(bt)))
-          case (at, NoSymbol) =>
-            if (isNumeric(at))
-              assignAll(toOperationType(unbox(at)))
-          case (at, bt) =>
-            if (isNumeric(at) && isNumeric(bt)) {
-              val ao = toOperationType(unbox(at))
-              val bo = toOperationType(unbox(bt))
-              assignAll(largerOperation(ao, bo))
+
+        val at = fromTpe(a)
+        val bt = fromTpe(b)
+        val (one, other) = (at, bt) match {
+          case (NoSymbol, NoSymbol) => (None, None)
+          case (NoSymbol, bt) => (Some(bt), None)
+          case (at, NoSymbol) => (Some(at), None)
+          case (at, bt) => (Some(at), Some(bt))
+        }
+
+        s match {
+          case b: BitBinExprType =>
+            (one, other) match {
+              case (Some(primitives.Boolean), Some(primitives.Boolean)) => assignAll(Boolean, Boolean)
+              case (Some(primitives.Boolean), None) => assignAll(Boolean, Boolean)
+              case (Some(p), None) if isIntNumeric(p) => assignAll(Int, Boolean)
+              case (Some(p), Some(p2)) if isIntNumeric(p) && isIntNumeric(p2) => assignAll(Int, Boolean)
+              case (None, _) => assignAll(Int, Boolean)
+              case _ => error("Incompatible types", vs.decl)
+            }
+          case c: CmpExprType => 
+            (one, other) match {
+              case (Some(p1), None) if isNumeric(p1) => assignAll(toOperationType(unbox(p1)), Boolean)
+              case (Some(p1), Some(p2)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(unbox(p1)), Boolean)
+              case (None, _) => assignAll(Int, Boolean)
+              case _ => error("Incompatible types", vs.decl)
+            }
+          case e: EqualityExprType =>
+            (one, other) match {
+              case (Some(p1), None) if isNumeric(p1) => assignAll(toOperationType(unbox(p1)), Boolean)
+              case (Some(p1), Some(p2)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(unbox(p1)), Boolean)
+              case (None, _) => assignAll(Int, Boolean)
+              case (Some(p1), None) if p1 == primitives.Boolean => assignAll(Boolean, Boolean)
+              case (Some(p1), Some(p2)) if p1 == p2 => assignAll(p1, Boolean)
+              case _ => error("Incompatible types", vs.decl)
+            }
+          case _ =>
+            (one, other) match {
+              case (Some(p1), None) if isNumeric(p1) => val t = toOperationType(unbox(p1)); assignAll(t, t)
+              case (Some(p1), Some(p2)) if isNumeric(p1) && isNumeric(p2) =>
+                val t = largerOperation(toOperationType(unbox(p1)), toOperationType(unbox(p2)))
+                assignAll(t, t)
+              case (None, _) => assignAll(Int, Int)
+              case _ => error("Incompatible types", vs.decl)
             }
         }
-        def checkNumeric(p: RealPortInstance) {
-          val tpe = fromTpe(p)
-          if (!isNumeric(tpe) && tpe != NoSymbol)
-            error("Type " + tpe.fqName.str + " is not numeric ", p.blameConnection.get)
-        }
-        checkNumeric(a)
-        checkNumeric(b)
-
       }
       def checkCastExprTypes(vs: ValSymbol) {
         import primitives._
@@ -204,14 +223,35 @@ trait AnalyzerConnections {
           case e => None
         }
         t match {
-          case Some((_,tpe)) => 
-            o.finalTpe=tpe
-          case None => 
-            o.finalTpe=NoSymbol; 
-            error("Cannot parse literal" , vs.decl)
+          case Some((_, tpe)) =>
+            o.finalTpe = tpe
+          case None =>
+            o.finalTpe = primitives.Byte;
         }
       }
-      
+      def checkUnaryExprType(vs: ValSymbol) {
+        import primitives._
+        val e = vs.tpe.asInstanceOf[UnaryExprType]
+        val (a, o) = e.unaryPortInstancesOf(vs)
+        e match {
+          case e: CastExprType => checkCastExprTypes(vs)
+          case MinusExprType =>
+            fromTpe(a) match {
+          		case p if isNumeric(p) => 
+          		  val t = toOperationType(unbox(p))
+          		  a.finalTpe =t; o.finalTpe=t
+          		case NoSymbol => a.finalTpe =Int; o.finalTpe=Int
+          		case _ => error("Incompatible type",a.blameConnection.get)
+            }
+          case NotExprType =>
+            fromTpe(a) match {
+              case Boolean => a.finalTpe = Boolean; o.finalTpe = Boolean
+              case p if isIntNumeric(p) => a.finalTpe = Int; o.finalTpe = Int
+              case NoSymbol => a.finalTpe = Boolean; o.finalTpe = Boolean 
+              case _ => error("Incompatible type", a.blameConnection.get)
+            }
+        }
+      }
       def checkTypes() {
         bs.thisVal.portInstances foreach { pi =>
           pi.asInstanceOf[RealPortInstance].finalTpe = pi.tpe
@@ -220,8 +260,8 @@ trait AnalyzerConnections {
           vs.tpe match {
             case bs: BoxTypeSymbol => checkBoxTypes(vs)
             case b: BinExprType => checkBinExprTypes(vs)
-            case e: CastExprType => checkCastExprTypes(vs)
             case LiteralExprType => checkLiteralExprType(vs)
+            case e: UnaryExprType => checkUnaryExprType(vs)
           }
         }
         checkBoxTypes(bs.thisVal)

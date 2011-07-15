@@ -78,7 +78,9 @@ object Literals {
   def parseNarrowestLiteral(v: String) = {
     def parseIntOpt = try { Some(v.toInt) } catch { case e => None }
     def parseDoubleOpt = try { Some(v.toDouble) } catch { case e => None }
-    if (v.endsWith("f") || v.endsWith("F")) {
+    if (v.toLowerCase=="true") Some(true, primitives.Boolean)
+    else if (v.toLowerCase=="false") Some(false, primitives.Boolean)
+    else if (v.endsWith("f") || v.endsWith("F")) {
       try { Some((v.toFloat, primitives.Float)) } catch { case e => None }
     } else if (v.endsWith("l") || v.endsWith("L")) {
       try { Some((v.toLong, primitives.Long)) } catch { case e => None }
@@ -173,6 +175,10 @@ object primitives {
       case _ => false
     }
   }
+  def isIntNumeric(tpe:Type) : Boolean =  tpe==primitives.Int || 
+        tpe==primitives.Short || 
+        tpe==primitives.Byte || 
+        tpe==primitives.Char
   /** tpe must be numeric*/
   def unbox(tpe: Type): PrimitiveJavaType = tpe.asInstanceOf[PrimitiveJavaType] // todo unbox
   def find(desc: String) = allTypes.find(_.descriptor == desc)

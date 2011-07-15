@@ -18,6 +18,13 @@ case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
 case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)]) extends Tree
 case class Assign(lhs: Ref, rhs: Tree) extends Tree
 
+case class Not(a:Tree,t:PrimitiveJavaType) extends UnaryExpr 
+case class Minus(a:Tree,t:PrimitiveJavaType) extends UnaryExpr 
+
+case class And(a:Tree,b:Tree, t:PrimitiveJavaType) extends BinaryExpr
+case class Or(a:Tree,b:Tree, t:PrimitiveJavaType) extends BinaryExpr
+case class Xor(a:Tree,b:Tree, t:PrimitiveJavaType) extends BinaryExpr
+
 case class Add(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
 case class Sub(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr
 case class Mul(a: Tree, b: Tree, t:PrimitiveJavaType) extends BinaryExpr

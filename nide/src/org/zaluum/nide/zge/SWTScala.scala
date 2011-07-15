@@ -55,8 +55,15 @@ object SWTScala {
     t.setLayoutData(layout)
     t
   }
-  def newCombo(c:Composite, txt: String, items:Array[String], style: Int = (SWT.DROP_DOWN | SWT.FLAT | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL), layout:Any = null) = {
+  def newCCombo(c:Composite, txt: String, items:Array[String], style: Int = (SWT.DROP_DOWN | SWT.FLAT | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL), layout:Any = null) = {
     val co = new CCombo(c,style)
+    co.setItems(items);
+    co.setText(txt)
+    co.setLayoutData(layout)
+    co
+  }
+  def newCombo(c:Composite, txt: String, items:Array[String], style: Int = (SWT.DROP_DOWN | SWT.FLAT | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL), layout:Any = null) = {
+    val co = new Combo(c,style)
     co.setItems(items);
     co.setText(txt)
     co.setLayoutData(layout)

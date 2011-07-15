@@ -115,8 +115,9 @@ object ByteCodeGen {
     }
     def emitConst(d:Any, constTpe:Type) {
       import primitives._
-          if (d == null || d == 0 ) {
+          if (d == null || d == 0 || d==false) {
             constTpe match {
+              case Boolean => mv.visitInsn(ICONST_0)
               case Byte => mv.visitInsn(ICONST_0)
               case Char => mv.visitInsn(ICONST_0)
               case Short => mv.visitInsn(ICONST_0)
@@ -128,6 +129,7 @@ object ByteCodeGen {
             }
           } else {
             constTpe match {
+              case Boolean => mv.visitInsn(if (d==true) ICONST_1 else ICONST_0) 
               case Byte => mv.visitLdcInsn(d.asInstanceOf[Byte].toInt) // TODO make clear how to cast
               case Char => mv.visitLdcInsn(d.asInstanceOf[Char].toInt)
               case Short => mv.visitLdcInsn(d.asInstanceOf[Short].toInt)
@@ -172,6 +174,10 @@ object ByteCodeGen {
       emit(e.b)
       import primitives._
       e match {
+        case And(a, b, _) => mv.visitInsn(IAND)
+        case Or(a,b,_) => mv.visitInsn(IOR)
+        case Xor(a,b,_) => mv.visitInsn(IXOR)
+        
         case Add(a, b, Int) => mv.visitInsn(IADD)
         case Add(a, b, Double) => mv.visitInsn(DADD)
         case Add(a, b, Long) => mv.visitInsn(LADD)
@@ -203,7 +209,10 @@ object ByteCodeGen {
         case Ge(a, b, Int) => emitIntCmp(IF_ICMPLT)
         case Eq(a, b, Int) => emitIntCmp(IF_ICMPNE)
         case Ne(a, b, Int) => emitIntCmp(IF_ICMPEQ)
-
+        
+        case Eq(a, b, Boolean) => emitIntCmp(IF_ICMPNE)
+        case Ne(a, b, Boolean) => emitIntCmp(IF_ICMPEQ)
+        
         case Lt(a, b, t) => emitCmpg(t); emitIntCmp(IFGE)
         case Le(a, b, t) => emitCmpg(t); emitIntCmp(IFGT)
         case Gt(a, b, t) => emitCmpg(t); emitIntCmp(IFLE)
@@ -229,23 +238,30 @@ object ByteCodeGen {
       mv.visitLabel(end)
     }
     def emitUnaryExpr(e: UnaryExpr) = {
+      import primitives._
       emit(e.a)
       e match {
-        case e: I2B => mv.visitInsn(Opcodes.I2B)
-        case e: I2C => mv.visitInsn(Opcodes.I2C)
-        case e: I2D => mv.visitInsn(Opcodes.I2D)
-        case e: I2F => mv.visitInsn(Opcodes.I2F)
-        case e: I2L => mv.visitInsn(Opcodes.I2L)
-        case e: I2S => mv.visitInsn(Opcodes.I2S)
-        case e: F2D => mv.visitInsn(Opcodes.F2D)
-        case e: F2I => mv.visitInsn(Opcodes.F2I)
-        case e: F2L => mv.visitInsn(Opcodes.F2L)
-        case e: D2F => mv.visitInsn(Opcodes.D2F)
-        case e: D2I => mv.visitInsn(Opcodes.D2I)
-        case e: D2L => mv.visitInsn(Opcodes.D2L)
-        case e: L2D => mv.visitInsn(Opcodes.L2D)
-        case e: L2F => mv.visitInsn(Opcodes.L2F)
-        case e: L2I => mv.visitInsn(Opcodes.L2I)
+        case Not(a,Boolean) => emitIntCmp(IFNE)
+        case Not(a,Int) => mv.visitInsn(ICONST_M1); mv.visitInsn(IXOR)
+        case Minus(a,Int) => mv.visitInsn(INEG)
+        case Minus(a,Long) => mv.visitInsn(LNEG)
+        case Minus(a,Float) => mv.visitInsn(FNEG)
+        case Minus(a,Double) => mv.visitInsn(DNEG)
+        case I2B(_) => mv.visitInsn(Opcodes.I2B)
+        case I2C(_)=> mv.visitInsn(Opcodes.I2C)
+        case I2D(_)=> mv.visitInsn(Opcodes.I2D)
+        case I2F(_)=> mv.visitInsn(Opcodes.I2F)
+        case I2L(_)=> mv.visitInsn(Opcodes.I2L)
+        case I2S(_)=> mv.visitInsn(Opcodes.I2S)
+        case F2D(_)=> mv.visitInsn(Opcodes.F2D)
+        case F2I(_)=> mv.visitInsn(Opcodes.F2I)
+        case F2L(_)=> mv.visitInsn(Opcodes.F2L)
+        case D2F(_)=> mv.visitInsn(Opcodes.D2F)
+        case D2I(_)=> mv.visitInsn(Opcodes.D2I)
+        case D2L(_)=> mv.visitInsn(Opcodes.D2L)
+        case L2D(_)=> mv.visitInsn(Opcodes.L2D)
+        case L2F(_)=> mv.visitInsn(Opcodes.L2F)
+        case L2I(_)=> mv.visitInsn(Opcodes.L2I)
       }
     }
     bc.children foreach { emit(_) }

@@ -18,7 +18,7 @@ import SWTScala._
 
 class ValDefDialog(viewer: Viewer, val vs: ValSymbol) extends Dialog(viewer.shell) {
   def v = vs.decl.asInstanceOf[ValDef]
-  var t :CCombo = _
+  var t :Combo = _
   def text = t.getText.trim;
   override protected def okPressed() {
     execCommand()

@@ -53,31 +53,39 @@ trait ContentsToClass {
             List(),
             tpe,
             "()V")
-        case c: CastExprType =>
-          val (a, o) = c.unaryPortInstancesOf(vs)
-          Assign(toRef(o), cast(a.finalTpe, o.finalTpe, toRef(a)))
-        case LiteralExprType => 
+        case LiteralExprType =>
           val o = LiteralExprType.outPort(vs)
           val c = vs.params.headOption match {
-            case Some((t,v:String)) =>
+            case Some((t, v: String)) =>
               o.finalTpe match {
-              	case primitives.Byte => Const(v.toByte,primitives.Byte)
-              	case primitives.Short => Const(v.toByte,primitives.Short)
-              	case primitives.Int => Const(v.toByte,primitives.Int)
-              	case primitives.Long => Const(v.toByte,primitives.Long)
-              	case primitives.Float => Const(v.toFloat,primitives.Float)
-              	case primitives.Double => Const(v.toDouble,primitives.Double)
-              	case primitives.String => Const(v,primitives.String)
+                case primitives.Boolean => Const(v.toBoolean, primitives.Boolean)
+                case primitives.Byte => Const(v.toByte, primitives.Byte)
+                case primitives.Short => Const(v.toByte, primitives.Short)
+                case primitives.Int => Const(v.toByte, primitives.Int)
+                case primitives.Long => Const(v.toByte, primitives.Long)
+                case primitives.Float => Const(v.toFloat, primitives.Float)
+                case primitives.Double => Const(v.toDouble, primitives.Double)
+                case primitives.String => Const(v, primitives.String)
               }
-            case _ => Const(0,primitives.Byte)
+            case _ => Const(0, primitives.Byte)
           }
-          Assign(toRef(o),c)
+          Assign(toRef(o), c)
+        case u: UnaryExprType =>
+          val (a, o) = u.unaryPortInstancesOf(vs)
+          u match {
+            case c: CastExprType => Assign(toRef(o), cast(a.finalTpe, o.finalTpe, toRef(a)))
+            case NotExprType => Assign(toRef(o),Not(toRef(a),a.finalTpe.asInstanceOf[PrimitiveJavaType]))
+            case MinusExprType => Assign(toRef(o), Minus(toRef(a),a.finalTpe.asInstanceOf[PrimitiveJavaType]))
+          }
         case s: BinExprType =>
           val (a, b, o) = s.binaryPortInstancesOf(vs)
           val aTree = toRef(a)
           val bTree = toRef(b)
           val etpe = a.finalTpe.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
           val eTree = s match {
+            case AndExprType => And(aTree, bTree, etpe)
+            case OrExprType => Or(aTree, bTree, etpe)
+            case XorExprType => Xor(aTree, bTree, etpe)
             case AddExprType => Add(aTree, bTree, etpe)
             case SubExprType => Sub(aTree, bTree, etpe)
             case MulExprType => Mul(aTree, bTree, etpe)
@@ -87,7 +95,7 @@ trait ContentsToClass {
             case LeExprType => Le(aTree, bTree, etpe)
             case GtExprType => Gt(aTree, bTree, etpe)
             case GeExprType => Ge(aTree, bTree, etpe)
-            case EqExprType => Eq(aTree, bTree, etpe)
+            case EqExprType => Eq(aTree, bTree, etpe) 
             case NeExprType => Ne(aTree, bTree, etpe)
           }
           Assign(toRef(o), eTree)
@@ -100,8 +108,11 @@ trait ContentsToClass {
       } yield a
       ins ::: invoke :: outs.toList
     }
-    val invokes = bs.valsInOrder flatMap { runOne }
-    val localsDecl = localsMap map { case (a, i) => (a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i) } toList;
+    println(bs.valsInOrder)
+    val invokes = bs.executionOrder flatMap { runOne }
+    val localsDecl = localsMap map { case (a, i) => 
+      (a.valSymbol.name.str + "_" + a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i) 
+      } toList;
     Method(Name("contents"), "()V", invokes, localsDecl)
   }
 
