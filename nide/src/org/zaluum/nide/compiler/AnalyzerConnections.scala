@@ -65,8 +65,7 @@ trait AnalyzerConnections {
           bs.connections.clumps foreach { checkClump(_) }
           checkTypes();
           bs.connections.clumps foreach { putConnectionTypes(_) }
-          import scala.collection.JavaConversions._
-          bs.executionOrder = new TopologicalOrderIterator(acyclic).toList
+          
         }
       }
       def checkClump(c: Clump) {
@@ -101,7 +100,8 @@ trait AnalyzerConnections {
           if (!isInside(out) && !isInside(in))
             addDag(out, in)
         }
-
+        import scala.collection.JavaConversions._
+        bs.executionOrder = new TopologicalOrderIterator(acyclic).toList
       }
       def isInside(p: PortInstance) = p.valSymbol == bs.thisVal
 
@@ -166,7 +166,17 @@ trait AnalyzerConnections {
               case (None, _) => assignAll(Int, Boolean)
               case _ => error("Incompatible types", vs.decl)
             }
-          case c: CmpExprType => 
+          case s: ShiftExprType =>
+            if (isIntNumeric(bt) || bt == NoSymbol) {
+              if (isIntNumeric(at) || at == NoSymbol) {
+                assignAll(Int, Int)
+              }else if (at == Long) {
+                a.finalTpe = Long; b.finalTpe = Int; o.finalTpe = Long
+              }else 
+                error("Shift only operates on Int and Long", a.blameConnection.get)
+              
+            } else error("Shift distance must be of Int type", b.blameConnection.get)
+          case c: CmpExprType =>
             (one, other) match {
               case (Some(p1), None) if isNumeric(p1) => assignAll(toOperationType(unbox(p1)), Boolean)
               case (Some(p1), Some(p2)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(unbox(p1)), Boolean)
@@ -219,13 +229,13 @@ trait AnalyzerConnections {
         val o = l.outPort(vs)
         val t = vs.params.headOption match {
           case Some((p, vuntrimmed: String)) =>
-            Literals.parseNarrowestLiteral(vuntrimmed.trim)
-          case e => None
-        }
-        t match {
-          case Some((_, tpe)) =>
-            o.finalTpe = tpe
-          case None =>
+            val v = vuntrimmed.trim
+            Literals.parseNarrowestLiteral(v) match {
+              case Some((_, tpe)) => o.finalTpe = tpe
+              case None => error("Cannot parse literal " + v, vs.decl)
+            }
+          case e =>
+            println("no")
             o.finalTpe = primitives.Byte;
         }
       }
@@ -237,17 +247,17 @@ trait AnalyzerConnections {
           case e: CastExprType => checkCastExprTypes(vs)
           case MinusExprType =>
             fromTpe(a) match {
-          		case p if isNumeric(p) => 
-          		  val t = toOperationType(unbox(p))
-          		  a.finalTpe =t; o.finalTpe=t
-          		case NoSymbol => a.finalTpe =Int; o.finalTpe=Int
-          		case _ => error("Incompatible type",a.blameConnection.get)
+              case p if isNumeric(p) =>
+                val t = toOperationType(unbox(p))
+                a.finalTpe = t; o.finalTpe = t
+              case NoSymbol => a.finalTpe = Int; o.finalTpe = Int
+              case _ => error("Incompatible type", a.blameConnection.get)
             }
           case NotExprType =>
             fromTpe(a) match {
               case Boolean => a.finalTpe = Boolean; o.finalTpe = Boolean
               case p if isIntNumeric(p) => a.finalTpe = Int; o.finalTpe = Int
-              case NoSymbol => a.finalTpe = Boolean; o.finalTpe = Boolean 
+              case NoSymbol => a.finalTpe = Boolean; o.finalTpe = Boolean
               case _ => error("Incompatible type", a.blameConnection.get)
             }
         }
@@ -256,7 +266,7 @@ trait AnalyzerConnections {
         bs.thisVal.portInstances foreach { pi =>
           pi.asInstanceOf[RealPortInstance].finalTpe = pi.tpe
         }
-        for (vs <- bs.valsInOrder) {
+        for (vs <- bs.executionOrder) {
           vs.tpe match {
             case bs: BoxTypeSymbol => checkBoxTypes(vs)
             case b: BinExprType => checkBinExprTypes(vs)

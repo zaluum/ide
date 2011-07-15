@@ -21,6 +21,10 @@ case class Assign(lhs: Ref, rhs: Tree) extends Tree
 case class Not(a:Tree,t:PrimitiveJavaType) extends UnaryExpr 
 case class Minus(a:Tree,t:PrimitiveJavaType) extends UnaryExpr 
 
+case class ShiftLeft(a:Tree,b:Tree, t:PrimitiveJavaType) extends BinaryExpr
+case class ShiftRight(a:Tree,b:Tree, t:PrimitiveJavaType) extends BinaryExpr
+case class UShiftRight(a:Tree,b:Tree, t:PrimitiveJavaType) extends BinaryExpr
+
 case class And(a:Tree,b:Tree, t:PrimitiveJavaType) extends BinaryExpr
 case class Or(a:Tree,b:Tree, t:PrimitiveJavaType) extends BinaryExpr
 case class Xor(a:Tree,b:Tree, t:PrimitiveJavaType) extends BinaryExpr

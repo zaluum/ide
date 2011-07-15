@@ -30,6 +30,7 @@ sealed abstract class BinExprType(nameStr: String) extends ExprType(nameStr) {
 }
 sealed abstract class MathExprType(nameStr: String) extends BinExprType(nameStr)
 sealed abstract class CmpExprType(nameStr: String) extends BinExprType(nameStr)
+sealed abstract class ShiftExprType(nameStr: String) extends BinExprType(nameStr)
 sealed abstract class EqualityExprType(nameStr: String) extends BinExprType(nameStr)
 sealed abstract class BitBinExprType(nameStr: String) extends BinExprType(nameStr)
 sealed abstract class CastExprType(nameStr: String) extends UnaryExprType(nameStr)
@@ -47,6 +48,10 @@ object ToIntType extends CastExprType("ToInt")
 object ToLongType extends CastExprType("ToLong")
 object ToFloatType extends CastExprType("ToFloat")
 object ToDoubleType extends CastExprType("ToDouble")
+
+object ShiftLeftExprType extends ShiftExprType("ShiftLeft")
+object UShiftRightExprType extends ShiftExprType("UShiftRight")
+object ShiftRightExprType extends ShiftExprType("ShiftRight")
 
 object LtExprType extends CmpExprType("Lt")
 object LeExprType extends CmpExprType("Le")
@@ -78,6 +83,9 @@ object Expressions {
     ToLongType,
     ToFloatType,
     ToDoubleType,
+    ShiftLeftExprType,
+    UShiftRightExprType,
+    ShiftRightExprType,
     LtExprType,
     LtExprType,
     LeExprType,

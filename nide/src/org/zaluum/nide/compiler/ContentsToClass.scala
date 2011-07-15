@@ -60,9 +60,9 @@ trait ContentsToClass {
               o.finalTpe match {
                 case primitives.Boolean => Const(v.toBoolean, primitives.Boolean)
                 case primitives.Byte => Const(v.toByte, primitives.Byte)
-                case primitives.Short => Const(v.toByte, primitives.Short)
-                case primitives.Int => Const(v.toByte, primitives.Int)
-                case primitives.Long => Const(v.toByte, primitives.Long)
+                case primitives.Short => Const(v.toShort, primitives.Short)
+                case primitives.Int => Const(v.toInt, primitives.Int)
+                case primitives.Long => Const(v.dropRight(1).toLong, primitives.Long)
                 case primitives.Float => Const(v.toFloat, primitives.Float)
                 case primitives.Double => Const(v.toDouble, primitives.Double)
                 case primitives.String => Const(v, primitives.String)
@@ -83,6 +83,9 @@ trait ContentsToClass {
           val bTree = toRef(b)
           val etpe = a.finalTpe.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
           val eTree = s match {
+            case ShiftLeftExprType => ShiftLeft(aTree,bTree,etpe)
+            case ShiftRightExprType => ShiftRight(aTree,bTree,etpe)
+            case UShiftRightExprType => UShiftRight(aTree,bTree,etpe)
             case AndExprType => And(aTree, bTree, etpe)
             case OrExprType => Or(aTree, bTree, etpe)
             case XorExprType => Xor(aTree, bTree, etpe)
@@ -108,7 +111,6 @@ trait ContentsToClass {
       } yield a
       ins ::: invoke :: outs.toList
     }
-    println(bs.valsInOrder)
     val invokes = bs.executionOrder flatMap { runOne }
     val localsDecl = localsMap map { case (a, i) => 
       (a.valSymbol.name.str + "_" + a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i) 

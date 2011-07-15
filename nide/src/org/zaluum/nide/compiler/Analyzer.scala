@@ -83,7 +83,7 @@ object Literals {
     else if (v.endsWith("f") || v.endsWith("F")) {
       try { Some((v.toFloat, primitives.Float)) } catch { case e => None }
     } else if (v.endsWith("l") || v.endsWith("L")) {
-      try { Some((v.toLong, primitives.Long)) } catch { case e => None }
+      try { Some((v.dropRight(1).toLong, primitives.Long)) } catch { case e => e.printStackTrace; println ("long fail " + v);None }
     } else if (v.startsWith("\"") && v.endsWith("\"")) {
       Some(v.substring(1, v.length - 1), primitives.String)
     } else {
