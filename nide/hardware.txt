@@ -1,0 +1,35 @@
+Compatibilitat National Instruments
+------------------
+* VISA sembla l'estandard per comunicar-se amb instruments virtuals
+* La única implementació trobada és NI-VISA de National Instruments. Sembla que ivifoundation té un estàndard superior però poc suportat (7/2011)
+* S'ha de comprar llicència per a HW no NI. 119€ Deploy 439€ Development.
+	If a deployed system contains:
+	NI hardware (e.g., GPIB, VXI, PXI, DAQ, etc.); or
+	NI software ADEs (e.g., LabVIEW FDS, TestStand, etc.); or
+	** An application written using NI software, used for communication through a PC bus, along with the NI software runtime (e.g., LabVIEW .exe accessing PC serial port and LabVIEW runtime engine).
+	A deployment license for NI-VISA is included
+* Drivers NI. Són Plug&play, plug&play (project style), ivy http://www.ni.com/devzone/idnet/ i dll with wrapper 
+	*el plug&play project style és un projecte LabView.
+	* el plug&play es un .llb Labview Vi Library. Es pot obrir els vis (segurament tb es pot exportar dll)
+* Exportar DLL LabView. 
+	Obrir projecte
+	Project Explorer 
+	Build Specifications
+	Source files : vis
+	java -jar jnaerator-0.9.7.jar agi.h agi.dll -I "Archivos de programa\National Instruments\LabVIEW 2010\cintools" -D_M_IX86=1
+        carregar agi.jar. agi.AgiLibrary.INSTANCE.Initialize ( IntBuffer...)
+* LVStringHandle string tipus pascal. fer wrapper a jnaerator? Classes VISA?
+* Most popular
+	Tektronix TDS 200 1000 2000 Series - LabVIEW Certified Plug and Play (project-style) Driver
+	Keithley 2400 Series - LabVIEW Certified Plug and Play (project-style) Driver
+	Agilent 34970A - LabVIEW Certified Plug and Play Driver
+	Agilent 34401 - LabVIEW Certified Plug and Play (project-style) Driver
+	Agilent 33XXX Series - LabVIEW Certified Plug and Play (project-style) Driver
+* Interficie USB = USBTMC (és al kernel)
+* Comandes estàndard : SCPI Standard Commands for Programmable Instruments
+* Openvisa té una implementació inicial serial i gpib
+* IVI Foundation: només windows
+
+* NI-VISA 5.0 rpms 32 bits. No compatibles amb kernel > 2.6.32 (?) 2.6.38 No funciona. La instalació de Labview 2010 instala NI-VISA amb rpm-cpio? amb alguns fallos a ubuntu 11.04-
+
+
