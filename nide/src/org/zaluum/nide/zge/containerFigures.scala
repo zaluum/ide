@@ -49,8 +49,9 @@ trait ContainerItem extends Item {
       pointsLayer.getChildren.view).collect { case i: Item ⇒ i }
   }
   protected def createGraph: ConnectionGraph = {
-    val portVertexs = portsLayer.getChildren collect { case port: PortFigure ⇒
-      new PortVertex(port.ps, port.anchor) 
+    val portVertexs = portsLayer.getChildren collect {
+      case port: PortFigure ⇒
+        new PortVertex(port.ps, port.anchor)
     }
     val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
     val emptyVertexs = Buffer[EmptyVertex]()
@@ -268,21 +269,22 @@ class OpenBoxFigure(
         }
       }
       intPs.pi match {
-        case r: RealPortInstance =>
-          if (r.portSymbol.box == this.boxDef.symbol) { // decl
-            r.portSymbol.dir match {
-              case In ⇒ newFig(true)
-              case Out ⇒ newFig(false)
-              case Shift ⇒ newFig(intPs.inPort);
-            }
-          } else {
-            val f = new PortSymbolFigure(r.portSymbol, intPs, OpenBoxFigure.this)
-            f.update
-            portSymbols += f
-            if (showing) f.show()
+        case pi: PortInstance =>
+          pi.portSymbol match {
+            case Some(ps) if (ps.box == this.boxDef.symbol) => //decl 
+              ps.dir match {
+                case In ⇒ newFig(true)
+                case Out ⇒ newFig(false)
+                case Shift ⇒ newFig(intPs.inPort);
+              }
+            case Some(ps) =>
+              val f = new PortSymbolFigure(ps, intPs, OpenBoxFigure.this)
+              f.update
+              portSymbols += f
+              if (showing) f.show()
+            case None =>
+              newFig(intPs.inPort)
           }
-        case m: MissingPortInstance =>
-          newFig(intPs.inPort)
       }
     }
   }

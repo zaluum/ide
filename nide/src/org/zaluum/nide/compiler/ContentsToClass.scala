@@ -1,4 +1,6 @@
 package org.zaluum.nide.compiler
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 
 trait ContentsToClass {
   self: TreeToClass =>
@@ -9,16 +11,16 @@ trait ContentsToClass {
     // create locals for expressions
     val localsMap = createLocalsMap(bs)
     //helper methods
-    def execConnection(c: (RealPortInstance, Set[RealPortInstance])) = {
+    def execConnection(c: (PortInstance, Set[PortInstance])) = {
       val (out, ins) = c
       ins.toList map { in ⇒
         assign(in, out)
       }
     }
-    def assign(to: RealPortInstance, from: RealPortInstance): Assign = {
+    def assign(to: PortInstance, from: PortInstance): Assign = {
       Assign(toRef(to), cast(from.finalTpe, to.finalTpe, toRef(from)))
     }
-    def toRef(pi: RealPortInstance): Ref = {
+    def toRef(pi: PortInstance): Ref = {
       if (pi.valSymbol == bs.thisVal) {
         Select(
           This,
@@ -37,10 +39,10 @@ trait ContentsToClass {
     }
     def runOne(vs: ValSymbol) = {
       // propagate inputs
-      val ins = for (ps <- vs.portSides; if (ps.flowIn); val i = ps.realPi) yield {
-        i.connectedFrom match {
-          case Some(o) => assign(i, o)
-          case None => Assign(toRef(i), Const(0, i.finalTpe))
+      val ins = for (ps <- vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
+        pi.connectedFrom match {
+          case Some(o) => assign(pi, o)
+          case None => Assign(toRef(pi), Const(0, pi.finalTpe))
         }
       }
       import primitives._
@@ -53,6 +55,22 @@ trait ContentsToClass {
             List(),
             tpe,
             "()V")
+        case InvokeExprType =>
+          val m = vs.info.asInstanceOf[MethodBinding]
+          val obj = InvokeExprType.objPort(vs)
+          val params = vs.portSides filter { ps => ps.inPort && ps.pi!=obj } sortBy {_.pi.name.str} map { ps => toRef(ps.pi) }
+          val invoke = Invoke(
+            toRef(obj),
+            m.selector.mkString,
+            params,
+            Name(m.declaringClass.constantPoolName().mkString),
+            m.signature().mkString)
+
+          if (m.returnType != null && m.returnType!=TypeBinding.VOID){
+        	  val out = vs.portInstances find (_.name==Name("out")) get;
+        	  Assign(toRef(out),invoke)
+          }else invoke
+
         case LiteralExprType =>
           val o = LiteralExprType.outPort(vs)
           val c = vs.params.headOption match {
@@ -74,8 +92,8 @@ trait ContentsToClass {
           val (a, o) = u.unaryPortInstancesOf(vs)
           u match {
             case c: CastExprType => Assign(toRef(o), cast(a.finalTpe, o.finalTpe, toRef(a)))
-            case NotExprType => Assign(toRef(o),Not(toRef(a),a.finalTpe.asInstanceOf[PrimitiveJavaType]))
-            case MinusExprType => Assign(toRef(o), Minus(toRef(a),a.finalTpe.asInstanceOf[PrimitiveJavaType]))
+            case NotExprType => Assign(toRef(o), Not(toRef(a), a.finalTpe.asInstanceOf[PrimitiveJavaType]))
+            case MinusExprType => Assign(toRef(o), Minus(toRef(a), a.finalTpe.asInstanceOf[PrimitiveJavaType]))
           }
         case s: BinExprType =>
           val (a, b, o) = s.binaryPortInstancesOf(vs)
@@ -83,9 +101,9 @@ trait ContentsToClass {
           val bTree = toRef(b)
           val etpe = a.finalTpe.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
           val eTree = s match {
-            case ShiftLeftExprType => ShiftLeft(aTree,bTree,etpe)
-            case ShiftRightExprType => ShiftRight(aTree,bTree,etpe)
-            case UShiftRightExprType => UShiftRight(aTree,bTree,etpe)
+            case ShiftLeftExprType => ShiftLeft(aTree, bTree, etpe)
+            case ShiftRightExprType => ShiftRight(aTree, bTree, etpe)
+            case UShiftRightExprType => UShiftRight(aTree, bTree, etpe)
             case AndExprType => And(aTree, bTree, etpe)
             case OrExprType => Or(aTree, bTree, etpe)
             case XorExprType => Xor(aTree, bTree, etpe)
@@ -98,7 +116,7 @@ trait ContentsToClass {
             case LeExprType => Le(aTree, bTree, etpe)
             case GtExprType => Gt(aTree, bTree, etpe)
             case GeExprType => Ge(aTree, bTree, etpe)
-            case EqExprType => Eq(aTree, bTree, etpe) 
+            case EqExprType => Eq(aTree, bTree, etpe)
             case NeExprType => Ne(aTree, bTree, etpe)
           }
           Assign(toRef(o), eTree)
@@ -112,9 +130,10 @@ trait ContentsToClass {
       ins ::: invoke :: outs.toList
     }
     val invokes = bs.executionOrder flatMap { runOne }
-    val localsDecl = localsMap map { case (a, i) => 
-      (a.valSymbol.name.str + "_" + a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i) 
-      } toList;
+    val localsDecl = localsMap map {
+      case (a, i) =>
+        (a.valSymbol.name.str + "_" + a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i)
+    } toList;
     Method(Name("contents"), "()V", invokes, localsDecl)
   }
 
@@ -133,8 +152,7 @@ trait ContentsToClass {
         case b: BoxTypeSymbol => List()
         case e: ExprType =>
           v.portInstances map { pi =>
-            val rpi = pi.asInstanceOf[RealPortInstance]
-            (rpi -> { val l = locals; locals = locals + rpi.finalTpe.javaSize; l })
+            (pi -> { val l = locals; locals = locals + pi.finalTpe.javaSize; l })
           }
         case _ => List()
       }

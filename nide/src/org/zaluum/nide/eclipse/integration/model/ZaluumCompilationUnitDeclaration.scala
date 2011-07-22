@@ -67,6 +67,7 @@ import org.eclipse.jdt.core.JavaCore
 import org.eclipse.core.resources.ResourcesPlugin
 import org.zaluum.nide.eclipse.EclipseUtils
 import javax.swing.JPanel
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
@@ -98,6 +99,7 @@ class ZaluumCompilationUnitDeclaration(
     def enter(p: PortSymbol) {}
     def enter(a: ValSymbol) {}
     def enter(p: ParamSymbol) {}
+    def compilationUnitScope = zaluumScope
   }
 
   override def buildCompilationUnitScope(lookupEnvironment: LookupEnvironment) = {
@@ -302,7 +304,7 @@ class ZaluumCompilationUnitDeclaration(
   override def resolve() {
     super.resolve() // FIXME run or not?
     try {
-      a.runResolve()
+      a.runResolve(types(0).asInstanceOf[ZaluumTypeDeclaration], this)
       a.runCheck()
       checkZaluumLibraryPresent()
     } catch { case e => e.printStackTrace }

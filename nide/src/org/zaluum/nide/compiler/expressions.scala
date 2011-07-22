@@ -6,7 +6,7 @@ sealed abstract class ExprType(nameStr: String) extends BoxType {
   val name = Name(nameStr)
   val fqName = Name("org.zaluum.expr." + nameStr)
   val o = new PortSymbol(this, Name("o"), Point(0, 0), Out)
-  val ports = Map(o.name -> o)
+  var ports = Map(o.name -> o)
   val params = Map[Name, ParamSymbol]()
   def lookupPort(a: Name) = ports.get(a)
   def lookupParam(a: Name) = params.get(a)
@@ -14,7 +14,7 @@ sealed abstract class ExprType(nameStr: String) extends BoxType {
 }
 sealed abstract class UnaryExprType(nameStr: String) extends ExprType(nameStr) {
   val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
-  override val ports = Map(a.name -> a, o.name -> o)
+  ports = Map(a.name -> a, o.name -> o)
 
   def unaryPortInstancesOf(v: ValSymbol) =
     (v.findPortInstance(a).get, v.findPortInstance(o).get)
@@ -23,7 +23,7 @@ sealed abstract class UnaryExprType(nameStr: String) extends ExprType(nameStr) {
 sealed abstract class BinExprType(nameStr: String) extends ExprType(nameStr) {
   val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
   val b = new PortSymbol(this, Name("b"), Point(0, 0), In)
-  override val ports = List(a, b, o) map { a => (a.name -> a) } toMap
+  ports = List(a, b, o) map { a => (a.name -> a) } toMap
   def binaryPortInstancesOf(v: ValSymbol) =
     (v.findPortInstance(a).get, v.findPortInstance(b).get, v.findPortInstance(o).get)
 
@@ -34,6 +34,16 @@ sealed abstract class ShiftExprType(nameStr: String) extends BinExprType(nameStr
 sealed abstract class EqualityExprType(nameStr: String) extends BinExprType(nameStr)
 sealed abstract class BitBinExprType(nameStr: String) extends BinExprType(nameStr)
 sealed abstract class CastExprType(nameStr: String) extends UnaryExprType(nameStr)
+
+object InvokeExprType extends ExprType("Invoke") {
+  val Sig = """(.+)(\(.*)""".r
+  val signatureName = Name("signature")
+  val signatureSymbol = new ParamSymbol(null,signatureName)
+  override val params = Map(signatureName-> signatureSymbol)
+  val obj = new PortSymbol(this,Name("obj"), Point(0,0), In)
+  ports = Map(obj.name -> obj)
+  def objPort (vs:ValSymbol) = vs.findPortInstance(obj).get
+}
 
 object LiteralExprType extends ExprType("Literal") {
   val paramName = Name("literal")
@@ -75,6 +85,7 @@ object DivExprType extends MathExprType("Div")
 object RemExprType extends MathExprType("Rem")
 object Expressions {
   val all = List(
+    InvokeExprType,
     LiteralExprType,
     ToByteType,
     ToShortType,

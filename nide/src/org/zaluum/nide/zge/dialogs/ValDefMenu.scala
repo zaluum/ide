@@ -59,6 +59,7 @@ object ValDefMenu {
             }
             params
           case _ ⇒
+            params
             tpeMenu
         }
     }

@@ -38,7 +38,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
       focus
     }
   }
-  def onFocus {editor.showPalette()}
+  def onFocus { editor.showPalette() }
   def onResize { refresh() } // FIXME this OnResize triggers when a tooltip expands the canvas
   // Viewer doesn't have any visual representation
   override def updateSize() {}
@@ -53,17 +53,17 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def updatePorts(changes: Map[Tree, Tree]) {
     ports.foreach { _.hide }
     ports.clear
-    symbol.thisVal.portSides foreach { ps =>
-      ps.pi match {
-        case r:RealPortInstance =>
-          r.portSymbol.decl match {
-            case pd : PortDef => 
-	            val f = new PortDeclFigure(pd, ps, TreeViewer.this)
-	            f.update()
-	            ports += f
-            case _=>
+    symbol.thisVal.portSides foreach { pside =>
+      pside.pi.portSymbol match {
+        case Some(ps) =>
+          ps.decl match {
+            case pd: PortDef =>
+              val f = new PortDeclFigure(pd, pside, TreeViewer.this)
+              f.update()
+              ports += f
+            case _ =>
           }
-        case _ => 
+        case _ =>
       }
     }
     ports.foreach { _.show }
@@ -95,10 +95,10 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
     };
     selection.refresh(mapper);
   }
-  
-  def itemToIType(i:Item) = {
+
+  def itemToIType(i: Item) = {
     i match {
-      case v:ValDefItem if (v.valSym.tpe!=NoSymbol) =>
+      case v: ValDefItem if (v.valSym.tpe != NoSymbol) =>
         controller.zproject.jProject.findType(v.valSym.tpe.name.str)
       case _ => null
     }
@@ -107,22 +107,22 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   emptyLabel.setForegroundColor(ColorConstants.lightGray)
   emptyLabel.setFont(Activator.getDefault.directEditFont)
   def showEmptyLabel() = {
-    val x = getBounds.width/2
-    val y = getBounds.height/2
+    val x = getBounds.width / 2
+    val y = getBounds.height / 2
     val d = emptyLabel.getPreferredSize();
-    val dx = d.width/2
-    val dy = d.height/2
-    emptyLabel.setBounds(new Rectangle(x-dx,y-dy,d.width,d.height))
+    val dx = d.width / 2
+    val dy = d.height / 2
+    emptyLabel.setBounds(new Rectangle(x - dx, y - dy, d.width, d.height))
     this.feedbackLayer.add(emptyLabel)
   }
   def hideEmptyLabel() = {
     if (feedbackLayer.getChildren.contains(emptyLabel))
       feedbackLayer.remove(emptyLabel)
   }
-  def deepChildrenWithoutLayers = this.deepChildren.filter { 
-    _ match { 
-      case _:FreeformLayer=>false
-      case _:ScalableFreeformLayeredPane=>false
+  def deepChildrenWithoutLayers = this.deepChildren.filter {
+    _ match {
+      case _: FreeformLayer => false
+      case _: ScalableFreeformLayeredPane => false
       case _ => true
     }
   }

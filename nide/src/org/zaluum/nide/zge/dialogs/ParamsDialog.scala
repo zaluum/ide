@@ -17,9 +17,10 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   var tableContents = List[TableEntry]()
   case class TableEntry(var sym: Option[ParamSymbol], var key:String, var value: String)
   def v = vs.decl.asInstanceOf[ValDef]
-  def bso = vs.tpe match {
-    case NoSymbol => None
-    case bs:BoxTypeSymbol => Some(bs)
+  def params = vs.tpe match {
+    case NoSymbol => List()
+    case bs:BoxTypeSymbol => bs.paramsInOrder
+    case e:ExprType => e.params.values.toList sortBy {_.name.str} // TODO merge in boxType
   }
   override protected def okPressed() {
     val newParams = tableContents.filterNot(_.key=="").map(t => (Param(Name(t.key),t.value))).sortBy(_.key.str)
@@ -125,7 +126,7 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   def createTableValue() = {
     val declared = v.params.asInstanceOf[List[Param]]
     def declaredValue(k:Name) =declared.find(_.key == k).map(_.value).getOrElse("")
-    val parSymbols = for (bs ← bso.toList; p ← bs.paramsInOrder) yield p
+    val parSymbols = for (p ← params) yield p
     val withSymbol = for (p<-parSymbols; val key = p.name) yield { TableEntry(Some(p), key.str,declaredValue(key) ) }
     val unknown = for (Param(k,v) ← declared; if !parSymbols.exists(_.name==k)) yield { TableEntry(None, k.str, v) }
     withSymbol ++ unknown

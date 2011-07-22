@@ -30,12 +30,17 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
   def getExpectedPackageName = this.referenceContext.compilationResult.compilationUnit.getPackageName();
   val cache = Map[Name, BoxTypeSymbol]()
   val cacheJava = Map[TypeBinding, ClassJavaType]()
+  // UPDATE primitive binding
+  primitives.String.binding = getJavaLangString
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray
     if (arr.isDefined) {
       val (leafname, dim) = arr.get
       getJavaType(leafname) map { l ⇒
-        new ArrayType(cud.JDTScope, l, dim)
+        val bind = createArrayType(l.binding,dim)
+        val a = new ArrayType(cud.JDTScope, l, dim)
+        a.binding = bind
+        a
       }
     } else {
       val tpe =
@@ -45,33 +50,35 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
         } else {
           getType(name.str.toCharArray)
         }
-      getJavaType(tpe)
+      Some(getJavaType(tpe)) //FIXME
     }
   }
-  def getJavaType(tpe: TypeBinding): Option[JavaType] = {
+  def getJavaType(tpe: TypeBinding): JavaType = {
     tpe match {
       case r: ReferenceBinding ⇒
-        cacheJava.get(tpe).orElse {
+        cacheJava.get(tpe).getOrElse {
           val jtpe = new ClassJavaType(cud.JDTScope, Name(aToString(r.compoundName)))
+          jtpe.binding = r
           cacheJava += (tpe -> jtpe)
-          Some(jtpe)
+          jtpe
         }
       case b: BaseTypeBinding ⇒
         b.simpleName.mkString match {
-          case "byte" ⇒ Some(primitives.Byte)
-          case "short" ⇒ Some(primitives.Short)
-          case "int" ⇒ Some(primitives.Int)
-          case "long" ⇒ Some(primitives.Long)
-          case "float" ⇒ Some(primitives.Float)
-          case "double" ⇒ Some(primitives.Double)
-          case "boolean" ⇒ Some(primitives.Boolean)
-          case "char" ⇒ Some(primitives.Char)
-          case _ ⇒ None
+          case "byte" ⇒ primitives.Byte
+          case "short" ⇒ primitives.Short
+          case "int" ⇒   primitives.Int
+          case "long" ⇒  primitives.Long
+          case "float" ⇒ primitives.Float
+          case "double" ⇒ primitives.Double
+          case "boolean" ⇒ primitives.Boolean
+          case "char" ⇒ primitives.Char
+          //case _ ⇒ None
         }
       case a: ArrayBinding ⇒
-        getJavaType(a.leafComponentType) map { leaf ⇒
-          new ArrayType(cud.JDTScope, leaf, a.dimensions)
-        }
+        val leaf = getJavaType(a.leafComponentType)
+        val t = new ArrayType(cud.JDTScope, leaf, a.dimensions)
+        t.binding = a
+        t
     }
   }
   def findMethodParameterNamesSource(m: MethodBinding, sourceType: SourceTypeBinding): Option[Array[String]] = {
@@ -160,7 +167,7 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
             }
             def createPort(in: Boolean) = {
               val port = new PortSymbol(bs, Name(fname), Point(0, 0), if (in) In else Out)
-              port.tpe = getJavaType(f.`type`).getOrElse(NoSymbol)
+              port.tpe = getJavaType(f.`type`)
               bs.enter(port)
             }
             if (hasAnnotation(classOf[org.zaluum.annotation.In])) createPort(true)
@@ -182,17 +189,16 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
             if (m.isConstructor && m.isPublic) {
               val params = for ((p, name) ← m.parameters zip parameterNames) yield {
                 val ps = new ParamSymbol(bs, Name(name))
-                ps.tpe = getJavaType(p).getOrElse(NoSymbol)
+                ps.tpe = getJavaType(p)
                 ps
               }
               bs.constructors = new Constructor(bs, params.toList) :: bs.constructors
             } else {
               if (mName.startsWith("set") && m.parameters.size == 1 && m.returnType == TypeBinding.VOID) {
-                getJavaType(m.parameters.head) foreach { ptpe ⇒
-                  val p = new ParamSymbol(bs, Name(mName))
-                  p.tpe = ptpe
-                  bs.enter(p)
-                }
+                val ptpe = getJavaType(m.parameters.head) 
+                val p = new ParamSymbol(bs, Name(mName))
+                p.tpe = ptpe
+                bs.enter(p)
               }else if (mName == "apply" && !m.isStatic && !m.isAbstract && m.parameters.size==0 && m.returnType == TypeBinding.VOID) {
                 bs.hasApply= true
               }
@@ -200,6 +206,7 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
           }
           if (bs.constructors.isEmpty)
             bs.constructors = List(new Constructor(bs, List()))
+          bs.binding = r
           cache += (name -> bs)
           Some(bs)
         case a ⇒ None

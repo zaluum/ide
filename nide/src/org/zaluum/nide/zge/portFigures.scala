@@ -63,7 +63,7 @@ class OpenPortDeclFigure(val openBox: OpenBoxFigure) extends RectangleFigure wit
     setXOR(b)
   }
   def update(intPs: PortSide, extPs:PortSide, left: Boolean) {
-    this.tree = intPs.realPi.portSymbol.decl.asInstanceOf[PortDef]; // ??? real
+    this.tree = intPs.pi.portSymbol.get.decl.asInstanceOf[PortDef]; // XXX ??? real
     this.left = left
     setBackgroundColor(Colorizer.color(intPs.pi.finalTpe))
     setForegroundColor(if (dir == Shift) ColorConstants.yellow else ColorConstants.white)

@@ -11,4 +11,5 @@ class ZaluumTypeDeclaration(compilationResult:CompilationResult,val b:BoxDef) ex
     //nop
   }
   override def isScannerUsableOnThisDeclaration = false
+  def zaluumScope = scope.asInstanceOf[ZaluumClassScope]
 }

@@ -3,6 +3,14 @@ import org.jgrapht.traverse.TopologicalOrderIterator
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import org.jgrapht.graph.DefaultEdge
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
+import org.eclipse.jdt.internal.compiler.lookup.InvocationSite
+import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
+import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 
 trait AnalyzerConnections {
   self: Analyzer =>
@@ -10,7 +18,7 @@ trait AnalyzerConnections {
   class CheckConnections(b: BoxDef, owner: Symbol) {
     val bs = b.sym
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
-    var usedInputs = Set[RealPortInstance]()
+    var usedInputs = Set[PortInstance]()
     def check() = Checker.traverse(b)
 
     object Checker extends Traverser(owner) with ReporterAdapter {
@@ -45,42 +53,26 @@ trait AnalyzerConnections {
       }
       // check
       def check() {
-        // 1 - Connections go to known ports
-        val resolved = b.connections.forall {
-          case con: ConnectionDef ⇒
-            def checkResolved(p: Tree) = p match {
-              case EmptyTree ⇒ error("Wire is not connected", con); false
-              case j: JunctionRef ⇒ /*if(!bs.junctions.exists {_.name == j.name}) {
-                  error("FATAL: junction does not exists " + j,con)
-                }*/ true
-              case p: PortRef ⇒
-                PortSide.find(p, bs) match {
-                  case None ⇒ error("Cannot find port " + p, con); false
-                  case _ ⇒ true
-                }
-            }
-            checkResolved(con.a) && checkResolved(con.b)
-        }
-        if (resolved && reporter.errors.isEmpty) {
-          bs.connections.clumps foreach { checkClump(_) }
-          checkTypes();
-          bs.connections.clumps foreach { putConnectionTypes(_) }
-          
-        }
+        // 1 - Check clumps. Do not check for port existence.
+        for (c <- bs.connections.clumps) { checkClump(c) }
+        // 4 - Propagate and check types
+        checkTypes();
+        // 5- Put calculated types to the clump
+        for (c <- bs.connections.clumps) storeTypesInConnectionsAndJunctions(c)
       }
       def checkClump(c: Clump) {
-        val ins = c.ports.filter(p ⇒ p.flowIn) map { _.realPi } // TODO stablish when realPi is ensured
-        val outs = c.ports.filter(p ⇒ !p.flowIn) map { _.realPi }
+        val ins = c.ports.filter(p ⇒ p.flowIn) map { _.pi }
+        val outs = c.ports.filter(p ⇒ !p.flowIn) map { _.pi }
         if (outs.size == 0) error("No output connected", c.connections.head)
         else if (outs.size > 1) error("More than one output is connected", c.connections.head)
         else if (ins.size == 0) error("No inputs connected", c.connections.head)
         else if (!usedInputs.intersect(ins).isEmpty) error("input connected multiple times", c.connections.head) // TODO check online to identify offending connection 
         else {
           checkGraphFlow(c, ins, outs.head)
-          putTypes(c, ins, outs.head)
+          storeFlow(c, ins, outs.head)
         }
       }
-      def checkGraphFlow(c: Clump, ins: Set[RealPortInstance], out: RealPortInstance) {
+      def checkGraphFlow(c: Clump, ins: Set[PortInstance], out: PortInstance) {
         // check graph consistency
         bs.connections.flow += (out -> ins)
         def addDag(vout: PortInstance, vin: PortInstance) {
@@ -104,13 +96,16 @@ trait AnalyzerConnections {
         bs.executionOrder = new TopologicalOrderIterator(acyclic).toList
       }
       def isInside(p: PortInstance) = p.valSymbol == bs.thisVal
-
-      def putTypes(c: Clump, ins: Set[RealPortInstance], out: RealPortInstance) {
+      def storeFlow(c: Clump, ins: Set[PortInstance], out: PortInstance) {
         usedInputs ++= ins
-        // check types
         for (in <- ins) {
           in.connectedFrom = Some(out)
           in.blameConnection = c.findConnectionFor(in)
+        }
+      }
+      def checkGhostPorts(vs: ValSymbol) {
+        for (pi <- vs.portInstances) {
+          if (pi.missing) error("Ghost port. Cannot find port " + pi, vs.decl)
         }
       }
       def checkAssignmentPossible(from: Type, to: Type): Boolean = {
@@ -126,17 +121,21 @@ trait AnalyzerConnections {
         }
       }
       def checkBoxTypes(vs: ValSymbol) {
-        for (api <- vs.portInstances; val pi = api.asInstanceOf[RealPortInstance]) {
-          pi.finalTpe = pi.portSymbol.tpe
-          if (pi.finalTpe == NoSymbol) error("Cannot find type of port " + pi.name.str, vs.decl)
-          pi.connectedFrom foreach { from =>
-            if (!checkAssignmentPossible(from.finalTpe, pi.finalTpe)) {
-              error("Connection with incompatible types", pi.blameConnection.get)
+        for (pi <- vs.portInstances) {
+          if (pi.missing) {
+            error("Cannot find type of port " + pi.name.str, vs.decl)
+          } else {
+            pi.finalTpe = pi.portSymbol.get.tpe // I'm a box so if not missing I have portsymbol
+
+            pi.connectedFrom foreach { from =>
+              if (!checkAssignmentPossible(from.finalTpe, pi.finalTpe)) {
+                error("Connection with incompatible types", pi.blameConnection.get)
+              }
             }
           }
         }
       }
-      def fromTpe(p: RealPortInstance) = p.connectedFrom.map(_.finalTpe).getOrElse(NoSymbol)
+      def fromTpe(p: PortInstance) = p.connectedFrom.map(_.finalTpe).getOrElse(NoSymbol)
       def checkBinExprTypes(vs: ValSymbol) {
         import primitives._
         val s = vs.tpe.asInstanceOf[BinExprType]
@@ -170,11 +169,11 @@ trait AnalyzerConnections {
             if (isIntNumeric(bt) || bt == NoSymbol) {
               if (isIntNumeric(at) || at == NoSymbol) {
                 assignAll(Int, Int)
-              }else if (at == Long) {
+              } else if (at == Long) {
                 a.finalTpe = Long; b.finalTpe = Int; o.finalTpe = Long
-              }else 
+              } else
                 error("Shift only operates on Int and Long", a.blameConnection.get)
-              
+
             } else error("Shift distance must be of Int type", b.blameConnection.get)
           case c: CmpExprType =>
             (one, other) match {
@@ -229,13 +228,13 @@ trait AnalyzerConnections {
         val o = l.outPort(vs)
         val t = vs.params.headOption match {
           case Some((p, vuntrimmed: String)) =>
+            p.tpe = primitives.String
             val v = vuntrimmed.trim
             Literals.parseNarrowestLiteral(v) match {
               case Some((_, tpe)) => o.finalTpe = tpe
               case None => error("Cannot parse literal " + v, vs.decl)
             }
           case e =>
-            println("no")
             o.finalTpe = primitives.Byte;
         }
       }
@@ -262,10 +261,56 @@ trait AnalyzerConnections {
             }
         }
       }
+      def checkInvokeExprType(vs: ValSymbol) {
+        val obj = vs.findPortInstance(InvokeExprType.obj).get
+        InvokeExprType.signatureSymbol.tpe = primitives.String // XXX ugly
+        obj.connectedFrom match {
+          case Some(from) =>
+            from.finalTpe match {
+              case c: ClassJavaType => invoke(vs,obj,c)
+              case _ => error("bad type", vs.decl)
+            }
+          case None => // not connected
+        }
+      }
+      
+      def invoke(vs: ValSymbol, obj: PortInstance, c: ClassJavaType) {
+        obj.finalTpe = c
+        vs.params.get(InvokeExprType.signatureSymbol) match {
+          case Some(InvokeExprType.Sig(selector,signature)) =>
+            //val m = ztd.scope.getMethod(c.binding, "toString".toCharArray(), Array(), new FakeInvocationSite(TypeBinding.VOID))
+            ztd.zaluumScope.findMethodBySignature(c.binding,selector,signature) match {
+            case Some(p: ProblemMethodBinding) =>
+            	error("problem method " + p +  p.problemId(), vs.decl)
+            case Some(m) =>
+	            if (m.returnType != null && m.returnType != TypeBinding.VOID) {
+	            	val out = vs.portInstances find {_.name == Name("out")} getOrElse {vs.createOut(Name("out")).pi}
+	            	out.missing=false
+	            	out.finalTpe = cud.zaluumScope.getJavaType(m.returnType)
+	            }
+	            for ((p, i) <- m.parameters.zipWithIndex) {
+	            	val name = Name("p" + i)
+	            	val in = vs.portInstances find {_.name == name} getOrElse {vs.createIn(Name("p" + i)).pi}
+	            	in.missing=false
+	            	in.finalTpe = cud.zaluumScope.getJavaType(p);
+	            }
+	            vs.info = m
+	            // check connections
+            case None =>
+              	error("method not found", vs.decl)
+            }
+
+          case _ => error("signature missing", vs.decl)
+        }
+      }
       def checkTypes() {
         bs.thisVal.portInstances foreach { api =>
-          val pi = api.asInstanceOf[RealPortInstance]
-          pi.finalTpe = pi.portSymbol.tpe
+          val pi = api.asInstanceOf[PortInstance]
+          pi.missing=false
+          pi.portSymbol match {
+            case Some(p) => pi.finalTpe = p.tpe
+            case None => error("Cannot find port " + api, bs.decl)
+          }
         }
         for (vs <- bs.executionOrder) {
           vs.tpe match {
@@ -273,12 +318,14 @@ trait AnalyzerConnections {
             case b: BinExprType => checkBinExprTypes(vs)
             case LiteralExprType => checkLiteralExprType(vs)
             case e: UnaryExprType => checkUnaryExprType(vs)
+            case InvokeExprType => checkInvokeExprType(vs)
           }
+          checkGhostPorts(vs)
         }
         checkBoxTypes(bs.thisVal)
       }
-      def putConnectionTypes(c: Clump) {
-        val outO = c.ports.find(p ⇒ !p.flowIn) map { _.realPi }
+      def storeTypesInConnectionsAndJunctions(c: Clump) {
+        val outO = c.ports.find(p ⇒ !p.flowIn) map { _.pi }
         outO foreach { out =>
           for (con <- c.connections) { con.tpe = out.finalTpe }
           for (jun <- c.junctions) { jun.tpe = out.finalTpe }
@@ -286,4 +333,14 @@ trait AnalyzerConnections {
       }
     }
   }
+}
+class FakeInvocationSite(val expectedType: TypeBinding) extends InvocationSite {
+  def genericTypeArguments() = null
+  def isSuperAccess() = false
+  def isTypeAccess() = false
+  def setActualReceiverType(receiverType: ReferenceBinding) {}
+  def setDepth(depth: Int) {}
+  def setFieldIndex(depth: Int) {}
+  def sourceEnd() = 0
+  def sourceStart() = 0
 }

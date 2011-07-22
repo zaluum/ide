@@ -3,6 +3,10 @@ package org.zaluum.nide.compiler
 import scala.collection.mutable.Buffer
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
 import javax.swing.JPanel
+import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.zaluum.nide.eclipse.integration.model.{ZaluumCompilationUnitScope,ZaluumTypeDeclaration}
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
 
 class Reporter {
   case class Error(msg: String, mark: Option[Int])
@@ -104,7 +108,7 @@ object Literals {
     (i, p)
   }
 }
-trait Scope {
+trait Scope  {
   def alreadyDefinedBoxType(name: Name): Boolean
   def lookupPort(name: Name): Option[PortSymbol]
   def lookupVal(name: Name): Option[ValSymbol]
@@ -129,16 +133,20 @@ trait RootSymbol extends Scope with Symbol {
   def root: Symbol = this
 }
 object primitives {
-  private def n(str: String, desc: String, size: Int = 1) = new PrimitiveJavaType(Name(str), desc, size)
-  val Byte = n("byte", "B")
-  val Short = n("short", "S")
-  val Int = n("int", "I")
-  val Long = n("long", "J", 2)
-  val Float = n("float", "F")
-  val Double = n("double", "D", 2)
-  val Boolean = n("boolean", "Z")
-  val Char = n("char", "C")
-  val String = n("string", "Ljava/lang/String;") // FIXME
+  private def n(str: String, desc: String, b:BaseTypeBinding, size: Int = 1) = {
+    val p = new PrimitiveJavaType(Name(str), desc, size)
+    p.binding = b
+    p
+  }
+  val Byte = n("byte", "B", TypeBinding.BYTE)
+  val Short = n("short", "S", TypeBinding.SHORT)
+  val Int = n("int", "I", TypeBinding.INT)
+  val Long = n("long", "J", TypeBinding.LONG, 2)
+  val Float = n("float", "F", TypeBinding.FLOAT)
+  val Double = n("double", "D", TypeBinding.DOUBLE, 2)
+  val Boolean = n("boolean", "Z", TypeBinding.BOOLEAN)
+  val Char = n("char", "C", TypeBinding.CHAR)
+  val String = new ClassJavaType(null, Name("java.lang.String") )
   val allTypes = List(Byte, Short, Int, Long, Float, Double, Boolean, Char)
   def numericTypes = List(Byte, Short, Int, Long, Float, Double, Char)
   def widening(from: PrimitiveJavaType, to: PrimitiveJavaType) = {
@@ -271,12 +279,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
     def createPortInstances(bs: BoxType, vsym: ValSymbol, isThis: Boolean) = {
-      val rpis = (for (p <- bs.portsWithSuper.values; if p.isInstanceOf[PortSymbol]) yield {
-        new RealPortInstance(p, vsym)
+      vsym.portInstances = (for (p <- bs.portsWithSuper.values; if p.isInstanceOf[PortSymbol]) yield {
+        val pi = new PortInstance(p.name, vsym)
+        pi.portSymbol = Some(p)
+        pi
       }).toList;
-      vsym.portInstances = rpis
-      vsym.portSides = (for (pi <- rpis) yield {
-        pi.portSymbol.dir match {
+      vsym.portSides = (for (pi <- vsym.portInstances; ps <- pi.portSymbol) yield {
+        ps.dir match {
           case In => List(new PortSide(pi, true, isThis))
           case Out => List(new PortSide(pi, false, isThis))
           case Shift => List(new PortSide(pi, true, isThis), new PortSide(pi, false, isThis))
@@ -376,7 +385,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           tree.tpe = tree.symbol.tpe
         case p @ PortRef(fromTree, name, in) ⇒ // TODO filter in?
           tree.symbol = fromTree.tpe match {
-            case b: BoxType ⇒
+            case b: BoxTypeSymbol ⇒
               catchAbort(b.lookupPort(name)).getOrElse {
                 error("Port not found " + name + " in box type " + b, tree);
                 NoSymbol
@@ -397,7 +406,11 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     new Namer(root).traverse(toCompile)
     toCompile
   }
-  def runResolve(): Tree = {
+  var ztd : ZaluumTypeDeclaration = _
+  var cud : ZaluumCompilationUnitDeclaration = _
+  def runResolve(ztd : ZaluumTypeDeclaration, cud : ZaluumCompilationUnitDeclaration): Tree = {
+    this.ztd = ztd 
+    this.cud = cud 
     new Resolver(global.root).traverse(toCompile)
     toCompile
   }
