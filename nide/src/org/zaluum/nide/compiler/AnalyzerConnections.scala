@@ -11,6 +11,19 @@ import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
+import org.eclipse.jdt.internal.core.builder.NameEnvironment
+import org.eclipse.jdt.internal.compiler.util.ObjectVector
+import org.eclipse.jdt.internal.core.SearchableEnvironment
+import org.eclipse.jdt.internal.core.JavaProject
+import org.eclipse.jdt.core.ICompilationUnit
+import org.eclipse.jdt.internal.core.CompilationUnit
+import org.eclipse.jdt.internal.core.builder.SourceFile
+import org.eclipse.jdt.internal.core.JavaModel
+import org.eclipse.jdt.internal.core.JavaModelManager
+import org.zaluum.nide.eclipse.integration.model.PreParsedZaluumCompilationUnit
+import org.zaluum.nide.eclipse.integration.model.{ ZaluumCompilationUnitDeclaration, ZaluumTypeDeclaration }
+import org.eclipse.jdt.internal.core.BasicCompilationUnit
 
 trait AnalyzerConnections {
   self: Analyzer =>
@@ -267,37 +280,38 @@ trait AnalyzerConnections {
         obj.connectedFrom match {
           case Some(from) =>
             from.finalTpe match {
-              case c: ClassJavaType => invoke(vs,obj,c)
+              case c: ClassJavaType => invoke(vs, obj, c)
               case _ => error("bad type", vs.decl)
             }
           case None => // not connected
         }
       }
-      
+
       def invoke(vs: ValSymbol, obj: PortInstance, c: ClassJavaType) {
         obj.finalTpe = c
         vs.params.get(InvokeExprType.signatureSymbol) match {
-          case Some(InvokeExprType.Sig(selector,signature)) =>
+          case Some(InvokeExprType.Sig(selector, signature)) =>
             //val m = ztd.scope.getMethod(c.binding, "toString".toCharArray(), Array(), new FakeInvocationSite(TypeBinding.VOID))
-            ztd.zaluumScope.findMethodBySignature(c.binding,selector,signature) match {
-            case Some(p: ProblemMethodBinding) =>
-            	error("problem method " + p +  p.problemId(), vs.decl)
-            case Some(m) =>
-	            if (m.returnType != null && m.returnType != TypeBinding.VOID) {
-	            	val out = vs.portInstances find {_.name == Name("out")} getOrElse {vs.createOut(Name("out")).pi}
-	            	out.missing=false
-	            	out.finalTpe = cud.zaluumScope.getJavaType(m.returnType)
-	            }
-	            for ((p, i) <- m.parameters.zipWithIndex) {
-	            	val name = Name("p" + i)
-	            	val in = vs.portInstances find {_.name == name} getOrElse {vs.createIn(Name("p" + i)).pi}
-	            	in.missing=false
-	            	in.finalTpe = cud.zaluumScope.getJavaType(p);
-	            }
-	            vs.info = m
-	            // check connections
-            case None =>
-              	error("method not found", vs.decl)
+            val scope = vs.owner.javaScope
+            ZaluumCompletionEngineScala.findBySignature(cud,scope, c, selector, signature) match {
+              case Some(p: ProblemMethodBinding) =>
+                error("problem method " + p + p.problemId(), vs.decl)
+              case Some(m) =>
+                if (m.returnType != null && m.returnType != TypeBinding.VOID) {
+                  val out = vs.portInstances find { _.name == Name("out") } getOrElse { vs.createOut(Name("out")).pi }
+                  out.missing = false
+                  out.finalTpe = cud.zaluumScope.getJavaType(m.returnType)
+                }
+                for ((p, i) <- m.parameters.zipWithIndex) {
+                  val name = Name("p" + i)
+                  val in = vs.portInstances find { _.name == name } getOrElse { vs.createIn(Name("p" + i)).pi }
+                  in.missing = false
+                  in.finalTpe = cud.zaluumScope.getJavaType(p);
+                }
+                vs.info = m
+              // check connections
+              case None =>
+                error("method not found", vs.decl)
             }
 
           case _ => error("signature missing", vs.decl)
@@ -306,7 +320,7 @@ trait AnalyzerConnections {
       def checkTypes() {
         bs.thisVal.portInstances foreach { api =>
           val pi = api.asInstanceOf[PortInstance]
-          pi.missing=false
+          pi.missing = false
           pi.portSymbol match {
             case Some(p) => pi.finalTpe = p.tpe
             case None => error("Cannot find port " + api, bs.decl)
@@ -332,6 +346,42 @@ trait AnalyzerConnections {
         }
       }
     }
+  }
+}
+object ZaluumCompletionEngineScala {
+  def findBySignature(
+    cud: ZaluumCompilationUnitDeclaration,
+    zcs: ZaluumClassScope,
+    c: ClassJavaType, selector: String, signature: String) = {
+
+    allMethods(engineFor(cud), zcs, c) find { m =>
+      m.selector.mkString == selector &&
+        m.signature().mkString == signature
+    }
+  }
+  
+  def engineFor(cud:ZaluumCompilationUnitDeclaration) : ZaluumCompletionEngine= {
+	  val lookup = cud.zaluumScope.environment
+	  new ZaluumCompletionEngine(lookup)    
+  }
+  
+  def engineForVs(vs: ValSymbol): ZaluumCompletionEngine =
+    engineFor(vs.owner.javaScope.compilationUnitScope()
+      .asInstanceOf[ZaluumCompilationUnitScope].cud)
+ 
+
+  def allMethods(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, c: ClassJavaType): List[MethodBinding] = {
+    val methodsFound = engine.findAllMethods(c.binding, zcs)
+
+    var l = List[MethodBinding]()
+    for (i <- 0 until methodsFound.size) {
+      val o = methodsFound.elementAt(i).asInstanceOf[Array[_]]
+      val method = o(0).asInstanceOf[MethodBinding]
+      l ::= method
+      val tpe = o(1).asInstanceOf[Object]
+      //println("method " + method + " receiverType " + " " + tpe.getClass)
+    }
+    l
   }
 }
 class FakeInvocationSite(val expectedType: TypeBinding) extends InvocationSite {

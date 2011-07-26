@@ -1,55 +1,82 @@
-NOW
+Agenda
 
-conversions de tipus
-	-downcast automàtic
-	-box unbox support
-	-pensar sistema upcasting
-	-connectar subclasses Dog->Animal (isAssignable?)
+week 25-31 compiler week
+	- invoke
+		- ignore generics
+		- parameter order and names (p1,p2,p2 or names)
+		- check method visibility
+		- ensure method binding is resolved and hierarchy connected.
+		- helper to select method signature
+		- this as out
+		- error resistant
+	- connectar subclasses. Dog->Animal (isAssignable?)
+	- box unbox support
+	- write one article
+	- desactivar hetzner
+	
+week 1-7 compiler week
+	- If box, Switch, and other boxes with special visual support.
+	- New
+	- field access
+week 8-14 
+	- array creation/access
+	- compilador amb parametres out apply(in in in)
+	- @Apply marks method to invoke
+	- analyzerConnections check correctness (missing ports eg)
+	- visual only boxes
+	- Automatic icon grows/shrinks depending on number of ports
+week 15-21 GUI week
+	- change port names
+	- nested guis as new window
+	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
+	- Swing thread synchronization / refresh rate	
+	- al connectar o desconnectar cables de vegades fa coses rares
+	- quan es vol moure un fil, costa de que no s'activi el de fer extensions
+	- when a visual component moves, resize the canvas size
+	- notes/ visual only on diagram
+week 22-28 library week
+	- Graphing widget properties. Color/etc( see labview)
+	- drivers
+		- template
+		- serial
+		- tcp/ip 
+	- basic math
+	- sound output clicks?
+week 29-4 doc week -> ampliar detalls
+	- tutorials/docs/etc
+	- examples/screencast
+	- build scripts
+week 5-11 launch week
+	- beta nag screen/ watermark
+	- buy hosting
+	- buy template
+	- publish beta
+	- buy adwords	
 
-classes base model 
-	-compilador amb parametres out apply(in in in)
-	-GUI deep preview -> metode per inicialitzar gui sense la box?
-	-@Apply marks method to invoke
-	*suport per a boxes especialitzades (operacions matematiques)
-		-Generic +-*/ and others. Box templates. (Box.class with Object inputs or special marker interface type. Box$int.class specialized)
-	*herencia de .zaluums? 
-	-visual only boxes
-	-write javadoc on zaluum files
-	-Extensible in/out with unfolded array inputs
-	-If box, Switch, and other boxes with special visual support.
-	-Feedback connections
-	-com gestionar excepcions?
-	-declare constructor on zaluum, use as parameter in instances
-	
-generacio codi
-	-backend soot? backend JDT? suport per multi backend? (generacio codi c/hadoop?)
-	-suport per a multiples directors (multi-threading)
-	-Swing thread synchronization / refresh rate
-	
-icons
-	-Automatic icon grows/shrinks depending on number of ports
+article ideas
+	- Use cases. Fake forum posts.
+	- Strategy. How to start. Open source library / pay tools.
+	- Why Zaluum: Write/Draw what makes sense. Future directions. Why JVM.
+	- Robot
+	- Scala
 
 bugs
 	-s'ha d'engegar RCP en unity amb UBUNTU_MENUPROXY=0
 	-sembla que xulrunner dona algun problema d'alt consum de cpu. xulrunner 2 no?
-	-make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
-	-al connectar o desconnectar cables de vegades fa coses rares
-
-usabilitat
-	-quan es vol moure un fil, costa de que no s'activi el de fer extensions
-	-change port names
-	-when a visual component moves, resize the canvas size
+	
+LATER
+	-suport per a multiples directors (multi-threading)
+	-backend soot? backend JDT? suport per multi backend? (generacio codi c/hadoop?)
+	-Feedback connections
+	*herencia de .zaluums? 
+	-write javadoc on zaluum files
+	-com gestionar excepcions?
+	-Extensible in/out with unfolded array inputs
+	-GUI deep preview -> metode per inicialitzar gui sense la box?
+	-declare constructor on zaluum, use as parameter in instances
+	-re layout on box movement
 	-show/hide grid
 	-snap correctly
-	-notes/ visual only on diagram
-	-re layout on box movement
-
-library
-	-Graphing widget properties. Color/etc( see labview)
-	-tutorials/docs/etc
-	-sound output clicks?
-
-LATER
 	-java search full support/refactor support
 	-refactor some boxes into a new subsystem
 	-mirar la visibilitat del port (protected/public) al compilar. Visualitzar el port depenent de si es accessible o no.
@@ -65,7 +92,6 @@ LATER
 		- org.eclipse.jdt.internal.core.CopyResourceElementsOperation
 		- org.eclipse.jdt.internal.core.CreatePackageDeclaration
 		- ICompilationUnit create...
-	
 	-fondo workbench com talend amb fletxes que indiquen com començar
 	-better icon set
 	-Zoom
@@ -80,8 +106,16 @@ LATER
 MUCH LATER
 	-code generation
 	-map reduce/other outputs.
-
+	
 DONE!
+	- look available methods
+	- go to superclass / superinterface
+	- abstract classes 
+	- filter bridges, synthetics etc?
+	-downcast automàtic
+	*suport per a boxes especialitzades (operacions matematiques) -> expressions
+		-Generic +-*/ and others. Box templates. (Box.class with Object inputs or special marker interface type. Box$int.class specialized)
+	-expressions
 	-testing harness
 	-peta el paquet default
 	-comprovar si hi ha metode apply

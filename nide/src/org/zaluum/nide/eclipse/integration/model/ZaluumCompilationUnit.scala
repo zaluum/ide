@@ -45,7 +45,7 @@ import ICompilationUnit._
 import java.util.{ Map ⇒ JMap }
 
 class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: WorkingCopyOwner) extends CompilationUnit(parent, name, owner) {
-  
+
   override def buildStructure(info: OpenableElementInfo, pm: IProgressMonitor, newElements: JMap[_, _], _underlyingResource: IResource): Boolean = {
     var underlyingResource = _underlyingResource
     //if (!isOnBuildPath) return false

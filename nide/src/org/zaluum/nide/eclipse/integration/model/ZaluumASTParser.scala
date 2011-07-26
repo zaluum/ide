@@ -12,5 +12,5 @@ class ZaluumASTParser(level:Int,tree: Tree) extends ASTParser(level) {
 }
   
 
-class PreParsedZaluumCompilationUnit(contents:Array[Char], packageName:Array[Array[Char]], fileName: String, element:IJavaElement, val tree:Tree) 
+class PreParsedZaluumCompilationUnit(contents:Array[Char], packageName:Array[Array[Char]], fileName: String, val element:IJavaElement, val tree:Tree) 
   extends BasicCompilationUnit(contents,packageName,fileName,element) 

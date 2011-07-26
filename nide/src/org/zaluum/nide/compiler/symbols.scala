@@ -7,6 +7,7 @@ import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 trait Symbol {
   def owner: Symbol
   def name: Name
@@ -99,6 +100,7 @@ class BoxTypeSymbol(
   def lookupValOrCreateMissing(name: Name) = lookupVal(name).getOrElse {
     missingVals.getOrElseUpdate(name, new ValSymbol(this, name));
   }
+  var javaScope : ZaluumClassScope = null
   var hasApply = false
   override def portsWithSuper: Map[Name, PortSymbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def declaredVals = vals

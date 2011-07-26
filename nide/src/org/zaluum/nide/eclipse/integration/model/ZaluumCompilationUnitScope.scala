@@ -23,7 +23,7 @@ import org.eclipse.jdt.internal.core.SourceTypeElementInfo
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
-class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cud, lookupEnvironment) {
+class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cudp, lookupEnvironment) {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
   }
@@ -32,6 +32,7 @@ class ZaluumCompilationUnitScope(cud: ZaluumCompilationUnitDeclaration, lookupEn
   val cacheJava = Map[TypeBinding, ClassJavaType]()
   // UPDATE primitive binding
   primitives.String.binding = getJavaLangString
+  def cud = referenceContext.asInstanceOf[ZaluumCompilationUnitDeclaration]
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray
     if (arr.isDefined) {

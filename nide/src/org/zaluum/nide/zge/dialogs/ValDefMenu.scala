@@ -26,6 +26,7 @@ object ValDefMenu {
       })
       item
     }
+    def methodMenu = newItem("Method...") { new MethodSelectDialog(viewer,v).open }
     def tpeMenu = newItem("Type...") { new ValDefDialog(viewer, v).open() }
     def params = newItem("Parameters...") { new ParamsDialog(viewer, v).open() }
     def cons = newItem("Constructor...") { new ConstructorDialog(viewer, v).open() }
@@ -58,6 +59,9 @@ object ValDefMenu {
               new SuperDialog(viewer, v).open()
             }
             params
+          case InvokeExprType => 
+            methodMenu
+            tpeMenu
           case _ ⇒
             params
             tpeMenu

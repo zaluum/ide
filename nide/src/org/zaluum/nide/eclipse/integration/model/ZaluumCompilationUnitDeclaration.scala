@@ -80,7 +80,6 @@ class ZaluumCompilationUnitDeclaration(
 
   var tree: BoxDef = _
   var a: Analyzer = _
-
   object JDTScope extends RootSymbol {
     def alreadyDefinedBoxType(name: Name): Boolean = false
     private def fail = throw new UnsupportedOperationException()
@@ -302,9 +301,12 @@ class ZaluumCompilationUnitDeclaration(
     }
   }
   override def resolve() {
-    super.resolve() // FIXME run or not?
+    super.resolve()
     try {
-      a.runResolve(types(0).asInstanceOf[ZaluumTypeDeclaration], this)
+      val ztd = types(0).asInstanceOf[ZaluumTypeDeclaration]
+      val scope = ztd.scope.asInstanceOf[ZaluumClassScope]
+      tree.sym.javaScope = scope //  a bit ugly...
+      a.runResolve(this)
       a.runCheck()
       checkZaluumLibraryPresent()
     } catch { case e => e.printStackTrace }

@@ -9,11 +9,4 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
   }
-  def findMethodBySignature(receiver:ReferenceBinding, selector:String, signature:String) = {
-    // TODO supers
-    receiver.getMethods(selector.toCharArray()) find { m => 
-      m.signature().mkString == signature 
-    }
-  }
-
 }

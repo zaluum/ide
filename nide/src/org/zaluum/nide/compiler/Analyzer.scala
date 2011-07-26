@@ -406,11 +406,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     new Namer(root).traverse(toCompile)
     toCompile
   }
-  var ztd : ZaluumTypeDeclaration = _
   var cud : ZaluumCompilationUnitDeclaration = _
-  def runResolve(ztd : ZaluumTypeDeclaration, cud : ZaluumCompilationUnitDeclaration): Tree = {
-    this.ztd = ztd 
-    this.cud = cud 
+  def runResolve(cud : ZaluumCompilationUnitDeclaration): Tree = {
+    this.cud = cud
     new Resolver(global.root).traverse(toCompile)
     toCompile
   }
