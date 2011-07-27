@@ -101,16 +101,16 @@ object MethodUtils {
         } map { foundM ⇒ foundM.getArgumentNames map { _.mkString } }
     }
   }
-  def findMethodParamNames2(m:MethodBinding, javaProject:IJavaProject) = {
+  def findMethodParamNames(m:MethodBinding, javaProject:IJavaProject) = {
     val e = m.declaringClass.erasure()
     val tpeName = e.qualifiedPackageName.mkString + "." + e.qualifiedSourceName().mkString
     try {
     	val tpe = javaProject.findType(tpeName)
-    	val sigs = m.parameters.map {_.qualifiedSourceName.mkString} map {
-    	  q => Signature.createTypeSignature(q, false);
+    	tpe.getMethods() find { im=>
+    	  im.getElementName == m.selector.mkString && im.getSignature == m.signature.mkString
+    	} map { meth =>
+    	  meth.getParameterNames()
     	}
-    	val meth = tpe.getMethod(m.selector.mkString, sigs)
-    	Some(meth.getParameterNames())
     }catch { case j:JavaModelException => None }
   }
   private def findMethodParams(m:MethodBinding, binFunc : ReferenceBinding => Option[Array[String]]) : Option[Array[String]]= {

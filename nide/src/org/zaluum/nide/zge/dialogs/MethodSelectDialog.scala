@@ -56,7 +56,7 @@ class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends Dialog(viewe
             val jproject = viewer.zproject.jProject.asInstanceOf[JavaProject]
             val nameLookup = jproject.newNameLookup(Array[org.eclipse.jdt.core.ICompilationUnit]())
             val paramNames = methods map { m =>
-              val names = MethodUtils.findMethodParamNames2(m, jproject)
+              val names = MethodUtils.findMethodParamNames(m, jproject)
               val params = names.toList.flatMap(a=>a)
               (m, params)
             }
