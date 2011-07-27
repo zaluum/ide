@@ -82,58 +82,7 @@ class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookup
         t
     }
   }
-  def findMethodParameterNamesSource(m: MethodBinding, sourceType: SourceTypeBinding): Option[Array[String]] = {
-    if (sourceType.scope != null) {
-      val parsedType = sourceType.scope.referenceContext
-      if (parsedType != null) {
-        val methodDecl = parsedType.declarationOf(m.original());
-        if (methodDecl != null) {
-          val arguments = methodDecl.arguments;
-          if (arguments != null) {
-            val names = for (a ← arguments) yield { a.name.mkString }
-            return Some(names)
-          }
-        }
-      }
-    }
-    None
-  }
-  private def findMethodParameterNamesBinary(m: MethodBinding, rb: ReferenceBinding): Option[Array[String]] = {
-    environment.nameEnvironment.findType(rb.compoundName) match {
-      case null ⇒ None
-      case answer if answer.isSourceType && answer.getSourceTypes()(0) != null ⇒
-        val sourceType = answer.getSourceTypes()(0);
-        val typeHandle = sourceType.asInstanceOf[SourceTypeElementInfo].getHandle();
-        val signature = for (e ← m.parameters) yield {
-          e.signature.mkString
-        }
-        val searchedMethod = typeHandle.getMethod(String.valueOf(m.selector), signature);
-        val foundMethods = typeHandle.findMethods(searchedMethod);
-        if (foundMethods != null && foundMethods.length == 1) {
-          try {
-            val names = foundMethods(0).asInstanceOf[SourceMethod]
-              .getElementInfo.asInstanceOf[SourceMethodElementInfo]
-              .getArgumentNames().map { _.mkString }
-            Some(names)
-          } catch { case e: JavaModelException ⇒ None }
-        } else None
-      case answer if answer.isBinaryType ⇒
-        answer.getBinaryType.getMethods.find { candidate ⇒
-          candidate.getSelector.mkString == m.selector.mkString &&
-            candidate.getMethodDescriptor.mkString == m.signature.mkString
-        } map { foundM ⇒ foundM.getArgumentNames map { _.mkString } }
-    }
-  }
-  private def findMethodParameterNames(m: MethodBinding): Option[Array[String]] = {
-    val erasure = m.declaringClass.erasure();
-    erasure match {
-      case sourceType: SourceTypeBinding ⇒
-        findMethodParameterNamesSource(m, sourceType)
-      case rb: ReferenceBinding ⇒
-        findMethodParameterNamesBinary(m, rb)
-      case _ ⇒ None
-    }
-  }
+ 
   def allFieldsFor(r:ReferenceBinding) : List[FieldBinding]= {
     r.fields.toList ++ {if (r.superclass!=null) allFieldsFor(r.superclass) else List()}
   }
@@ -183,7 +132,7 @@ class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookup
           }
           
           for (m ← allMethodsFor(r)) {
-            val parameterNames = findMethodParameterNames(m) getOrElse {
+            val parameterNames = MethodUtils.findMethodParameterNamesEnv(m,environment.nameEnvironment) getOrElse {
               (for (i ← 0 until m.parameters.length) yield "$" + i).toArray
             }
             val mName = m.selector.mkString

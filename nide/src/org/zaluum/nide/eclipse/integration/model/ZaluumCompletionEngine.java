@@ -9,43 +9,44 @@ import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Scope;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
-import org.eclipse.jdt.internal.compiler.util.HashtableOfObject;
 import org.eclipse.jdt.internal.compiler.util.ObjectVector;
 import org.zaluum.nide.compiler.FakeInvocationSite;
+
 @SuppressWarnings("restriction")
 public class ZaluumCompletionEngine {
 	LookupEnvironment lookupEnvironment;
-	public HashtableOfObject typeCache = new HashtableOfObject(5);
-	
+
 	public ZaluumCompletionEngine(LookupEnvironment lookupEnvironment) {
 		this.lookupEnvironment = lookupEnvironment;
 	}
-	public ObjectVector findAllMethods(ReferenceBinding receiverType, ClassScope scope){
+
+	public ObjectVector findAllMethods(ReferenceBinding receiverType,
+			ClassScope scope) {
 		ObjectVector methodsFound = new ObjectVector();
-		findMethods(
-		          new char[0], // selector
-		          null, // typeArgTypes 
-		          null, // argTypes
-		          receiverType, // receiverType
-		          scope, // scope
-		          methodsFound, // methodsFound
-		          false, // onlystatic
-		          false, //exactmatch
-		          new FakeInvocationSite(null), // invocationSite
-		          scope, // invocationScope
-		          false, //implicitCall
-		          false, //supercall
-		          false, //canbePrefixed
-		          null, //missingelements
-		          null, //missingElementsStarts
-		          null, //missingElementsEnds
-		          false, // missingElementsHaveProblems
-		          null, //castedReceiver
-		          -1, // receiverStart
-		          -1 //receiverEnd
-		          );
+		findMethods(new char[0], // selector
+				null, // typeArgTypes
+				null, // argTypes
+				receiverType, // receiverType
+				scope, // scope
+				methodsFound, // methodsFound
+				false, // onlystatic
+				false, // exactmatch
+				new FakeInvocationSite(null), // invocationSite
+				scope, // invocationScope
+				false, // implicitCall
+				false, // supercall
+				false, // canbePrefixed
+				null, // missingelements
+				null, // missingElementsStarts
+				null, // missingElementsEnds
+				false, // missingElementsHaveProblems
+				null, // castedReceiver
+				-1, // receiverStart
+				-1 // receiverEnd
+		);
 		return methodsFound;
 	}
+
 	public void findMethods(char[] selector, TypeBinding[] typeArgTypes,
 			TypeBinding[] argTypes, ReferenceBinding receiverType, Scope scope,
 			ObjectVector methodsFound, boolean onlyStaticMethods,
@@ -229,12 +230,12 @@ public class ZaluumCompletionEngine {
 			} else {
 				if (methodLength > method.selector.length)
 					continue next;
-				/*if (!CharOperation.prefixEquals(methodName, method.selector,
-						false) //ignore case )
-						&& !( this.options.camelCaseMatch  && CharOperation
-								.camelCaseMatch(methodName, method.selector))) {
-					continue next;
-				}*/
+				/*
+				 * if (!CharOperation.prefixEquals(methodName, method.selector,
+				 * false) //ignore case ) && !( this.options.camelCaseMatch &&
+				 * CharOperation .camelCaseMatch(methodName, method.selector)))
+				 * { continue next; }
+				 */
 			}
 
 			if (minTypeArgLength != 0
@@ -257,7 +258,6 @@ public class ZaluumCompletionEngine {
 					}
 				}
 			}
-
 
 			for (int i = methodsFound.size; --i >= 0;) {
 				Object[] other = (Object[]) methodsFound.elementAt(i);
@@ -307,111 +307,9 @@ public class ZaluumCompletionEngine {
 				}
 			}
 
-			int length = method.parameters.length;
-			char[][] parameterPackageNames = new char[length][];
-			char[][] parameterTypeNames = new char[length][];
-
-			for (int i = 0; i < length; i++) {
-				TypeBinding type = method.original().parameters[i];
-				parameterPackageNames[i] = type.qualifiedPackageName();
-				parameterTypeNames[i] = type.qualifiedSourceName();
-			}
-			/*char[][] parameterNames = findMethodParameterNames(method,
-					parameterTypeNames);
-*/
 		}
-
-		// Javadoc proposal
 
 		methodsFound.addAll(newMethodsFound);
 	}
 
-	/*public char[][] findMethodParameterNames(MethodBinding method,
-			char[][] parameterTypeNames) {
-		TypeBinding erasure = method.declaringClass.erasure();
-		if (!(erasure instanceof ReferenceBinding))
-			return null;
-
-		char[][] parameterNames = null;
-
-		int length = parameterTypeNames.length;
-
-		if (length == 0) {
-			return CharOperation.NO_CHAR_CHAR;
-		}
-		// look into the corresponding unit if it is available
-		if (erasure instanceof SourceTypeBinding) {
-			SourceTypeBinding sourceType = (SourceTypeBinding) erasure;
-
-			if (sourceType.scope != null) {
-				TypeDeclaration parsedType;
-
-				if ((parsedType = sourceType.scope.referenceContext) != null) {
-					AbstractMethodDeclaration methodDecl = parsedType
-							.declarationOf(method.original());
-
-					if (methodDecl != null) {
-						Argument[] arguments = methodDecl.arguments;
-						parameterNames = new char[length][];
-
-						for (int i = 0; i < length; i++) {
-							parameterNames[i] = arguments[i].name;
-						}
-					}
-				}
-			}
-		}
-		// look into the model
-		if (parameterNames == null) {
-
-			ReferenceBinding bindingType = (ReferenceBinding) erasure;
-
-			char[] compoundName = CharOperation.concatWith(
-					bindingType.compoundName, '.');
-			Object type = this.typeCache.get(compoundName);
-
-			ISourceType sourceType = null;
-			if (type != null) {
-				if (type instanceof ISourceType) {
-					sourceType = (ISourceType) type;
-				}
-			} else {
-				NameEnvironmentAnswer answer = this.nameEnvironment
-						.findType(bindingType.compoundName);
-				if (answer != null && answer.isSourceType()) {
-					sourceType = answer.getSourceTypes()[0];
-					this.typeCache.put(compoundName, sourceType);
-				}
-			}
-
-			if (sourceType != null) {
-				IType typeHandle = ((SourceTypeElementInfo) sourceType)
-						.getHandle();
-
-				String[] parameterTypeSignatures = new String[length];
-				for (int i = 0; i < length; i++) {
-					parameterTypeSignatures[i] = Signature.createTypeSignature(
-							parameterTypeNames[i], false);
-				}
-				IMethod searchedMethod = typeHandle.getMethod(
-						String.valueOf(method.selector),
-						parameterTypeSignatures);
-				IMethod[] foundMethods = typeHandle.findMethods(searchedMethod);
-
-				if (foundMethods != null) {
-					int len = foundMethods.length;
-					if (len == 1) {
-						try {
-							SourceMethod sourceMethod = (SourceMethod) foundMethods[0];
-							parameterNames = ((SourceMethodElementInfo) sourceMethod
-									.getElementInfo()).getArgumentNames();
-						} catch (JavaModelException e) {
-							// method doesn't exist: ignore
-						}
-					}
-				}
-			}
-		}
-		return parameterNames;
-	}*/
 }
