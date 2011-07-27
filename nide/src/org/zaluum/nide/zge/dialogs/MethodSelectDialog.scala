@@ -17,14 +17,14 @@ import org.eclipse.jdt.internal.core.JavaProject
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 
 class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends Dialog(viewer.shell) {
-  var comboC: CCombo = _
-  var cviewer: ComboViewer = _
+  var list: org.eclipse.swt.widgets.List = _
+  var lviewer: ListViewer = _
   override protected def okPressed() {
     execCommand()
     super.okPressed()
   }
   def execCommand() {
-    cviewer.getSelection().asInstanceOf[IStructuredSelection].getFirstElement match {
+    lviewer.getSelection().asInstanceOf[IStructuredSelection].getFirstElement match {
       case m: MethodBinding =>
         val tr = new EditTransformer() {
           val trans: PartialFunction[Tree, Tree] = {
@@ -37,12 +37,12 @@ class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends Dialog(viewe
       case _ =>
     }
   }
-  def toMethodStr(m:MethodBinding) = m.selector.mkString + m.signature().mkString
+  def toMethodStr(m: MethodBinding) = m.selector.mkString + m.signature().mkString
   override def createDialogArea(parent: Composite): Control = {
     val sup = super.createDialogArea(parent).asInstanceOf[Composite];
     val c = new Composite(sup, SWT.NONE)
     c.setLayout(new MigLayout)
-    newLabel(c, "Method")
+
     val items: Array[MethodBinding] = vs.findPortInstance(InvokeExprType.obj) match {
       case Some(pi) =>
         pi.finalTpe match {
@@ -55,22 +55,32 @@ class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends Dialog(viewe
         }
       case None => Array()
     }
-    comboC = new CCombo(c, (SWT.DROP_DOWN | SWT.FLAT | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL))
-    cviewer = new ComboViewer(comboC);
-    cviewer.setContentProvider(new ArrayContentProvider)
-    cviewer.setLabelProvider(new LabelProvider() {
+    val currentMethod = vs.params.values.headOption flatMap { mstr =>
+      items.find { m => toMethodStr(m) == mstr }
+    }
+    val labelStr= currentMethod match {
+      case Some(m) => "Select method to invoke"
+      case None => 
+        vs.params.values.headOption match {
+          case Some(sig) => "Method with signature" + sig + " not found"
+          case None => "Select method to invoke"
+        }
+    }
+    newLabel(c, labelStr , layout = "wrap")
+    list = new org.eclipse.swt.widgets.List(c, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER)
+    list.setLayoutData("height ::300")
+    lviewer = new ListViewer(list);
+    lviewer.setContentProvider(new ArrayContentProvider)
+    lviewer.setLabelProvider(new LabelProvider() {
       override def getText(element: AnyRef): String = {
         element match {
           case m: MethodBinding => m.toString()
         }
       }
     })
-    cviewer.setInput(items)
-    vs.params.values.headOption foreach { mstr =>
-      items.find { m => toMethodStr(m) == mstr } foreach { m=>
-    	  cviewer.setSelection(new StructuredSelection(m) )
-      }
-    }
+    lviewer.setInput(items)
+    currentMethod foreach { m => lviewer.setSelection(new StructuredSelection(m)) }
     sup
   }
+  
 }

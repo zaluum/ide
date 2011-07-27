@@ -3,10 +3,9 @@ Agenda
 week 25-31 compiler week
 	- invoke
 		- ignore generics
-		- parameter order and names (p1,p2,p2 or names)
 		- check method visibility
+		- parameter order and names (p1,p2,p2 or names)
 		- ensure method binding is resolved and hierarchy connected.
-		- helper to select method signature
 		- this as out
 		- error resistant
 	- connectar subclasses. Dog->Animal (isAssignable?)
@@ -108,6 +107,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- helper to select method signature
 	- look available methods
 	- go to superclass / superinterface
 	- abstract classes 
