@@ -129,7 +129,8 @@ trait AnalyzerConnections {
               case t: PrimitiveJavaType => primitives.widening(f, t)
               case _ => false
             }
-          case f: JavaType => f == to
+          case f: JavaType =>
+            f == to
           case _ => false
         }
       }
@@ -379,7 +380,6 @@ object ZaluumCompletionEngineScala {
       val method = o(0).asInstanceOf[MethodBinding]
       l ::= method
       val tpe = o(1).asInstanceOf[Object]
-      //println("method " + method + " receiverType " + " " + tpe.getClass)
     }
     l
   }

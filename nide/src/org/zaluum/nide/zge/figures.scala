@@ -28,6 +28,9 @@ import java.awt.image.BufferedImage
 import javax.swing.BoxLayout
 import org.eclipse.draw2d.FigureUtilities
 import org.zaluum.nide.Activator
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.zaluum.nide.eclipse.integration.model.MethodUtils
+import org.eclipse.jdt.internal.core.JavaProject
 
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item {
@@ -51,8 +54,8 @@ trait ValFigure extends ValDefItem with HasPorts {
   def updateValPorts() {
     for (p ← ports) container.portsLayer.remove(p)
     ports.clear
-    
-    val bports = sym.portSides ;
+
+    val bports = sym.portSides;
     val (unsortedins, unsortedouts) = bports.partition { _.inPort } // SHIFT?
     val ins = unsortedins.toList.sortBy(_.name.str);
     val outs = unsortedouts.toList.sortBy(_.name.str);
@@ -96,6 +99,24 @@ trait AutoDisposeImageFigure extends ImageFigure {
       imageFactory.destroy(desc)
   }
 }
+class InvokeValFigure(container: ContainerItem) extends ImageValFigure(container) {
+  private def jproject = container.viewer.zproject.jProject.asInstanceOf[JavaProject]
+  override def updateValPorts() {
+    super.updateValPorts()
+    sym.info match {
+      case m: MethodBinding =>
+        MethodUtils.findMethodParamNames(m, jproject).foreach { names =>
+          names.zipWithIndex.foreach {
+            case (name, i) =>
+              ports filter { _.ps.name.str == "p" + i } foreach { // remove literal "p"
+                _.nameOverride = name
+              }
+          }
+        }
+      case _ =>
+    }
+  }
+}
 class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def imageFactory = container.viewer.zproject.imageFactory
@@ -107,7 +128,6 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
   }
   override def paintFigure(gc: Graphics) {
     gc.setAlpha(if (blinkOn) 100 else 255);
-    //  gc.drawImage(getImage, getClientArea.x, getClientArea.y)
     super.paintFigure(gc)
   }
   var blinkOn = false

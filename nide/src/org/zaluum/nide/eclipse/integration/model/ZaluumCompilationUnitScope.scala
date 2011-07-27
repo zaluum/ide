@@ -23,13 +23,13 @@ import org.eclipse.jdt.internal.core.SourceTypeElementInfo
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
-class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cudp, lookupEnvironment) {
+class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cudp, lookupEnvironment) {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
   }
   def getExpectedPackageName = this.referenceContext.compilationResult.compilationUnit.getPackageName();
   val cache = Map[Name, BoxTypeSymbol]()
-  val cacheJava = Map[TypeBinding, ClassJavaType]()
+  private val cacheJava = Map[TypeBinding, ClassJavaType]()
   // UPDATE primitive binding
   primitives.String.binding = getJavaLangString
   def cud = referenceContext.asInstanceOf[ZaluumCompilationUnitDeclaration]
@@ -38,7 +38,7 @@ class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookup
     if (arr.isDefined) {
       val (leafname, dim) = arr.get
       getJavaType(leafname) map { l ⇒
-        val bind = createArrayType(l.binding,dim)
+        val bind = createArrayType(l.binding, dim)
         val a = new ArrayType(cud.JDTScope, l, dim)
         a.binding = bind
         a
@@ -57,18 +57,18 @@ class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookup
   def getJavaType(tpe: TypeBinding): JavaType = {
     tpe match {
       case r: ReferenceBinding ⇒
-        cacheJava.get(tpe).getOrElse {
+      	val tpe = r.erasure()
+        cacheJava.getOrElseUpdate(tpe,{
           val jtpe = new ClassJavaType(cud.JDTScope, Name(aToString(r.compoundName)))
           jtpe.binding = r
-          cacheJava += (tpe -> jtpe)
           jtpe
-        }
+      	})
       case b: BaseTypeBinding ⇒
         b.simpleName.mkString match {
           case "byte" ⇒ primitives.Byte
           case "short" ⇒ primitives.Short
-          case "int" ⇒   primitives.Int
-          case "long" ⇒  primitives.Long
+          case "int" ⇒ primitives.Int
+          case "long" ⇒ primitives.Long
           case "float" ⇒ primitives.Float
           case "double" ⇒ primitives.Double
           case "boolean" ⇒ primitives.Boolean
@@ -82,12 +82,12 @@ class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookup
         t
     }
   }
- 
-  def allFieldsFor(r:ReferenceBinding) : List[FieldBinding]= {
-    r.fields.toList ++ {if (r.superclass!=null) allFieldsFor(r.superclass) else List()}
+
+  def allFieldsFor(r: ReferenceBinding): List[FieldBinding] = {
+    r.fields.toList ++ { if (r.superclass != null) allFieldsFor(r.superclass) else List() }
   }
-  def allMethodsFor(r:ReferenceBinding) : List[MethodBinding]= {
-    r.methods.toList ++ {if (r.superclass!=null) allMethodsFor(r.superclass) else List()}
+  def allMethodsFor(r: ReferenceBinding): List[MethodBinding] = {
+    r.methods.toList ++ { if (r.superclass != null) allMethodsFor(r.superclass) else List() }
   }
   def getBoxType(name: Name): Option[BoxTypeSymbol] = {
     cache.get(name).orElse {
@@ -103,9 +103,9 @@ class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookup
               case other ⇒ Some(Name(other))
             }
           }
-          
+
           val srcName = Name(r.compoundName.last.mkString)
-          val pkgName = Name(r.qualifiedPackageName.mkString) 
+          val pkgName = Name(r.qualifiedPackageName.mkString)
           val bs = new BoxTypeSymbol(
             cud.a.global.root, srcName, pkgName,
             sperO, None, None, r.isAbstract)
@@ -130,9 +130,9 @@ class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookup
               }
             }
           }
-          
+
           for (m ← allMethodsFor(r)) {
-            val parameterNames = MethodUtils.findMethodParameterNamesEnv(m,environment.nameEnvironment) getOrElse {
+            val parameterNames = MethodUtils.findMethodParameterNamesEnv(m, environment.nameEnvironment) getOrElse {
               (for (i ← 0 until m.parameters.length) yield "$" + i).toArray
             }
             val mName = m.selector.mkString
@@ -145,12 +145,12 @@ class ZaluumCompilationUnitScope(cudp : ZaluumCompilationUnitDeclaration, lookup
               bs.constructors = new Constructor(bs, params.toList) :: bs.constructors
             } else {
               if (mName.startsWith("set") && m.parameters.size == 1 && m.returnType == TypeBinding.VOID) {
-                val ptpe = getJavaType(m.parameters.head) 
+                val ptpe = getJavaType(m.parameters.head)
                 val p = new ParamSymbol(bs, Name(mName))
                 p.tpe = ptpe
                 bs.enter(p)
-              }else if (mName == "apply" && !m.isStatic && !m.isAbstract && m.parameters.size==0 && m.returnType == TypeBinding.VOID) {
-                bs.hasApply= true
+              } else if (mName == "apply" && !m.isStatic && !m.isAbstract && m.parameters.size == 0 && m.returnType == TypeBinding.VOID) {
+                bs.hasApply = true
               }
             }
           }
