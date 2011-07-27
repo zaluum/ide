@@ -54,7 +54,8 @@ trait ContentsToClass {
             "apply",
             List(),
             tpe,
-            "()V")
+            "()V",
+            interface=false)
         case InvokeExprType =>
           val m = vs.info.asInstanceOf[MethodBinding]
           val obj = InvokeExprType.objPort(vs)
@@ -64,7 +65,8 @@ trait ContentsToClass {
             m.selector.mkString,
             params,
             Name(m.declaringClass.constantPoolName().mkString),
-            m.signature().mkString)
+            m.signature().mkString,
+            m.declaringClass.isInterface)
 
           if (m.returnType != null && m.returnType!=TypeBinding.VOID){
         	  val out = vs.portInstances find (_.name==Name("out")) get;

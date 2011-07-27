@@ -50,7 +50,9 @@ trait Ref extends Tree
 case class Select(a: Tree, b: Tree) extends Ref
 case class LocalRef(id: Int, typeName: Name) extends Ref
 case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Ref
-case class Invoke(obj: Tree, meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
+case class Invoke(
+    obj: Tree, meth: String, param: List[Tree], 
+    fromClass: Name, descriptor: String, interface:Boolean) extends Tree
 case class Const(i: Any,constTpe:Type) extends Tree
 case class Return(t: Tree) extends Tree
 case object True extends Tree
@@ -154,7 +156,8 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
                 param.name.str,
                 List(Const(v,param.tpe)),
                 valBs.fqName,
-                "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V") // FIXME not always JavaType
+                "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V",
+                interface=false) // FIXME not always JavaType
           }
         case _ => List()
       }
@@ -169,7 +172,8 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
             List(Const(b.guiSize.map(_.w).getOrElse(100),primitives.Int),
               Const(b.guiSize.map(_.h).getOrElse(100),primitives.Int)),
             Name("javax.swing.JComponent"),
-            "(II)V"))
+            "(II)V",
+            interface=false))
         widgetCreation ++ createWidgets(bs, List(), b)
       }
       ConstructorMethod(boxCreation ++ params ++ widgets.toList.flatten)
@@ -204,12 +208,14 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
                   Const(valDef.guiSize.map(_.w).getOrElse(50),primitives.Int),
                   Const(valDef.guiSize.map(_.h).getOrElse(50),primitives.Int)),
                 Name("javax.swing.JComponent"),
-                "(IIII)V"),
+                "(IIII)V",
+                interface=false),
               Invoke(
                 Select(This, FieldRef(widgetName, vClass(mainBox).get, mainTpe.fqName)),
                 "add",
                 List(widgetSelect),
-                Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;"),
+                Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;",
+                interface=false),
               Pop) ++ createLabel(vs, mainBox)
           } getOrElse List()
         case _ ⇒ List()
@@ -234,12 +240,14 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
                 Const(jdim.width,primitives.Int),
                 Const(jdim.height,primitives.Int)),
               Name("javax.swing.JComponent"),
-              "(IIII)V"),
+              "(IIII)V",
+              interface=false),
             Invoke(
               Select(This, FieldRef(widgetName, vClass(mainBox).get, mainTpe.fqName)),
               "add",
               List(ALoad(1)),
-              Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;"),
+              Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;",
+              interface=false),
             Pop)
         case None ⇒ List()
       }

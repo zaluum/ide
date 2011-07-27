@@ -87,10 +87,11 @@ object ByteCodeGen {
           mv.visitFieldInsn(GETFIELD, fromClass.internal, id.str, descriptor(typeName))
         case This ⇒
           mv.visitVarInsn(ALOAD, 0);
-        case Invoke(obj, meth, param, fromClass, descriptor) ⇒
+        case Invoke(obj, meth, param, fromClass, descriptor,interface) ⇒
           emit(obj)
           param foreach { emit(_) }
-          mv.visitMethodInsn(INVOKEVIRTUAL, fromClass.internal, meth, descriptor)
+          val ins = if (interface) INVOKEINTERFACE else INVOKEVIRTUAL
+          mv.visitMethodInsn(ins, fromClass.internal, meth, descriptor)
         case Pop ⇒
           mv.visitInsn(POP)
         case AStore(i: Int) ⇒
