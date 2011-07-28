@@ -33,19 +33,9 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
 
   def cud = referenceContext.asInstanceOf[ZaluumCompilationUnitDeclaration]
   
-  def getBoxedType(p: PrimitiveJavaType): JavaType = {
-    val tpe = p match {
-      case primitives.Boolean => getJavaType(Name("java.lang.Boolean"))
-      case primitives.Char => getJavaType(Name("java.lang.Char"))
-      case primitives.Byte => getJavaType(Name("java.lang.Byte"))
-      case primitives.Short => getJavaType(Name("java.lang.Short"))
-      case primitives.Int => getJavaType(Name("java.lang.Integer"))
-      case primitives.Float => getJavaType(Name("java.lang.Float"))
-      case primitives.Double => getJavaType(Name("java.lang.Double"))
-      case primitives.Long => getJavaType(Name("java.lang.Long"))
-    }
-    tpe.get
-  }
+  def getBoxedType(p: PrimitiveJavaType): JavaType = 
+    getJavaType(p.boxedName).get
+  
   def getZJavaLangString = getJavaType(Name("java.lang.String")).get;
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray

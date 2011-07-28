@@ -30,6 +30,7 @@ public class ZaluumCompletionEngine {
 				scope, // scope
 				methodsFound, // methodsFound
 				false, // onlystatic
+				true, // noStaticMethods
 				false, // exactmatch
 				new FakeInvocationSite(null), // invocationSite
 				scope, // invocationScope
@@ -49,7 +50,7 @@ public class ZaluumCompletionEngine {
 
 	public void findMethods(char[] selector, TypeBinding[] typeArgTypes,
 			TypeBinding[] argTypes, ReferenceBinding receiverType, Scope scope,
-			ObjectVector methodsFound, boolean onlyStaticMethods,
+			ObjectVector methodsFound, boolean onlyStaticMethods, boolean noStaticMethods,
 			boolean exactMatch, InvocationSite invocationSite,
 			Scope invocationScope, boolean implicitCall, boolean superCall,
 			boolean canBePrefixed, Binding[] missingElements,
@@ -61,7 +62,7 @@ public class ZaluumCompletionEngine {
 		if (receiverType.isInterface()) {
 			findInterfacesMethods(selector, typeArgTypes, argTypes,
 					receiverType, new ReferenceBinding[] { currentType },
-					scope, methodsFound, onlyStaticMethods, exactMatch,
+					scope, methodsFound, onlyStaticMethods, noStaticMethods, exactMatch,
 					invocationSite, invocationScope, implicitCall, superCall,
 					canBePrefixed, missingElements, missingElementsStarts,
 					missingElementsEnds, missingElementsHaveProblems,
@@ -75,7 +76,7 @@ public class ZaluumCompletionEngine {
 			MethodBinding[] methods = currentType.availableMethods();
 			if (methods != null) {
 				findLocalMethods(selector, typeArgTypes, argTypes, methods,
-						scope, methodsFound, onlyStaticMethods, exactMatch,
+						scope, methodsFound, onlyStaticMethods, noStaticMethods, exactMatch,
 						receiverType, invocationSite, invocationScope,
 						implicitCall, superCall, canBePrefixed,
 						missingElements, missingElementsStarts,
@@ -101,7 +102,7 @@ public class ZaluumCompletionEngine {
 
 				findInterfacesMethods(selector, typeArgTypes, argTypes,
 						receiverType, superInterfaces, scope, methodsFound,
-						onlyStaticMethods, exactMatch, invocationSite,
+						onlyStaticMethods, noStaticMethods, exactMatch, invocationSite,
 						invocationScope, implicitCall, superCall,
 						canBePrefixed, missingElements, missingElementsStarts,
 						missingElementsEnds, missingElementsHaveProblems,
@@ -116,7 +117,7 @@ public class ZaluumCompletionEngine {
 	private void findInterfacesMethods(char[] selector,
 			TypeBinding[] typeArgTypes, TypeBinding[] argTypes,
 			ReferenceBinding receiverType, ReferenceBinding[] itsInterfaces,
-			Scope scope, ObjectVector methodsFound, boolean onlyStaticMethods,
+			Scope scope, ObjectVector methodsFound, boolean onlyStaticMethods, boolean noStaticMethods,
 			boolean exactMatch, InvocationSite invocationSite,
 			Scope invocationScope, boolean implicitCall, boolean superCall,
 			boolean canBePrefixed, Binding[] missingElements,
@@ -136,7 +137,7 @@ public class ZaluumCompletionEngine {
 				MethodBinding[] methods = currentType.availableMethods();
 				if (methods != null) {
 					findLocalMethods(selector, typeArgTypes, argTypes, methods,
-							scope, methodsFound, onlyStaticMethods, exactMatch,
+							scope, methodsFound, onlyStaticMethods, noStaticMethods, exactMatch,
 							receiverType, invocationSite, invocationScope,
 							implicitCall, superCall, canBePrefixed,
 							missingElements, missingElementssStarts,
@@ -168,7 +169,7 @@ public class ZaluumCompletionEngine {
 
 	public void findLocalMethods(char[] methodName, TypeBinding[] typeArgTypes,
 			TypeBinding[] argTypes, MethodBinding[] methods, Scope scope,
-			ObjectVector methodsFound, boolean onlyStaticMethods,
+			ObjectVector methodsFound, boolean onlyStaticMethods, boolean noStaticMethods,
 			boolean exactMatch, ReferenceBinding receiverType,
 			InvocationSite invocationSite, Scope invocationScope,
 			boolean implicitCall, boolean superCall, boolean canBePrefixed,
@@ -206,7 +207,9 @@ public class ZaluumCompletionEngine {
 			// lesser than other methods
 			// if (expectedTypesPtr > -1 && method.returnType ==
 			// BaseTypes.VoidBinding) continue next;
-
+			if (noStaticMethods && method.isStatic())
+				continue next;
+			
 			if (onlyStaticMethods && !method.isStatic())
 				continue next;
 
