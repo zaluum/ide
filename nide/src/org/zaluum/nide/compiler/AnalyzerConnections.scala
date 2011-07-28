@@ -126,11 +126,24 @@ trait AnalyzerConnections {
           case f: PrimitiveJavaType =>
             to match {
               case t: PrimitiveJavaType if t == f => true
-              case t: PrimitiveJavaType => primitives.widening(f, t)
+              case t: PrimitiveJavaType => 
+                t==f || primitives.widening(f, t)
+              case t: ClassJavaType => 
+                cud.zaluumScope.getBoxedType(f).binding.isCompatibleWith(t.binding)
               case _ => false
             }
+          case f: ClassJavaType =>
+            to match {
+              case t: PrimitiveJavaType =>
+               primitives.getUnboxedType(f) match {
+                  case Some(fp) => fp==t || primitives.widening(fp,t)
+                  case None => false
+                }
+              case t: JavaType =>
+                f.binding.isCompatibleWith(to.binding);
+            }
           case f: JavaType =>
-            f == to
+            f.binding.isCompatibleWith(to.binding); //array
           case _ => false
         }
       }
@@ -150,6 +163,10 @@ trait AnalyzerConnections {
         }
       }
       def fromTpe(p: PortInstance) = p.connectedFrom.map(_.finalTpe).getOrElse(NoSymbol)
+      def unboxIfNeeded(t : Type) = t match {
+        case p:ClassJavaType => primitives.getUnboxedType(p).getOrElse(t)
+        case _ => t
+      }
       def checkBinExprTypes(vs: ValSymbol) {
         import primitives._
         val s = vs.tpe.asInstanceOf[BinExprType]
@@ -160,8 +177,8 @@ trait AnalyzerConnections {
           o.finalTpe = outTpe
         }
 
-        val at = fromTpe(a)
-        val bt = fromTpe(b)
+        val at = unboxIfNeeded(fromTpe(a))
+        val bt = unboxIfNeeded(fromTpe(b))
         val (one, other) = (at, bt) match {
           case (NoSymbol, NoSymbol) => (None, None)
           case (NoSymbol, bt) => (Some(bt), None)
@@ -191,15 +208,15 @@ trait AnalyzerConnections {
             } else error("Shift distance must be of Int type", b.blameConnection.get)
           case c: CmpExprType =>
             (one, other) match {
-              case (Some(p1), None) if isNumeric(p1) => assignAll(toOperationType(unbox(p1)), Boolean)
-              case (Some(p1), Some(p2)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(unbox(p1)), Boolean)
+              case (Some(p1:PrimitiveJavaType), None) if isNumeric(p1) => assignAll(toOperationType(p1), Boolean)
+              case (Some(p1:PrimitiveJavaType), Some(p2:PrimitiveJavaType)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(p1), Boolean)
               case (None, _) => assignAll(Int, Boolean)
               case _ => error("Incompatible types", vs.decl)
             }
           case e: EqualityExprType =>
             (one, other) match {
-              case (Some(p1), None) if isNumeric(p1) => assignAll(toOperationType(unbox(p1)), Boolean)
-              case (Some(p1), Some(p2)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(unbox(p1)), Boolean)
+              case (Some(p1:PrimitiveJavaType), None) if isNumeric(p1) => assignAll(toOperationType(p1), Boolean)
+              case (Some(p1:PrimitiveJavaType), Some(p2)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(p1), Boolean)
               case (None, _) => assignAll(Int, Boolean)
               case (Some(p1), None) if p1 == primitives.Boolean => assignAll(Boolean, Boolean)
               case (Some(p1), Some(p2)) if p1 == p2 => assignAll(p1, Boolean)
@@ -207,9 +224,9 @@ trait AnalyzerConnections {
             }
           case _ =>
             (one, other) match {
-              case (Some(p1), None) if isNumeric(p1) => val t = toOperationType(unbox(p1)); assignAll(t, t)
-              case (Some(p1), Some(p2)) if isNumeric(p1) && isNumeric(p2) =>
-                val t = largerOperation(toOperationType(unbox(p1)), toOperationType(unbox(p2)))
+              case (Some(p1:PrimitiveJavaType), None) if isNumeric(p1) => val t = toOperationType(p1); assignAll(t, t)
+              case (Some(p1:PrimitiveJavaType), Some(p2:PrimitiveJavaType)) if isNumeric(p1) && isNumeric(p2) =>
+                val t = largerOperation(toOperationType(p1), toOperationType(p2))
                 assignAll(t, t)
               case (None, _) => assignAll(Int, Int)
               case _ => error("Incompatible types", vs.decl)
@@ -229,7 +246,7 @@ trait AnalyzerConnections {
           case ToFloatType => o.finalTpe = Float
           case ToDoubleType => o.finalTpe = Double
         }
-        a.connectedFrom.map(_.finalTpe) match {
+        a.connectedFrom.map(pi => unboxIfNeeded(pi.finalTpe)) match {
           case Some(t) => t match {
             case j: PrimitiveJavaType if isNumeric(j) => a.finalTpe = j
             case _ => a.finalTpe = o.finalTpe; error("Cast between incompatible types", a.blameConnection.get)
@@ -242,9 +259,9 @@ trait AnalyzerConnections {
         val o = l.outPort(vs)
         val t = vs.params.headOption match {
           case Some((p, vuntrimmed: String)) =>
-            p.tpe = primitives.String
+            p.tpe = cud.zaluumScope.getZJavaLangString
             val v = vuntrimmed.trim
-            Literals.parseNarrowestLiteral(v) match {
+            Literals.parseNarrowestLiteral(v,cud.zaluumScope) match {
               case Some((_, tpe)) => o.finalTpe = tpe
               case None => error("Cannot parse literal " + v, vs.decl)
             }
@@ -259,15 +276,15 @@ trait AnalyzerConnections {
         e match {
           case e: CastExprType => checkCastExprTypes(vs)
           case MinusExprType =>
-            fromTpe(a) match {
-              case p if isNumeric(p) =>
-                val t = toOperationType(unbox(p))
+            unboxIfNeeded(fromTpe(a)) match {
+              case p:PrimitiveJavaType if isNumeric(p) =>
+                val t = toOperationType(p)
                 a.finalTpe = t; o.finalTpe = t
               case NoSymbol => a.finalTpe = Int; o.finalTpe = Int
               case _ => error("Incompatible type", a.blameConnection.get)
             }
           case NotExprType =>
-            fromTpe(a) match {
+            unboxIfNeeded(fromTpe(a)) match {
               case Boolean => a.finalTpe = Boolean; o.finalTpe = Boolean
               case p if isIntNumeric(p) => a.finalTpe = Int; o.finalTpe = Int
               case NoSymbol => a.finalTpe = Boolean; o.finalTpe = Boolean
@@ -277,7 +294,7 @@ trait AnalyzerConnections {
       }
       def checkInvokeExprType(vs: ValSymbol) {
         val obj = vs.findPortInstance(InvokeExprType.obj).get
-        InvokeExprType.signatureSymbol.tpe = primitives.String // XXX ugly
+        InvokeExprType.signatureSymbol.tpe = cud.zaluumScope.getZJavaLangString // XXX ugly
         obj.connectedFrom match {
           case Some(from) =>
             from.finalTpe match {
@@ -294,7 +311,7 @@ trait AnalyzerConnections {
           case Some(InvokeExprType.Sig(selector, signature)) =>
             //val m = ztd.scope.getMethod(c.binding, "toString".toCharArray(), Array(), new FakeInvocationSite(TypeBinding.VOID))
             val scope = vs.owner.javaScope
-            ZaluumCompletionEngineScala.findBySignature(cud,scope, c, selector, signature) match {
+            ZaluumCompletionEngineScala.findBySignature(cud, scope, c, selector, signature) match {
               case Some(p: ProblemMethodBinding) =>
                 error("problem method " + p + p.problemId(), vs.decl)
               case Some(m) =>
@@ -323,7 +340,7 @@ trait AnalyzerConnections {
           val pi = api.asInstanceOf[PortInstance]
           pi.missing = false
           pi.portSymbol match {
-            case Some(p) => pi.finalTpe = p.tpe
+            case Some(ps) => pi.finalTpe = ps.tpe
             case None => error("Cannot find port " + api, bs.decl)
           }
         }
@@ -360,16 +377,15 @@ object ZaluumCompletionEngineScala {
         m.signature().mkString == signature
     }
   }
-  
-  def engineFor(cud:ZaluumCompilationUnitDeclaration) : ZaluumCompletionEngine= {
-	  val lookup = cud.zaluumScope.environment
-	  new ZaluumCompletionEngine(lookup)    
+
+  def engineFor(cud: ZaluumCompilationUnitDeclaration): ZaluumCompletionEngine = {
+    val lookup = cud.zaluumScope.environment
+    new ZaluumCompletionEngine(lookup)
   }
-  
+
   def engineForVs(vs: ValSymbol): ZaluumCompletionEngine =
     engineFor(vs.owner.javaScope.compilationUnitScope()
       .asInstanceOf[ZaluumCompilationUnitScope].cud)
- 
 
   def allMethods(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, c: ClassJavaType): List[MethodBinding] = {
     val methodsFound = engine.findAllMethods(c.binding, zcs)

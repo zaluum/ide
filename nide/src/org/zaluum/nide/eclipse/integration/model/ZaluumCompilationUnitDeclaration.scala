@@ -287,7 +287,7 @@ class ZaluumCompilationUnitDeclaration(
       val binding: SourceTypeBinding = tpe.binding
       if (binding != null) {
         val boxDef = tpe.b
-        val classTree = new TreeToClass(boxDef, a.global).run()
+        val classTree = new TreeToClass(boxDef, a.global, this.zaluumScope).run()
         val name = binding.constantPoolName()
         compilationResult.record(name,
           new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.', '/')))

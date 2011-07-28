@@ -36,7 +36,9 @@ abstract class JavaType(val owner: Symbol) extends Symbol with Type {
 class PrimitiveJavaType(
   val name: Name,
   override val descriptor: String,
-  override val javaSize: Int) extends JavaType(null) {
+  override val javaSize: Int,
+  val boxedName : Name,
+  val boxMethod : String) extends JavaType(null) {
   type B = BaseTypeBinding
   def fqName = name
 }

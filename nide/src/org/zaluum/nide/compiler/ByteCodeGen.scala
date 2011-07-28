@@ -87,6 +87,9 @@ object ByteCodeGen {
           mv.visitFieldInsn(GETFIELD, fromClass.internal, id.str, descriptor(typeName))
         case This ⇒
           mv.visitVarInsn(ALOAD, 0);
+        case InvokeStatic(meth, params, fromClass, descriptor) =>
+          params foreach { emit }
+          mv.visitMethodInsn(INVOKESTATIC, fromClass.internal, meth, descriptor)
         case Invoke(obj, meth, param, fromClass, descriptor,interface) ⇒
           emit(obj)
           param foreach { emit(_) }
@@ -138,7 +141,7 @@ object ByteCodeGen {
           case Long => mv.visitLdcInsn(d.asInstanceOf[Long])
           case Float => mv.visitLdcInsn(d.asInstanceOf[Float])
           case Double => mv.visitLdcInsn(d.asInstanceOf[Double])
-          case String => mv.visitLdcInsn(d.asInstanceOf[String])
+          case _ => mv.visitLdcInsn(d.asInstanceOf[String])
         }
       }
     }

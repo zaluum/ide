@@ -5,17 +5,15 @@ week 25-31 compiler week
 		- ensure method binding is resolved and hierarchy connected.
 		- this as out
 		- error resistant
-		- invokeInterface/InvokeSpecial
 		- better list presentation with columns
 		- ignore static
-	- connectar subclasses. Dog->Animal (isAssignable?)
-	- box unbox support
 	- write one article
+	- GUI per seleccionar el tipus dels port
 	- desactivar hetzner
-	
 week 1-7 compiler week
 	- If box, Switch, and other boxes with special visual support.
 	- New
+	- Static box?
 	- field access
 week 8-14 
 	- array creation/access
@@ -45,7 +43,12 @@ week 29-4 doc week -> ampliar detalls
 	- tutorials/docs/etc
 	- examples/screencast
 	- build scripts
-week 5-11 launch week
+week 5-11 bug hunting
+	- test cases bug fixing
+	- box unbox
+	- generics
+	- protected/private
+week 12-18 launch week
 	- beta nag screen/ watermark
 	- buy hosting
 	- buy template
@@ -107,6 +110,9 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- connectar subclasses. Dog->Animal (isAssignable?)
+	- box unbox support
+	- invokeInterface/InvokeSpecial
 	- parameter order and names (p1,p2,p2 or names)
 	- ignore generics
 	- check method visibility

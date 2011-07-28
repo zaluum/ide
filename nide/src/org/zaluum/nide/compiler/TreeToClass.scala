@@ -2,6 +2,7 @@ package org.zaluum.nide.compiler
 
 import javax.swing.JLabel
 import org.zaluum.basic.RunnableBox
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
 
 trait BinaryExpr extends Tree { 
 	def a:Tree
@@ -53,6 +54,7 @@ case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Ref
 case class Invoke(
     obj: Tree, meth: String, param: List[Tree], 
     fromClass: Name, descriptor: String, interface:Boolean) extends Tree
+case class InvokeStatic(meth:String, param: List[Tree], fromClass:Name, descriptor:String) extends Tree
 case class Const(i: Any,constTpe:Type) extends Tree
 case class Return(t: Tree) extends Tree
 case object True extends Tree
@@ -75,7 +77,7 @@ case class L2D(a:Tree) extends UnaryExpr
 case class L2F(a:Tree) extends UnaryExpr
 case class L2I(a:Tree) extends UnaryExpr
 
-class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsToClass {
+class TreeToClass(t: Tree, global: Scope, zaluumScope:ZaluumCompilationUnitScope) extends ReporterAdapter with ContentsToClass {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
   object orderValDefs extends CopyTransformer with CopySymbolTransformer {
@@ -230,7 +232,7 @@ class TreeToClass(t: Tree, global: Scope) extends ReporterAdapter with ContentsT
           val jdim = jlabel.getPreferredSize
           val pos = v.guiPos.getOrElse(Point(0, 0)) + lbl.pos + Vector2(0, -jdim.height);
           List[Tree](
-            New(Name("javax.swing.JLabel"), List(Const(lbl.description,primitives.String)), "(Ljava/lang/String;)V"),
+            New(Name("javax.swing.JLabel"), List(Const(lbl.description,zaluumScope.getZJavaLangString)), "(Ljava/lang/String;)V"),
             AStore(1),
             Invoke(
               ALoad(1),

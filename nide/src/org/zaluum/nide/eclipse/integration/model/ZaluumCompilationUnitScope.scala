@@ -30,9 +30,23 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   def getExpectedPackageName = this.referenceContext.compilationResult.compilationUnit.getPackageName();
   val cache = Map[Name, BoxTypeSymbol]()
   private val cacheJava = Map[TypeBinding, ClassJavaType]()
-  // UPDATE primitive binding
-  primitives.String.binding = getJavaLangString
+
   def cud = referenceContext.asInstanceOf[ZaluumCompilationUnitDeclaration]
+  
+  def getBoxedType(p: PrimitiveJavaType): JavaType = {
+    val tpe = p match {
+      case primitives.Boolean => getJavaType(Name("java.lang.Boolean"))
+      case primitives.Char => getJavaType(Name("java.lang.Char"))
+      case primitives.Byte => getJavaType(Name("java.lang.Byte"))
+      case primitives.Short => getJavaType(Name("java.lang.Short"))
+      case primitives.Int => getJavaType(Name("java.lang.Integer"))
+      case primitives.Float => getJavaType(Name("java.lang.Float"))
+      case primitives.Double => getJavaType(Name("java.lang.Double"))
+      case primitives.Long => getJavaType(Name("java.lang.Long"))
+    }
+    tpe.get
+  }
+  def getZJavaLangString = getJavaType(Name("java.lang.String")).get;
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray
     if (arr.isDefined) {
@@ -57,12 +71,12 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   def getJavaType(tpe: TypeBinding): JavaType = {
     tpe match {
       case r: ReferenceBinding ⇒
-      	val tpe = r.erasure()
-        cacheJava.getOrElseUpdate(tpe,{
-          val jtpe = new ClassJavaType(cud.JDTScope, Name(aToString(r.compoundName)))
-          jtpe.binding = r
+        val tpe = lookupEnvironment.convertToRawType(r, false).asInstanceOf[ReferenceBinding]
+        cacheJava.getOrElseUpdate(tpe, {
+          val jtpe = new ClassJavaType(cud.JDTScope, Name(aToString(tpe.compoundName)))
+          jtpe.binding = tpe
           jtpe
-      	})
+        })
       case b: BaseTypeBinding ⇒
         b.simpleName.mkString match {
           case "byte" ⇒ primitives.Byte

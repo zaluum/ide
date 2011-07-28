@@ -79,7 +79,7 @@ object Literals {
       case e ⇒ None
     }
   }
-  def parseNarrowestLiteral(v: String) = {
+  def parseNarrowestLiteral(v: String, zaluumScope:ZaluumCompilationUnitScope) = {
     def parseIntOpt = try { Some(v.toInt) } catch { case e => None }
     def parseDoubleOpt = try { Some(v.toDouble) } catch { case e => None }
     if (v.toLowerCase=="true") Some(true, primitives.Boolean)
@@ -89,14 +89,15 @@ object Literals {
     } else if (v.endsWith("l") || v.endsWith("L")) {
       try { Some((v.dropRight(1).toLong, primitives.Long)) } catch { case e => e.printStackTrace; println ("long fail " + v);None }
     } else if (v.startsWith("\"") && v.endsWith("\"")) {
-      Some(v.substring(1, v.length - 1), primitives.String)
+      
+      Some(v.substring(1, v.length - 1), zaluumScope.getZJavaLangString)
     } else {
       parseIntOpt match { // char?
         case Some(i) => Some(narrowestInt(i))
         case None =>
           parseDoubleOpt match {
             case Some(d) => Some(d, primitives.Double)
-            case None => Some(v, primitives.String)
+            case None => Some(v,  zaluumScope.getZJavaLangString)
           }
       }
     }
@@ -133,20 +134,20 @@ trait RootSymbol extends Scope with Symbol {
   def root: Symbol = this
 }
 object primitives {
-  private def n(str: String, desc: String, b:BaseTypeBinding, size: Int = 1) = {
-    val p = new PrimitiveJavaType(Name(str), desc, size)
+  private def n(str: String, desc: String, b:BaseTypeBinding, boxedName:Name, boxMethod:String, size: Int = 1) = {
+    val p = new PrimitiveJavaType(Name(str), desc, size, boxedName, boxMethod)
     p.binding = b
     p
   }
-  val Byte = n("byte", "B", TypeBinding.BYTE)
-  val Short = n("short", "S", TypeBinding.SHORT)
-  val Int = n("int", "I", TypeBinding.INT)
-  val Long = n("long", "J", TypeBinding.LONG, 2)
-  val Float = n("float", "F", TypeBinding.FLOAT)
-  val Double = n("double", "D", TypeBinding.DOUBLE, 2)
-  val Boolean = n("boolean", "Z", TypeBinding.BOOLEAN)
-  val Char = n("char", "C", TypeBinding.CHAR)
-  val String = new ClassJavaType(null, Name("java.lang.String") )
+  val Byte = n("byte", "B", TypeBinding.BYTE, Name("java.lang.Byte"), "byteValue")
+  val Short = n("short", "S", TypeBinding.SHORT,Name("java.lang.Short"), "shortValue")
+  val Int = n("int", "I", TypeBinding.INT,Name("java.lang.Integer"), "intValue")
+  val Long = n("long", "J", TypeBinding.LONG, Name("java.lang.Long"), "longValue",2)
+  val Float = n("float", "F", TypeBinding.FLOAT, Name("java.lang.Float"), "floatValue")
+  val Double = n("double", "D", TypeBinding.DOUBLE, Name("java.lang.Double"), "doubleValue",2)
+  val Boolean = n("boolean", "Z", TypeBinding.BOOLEAN,Name("java.lang.Boolean"), "booleanValue")
+  val Char = n("char", "C", TypeBinding.CHAR,Name("java.lang.Char"), "charValue")
+  
   val allTypes = List(Byte, Short, Int, Long, Float, Double, Boolean, Char)
   def numericTypes = List(Byte, Short, Int, Long, Float, Double, Char)
   def widening(from: PrimitiveJavaType, to: PrimitiveJavaType) = {
@@ -171,6 +172,19 @@ object primitives {
       case Double => Double
     }
   }
+  def getUnboxedType(p: ClassJavaType): Option[PrimitiveJavaType] = {
+    p.name.str match {
+      case "java.lang.Boolean" => Some(primitives.Boolean)
+      case "java.lang.Char" => Some(primitives.Char)
+      case "java.lang.Byte" => Some(primitives.Byte)
+      case "java.lang.Short" => Some(primitives.Short)
+      case "java.lang.Integer" => Some(primitives.Int)
+      case "java.lang.Float" => Some(primitives.Float)
+      case "java.lang.Double" => Some(primitives.Double)
+      case "java.lang.Long" => Some(primitives.Long)
+      case _ => None
+    }
+  }
   /** must be int long float or double (operationtype) */
   def largerOperation(a: PrimitiveJavaType, b: PrimitiveJavaType): PrimitiveJavaType = {
     val l = List(Int, Long, Float, Double)
@@ -178,8 +192,8 @@ object primitives {
   }
   def isNumeric(tpe: Type): Boolean = {
     tpe match {
-      case p: PrimitiveJavaType if (p != primitives.Boolean && p != primitives.String) => true
-      case j: JavaType => false // TODO autobox
+      case p: PrimitiveJavaType if (p != primitives.Boolean) => true
+      case j: JavaType => false 
       case _ => false
     }
   }
@@ -187,8 +201,6 @@ object primitives {
         tpe==primitives.Short || 
         tpe==primitives.Byte || 
         tpe==primitives.Char
-  /** tpe must be numeric*/
-  def unbox(tpe: Type): PrimitiveJavaType = tpe.asInstanceOf[PrimitiveJavaType] // todo unbox
   def find(desc: String) = allTypes.find(_.descriptor == desc)
   def find(name: Name) = allTypes.find(_.name == name)
 }
@@ -228,7 +240,7 @@ trait ReporterAdapter {
 }
 class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope) extends AnalyzerConnections {
   def globLocation(t: Tree) = t.line
-
+ 
   class Namer(initOwner: Symbol) extends Traverser(initOwner) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
@@ -275,6 +287,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
       super.traverse(tree)
     }
   }
+   var cud : ZaluumCompilationUnitDeclaration = _
   class Resolver(global: Symbol) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
@@ -406,7 +419,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
     new Namer(root).traverse(toCompile)
     toCompile
   }
-  var cud : ZaluumCompilationUnitDeclaration = _
+ 
   def runResolve(cud : ZaluumCompilationUnitDeclaration): Tree = {
     this.cud = cud
     new Resolver(global.root).traverse(toCompile)
