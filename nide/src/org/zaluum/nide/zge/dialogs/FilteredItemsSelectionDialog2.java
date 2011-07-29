@@ -112,7 +112,6 @@ import org.eclipse.ui.internal.WorkbenchMessages;
 import org.eclipse.ui.internal.WorkbenchPlugin;
 import org.eclipse.ui.progress.UIJob;
 import org.eclipse.ui.statushandlers.StatusManager;
-import org.zaluum.nide.zge.SWTUtils;
 
 /**
  * Shows a list of items to the user with a text entry field for a string

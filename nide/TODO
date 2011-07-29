@@ -1,11 +1,8 @@
 Agenda
 
 week 25-31 compiler week
-	- invoke
-		- ensure method binding is resolved and hierarchy connected.
-		- error resistant
+	- invoke method name on icon
 	- write one article
-	- GUI per seleccionar el tipus dels port
 	- desactivar hetzner
 week 1-7 compiler week
 	- If box and Switch support.
@@ -109,6 +106,10 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- GUI per seleccionar el tipus dels port
+	- ensure method binding is resolved and hierarchy connected.
+	- some error resistant on invoke
+	- better gui for method selection
 	- this as out
 	- ignore static
 	- connectar subclasses. Dog->Animal (isAssignable?)

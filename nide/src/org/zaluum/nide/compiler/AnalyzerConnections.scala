@@ -163,7 +163,10 @@ trait AnalyzerConnections {
       }
       def checkBoxTypes(vs: ValSymbol) {
         for (pi <- vs.portInstances) {
-          pi.finalTpe = pi.portSymbol.get.tpe // I'm a box so if not missing I have portsymbol
+          pi.portSymbol match {
+            case Some(ps) => pi.finalTpe = ps.tpe
+            case _ => 
+          }
         }
         checkGhostPorts(vs)
         checkPortConnectionsTypes(vs)

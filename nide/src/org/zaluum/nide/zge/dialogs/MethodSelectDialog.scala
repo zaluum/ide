@@ -144,7 +144,8 @@ case class MethodWithNames(m: MethodBinding, paramNames: List[String]) {
     }
   }
   def selector = m.selector.mkString
+  def declaringClass = new String(m.declaringClass.readableName())
   def methodSignature = MethodUtils.toMethodSig(m)
-  def fullText = MethodUtils.toMethodStr(m, paramNames) + " - " + m.declaringClass.debugName()
-  def text = selector + " " + params + " : " + returnStr + " - " + m.declaringClass.debugName()
+  def fullText = MethodUtils.toMethodStr(m, paramNames) + " - " + declaringClass
+  def text = selector + " " + params + " : " + returnStr + " - " + declaringClass
 }
