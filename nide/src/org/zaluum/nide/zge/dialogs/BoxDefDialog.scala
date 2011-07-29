@@ -2,7 +2,6 @@ package org.zaluum.nide.zge.dialogs
 
 import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.custom.CCombo
-import org.eclipse.ui.dialogs.FilteredItemsSelectionDialog
 import org.eclipse.swt.widgets.Combo
 import org.eclipse.jface.fieldassist.ComboContentAdapter
 import org.eclipse.jface.fieldassist.AutoCompleteField

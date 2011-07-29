@@ -41,7 +41,6 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   def createTable(parent: Composite) = {
     val table = new Table(parent, SWT.MULTI | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL |
       SWT.FULL_SELECTION | SWT.HIDE_SELECTION)
-    val nameCol = new TableColumn(table, SWT.RIGHT)
     table.setLinesVisible(true);
     table.setHeaderVisible(true);
     def newColumn(str: String, w: Int) {

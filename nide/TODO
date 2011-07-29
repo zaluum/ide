@@ -123,8 +123,8 @@ DONE!
 	- go to superclass / superinterface
 	- abstract classes 
 	- filter bridges, synthetics etc?
-	-downcast automàtic
-	*suport per a boxes especialitzades (operacions matematiques) -> expressions
+	- downcast automàtic
+	* suport per a boxes especialitzades (operacions matematiques) -> expressions
 		-Generic +-*/ and others. Box templates. (Box.class with Object inputs or special marker interface type. Box$int.class specialized)
 	-expressions
 	-testing harness
