@@ -116,13 +116,23 @@ class InvokeValFigure(container: ContainerItem) extends ImageValFigure(container
       case _ =>
     }
   }
+  override def img = {
+    sym.info match {
+      case m: MethodBinding =>
+        imageFactory.invokeImage(m.selector.mkString)
+      case _ =>
+        val str = sym.params.values.headOption map { _.toString } getOrElse { "right click to select method" }
+        imageFactory.invokeImageError(str)
+    }
+  }
 }
 class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def imageFactory = container.viewer.zproject.imageFactory
+  def img = imageFactory(valDef.tpe)
   def updateMe() {
     disposeImage()
-    val (newImg, newDesc) = imageFactory(valDef.tpe)
+    val (newImg, newDesc) = img
     desc = newDesc
     setImage(newImg)
   }

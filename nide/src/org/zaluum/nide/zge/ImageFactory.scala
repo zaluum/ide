@@ -28,6 +28,7 @@ import org.eclipse.swt.widgets.{ Display, Shell, Composite }
 import org.zaluum.nide.icons.Icons
 import org.zaluum.nide.eclipse.ZaluumProject
 import org.eclipse.core.resources.IProject
+import org.eclipse.swt.graphics.Color
 
 class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def this(zp: ZaluumProject) = this(zp, new LocalResourceManager(JFaceResources.getResources))
@@ -45,6 +46,8 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   }
   def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
   def destroyAll() = rm.dispose();
+  def invokeImage(txt:String) = imageForText(txt, ColorConstants.blue)
+  def invokeImageError(txt:String) = imageForText(txt, ColorConstants.red)
   def apply(name: Name): (Image, DeviceResourceDescriptor) = imageFor(None, name);
   def apply(tpe: Type): (Image, DeviceResourceDescriptor) = {
     tpe match {
@@ -67,17 +70,21 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
     imageName flatMap { resourceToImage } orElse {
       resourceToImage(name.toRelativePath + ".png")
     } getOrElse {
-      val desc = GeneratedIconImageDescriptor(name)
-      (rm.create(desc).asInstanceOf[Image], desc)
+      imageForText(name.classNameWithoutPackage,ColorConstants.black)
     }
   }
-  case class GeneratedIconImageDescriptor(name: Name) extends DeviceResourceDescriptor {
+  private def imageForText(txt:String, color:Color) = {
+    val desc = GeneratedIconImageDescriptor(txt, color)
+    (rm.create(desc).asInstanceOf[Image], desc)
+  }
+  case class GeneratedIconImageDescriptor(text: String, color:Color) extends DeviceResourceDescriptor {
     def createResource(device: Device): Object = {
       val img = new Image(device, 48, 48);
       val gc = new GC(img)
       val t = new TextLayout(device)
+      gc.setForeground(color)
       val font = Activator.getDefault.generatedIconFont
-      t.setText(name.classNameWithoutPackage)
+      t.setText(text)
       t.setAlignment(SWT.CENTER)
       t.setFont(font)
       t.setWidth(47)

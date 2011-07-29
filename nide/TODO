@@ -1,15 +1,11 @@
 Agenda
 
-week 25-31 compiler week
-	- invoke method name on icon
-	- write one article
-	- desactivar hetzner
 week 1-7 compiler week
 	- If box and Switch support.
-	- Timed loop?
 	- New
 	- Static box?
 	- field access
+	- write one article
 week 8-14 
 	- array creation/access
 	- compilador amb parametres out apply(in in in)
@@ -63,6 +59,7 @@ bugs
 	-sembla que xulrunner dona algun problema d'alt consum de cpu. xulrunner 2 no?
 	
 LATER
+	- Timed loop?
 	-suport per a multiples directors (multi-threading)
 	-backend soot? backend JDT? suport per multi backend? (generacio codi c/hadoop?)
 	-Feedback connections
