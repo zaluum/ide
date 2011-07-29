@@ -22,12 +22,14 @@ trait Type extends Symbol { // merge with javatype
   type B <: TypeBinding
   var binding : B = _
 }
-case object NoSymbol extends Symbol with Type {
+case object NoSymbol extends Symbol with JavaType {
   val owner = NoSymbol
+  def descriptor = null
   val name = Name("NoSymbol")
   def fqName = name
 }
-abstract class JavaType(val owner: Symbol) extends Symbol with Type {
+trait JavaType extends Type {
+  val owner : Symbol
   scope = if (owner != null) owner.scope else null
   def name: Name
   def descriptor: String
@@ -38,11 +40,12 @@ class PrimitiveJavaType(
   override val descriptor: String,
   override val javaSize: Int,
   val boxedName : Name,
-  val boxMethod : String) extends JavaType(null) {
+  val boxMethod : String) extends JavaType {
   type B = BaseTypeBinding
+  val owner = null
   def fqName = name
 }
-class ArrayType(owner: Symbol, val of: JavaType, val dim: Int) extends JavaType(owner) {
+class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int) extends JavaType {
   type B = ArrayBinding
   assert(!of.isInstanceOf[ArrayType])
   def descriptor = "[" * dim + of.descriptor
@@ -59,7 +62,7 @@ class ArrayType(owner: Symbol, val of: JavaType, val dim: Int) extends JavaType(
   }
   override def toString = "ArrayType(" + of.toString + ", " + dim + ")"
 }
-class ClassJavaType(owner: Symbol, val fqName: Name) extends JavaType(owner) {
+class ClassJavaType(val owner: Symbol, val fqName: Name) extends JavaType {
   type B = ReferenceBinding
   scope = if (owner!=null) owner.scope else null
   def descriptor = "L" + name.internal + ";"

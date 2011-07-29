@@ -40,9 +40,11 @@ object InvokeExprType extends ExprType("Invoke") {
   val signatureName = Name("signature")
   val signatureSymbol = new ParamSymbol(null,signatureName)
   override val params = Map(signatureName-> signatureSymbol)
-  val obj = new PortSymbol(this,Name("obj"), Point(0,0), In)
-  ports = Map(obj.name -> obj)
-  def objPort (vs:ValSymbol) = vs.findPortInstance(obj).get
+  val thiz = new PortSymbol(this,Name("this"), Point(0,0), In)
+  val thizOut = new PortSymbol(this, Name("thisOut"), Point(0,0),Out)
+  ports = Map(thiz.name -> thiz, thizOut.name -> thizOut)
+  def thisPort (vs:ValSymbol) = vs.findPortInstance(thiz).get
+  def thisOutPort (vs:ValSymbol) = vs.findPortInstance(thizOut).get
 }
 
 object LiteralExprType extends ExprType("Literal") {

@@ -23,6 +23,9 @@ import org.eclipse.jdt.internal.core.SourceTypeElementInfo
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
+import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding
+import org.eclipse.jdt.internal.compiler.lookup.UnresolvedReferenceBinding
+import org.eclipse.jdt.internal.compiler.lookup.MissingTypeBinding
 class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cudp, lookupEnvironment) {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
@@ -32,10 +35,10 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   private val cacheJava = Map[TypeBinding, ClassJavaType]()
 
   def cud = referenceContext.asInstanceOf[ZaluumCompilationUnitDeclaration]
-  
-  def getBoxedType(p: PrimitiveJavaType): JavaType = 
+
+  def getBoxedType(p: PrimitiveJavaType): JavaType =
     getJavaType(p.boxedName).get
-  
+
   def getZJavaLangString = getJavaType(Name("java.lang.String")).get;
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray
@@ -60,6 +63,9 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   }
   def getJavaType(tpe: TypeBinding): JavaType = {
     tpe match {
+      case m: MissingTypeBinding => NoSymbol
+      case p: ProblemReferenceBinding => NoSymbol
+      case u: UnresolvedReferenceBinding => NoSymbol
       case r: ReferenceBinding ⇒
         val tpe = lookupEnvironment.convertToRawType(r, false).asInstanceOf[ReferenceBinding]
         cacheJava.getOrElseUpdate(tpe, {

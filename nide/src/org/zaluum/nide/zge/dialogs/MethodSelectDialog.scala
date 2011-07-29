@@ -65,7 +65,7 @@ class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItem
 
   val id = "org.zaluum.nide.methodSelectDialog"
   val settings = new DialogSettings(id);
-  val items: Array[MethodWithNames] = vs.findPortInstance(InvokeExprType.obj) match {
+  val items: Array[MethodWithNames] = vs.findPortInstance(InvokeExprType.thiz) match {
     case Some(pi) =>
       pi.finalTpe match {
         case c: ClassJavaType =>

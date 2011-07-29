@@ -122,21 +122,23 @@ trait AnalyzerConnections {
         }
       }
       def checkAssignmentPossible(from: Type, to: Type): Boolean = {
+        if (to==NoSymbol) return false
         from match {
+          case NoSymbol => false
           case f: PrimitiveJavaType =>
             to match {
               case t: PrimitiveJavaType if t == f => true
-              case t: PrimitiveJavaType => 
-                t==f || primitives.widening(f, t)
-              case t: ClassJavaType => 
+              case t: PrimitiveJavaType =>
+                t == f || primitives.widening(f, t)
+              case t: ClassJavaType =>
                 cud.zaluumScope.getBoxedType(f).binding.isCompatibleWith(t.binding)
               case _ => false
             }
           case f: ClassJavaType =>
             to match {
               case t: PrimitiveJavaType =>
-               primitives.getUnboxedType(f) match {
-                  case Some(fp) => fp==t || primitives.widening(fp,t)
+                primitives.getUnboxedType(f) match {
+                  case Some(fp) => fp == t || primitives.widening(fp, t)
                   case None => false
                 }
               case t: JavaType =>
@@ -147,14 +149,11 @@ trait AnalyzerConnections {
           case _ => false
         }
       }
-      def checkBoxTypes(vs: ValSymbol) {
+      def checkPortConnectionsTypes(vs: ValSymbol) {
         for (pi <- vs.portInstances) {
-          if (pi.missing) {
-            error("Cannot find type of port " + pi.name.str, vs.decl)
-          } else {
-            pi.finalTpe = pi.portSymbol.get.tpe // I'm a box so if not missing I have portsymbol
-
-            pi.connectedFrom foreach { from =>
+          if (pi.finalTpe == NoSymbol)  error("Port type not found", vs.decl)
+          else {
+            for (from <- pi.connectedFrom) {
               if (!checkAssignmentPossible(from.finalTpe, pi.finalTpe)) {
                 error("Connection with incompatible types", pi.blameConnection.get)
               }
@@ -162,9 +161,16 @@ trait AnalyzerConnections {
           }
         }
       }
+      def checkBoxTypes(vs: ValSymbol) {
+        for (pi <- vs.portInstances) {
+          pi.finalTpe = pi.portSymbol.get.tpe // I'm a box so if not missing I have portsymbol
+        }
+        checkGhostPorts(vs)
+        checkPortConnectionsTypes(vs)
+      }
       def fromTpe(p: PortInstance) = p.connectedFrom.map(_.finalTpe).getOrElse(NoSymbol)
-      def unboxIfNeeded(t : Type) = t match {
-        case p:ClassJavaType => primitives.getUnboxedType(p).getOrElse(t)
+      def unboxIfNeeded(t: Type) = t match {
+        case p: ClassJavaType => primitives.getUnboxedType(p).getOrElse(t)
         case _ => t
       }
       def checkBinExprTypes(vs: ValSymbol) {
@@ -208,15 +214,15 @@ trait AnalyzerConnections {
             } else error("Shift distance must be of Int type", b.blameConnection.get)
           case c: CmpExprType =>
             (one, other) match {
-              case (Some(p1:PrimitiveJavaType), None) if isNumeric(p1) => assignAll(toOperationType(p1), Boolean)
-              case (Some(p1:PrimitiveJavaType), Some(p2:PrimitiveJavaType)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(p1), Boolean)
+              case (Some(p1: PrimitiveJavaType), None) if isNumeric(p1) => assignAll(toOperationType(p1), Boolean)
+              case (Some(p1: PrimitiveJavaType), Some(p2: PrimitiveJavaType)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(p1), Boolean)
               case (None, _) => assignAll(Int, Boolean)
               case _ => error("Incompatible types", vs.decl)
             }
           case e: EqualityExprType =>
             (one, other) match {
-              case (Some(p1:PrimitiveJavaType), None) if isNumeric(p1) => assignAll(toOperationType(p1), Boolean)
-              case (Some(p1:PrimitiveJavaType), Some(p2)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(p1), Boolean)
+              case (Some(p1: PrimitiveJavaType), None) if isNumeric(p1) => assignAll(toOperationType(p1), Boolean)
+              case (Some(p1: PrimitiveJavaType), Some(p2)) if isNumeric(p1) && isNumeric(p2) => assignAll(toOperationType(p1), Boolean)
               case (None, _) => assignAll(Int, Boolean)
               case (Some(p1), None) if p1 == primitives.Boolean => assignAll(Boolean, Boolean)
               case (Some(p1), Some(p2)) if p1 == p2 => assignAll(p1, Boolean)
@@ -224,8 +230,8 @@ trait AnalyzerConnections {
             }
           case _ =>
             (one, other) match {
-              case (Some(p1:PrimitiveJavaType), None) if isNumeric(p1) => val t = toOperationType(p1); assignAll(t, t)
-              case (Some(p1:PrimitiveJavaType), Some(p2:PrimitiveJavaType)) if isNumeric(p1) && isNumeric(p2) =>
+              case (Some(p1: PrimitiveJavaType), None) if isNumeric(p1) => val t = toOperationType(p1); assignAll(t, t)
+              case (Some(p1: PrimitiveJavaType), Some(p2: PrimitiveJavaType)) if isNumeric(p1) && isNumeric(p2) =>
                 val t = largerOperation(toOperationType(p1), toOperationType(p2))
                 assignAll(t, t)
               case (None, _) => assignAll(Int, Int)
@@ -261,7 +267,7 @@ trait AnalyzerConnections {
           case Some((p, vuntrimmed: String)) =>
             p.tpe = cud.zaluumScope.getZJavaLangString
             val v = vuntrimmed.trim
-            Literals.parseNarrowestLiteral(v,cud.zaluumScope) match {
+            Literals.parseNarrowestLiteral(v, cud.zaluumScope) match {
               case Some((_, tpe)) => o.finalTpe = tpe
               case None => error("Cannot parse literal " + v, vs.decl)
             }
@@ -277,7 +283,7 @@ trait AnalyzerConnections {
           case e: CastExprType => checkCastExprTypes(vs)
           case MinusExprType =>
             unboxIfNeeded(fromTpe(a)) match {
-              case p:PrimitiveJavaType if isNumeric(p) =>
+              case p: PrimitiveJavaType if isNumeric(p) =>
                 val t = toOperationType(p)
                 a.finalTpe = t; o.finalTpe = t
               case NoSymbol => a.finalTpe = Int; o.finalTpe = Int
@@ -293,20 +299,22 @@ trait AnalyzerConnections {
         }
       }
       def checkInvokeExprType(vs: ValSymbol) {
-        val obj = vs.findPortInstance(InvokeExprType.obj).get
+        val thiz = InvokeExprType.thisPort(vs)
+        val thizOut = InvokeExprType.thisOutPort(vs)
         InvokeExprType.signatureSymbol.tpe = cud.zaluumScope.getZJavaLangString // XXX ugly
-        obj.connectedFrom match {
+        thiz.connectedFrom match {
           case Some(from) =>
             from.finalTpe match {
-              case c: ClassJavaType => invoke(vs, obj, c)
+              case c: ClassJavaType => invoke(vs, thiz, thizOut, c)
               case _ => error("bad type", vs.decl)
             }
           case None => // not connected
         }
       }
 
-      def invoke(vs: ValSymbol, obj: PortInstance, c: ClassJavaType) {
+      def invoke(vs: ValSymbol, obj: PortInstance, thisOut: PortInstance, c: ClassJavaType) {
         obj.finalTpe = c
+        thisOut.finalTpe = c
         vs.params.get(InvokeExprType.signatureSymbol) match {
           case Some(InvokeExprType.Sig(selector, signature)) =>
             //val m = ztd.scope.getMethod(c.binding, "toString".toCharArray(), Array(), new FakeInvocationSite(TypeBinding.VOID))
@@ -316,9 +324,10 @@ trait AnalyzerConnections {
                 error("problem method " + p + p.problemId(), vs.decl)
               case Some(m) =>
                 if (m.returnType != null && m.returnType != TypeBinding.VOID) {
-                  val out = vs.portInstances find { _.name == Name("out") } getOrElse { vs.createOut(Name("out")).pi }
+                  val out = vs.portInstances find { _.name == Name("return") } getOrElse { vs.createOut(Name("return")).pi }
                   out.missing = false
                   out.finalTpe = cud.zaluumScope.getJavaType(m.returnType)
+                  if (out.finalTpe == NoSymbol) error("return type not found", vs.decl)
                 }
                 for ((p, i) <- m.parameters.zipWithIndex) {
                   val name = Name("p" + i)
@@ -350,7 +359,7 @@ trait AnalyzerConnections {
             case b: BinExprType => checkBinExprTypes(vs)
             case LiteralExprType => checkLiteralExprType(vs)
             case e: UnaryExprType => checkUnaryExprType(vs)
-            case InvokeExprType => checkInvokeExprType(vs)
+            case InvokeExprType => checkInvokeExprType(vs); checkPortConnectionsTypes(vs)
           }
           checkGhostPorts(vs)
         }

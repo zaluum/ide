@@ -46,19 +46,21 @@ trait ContentsToClass {
         }
       }
       import primitives._
-      val invoke = vs.tpe match {
+      val invoke : List[Tree] = vs.tpe match {
         case vbs: BoxTypeSymbol =>
           val tpe = vbs.fqName
-          Invoke(
-            Select(This, FieldRef(vs.name, tpe, bs.fqName)),
-            "apply",
-            List(),
-            tpe,
-            "()V",
-            interface = false)
+          List(
+            Invoke(
+              Select(This, FieldRef(vs.name, tpe, bs.fqName)),
+              "apply",
+              List(),
+              tpe,
+              "()V",
+              interface = false))
         case InvokeExprType =>
           val m = vs.info.asInstanceOf[MethodBinding]
-          val obj = InvokeExprType.objPort(vs)
+          val obj = InvokeExprType.thisPort(vs)
+          val thisOut = InvokeExprType.thisOutPort(vs) // XXX optimize and use only 1 var
           val params = vs.portSides filter { ps => ps.inPort && ps.pi != obj } sortBy { _.pi.name.str } map { ps => toRef(ps.pi) }
           val invoke = Invoke(
             toRef(obj),
@@ -67,12 +69,11 @@ trait ContentsToClass {
             Name(m.declaringClass.constantPoolName().mkString),
             m.signature().mkString,
             m.declaringClass.isInterface)
-
-          if (m.returnType != null && m.returnType != TypeBinding.VOID) {
-            val out = vs.portInstances find (_.name == Name("out")) get;
+          val assOut = if (m.returnType != null && m.returnType != TypeBinding.VOID) {
+            val out = vs.portInstances find (_.name == Name("return")) get;
             Assign(toRef(out), invoke)
           } else invoke
-
+          List(assOut, Assign(toRef(thisOut), toRef(obj)))
         case LiteralExprType =>
           val o = LiteralExprType.outPort(vs)
           val c = vs.params.headOption match {
@@ -89,14 +90,15 @@ trait ContentsToClass {
               }
             case _ => Const(0, primitives.Byte)
           }
-          Assign(toRef(o), c)
+          List(Assign(toRef(o), c))
         case u: UnaryExprType =>
           val (a, o) = u.unaryPortInstancesOf(vs)
-          u match {
-            case c: CastExprType => Assign(toRef(o), cast(a.finalTpe, o.finalTpe, toRef(a)))
-            case NotExprType => Assign(toRef(o), Not(toRef(a), a.finalTpe.asInstanceOf[PrimitiveJavaType]))
-            case MinusExprType => Assign(toRef(o), Minus(toRef(a), a.finalTpe.asInstanceOf[PrimitiveJavaType]))
-          }
+          List(
+            u match {
+              case c: CastExprType => Assign(toRef(o), cast(a.finalTpe, o.finalTpe, toRef(a)))
+              case NotExprType => Assign(toRef(o), Not(toRef(a), a.finalTpe.asInstanceOf[PrimitiveJavaType]))
+              case MinusExprType => Assign(toRef(o), Minus(toRef(a), a.finalTpe.asInstanceOf[PrimitiveJavaType]))
+            })
         case s: BinExprType =>
           val (a, b, o) = s.binaryPortInstancesOf(vs)
           val aTree = toRef(a)
@@ -121,7 +123,7 @@ trait ContentsToClass {
             case EqExprType => Eq(aTree, bTree, etpe)
             case NeExprType => Ne(aTree, bTree, etpe)
           }
-          Assign(toRef(o), eTree)
+          List(Assign(toRef(o), eTree))
       }
       // propagate outputs
       val outs = for {
@@ -129,7 +131,7 @@ trait ContentsToClass {
         if from.valSymbol == vs;
         a <- execConnection((from, to))
       } yield a
-      ins ::: invoke :: outs.toList
+      ins ::: invoke ::: outs.toList
     }
     val invokes = bs.executionOrder flatMap { runOne }
     val localsDecl = localsMap map {
@@ -138,13 +140,13 @@ trait ContentsToClass {
     } toList;
     Method(Name("contents"), "()V", invokes, localsDecl)
   }
-  def box(p: PrimitiveJavaType, t: Tree) = 
+  def box(p: PrimitiveJavaType, t: Tree) =
     InvokeStatic(
-   		"valueOf",
-        List(t),
-        p.boxedName,
-        "("+p.descriptor+")L"+ p.boxedName.internal + ";")
-        
+      "valueOf",
+      List(t),
+      p.boxedName,
+      "(" + p.descriptor + ")L" + p.boxedName.internal + ";")
+
   def unbox(c: ClassJavaType, t: Tree): (PrimitiveJavaType, Tree) = {
     val unboxedTpe = primitives.getUnboxedType(c).get
     import primitives._
