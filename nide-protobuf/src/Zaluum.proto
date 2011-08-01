@@ -1,33 +1,64 @@
 package zaluum;
 
 option java_package = "org.zaluum.nide.protobuf";
-option java_outer_classname = "BoxFileProtos";
+option java_outer_classname = "ZaluumProtobuf";
 
-message BoxClassDef {
+message BoxClass
+{
 	optional string class_name = 1;
 	optional string image_name = 2;
 	required Point gui_size = 3; 
 	required bool visual = 4; 
-	repeated Port port = 5;
-	repeated BoxClassDef inner_class = 6;
-	repeated Instance instance = 7;
-	repeated Connection connection =8; 
-	repeated Junction junction =9;
-	optional string super = 10;
-	optional string package = 11;
+	optional string super = 6;
+	optional string package = 7;
+	required Template template = 8;
 }
-message Instance {
+message Template {
+	repeated Port port = 1;
+	repeated Block block = 2;
+}
+message Block 
+{
+	repeated Instance instance = 1;
+	repeated Connection connection = 2; 
+	repeated Junction junction = 3;	
+	optional string info = 4;
+}
+message Instance 
+{
+	extensions 100 to max;
 	required string name = 1;
-	required string class_name = 2;
 	required Point pos = 3;
 	optional Point size = 4;
-	repeated Parameter parameter =5;
-	optional Point gui_pos = 6;
-	optional Point gui_size = 7;
-	repeated string constructor_parameter =8;
-	repeated string constructor_types = 9;
-	optional Label label = 12;
-	optional Label label_gui = 13;
+	repeated Parameter parameter = 5;
+	optional Label label = 6;
+	optional Label label_gui = 7;
+	enum Type
+	{
+		ClassInstance = 1;
+		StatInstance = 2;
+	}	
+	required Type type = 8;
+}
+message ClassInstance 
+{
+	extend Instance
+	{
+		required ClassInstance instance = 100;
+	}
+	required string class_name = 1;
+	optional Point gui_pos = 2;
+	optional Point gui_size = 3;
+	repeated string constructor_parameter =4;
+	repeated string constructor_types = 5;	
+}
+message StatInstance {
+	extend Instance 
+	{
+		required StatInstance instance = 101;
+	}
+	required Template template = 1;
+	required string statement = 2;
 }
 message Label {
 	required string description = 1;
@@ -76,7 +107,6 @@ enum Direction {
 }  
 message Clipboard {
 	repeated Instance instance = 1;
-	repeated BoxClassDef boxClass = 2;
 	repeated Port port =3;
 	repeated Connection connnection = 4;
 }

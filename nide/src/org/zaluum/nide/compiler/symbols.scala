@@ -11,16 +11,15 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 trait Symbol {
   def owner: Symbol
   def name: Name
-  var decl: Tree = EmptyTree
+  var decl: Tree = null
   var tpe: Type = NoSymbol
-  var scope: Scope = null
   override def toString = "Symbol(" + (if (name != null) name.str else "NoSymbol") + ")"
 }
 trait Type extends Symbol { // merge with javatype
   def fqName: Name
   def javaSize = 1
   type B <: TypeBinding
-  var binding : B = _
+  var binding: B = _
 }
 case object NoSymbol extends Symbol with JavaType {
   val owner = NoSymbol
@@ -29,8 +28,7 @@ case object NoSymbol extends Symbol with JavaType {
   def fqName = name
 }
 trait JavaType extends Type {
-  val owner : Symbol
-  scope = if (owner != null) owner.scope else null
+  val owner: Symbol
   def name: Name
   def descriptor: String
   override def toString = "JavaType(" + name + ")"
@@ -39,8 +37,8 @@ class PrimitiveJavaType(
   val name: Name,
   override val descriptor: String,
   override val javaSize: Int,
-  val boxedName : Name,
-  val boxMethod : String) extends JavaType {
+  val boxedName: Name,
+  val boxMethod: String) extends JavaType {
   type B = BaseTypeBinding
   val owner = null
   def fqName = name
@@ -64,17 +62,16 @@ class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int) extends JavaT
 }
 class ClassJavaType(val owner: Symbol, val fqName: Name) extends JavaType {
   type B = ReferenceBinding
-  scope = if (owner!=null) owner.scope else null
   def descriptor = "L" + name.internal + ";"
   def name = fqName
 }
-case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bs: BoxTypeSymbol) {
+case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bl: BlockSymbol) {
   def findConnectionFor(pi: PortInstance) = {
     connections.find { con =>
-      def isEnd(tree: Tree) = {
+      def isEnd(tree: Option[ConnectionEnd]) = {
         tree match {
-          case p: PortRef =>
-            PortSide.find(p, bs).exists(_.pi == pi)
+          case Some(p: PortRef) =>
+            PortSide.find(p, bl).exists(_.pi == pi)
           case _ => false
         }
       }
@@ -82,37 +79,29 @@ case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var con
     }
   }
 }
-trait BoxType extends Symbol with Type {
-  protected def ports: Map[Name, PortSymbol]
-  def declaredPorts = ports
-  def portsWithSuper = ports
-  def lookupPort(name: Name): Option[PortSymbol]
-  def lookupParam(name:Name) : Option[ParamSymbol]
-  
+trait TemplateSymbol extends Symbol {
+  var ports = Map[Name, PortSymbol]()
+  var blocks = List[BlockSymbol]()
+  def lookupParam(name: Name): Option[ParamSymbol]
+  var thisVal: ValSymbol = _ // should be template
 }
-class BoxTypeSymbol(
-  val owner: Symbol,
-  val name: Name, //Class name without package
-  val pkg: Name, // pkgdecl
-  val superName: Option[Name], //fqname
-  val image: Option[String],
-  var visualClass: Option[Name],
-  val abstractCl: Boolean = false) extends LocalScope(owner.scope) with BoxType {
-  type B = ReferenceBinding
-  var thisVal: ValSymbol = _
-  val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
-  def lookupValWithMissing(name: Name) = lookupVal(name).orElse { missingVals.get(name) }
-  def lookupValOrCreateMissing(name: Name) = lookupVal(name).getOrElse {
+trait BoxType extends TemplateSymbol with Type {
+  def portsWithSuper = ports
+  def lookupPortWithSuper(name:Name) : Option[PortSymbol]
+}
+class BlockSymbol extends Symbol {
+  var vals = Map[Name,ValSymbol]()
+  def valsList = vals.values.toList
+  private val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
+  def lookupValWithMissing(name: Name) = vals.get(name).orElse { missingVals.get(name) }
+  def lookupValOrCreateMissing(name: Name) = vals.get(name).getOrElse {
     missingVals.getOrElseUpdate(name, new ValSymbol(this, name));
   }
-  var javaScope : ZaluumClassScope = null
-  var hasApply = false
-  override def portsWithSuper: Map[Name, PortSymbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
+  val template : TemplateSymbol
   def declaredVals = vals
-  def fqName: Name = owner match { // this is
-    case bown: BoxTypeSymbol ⇒ Name(bown.fqName.str + "$" + name.str)
-    case _ ⇒ if (pkg.str != "") Name(pkg.str + "." + name.str) else name
-  }
+  def valsAlphabeticOrder = (vals.values ++ missingVals.values).toList.sortBy(_.name.str)
+  var executionOrder = List[ValSymbol]()
+
   object connections extends Namer {
     var junctions = Set[Junction]()
     def usedNames = junctions map { _.name.str }
@@ -122,14 +111,14 @@ class BoxTypeSymbol(
     def clumpOf(p: PortSide) = clumps find { _.ports.contains(p) }
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
-      val pk = PortSide.findOrCreateMissing(a, BoxTypeSymbol.this)
+      val pk = PortSide.findOrCreateMissing(a, BlockSymbol.this)
       val newClump = merge(clumpOf(pk), clumpOf(j))
       newClump.connections += c
       newClump.ports += pk
       newClump.junctions += j
     }
     def addPorts(a: PortRef, b: PortRef, c: ConnectionDef) {
-      val (as, bs) = (PortSide.findOrCreateMissing(a, BoxTypeSymbol.this), PortSide.findOrCreateMissing(b, BoxTypeSymbol.this))
+      val (as, bs) = (PortSide.findOrCreateMissing(a, BlockSymbol.this), PortSide.findOrCreateMissing(b, BlockSymbol.this))
       val newClump = merge(clumpOf(as), clumpOf(bs))
       newClump.connections += c
       newClump.ports ++= Set(as, bs)
@@ -153,7 +142,7 @@ class BoxTypeSymbol(
         case (Some(c1), None) ⇒ c1
         case (None, Some(c2)) ⇒ c2
         case (None, None) ⇒
-          val clump = Clump(Set(), Set(), Set(),BoxTypeSymbol.this)
+          val clump = Clump(Set(), Set(), Set(), BlockSymbol.this)
           clumps += clump
           clump
       }
@@ -169,7 +158,30 @@ class BoxTypeSymbol(
       }
     }
   }
+}
+class BoxTypeSymbol(
+  val name: Name, //Class name without package
+  val pkg: Name, // pkgdecl
+  val superName: Option[Name], //fqname
+  val image: Option[String],
+  var visualClass: Option[Name],
+  val abstractCl: Boolean = false) extends TemplateSymbol with BoxType {
+  
+  
+  type B = ReferenceBinding
+  var javaScope: ZaluumClassScope = null
+  var scope : Scope = null
+  val owner = null
+  var hasApply = false
   var _superSymbol: Option[BoxType] = None
+  var okOverride = false
+  var constructors = List[Constructor]()
+  var params = Map[Name,ParamSymbol]()
+  var source: String = "" // TODO
+  tpe = this
+  def portsWithSuper: Map[Name, PortSymbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
+  def fqName: Name = if (pkg.str != "") Name(pkg.str + "." + name.str) else name
+  def block = blocks.head
   def superSymbol = {
     _superSymbol match {
       case Some(s) ⇒ _superSymbol
@@ -181,26 +193,18 @@ class BoxTypeSymbol(
       }
     }
   }
-  var okOverride = false
-  var constructors = List[Constructor]()
-  var source: String = "" // TODO
-  def valsAlphabeticOrder = (vals.values ++ missingVals.values).toList.sortBy(_.name.str)
   def IOInOrder = (ports.values ++ params.values).toList.sortBy(_.name.str)
   def paramsInOrder = params.values.toList.sortBy(_.name.str)
-  var executionOrder = List[ValSymbol]()
-  def isLocal = owner.isInstanceOf[BoxTypeSymbol]
-  // override def toString = "BoxTypeSymbol(" + name.str + ", super=" + superSymbol + ")"
-  override def lookupPort(name: Name): Option[PortSymbol] =
-    super.lookupPort(name) orElse (superSymbol flatMap { _.lookupPort(name) })
-  tpe = this
+  def lookupPortWithSuper(name: Name): Option[PortSymbol] =
+    super.lookupPortWithSuper(name) orElse (superSymbol flatMap { _.lookupPortWithSuper(name) })
 }
 
 //class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 
 // TODO make two classes one that has values from the declaring tree and the other directly from symbol
-class IOSymbol(val owner: BoxType, val name: Name, val dir: PortDir) extends Symbol {
+class IOSymbol(val owner: TemplateSymbol, val name: Name, val dir: PortDir) extends Symbol {
   def box = owner
 }
-class PortSymbol(owner: BoxType, name: Name, val extPos: Point, dir: PortDir) extends IOSymbol(owner, name, dir) {
+class PortSymbol(owner: TemplateSymbol, name: Name, val extPos: Point, dir: PortDir) extends IOSymbol(owner, name, dir) {
   override def toString = "PortSymbol(" + name + ")"
 }
 class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
@@ -218,8 +222,8 @@ class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
 class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name, In) {
   override def toString = "ParamSymbol(" + name + ")"
 }
-class PortInstance(val name:Name, val valSymbol: ValSymbol) {
-  var portSymbol: Option[PortSymbol] = None 
+class PortInstance(val name: Name, val valSymbol: ValSymbol) {
+  var portSymbol: Option[PortSymbol] = None
   var missing = false
   var connectedFrom: Option[PortInstance] = None
   var blameConnection: Option[ConnectionDef] = None
@@ -228,13 +232,13 @@ class PortInstance(val name:Name, val valSymbol: ValSymbol) {
 }
 
 object PortSide {
-  def find(p: PortRef, bs: BoxTypeSymbol) = {
+  def find(p: PortRef, bl: BlockSymbol) = {
     p.fromRef match {
-      case t: ThisRef ⇒ bs.thisVal.findPortSide(p)
-      case v: ValRef ⇒ for (vs <- bs.lookupValWithMissing(v.name); ps <- vs.findPortSide(p)) yield ps
+      case t: ThisRef ⇒ bl.template.thisVal.findPortSide(p)
+      case v: ValRef ⇒ for (vs <- bl.lookupValWithMissing(v.name); ps <- vs.findPortSide(p)) yield ps
     }
   }
-  def findOrCreateMissing(p: PortRef, bs: BoxTypeSymbol) = {
+  def findOrCreateMissing(p: PortRef, bl: BlockSymbol) = {
     def createMissing(vs: ValSymbol, inside: Boolean) = {
       val missing = new PortInstance(p.name, vs)
       missing.missing = true
@@ -245,11 +249,11 @@ object PortSide {
     }
     p.fromRef match {
       case t: ThisRef =>
-        bs.thisVal.findPortSide(p).getOrElse {
-          createMissing(bs.thisVal, true)
+        bl.template.thisVal.findPortSide(p).getOrElse {
+          createMissing(bl.template.thisVal, true)
         }
       case v: ValRef =>
-        val vs = bs.lookupValOrCreateMissing(v.name)
+        val vs = bl.lookupValOrCreateMissing(v.name)
         vs.findPortSide(p).getOrElse { createMissing(vs, false) }
     }
   }
@@ -263,24 +267,24 @@ class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolea
   }
   override def toString() = "PortSide(" + pi.toString + ", in=" + inPort + ", fromInside=" + fromInside + ")"
 }
-class ValSymbol(val owner: BoxTypeSymbol, val name: Name) extends Symbol {
+class ValSymbol(val owner: BlockSymbol, val name: Name) extends Symbol {
   var params = Map[ParamSymbol, Any]()
-  var info : AnyRef = null
+  var info: AnyRef = null
   var constructor: Option[Constructor] = None
   var constructorParams = List[(Any, Type)]()
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
-  private def createPs(name:Name, dir:Boolean) = {
-    val pi = new PortInstance(name,this)
+  private def createPs(name: Name, dir: Boolean) = {
+    val pi = new PortInstance(name, this)
     val ps = new PortSide(pi, dir, false)
     portInstances ::= pi
     portSides ::= ps
     ps
   }
-  def createIn(name:Name) = createPs(name,true)
-  def createOut(name:Name) = createPs(name,false)
+  def createIn(name: Name) = createPs(name, true)
+  def createOut(name: Name) = createPs(name, false)
   def findPortInstance(p: PortSymbol): Option[PortInstance] = {
-    portInstances.find (_.portSymbol == Some(p))
+    portInstances.find(_.portSymbol == Some(p))
   }
   def findPortSide(pr: PortRef) =
     portSides.find(ps => ps.pi.name == pr.name && ps.inPort == pr.in)

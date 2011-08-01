@@ -510,11 +510,11 @@ abstract class ConnectionGraph {
         j
     }
     val connections: List[Tree] = edges.map { e ⇒
-      def vertexRef(v: Vertex): Tree = v match {
-        case p: PortVertex ⇒ p.ps.toRef
-        case m: MissingPortVertex => m.key.toRef
-        case e : EmptyVertex => EmptyTree 
-        case v : Joint ⇒ JunctionRef(map(v).name)
+      def vertexRef(v: Vertex): Option[ConnectionEnd] = v match {
+        case p: PortVertex ⇒ Some(p.ps.toRef)
+        case m: MissingPortVertex => Some(m.key.toRef)
+        case e : EmptyVertex => None 
+        case v : Joint ⇒ Some(JunctionRef(map(v).name))
       }
       ConnectionDef(vertexRef(e.a), vertexRef(e.b), e.points)
     }.toList

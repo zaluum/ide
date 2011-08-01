@@ -10,6 +10,9 @@ import scala.collection.mutable._
 import org.eclipse.core.runtime.jobs.Job
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.core.runtime.IStatus
+object NotImplemented {
+	def ??? = sys.error("not implemented")
+}
 object Utils {
 
   def loadIcons(ir: ImageRegistry, base: Class[_], keys: String*) = {

@@ -90,7 +90,6 @@ trait ConnectionsTool {
             val trans: PartialFunction[Tree, Tree] = {
               case b: BoxDef if (b == initContainer.boxDef) ⇒
                 b.copy(
-                  defs = transformTrees(b.defs),
                   vals = transformTrees(b.vals),
                   ports = transformTrees(b.ports),
                   connections = connections,
@@ -265,7 +264,6 @@ trait ConnectionsTool {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if (b == initContainer.boxDef) ⇒
             b.copy(
-              defs = transformTrees(b.defs),
               vals = transformTrees(b.vals),
               ports = transformTrees(b.ports),
               connections = connections,

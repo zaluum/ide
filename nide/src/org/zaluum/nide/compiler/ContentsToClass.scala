@@ -7,7 +7,8 @@ trait ContentsToClass {
 
   def appl(b: BoxDef): Method = {
     val bs = b.sym
-    val connections = bs.connections
+    val block = bs.blocks.head
+    val connections = block.connections
     // create locals for expressions
     val localsMap = createLocalsMap(bs)
     //helper methods
@@ -133,7 +134,7 @@ trait ContentsToClass {
       } yield a
       ins ::: invoke ::: outs.toList
     }
-    val invokes = bs.executionOrder flatMap { runOne }
+    val invokes = block.executionOrder flatMap { runOne }
     val localsDecl = localsMap map {
       case (a, i) =>
         (a.valSymbol.name.str + "_" + a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i)
@@ -173,7 +174,7 @@ trait ContentsToClass {
 
   def createLocalsMap(bs: BoxTypeSymbol) = {
     var locals = 1; // 0 for "this"
-    bs.valsAlphabeticOrder flatMap { v =>
+    bs.block.valsAlphabeticOrder flatMap { v =>
       v.tpe match {
         case b: BoxTypeSymbol => List()
         case e: ExprType =>

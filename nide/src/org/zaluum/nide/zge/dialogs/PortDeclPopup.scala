@@ -11,7 +11,7 @@ import org.zaluum.nide.zge.ScrollPopup
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.{ Composite, Button, Label, Text }
-import org.zaluum.nide.compiler.{ EmptyTree, Tree }
+import org.zaluum.nide.compiler.Tree
 import org.eclipse.jdt.internal.ui.dialogs.OpenTypeSelectionDialog
 import org.eclipse.ui.PlatformUI
 import org.eclipse.jdt.core.search.IJavaSearchConstants

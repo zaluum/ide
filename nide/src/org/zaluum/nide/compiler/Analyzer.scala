@@ -5,7 +5,7 @@ import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
 import javax.swing.JPanel
 import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
-import org.zaluum.nide.eclipse.integration.model.{ZaluumCompilationUnitScope,ZaluumTypeDeclaration}
+import org.zaluum.nide.eclipse.integration.model.{ ZaluumCompilationUnitScope, ZaluumTypeDeclaration }
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
 
 class Reporter {
@@ -79,17 +79,17 @@ object Literals {
       case e ⇒ None
     }
   }
-  def parseNarrowestLiteral(v: String, zaluumScope:ZaluumCompilationUnitScope) = {
+  def parseNarrowestLiteral(v: String, zaluumScope: ZaluumCompilationUnitScope) = {
     def parseIntOpt = try { Some(v.toInt) } catch { case e => None }
     def parseDoubleOpt = try { Some(v.toDouble) } catch { case e => None }
-    if (v.toLowerCase=="true") Some(true, primitives.Boolean)
-    else if (v.toLowerCase=="false") Some(false, primitives.Boolean)
+    if (v.toLowerCase == "true") Some(true, primitives.Boolean)
+    else if (v.toLowerCase == "false") Some(false, primitives.Boolean)
     else if (v.endsWith("f") || v.endsWith("F")) {
       try { Some((v.toFloat, primitives.Float)) } catch { case e => None }
     } else if (v.endsWith("l") || v.endsWith("L")) {
-      try { Some((v.dropRight(1).toLong, primitives.Long)) } catch { case e => e.printStackTrace; println ("long fail " + v);None }
+      try { Some((v.dropRight(1).toLong, primitives.Long)) } catch { case e => e.printStackTrace; println("long fail " + v); None }
     } else if (v.startsWith("\"") && v.endsWith("\"")) {
-      
+
       Some(v.substring(1, v.length - 1), zaluumScope.getZJavaLangString)
     } else {
       parseIntOpt match { // char?
@@ -97,7 +97,7 @@ object Literals {
         case None =>
           parseDoubleOpt match {
             case Some(d) => Some(d, primitives.Double)
-            case None => Some(v,  zaluumScope.getZJavaLangString)
+            case None => Some(v, zaluumScope.getZJavaLangString)
           }
       }
     }
@@ -109,20 +109,21 @@ object Literals {
     (i, p)
   }
 }
-trait Scope  {
+trait Scope extends Symbol {
   def alreadyDefinedBoxType(name: Name): Boolean
-  def lookupPort(name: Name): Option[PortSymbol]
-  def lookupVal(name: Name): Option[ValSymbol]
+  //def lookupPort(name: Name): Option[PortSymbol]
+  //def lookupVal(name: Name): Option[ValSymbol]
   def lookupType(name: Name): Option[Type]
   def lookupBoxType(name: Name): Option[BoxType]
-  def lookupBoxTypeLocal(name: Name): Option[BoxType]
-  def enter(sym: ValSymbol)
-  def enter(sym: PortSymbol)
-  def enter(sym: ParamSymbol)
-  def enter(sym: BoxTypeSymbol)
-  def root: Symbol
+  def javaScope : ZaluumCompilationUnitScope
+  //def lookupBoxTypeLocal(name: Name): Option[BoxType]
+  //def enter(sym: ValSymbol)
+  //def enter(sym: PortSymbol)
+  //def enter(sym: ParamSymbol)
+  //def enter(sym: BoxTypeSymbol)
+  //  def root: Symbol
 }
-trait RootSymbol extends Scope with Symbol {
+/*trait RootSymbol extends Scope with Symbol {
   val owner = NoSymbol
   val name = null
   scope = this
@@ -132,22 +133,22 @@ trait RootSymbol extends Scope with Symbol {
   def lookupParam(name: Name): Option[ParamSymbol] = fail
   def lookupBoxTypeLocal(name: Name): Option[BoxType] = fail
   def root: Symbol = this
-}
+}*/
 object primitives {
-  private def n(str: String, desc: String, b:BaseTypeBinding, boxedName:Name, boxMethod:String, size: Int = 1) = {
+  private def n(str: String, desc: String, b: BaseTypeBinding, boxedName: Name, boxMethod: String, size: Int = 1) = {
     val p = new PrimitiveJavaType(Name(str), desc, size, boxedName, boxMethod)
     p.binding = b
     p
   }
   val Byte = n("byte", "B", TypeBinding.BYTE, Name("java.lang.Byte"), "byteValue")
-  val Short = n("short", "S", TypeBinding.SHORT,Name("java.lang.Short"), "shortValue")
-  val Int = n("int", "I", TypeBinding.INT,Name("java.lang.Integer"), "intValue")
-  val Long = n("long", "J", TypeBinding.LONG, Name("java.lang.Long"), "longValue",2)
+  val Short = n("short", "S", TypeBinding.SHORT, Name("java.lang.Short"), "shortValue")
+  val Int = n("int", "I", TypeBinding.INT, Name("java.lang.Integer"), "intValue")
+  val Long = n("long", "J", TypeBinding.LONG, Name("java.lang.Long"), "longValue", 2)
   val Float = n("float", "F", TypeBinding.FLOAT, Name("java.lang.Float"), "floatValue")
-  val Double = n("double", "D", TypeBinding.DOUBLE, Name("java.lang.Double"), "doubleValue",2)
-  val Boolean = n("boolean", "Z", TypeBinding.BOOLEAN,Name("java.lang.Boolean"), "booleanValue")
-  val Char = n("char", "C", TypeBinding.CHAR,Name("java.lang.Char"), "charValue")
-  
+  val Double = n("double", "D", TypeBinding.DOUBLE, Name("java.lang.Double"), "doubleValue", 2)
+  val Boolean = n("boolean", "Z", TypeBinding.BOOLEAN, Name("java.lang.Boolean"), "booleanValue")
+  val Char = n("char", "C", TypeBinding.CHAR, Name("java.lang.Char"), "charValue")
+
   val allTypes = List(Byte, Short, Int, Long, Float, Double, Boolean, Char)
   def numericTypes = List(Byte, Short, Int, Long, Float, Double, Char)
   def widening(from: PrimitiveJavaType, to: PrimitiveJavaType) = {
@@ -193,27 +194,28 @@ object primitives {
   def isNumeric(tpe: Type): Boolean = {
     tpe match {
       case p: PrimitiveJavaType if (p != primitives.Boolean) => true
-      case j: JavaType => false 
+      case j: JavaType => false
       case _ => false
     }
   }
-  def isIntNumeric(tpe:Type) : Boolean =  tpe==primitives.Int || 
-        tpe==primitives.Short || 
-        tpe==primitives.Byte || 
-        tpe==primitives.Char
+  def isIntNumeric(tpe: Type): Boolean = tpe == primitives.Int ||
+    tpe == primitives.Short ||
+    tpe == primitives.Byte ||
+    tpe == primitives.Char
   def find(desc: String) = allTypes.find(_.descriptor == desc)
   def find(name: Name) = allTypes.find(_.name == name)
 }
 
-class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for presentation compiler
+/*class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for presentation compiler
   case object fakeRoot extends Symbol {
     val owner = NoSymbol
     scope = FakeGlobalScope.this
     override val name = null
   }
   override val root = fakeRoot
-}
-class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
+}*/
+/*trait LocalScope extends Scope with Namer {
+  val enclosingScope: Scope
   protected var ports = Map[Name, PortSymbol]()
   protected var params = Map[Name, ParamSymbol]()
   protected var vals = Map[Name, ValSymbol]()
@@ -232,7 +234,7 @@ class LocalScope(val enclosingScope: Scope) extends Scope with Namer {
   def enter(sym: ParamSymbol) = { params += (sym.name -> sym); sym }
   def usedNames = (boxes.keySet.map { _.str } ++ vals.keySet.map { _.str } ++ ports.keySet.map { _.str }).toSet
   def root = enclosingScope.root
-}
+}*/
 trait ReporterAdapter {
   def location(tree: Tree): Int
   def reporter: Reporter
@@ -240,29 +242,13 @@ trait ReporterAdapter {
 }
 class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope) extends AnalyzerConnections {
   def globLocation(t: Tree) = t.line
- 
-  class Namer(initOwner: Symbol) extends Traverser(initOwner) with ReporterAdapter {
+
+  class Namer extends Traverser(null) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
-    def defineBox(symbol: BoxTypeSymbol, tree: Tree) {
-      prepare(symbol, currentScope, tree, currentScope.alreadyDefinedBoxType(symbol.name)) {
-        currentScope.enter(symbol)
-      }
-    }
-    def defineVal(symbol: ValSymbol, tree: Tree) {
-      prepare(symbol, currentScope, tree, currentScope.lookupVal(symbol.name).isDefined) {
-        currentScope.enter(symbol)
-      }
-    }
-    def definePort(symbol: PortSymbol, tree: Tree) {
-      prepare(symbol, currentScope, tree, /* FIXME currentScope.lookupPort(symbol.name).isDefined*/ false) {
-        currentScope.enter(symbol)
-      }
-    }
-    private def prepare(symbol: Symbol, scope: Scope, tree: Tree, dupl: Boolean)(block: => Unit) {
+
+    private def bind(symbol: Symbol, tree: Tree, dupl: Boolean)(block: => Unit) {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
-      symbol.scope = scope
-      tree.scope = scope
       tree.symbol = symbol
       symbol.decl = tree
       block
@@ -271,24 +257,43 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
       tree match {
         case b: BoxDef ⇒
           val cl = Some(Name(classOf[JPanel].getName))
-          val sym = new BoxTypeSymbol(currentOwner, b.name, b.pkg, b.superName, b.image, cl)
+          val sym = new BoxTypeSymbol(b.name, b.pkg, b.superName, b.image, cl)
+          sym.scope = global
           sym.hasApply = true
-          defineBox(sym, tree)
+          bind(sym, b, global.lookupBoxType(b.name).isDefined) {}
           sym.constructors = List(new Constructor(sym, List()))
           tree.tpe = sym
+          if(b.template.blocks.size != 1) error("Fatal BoxDef has no block defined",b) // FATAL
         // FIXME reported errors do not show in the editor (valdef)
+        case t: Template =>
+          val template = currentOwner.asInstanceOf[TemplateSymbol]
+          bind(template, t, false) {}
+        case b: Block =>
+          val template = currentOwner.asInstanceOf[TemplateSymbol]
+          val blockSym = new BlockSymbol()
+          bind(blockSym, b, false) {
+            template.blocks ::= blockSym
+          }
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
-          definePort(new PortSymbol(currentOwner.asInstanceOf[BoxType], name, extPos, dir), tree) // owner of a port is boxtypesymbol
+          val template = currentOwner.asInstanceOf[TemplateSymbol]
+          val port = new PortSymbol(template, name, extPos, dir)
+          bind(port, p, template.ports.contains(p.name)) {
+            template.ports += (name -> port)
+          }
         case v: ValDef ⇒
-          defineVal(new ValSymbol(currentOwner.asInstanceOf[BoxTypeSymbol], v.name), tree)
+          val block = currentOwner.asInstanceOf[BlockSymbol]
+          val vs = new ValSymbol(block, v.name)
+          bind(vs, v, block.vals.contains(v.name)) {
+            block.vals += (v.name -> vs)
+          }
         case _ ⇒
-          tree.scope = currentScope
       }
       super.traverse(tree)
     }
   }
-   var cud : ZaluumCompilationUnitDeclaration = _
-  class Resolver(global: Symbol) extends Traverser(global) with ReporterAdapter {
+  var cud: ZaluumCompilationUnitDeclaration = _
+
+  class Resolver(global: Scope) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
     def createPortInstances(bs: BoxType, vsym: ValSymbol, isThis: Boolean) = {
@@ -313,26 +318,29 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
         case b: BoxDef ⇒
           val bs = b.sym
           b.superName foreach { sn ⇒
-            catchAbort(currentScope.lookupBoxType(sn)) match {
+            catchAbort(global.lookupBoxType(sn)) match {
               case Some(sbs: BoxTypeSymbol) ⇒
                 bs._superSymbol = Some(sbs)
-              /* if (!bs.okOverride) 
-                  error ("Super box " + sn.str + " has no 'void contents()' to override or has other abstract methods.", tree)*/
               case None ⇒
                 error("Super box type not found " + sn, tree)
             }
           }
-          bs.thisVal = new ValSymbol(bs, Name("this"))
-          bs.thisVal.tpe = bs
           createPortInstances(bs, bs.thisVal, true)
+        case bl: Block =>
+          bl.sym.template match {
+            case bs:BoxTypeSymbol =>
+              bs.thisVal = new ValSymbol(bl.sym, Name("this")) // feels wrong
+              bs.thisVal.tpe = bs
+              /*case val => te.thisVal = val*/
+          }
         case PortDef(name, typeName, in, inPos, extPos) ⇒
-          tree.symbol.tpe = catchAbort(currentScope.lookupType(typeName)) getOrElse {
+          tree.symbol.tpe = catchAbort(global.lookupType(typeName)) getOrElse {
             error("Port type not found " + typeName, tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
           val vsym = v.sym
-          catchAbort(Expressions.find(v.typeName) orElse currentScope.lookupBoxType(v.typeName)) match {
+          catchAbort(Expressions.find(v.typeName) orElse global.lookupBoxType(v.typeName)) match {
             case Some(bs: BoxTypeSymbol) ⇒
               v.symbol.tpe = bs
               if (!bs.hasApply) {
@@ -340,7 +348,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
               }
               // Constructor
               val consSign = v.constructorTypes map { name ⇒
-                currentScope.lookupType(name) getOrElse {
+                global.lookupType(name) getOrElse {
                   error("Constructor type " + name + " not found", tree)
                   NoSymbol
                 }
@@ -381,25 +389,27 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
                 b.lookupParam(p.key) match {
                   case Some(parSym) =>
                     vsym.params += (parSym -> p.value) // FIXME always string?
-                  case None => error("Cannot find parameter " + p.key,tree)
+                  case None => error("Cannot find parameter " + p.key, tree)
                 }
               }
               createPortInstances(b, vsym, false)
             case a ⇒
-              v.symbol.tpe = NoSymbol
+              v.symbol.tpe = null
               error("Box class " + v.typeName + " not found", tree);
           }
           // constructor match
           tree.tpe = tree.symbol.tpe
-        case ValRef(name) ⇒
-          tree.symbol = catchAbort(currentScope.lookupVal(name)) getOrElse {
+        case v @ ValRef(name) ⇒
+          val block = currentOwner.asInstanceOf[BlockSymbol]
+          tree.symbol = catchAbort(block.vals.get(name)) getOrElse {
             error("Box not found " + name, tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
         case p @ PortRef(fromTree, name, in) ⇒ // TODO filter in?
+          val block = currentOwner.asInstanceOf[BlockSymbol]
           tree.symbol = fromTree.tpe match {
             case b: BoxTypeSymbol ⇒
-              catchAbort(b.lookupPort(name)).getOrElse {
+              catchAbort(b.lookupPortWithSuper(name)).getOrElse {
                 error("Port not found " + name + " in box type " + b, tree);
                 NoSymbol
               }
@@ -407,26 +417,28 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val global: Scope)
           }
           tree.tpe = tree.symbol.tpe
         case ThisRef() ⇒
-          tree.symbol = currentOwner // TODO what symbol for this?
-          tree.tpe = currentOwner.asInstanceOf[BoxTypeSymbol] // owner of thisRef is owner of connection which is boxTypeSymbol
+          val block = currentOwner.asInstanceOf[BlockSymbol]
+          tree.symbol = null 
+          tree.tpe = block.template.asInstanceOf[BoxTypeSymbol] // FIXME
         case _ ⇒
       }
     }
   }
 
   def runNamer(): Tree = {
-    val root = global.root
-    new Namer(root).traverse(toCompile)
+    new Namer().traverse(toCompile)
     toCompile
   }
- 
-  def runResolve(cud : ZaluumCompilationUnitDeclaration): Tree = {
+
+  def runResolve(cud: ZaluumCompilationUnitDeclaration): Tree = {
     this.cud = cud
-    new Resolver(global.root).traverse(toCompile)
+    new Resolver(global).traverse(toCompile)
     toCompile
   }
   def runCheck(): Tree = {
-    new CheckConnections(toCompile, global.root).check()
+    toCompile.template.blocks.headOption foreach { 
+    	bl => new CheckConnections(bl).run()
+    }
     toCompile
   }
 }

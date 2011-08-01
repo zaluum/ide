@@ -80,26 +80,6 @@ class ZaluumCompilationUnitDeclaration(
 
   var tree: BoxDef = _
   var a: Analyzer = _
-  object JDTScope extends RootSymbol {
-    def alreadyDefinedBoxType(name: Name): Boolean = false
-    private def fail = throw new UnsupportedOperationException()
-    var boxes = Map[Name, BoxTypeSymbol]()
-    def lookupType(name: Name): Option[Type] = {
-      zaluumScope.getJavaType(name)
-    }
-    def lookupBoxType(name: Name): Option[BoxType] = {
-      boxes.get(name).orElse {
-        zaluumScope.getBoxType(name)
-      }
-    }
-    def enter(b: BoxTypeSymbol) {
-      boxes += (b.name -> b)
-    }
-    def enter(p: PortSymbol) {}
-    def enter(a: ValSymbol) {}
-    def enter(p: ParamSymbol) {}
-    def compilationUnitScope = zaluumScope
-  }
 
   override def buildCompilationUnitScope(lookupEnvironment: LookupEnvironment) = {
     new ZaluumCompilationUnitScope(this, lookupEnvironment)

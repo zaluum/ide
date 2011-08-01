@@ -8,7 +8,7 @@ import org.eclipse.swt.dnd.Transfer
 import org.eclipse.swt.dnd.ByteArrayTransfer
 import scala.collection.mutable.Buffer
 import org.zaluum.nide.compiler._
-
+/* FIXME
 case class Clipboard(boxes: List[BoxDef], valDefs: List[ValDef], ports: List[PortDef], connections: List[ConnectionDef]) {
   def isEmpty: Boolean = valDefs.isEmpty && ports.isEmpty
   def positions = (valDefs.view.map(_.pos) ++ ports.view.map(_.inPos))
@@ -132,4 +132,4 @@ trait ClipboardViewer {
     Option(eclip.getContents(ClipTransfer).asInstanceOf[BoxFileProtos.Clipboard]).
       map { c ⇒ Parser.parse(c) }
   } catch { case e ⇒ None }
-}
+}*/

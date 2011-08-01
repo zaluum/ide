@@ -129,7 +129,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   // PASTING
-  abstract class Pasting extends ToolState {
+  /*abstract class Pasting extends ToolState {
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
     var clipboard: Clipboard = _
@@ -153,7 +153,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       selecting.enter()
     }
   }
-  object pasting extends Pasting with SingleContainerAllower
+  object pasting extends Pasting with SingleContainerAllower*/
   // CREATING
   abstract class Creating extends ToolState {
     self: SingleContainer ⇒
