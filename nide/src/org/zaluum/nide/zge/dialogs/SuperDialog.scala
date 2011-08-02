@@ -9,12 +9,7 @@ class SuperDialog(viewer: Viewer, vs: ValSymbol) extends ValDefDialog(viewer, vs
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if bd == b ⇒
-            b.copy(superName = Some(Name(text)),
-              defs = transformTrees(b.defs),
-              vals = transformTrees(b.vals),
-              ports = transformTrees(b.ports),
-              connections = transformTrees(b.connections),
-              junctions = transformTrees(b.junctions))
+            b.copy(superName = Some(Name(text)), template = transform(b.template))
         }
       }
       viewer.controller.exec(tr)

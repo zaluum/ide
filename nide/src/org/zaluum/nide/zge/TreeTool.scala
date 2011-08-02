@@ -4,7 +4,6 @@ import org.zaluum.nide.zge.dialogs._
 import org.eclipse.draw2d.RectangleFigure
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.Label
-import org.zaluum.nide.compiler.NoSymbol
 import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.ToolTip
 import draw2dConversions._
@@ -111,11 +110,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.graphOf))
     }
     def cut() {
-      viewer.updateClipboard
+     // FIXME viewer.updateClipboard
       delete
     }
-    def copy() = viewer.updateClipboard
-    def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
+    def copy() = {}// FIXME  viewer.updateClipboard
+    def paste() = {} // FIXME viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
     
     override def menu() {
       itemUnderMouse match {
@@ -177,18 +176,17 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     private def newInstance(dst: Point) = {
       new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
-          case b: BoxDef if b == initContainer.boxDef ⇒
+          case b: Block if b == initContainer.block ⇒
             val name = Name(b.sym.freshName("box"))
             b.copy(
-              defs=transformTrees(b.defs),
-              vals=ValDef(name, tpeName, dst, None, None, None, List(), List(), List(),None, None) :: transformTrees(b.vals),
-              ports=transformTrees(b.ports),
+              valDefs=ValDef(name, tpeName, dst, None, None, None, List(), List(), List(),None, None) :: transformTrees(b.valDefs),
               connections=transformTrees(b.connections),
+              parameters=transformTrees(b.parameters),
               junctions=transformTrees(b.junctions))
         }
       }
     }
-    private def newClass(dst: Point) = {
+    /*private def newClass(dst: Point) = {
       new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == initContainer.boxDef ⇒
@@ -209,14 +207,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
               junctions = transformTrees(b.junctions))
         }
       }
-    }
+    }*/
     def buttonUp() {
       val dst = snap(currentMouseLocation)
-      val command = tpe match {
+      /*val command = tpe match {
         case Some(b) if b.abstractCl ⇒ newClass(dst)
         case _ ⇒ newInstance(dst)
-      }
-      controller.exec(command)
+      }*/
+      controller.exec(newInstance(dst))
     }
     def buttonDown() {}
     def exit() {
@@ -250,16 +248,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       val pos = snap(currentMouseLocation)
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
-          case b: BoxDef if b == initContainer.boxDef ⇒
-            val tpe = b.sym
-            val name = Name(tpe.freshName("port"))
+          case te: Template if te == initContainer.template ⇒
+            val name = Name(initContainer.symbol.freshName("port"))
             val p = PortDef(name, Name("double"), dir, pos, Point(0, pos.y))
-            b.copy(
-              defs=transformTrees(b.defs),
-              vals=transformTrees(b.vals),
-              ports=p :: transformTrees(b.ports),
-              connections=transformTrees(b.connections),
-              junctions=transformTrees(b.junctions))
+            te.copy(
+         	  ports=p :: transformTrees(te.ports),
+         	  blocks= transformTrees(te.blocks))
         }
       }
       controller.exec(tr)

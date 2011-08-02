@@ -50,15 +50,10 @@ object ValDefMenu {
       case l: LabelItem ⇒ // 
       case _ ⇒
         valDef.tpe match {
-          case b: BoxTypeSymbol if (!b.isLocal) ⇒
+          case b: BoxTypeSymbol ⇒
             cons
             params
             tpeMenu
-          case b: BoxTypeSymbol if (b.isLocal) ⇒
-            newItem("Super...") {
-              new SuperDialog(viewer, v).open()
-            }
-            params
           case InvokeExprType => 
             methodMenu
             tpeMenu

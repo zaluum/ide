@@ -51,7 +51,6 @@ import java.nio.charset.Charset
 import java.io.ByteArrayInputStream
 import org.objectweb.asm.Opcodes
 import org.zaluum.nide.compiler.Reporter
-import org.zaluum.nide.compiler.LocalScope
 import org.zaluum.nide.compiler.Scope
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding
@@ -115,8 +114,8 @@ class ZaluumCompilationUnitDeclaration(
           createProblem(str, mark.getOrElse(-1))
         }
       }
-      val scope = JDTScope
-      a = new Analyzer(reporter, tree, scope)
+      val scope = zaluumScope
+      a = new Analyzer(reporter, tree)
       a.runNamer()
       createPackageDeclaration()
       createTypeDeclarations()
@@ -158,15 +157,7 @@ class ZaluumCompilationUnitDeclaration(
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
     typeDeclaration.fields = createFieldDeclarations(b)
-    val children = for (
-      t ← b.defs;
-      val benc = t.asInstanceOf[BoxDef]
-    ) yield {
-      val encDec = createTypeDeclaration(benc, Some(typeDeclaration))
-      encDec.enclosingType = typeDeclaration
-      encDec
-    }
-    typeDeclaration.memberTypes = children.toArray
+    typeDeclaration.memberTypes = Array()
     typeDeclaration.declarationSourceEnd = end(b);
     typeDeclaration.declarationSourceStart = start(b);
     typeDeclaration.bodyStart = start(b);
@@ -204,18 +195,19 @@ class ZaluumCompilationUnitDeclaration(
     meth.declarationSourceEnd = end(b)
     Array(constructor, meth)
   }
+  // tpe not yet initialized
   def createFieldDeclarations(b: BoxDef): Array[FieldDeclaration] = {
     val res = Buffer[FieldDeclaration]()
-    //vals
-    val bs = b.sym
-    for (vs ← bs.valsAlphabeticOrder; if (vs.tpe.isInstanceOf[BoxTypeSymbol])) {
-      val f = new FieldDeclaration(vs.name.str.toCharArray, start(vs.decl), end(vs.decl))
+    //vals 
+    val block = b.template.blocks.head
+    for (v ← block.valDefs) {
+      val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v))
       f.modifiers = Opcodes.ACC_PUBLIC
-      f.`type` = createTypeReference(vs.tpe.name, vs.decl)
+      f.`type` = createTypeReference(v.typeName, v)
       res += f
     }
     //ports
-    for (t ← b.ports; val p = t.asInstanceOf[PortDef]) {
+    for (p ← b.template.ports) {
       val f = new FieldDeclaration(p.name.str.toCharArray, start(p), end(p))
       f.modifiers = Opcodes.ACC_PUBLIC
       f.`type` = createTypeReference(p.typeName, p)
@@ -267,14 +259,14 @@ class ZaluumCompilationUnitDeclaration(
       val binding: SourceTypeBinding = tpe.binding
       if (binding != null) {
         val boxDef = tpe.b
-        val classTree = new TreeToClass(boxDef, a.global, this.zaluumScope).run()
+        val classTree = new TreeToClass(boxDef, zaluumScope /*should be per class*/, this.zaluumScope).run()
         val name = binding.constantPoolName()
         compilationResult.record(name,
           new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.', '/')))
         for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
       }
     }
-    if (!ignoreFurtherInvestigation && !ignoreMethodBodies) {
+    if (!ignoreFurtherInvestigation && !ignoreMethodBodies && a.reporter.errors.isEmpty) {
       try {
         generate(types(0).asInstanceOf[ZaluumTypeDeclaration], None)
       } catch { case e => e.printStackTrace }
@@ -286,7 +278,7 @@ class ZaluumCompilationUnitDeclaration(
       val ztd = types(0).asInstanceOf[ZaluumTypeDeclaration]
       val scope = ztd.scope.asInstanceOf[ZaluumClassScope]
       tree.sym.javaScope = scope //  a bit ugly...
-      a.runResolve(this)
+      a.runResolve(this, zaluumScope)
       a.runCheck()
       checkZaluumLibraryPresent()
     } catch { case e => e.printStackTrace }

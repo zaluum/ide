@@ -7,8 +7,8 @@ import java.io.StringWriter
 trait SelectionSubject
 abstract class Tree extends Product with SelectionSubject {
   //var pos : Position = NoPosition
-  var tpe: Type = NoSymbol
-  var symbol: Symbol = NoSymbol
+  var tpe: Type = null
+  var symbol: Symbol = null
   var line : Int = 0
   def hasSymbol = false
   def isDef = false
@@ -79,10 +79,6 @@ abstract class Tree extends Product with SelectionSubject {
   }
 }
 
-trait SymTree extends Tree {
-  override def hasSymbol = true
-  symbol = NoSymbol
-}
 /*
     case EmptyTree ⇒
     case BoxDef(name, defs, vals, ports, connections) ⇒
@@ -146,7 +142,7 @@ abstract class Transformer extends OwnerHelper[Tree] {
   protected val defaultTransform: PartialFunction[Tree, Tree]
   protected val trans: PartialFunction[Tree, Tree]
   protected lazy val finalTrans = trans.orElse(defaultTransform)
-  def apply(tree: Tree, initOwner: Symbol = NoSymbol): Tree = {
+  def apply(tree: Tree, initOwner: Symbol = null): Tree = {
     currentOwner = initOwner
     transform(tree)
   }
@@ -272,6 +268,21 @@ abstract class OwnerHelper[A] {
 }*/
 
 /* Definition */
+object BoxDef {
+  def emptyBox(name:String,pkg:String) = {
+    val block = Block(junctions = List(),
+      connections = List(),
+      parameters = List(),
+      valDefs = List())
+    val template = Template(ports = List(), blocks = List(block))
+    BoxDef(name = Name(name),
+      pkg = Name(pkg),
+      superName = None,
+      guiSize = Some(Dimension(250, 250)),
+      image = None,
+      template = template)
+  }
+}
 case class BoxDef(name: Name, // simple name
   pkg:Name, superName: Option[Name],
   guiSize: Option[Dimension],
@@ -305,7 +316,7 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
   def pos = inPos
 }
 case class ValRef(name: Name) extends Tree
-case class ThisRef() extends SymTree
+case class ThisRef() extends Tree
 trait ConnectionEnd extends Tree
 case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd
 case class Param(key: Name, value: String) extends Tree
@@ -331,7 +342,10 @@ case class ValDef(
   def sym = symbol.asInstanceOf[ValSymbol]
 }
 //case class SizeDef(pos: Point, size: Dimension) extends Tree
-case class ConnectionDef(a: Option[ConnectionEnd], b: Option[ConnectionEnd], points: List[Point]) extends SymTree {
+case class ConnectionDef(
+    a: Option[ConnectionEnd], 
+    b: Option[ConnectionEnd], 
+    points: List[Point]) extends Tree {
  def headPoint = points.headOption.getOrElse(Point(0, 0))
  def lastPoint = points.lastOption.getOrElse(Point(0, 0))
 

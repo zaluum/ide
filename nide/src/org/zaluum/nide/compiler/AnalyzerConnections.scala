@@ -35,7 +35,7 @@ trait AnalyzerConnections {
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
     var usedInputs = Set[PortInstance]()
     def run() = {
-      object connectionNamer extends Traverser(null) {
+      val connectionNamer  = new Traverser(null) {
         // parse connections
         override def traverse(tree: Tree) {
           tree match {
@@ -56,19 +56,22 @@ trait AnalyzerConnections {
               } else {
                 bl.connections.addConnection(c)
               }
-            case _ ⇒
+            case o ⇒ println("DEBUG: analyzerconnections other" + o)
           }
         }
-        connectionNamer.traverse(b)
       }
+      connectionNamer.traverse(b)
     }
     // check 
     protected def check() {
       // 1 - Check clumps. Do not check for port existence.
       for (c <- bl.connections.clumps) { checkClump(c) }
-      // 4 - Propagate and check types
+      // 2 - compute execution order
+      import scala.collection.JavaConversions._
+      bl.executionOrder = new TopologicalOrderIterator(acyclic).toList
+      // 3 - Propagate and check types
       checkTypes();
-      // 5- Put calculated types to the clump
+      // 4- Put calculated types to the clump
       for (c <- bl.connections.clumps) storeTypesInConnectionsAndJunctions(c)
     }
     def checkClump(c: Clump) {
@@ -103,8 +106,6 @@ trait AnalyzerConnections {
         if (!isInside(out) && !isInside(in))
           addDag(out, in)
       }
-      import scala.collection.JavaConversions._
-      bl.executionOrder = new TopologicalOrderIterator(acyclic).toList
     }
     def isInside(p: PortInstance) = p.valSymbol == template.thisVal
     def storeFlow(c: Clump, ins: Set[PortInstance], out: PortInstance) {
@@ -176,6 +177,7 @@ trait AnalyzerConnections {
     }
     def checkBinExprTypes(vs: ValSymbol) {
       import primitives._
+
       val s = vs.tpe.asInstanceOf[BinExprType]
       val (a, b, o) = s.binaryPortInstancesOf(vs)
       def assignAll(tpe: Type, outTpe: Type) = {
@@ -408,14 +410,4 @@ object ZaluumCompletionEngineScala {
     }
     l
   }
-}
-class FakeInvocationSite(val expectedType: TypeBinding) extends InvocationSite {
-  def genericTypeArguments() = null
-  def isSuperAccess() = false
-  def isTypeAccess() = false
-  def setActualReceiverType(receiverType: ReferenceBinding) {}
-  def setDepth(depth: Int) {}
-  def setFieldIndex(depth: Int) {}
-  def sourceEnd() = 0
-  def sourceStart() = 0
 }

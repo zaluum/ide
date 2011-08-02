@@ -1,7 +1,7 @@
 package org.zaluum.nide.compiler
 
-import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.annotation.tailrec
+import org.zaluum.nide.protobuf.ZaluumProtobuf
 
 trait Tuple2 {
   val x: Int
@@ -18,7 +18,7 @@ case class Point(x: Int, y: Int) extends Tuple2 {
   def ^(despl: Int) = Point(x, y+despl)
   def distanceOrto(p:Point) = math.abs(x-p.x) + math.abs(y-p.y) 
   def toProto  = {
-    val p =BoxFileProtos.Point.newBuilder
+    val p =ZaluumProtobuf.Point.newBuilder
     p.setX(x)
     p.setY(y)
     p.build
@@ -37,7 +37,7 @@ object Geometry {
 }
 case class Dimension(w: Int, h: Int) {
   def toProto  = {
-    val p =BoxFileProtos.Point.newBuilder
+    val p =ZaluumProtobuf.Point.newBuilder
     p.setX(w)
     p.setY(h)
     p.build

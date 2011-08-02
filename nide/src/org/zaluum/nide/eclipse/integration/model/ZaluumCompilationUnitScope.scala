@@ -5,7 +5,7 @@ import org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration
 import org.eclipse.jdt.internal.compiler.lookup.Scope
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
-import org.zaluum.nide.compiler._
+import org.zaluum.nide.compiler.{ Scope=>ZScope,_}
 import org.eclipse.jdt.internal.compiler.lookup.BinaryTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding
 import org.zaluum.annotation.Box
@@ -26,7 +26,7 @@ import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.UnresolvedReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.MissingTypeBinding
-class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cudp, lookupEnvironment) {
+class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cudp, lookupEnvironment) with ZScope {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
   }
@@ -35,18 +35,21 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   private val cacheJava = Map[TypeBinding, ClassJavaType]()
 
   def cud = referenceContext.asInstanceOf[ZaluumCompilationUnitDeclaration]
-
+  def name = Name("root")          
+  def owner= null
   def getBoxedType(p: PrimitiveJavaType): JavaType =
     getJavaType(p.boxedName).get
 
   def getZJavaLangString = getJavaType(Name("java.lang.String")).get;
+  def javaScope : ZaluumCompilationUnitScope = this
+  def lookupType(name: Name): Option[Type] = getJavaType(name)
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray
     if (arr.isDefined) {
       val (leafname, dim) = arr.get
       getJavaType(leafname) map { l ⇒
         val bind = createArrayType(l.binding, dim)
-        val a = new ArrayType(cud.JDTScope, l, dim)
+        val a = new ArrayType(this, l, dim)
         a.binding = bind
         a
       }
@@ -69,7 +72,7 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
       case r: ReferenceBinding ⇒
         val tpe = lookupEnvironment.convertToRawType(r, false).asInstanceOf[ReferenceBinding]
         cacheJava.getOrElseUpdate(tpe, {
-          val jtpe = new ClassJavaType(cud.JDTScope, Name(aToString(tpe.compoundName)))
+          val jtpe = new ClassJavaType(this, Name(aToString(tpe.compoundName)))
           jtpe.binding = tpe
           jtpe
         })
@@ -87,7 +90,7 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
         }
       case a: ArrayBinding ⇒
         val leaf = getJavaType(a.leafComponentType)
-        val t = new ArrayType(cud.JDTScope, leaf, a.dimensions)
+        val t = new ArrayType(this, leaf, a.dimensions)
         t.binding = a
         t
     }
@@ -99,7 +102,7 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   def allMethodsFor(r: ReferenceBinding): List[MethodBinding] = {
     r.methods.toList ++ { if (r.superclass != null) allMethodsFor(r.superclass) else List() }
   }
-  def getBoxType(name: Name): Option[BoxTypeSymbol] = {
+  def lookupBoxType(name: Name): Option[BoxTypeSymbol] = {
     cache.get(name).orElse {
       val compoundName = stringToA(name.str)
       getType(compoundName, compoundName.length) match {
@@ -117,9 +120,9 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
           val srcName = Name(r.compoundName.last.mkString)
           val pkgName = Name(r.qualifiedPackageName.mkString)
           val bs = new BoxTypeSymbol(
-            cud.a.global.root, srcName, pkgName,
+            srcName, pkgName,
             sperO, None, None, r.isAbstract)
-          bs.scope = cud.a.global
+          bs.scope = this
           for (f ← allFieldsFor(r); if f.isPublic && !f.isStatic) {
             val fname = f.name.mkString
             def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
@@ -128,7 +131,7 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
             def createPort(in: Boolean) = {
               val port = new PortSymbol(bs, Name(fname), Point(0, 0), if (in) In else Out)
               port.tpe = getJavaType(f.`type`)
-              bs.enter(port)
+              bs.ports += (port.name -> port)
             }
             if (hasAnnotation(classOf[org.zaluum.annotation.In])) createPort(true)
             else if (hasAnnotation(classOf[org.zaluum.annotation.Out])) createPort(false)
@@ -158,7 +161,7 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
                 val ptpe = getJavaType(m.parameters.head)
                 val p = new ParamSymbol(bs, Name(mName))
                 p.tpe = ptpe
-                bs.enter(p)
+                bs.params += (p.name -> p)
               } else if (mName == "apply" && !m.isStatic && !m.isAbstract && m.parameters.size == 0 && m.returnType == TypeBinding.VOID) {
                 bs.hasApply = true
               }

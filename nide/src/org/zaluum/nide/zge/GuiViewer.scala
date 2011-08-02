@@ -15,7 +15,7 @@ import scala.collection.mutable.Buffer
 import org.eclipse.draw2d.{IFigure,LayoutListener}
 
 class GuiViewer(parent: Composite, controller: Controller)
-  extends ItemViewer(parent, controller) with ContainerItem {
+  extends ItemViewer(parent, controller) {
   /*TOOLS*/
   def zproject = controller.zproject
   val items = Buffer[Item]()
@@ -26,6 +26,7 @@ class GuiViewer(parent: Composite, controller: Controller)
   /*MODEL*/
   def tree = controller.tree
   def boxDef = tree
+  def block = boxDef.template.blocks.head
   def owner = null//global.root
   background.setForegroundColor(ColorConstants.white)
   background.setBackgroundColor(ColorConstants.lightGray)
@@ -61,7 +62,7 @@ class GuiViewer(parent: Composite, controller: Controller)
           case v: ValDef ⇒
             val sym = v.sym
             val tpe = sym.tpe.asInstanceOf[BoxTypeSymbol]
-            if (!tpe.isLocal && tpe.visualClass.isDefined) {
+            if (tpe.visualClass.isDefined) { // removed !tpe.isLocal && 
                 val f = new SwingFigure(GuiViewer.this,controller.zproject.classLoader)
                 f.updateValDef(v)
                 items += f

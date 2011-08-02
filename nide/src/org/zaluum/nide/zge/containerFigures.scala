@@ -36,7 +36,6 @@ trait ContainerItem extends Item {
   protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] = container.findDeepAt(point(p), 0, debug) {
     case i: Item ⇒ i
   }
-  def symbol: BoxTypeSymbol = boxDef.sym
   def itemAt(p: Point, debug: Boolean = false) = {
     itemAtIn(portsLayer, p, debug)
       .orElse(itemAtIn(layer, p, debug))
@@ -53,20 +52,20 @@ trait ContainerItem extends Item {
       case port: PortFigure ⇒
         new PortVertex(port.ps, port.anchor)
     }
-    val junctions = boxDef.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
+    val junctions = block.junctions.collect { case j: Junction ⇒ (j -> new Joint(j.p)) }.toMap
     val emptyVertexs = Buffer[EmptyVertex]()
 
-    val edges = boxDef.connections.map {
+    val edges = block.connections.map {
       case c: ConnectionDef ⇒
-        def toVertex(t: Tree, start: Boolean): Vertex = {
+        def toVertex(t: Option[ConnectionEnd], start: Boolean): Vertex = {
           def pos = if (start) c.headPoint else c.lastPoint
           t match {
-            case JunctionRef(name) ⇒
+            case Some(JunctionRef(name)) ⇒
               junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
-            case p: PortRef ⇒
-              val ps = PortSide.find(p, boxDef.sym).get
+            case Some(p: PortRef) ⇒
+              val ps = PortSide.find(p, symbol).get
               portVertexs.find(_.ps == ps).get
-            case EmptyTree ⇒
+            case None ⇒
               val e = new EmptyVertex(pos)
               emptyVertexs += e
               e
@@ -82,7 +81,10 @@ trait ContainerItem extends Item {
   }
   val boxes = Buffer[ValDefItem]()
   val labels = Buffer[LabelItem]()
-  def boxDef: BoxDef
+  def block : Block
+  def symbol = block.sym
+  def templateSym = symbol.template
+  def template = templateSym.decl.asInstanceOf[Template]
   val junctions = Buffer[PointFigure]()
   val connections = Buffer[ConnectionFigure]()
   var graph: ConnectionGraph = _
@@ -117,14 +119,14 @@ trait ContainerItem extends Item {
     }
     boxes.filterNot(remove.contains)
     labels.filterNot(remove.contains)
-    val news = boxDef.vals filterNot (remove contains) collect { case v: ValDef ⇒ v }
+    val news = block.valDefs filterNot (remove.contains(_)) collect { case v: ValDef ⇒ v }
     news foreach { v ⇒
-      val f = v.scope.lookupBoxTypeLocal(v.typeName) match {
+      val f = {/* FIXME  v.scope.lookupBoxTypeLocal(v.typeName) match {
         case Some(tpe) ⇒
           val o = new OpenBoxFigure(ContainerItem.this, viewer)
           o.updateOpenBox(v, Map())
           o
-        case None ⇒
+        case None ⇒*/
           val Lit = Name(classOf[org.zaluum.expr.Literal].getName)
           val Inv = Name(classOf[org.zaluum.expr.Invoke].getName)
           val valf = v.tpe.fqName match {
@@ -151,7 +153,7 @@ trait ContainerItem extends Item {
   def updateJunctions() {
     junctions.foreach { this.pointsLayer.safeRemove(_) }
     junctions.clear
-    for (j ← boxDef.junctions.asInstanceOf[List[Junction]]) {
+    for (j ← block.junctions.asInstanceOf[List[Junction]]) {
       val p = new PointFigure
       p.update(j.p, j.tpe)
       junctions += p
@@ -171,7 +173,7 @@ object OpenBoxFigure {
 }
 class OpenBoxFigure(
   val container: ContainerItem,
-  val viewer: Viewer) extends Figure with ValDefItem with ResizableFeedback with ContainerItem with Transparent {
+  val viewer: Viewer) extends ValDefItem with ResizableFeedback with ContainerItem with Transparent {
   // Item
   def myLayer = container.layer
   def size = valDef.size getOrElse Dimension(Tool.gridSize * 16, Tool.gridSize * 16)
@@ -190,6 +192,7 @@ class OpenBoxFigure(
   val portSymbols = Buffer[PortSymbolFigure]()
   override def useLocalCoordinates = true
   def boxDef = valDef.tpe.decl.asInstanceOf[BoxDef]
+  def block = boxDef.template.blocks.head // TODO
   def updateOpenBox(v: ValDef, changes: Map[Tree, Tree]) {
     updateValDef(v)
     updateContents(changes)

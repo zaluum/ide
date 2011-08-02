@@ -22,24 +22,12 @@ object Parser {
         // TODO fixme better handling
         //e.printStackTrace;
         println("PARSING ERROR! " + e)
-        emptyBox
+        BoxDef.emptyBox("","")
     }
     a.assignLine(1)
     a
   }
-  def emptyBox = {
-    val block = Block(junctions = List(),
-      connections = List(),
-      parameters = List(),
-      valDefs = List())
-    val template = Template(ports = List(), blocks = List(block))
-    BoxDef(name = Name(""),
-      pkg = Name(""),
-      superName = None,
-      guiSize = Some(Dimension(250, 250)),
-      image = None,
-      template = template)
-  }
+  
   def readTree(isoString: String, className: Name): BoxDef = {
     val byteContents = isoString.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
     readTree(new ByteArrayInputStream(byteContents), className)

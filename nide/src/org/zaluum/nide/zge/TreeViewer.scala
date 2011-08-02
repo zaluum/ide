@@ -22,11 +22,11 @@ import org.zaluum.nide.Activator
 import org.eclipse.swt.SWT
 
 class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
-  extends ItemViewer(parent, controller) with ContainerItem /* FIXME with ClipboardViewer*/ {
+  extends ItemViewer(parent, controller) /* FIXME with ClipboardViewer*/ {
   /*MODEL*/
   def tree = controller.tree
   def boxDef = tree
-  def owner = null
+  def block = boxDef.template.blocks.head
   def viewer = this
   /*LAYERS*/
   val tool: TreeTool = new TreeTool(this)
@@ -53,7 +53,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def updatePorts(changes: Map[Tree, Tree]) {
     ports.foreach { _.hide }
     ports.clear
-    symbol.thisVal.portSides foreach { pside =>
+    symbol.template.thisVal.portSides foreach { pside =>
       pside.pi.portSymbol match {
         case Some(ps) =>
           ps.decl match {
@@ -98,7 +98,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
 
   def itemToIType(i: Item) = {
     i match {
-      case v: ValDefItem if (v.valSym.tpe != NoSymbol) =>
+      case v: ValDefItem if (v.valSym.tpe != null) =>
         controller.zproject.jProject.findType(v.valSym.tpe.name.str)
       case _ => null
     }
@@ -145,12 +145,12 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i
   }.toSet
-  def graphOf(b: BoxDef) = {
-    if (boxDef == b) Some(graph)
+  def graphOf(b: Block) = {
+    if (block == b) Some(graph)
     else {
       this.deepChildren.view.collect {
         case c: ContainerItem ⇒ c
-      } filter { _.boxDef == b } map { _.graph } headOption
+      } filter { _.block == b } map { _.graph } headOption
     }
   }
 }

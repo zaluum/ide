@@ -509,7 +509,7 @@ abstract class ConnectionGraph {
         map += (v -> j)
         j
     }
-    val connections: List[Tree] = edges.map { e ⇒
+    val connections: List[ConnectionDef] = edges.map { e ⇒
       def vertexRef(v: Vertex): Option[ConnectionEnd] = v match {
         case p: PortVertex ⇒ Some(p.ps.toRef)
         case m: MissingPortVertex => Some(m.key.toRef)

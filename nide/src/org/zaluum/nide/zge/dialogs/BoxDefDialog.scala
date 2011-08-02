@@ -27,12 +27,8 @@ class BoxDefDialog(viewer: Viewer, val b: BoxDef) extends Dialog(viewer.shell) {
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case box: BoxDef if box == b ⇒
-            box.copy(pkg = Name(text), 
-                defs=transformTrees(b.defs),
-                vals=transformTrees(b.vals),
-                ports=transformTrees(b.ports),
-                connections=transformTrees(b.connections),
-                junctions=transformTrees(b.junctions))
+            box.copy(pkg = Name(text),
+                template =transform(b.template))
         }
       }
       viewer.controller.exec(tr)

@@ -70,7 +70,7 @@ class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItem
       pi.finalTpe match {
         case c: ClassJavaType =>
           val engine = ZaluumCompletionEngineScala.engineForVs(vs)
-          val methods = ZaluumCompletionEngineScala.allMethods(engine, vs.owner.javaScope, c)
+          val methods = ZaluumCompletionEngineScala.allMethods(engine, vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope, c) // FIXME
           val jproject = viewer.zproject.jProject.asInstanceOf[JavaProject]
           val nameLookup = jproject.newNameLookup(Array[org.eclipse.jdt.core.ICompilationUnit]())
           val paramNames = methods map { m =>

@@ -1,7 +1,6 @@
 package org.zaluum.nide.zge
 
 import org.eclipse.draw2d.Polyline
-import org.zaluum.nide.compiler.NoSymbol
 import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.ToolTip
 import draw2dConversions._
@@ -77,7 +76,7 @@ trait ConnectionsTool {
      * This tries to simplify the connection searching for intersections
      */
     def endConnection() {
-      val bs = initContainer.boxDef.sym
+      val bl = initContainer.symbol
       val wp = extend.points
       if (wp.distinct.size >= 2) {
         val vend = vertexFor(wp.last, dst)
@@ -88,10 +87,10 @@ trait ConnectionsTool {
         controller.exec(
           new EditTransformer {
             val trans: PartialFunction[Tree, Tree] = {
-              case b: BoxDef if (b == initContainer.boxDef) ⇒
+              case b: Block if (b == initContainer.block) ⇒
                 b.copy(
-                  vals = transformTrees(b.vals),
-                  ports = transformTrees(b.ports),
+                  valDefs = transformTrees(b.valDefs),
+                  parameters = transformTrees(b.parameters),
                   connections = connections,
                   junctions = junctions)
             }
@@ -259,15 +258,15 @@ trait ConnectionsTool {
       }
       result = result.prune.clean
       // done
-      val (connections, junctions) = result.toTree
+      val (connections, njunctions) = result.toTree
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
-          case b: BoxDef if (b == initContainer.boxDef) ⇒
+          case b: Block if (b == initContainer.block) ⇒
             b.copy(
-              vals = transformTrees(b.vals),
-              ports = transformTrees(b.ports),
+              valDefs = transformTrees(b.valDefs),
+              parameters = transformTrees(b.parameters),
               connections = connections,
-              junctions = junctions)
+              junctions = njunctions)
           case v: ValDef if (valdefs.contains(v)) ⇒
             v.copy(pos = snap(v.pos + delta), params = transformTrees(v.params))
           case p: PortDef if (portdefs.contains(p)) ⇒

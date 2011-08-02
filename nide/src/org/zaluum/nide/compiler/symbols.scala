@@ -89,19 +89,19 @@ trait BoxType extends TemplateSymbol with Type {
   def portsWithSuper = ports
   def lookupPortWithSuper(name:Name) : Option[PortSymbol]
 }
-class BlockSymbol extends Symbol {
+class BlockSymbol(val template:TemplateSymbol) extends Symbol with Namer {
+  def name = null
+  def owner = template
   var vals = Map[Name,ValSymbol]()
-  def valsList = vals.values.toList
+  var executionOrder = List[ValSymbol]()
   private val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
+  def usedNames = (valsList ++ missingVals.values ++ template.ports.values).map{_.name.str}.toSet
+  def valsList = vals.values.toList
   def lookupValWithMissing(name: Name) = vals.get(name).orElse { missingVals.get(name) }
   def lookupValOrCreateMissing(name: Name) = vals.get(name).getOrElse {
     missingVals.getOrElseUpdate(name, new ValSymbol(this, name));
   }
-  val template : TemplateSymbol
-  def declaredVals = vals
   def valsAlphabeticOrder = (vals.values ++ missingVals.values).toList.sortBy(_.name.str)
-  var executionOrder = List[ValSymbol]()
-
   object connections extends Namer {
     var junctions = Set[Junction]()
     def usedNames = junctions map { _.name.str }
@@ -149,12 +149,12 @@ class BlockSymbol extends Symbol {
     }
     def addConnection(c: ConnectionDef) = {
       (c.a, c.b) match {
-        case (p: PortRef, j: JunctionRef) ⇒ addPort(lookupJunction(j.name).getOrElse { throw new RuntimeException("cannot find junction" + j.name) }, p, c)
-        case (j: JunctionRef, p: PortRef) ⇒ addPort(lookupJunction(j.name).get, p, c)
-        case (p1: PortRef, p2: PortRef) ⇒ addPorts(p1, p2, c)
-        case (j1: JunctionRef, j2: JunctionRef) ⇒ addJunctions(lookupJunction(j1.name).get, lookupJunction(j2.name).get, c)
+        case (Some(p: PortRef), Some(j: JunctionRef)) ⇒ addPort(lookupJunction(j.name).getOrElse { throw new RuntimeException("cannot find junction" + j.name) }, p, c)
+        case (Some(j: JunctionRef), Some(p: PortRef)) ⇒ addPort(lookupJunction(j.name).get, p, c)
+        case (Some(p1: PortRef), Some(p2: PortRef)) ⇒ addPorts(p1, p2, c)
+        case (Some(j1: JunctionRef), Some(j2: JunctionRef)) ⇒ addJunctions(lookupJunction(j1.name).get, lookupJunction(j2.name).get, c)
         // FIXME not connected EmptyTrees
-        case _ ⇒
+        case _ ⇒ println("DEBUG: ignored connection in addConnetion " +c)
       }
     }
   }
@@ -179,7 +179,8 @@ class BoxTypeSymbol(
   var params = Map[Name,ParamSymbol]()
   var source: String = "" // TODO
   tpe = this
-  def portsWithSuper: Map[Name, PortSymbol] = ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
+  override def portsWithSuper: Map[Name, PortSymbol] = 
+    ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def fqName: Name = if (pkg.str != "") Name(pkg.str + "." + name.str) else name
   def block = blocks.head
   def superSymbol = {
@@ -195,8 +196,9 @@ class BoxTypeSymbol(
   }
   def IOInOrder = (ports.values ++ params.values).toList.sortBy(_.name.str)
   def paramsInOrder = params.values.toList.sortBy(_.name.str)
+  def lookupParam(name:Name) = params.get(name)
   def lookupPortWithSuper(name: Name): Option[PortSymbol] =
-    super.lookupPortWithSuper(name) orElse (superSymbol flatMap { _.lookupPortWithSuper(name) })
+    ports.get(name) orElse (superSymbol flatMap { _.lookupPortWithSuper(name) })
 }
 
 //class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 

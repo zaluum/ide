@@ -72,8 +72,8 @@ trait ValFigure extends ValDefItem with HasPorts {
 
   }
 }
-class LabelItem(val container: ContainerItem, gui: Boolean = false) extends Figure with TextEditFigure with ValDefItem with RectFeedback {
-  setForegroundColor(Colorizer.color(NoSymbol))
+class LabelItem(val container: ContainerItem, gui: Boolean = false) extends TextEditFigure with ValDefItem with RectFeedback {
+  setForegroundColor(Colorizer.color(null))
   def blink(b: Boolean) {}
   def size = pg.getPreferredSize
   def baseVector = Vector2(0, -size.h)
@@ -146,7 +146,7 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
     repaint()
   }
 }
-class DirectValFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure {
+class DirectValFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure with RectFeedback{
   def size = {
     pg.getPreferredSize().ensureMin(Dimension(Tool.gridSize * 3, Tool.gridSize * 3)) + Vector2(Tool.gridSize, 0)
   }
@@ -154,14 +154,14 @@ class DirectValFigure(val container: ContainerItem) extends RectangleFigure with
   def text = param.map { _.value }.getOrElse { "0" }
   def updateMe {
     fl.setText(text)
-    setForegroundColor(Colorizer.color(param.map(_.tpe).getOrElse(NoSymbol)))
+    setForegroundColor(Colorizer.color(param.map(_.tpe).getOrElse(null)))
     pg.setBounds(new Rectangle(new EPoint(2, 2), dimension(size)))
   }
   def blink(c: Boolean) {
     this.setXOR(c)
   }
 }
-trait TextEditFigure extends Figure with Item with RectFeedback {
+trait TextEditFigure extends Item  {
   def text: String;
   setFont(Activator.getDefault.directEditFont) // https://bugs.eclipse.org/bugs/show_bug.cgi?id=308964
   val pg = new FlowPage()
@@ -199,7 +199,7 @@ trait TextEditFigure extends Figure with Item with RectFeedback {
     }
   }
 }
-class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Figure with ValDefItem with ResizableFeedback {
+class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends ValDefItem with ResizableFeedback {
   setOpaque(true)
   def size = valDef.guiSize getOrElse { Dimension(Tool.gridSize * 5, Tool.gridSize * 5) }
   override def pos = valDef.guiPos getOrElse { Point(0, 0) }

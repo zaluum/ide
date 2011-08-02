@@ -10,7 +10,6 @@ import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Scope;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 import org.eclipse.jdt.internal.compiler.util.ObjectVector;
-import org.zaluum.nide.compiler.FakeInvocationSite;
 
 @SuppressWarnings("restriction")
 public class ZaluumCompletionEngine {

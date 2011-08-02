@@ -28,7 +28,7 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
     this.con = con
     this.complete = complete
     this.l = l
-    setForegroundColor(Colorizer.color(connectionDef.map { _.tpe }.getOrElse { NoSymbol }))
+    setForegroundColor(Colorizer.color(connectionDef.map { _.tpe }.getOrElse { null }))
     width = 1
     if (complete) {
       style = SWT.LINE_SOLID

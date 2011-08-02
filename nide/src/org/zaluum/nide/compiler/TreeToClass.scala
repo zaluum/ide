@@ -96,7 +96,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
           b.superName getOrElse { Name(classOf[RunnableBox].getName) },
           baseMethods ++ fields)
     }
-    def field(s: Symbol) = t match {
+    def field(s: Symbol) = s match {
       case ps: PortSymbol ⇒
         val a = ps.dir match {
           case Out ⇒ classOf[org.zaluum.annotation.Out]
@@ -239,7 +239,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
     }
     def createWidgets(bs: BoxTypeSymbol, path: List[ValSymbol], mainBox: BoxDef): List[Tree] = {
       bs.blocks.flatMap {
-        _.declaredVals.values.toList flatMap {
+        _.valsList flatMap {
           case v: ValSymbol ⇒
             v.tpe match {
               case tpe: BoxTypeSymbol ⇒

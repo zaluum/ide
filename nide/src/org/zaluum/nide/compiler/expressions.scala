@@ -6,9 +6,10 @@ sealed abstract class ExprType(nameStr: String) extends BoxType {
   val name = Name(nameStr)
   val fqName = Name("org.zaluum.expr." + nameStr)
   val o = new PortSymbol(this, Name("o"), Point(0, 0), Out)
-  var ports = Map(o.name -> o)
+  ports = Map(o.name -> o)
   val params = Map[Name, ParamSymbol]()
   def lookupPort(a: Name) = ports.get(a)
+  def lookupPortWithSuper(a:Name) = lookupPort(a)
   def lookupParam(a: Name) = params.get(a)
   def outPort(v: ValSymbol) = v.findPortInstance(o).get
 }

@@ -2,7 +2,6 @@ package org.zaluum.nide.zge
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import org.zaluum.nide.protobuf.BoxFileProtos
 import org.eclipse.swt.dnd.TransferData
 import org.eclipse.swt.dnd.Transfer
 import org.eclipse.swt.dnd.ByteArrayTransfer

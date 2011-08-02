@@ -119,11 +119,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
             case b: BoxDef if (b == viewer.boxDef) ⇒
               b.copy(
                 guiSize = Some(newSize),
-                defs=transformTrees(b.defs),
-                vals=transformTrees(b.vals),
-                ports=transformTrees(b.ports),
-                connections=transformTrees(b.connections),
-                junctions=transformTrees(b.junctions))
+                template=transform(b.template))
           }
         }
         controller.exec(command)

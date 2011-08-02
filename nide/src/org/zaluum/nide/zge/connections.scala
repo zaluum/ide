@@ -1,6 +1,5 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.protobuf.BoxFileProtos
 import scala.collection.mutable.Buffer
 import org.zaluum.nide.compiler._
 

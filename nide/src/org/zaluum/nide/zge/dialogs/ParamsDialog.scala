@@ -18,7 +18,7 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   case class TableEntry(var sym: Option[ParamSymbol], var key:String, var value: String)
   def v = vs.decl.asInstanceOf[ValDef]
   def params = vs.tpe match {
-    case NoSymbol => List()
+    case null => List()
     case bs:BoxTypeSymbol => bs.paramsInOrder
     case e:ExprType => e.params.values.toList sortBy {_.name.str} // TODO merge in boxType
   }
