@@ -114,7 +114,7 @@ class PortDeclFigure(val tree: PortDef, ps:PortSide, container: ContainerItem) e
   def sym = tree.symbol.asInstanceOf[PortSymbol]
   override def selectionSubject = Some(tree)
 }
-class PortSymbolFigure(val sym: PortSymbol, ps:PortSide, openBox: OpenBoxFigure) extends PortHolderFigure(openBox,ps) {
+class PortSymbolFigure(ps:PortSide, openBox: OpenBoxFigure) extends PortHolderFigure(openBox,ps) {
   def pos = MPoint(openBox.getSize.w - Tool.gridSize*10, openBox.getSize.h - Tool.gridSize*5)
-  def dir = sym.dir
+  def dir = ps.pi.dir
 }

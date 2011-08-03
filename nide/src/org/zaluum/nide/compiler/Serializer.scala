@@ -41,20 +41,18 @@ object Serializer {
   def proto(p: ValDef): ZaluumProtobuf.Instance = {
     import scala.collection.JavaConversions._
     val b = ZaluumProtobuf.Instance.newBuilder
-    b.setType(ZaluumProtobuf.Instance.Type.ClassInstance)
-    val ci = ZaluumProtobuf.ClassInstance.newBuilder()
     p.params collect { case p: Param ⇒ p } sortBy { _.key.str } foreach { p ⇒ b.addParameter(proto(p)) }
     p.label foreach { l => b.setLabel(proto(l)) }
     p.labelGui foreach { l => b.setLabelGui(proto(l)) }
-    ci.setGuiPos(proto(p.guiPos.getOrElse { Point(0, 0) }))
+    p.template foreach { t => b.setTemplate(proto(t)) }
+    b.setGuiPos(proto(p.guiPos.getOrElse { Point(0, 0) }))
       .setGuiSize(proto(p.guiSize.getOrElse { Dimension(50, 50) }))
       .setClassName(p.typeName.str)
       .addAllConstructorParameter(p.constructorParams)
       .addAllConstructorTypes(p.constructorTypes map { _.str })
-    b.setName(p.name.str)
+      .setName(p.name.str)
       .setPos(proto(p.pos))
       .setSize(proto(p.size.getOrElse(Dimension(50, 50))))
-      .setExtension(ZaluumProtobuf.ClassInstance.instance, ci.build)
       .build
   }
   def proto(j: Junction): ZaluumProtobuf.Junction = {

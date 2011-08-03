@@ -79,6 +79,12 @@ object ByteCodeGen {
               emit(rhs)
               mv.visitFieldInsn(PUTFIELD, fromClass.internal, id.str, descriptor(typeName))
           }
+        case While(body,cond) =>
+          val start = new Label()
+          mv.visitLabel(start)
+          body foreach {emit}
+          emit(cond)
+          mv.visitJumpInsn(IFNE,start)
         case Select(a, b) ⇒
           emit(a)
           emit(b)

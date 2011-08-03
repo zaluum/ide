@@ -81,10 +81,13 @@ trait ContainerItem extends Item {
   }
   val boxes = Buffer[ValDefItem]()
   val labels = Buffer[LabelItem]()
-  def block : Block
+  def block: Block
   def symbol = block.sym
   def templateSym = symbol.template
-  def template = templateSym.decl.asInstanceOf[Template]
+  def template = templateSym match {
+    case v: ValSymbol => v.tdecl.template.get
+    case b: BoxTypeSymbol => b.tdecl.template
+  }
   val junctions = Buffer[PointFigure]()
   val connections = Buffer[ConnectionFigure]()
   var graph: ConnectionGraph = _
@@ -119,20 +122,20 @@ trait ContainerItem extends Item {
     }
     boxes.filterNot(remove.contains)
     labels.filterNot(remove.contains)
-    val news = block.valDefs filterNot (remove.contains(_)) collect { case v: ValDef ⇒ v }
+    val news = block.valDefs filterNot (remove.contains(_))
     news foreach { v ⇒
-      val f = {/* FIXME  v.scope.lookupBoxTypeLocal(v.typeName) match {
-        case Some(tpe) ⇒
+      val f = v.template match {
+        case Some(t) ⇒
           val o = new OpenBoxFigure(ContainerItem.this, viewer)
           o.updateOpenBox(v, Map())
           o
-        case None ⇒*/
+        case None ⇒
           val Lit = Name(classOf[org.zaluum.expr.Literal].getName)
           val Inv = Name(classOf[org.zaluum.expr.Invoke].getName)
           val valf = v.tpe.fqName match {
-          	case Lit =>	new DirectValFigure(ContainerItem.this)
-          	case Inv => new InvokeValFigure(ContainerItem.this)
-          	case _ => new ImageValFigure(ContainerItem.this)
+            case Lit => new DirectValFigure(ContainerItem.this)
+            case Inv => new InvokeValFigure(ContainerItem.this)
+            case _ => new ImageValFigure(ContainerItem.this)
           }
           valf.updateValDef(v)
           valf
@@ -191,8 +194,7 @@ class OpenBoxFigure(
   val portDecls = Buffer[OpenPortDeclFigure]()
   val portSymbols = Buffer[PortSymbolFigure]()
   override def useLocalCoordinates = true
-  def boxDef = valDef.tpe.decl.asInstanceOf[BoxDef]
-  def block = boxDef.template.blocks.head // TODO
+  def block = valDef.template.get.blocks.head // TODO
   def updateOpenBox(v: ValDef, changes: Map[Tree, Tree]) {
     updateValDef(v)
     updateContents(changes)
@@ -263,34 +265,27 @@ class OpenBoxFigure(
     portDecls.clear()
     portSymbols.foreach(_.hide)
     portSymbols.clear()
-    val bs = boxDef.sym
     val vs = valDef.sym
-    bs.thisVal.portSides foreach { intPs =>
+    vs.portSides filter { _.fromInside } foreach { intPs =>
       def newFig(left: Boolean) = {
         val f = new OpenPortDeclFigure(OpenBoxFigure.this)
-        vs.portSides.find(c => c.name == intPs.name && c.inPort == intPs.inPort) foreach { extPs =>
+        vs.portSides.find(c => c.name == intPs.name && c.inPort == intPs.inPort && !c.fromInside) foreach { extPs =>
           f.update(intPs, extPs, left)
           portDecls += f
           if (showing) f.show()
         }
       }
-      intPs.pi match {
-        case pi: PortInstance =>
-          pi.portSymbol match {
-            case Some(ps) if (ps.box == this.boxDef.symbol) => //decl 
-              ps.dir match {
-                case In ⇒ newFig(true)
-                case Out ⇒ newFig(false)
-                case Shift ⇒ newFig(intPs.inPort);
-              }
-            case Some(ps) =>
-              val f = new PortSymbolFigure(ps, intPs, OpenBoxFigure.this)
-              f.update
-              portSymbols += f
-              if (showing) f.show()
-            case None =>
-              newFig(intPs.inPort)
-          }
+      if (intPs.pi.hasDecl) {
+        intPs.pi.dir match {
+          case In ⇒ newFig(true)
+          case Out ⇒ newFig(false)
+          case Shift ⇒ newFig(intPs.inPort);
+        }
+      } else {
+        val f = new PortSymbolFigure(intPs, OpenBoxFigure.this)
+        f.update
+        portSymbols += f
+        if (showing) f.show()
       }
     }
   }

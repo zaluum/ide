@@ -9,8 +9,9 @@ import org.zaluum.annotation.Box
 import scala.collection.mutable.WeakHashMap
 import org.zaluum.nide.zge.ImageFactory
 import org.eclipse.swt.widgets.Display
+import org.zaluum.nide.compiler.Expressions
 
-case class BoxTypeProxy(name:Name, abstractCl:Boolean) {
+case class BoxTypeProxy(name:Name, template:Boolean) {
   def split = name.str.splitAt(name.str.lastIndexOf("."))
   def pkgName = split._1 
   def simpleName = split._2.drop(1)
@@ -33,9 +34,10 @@ class ZaluumProject private[eclipse] (val jProject: IJavaProject) extends Global
     l flatMap (typeToProxy(_))
   }
   def typeToProxy(t:IType) : Option[BoxTypeProxy] = {
+    val name = Name(t.getFullyQualifiedName)
       Some(
           BoxTypeProxy(
-              Name(t.getFullyQualifiedName),
-              Flags.isAbstract(t.getFlags())))
+              name,
+              Expressions.isTemplateExpression(name)))
   }
 }

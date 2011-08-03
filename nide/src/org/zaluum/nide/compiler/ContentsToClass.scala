@@ -7,8 +7,6 @@ trait ContentsToClass {
 
   def appl(b: BoxDef): Method = {
     val bs = b.sym
-    val block = bs.blocks.head
-    val connections = block.connections
     // create locals for expressions
     val localsMap = createLocalsMap(bs)
     //helper methods
@@ -31,33 +29,48 @@ trait ContentsToClass {
         vfrom.tpe match {
           case vfromBs: BoxTypeSymbol =>
             Select(
-              Select(This, FieldRef(vfrom.name, vfromBs.fqName, bs.fqName)),
+              Select(This, FieldRef(vfrom.fqName, vfromBs.fqName, bs.fqName)),
               FieldRef(pi.name, pi.finalTpe.name, vfromBs.fqName))
           case _ =>
             LocalRef(localsMap(pi), pi.finalTpe.name)
         }
       }
     }
-    def runOne(vs: ValSymbol) = {
+    def runBlock(bl: BlockSymbol) : List[Tree]= {
+      bl.executionOrder flatMap { vs =>
+        val outs = for {
+          (from, to) <- bl.connections.flow;
+          if from.valSymbol == vs;
+          a <- execConnection((from, to))
+        } yield a
+        runOne(vs) ::: outs.toList
+      }
+    }
+    def runOne(vs: ValSymbol) : List[Tree]= {
       // propagate inputs
       val ins = for (ps <- vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
-        pi.connectedFrom match {
-          case Some(o) => assign(pi, o)
+        pi.connectedFromOutside match { 
+          case Some(o) => assign(pi, o) 
           case None => Assign(toRef(pi), Const(0, pi.finalTpe))
         }
       }
       import primitives._
-      val invoke : List[Tree] = vs.tpe match {
+      val invoke: List[Tree] = vs.tpe match {
         case vbs: BoxTypeSymbol =>
           val tpe = vbs.fqName
           List(
             Invoke(
-              Select(This, FieldRef(vs.name, tpe, bs.fqName)),
+              Select(This, FieldRef(vs.fqName, tpe, bs.fqName)),
               "apply",
               List(),
               tpe,
               "()V",
               interface = false))
+        case IfExprType => List() // FIXME
+        case WhileExprType => 
+          List(While(
+              runBlock(vs.blocks.head),
+              toRef(WhileExprType.outPort(vs))))
         case InvokeExprType =>
           val m = vs.info.asInstanceOf[MethodBinding]
           val obj = InvokeExprType.thisPort(vs)
@@ -126,18 +139,13 @@ trait ContentsToClass {
           }
           List(Assign(toRef(o), eTree))
       }
-      // propagate outputs
-      val outs = for {
-        (from, to) <- connections.flow;
-        if from.valSymbol == vs;
-        a <- execConnection((from, to))
-      } yield a
-      ins ::: invoke ::: outs.toList
+      ins ::: invoke 
     }
-    val invokes = block.executionOrder flatMap { runOne }
+    
+    val invokes = runBlock(bs.blocks.head)
     val localsDecl = localsMap map {
       case (a, i) =>
-        (a.valSymbol.name.str + "_" + a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i)
+        (a.valSymbol.fqName.str + "_" + a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i)
     } toList;
     Method(Name("contents"), "()V", invokes, localsDecl)
   }
@@ -172,18 +180,22 @@ trait ContentsToClass {
     }
   }
 
-  def createLocalsMap(bs: BoxTypeSymbol) = {
+  def createLocalsMap(bs: BoxTypeSymbol): Map[PortInstance, Int] = {
     var locals = 1; // 0 for "this"
-    bs.block.valsAlphabeticOrder flatMap { v =>
-      v.tpe match {
-        case b: BoxTypeSymbol => List()
+    def createLocals(vs: ValSymbol) : List[(PortInstance,Int)]= {
+      vs.tpe match {
+        case b: BoxTypeSymbol => 
+          List()
         case e: ExprType =>
-          v.portInstances map { pi =>
+          val res = vs.portInstances map { pi =>
             (pi -> { val l = locals; locals = locals + pi.finalTpe.javaSize; l })
           }
+          val children = for (bl <- vs.blocks; vs <- bl.executionOrder; l <- createLocals(vs)) yield l
+          res ::: children
         case _ => List()
       }
-    } toMap;
+    }
+    bs.blocks.head.executionOrder flatMap { createLocals } toMap
   }
   def primitiveCast(from: PrimitiveJavaType, to: PrimitiveJavaType, t: Tree) = {
     import primitives._

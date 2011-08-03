@@ -7,8 +7,6 @@ public final class ZaluumProtobuf {
   private ZaluumProtobuf() {}
   public static void registerAllExtensions(
       com.google.protobuf.ExtensionRegistry registry) {
-    registry.add(org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.instance);
-    registry.add(org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.instance);
   }
   public enum Direction
       implements com.google.protobuf.ProtocolMessageEnum {
@@ -134,18 +132,6 @@ public final class ZaluumProtobuf {
     public boolean hasVisual() { return hasVisual; }
     public boolean getVisual() { return visual_; }
     
-    // repeated .zaluum.BoxClass inner_class = 5;
-    public static final int INNER_CLASS_FIELD_NUMBER = 5;
-    private java.util.List<org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass> innerClass_ =
-      java.util.Collections.emptyList();
-    public java.util.List<org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass> getInnerClassList() {
-      return innerClass_;
-    }
-    public int getInnerClassCount() { return innerClass_.size(); }
-    public org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass getInnerClass(int index) {
-      return innerClass_.get(index);
-    }
-    
     // optional string super = 6;
     public static final int SUPER_FIELD_NUMBER = 6;
     private boolean hasSuper;
@@ -176,9 +162,6 @@ public final class ZaluumProtobuf {
       if (!hasVisual) return false;
       if (!hasTemplate) return false;
       if (!getGuiSize().isInitialized()) return false;
-      for (org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass element : getInnerClassList()) {
-        if (!element.isInitialized()) return false;
-      }
       if (!getTemplate().isInitialized()) return false;
       return true;
     }
@@ -197,9 +180,6 @@ public final class ZaluumProtobuf {
       }
       if (hasVisual()) {
         output.writeBool(4, getVisual());
-      }
-      for (org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass element : getInnerClassList()) {
-        output.writeMessage(5, element);
       }
       if (hasSuper()) {
         output.writeString(6, getSuper());
@@ -234,10 +214,6 @@ public final class ZaluumProtobuf {
       if (hasVisual()) {
         size += com.google.protobuf.CodedOutputStream
           .computeBoolSize(4, getVisual());
-      }
-      for (org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass element : getInnerClassList()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(5, element);
       }
       if (hasSuper()) {
         size += com.google.protobuf.CodedOutputStream
@@ -393,10 +369,6 @@ public final class ZaluumProtobuf {
           throw new IllegalStateException(
             "build() has already been called on this Builder.");
         }
-        if (result.innerClass_ != java.util.Collections.EMPTY_LIST) {
-          result.innerClass_ =
-            java.util.Collections.unmodifiableList(result.innerClass_);
-        }
         org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass returnMe = result;
         result = null;
         return returnMe;
@@ -424,12 +396,6 @@ public final class ZaluumProtobuf {
         }
         if (other.hasVisual()) {
           setVisual(other.getVisual());
-        }
-        if (!other.innerClass_.isEmpty()) {
-          if (result.innerClass_.isEmpty()) {
-            result.innerClass_ = new java.util.ArrayList<org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass>();
-          }
-          result.innerClass_.addAll(other.innerClass_);
         }
         if (other.hasSuper()) {
           setSuper(other.getSuper());
@@ -484,12 +450,6 @@ public final class ZaluumProtobuf {
             }
             case 32: {
               setVisual(input.readBool());
-              break;
-            }
-            case 42: {
-              org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass.newBuilder();
-              input.readMessage(subBuilder, extensionRegistry);
-              addInnerClass(subBuilder.buildPartial());
               break;
             }
             case 50: {
@@ -608,57 +568,6 @@ public final class ZaluumProtobuf {
       public Builder clearVisual() {
         result.hasVisual = false;
         result.visual_ = false;
-        return this;
-      }
-      
-      // repeated .zaluum.BoxClass inner_class = 5;
-      public java.util.List<org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass> getInnerClassList() {
-        return java.util.Collections.unmodifiableList(result.innerClass_);
-      }
-      public int getInnerClassCount() {
-        return result.getInnerClassCount();
-      }
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass getInnerClass(int index) {
-        return result.getInnerClass(index);
-      }
-      public Builder setInnerClass(int index, org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        result.innerClass_.set(index, value);
-        return this;
-      }
-      public Builder setInnerClass(int index, org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass.Builder builderForValue) {
-        result.innerClass_.set(index, builderForValue.build());
-        return this;
-      }
-      public Builder addInnerClass(org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        if (result.innerClass_.isEmpty()) {
-          result.innerClass_ = new java.util.ArrayList<org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass>();
-        }
-        result.innerClass_.add(value);
-        return this;
-      }
-      public Builder addInnerClass(org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass.Builder builderForValue) {
-        if (result.innerClass_.isEmpty()) {
-          result.innerClass_ = new java.util.ArrayList<org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass>();
-        }
-        result.innerClass_.add(builderForValue.build());
-        return this;
-      }
-      public Builder addAllInnerClass(
-          java.lang.Iterable<? extends org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass> values) {
-        if (result.innerClass_.isEmpty()) {
-          result.innerClass_ = new java.util.ArrayList<org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass>();
-        }
-        super.addAll(values, result.innerClass_);
-        return this;
-      }
-      public Builder clearInnerClass() {
-        result.innerClass_ = java.util.Collections.emptyList();
         return this;
       }
       
@@ -1731,8 +1640,7 @@ public final class ZaluumProtobuf {
   }
   
   public static final class Instance extends
-      com.google.protobuf.GeneratedMessage.ExtendableMessage<
-        Instance> {
+      com.google.protobuf.GeneratedMessage {
     // Use Instance.newBuilder() to construct.
     private Instance() {
       initFields();
@@ -1756,73 +1664,6 @@ public final class ZaluumProtobuf {
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
       return org.zaluum.nide.protobuf.ZaluumProtobuf.internal_static_zaluum_Instance_fieldAccessorTable;
-    }
-    
-    public enum Type
-        implements com.google.protobuf.ProtocolMessageEnum {
-      ClassInstance(0, 1),
-      StatInstance(1, 2),
-      ;
-      
-      
-      public final int getNumber() { return value; }
-      
-      public static Type valueOf(int value) {
-        switch (value) {
-          case 1: return ClassInstance;
-          case 2: return StatInstance;
-          default: return null;
-        }
-      }
-      
-      public static com.google.protobuf.Internal.EnumLiteMap<Type>
-          internalGetValueMap() {
-        return internalValueMap;
-      }
-      private static com.google.protobuf.Internal.EnumLiteMap<Type>
-          internalValueMap =
-            new com.google.protobuf.Internal.EnumLiteMap<Type>() {
-              public Type findValueByNumber(int number) {
-                return Type.valueOf(number)
-      ;        }
-            };
-      
-      public final com.google.protobuf.Descriptors.EnumValueDescriptor
-          getValueDescriptor() {
-        return getDescriptor().getValues().get(index);
-      }
-      public final com.google.protobuf.Descriptors.EnumDescriptor
-          getDescriptorForType() {
-        return getDescriptor();
-      }
-      public static final com.google.protobuf.Descriptors.EnumDescriptor
-          getDescriptor() {
-        return org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.getDescriptor().getEnumTypes().get(0);
-      }
-      
-      private static final Type[] VALUES = {
-        ClassInstance, StatInstance, 
-      };
-      public static Type valueOf(
-          com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
-        if (desc.getType() != getDescriptor()) {
-          throw new java.lang.IllegalArgumentException(
-            "EnumValueDescriptor is not for this type.");
-        }
-        return VALUES[desc.getIndex()];
-      }
-      private final int index;
-      private final int value;
-      private Type(int index, int value) {
-        this.index = index;
-        this.value = value;
-      }
-      
-      static {
-        org.zaluum.nide.protobuf.ZaluumProtobuf.getDescriptor();
-      }
-      
-      // @@protoc_insertion_point(enum_scope:zaluum.Instance.Type)
     }
     
     // required string name = 1;
@@ -1872,24 +1713,71 @@ public final class ZaluumProtobuf {
     public boolean hasLabelGui() { return hasLabelGui; }
     public org.zaluum.nide.protobuf.ZaluumProtobuf.Label getLabelGui() { return labelGui_; }
     
-    // required .zaluum.Instance.Type type = 8;
-    public static final int TYPE_FIELD_NUMBER = 8;
-    private boolean hasType;
-    private org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Type type_;
-    public boolean hasType() { return hasType; }
-    public org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Type getType() { return type_; }
+    // required string class_name = 8;
+    public static final int CLASS_NAME_FIELD_NUMBER = 8;
+    private boolean hasClassName;
+    private java.lang.String className_ = "";
+    public boolean hasClassName() { return hasClassName; }
+    public java.lang.String getClassName() { return className_; }
+    
+    // optional .zaluum.Point gui_pos = 9;
+    public static final int GUI_POS_FIELD_NUMBER = 9;
+    private boolean hasGuiPos;
+    private org.zaluum.nide.protobuf.ZaluumProtobuf.Point guiPos_;
+    public boolean hasGuiPos() { return hasGuiPos; }
+    public org.zaluum.nide.protobuf.ZaluumProtobuf.Point getGuiPos() { return guiPos_; }
+    
+    // optional .zaluum.Point gui_size = 10;
+    public static final int GUI_SIZE_FIELD_NUMBER = 10;
+    private boolean hasGuiSize;
+    private org.zaluum.nide.protobuf.ZaluumProtobuf.Point guiSize_;
+    public boolean hasGuiSize() { return hasGuiSize; }
+    public org.zaluum.nide.protobuf.ZaluumProtobuf.Point getGuiSize() { return guiSize_; }
+    
+    // repeated string constructor_parameter = 11;
+    public static final int CONSTRUCTOR_PARAMETER_FIELD_NUMBER = 11;
+    private java.util.List<java.lang.String> constructorParameter_ =
+      java.util.Collections.emptyList();
+    public java.util.List<java.lang.String> getConstructorParameterList() {
+      return constructorParameter_;
+    }
+    public int getConstructorParameterCount() { return constructorParameter_.size(); }
+    public java.lang.String getConstructorParameter(int index) {
+      return constructorParameter_.get(index);
+    }
+    
+    // repeated string constructor_types = 12;
+    public static final int CONSTRUCTOR_TYPES_FIELD_NUMBER = 12;
+    private java.util.List<java.lang.String> constructorTypes_ =
+      java.util.Collections.emptyList();
+    public java.util.List<java.lang.String> getConstructorTypesList() {
+      return constructorTypes_;
+    }
+    public int getConstructorTypesCount() { return constructorTypes_.size(); }
+    public java.lang.String getConstructorTypes(int index) {
+      return constructorTypes_.get(index);
+    }
+    
+    // optional .zaluum.Template template = 13;
+    public static final int TEMPLATE_FIELD_NUMBER = 13;
+    private boolean hasTemplate;
+    private org.zaluum.nide.protobuf.ZaluumProtobuf.Template template_;
+    public boolean hasTemplate() { return hasTemplate; }
+    public org.zaluum.nide.protobuf.ZaluumProtobuf.Template getTemplate() { return template_; }
     
     private void initFields() {
       pos_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
       size_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
       label_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Label.getDefaultInstance();
       labelGui_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Label.getDefaultInstance();
-      type_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Type.ClassInstance;
+      guiPos_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
+      guiSize_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
+      template_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Template.getDefaultInstance();
     }
     public final boolean isInitialized() {
       if (!hasName) return false;
       if (!hasPos) return false;
-      if (!hasType) return false;
+      if (!hasClassName) return false;
       if (!getPos().isInitialized()) return false;
       if (hasSize()) {
         if (!getSize().isInitialized()) return false;
@@ -1903,15 +1791,21 @@ public final class ZaluumProtobuf {
       if (hasLabelGui()) {
         if (!getLabelGui().isInitialized()) return false;
       }
-      if (!extensionsAreInitialized()) return false;
+      if (hasGuiPos()) {
+        if (!getGuiPos().isInitialized()) return false;
+      }
+      if (hasGuiSize()) {
+        if (!getGuiSize().isInitialized()) return false;
+      }
+      if (hasTemplate()) {
+        if (!getTemplate().isInitialized()) return false;
+      }
       return true;
     }
     
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       getSerializedSize();
-      com.google.protobuf.GeneratedMessage.ExtendableMessage
-        .ExtensionWriter extensionWriter = newExtensionWriter();
       if (hasName()) {
         output.writeString(1, getName());
       }
@@ -1930,10 +1824,24 @@ public final class ZaluumProtobuf {
       if (hasLabelGui()) {
         output.writeMessage(7, getLabelGui());
       }
-      if (hasType()) {
-        output.writeEnum(8, getType().getNumber());
+      if (hasClassName()) {
+        output.writeString(8, getClassName());
       }
-      extensionWriter.writeUntil(536870912, output);
+      if (hasGuiPos()) {
+        output.writeMessage(9, getGuiPos());
+      }
+      if (hasGuiSize()) {
+        output.writeMessage(10, getGuiSize());
+      }
+      for (java.lang.String element : getConstructorParameterList()) {
+        output.writeString(11, element);
+      }
+      for (java.lang.String element : getConstructorTypesList()) {
+        output.writeString(12, element);
+      }
+      if (hasTemplate()) {
+        output.writeMessage(13, getTemplate());
+      }
       getUnknownFields().writeTo(output);
     }
     
@@ -1967,11 +1875,40 @@ public final class ZaluumProtobuf {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(7, getLabelGui());
       }
-      if (hasType()) {
+      if (hasClassName()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(8, getType().getNumber());
+          .computeStringSize(8, getClassName());
       }
-      size += extensionsSerializedSize();
+      if (hasGuiPos()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(9, getGuiPos());
+      }
+      if (hasGuiSize()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(10, getGuiSize());
+      }
+      {
+        int dataSize = 0;
+        for (java.lang.String element : getConstructorParameterList()) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeStringSizeNoTag(element);
+        }
+        size += dataSize;
+        size += 1 * getConstructorParameterList().size();
+      }
+      {
+        int dataSize = 0;
+        for (java.lang.String element : getConstructorTypesList()) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeStringSizeNoTag(element);
+        }
+        size += dataSize;
+        size += 1 * getConstructorTypesList().size();
+      }
+      if (hasTemplate()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(13, getTemplate());
+      }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
       return size;
@@ -2052,8 +1989,7 @@ public final class ZaluumProtobuf {
     public Builder toBuilder() { return newBuilder(this); }
     
     public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.ExtendableBuilder<
-          org.zaluum.nide.protobuf.ZaluumProtobuf.Instance, Builder> {
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
       private org.zaluum.nide.protobuf.ZaluumProtobuf.Instance result;
       
       // Construct using org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.newBuilder()
@@ -2119,6 +2055,14 @@ public final class ZaluumProtobuf {
           result.parameter_ =
             java.util.Collections.unmodifiableList(result.parameter_);
         }
+        if (result.constructorParameter_ != java.util.Collections.EMPTY_LIST) {
+          result.constructorParameter_ =
+            java.util.Collections.unmodifiableList(result.constructorParameter_);
+        }
+        if (result.constructorTypes_ != java.util.Collections.EMPTY_LIST) {
+          result.constructorTypes_ =
+            java.util.Collections.unmodifiableList(result.constructorTypes_);
+        }
         org.zaluum.nide.protobuf.ZaluumProtobuf.Instance returnMe = result;
         result = null;
         return returnMe;
@@ -2156,10 +2100,30 @@ public final class ZaluumProtobuf {
         if (other.hasLabelGui()) {
           mergeLabelGui(other.getLabelGui());
         }
-        if (other.hasType()) {
-          setType(other.getType());
+        if (other.hasClassName()) {
+          setClassName(other.getClassName());
         }
-        this.mergeExtensionFields(other);
+        if (other.hasGuiPos()) {
+          mergeGuiPos(other.getGuiPos());
+        }
+        if (other.hasGuiSize()) {
+          mergeGuiSize(other.getGuiSize());
+        }
+        if (!other.constructorParameter_.isEmpty()) {
+          if (result.constructorParameter_.isEmpty()) {
+            result.constructorParameter_ = new java.util.ArrayList<java.lang.String>();
+          }
+          result.constructorParameter_.addAll(other.constructorParameter_);
+        }
+        if (!other.constructorTypes_.isEmpty()) {
+          if (result.constructorTypes_.isEmpty()) {
+            result.constructorTypes_ = new java.util.ArrayList<java.lang.String>();
+          }
+          result.constructorTypes_.addAll(other.constructorTypes_);
+        }
+        if (other.hasTemplate()) {
+          mergeTemplate(other.getTemplate());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -2231,14 +2195,43 @@ public final class ZaluumProtobuf {
               setLabelGui(subBuilder.buildPartial());
               break;
             }
-            case 64: {
-              int rawValue = input.readEnum();
-              org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Type value = org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Type.valueOf(rawValue);
-              if (value == null) {
-                unknownFields.mergeVarintField(8, rawValue);
-              } else {
-                setType(value);
+            case 66: {
+              setClassName(input.readString());
+              break;
+            }
+            case 74: {
+              org.zaluum.nide.protobuf.ZaluumProtobuf.Point.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.newBuilder();
+              if (hasGuiPos()) {
+                subBuilder.mergeFrom(getGuiPos());
               }
+              input.readMessage(subBuilder, extensionRegistry);
+              setGuiPos(subBuilder.buildPartial());
+              break;
+            }
+            case 82: {
+              org.zaluum.nide.protobuf.ZaluumProtobuf.Point.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.newBuilder();
+              if (hasGuiSize()) {
+                subBuilder.mergeFrom(getGuiSize());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setGuiSize(subBuilder.buildPartial());
+              break;
+            }
+            case 90: {
+              addConstructorParameter(input.readString());
+              break;
+            }
+            case 98: {
+              addConstructorTypes(input.readString());
+              break;
+            }
+            case 106: {
+              org.zaluum.nide.protobuf.ZaluumProtobuf.Template.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.Template.newBuilder();
+              if (hasTemplate()) {
+                subBuilder.mergeFrom(getTemplate());
+              }
+              input.readMessage(subBuilder, extensionRegistry);
+              setTemplate(subBuilder.buildPartial());
               break;
             }
           }
@@ -2466,438 +2459,7 @@ public final class ZaluumProtobuf {
         return this;
       }
       
-      // required .zaluum.Instance.Type type = 8;
-      public boolean hasType() {
-        return result.hasType();
-      }
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Type getType() {
-        return result.getType();
-      }
-      public Builder setType(org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Type value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        result.hasType = true;
-        result.type_ = value;
-        return this;
-      }
-      public Builder clearType() {
-        result.hasType = false;
-        result.type_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Type.ClassInstance;
-        return this;
-      }
-      
-      // @@protoc_insertion_point(builder_scope:zaluum.Instance)
-    }
-    
-    static {
-      defaultInstance = new Instance(true);
-      org.zaluum.nide.protobuf.ZaluumProtobuf.internalForceInit();
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:zaluum.Instance)
-  }
-  
-  public static final class ClassInstance extends
-      com.google.protobuf.GeneratedMessage {
-    // Use ClassInstance.newBuilder() to construct.
-    private ClassInstance() {
-      initFields();
-    }
-    private ClassInstance(boolean noInit) {}
-    
-    private static final ClassInstance defaultInstance;
-    public static ClassInstance getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public ClassInstance getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return org.zaluum.nide.protobuf.ZaluumProtobuf.internal_static_zaluum_ClassInstance_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return org.zaluum.nide.protobuf.ZaluumProtobuf.internal_static_zaluum_ClassInstance_fieldAccessorTable;
-    }
-    
-    public static final int INSTANCE_FIELD_NUMBER = 100;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        org.zaluum.nide.protobuf.ZaluumProtobuf.Instance,
-        org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance> instance =
-          com.google.protobuf.GeneratedMessage
-            .newGeneratedExtension();
-    // required string class_name = 1;
-    public static final int CLASS_NAME_FIELD_NUMBER = 1;
-    private boolean hasClassName;
-    private java.lang.String className_ = "";
-    public boolean hasClassName() { return hasClassName; }
-    public java.lang.String getClassName() { return className_; }
-    
-    // optional .zaluum.Point gui_pos = 2;
-    public static final int GUI_POS_FIELD_NUMBER = 2;
-    private boolean hasGuiPos;
-    private org.zaluum.nide.protobuf.ZaluumProtobuf.Point guiPos_;
-    public boolean hasGuiPos() { return hasGuiPos; }
-    public org.zaluum.nide.protobuf.ZaluumProtobuf.Point getGuiPos() { return guiPos_; }
-    
-    // optional .zaluum.Point gui_size = 3;
-    public static final int GUI_SIZE_FIELD_NUMBER = 3;
-    private boolean hasGuiSize;
-    private org.zaluum.nide.protobuf.ZaluumProtobuf.Point guiSize_;
-    public boolean hasGuiSize() { return hasGuiSize; }
-    public org.zaluum.nide.protobuf.ZaluumProtobuf.Point getGuiSize() { return guiSize_; }
-    
-    // repeated string constructor_parameter = 4;
-    public static final int CONSTRUCTOR_PARAMETER_FIELD_NUMBER = 4;
-    private java.util.List<java.lang.String> constructorParameter_ =
-      java.util.Collections.emptyList();
-    public java.util.List<java.lang.String> getConstructorParameterList() {
-      return constructorParameter_;
-    }
-    public int getConstructorParameterCount() { return constructorParameter_.size(); }
-    public java.lang.String getConstructorParameter(int index) {
-      return constructorParameter_.get(index);
-    }
-    
-    // repeated string constructor_types = 5;
-    public static final int CONSTRUCTOR_TYPES_FIELD_NUMBER = 5;
-    private java.util.List<java.lang.String> constructorTypes_ =
-      java.util.Collections.emptyList();
-    public java.util.List<java.lang.String> getConstructorTypesList() {
-      return constructorTypes_;
-    }
-    public int getConstructorTypesCount() { return constructorTypes_.size(); }
-    public java.lang.String getConstructorTypes(int index) {
-      return constructorTypes_.get(index);
-    }
-    
-    private void initFields() {
-      guiPos_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
-      guiSize_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
-    }
-    public final boolean isInitialized() {
-      if (!hasClassName) return false;
-      if (hasGuiPos()) {
-        if (!getGuiPos().isInitialized()) return false;
-      }
-      if (hasGuiSize()) {
-        if (!getGuiSize().isInitialized()) return false;
-      }
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (hasClassName()) {
-        output.writeString(1, getClassName());
-      }
-      if (hasGuiPos()) {
-        output.writeMessage(2, getGuiPos());
-      }
-      if (hasGuiSize()) {
-        output.writeMessage(3, getGuiSize());
-      }
-      for (java.lang.String element : getConstructorParameterList()) {
-        output.writeString(4, element);
-      }
-      for (java.lang.String element : getConstructorTypesList()) {
-        output.writeString(5, element);
-      }
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      if (hasClassName()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(1, getClassName());
-      }
-      if (hasGuiPos()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, getGuiPos());
-      }
-      if (hasGuiSize()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, getGuiSize());
-      }
-      {
-        int dataSize = 0;
-        for (java.lang.String element : getConstructorParameterList()) {
-          dataSize += com.google.protobuf.CodedOutputStream
-            .computeStringSizeNoTag(element);
-        }
-        size += dataSize;
-        size += 1 * getConstructorParameterList().size();
-      }
-      {
-        int dataSize = 0;
-        for (java.lang.String element : getConstructorTypesList()) {
-          dataSize += com.google.protobuf.CodedOutputStream
-            .computeStringSizeNoTag(element);
-        }
-        size += dataSize;
-        size += 1 * getConstructorTypesList().size();
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance result;
-      
-      // Construct using org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance();
-        return builder;
-      }
-      
-      protected org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance internalGetResult() {
-        return result;
-      }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(result);
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.getDescriptor();
-      }
-      
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance getDefaultInstanceForType() {
-        return org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.getDefaultInstance();
-      }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance build() {
-        if (result != null && !isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return buildPartial();
-      }
-      
-      private org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
-        }
-        if (result.constructorParameter_ != java.util.Collections.EMPTY_LIST) {
-          result.constructorParameter_ =
-            java.util.Collections.unmodifiableList(result.constructorParameter_);
-        }
-        if (result.constructorTypes_ != java.util.Collections.EMPTY_LIST) {
-          result.constructorTypes_ =
-            java.util.Collections.unmodifiableList(result.constructorTypes_);
-        }
-        org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance returnMe = result;
-        result = null;
-        return returnMe;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance) {
-          return mergeFrom((org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance other) {
-        if (other == org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.getDefaultInstance()) return this;
-        if (other.hasClassName()) {
-          setClassName(other.getClassName());
-        }
-        if (other.hasGuiPos()) {
-          mergeGuiPos(other.getGuiPos());
-        }
-        if (other.hasGuiSize()) {
-          mergeGuiSize(other.getGuiSize());
-        }
-        if (!other.constructorParameter_.isEmpty()) {
-          if (result.constructorParameter_.isEmpty()) {
-            result.constructorParameter_ = new java.util.ArrayList<java.lang.String>();
-          }
-          result.constructorParameter_.addAll(other.constructorParameter_);
-        }
-        if (!other.constructorTypes_.isEmpty()) {
-          if (result.constructorTypes_.isEmpty()) {
-            result.constructorTypes_ = new java.util.ArrayList<java.lang.String>();
-          }
-          result.constructorTypes_.addAll(other.constructorTypes_);
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              }
-              break;
-            }
-            case 10: {
-              setClassName(input.readString());
-              break;
-            }
-            case 18: {
-              org.zaluum.nide.protobuf.ZaluumProtobuf.Point.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.newBuilder();
-              if (hasGuiPos()) {
-                subBuilder.mergeFrom(getGuiPos());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setGuiPos(subBuilder.buildPartial());
-              break;
-            }
-            case 26: {
-              org.zaluum.nide.protobuf.ZaluumProtobuf.Point.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.newBuilder();
-              if (hasGuiSize()) {
-                subBuilder.mergeFrom(getGuiSize());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setGuiSize(subBuilder.buildPartial());
-              break;
-            }
-            case 34: {
-              addConstructorParameter(input.readString());
-              break;
-            }
-            case 42: {
-              addConstructorTypes(input.readString());
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // required string class_name = 1;
+      // required string class_name = 8;
       public boolean hasClassName() {
         return result.hasClassName();
       }
@@ -2918,7 +2480,7 @@ public final class ZaluumProtobuf {
         return this;
       }
       
-      // optional .zaluum.Point gui_pos = 2;
+      // optional .zaluum.Point gui_pos = 9;
       public boolean hasGuiPos() {
         return result.hasGuiPos();
       }
@@ -2955,7 +2517,7 @@ public final class ZaluumProtobuf {
         return this;
       }
       
-      // optional .zaluum.Point gui_size = 3;
+      // optional .zaluum.Point gui_size = 10;
       public boolean hasGuiSize() {
         return result.hasGuiSize();
       }
@@ -2992,7 +2554,7 @@ public final class ZaluumProtobuf {
         return this;
       }
       
-      // repeated string constructor_parameter = 4;
+      // repeated string constructor_parameter = 11;
       public java.util.List<java.lang.String> getConstructorParameterList() {
         return java.util.Collections.unmodifiableList(result.constructorParameter_);
       }
@@ -3032,7 +2594,7 @@ public final class ZaluumProtobuf {
         return this;
       }
       
-      // repeated string constructor_types = 5;
+      // repeated string constructor_types = 12;
       public java.util.List<java.lang.String> getConstructorTypesList() {
         return java.util.Collections.unmodifiableList(result.constructorTypes_);
       }
@@ -3072,310 +2634,7 @@ public final class ZaluumProtobuf {
         return this;
       }
       
-      // @@protoc_insertion_point(builder_scope:zaluum.ClassInstance)
-    }
-    
-    static {
-      defaultInstance = new ClassInstance(true);
-      org.zaluum.nide.protobuf.ZaluumProtobuf.internalForceInit();
-      defaultInstance.initFields();
-    }
-    
-    // @@protoc_insertion_point(class_scope:zaluum.ClassInstance)
-  }
-  
-  public static final class StatInstance extends
-      com.google.protobuf.GeneratedMessage {
-    // Use StatInstance.newBuilder() to construct.
-    private StatInstance() {
-      initFields();
-    }
-    private StatInstance(boolean noInit) {}
-    
-    private static final StatInstance defaultInstance;
-    public static StatInstance getDefaultInstance() {
-      return defaultInstance;
-    }
-    
-    public StatInstance getDefaultInstanceForType() {
-      return defaultInstance;
-    }
-    
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return org.zaluum.nide.protobuf.ZaluumProtobuf.internal_static_zaluum_StatInstance_descriptor;
-    }
-    
-    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return org.zaluum.nide.protobuf.ZaluumProtobuf.internal_static_zaluum_StatInstance_fieldAccessorTable;
-    }
-    
-    public static final int INSTANCE_FIELD_NUMBER = 101;
-    public static final
-      com.google.protobuf.GeneratedMessage.GeneratedExtension<
-        org.zaluum.nide.protobuf.ZaluumProtobuf.Instance,
-        org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance> instance =
-          com.google.protobuf.GeneratedMessage
-            .newGeneratedExtension();
-    // required .zaluum.Template template = 1;
-    public static final int TEMPLATE_FIELD_NUMBER = 1;
-    private boolean hasTemplate;
-    private org.zaluum.nide.protobuf.ZaluumProtobuf.Template template_;
-    public boolean hasTemplate() { return hasTemplate; }
-    public org.zaluum.nide.protobuf.ZaluumProtobuf.Template getTemplate() { return template_; }
-    
-    // required string statement = 2;
-    public static final int STATEMENT_FIELD_NUMBER = 2;
-    private boolean hasStatement;
-    private java.lang.String statement_ = "";
-    public boolean hasStatement() { return hasStatement; }
-    public java.lang.String getStatement() { return statement_; }
-    
-    private void initFields() {
-      template_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Template.getDefaultInstance();
-    }
-    public final boolean isInitialized() {
-      if (!hasTemplate) return false;
-      if (!hasStatement) return false;
-      if (!getTemplate().isInitialized()) return false;
-      return true;
-    }
-    
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      getSerializedSize();
-      if (hasTemplate()) {
-        output.writeMessage(1, getTemplate());
-      }
-      if (hasStatement()) {
-        output.writeString(2, getStatement());
-      }
-      getUnknownFields().writeTo(output);
-    }
-    
-    private int memoizedSerializedSize = -1;
-    public int getSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-    
-      size = 0;
-      if (hasTemplate()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getTemplate());
-      }
-      if (hasStatement()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeStringSize(2, getStatement());
-      }
-      size += getUnknownFields().getSerializedSize();
-      memoizedSerializedSize = size;
-      return size;
-    }
-    
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data).buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return newBuilder().mergeFrom(data, extensionRegistry)
-               .buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      Builder builder = newBuilder();
-      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
-        return builder.buildParsed();
-      } else {
-        return null;
-      }
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input).buildParsed();
-    }
-    public static org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return newBuilder().mergeFrom(input, extensionRegistry)
-               .buildParsed();
-    }
-    
-    public static Builder newBuilder() { return Builder.create(); }
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance prototype) {
-      return newBuilder().mergeFrom(prototype);
-    }
-    public Builder toBuilder() { return newBuilder(this); }
-    
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessage.Builder<Builder> {
-      private org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance result;
-      
-      // Construct using org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.newBuilder()
-      private Builder() {}
-      
-      private static Builder create() {
-        Builder builder = new Builder();
-        builder.result = new org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance();
-        return builder;
-      }
-      
-      protected org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance internalGetResult() {
-        return result;
-      }
-      
-      public Builder clear() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "Cannot call clear() after build().");
-        }
-        result = new org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance();
-        return this;
-      }
-      
-      public Builder clone() {
-        return create().mergeFrom(result);
-      }
-      
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.getDescriptor();
-      }
-      
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance getDefaultInstanceForType() {
-        return org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.getDefaultInstance();
-      }
-      
-      public boolean isInitialized() {
-        return result.isInitialized();
-      }
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance build() {
-        if (result != null && !isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return buildPartial();
-      }
-      
-      private org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance buildParsed()
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        if (!isInitialized()) {
-          throw newUninitializedMessageException(
-            result).asInvalidProtocolBufferException();
-        }
-        return buildPartial();
-      }
-      
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance buildPartial() {
-        if (result == null) {
-          throw new IllegalStateException(
-            "build() has already been called on this Builder.");
-        }
-        org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance returnMe = result;
-        result = null;
-        return returnMe;
-      }
-      
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance) {
-          return mergeFrom((org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-      
-      public Builder mergeFrom(org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance other) {
-        if (other == org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.getDefaultInstance()) return this;
-        if (other.hasTemplate()) {
-          mergeTemplate(other.getTemplate());
-        }
-        if (other.hasStatement()) {
-          setStatement(other.getStatement());
-        }
-        this.mergeUnknownFields(other.getUnknownFields());
-        return this;
-      }
-      
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder(
-            this.getUnknownFields());
-        while (true) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              this.setUnknownFields(unknownFields.build());
-              return this;
-            default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
-                this.setUnknownFields(unknownFields.build());
-                return this;
-              }
-              break;
-            }
-            case 10: {
-              org.zaluum.nide.protobuf.ZaluumProtobuf.Template.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.Template.newBuilder();
-              if (hasTemplate()) {
-                subBuilder.mergeFrom(getTemplate());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setTemplate(subBuilder.buildPartial());
-              break;
-            }
-            case 18: {
-              setStatement(input.readString());
-              break;
-            }
-          }
-        }
-      }
-      
-      
-      // required .zaluum.Template template = 1;
+      // optional .zaluum.Template template = 13;
       public boolean hasTemplate() {
         return result.hasTemplate();
       }
@@ -3412,37 +2671,16 @@ public final class ZaluumProtobuf {
         return this;
       }
       
-      // required string statement = 2;
-      public boolean hasStatement() {
-        return result.hasStatement();
-      }
-      public java.lang.String getStatement() {
-        return result.getStatement();
-      }
-      public Builder setStatement(java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  result.hasStatement = true;
-        result.statement_ = value;
-        return this;
-      }
-      public Builder clearStatement() {
-        result.hasStatement = false;
-        result.statement_ = getDefaultInstance().getStatement();
-        return this;
-      }
-      
-      // @@protoc_insertion_point(builder_scope:zaluum.StatInstance)
+      // @@protoc_insertion_point(builder_scope:zaluum.Instance)
     }
     
     static {
-      defaultInstance = new StatInstance(true);
+      defaultInstance = new Instance(true);
       org.zaluum.nide.protobuf.ZaluumProtobuf.internalForceInit();
       defaultInstance.initFields();
     }
     
-    // @@protoc_insertion_point(class_scope:zaluum.StatInstance)
+    // @@protoc_insertion_point(class_scope:zaluum.Instance)
   }
   
   public static final class Label extends
@@ -7357,16 +6595,6 @@ public final class ZaluumProtobuf {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_zaluum_Instance_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_zaluum_ClassInstance_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_zaluum_ClassInstance_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
-    internal_static_zaluum_StatInstance_descriptor;
-  private static
-    com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_zaluum_StatInstance_fieldAccessorTable;
-  private static com.google.protobuf.Descriptors.Descriptor
     internal_static_zaluum_Label_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -7425,53 +6653,46 @@ public final class ZaluumProtobuf {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\014Zaluum.proto\022\006zaluum\"\316\001\n\010BoxClass\022\022\n\nc" +
+      "\n\014Zaluum.proto\022\006zaluum\"\247\001\n\010BoxClass\022\022\n\nc" +
       "lass_name\030\001 \001(\t\022\022\n\nimage_name\030\002 \001(\t\022\037\n\010g" +
       "ui_size\030\003 \002(\0132\r.zaluum.Point\022\016\n\006visual\030\004" +
-      " \002(\010\022%\n\013inner_class\030\005 \003(\0132\020.zaluum.BoxCl" +
-      "ass\022\r\n\005super\030\006 \001(\t\022\017\n\007package\030\007 \001(\t\022\"\n\010t" +
-      "emplate\030\010 \002(\0132\020.zaluum.Template\"D\n\010Templ" +
-      "ate\022\032\n\004port\030\001 \003(\0132\014.zaluum.Port\022\034\n\005block" +
-      "\030\002 \003(\0132\r.zaluum.Block\"\205\001\n\005Block\022\"\n\010insta" +
-      "nce\030\001 \003(\0132\020.zaluum.Instance\022&\n\nconnectio" +
-      "n\030\002 \003(\0132\022.zaluum.Connection\022\"\n\010junction\030",
-      "\003 \003(\0132\020.zaluum.Junction\022\014\n\004info\030\004 \001(\t\"\223\002" +
-      "\n\010Instance\022\014\n\004name\030\001 \002(\t\022\032\n\003pos\030\003 \002(\0132\r." +
-      "zaluum.Point\022\033\n\004size\030\004 \001(\0132\r.zaluum.Poin" +
-      "t\022$\n\tparameter\030\005 \003(\0132\021.zaluum.Parameter\022" +
-      "\034\n\005label\030\006 \001(\0132\r.zaluum.Label\022 \n\tlabel_g" +
-      "ui\030\007 \001(\0132\r.zaluum.Label\022#\n\004type\030\010 \002(\0162\025." +
-      "zaluum.Instance.Type\"+\n\004Type\022\021\n\rClassIns" +
-      "tance\020\001\022\020\n\014StatInstance\020\002*\010\010d\020\200\200\200\200\002\"\331\001\n\r" +
-      "ClassInstance\022\022\n\nclass_name\030\001 \002(\t\022\036\n\007gui" +
-      "_pos\030\002 \001(\0132\r.zaluum.Point\022\037\n\010gui_size\030\003 ",
-      "\001(\0132\r.zaluum.Point\022\035\n\025constructor_parame" +
-      "ter\030\004 \003(\t\022\031\n\021constructor_types\030\005 \003(\t29\n\010" +
-      "instance\022\020.zaluum.Instance\030d \002(\0132\025.zaluu" +
-      "m.ClassInstance\"\177\n\014StatInstance\022\"\n\010templ" +
-      "ate\030\001 \002(\0132\020.zaluum.Template\022\021\n\tstatement" +
-      "\030\002 \002(\t28\n\010instance\022\020.zaluum.Instance\030e \002" +
-      "(\0132\024.zaluum.StatInstance\"8\n\005Label\022\023\n\013des" +
-      "cription\030\001 \002(\t\022\032\n\003pos\030\002 \002(\0132\r.zaluum.Poi" +
-      "nt\"\'\n\tParameter\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 " +
-      "\002(\t\":\n\007PortRef\022\020\n\010box_name\030\001 \001(\t\022\021\n\tport",
-      "_name\030\002 \002(\t\022\n\n\002in\030\003 \001(\010\"\222\001\n\004Port\022\014\n\004name" +
-      "\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022$\n\tdirection\030\003 \002(\0162" +
-      "\021.zaluum.Direction\022#\n\014pos_internal\030\004 \002(\013" +
-      "2\r.zaluum.Point\022#\n\014pos_external\030\005 \002(\0132\r." +
-      "zaluum.Point\"K\n\003Ref\022%\n\010junction\030\001 \001(\0132\023." +
-      "zaluum.JunctionRef\022\035\n\004port\030\002 \001(\0132\017.zaluu" +
-      "m.PortRef\"d\n\nConnection\022\033\n\006source\030\001 \002(\0132" +
-      "\013.zaluum.Ref\022\033\n\006target\030\002 \002(\0132\013.zaluum.Re" +
-      "f\022\034\n\005point\030\003 \003(\0132\r.zaluum.Point\"4\n\010Junct" +
-      "ion\022\014\n\004name\030\001 \002(\t\022\032\n\003pos\030\002 \002(\0132\r.zaluum.",
-      "Point\"\033\n\013JunctionRef\022\014\n\004name\030\001 \002(\t\"\035\n\005Po" +
-      "int\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005\"t\n\tClipboard\022\"" +
-      "\n\010instance\030\001 \003(\0132\020.zaluum.Instance\022\032\n\004po" +
-      "rt\030\003 \003(\0132\014.zaluum.Port\022\'\n\013connnection\030\004 " +
-      "\003(\0132\022.zaluum.Connection*\'\n\tDirection\022\006\n\002" +
-      "IN\020\000\022\007\n\003OUT\020\001\022\t\n\005SHIFT\020\002B*\n\030org.zaluum.n" +
-      "ide.protobufB\016ZaluumProtobuf"
+      " \002(\010\022\r\n\005super\030\006 \001(\t\022\017\n\007package\030\007 \001(\t\022\"\n\010" +
+      "template\030\010 \002(\0132\020.zaluum.Template\"D\n\010Temp" +
+      "late\022\032\n\004port\030\001 \003(\0132\014.zaluum.Port\022\034\n\005bloc" +
+      "k\030\002 \003(\0132\r.zaluum.Block\"\205\001\n\005Block\022\"\n\010inst" +
+      "ance\030\001 \003(\0132\020.zaluum.Instance\022&\n\nconnecti" +
+      "on\030\002 \003(\0132\022.zaluum.Connection\022\"\n\010junction" +
+      "\030\003 \003(\0132\020.zaluum.Junction\022\014\n\004info\030\004 \001(\t\"\352",
+      "\002\n\010Instance\022\014\n\004name\030\001 \002(\t\022\032\n\003pos\030\003 \002(\0132\r" +
+      ".zaluum.Point\022\033\n\004size\030\004 \001(\0132\r.zaluum.Poi" +
+      "nt\022$\n\tparameter\030\005 \003(\0132\021.zaluum.Parameter" +
+      "\022\034\n\005label\030\006 \001(\0132\r.zaluum.Label\022 \n\tlabel_" +
+      "gui\030\007 \001(\0132\r.zaluum.Label\022\022\n\nclass_name\030\010" +
+      " \002(\t\022\036\n\007gui_pos\030\t \001(\0132\r.zaluum.Point\022\037\n\010" +
+      "gui_size\030\n \001(\0132\r.zaluum.Point\022\035\n\025constru" +
+      "ctor_parameter\030\013 \003(\t\022\031\n\021constructor_type" +
+      "s\030\014 \003(\t\022\"\n\010template\030\r \001(\0132\020.zaluum.Templ" +
+      "ate\"8\n\005Label\022\023\n\013description\030\001 \002(\t\022\032\n\003pos",
+      "\030\002 \002(\0132\r.zaluum.Point\"\'\n\tParameter\022\013\n\003ke" +
+      "y\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\":\n\007PortRef\022\020\n\010box" +
+      "_name\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\022\n\n\002in\030\003 \001" +
+      "(\010\"\222\001\n\004Port\022\014\n\004name\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022" +
+      "$\n\tdirection\030\003 \002(\0162\021.zaluum.Direction\022#\n" +
+      "\014pos_internal\030\004 \002(\0132\r.zaluum.Point\022#\n\014po" +
+      "s_external\030\005 \002(\0132\r.zaluum.Point\"K\n\003Ref\022%" +
+      "\n\010junction\030\001 \001(\0132\023.zaluum.JunctionRef\022\035\n" +
+      "\004port\030\002 \001(\0132\017.zaluum.PortRef\"d\n\nConnecti" +
+      "on\022\033\n\006source\030\001 \002(\0132\013.zaluum.Ref\022\033\n\006targe",
+      "t\030\002 \002(\0132\013.zaluum.Ref\022\034\n\005point\030\003 \003(\0132\r.za" +
+      "luum.Point\"4\n\010Junction\022\014\n\004name\030\001 \002(\t\022\032\n\003" +
+      "pos\030\002 \002(\0132\r.zaluum.Point\"\033\n\013JunctionRef\022" +
+      "\014\n\004name\030\001 \002(\t\"\035\n\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002" +
+      " \002(\005\"t\n\tClipboard\022\"\n\010instance\030\001 \003(\0132\020.za" +
+      "luum.Instance\022\032\n\004port\030\003 \003(\0132\014.zaluum.Por" +
+      "t\022\'\n\013connnection\030\004 \003(\0132\022.zaluum.Connecti" +
+      "on*\'\n\tDirection\022\006\n\002IN\020\000\022\007\n\003OUT\020\001\022\t\n\005SHIF" +
+      "T\020\002B*\n\030org.zaluum.nide.protobufB\016ZaluumP" +
+      "rotobuf"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -7483,7 +6704,7 @@ public final class ZaluumProtobuf {
           internal_static_zaluum_BoxClass_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_BoxClass_descriptor,
-              new java.lang.String[] { "ClassName", "ImageName", "GuiSize", "Visual", "InnerClass", "Super", "Package", "Template", },
+              new java.lang.String[] { "ClassName", "ImageName", "GuiSize", "Visual", "Super", "Package", "Template", },
               org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.BoxClass.Builder.class);
           internal_static_zaluum_Template_descriptor =
@@ -7507,33 +6728,11 @@ public final class ZaluumProtobuf {
           internal_static_zaluum_Instance_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Instance_descriptor,
-              new java.lang.String[] { "Name", "Pos", "Size", "Parameter", "Label", "LabelGui", "Type", },
+              new java.lang.String[] { "Name", "Pos", "Size", "Parameter", "Label", "LabelGui", "ClassName", "GuiPos", "GuiSize", "ConstructorParameter", "ConstructorTypes", "Template", },
               org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Builder.class);
-          internal_static_zaluum_ClassInstance_descriptor =
-            getDescriptor().getMessageTypes().get(4);
-          internal_static_zaluum_ClassInstance_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_zaluum_ClassInstance_descriptor,
-              new java.lang.String[] { "ClassName", "GuiPos", "GuiSize", "ConstructorParameter", "ConstructorTypes", },
-              org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.class,
-              org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.Builder.class);
-          org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.instance.internalInit(
-              org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.getDescriptor().getExtensions().get(0),
-              org.zaluum.nide.protobuf.ZaluumProtobuf.ClassInstance.class);
-          internal_static_zaluum_StatInstance_descriptor =
-            getDescriptor().getMessageTypes().get(5);
-          internal_static_zaluum_StatInstance_fieldAccessorTable = new
-            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-              internal_static_zaluum_StatInstance_descriptor,
-              new java.lang.String[] { "Template", "Statement", },
-              org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.class,
-              org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.Builder.class);
-          org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.instance.internalInit(
-              org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.getDescriptor().getExtensions().get(0),
-              org.zaluum.nide.protobuf.ZaluumProtobuf.StatInstance.class);
           internal_static_zaluum_Label_descriptor =
-            getDescriptor().getMessageTypes().get(6);
+            getDescriptor().getMessageTypes().get(4);
           internal_static_zaluum_Label_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Label_descriptor,
@@ -7541,7 +6740,7 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.Label.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Label.Builder.class);
           internal_static_zaluum_Parameter_descriptor =
-            getDescriptor().getMessageTypes().get(7);
+            getDescriptor().getMessageTypes().get(5);
           internal_static_zaluum_Parameter_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Parameter_descriptor,
@@ -7549,7 +6748,7 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.Parameter.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Parameter.Builder.class);
           internal_static_zaluum_PortRef_descriptor =
-            getDescriptor().getMessageTypes().get(8);
+            getDescriptor().getMessageTypes().get(6);
           internal_static_zaluum_PortRef_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_PortRef_descriptor,
@@ -7557,7 +6756,7 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.PortRef.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.PortRef.Builder.class);
           internal_static_zaluum_Port_descriptor =
-            getDescriptor().getMessageTypes().get(9);
+            getDescriptor().getMessageTypes().get(7);
           internal_static_zaluum_Port_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Port_descriptor,
@@ -7565,7 +6764,7 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.Port.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Port.Builder.class);
           internal_static_zaluum_Ref_descriptor =
-            getDescriptor().getMessageTypes().get(10);
+            getDescriptor().getMessageTypes().get(8);
           internal_static_zaluum_Ref_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Ref_descriptor,
@@ -7573,7 +6772,7 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.Ref.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Ref.Builder.class);
           internal_static_zaluum_Connection_descriptor =
-            getDescriptor().getMessageTypes().get(11);
+            getDescriptor().getMessageTypes().get(9);
           internal_static_zaluum_Connection_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Connection_descriptor,
@@ -7581,7 +6780,7 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.Connection.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Connection.Builder.class);
           internal_static_zaluum_Junction_descriptor =
-            getDescriptor().getMessageTypes().get(12);
+            getDescriptor().getMessageTypes().get(10);
           internal_static_zaluum_Junction_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Junction_descriptor,
@@ -7589,7 +6788,7 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.Junction.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Junction.Builder.class);
           internal_static_zaluum_JunctionRef_descriptor =
-            getDescriptor().getMessageTypes().get(13);
+            getDescriptor().getMessageTypes().get(11);
           internal_static_zaluum_JunctionRef_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_JunctionRef_descriptor,
@@ -7597,7 +6796,7 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.JunctionRef.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.JunctionRef.Builder.class);
           internal_static_zaluum_Point_descriptor =
-            getDescriptor().getMessageTypes().get(14);
+            getDescriptor().getMessageTypes().get(12);
           internal_static_zaluum_Point_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Point_descriptor,
@@ -7605,7 +6804,7 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.Point.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Point.Builder.class);
           internal_static_zaluum_Clipboard_descriptor =
-            getDescriptor().getMessageTypes().get(15);
+            getDescriptor().getMessageTypes().get(13);
           internal_static_zaluum_Clipboard_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Clipboard_descriptor,

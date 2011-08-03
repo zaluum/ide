@@ -27,7 +27,7 @@ import org.eclipse.jdt.internal.core.BasicCompilationUnit
 
 trait AnalyzerConnections {
   self: Analyzer =>
-  class CheckConnections(b: Block) extends ReporterAdapter {
+  class CheckConnections(b: Block, main:Boolean) extends ReporterAdapter {
     def location(tree: Tree) = globLocation(tree)
     def reporter = self.reporter
     val bl = b.sym
@@ -35,7 +35,7 @@ trait AnalyzerConnections {
     val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
     var usedInputs = Set[PortInstance]()
     def run() = {
-      val connectionNamer  = new Traverser(null) {
+      val connectionNamer = new Traverser(null) {
         // parse connections
         override def traverse(tree: Tree) {
           tree match {
@@ -111,8 +111,12 @@ trait AnalyzerConnections {
     def storeFlow(c: Clump, ins: Set[PortInstance], out: PortInstance) {
       usedInputs ++= ins
       for (in <- ins) {
-        in.connectedFrom = Some(out)
-        in.blameConnection = c.findConnectionFor(in)
+        if (in.valSymbol == c.bl.template) // from inside
+          in.connectedFromInside = Some(out)
+        else
+          in.connectedFromOutside = Some(out)
+       
+        in.blameConnection = c.findConnectionFor(in) // FIXME
       }
     }
     def checkGhostPorts(vs: ValSymbol) {
@@ -150,9 +154,9 @@ trait AnalyzerConnections {
     }
     def checkPortConnectionsTypes(vs: ValSymbol) {
       for (pi <- vs.portInstances) {
-        if (pi.finalTpe == NoSymbol) error("Port type not found", vs.decl)
+        if (pi.finalTpe == NoSymbol) error("Port type not found " + pi, vs.decl)
         else {
-          for (from <- pi.connectedFrom) {
+          for (from <- pi.connectedFromOutside ++ pi.connectedFromInside) { // FIXME insides
             if (!checkAssignmentPossible(from.finalTpe, pi.finalTpe)) {
               error("Connection with incompatible types", pi.blameConnection.get)
             }
@@ -161,16 +165,10 @@ trait AnalyzerConnections {
       }
     }
     def checkBoxTypes(vs: ValSymbol) {
-      for (pi <- vs.portInstances) {
-        pi.portSymbol match {
-          case Some(ps) => pi.finalTpe = ps.tpe
-          case _ =>
-        }
-      }
       checkGhostPorts(vs)
       checkPortConnectionsTypes(vs)
     }
-    def fromTpe(p: PortInstance) = p.connectedFrom.map(_.finalTpe).getOrElse(NoSymbol)
+    def fromOutsideTpe(p: PortInstance) = p.connectedFromOutside.map(_.finalTpe).getOrElse(NoSymbol)
     def unboxIfNeeded(t: Type) = t match {
       case p: ClassJavaType => primitives.getUnboxedType(p).getOrElse(t)
       case _ => t
@@ -186,8 +184,8 @@ trait AnalyzerConnections {
         o.finalTpe = outTpe
       }
 
-      val at = unboxIfNeeded(fromTpe(a))
-      val bt = unboxIfNeeded(fromTpe(b))
+      val at = unboxIfNeeded(fromOutsideTpe(a))
+      val bt = unboxIfNeeded(fromOutsideTpe(b))
       val (one, other) = (at, bt) match {
         case (NoSymbol, NoSymbol) => (None, None)
         case (NoSymbol, bt) => (Some(bt), None)
@@ -255,7 +253,7 @@ trait AnalyzerConnections {
         case ToFloatType => o.finalTpe = Float
         case ToDoubleType => o.finalTpe = Double
       }
-      a.connectedFrom.map(pi => unboxIfNeeded(pi.finalTpe)) match {
+      a.connectedFromOutside.map(pi => unboxIfNeeded(pi.finalTpe)) match {
         case Some(t) => t match {
           case j: PrimitiveJavaType if isNumeric(j) => a.finalTpe = j
           case _ => a.finalTpe = o.finalTpe; error("Cast between incompatible types", a.blameConnection.get)
@@ -285,7 +283,7 @@ trait AnalyzerConnections {
       e match {
         case e: CastExprType => checkCastExprTypes(vs)
         case MinusExprType =>
-          unboxIfNeeded(fromTpe(a)) match {
+          unboxIfNeeded(fromOutsideTpe(a)) match {
             case p: PrimitiveJavaType if isNumeric(p) =>
               val t = toOperationType(p)
               a.finalTpe = t; o.finalTpe = t
@@ -293,7 +291,7 @@ trait AnalyzerConnections {
             case _ => error("Incompatible type", a.blameConnection.get)
           }
         case NotExprType =>
-          unboxIfNeeded(fromTpe(a)) match {
+          unboxIfNeeded(fromOutsideTpe(a)) match {
             case Boolean => a.finalTpe = Boolean; o.finalTpe = Boolean
             case p if isIntNumeric(p) => a.finalTpe = Int; o.finalTpe = Int
             case NoSymbol => a.finalTpe = Boolean; o.finalTpe = Boolean
@@ -305,7 +303,7 @@ trait AnalyzerConnections {
       val thiz = InvokeExprType.thisPort(vs)
       val thizOut = InvokeExprType.thisOutPort(vs)
       InvokeExprType.signatureSymbol.tpe = cud.zaluumScope.getZJavaLangString // XXX ugly
-      thiz.connectedFrom match {
+      thiz.connectedFromOutside match {
         case Some(from) =>
           from.finalTpe match {
             case c: ClassJavaType => invoke(vs, thiz, thizOut, c)
@@ -327,14 +325,14 @@ trait AnalyzerConnections {
               error("problem method " + p + p.problemId(), vs.decl)
             case Some(m) =>
               if (m.returnType != null && m.returnType != TypeBinding.VOID) {
-                val out = vs.portInstances find { _.name == Name("return") } getOrElse { vs.createOut(Name("return")).pi }
+                val out = vs.portInstances find { _.name == Name("return") } getOrElse { vs.createOutsideOut(Name("return")).pi }
                 out.missing = false
                 out.finalTpe = cud.zaluumScope.getJavaType(m.returnType)
                 if (out.finalTpe == NoSymbol) error("return type not found", vs.decl)
               }
               for ((p, i) <- m.parameters.zipWithIndex) {
                 val name = Name("p" + i)
-                val in = vs.portInstances find { _.name == name } getOrElse { vs.createIn(Name("p" + i)).pi }
+                val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(Name("p" + i)).pi }
                 in.missing = false
                 in.finalTpe = cud.zaluumScope.getJavaType(p);
               }
@@ -347,14 +345,35 @@ trait AnalyzerConnections {
         case _ => error("signature missing", vs.decl)
       }
     }
+    def checkWhileExprType(vs: ValSymbol) = {
+      vs.tdecl.template match {
+        case Some(template) =>
+          if (template.blocks.size != 1)
+            error("While loop must have 1 block", vs.decl) //  FATAL
+          else {
+        	for (pi<-vs.portInstances; ps<-pi.portSymbol) {
+        	  pi.finalTpe = ps.tpe
+        	}
+            val o = WhileExprType.outPort(vs)
+            o.finalTpe = primitives.Boolean
+            new CheckConnections(template.blocks.head, false).run()
+          }
+        case None =>
+          error("Fatal no template for while loop", vs.decl)
+      }
+      checkGhostPorts(vs)
+      checkPortConnectionsTypes(vs)
+    }
     def checkTypes() {
-      template.thisVal.portInstances foreach { api =>
-        val pi = api.asInstanceOf[PortInstance]
-        pi.missing = false
-        pi.portSymbol match {
-          case Some(ps) => pi.finalTpe = ps.tpe
-          case None => error("Cannot find port " + api, bl.decl)
-        }
+      if (main){
+	      template.thisVal.portInstances foreach { api =>
+	        val pi = api.asInstanceOf[PortInstance]
+	        pi.missing = false
+	        pi.portSymbol match {
+	          case Some(ps) => pi.finalTpe = ps.tpe
+	          case None => error("Cannot find port " + api, bl.decl)
+	        }
+	      }
       }
       for (vs <- bl.executionOrder) {
         vs.tpe match {
@@ -363,6 +382,8 @@ trait AnalyzerConnections {
           case LiteralExprType => checkLiteralExprType(vs)
           case e: UnaryExprType => checkUnaryExprType(vs)
           case InvokeExprType => checkInvokeExprType(vs); checkPortConnectionsTypes(vs)
+          case IfExprType => // FIXME
+          case WhileExprType => checkWhileExprType(vs);
         }
         checkGhostPorts(vs)
       }

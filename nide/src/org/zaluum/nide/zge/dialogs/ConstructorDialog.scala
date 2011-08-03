@@ -4,9 +4,9 @@ import org.eclipse.ui.ISharedImages
 import org.eclipse.ui.PlatformUI
 import net.miginfocom.swt.MigLayout
 import org.eclipse.jface.dialogs.Dialog
-import org.eclipse.jface.viewers.{Viewer => _ , _}
+import org.eclipse.jface.viewers.{ Viewer => _, _ }
 import org.eclipse.swt.graphics.Image
-import org.eclipse.swt.widgets.{ Menu,MenuItem,Table, TableItem, Shell, Composite, TableColumn, Label, Control }
+import org.eclipse.swt.widgets.{ Menu, MenuItem, Table, TableItem, Shell, Composite, TableColumn, Label, Control }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{ KeyListener, KeyEvent }
 import org.zaluum.nide.compiler._
@@ -22,7 +22,7 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
   }
   var tableContents = List[TableEntry]()
   case class TableEntry(var sym: Option[ParamSymbol], var value: String)
-  def v = vs.decl.asInstanceOf[ValDef]
+  def v = vs.tdecl
   override protected def okPressed() {
     val typeNames = for (c ← comboValue.toList; p ← c.params) yield p.tpe.name
     val params = tableContents.map(_.value)
@@ -32,7 +32,8 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
           case v: ValDef if vs.decl == v ⇒
             v.copy(
               constructorParams = params,
-              constructorTypes = typeNames)
+              constructorTypes = typeNames,
+              template = transformOption(v.template))
         }
       }
       super.okPressed()
@@ -67,17 +68,21 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
     val c = new Composite(sup, SWT.NONE)
     //applyDialogFont(c);
     c.setLayout(new MigLayout)
-    newLabel(c,"Select the constructor to be used")
+    newLabel(c, "Select the constructor to be used")
     combo = new ComboViewer(c)
     combo.setContentProvider(ArrayContentProvider.getInstance)
     val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
     combo.setInput(tpe.constructors.toArray)
     combo.getControl.setLayoutData("span,wrap")
-    vs.constructor foreach { cons ⇒
+    val constructor = vs match {
+      case vs: ValSymbol => vs.constructor
+      case _ => None
+    }
+    constructor foreach { cons ⇒
       combo.setSelection(new StructuredSelection(cons));
     }
     // TABLE
-    tableContents = createTableValue(vs.constructor, vs.decl.asInstanceOf[ValDef].constructorParams)
+    tableContents = createTableValue(constructor, vs.tdecl.constructorParams)
     val table = createTable(c)
     table.setLayoutData("span,  height 200")
     val tableViewer = new TableViewer(table)
@@ -132,12 +137,12 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
         }
       }
     }
-    newPopupMenu(getShell,table) { m=>
+    newPopupMenu(getShell, table) { m =>
       newMenuItem(m, "Delete", Some(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_ELCL_REMOVE))) {
         delete()
       }
     }
-    addKeyReleasedReaction(table,SWT.DEL) {delete()}
+    addKeyReleasedReaction(table, SWT.DEL) { delete() }
     c
   }
 

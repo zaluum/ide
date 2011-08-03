@@ -112,7 +112,7 @@ object Literals {
 trait Scope extends Symbol {
   def lookupType(name: Name): Option[Type]
   def lookupBoxType(name: Name): Option[BoxType]
-  def javaScope : ZaluumCompilationUnitScope
+  def javaScope: ZaluumCompilationUnitScope
 }
 object primitives {
   private def n(str: String, desc: String, b: BaseTypeBinding, boxedName: Name, boxMethod: String, size: Int = 1) = {
@@ -186,14 +186,6 @@ object primitives {
   def find(name: Name) = allTypes.find(_.name == name)
 }
 
-/*class FakeGlobalScope(realGlobal: Scope) extends LocalScope(realGlobal) { // for presentation compiler
-  case object fakeRoot extends Symbol {
-    val owner = NoSymbol
-    scope = FakeGlobalScope.this
-    override val name = null
-  }
-  override val root = fakeRoot
-}*/
 trait ReporterAdapter {
   def location(tree: Tree): Int
   def reporter: Reporter
@@ -221,11 +213,11 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
           sym.constructors = List(new Constructor(sym, List()))
           tree.tpe = sym
-          if(b.template.blocks.size != 1) error("Fatal BoxDef has no block defined",b) // FATAL
+          if (b.template.blocks.size != 1) error("Fatal BoxDef has no block defined", b) // FATAL
         // FIXME reported errors do not show in the editor (valdef)
         case t: Template =>
           val template = currentOwner.asInstanceOf[TemplateSymbol]
-          bind(template, t, false) {}
+          t.symbol = template
         case b: Block =>
           val template = currentOwner.asInstanceOf[TemplateSymbol]
           val blockSym = new BlockSymbol(template)
@@ -254,18 +246,20 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
   class Resolver(global: Scope) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
-    def createPortInstances(bs: BoxType, vsym: ValSymbol, isThis: Boolean) = {
-      vsym.portInstances = (for (p <- bs.portsWithSuper.values; if p.isInstanceOf[PortSymbol]) yield {
-        val pi = new PortInstance(p.name, vsym)
-        pi.portSymbol = Some(p)
+    def createPortInstances(ports: Iterable[PortSymbol], vsym: ValSymbol, inside: Boolean, outside:Boolean) = {
+      vsym.portInstances :::= (for (p <- ports; if p.isInstanceOf[PortSymbol]) yield {
+        val pi = new PortInstance(p.name, vsym, p.dir, Some(p))
         pi
       }).toList;
-      vsym.portSides = (for (pi <- vsym.portInstances; ps <- pi.portSymbol) yield {
-        ps.dir match {
-          case In => List(new PortSide(pi, true, isThis))
-          case Out => List(new PortSide(pi, false, isThis))
-          case Shift => List(new PortSide(pi, true, isThis), new PortSide(pi, false, isThis))
+      vsym.portSides :::= (for (pi <- vsym.portInstances; ps <- pi.portSymbol) yield {
+        def define(fromInside: Boolean) = ps.dir match {
+          case In => List(new PortSide(pi, true, fromInside))
+          case Out => List(new PortSide(pi, false, fromInside))
+          case Shift => List(new PortSide(pi, true, fromInside), new PortSide(pi, false, fromInside))
         }
+        val i = if (inside) define(true) else List()
+        val o = if (outside) define(false) else List()
+        i ::: o
       }).flatMap(a => a);
     }
     private def catchAbort[T](b: ⇒ Option[T]): Option[T] =
@@ -284,13 +278,14 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
                 error("Super box type not found " + sn, tree)
             }
           }
-          createPortInstances(bs, bs.thisVal, true)
+          createPortInstances(bs.portsWithSuper.values, bs.thisVal, true,false)
         case bl: Block =>
           bl.sym.template match {
-            case bs:BoxTypeSymbol =>
+            case bs: BoxTypeSymbol =>
               bs.thisVal = new ValSymbol(bl.sym, Name("this")) // feels wrong
               bs.thisVal.tpe = bs
-              /*case val => te.thisVal = val*/
+            case v: ValSymbol =>
+              v.thisVal = v
           }
         case PortDef(name, typeName, in, inPos, extPos) ⇒
           tree.symbol.tpe = catchAbort(global.lookupType(typeName)) getOrElse {
@@ -298,9 +293,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
           }
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
-          val vsym = v.sym
           catchAbort(Expressions.find(v.typeName) orElse global.lookupBoxType(v.typeName)) match {
             case Some(bs: BoxTypeSymbol) ⇒
+              val vsym = v.sym.asInstanceOf[ValSymbol]
               v.symbol.tpe = bs
               if (!bs.hasApply) {
                 error("Box " + v.typeName.str + " has no apply method", tree)
@@ -340,10 +335,11 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
                   case None ⇒ error("Cannot find parameter " + p.key, tree)
                 }
               }
-              createPortInstances(bs, vsym, false)
+              createPortInstances(bs.portsWithSuper.values, vsym, false,true)
               vsym.params
             case Some(b: ExprType) =>
               v.symbol.tpe = b
+              val vsym = v.sym
               for (p ← v.params.asInstanceOf[List[Param]]) {
                 b.lookupParam(p.key) match {
                   case Some(parSym) =>
@@ -351,7 +347,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
                   case None => error("Cannot find parameter " + p.key, tree)
                 }
               }
-              createPortInstances(b, vsym, false)
+              createPortInstances(vsym.ports.values, vsym, b==WhileExprType,true)
+              createPortInstances(b.ports.values, vsym, b==WhileExprType,true)
             case a ⇒
               v.symbol.tpe = NoSymbol
               error("Box class " + v.typeName + " not found", tree);
@@ -377,8 +374,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
           tree.tpe = tree.symbol.tpe
         case ThisRef() ⇒
           val block = currentOwner.asInstanceOf[BlockSymbol]
-          tree.symbol = NoSymbol 
-          tree.tpe = block.template.asInstanceOf[BoxTypeSymbol] // FIXME
+          tree.symbol = NoSymbol
+          tree.tpe = NoSymbol  // FIXME
         case _ ⇒
       }
     }
@@ -389,15 +386,15 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
     toCompile
   }
 
-  def runResolve(cud: ZaluumCompilationUnitDeclaration, global:Scope): Tree = {
+  def runResolve(cud: ZaluumCompilationUnitDeclaration, global: Scope): Tree = {
     this.cud = cud
     new Resolver(global).traverse(toCompile)
     toCompile
   }
   def runCheck(): Tree = {
-    toCompile.template.blocks.headOption foreach { 
-    	bl => 
-    	  new CheckConnections(bl).run()
+    toCompile.template.blocks.headOption foreach {
+      bl =>
+        new CheckConnections(bl,true).run()
     }
     toCompile
   }

@@ -123,7 +123,8 @@ trait CopyTransformer extends Transformer {
       PortDef(name, typeName, dir, inPos, extPos)
     case v:ValDef ⇒
       atOwner(v.symbol) {
-        v.copy(params = transformTrees(v.params))
+        v.copy(params = transformTrees(v.params),
+            template = transformOption(v.template))
       }
     case p: Param ⇒ p.copy()
     case c@ConnectionDef(a, b, wp) ⇒
@@ -176,6 +177,7 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
       case v: ValDef ⇒
         atOwner(tree.symbol) {
           traverseTrees(v.params)
+          traverseOption(v.template)
         }
       case p: Param ⇒
       case ConnectionDef(a, b, waypoints) ⇒
@@ -228,6 +230,7 @@ object PrettyPrinter {
       print("params: " + v.params, deep + 1)
       print("constructors:" + v.constructorParams.mkString(","), deep +1)
       print("constructorTypes:("+ v.constructorTypes.mkString(",") +")" , deep +1)
+      print(v.template.toList, deep+1)
       print(")" + sym(v), deep)
     case p: Param ⇒
       print(p.toString + sym(p), deep)
@@ -290,6 +293,9 @@ case class BoxDef(name: Name, // simple name
   template : Template) extends Tree {
   def sym = symbol.asInstanceOf[BoxTypeSymbol]
 }
+object Template {
+  def emptyTemplate = Template(List(Block(List(),List(),List(),List())), List())
+}
 case class Template(blocks : List[Block], ports: List[PortDef]) extends Tree {
   def sym :TemplateSymbol = symbol.asInstanceOf[TemplateSymbol]
 }
@@ -318,9 +324,14 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
 case class ValRef(name: Name) extends Tree
 case class ThisRef() extends Tree
 trait ConnectionEnd extends Tree
-case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd
+case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd // in as flow or as PortDir?
 case class Param(key: Name, value: String) extends Tree
 case class LabelDesc(description:String, pos:Vector2)
+object ValDef {
+  def emptyValDef(name:Name, tpeName:Name, dst:Point) =
+    ValDef(name, tpeName, dst, None, None, None, List(), List(), List(),None, None, None)
+  
+}
 case class ValDef(
   name: Name,
   typeName: Name,
@@ -332,7 +343,8 @@ case class ValDef(
   constructorParams:List[String],
   constructorTypes:List[Name],
   label : Option[LabelDesc],
-  labelGui : Option[LabelDesc]
+  labelGui : Option[LabelDesc],
+  template : Option[Template]
   ) extends Tree with Positionable {
   /*def localTypeDecl = tpe match {
     case NoSymbol ⇒ None

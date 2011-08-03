@@ -13,8 +13,6 @@ object Parser {
   def readTree(i: InputStream, className: Name): BoxDef = {
     val a = try {
       val registry = ExtensionRegistry.newInstance();
-      registry.add(ZaluumProtobuf.ClassInstance.instance)
-      registry.add(ZaluumProtobuf.StatInstance.instance)
       val proto = ZaluumProtobuf.BoxClass.parseFrom(i, registry)
       parse(proto, Some(className))
     } catch {
@@ -22,12 +20,12 @@ object Parser {
         // TODO fixme better handling
         //e.printStackTrace;
         println("PARSING ERROR! " + e)
-        BoxDef.emptyBox("","")
+        BoxDef.emptyBox("", "")
     }
     a.assignLine(1)
     a
   }
-  
+
   def readTree(isoString: String, className: Name): BoxDef = {
     val byteContents = isoString.getBytes(Charset.forName("ISO-8859-1")) // TODO ??
     readTree(new ByteArrayInputStream(byteContents), className)
@@ -61,28 +59,23 @@ object Parser {
     val size = if (i.hasSize) Some(parseDim(i.getSize)) else None
     val lbl = if (i.hasLabel) Some(parse(i.getLabel)) else None
     val lblgui = if (i.hasLabelGui) Some(parse(i.getLabelGui)) else None
-    i.getType() match {
-      case ZaluumProtobuf.Instance.Type.ClassInstance =>
-        val ci = i.getExtension(ZaluumProtobuf.ClassInstance.instance)
-        val guiPos = if (ci.hasGuiPos) Some(parse(ci.getGuiPos)) else None
-        val guiSize = if (ci.hasGuiSize) Some(parseDim(ci.getGuiSize)) else None
-        ValDef(
-          Name(i.getName),
-          Name(ci.getClassName),
-          parse(i.getPos),
-          size,
-          guiPos,
-          guiSize,
-          i.getParameterList.map { parse(_) }.toList,
-          ci.getConstructorParameterList.toList,
-          ci.getConstructorTypesList.map { Name(_) }.toList,
-          lbl,
-          lblgui)
+    val guiPos = if (i.hasGuiPos) Some(parse(i.getGuiPos)) else None
+    val guiSize = if (i.hasGuiSize) Some(parseDim(i.getGuiSize)) else None
+    val template = if (i.hasTemplate) Some(parse(i.getTemplate())) else None
+    ValDef(
+      Name(i.getName),
+      Name(i.getClassName),
+      parse(i.getPos),
+      size,
+      guiPos,
+      guiSize,
+      i.getParameterList.map { parse(_) }.toList,
+      i.getConstructorParameterList.toList,
+      i.getConstructorTypesList.map { Name(_) }.toList,
+      lbl,
+      lblgui,
+      template)
 
-      case ZaluumProtobuf.Instance.Type.StatInstance =>
-        val si = i.getExtension(ZaluumProtobuf.StatInstance.instance)
-        ???
-    }
   }
   def parse(p: ZaluumProtobuf.Parameter): Param = {
     Param(Name(p.getKey), p.getValue)

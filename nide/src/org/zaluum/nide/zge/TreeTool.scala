@@ -179,42 +179,36 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           case b: Block if b == initContainer.block ⇒
             val name = Name(b.sym.freshName("box"))
             b.copy(
-              valDefs=ValDef(name, tpeName, dst, None, None, None, List(), List(), List(),None, None) :: transformTrees(b.valDefs),
+              valDefs= ValDef.emptyValDef(name,tpeName,dst):: transformTrees(b.valDefs),
               connections=transformTrees(b.connections),
               parameters=transformTrees(b.parameters),
               junctions=transformTrees(b.junctions))
         }
       }
     }
-    /*private def newClass(dst: Point) = {
+    private def newInstanceTemplate(dst: Point) = {
       new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
-          case b: BoxDef if b == initContainer.boxDef ⇒
+          case b: Block if b == initContainer.block ⇒
             val sym = b.sym
             val name = Name(sym.freshName("box"))
-            val className = Name(sym.freshName("C"))
-            val newDef = BoxDef(className, b.pkg, Some(tpeName), guiSize = None, image = None, List(),
-              vals = List(),
-              ports = List(),
-              connections = List(),
-              junctions = List())
-            val newVal = ValDef(name, className, dst, Some(Dimension(200, 200)), None, None, List(), List(), List(),None,None)
+            val template = Template.emptyTemplate
+            val newVal = ValDef(name, tpe.get.name, dst, Some(Dimension(200, 200)), None, None, List(), List(), List(),None,None, Some(template))
             b.copy(
-              defs = newDef :: transformTrees(b.defs),
-              vals = newVal :: transformTrees(b.vals),
-              ports = transformTrees(b.ports),
+              valDefs = newVal :: transformTrees(b.valDefs),
+              parameters = transformTrees(b.parameters),
               connections = transformTrees(b.connections),
               junctions = transformTrees(b.junctions))
         }
       }
-    }*/
+    }
     def buttonUp() {
       val dst = snap(currentMouseLocation)
-      /*val command = tpe match {
-        case Some(b) if b.abstractCl ⇒ newClass(dst)
+      val command = tpe match {
+        case Some(b) if b.template ⇒ newInstanceTemplate(dst)
         case _ ⇒ newInstance(dst)
-      }*/
-      controller.exec(newInstance(dst))
+      }
+      controller.exec(command)
     }
     def buttonDown() {}
     def exit() {
@@ -272,7 +266,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case v: ValDef if (fig.valDef == v) ⇒
-            v.copy(label = Some(v.label.get.copy(pos=newPos)))
+            v.copy(label = Some(v.label.get.copy(pos=newPos)), 
+                template=transformOption(v.template))
         }
       }
       controller.exec(command)

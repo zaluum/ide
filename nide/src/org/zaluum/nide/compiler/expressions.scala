@@ -36,6 +36,9 @@ sealed abstract class EqualityExprType(nameStr: String) extends BinExprType(name
 sealed abstract class BitBinExprType(nameStr: String) extends BinExprType(nameStr)
 sealed abstract class CastExprType(nameStr: String) extends UnaryExprType(nameStr)
 
+object IfExprType extends ExprType("If") 
+object WhileExprType extends ExprType("While")
+
 object InvokeExprType extends ExprType("Invoke") {
   val Sig = """(.+)(\(.*)""".r
   val signatureName = Name("signature")
@@ -88,6 +91,8 @@ object DivExprType extends MathExprType("Div")
 object RemExprType extends MathExprType("Rem")
 object Expressions {
   val all = List(
+    WhileExprType,
+    IfExprType,
     InvokeExprType,
     LiteralExprType,
     ToByteType,
@@ -117,6 +122,10 @@ object Expressions {
     MulExprType,
     DivExprType,
     RemExprType) map { e => e.fqName -> e } toMap
+  val templateExpressions = List(
+      IfExprType,
+      WhileExprType) map { e => e.fqName -> e} toMap
   def find(name: Name) = all.get(name)
+  def isTemplateExpression(className:Name) = templateExpressions.contains(className)
 
 }
