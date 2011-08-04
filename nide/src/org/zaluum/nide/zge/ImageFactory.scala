@@ -39,6 +39,9 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def portDeclIn = ImageDescriptor.createFromFile(classOf[Icons], "portDeclIn.png")
   def portDeclOut = ImageDescriptor.createFromFile(classOf[Icons], "portDeclOut.png")
   def portDeclShift = ImageDescriptor.createFromFile(classOf[Icons], "portDeclShift.png")
+  def buttonIfTrue = ImageDescriptor.createFromFile(classOf[Icons], "buttonIfTrue.png")
+  def buttonIfFalse = ImageDescriptor.createFromFile(classOf[Icons], "buttonIfFalse.png")
+  
   def portImg(dir: PortDir) = dir match {
     case In ⇒ (rm.createImage(portDeclIn), portDeclIn)
     case Out ⇒ (rm.createImage(portDeclOut), portDeclOut)
@@ -56,6 +59,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
       case _ ⇒ (rm.createImage(notFound), notFound)
     }
   }
+  def apply(d:ImageDescriptor) = rm.createImage(d)
   private def resourceToDescriptor(resource: String) =
     zp.getResource(resource) map { ImageDescriptor.createFromURL }
 

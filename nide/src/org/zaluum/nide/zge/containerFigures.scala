@@ -25,6 +25,7 @@ import scala.collection.mutable.Buffer
 import scala.collection.JavaConversions._
 import RichFigure._
 import org.eclipse.swt.graphics.Color
+import org.eclipse.jface.resource.ImageDescriptor
 
 trait ContainerItem extends Item {
   def viewer: Viewer
@@ -328,23 +329,44 @@ class OpenBoxFigure(
   add(inners);
   setBorder(new LineBorder(ColorConstants.gray, Tool.gridSize))
 }
-abstract class Button(val openBox : OpenBoxFigure) extends RectangleFigure with OverlappedItem with RectFeedback {
-  val size = Dimension(10, 10)
+abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with OverlappedItem with RectFeedback {
+  var size = Dimension(10, 10)
+  def imageFactory = container.viewer.zproject.imageFactory
   def myLayer = container.layer
   def blink(b: Boolean) {}
-  def extPos = MPoint(-20,-4)
-  def constantDisplacement = Vector2(openBox.size.w/2 - size.w/2,0)
-  def color : Color
-  def update(){
-	  updateSize()
-	  setBackgroundColor(color)
-	  setForegroundColor(ColorConstants.black)
+  def extPos = MPoint(16, 0)
+  def constantDisplacement = Vector2(0,- size.h + openBox.getInsets().top)
+  def imageDesc : ImageDescriptor
+  var currentDesc : Option[ImageDescriptor] = None
+  def update() {
+    def loadImage() {
+      currentDesc = Some(imageDesc)
+      val img = imageFactory(imageDesc)
+	  setImage(img)
+	  size = Dimension(img.getBounds.width,img.getBounds().height)
+    }
+    currentDesc match {
+      case Some(c) if (c!=imageDesc) =>
+        imageFactory.destroy(c)
+        loadImage()
+      case None => loadImage()
+      case _=>
+    }
+    updateSize()
+  }
+  override def hide() {
+    super.hide()
+    currentDesc foreach { imageFactory.destroy }
+    currentDesc = None
   }
 }
 class IfOpenBoxFigure(container: ContainerItem, viewer: Viewer) extends OpenBoxFigure(container, viewer) {
   val buttons = Buffer[Button]()
   buttons += new Button(this) {
-    def color = if (openBox.symbol.numeral == 0) ColorConstants.green else ColorConstants.red
+    def imageDesc = 
+      if (openBox.symbol.numeral == 0) 
+        imageFactory.buttonIfTrue 
+      else imageFactory.buttonIfFalse
   }
   override def show() {
     super.show()
@@ -355,6 +377,6 @@ class IfOpenBoxFigure(container: ContainerItem, viewer: Viewer) extends OpenBoxF
     buttons.foreach { _.hide }
   }
   override def updateMe {
-    buttons.foreach{_.update()}
+    buttons.foreach { _.update() }
   }
 }
