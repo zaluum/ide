@@ -43,14 +43,14 @@ trait ContentsToClass {
           if from.valSymbol == vs;
           a <- execConnection((from, to))
         } yield a
-        runOne(vs) ::: outs.toList
+        runOne(vs,bl) ::: outs.toList
       }
     }
-    def runOne(vs: ValSymbol) : List[Tree]= {
+    def runOne(vs: ValSymbol,bl:BlockSymbol) : List[Tree]= {
       // propagate inputs
       val ins = for (ps <- vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
-        pi.connectedFromOutside match { 
-          case Some(o) => assign(pi, o) 
+        bl.connections.connectedFrom.get(pi) match {
+          case Some((o,blame)) => assign(pi, o) 
           case None => Assign(toRef(pi), Const(0, pi.finalTpe))
         }
       }

@@ -58,19 +58,19 @@ trait ContainerItem extends Item {
     val edges = block.connections.map {
       case c: ConnectionDef ⇒
         def toVertex(t: Option[ConnectionEnd], start: Boolean): Vertex = {
-          def pos = if (start) c.headPoint else c.lastPoint
-          t match {
-            case Some(JunctionRef(name)) ⇒
-              junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
-            case Some(p: PortRef) ⇒
-              val ps = PortSide.find(p, symbol).get
-              portVertexs.find(_.ps == ps).get
-            case None ⇒
-              val e = new EmptyVertex(pos)
-              emptyVertexs += e
-              e
+              def pos = if (start) c.headPoint else c.lastPoint
+            t match {
+              case Some(JunctionRef(name)) ⇒
+                junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
+              case Some(p: PortRef) ⇒
+                val ps = PortSide.find(p, symbol).get
+                portVertexs.find(_.ps == ps).get
+              case None ⇒
+                val e = new EmptyVertex(pos)
+                emptyVertexs += e
+                e
+            }
           }
-        }
         (c -> new Edge(toVertex(c.a, true), toVertex(c.b, false), c.points, Some(c)).fixEnds)
     }.toMap
     new ConnectionGraphV(
@@ -85,8 +85,8 @@ trait ContainerItem extends Item {
   def symbol = block.sym
   def templateSym = symbol.template
   def template = templateSym match {
-    case v: ValSymbol => v.tdecl.template.get
-    case b: BoxTypeSymbol => b.tdecl.template
+    case v: ValSymbol     ⇒ v.tdecl.template.get
+    case b: BoxTypeSymbol ⇒ b.tdecl.template
   }
   val junctions = Buffer[PointFigure]()
   val connections = Buffer[ConnectionFigure]()
@@ -133,9 +133,9 @@ trait ContainerItem extends Item {
           val Lit = Name(classOf[org.zaluum.expr.Literal].getName)
           val Inv = Name(classOf[org.zaluum.expr.Invoke].getName)
           val valf = v.tpe.fqName match {
-            case Lit => new DirectValFigure(ContainerItem.this)
-            case Inv => new InvokeValFigure(ContainerItem.this)
-            case _ => new ImageValFigure(ContainerItem.this)
+            case Lit ⇒ new DirectValFigure(ContainerItem.this)
+            case Inv ⇒ new InvokeValFigure(ContainerItem.this)
+            case _   ⇒ new ImageValFigure(ContainerItem.this)
           }
           valf.updateValDef(v)
           valf
@@ -175,8 +175,8 @@ object OpenBoxFigure {
   val backgroundBlink = ColorConstants.lightGray
 }
 class OpenBoxFigure(
-  val container: ContainerItem,
-  val viewer: Viewer) extends ValDefItem with ResizableFeedback with ContainerItem with Transparent {
+    val container: ContainerItem,
+    val viewer: Viewer) extends ValDefItem with ResizableFeedback with ContainerItem with Transparent {
   // Item
   def myLayer = container.layer
   def size = valDef.size getOrElse Dimension(Tool.gridSize * 16, Tool.gridSize * 16)
@@ -224,23 +224,23 @@ class OpenBoxFigure(
   def showArrowsIfNotBigEnough() {
     val b = new Rectangle()
     inners.deepChildren.foreach { f ⇒ b.union(f.getBounds()) }
-    def showTriangle(pos: Int) = {
-      val t = triangles(pos)
-      if (!container.feedbackLayer.getChildren.contains(t))
-        add(t)
-      val point = if (pos == EAST || pos == WEST) {
-        val y = size.h / 2 - t.getSize.height / 2
-        val x = if (pos == EAST) size.w - t.getSize.width - getInsets.left - getInsets.right
-        else getInsets.left
-        new Point(x, y)
-      } else {
-        val x = size.w / 2 - t.getSize.width / 2
-        val y = if (pos == SOUTH) size.h - t.getSize.height - getInsets.top - getInsets.bottom
-        else getInsets.top
-        new Point(x, y)
+      def showTriangle(pos: Int) = {
+        val t = triangles(pos)
+        if (!container.feedbackLayer.getChildren.contains(t))
+          add(t)
+        val point = if (pos == EAST || pos == WEST) {
+          val y = size.h / 2 - t.getSize.height / 2
+          val x = if (pos == EAST) size.w - t.getSize.width - getInsets.left - getInsets.right
+          else getInsets.left
+          new Point(x, y)
+        } else {
+          val x = size.w / 2 - t.getSize.width / 2
+          val y = if (pos == SOUTH) size.h - t.getSize.height - getInsets.top - getInsets.bottom
+          else getInsets.top
+          new Point(x, y)
+        }
+        t.setLocation(point)
       }
-      t.setLocation(point)
-    }
     triangles.values.foreach { this.safeRemove(_) }
     if (b.width > getClientArea.getSize.width) showTriangle(EAST)
     if (b.height > getClientArea.getSize.height) showTriangle(SOUTH)
@@ -266,27 +266,28 @@ class OpenBoxFigure(
     portSymbols.foreach(_.hide)
     portSymbols.clear()
     val vs = valDef.sym
-    vs.portSides filter { _.fromInside } foreach { intPs =>
-      def newFig(left: Boolean) = {
-        val f = new OpenPortDeclFigure(OpenBoxFigure.this)
-        vs.portSides.find(c => c.name == intPs.name && c.inPort == intPs.inPort && !c.fromInside) foreach { extPs =>
-          f.update(intPs, extPs, left)
-          portDecls += f
+    vs.portSides filter { _.fromInside } foreach {
+      intPs ⇒
+          def newFig(left: Boolean) = {
+            val f = new OpenPortDeclFigure(OpenBoxFigure.this)
+            vs.portSides.find(c ⇒ c.name == intPs.name && c.inPort == intPs.inPort && !c.fromInside) foreach { extPs ⇒
+              f.update(intPs, extPs, left)
+              portDecls += f
+              if (showing) f.show()
+            }
+          }
+        if (intPs.pi.hasDecl) {
+          intPs.pi.dir match {
+            case In    ⇒ newFig(true)
+            case Out   ⇒ newFig(false)
+            case Shift ⇒ newFig(intPs.inPort);
+          }
+        } else {
+          val f = new PortSymbolFigure(intPs, OpenBoxFigure.this)
+          f.update
+          portSymbols += f
           if (showing) f.show()
         }
-      }
-      if (intPs.pi.hasDecl) {
-        intPs.pi.dir match {
-          case In ⇒ newFig(true)
-          case Out ⇒ newFig(false)
-          case Shift ⇒ newFig(intPs.inPort);
-        }
-      } else {
-        val f = new PortSymbolFigure(intPs, OpenBoxFigure.this)
-        f.update
-        portSymbols += f
-        if (showing) f.show()
-      }
     }
   }
   override def paintClientArea(graphics: Graphics) {

@@ -108,6 +108,7 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
     var junctions = Set[Junction]()
     def usedNames = junctions map { _.name.str }
     var flow = Map[PortInstance, Set[PortInstance]]()
+    var connectedFrom = Map[PortInstance,(PortInstance,ConnectionDef)]()
     var clumps = Buffer[Clump]()
     def clumpOf(c: ConnectionDef) = clumps find { _.connections.contains(c) }
     def clumpOf(p: PortSide) = clumps find { _.ports.contains(p) }
@@ -228,9 +229,6 @@ class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name
 }
 class PortInstance(val name: Name, val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) {
   var missing = false
-  var connectedFromOutside: Option[PortInstance] = None
-  var connectedFromInside: Option[PortInstance] = None
-  var blameConnection: Option[ConnectionDef] = None
   var finalTpe: Type = NoSymbol
   def hasDecl = portSymbol.map { _.decl != null } getOrElse { false }
   def fqName = Name(valSymbol.fqName.str + "_" + name.str)

@@ -111,12 +111,8 @@ trait AnalyzerConnections {
     def storeFlow(c: Clump, ins: Set[PortInstance], out: PortInstance) {
       usedInputs ++= ins
       for (in <- ins) {
-        if (in.valSymbol == c.bl.template) // from inside
-          in.connectedFromInside = Some(out)
-        else
-          in.connectedFromOutside = Some(out)
-       
-        in.blameConnection = c.findConnectionFor(in) // FIXME
+        val r = (out,c.findConnectionFor(in).get)
+        bl.connections.connectedFrom += (in ->  r)
       }
     }
     def checkGhostPorts(vs: ValSymbol) {
@@ -156,9 +152,9 @@ trait AnalyzerConnections {
       for (pi <- vs.portInstances) {
         if (pi.finalTpe == NoSymbol) error("Port type not found " + pi, vs.decl)
         else {
-          for (from <- pi.connectedFromOutside ++ pi.connectedFromInside) { // FIXME insides
+          for ((from,blame) <- bl.connections.connectedFrom.get(pi)) { 
             if (!checkAssignmentPossible(from.finalTpe, pi.finalTpe)) {
-              error("Connection with incompatible types", pi.blameConnection.get)
+              error("Connection with incompatible types", blame)
             }
           }
         }
@@ -168,7 +164,9 @@ trait AnalyzerConnections {
       checkGhostPorts(vs)
       checkPortConnectionsTypes(vs)
     }
-    def fromOutsideTpe(p: PortInstance) = p.connectedFromOutside.map(_.finalTpe).getOrElse(NoSymbol)
+    def connectedFrom(p:PortInstance) = bl.connections.connectedFrom.get(p)
+    def fromTpe(p: PortInstance) = connectedFrom(p).map{ _._1.finalTpe}.getOrElse(NoSymbol)
+    def blame(p:PortInstance) = connectedFrom(p) map {_._2}
     def unboxIfNeeded(t: Type) = t match {
       case p: ClassJavaType => primitives.getUnboxedType(p).getOrElse(t)
       case _ => t
@@ -184,8 +182,8 @@ trait AnalyzerConnections {
         o.finalTpe = outTpe
       }
 
-      val at = unboxIfNeeded(fromOutsideTpe(a))
-      val bt = unboxIfNeeded(fromOutsideTpe(b))
+      val at = unboxIfNeeded(fromTpe(a))
+      val bt = unboxIfNeeded(fromTpe(b))
       val (one, other) = (at, bt) match {
         case (NoSymbol, NoSymbol) => (None, None)
         case (NoSymbol, bt) => (Some(bt), None)
@@ -210,9 +208,9 @@ trait AnalyzerConnections {
             } else if (at == Long) {
               a.finalTpe = Long; b.finalTpe = Int; o.finalTpe = Long
             } else
-              error("Shift only operates on Int and Long", a.blameConnection.get)
+              error("Shift only operates on Int and Long", blame(a).getOrElse(vs.decl))
 
-          } else error("Shift distance must be of Int type", b.blameConnection.get)
+          } else error("Shift distance must be of Int type", blame(a).getOrElse(vs.decl))
         case c: CmpExprType =>
           (one, other) match {
             case (Some(p1: PrimitiveJavaType), None) if isNumeric(p1) => assignAll(toOperationType(p1), Boolean)
@@ -253,10 +251,10 @@ trait AnalyzerConnections {
         case ToFloatType => o.finalTpe = Float
         case ToDoubleType => o.finalTpe = Double
       }
-      a.connectedFromOutside.map(pi => unboxIfNeeded(pi.finalTpe)) match {
-        case Some(t) => t match {
+      connectedFrom(a).map{case (pi,blame) => (unboxIfNeeded(pi.finalTpe),blame)} match {
+        case Some((t,blame)) => t match {
           case j: PrimitiveJavaType if isNumeric(j) => a.finalTpe = j
-          case _ => a.finalTpe = o.finalTpe; error("Cast between incompatible types", a.blameConnection.get)
+          case _ => a.finalTpe = o.finalTpe; error("Cast between incompatible types", blame)
         }
         case None => a.finalTpe = o.finalTpe
       }
@@ -283,19 +281,19 @@ trait AnalyzerConnections {
       e match {
         case e: CastExprType => checkCastExprTypes(vs)
         case MinusExprType =>
-          unboxIfNeeded(fromOutsideTpe(a)) match {
+          unboxIfNeeded(fromTpe(a)) match {
             case p: PrimitiveJavaType if isNumeric(p) =>
               val t = toOperationType(p)
               a.finalTpe = t; o.finalTpe = t
             case NoSymbol => a.finalTpe = Int; o.finalTpe = Int
-            case _ => error("Incompatible type", a.blameConnection.get)
+            case _ => error("Incompatible type", blame(a).get)
           }
         case NotExprType =>
-          unboxIfNeeded(fromOutsideTpe(a)) match {
+          unboxIfNeeded(fromTpe(a)) match {
             case Boolean => a.finalTpe = Boolean; o.finalTpe = Boolean
             case p if isIntNumeric(p) => a.finalTpe = Int; o.finalTpe = Int
             case NoSymbol => a.finalTpe = Boolean; o.finalTpe = Boolean
-            case _ => error("Incompatible type", a.blameConnection.get)
+            case _ => error("Incompatible type", blame(a).get)
           }
       }
     }
@@ -303,11 +301,11 @@ trait AnalyzerConnections {
       val thiz = InvokeExprType.thisPort(vs)
       val thizOut = InvokeExprType.thisOutPort(vs)
       InvokeExprType.signatureSymbol.tpe = cud.zaluumScope.getZJavaLangString // XXX ugly
-      thiz.connectedFromOutside match {
-        case Some(from) =>
+      connectedFrom(thiz) match {
+        case Some((from,blame)) =>
           from.finalTpe match {
             case c: ClassJavaType => invoke(vs, thiz, thizOut, c)
-            case _ => error("bad type", vs.decl)
+            case _ => error("bad type", blame)
           }
         case None => // not connected
       }

@@ -2,12 +2,15 @@ Agenda
 
 week 1-7 compiler week
 	- If box and Switch support.
+	- BUG Change type of a box to While or if (doesn't have template)
 	- restore clipboard
 	- New
 	- Static box?
 	- field access
 	- write one article
 week 8-14 
+	- type auto
+	- infer types on while/ifs
 	- array creation/access
 	- compilador amb parametres out apply(in in in)
 	- @Apply marks method to invoke

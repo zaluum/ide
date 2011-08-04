@@ -29,6 +29,10 @@ object Delete {
           connectsRemovedVal(c.a) || connectsRemovedVal(c.b) || connDefs.contains(c)
       }
       val trans: PartialFunction[Tree, Tree] = {
+        case t:Template =>
+          println(portDefs)
+          t.copy(blocks = transformTrees(t.blocks),
+              ports = transformTrees(t.ports.filterNot { portDefs contains}))
         case b: Block ⇒
           val gb = g(b).get
           val removedEdges = for (e <- gb.edges; c <- e.srcCon; if isRemoved(c)) yield e
