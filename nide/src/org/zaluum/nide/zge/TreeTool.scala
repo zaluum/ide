@@ -19,21 +19,21 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   def tree = viewer.tree
   def zproject = viewer.controller.zproject
   val connectionLineDistance = 2
-  object selecting extends Selecting with DeleteState with ClipboardState with DropState{
+  object selecting extends Selecting with DeleteState with ClipboardState with DropState {
     var port: Option[PortFigure] = None
     override def doubleClick() {
       itemUnderMouse match {
         case Some(e: TextEditFigure) ⇒ directEditing.enter(e)
-        case _ ⇒
+        case _                       ⇒
       }
     }
     def buttonUp {
       if (filterDouble) { filterDouble = false; return }
-      def selectItem(i: Item) {
-        viewer.selection.updateSelection(i.selectionSubject.toSet, shift)
-        viewer.refresh()
-        i.selectionSubject foreach { controller.blink(_, viewer) }
-      }
+        def selectItem(i: Item) {
+          viewer.selection.updateSelection(i.selectionSubject.toSet, shift)
+          viewer.refresh()
+          i.selectionSubject foreach { controller.blink(_, viewer) }
+        }
       (beingSelected, port) match {
         case (Some(o: OpenPortDeclFigure), _) ⇒ selectItem(o)
         case (_, Some(port)) ⇒ // connect
@@ -74,7 +74,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           viewer.setCursor(Cursors.CROSS)
           portsTrack.current match {
             case Some(_) ⇒
-            case None ⇒
+            case None    ⇒
           }
       }
     }
@@ -91,39 +91,39 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             fig.showFeedback()
             fig match {
               case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
-              case label : LabelItem => movingLabel.enter(initDrag,initContainer,label)
-              case _ ⇒ moving.enter(initDrag, initContainer)
+              case label: LabelItem          ⇒ movingLabel.enter(initDrag, initContainer, label)
+              case _                         ⇒ moving.enter(initDrag, initContainer)
             }
           }
         case (None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
-    def drop(s:String) {
+    def drop(s: String) {
       s match {
-        case In.str => creatingPort.enter(In,current)
-        case Out.str => creatingPort.enter(Out,current)
-        case Shift.str => creatingPort.enter(Shift,current)
-        case _ =>  creating.enter(Name(s),current)
+        case In.str    ⇒ creatingPort.enter(In, current)
+        case Out.str   ⇒ creatingPort.enter(Out, current)
+        case Shift.str ⇒ creatingPort.enter(Shift, current)
+        case _         ⇒ creating.enter(Name(s), current)
       }
     }
     def delete() {
-      controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.graphOf))
+      controller.exec(Delete.deleteSelection(viewer.selectedItems,viewer.graphOf))
     }
     def cut() {
-     // FIXME viewer.updateClipboard
+      // FIXME viewer.updateClipboard
       delete
     }
-    def copy() = {}// FIXME  viewer.updateClipboard
+    def copy() = {} // FIXME  viewer.updateClipboard
     def paste() = {} // FIXME viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
-    
+
     override def menu() {
       itemUnderMouse match {
-        case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show() // TODO Dispose?
+        case Some(p: PortDeclFigure)     ⇒ new PortDeclPopup(viewer, p.tree).show() // TODO Dispose?
         case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show()
-        case Some(o: OpenBoxFigure) ⇒ ValDefMenu.show(viewer, o)
-        case Some(l: LabelItem) => ValDefMenu.show(viewer, l)
-        case Some(b: ValFigure) ⇒ ValDefMenu.show(viewer, b);
-        case _ ⇒ 
+        case Some(o: OpenBoxFigure)      ⇒ ValDefMenu.show(viewer, o)
+        case Some(l: LabelItem)          ⇒ ValDefMenu.show(viewer, l)
+        case Some(b: ValFigure)          ⇒ ValDefMenu.show(viewer, b);
+        case _                           ⇒
       }
     }
   }
@@ -164,7 +164,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       state = this
       this.tpeName = tpename
       tpe = controller.zproject.getBoxSymbol(tpeName);
-      val (img,desc) = zproject.imageFactory(tpeName);
+      val (img, desc) = zproject.imageFactory(tpeName);
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
       zproject.imageFactory.destroy(desc)
@@ -179,21 +179,21 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           case b: Block if b == initContainer.block ⇒
             val name = Name(b.sym.freshName("box"))
             b.copy(
-              valDefs= ValDef.emptyValDef(name,tpeName,dst):: transformTrees(b.valDefs),
-              connections=transformTrees(b.connections),
-              parameters=transformTrees(b.parameters),
-              junctions=transformTrees(b.junctions))
+              valDefs = ValDef.emptyValDef(name, tpeName, dst) :: transformTrees(b.valDefs),
+              connections = transformTrees(b.connections),
+              parameters = transformTrees(b.parameters),
+              junctions = transformTrees(b.junctions))
         }
       }
     }
-    private def newInstanceTemplate(dst: Point) = {
+    private def newInstanceTemplate(dst: Point, requiredBlocks : Int) = {
       new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒
             val sym = b.sym
             val name = Name(sym.freshName("box"))
-            val template = Template.emptyTemplate
-            val newVal = ValDef(name, tpe.get.name, dst, Some(Dimension(200, 200)), None, None, List(), List(), List(),None,None, Some(template))
+            val template = Template.emptyTemplate(requiredBlocks)
+            val newVal = ValDef(name, tpe.get.name, dst, Some(Dimension(200, 200)), None, None, List(), List(), List(), None, None, Some(template))
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
               parameters = transformTrees(b.parameters),
@@ -205,7 +205,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def buttonUp() {
       val dst = snap(currentMouseLocation)
       val command = tpe match {
-        case Some(b) if b.template ⇒ newInstanceTemplate(dst)
+        case Some(b) ⇒
+          Expressions.templateExpressions.get(b.name) match {
+            case Some(e) ⇒ newInstanceTemplate(dst, e.requiredBlocks)
+            case None    ⇒ newInstance(dst)
+          }
         case _ ⇒ newInstance(dst)
       }
       controller.exec(command)
@@ -226,7 +230,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       enterSingle(initContainer)
       state = this
       this.dir = dir
-      val (img,desc) = zproject.imageFactory.portImg(dir)
+      val (img, desc) = zproject.imageFactory.portImg(dir)
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
       zproject.imageFactory.destroy(desc)
@@ -246,8 +250,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             val name = Name(initContainer.symbol.freshName("port"))
             val p = PortDef(name, Name("double"), dir, pos, Point(0, pos.y))
             te.copy(
-         	  ports=p :: transformTrees(te.ports),
-         	  blocks= transformTrees(te.blocks))
+              ports = p :: transformTrees(te.ports),
+              blocks = transformTrees(te.blocks))
         }
       }
       controller.exec(tr)
@@ -256,9 +260,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def exit() { feed.hide(); feed = null; selecting.enter() }
   }
   object creatingPort extends CreatingPort with SingleContainerAllower
-  
-  trait MovingLabel extends SpecialMove[LabelItem]{
-    self : ToolState with DeltaMove with SingleContainer =>
+
+  trait MovingLabel extends SpecialMove[LabelItem] {
+    self: ToolState with DeltaMove with SingleContainer ⇒
     def clampDelta = delta
     def buttonUp {
       val oldPos = fig.valDef.label.get.pos
@@ -266,8 +270,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case v: ValDef if (fig.valDef == v) ⇒
-            v.copy(label = Some(v.label.get.copy(pos=newPos)), 
-                template=transformOption(v.template))
+            v.copy(label = Some(v.label.get.copy(pos = newPos)),
+              template = transformOption(v.template))
         }
       }
       controller.exec(command)
@@ -275,8 +279,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   }
   object movingLabel extends MovingLabel with DeltaMove with SingleContainer
   // MOVING OPEN PORT
-  trait MovingOpenPort extends SpecialMove[OpenPortDeclFigure]{
-    self:  ToolState with DeltaMove with SingleContainer =>
+  trait MovingOpenPort extends SpecialMove[OpenPortDeclFigure] {
+    self: ToolState with DeltaMove with SingleContainer ⇒
     def minY = 0
     def maxY = fig.openBox.size.h
     def posY = fig.relPos.y
@@ -297,11 +301,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   object movingOpenPort extends MovingOpenPort with DeltaMove with SingleContainer
-  
+
   class PortTrack extends OverTrack[PortFigure] {
     class TooltipLabel extends RectangleFigure {
       val l = new Label
-      l.setBorder(new MarginBorder(4,4,4,4));
+      l.setBorder(new MarginBorder(4, 4, 4, 4));
       l.setFont(viewer.display.getSystemFont)
       setBackgroundColor(ColorConstants.tooltipBackground)
       setForegroundColor(ColorConstants.tooltipForeground)
@@ -314,8 +318,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     lazy val tooltip = new TooltipLabel
     def showTip(pf: PortFigure) {
       val abs = pf.anchor.getCopy
-      val name = if (pf.nameOverride!="") pf.nameOverride else pf.ps.name.str 
-      val text = name + " : " + pf.ps.pi.finalTpe.name.str  
+      val name = if (pf.nameOverride != "") pf.nameOverride else pf.ps.name.str
+      val text = name + " : " + pf.ps.pi.finalTpe.name.str
       tooltip.setText(text)
       viewer.feedbackLayer.add(tooltip)
     }

@@ -5,15 +5,17 @@ sealed abstract class ExprType(nameStr: String) extends BoxType {
   val owner = null
   val name = Name(nameStr)
   val fqName = Name("org.zaluum.expr." + nameStr)
-  val o = new PortSymbol(this, Name("o"), Point(0, 0), Out)
-  ports = Map(o.name -> o)
   val params = Map[Name, ParamSymbol]()
   def lookupPort(a: Name) = ports.get(a)
   def lookupPortWithSuper(a:Name) = lookupPort(a)
   def lookupParam(a: Name) = params.get(a)
+}
+sealed abstract class ResultExprType(nameStr:String) extends ExprType(nameStr) {
+  val o = new PortSymbol(this, Name("o"), Point(0, 0), Out)
+  ports = Map(o.name -> o)
   def outPort(v: ValSymbol) = v.findPortInstance(o).get
 }
-sealed abstract class UnaryExprType(nameStr: String) extends ExprType(nameStr) {
+sealed abstract class UnaryExprType(nameStr: String) extends ResultExprType(nameStr) {
   val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
   ports = Map(a.name -> a, o.name -> o)
 
@@ -21,7 +23,7 @@ sealed abstract class UnaryExprType(nameStr: String) extends ExprType(nameStr) {
     (v.findPortInstance(a).get, v.findPortInstance(o).get)
 
 }
-sealed abstract class BinExprType(nameStr: String) extends ExprType(nameStr) {
+sealed abstract class BinExprType(nameStr: String) extends ResultExprType(nameStr) {
   val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
   val b = new PortSymbol(this, Name("b"), Point(0, 0), In)
   ports = List(a, b, o) map { a => (a.name -> a) } toMap
@@ -36,8 +38,21 @@ sealed abstract class EqualityExprType(nameStr: String) extends BinExprType(name
 sealed abstract class BitBinExprType(nameStr: String) extends BinExprType(nameStr)
 sealed abstract class CastExprType(nameStr: String) extends UnaryExprType(nameStr)
 
-object IfExprType extends ExprType("If") 
-object WhileExprType extends ExprType("While")
+sealed abstract class TemplateExprType(nameStr:String) extends ExprType(nameStr) {
+  val requiredBlocks : Int
+}
+object IfExprType extends TemplateExprType("If") {
+  val requiredBlocks = 2
+  val cond = new PortSymbol(this, Name("cond"), Point(0, 0), In)
+  ports = Map(cond.name -> cond)
+  def condPort(v: ValSymbol) = v.findPortInstance(cond).get
+}
+object WhileExprType extends TemplateExprType("While") {
+  val requiredBlocks = 1
+  val end = new PortSymbol(this, Name("end"), Point(0, 0), Out)
+  ports = Map(end.name -> end)
+  def endPort(v: ValSymbol) = v.findPortInstance(end).get
+}
 
 object InvokeExprType extends ExprType("Invoke") {
   val Sig = """(.+)(\(.*)""".r
@@ -51,7 +66,7 @@ object InvokeExprType extends ExprType("Invoke") {
   def thisOutPort (vs:ValSymbol) = vs.findPortInstance(thizOut).get
 }
 
-object LiteralExprType extends ExprType("Literal") {
+object LiteralExprType extends ResultExprType("Literal") {
   val paramName = Name("literal")
   val paramSymbol = new ParamSymbol(null, paramName)
   override val params = Map(paramName -> paramSymbol)

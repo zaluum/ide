@@ -294,10 +294,15 @@ case class BoxDef(name: Name, // simple name
   def sym = symbol.asInstanceOf[BoxTypeSymbol]
 }
 object Template {
-  def emptyTemplate = Template(List(Block(List(),List(),List(),List())), List())
+  def emptyTemplate(blocks:Int) = {
+    Template(List.fill(blocks){Block.empty}, List())
+  }
 }
 case class Template(blocks : List[Block], ports: List[PortDef]) extends Tree {
   def sym :TemplateSymbol = symbol.asInstanceOf[TemplateSymbol]
+}
+object Block {
+  def empty =  Block(List(),List(),List(),List())
 }
 case class Block(
     junctions : List[Junction],

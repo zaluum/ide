@@ -347,8 +347,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
                   case None => error("Cannot find parameter " + p.key, tree)
                 }
               }
-              createPortInstances(vsym.ports.values, vsym, b==WhileExprType,true)
-              createPortInstances(b.ports.values, vsym, b==WhileExprType,true)
+              val createInside = b.isInstanceOf[TemplateExprType]
+              createPortInstances(vsym.ports.values, vsym, createInside,true)
+              createPortInstances(b.ports.values, vsym, createInside,true)
             case a ⇒
               v.symbol.tpe = NoSymbol
               error("Box class " + v.typeName + " not found", tree);

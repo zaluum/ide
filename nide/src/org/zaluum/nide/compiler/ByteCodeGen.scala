@@ -85,6 +85,30 @@ object ByteCodeGen {
           body foreach {emit}
           emit(cond)
           mv.visitJumpInsn(IFNE,start)
+        case If(cond,trueBlock,falseBlock) => 
+          val end = new Label()
+          (trueBlock,falseBlock) match {
+            case (Nil,Nil) => 
+            case (tb, Nil) => 
+              emit(cond)
+              mv.visitJumpInsn(IFNE,end)
+              tb.foreach (emit)
+              mv.visitLabel(end)
+            case (Nil, fb) =>
+              emit(cond)
+              mv.visitJumpInsn(IFEQ,end)
+              fb.foreach(emit)
+              mv.visitLabel(end)
+            case (tb, fb) =>
+              val elseLabel = new Label()
+              emit(cond)
+              mv.visitJumpInsn(IFNE,elseLabel)
+              tb.foreach(emit)
+              mv.visitJumpInsn(GOTO, end)
+              mv.visitLabel(elseLabel)
+              fb.foreach(emit)
+              mv.visitLabel(end)
+          }
         case Select(a, b) ⇒
           emit(a)
           emit(b)

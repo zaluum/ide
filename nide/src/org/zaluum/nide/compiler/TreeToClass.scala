@@ -19,7 +19,7 @@ case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
 case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)]) extends Tree
 case class Assign(lhs: Ref, rhs: Tree) extends Tree
 case class While(body: List[Tree], cond: Tree) extends Tree
-
+case class If(cond:Tree, trueBlock: List[Tree], falseBlock:List[Tree]) extends Tree
 case class Not(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
 case class Minus(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
 

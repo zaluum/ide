@@ -191,7 +191,7 @@ class OpenBoxFigure(
   // ContainerItem
   background.setBackgroundColor(ColorConstants.white)
   def helpers = portDecls ++ portSymbols
-  val portDecls = Buffer[OpenPortDeclFigure]()
+  val portDecls = Buffer[OpenPortBaseFigure]()
   val portSymbols = Buffer[PortSymbolFigure]()
   override def useLocalCoordinates = true
   def block = valDef.template.get.blocks.head // TODO
@@ -267,14 +267,13 @@ class OpenBoxFigure(
     portSymbols.clear()
     val vs = valDef.sym
     vs.portSides filter { _.fromInside } foreach {
-      intPs ⇒
+      intPs ⇒ // TODO cleanup
+      	def extPs = vs.portSides.find(c ⇒ c.name == intPs.name && c.inPort == intPs.inPort && !c.fromInside).get
           def newFig(left: Boolean) = {
             val f = new OpenPortDeclFigure(OpenBoxFigure.this)
-            vs.portSides.find(c ⇒ c.name == intPs.name && c.inPort == intPs.inPort && !c.fromInside) foreach { extPs ⇒
-              f.update(intPs, extPs, left)
-              portDecls += f
-              if (showing) f.show()
-            }
+            f.update(intPs, extPs, left)
+            portDecls += f
+            if (showing) f.show()
           }
         if (intPs.pi.hasDecl) {
           intPs.pi.dir match {
@@ -283,10 +282,17 @@ class OpenBoxFigure(
             case Shift ⇒ newFig(intPs.inPort);
           }
         } else {
-          val f = new PortSymbolFigure(intPs, OpenBoxFigure.this)
-          f.update
-          portSymbols += f
-          if (showing) f.show()
+          if (intPs.pi.dir == Out) {
+            val f = new PortSymbolFigure(intPs, OpenBoxFigure.this)
+            f.update
+            portSymbols += f
+            if (showing) f.show()
+          } else if (intPs.pi.dir == In) {
+            val f = new OpenPortFixedFigure(OpenBoxFigure.this)
+            f.update(intPs,extPs,true, In, MPoint(0,10))
+            portDecls +=f
+            if (showing) f.show()
+          }
         }
     }
   }
