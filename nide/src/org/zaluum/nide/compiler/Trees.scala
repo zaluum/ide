@@ -277,7 +277,7 @@ object BoxDef {
       connections = List(),
       parameters = List(),
       valDefs = List())
-    val template = Template(ports = List(), blocks = List(block))
+    val template = Template(ports = List(), blocks = List(block), currentBlock=None)
     BoxDef(name = Name(name),
       pkg = Name(pkg),
       superName = None,
@@ -295,10 +295,10 @@ case class BoxDef(name: Name, // simple name
 }
 object Template {
   def emptyTemplate(blocks:Int) = {
-    Template(List.fill(blocks){Block.empty}, List())
+    Template(List.fill(blocks){Block.empty}, List(), None)
   }
 }
-case class Template(blocks : List[Block], ports: List[PortDef]) extends Tree {
+case class Template(blocks : List[Block], ports: List[PortDef], currentBlock:Option[String]) extends Tree {
   def sym :TemplateSymbol = symbol.asInstanceOf[TemplateSymbol]
 }
 object Block {

@@ -24,6 +24,7 @@ import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
 import scala.collection.mutable.Buffer
 import scala.collection.JavaConversions._
 import RichFigure._
+import org.eclipse.swt.graphics.Color
 
 trait ContainerItem extends Item {
   def viewer: Viewer
@@ -126,7 +127,10 @@ trait ContainerItem extends Item {
     news foreach { v ⇒
       val f = v.template match {
         case Some(t) ⇒
-          val o = new OpenBoxFigure(ContainerItem.this, viewer)
+          val o = v.sym.tpe match {
+            case IfExprType ⇒ new IfOpenBoxFigure(ContainerItem.this, viewer)
+            case _          ⇒ new OpenBoxFigure(ContainerItem.this, viewer)
+          }
           o.updateOpenBox(v, Map())
           o
         case None ⇒
@@ -194,7 +198,7 @@ class OpenBoxFigure(
   val portDecls = Buffer[OpenPortBaseFigure]()
   val portSymbols = Buffer[PortSymbolFigure]()
   override def useLocalCoordinates = true
-  def block = valDef.template.get.blocks.head // TODO
+  def block = valDef.sym.currentBlock.tdecl
   def updateOpenBox(v: ValDef, changes: Map[Tree, Tree]) {
     updateValDef(v)
     updateContents(changes)
@@ -258,7 +262,6 @@ class OpenBoxFigure(
     super.hide()
     portDecls.foreach { _.hide }
     portSymbols.foreach { _.hide }
-
   }
   def updatePorts(changes: Map[Tree, Tree]) {
     portDecls.foreach { _.hide() }
@@ -268,7 +271,7 @@ class OpenBoxFigure(
     val vs = valDef.sym
     vs.portSides filter { _.fromInside } foreach {
       intPs ⇒ // TODO cleanup
-      	def extPs = vs.portSides.find(c ⇒ c.name == intPs.name && c.inPort == intPs.inPort && !c.fromInside).get
+          def extPs = vs.portSides.find(c ⇒ c.name == intPs.name && c.inPort == intPs.inPort && !c.fromInside).get
           def newFig(left: Boolean) = {
             val f = new OpenPortDeclFigure(OpenBoxFigure.this)
             f.update(intPs, extPs, left)
@@ -289,8 +292,8 @@ class OpenBoxFigure(
             if (showing) f.show()
           } else if (intPs.pi.dir == In) {
             val f = new OpenPortFixedFigure(OpenBoxFigure.this)
-            f.update(intPs,extPs,true, In, MPoint(0,10))
-            portDecls +=f
+            f.update(intPs, extPs, true, In, MPoint(0, 10))
+            portDecls += f
             if (showing) f.show()
           }
         }
@@ -324,5 +327,34 @@ class OpenBoxFigure(
   inners.add(feedbackLayer)
   add(inners);
   setBorder(new LineBorder(ColorConstants.gray, Tool.gridSize))
-
+}
+abstract class Button(val openBox : OpenBoxFigure) extends RectangleFigure with OverlappedItem with RectFeedback {
+  val size = Dimension(10, 10)
+  def myLayer = container.layer
+  def blink(b: Boolean) {}
+  def extPos = MPoint(-20,-4)
+  def constantDisplacement = Vector2(openBox.size.w/2 - size.w/2,0)
+  def color : Color
+  def update(){
+	  updateSize()
+	  setBackgroundColor(color)
+	  setForegroundColor(ColorConstants.black)
+  }
+}
+class IfOpenBoxFigure(container: ContainerItem, viewer: Viewer) extends OpenBoxFigure(container, viewer) {
+  val buttons = Buffer[Button]()
+  buttons += new Button(this) {
+    def color = if (openBox.symbol.numeral == 0) ColorConstants.green else ColorConstants.red
+  }
+  override def show() {
+    super.show()
+    buttons.foreach { _.show }
+  }
+  override def hide() {
+    super.hide()
+    buttons.foreach { _.hide }
+  }
+  override def updateMe {
+    buttons.foreach{_.update()}
+  }
 }

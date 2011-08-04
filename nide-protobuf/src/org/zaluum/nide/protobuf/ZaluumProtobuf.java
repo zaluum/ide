@@ -713,6 +713,13 @@ public final class ZaluumProtobuf {
       return block_.get(index);
     }
     
+    // optional string current_block = 3;
+    public static final int CURRENT_BLOCK_FIELD_NUMBER = 3;
+    private boolean hasCurrentBlock;
+    private java.lang.String currentBlock_ = "";
+    public boolean hasCurrentBlock() { return hasCurrentBlock; }
+    public java.lang.String getCurrentBlock() { return currentBlock_; }
+    
     private void initFields() {
     }
     public final boolean isInitialized() {
@@ -734,6 +741,9 @@ public final class ZaluumProtobuf {
       for (org.zaluum.nide.protobuf.ZaluumProtobuf.Block element : getBlockList()) {
         output.writeMessage(2, element);
       }
+      if (hasCurrentBlock()) {
+        output.writeString(3, getCurrentBlock());
+      }
       getUnknownFields().writeTo(output);
     }
     
@@ -750,6 +760,10 @@ public final class ZaluumProtobuf {
       for (org.zaluum.nide.protobuf.ZaluumProtobuf.Block element : getBlockList()) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(2, element);
+      }
+      if (hasCurrentBlock()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeStringSize(3, getCurrentBlock());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -929,6 +943,9 @@ public final class ZaluumProtobuf {
           }
           result.block_.addAll(other.block_);
         }
+        if (other.hasCurrentBlock()) {
+          setCurrentBlock(other.getCurrentBlock());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -964,6 +981,10 @@ public final class ZaluumProtobuf {
               org.zaluum.nide.protobuf.ZaluumProtobuf.Block.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.Block.newBuilder();
               input.readMessage(subBuilder, extensionRegistry);
               addBlock(subBuilder.buildPartial());
+              break;
+            }
+            case 26: {
+              setCurrentBlock(input.readString());
               break;
             }
           }
@@ -1070,6 +1091,27 @@ public final class ZaluumProtobuf {
       }
       public Builder clearBlock() {
         result.block_ = java.util.Collections.emptyList();
+        return this;
+      }
+      
+      // optional string current_block = 3;
+      public boolean hasCurrentBlock() {
+        return result.hasCurrentBlock();
+      }
+      public java.lang.String getCurrentBlock() {
+        return result.getCurrentBlock();
+      }
+      public Builder setCurrentBlock(java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  result.hasCurrentBlock = true;
+        result.currentBlock_ = value;
+        return this;
+      }
+      public Builder clearCurrentBlock() {
+        result.hasCurrentBlock = false;
+        result.currentBlock_ = getDefaultInstance().getCurrentBlock();
         return this;
       }
       
@@ -6657,42 +6699,42 @@ public final class ZaluumProtobuf {
       "lass_name\030\001 \001(\t\022\022\n\nimage_name\030\002 \001(\t\022\037\n\010g" +
       "ui_size\030\003 \002(\0132\r.zaluum.Point\022\016\n\006visual\030\004" +
       " \002(\010\022\r\n\005super\030\006 \001(\t\022\017\n\007package\030\007 \001(\t\022\"\n\010" +
-      "template\030\010 \002(\0132\020.zaluum.Template\"D\n\010Temp" +
+      "template\030\010 \002(\0132\020.zaluum.Template\"[\n\010Temp" +
       "late\022\032\n\004port\030\001 \003(\0132\014.zaluum.Port\022\034\n\005bloc" +
-      "k\030\002 \003(\0132\r.zaluum.Block\"\205\001\n\005Block\022\"\n\010inst" +
-      "ance\030\001 \003(\0132\020.zaluum.Instance\022&\n\nconnecti" +
-      "on\030\002 \003(\0132\022.zaluum.Connection\022\"\n\010junction" +
-      "\030\003 \003(\0132\020.zaluum.Junction\022\014\n\004info\030\004 \001(\t\"\352",
-      "\002\n\010Instance\022\014\n\004name\030\001 \002(\t\022\032\n\003pos\030\003 \002(\0132\r" +
-      ".zaluum.Point\022\033\n\004size\030\004 \001(\0132\r.zaluum.Poi" +
-      "nt\022$\n\tparameter\030\005 \003(\0132\021.zaluum.Parameter" +
-      "\022\034\n\005label\030\006 \001(\0132\r.zaluum.Label\022 \n\tlabel_" +
-      "gui\030\007 \001(\0132\r.zaluum.Label\022\022\n\nclass_name\030\010" +
-      " \002(\t\022\036\n\007gui_pos\030\t \001(\0132\r.zaluum.Point\022\037\n\010" +
-      "gui_size\030\n \001(\0132\r.zaluum.Point\022\035\n\025constru" +
-      "ctor_parameter\030\013 \003(\t\022\031\n\021constructor_type" +
-      "s\030\014 \003(\t\022\"\n\010template\030\r \001(\0132\020.zaluum.Templ" +
-      "ate\"8\n\005Label\022\023\n\013description\030\001 \002(\t\022\032\n\003pos",
-      "\030\002 \002(\0132\r.zaluum.Point\"\'\n\tParameter\022\013\n\003ke" +
-      "y\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\":\n\007PortRef\022\020\n\010box" +
-      "_name\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\022\n\n\002in\030\003 \001" +
-      "(\010\"\222\001\n\004Port\022\014\n\004name\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022" +
-      "$\n\tdirection\030\003 \002(\0162\021.zaluum.Direction\022#\n" +
-      "\014pos_internal\030\004 \002(\0132\r.zaluum.Point\022#\n\014po" +
-      "s_external\030\005 \002(\0132\r.zaluum.Point\"K\n\003Ref\022%" +
-      "\n\010junction\030\001 \001(\0132\023.zaluum.JunctionRef\022\035\n" +
-      "\004port\030\002 \001(\0132\017.zaluum.PortRef\"d\n\nConnecti" +
-      "on\022\033\n\006source\030\001 \002(\0132\013.zaluum.Ref\022\033\n\006targe",
-      "t\030\002 \002(\0132\013.zaluum.Ref\022\034\n\005point\030\003 \003(\0132\r.za" +
-      "luum.Point\"4\n\010Junction\022\014\n\004name\030\001 \002(\t\022\032\n\003" +
-      "pos\030\002 \002(\0132\r.zaluum.Point\"\033\n\013JunctionRef\022" +
-      "\014\n\004name\030\001 \002(\t\"\035\n\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002" +
-      " \002(\005\"t\n\tClipboard\022\"\n\010instance\030\001 \003(\0132\020.za" +
-      "luum.Instance\022\032\n\004port\030\003 \003(\0132\014.zaluum.Por" +
-      "t\022\'\n\013connnection\030\004 \003(\0132\022.zaluum.Connecti" +
-      "on*\'\n\tDirection\022\006\n\002IN\020\000\022\007\n\003OUT\020\001\022\t\n\005SHIF" +
-      "T\020\002B*\n\030org.zaluum.nide.protobufB\016ZaluumP" +
-      "rotobuf"
+      "k\030\002 \003(\0132\r.zaluum.Block\022\025\n\rcurrent_block\030" +
+      "\003 \001(\t\"\205\001\n\005Block\022\"\n\010instance\030\001 \003(\0132\020.zalu" +
+      "um.Instance\022&\n\nconnection\030\002 \003(\0132\022.zaluum" +
+      ".Connection\022\"\n\010junction\030\003 \003(\0132\020.zaluum.J",
+      "unction\022\014\n\004info\030\004 \001(\t\"\352\002\n\010Instance\022\014\n\004na" +
+      "me\030\001 \002(\t\022\032\n\003pos\030\003 \002(\0132\r.zaluum.Point\022\033\n\004" +
+      "size\030\004 \001(\0132\r.zaluum.Point\022$\n\tparameter\030\005" +
+      " \003(\0132\021.zaluum.Parameter\022\034\n\005label\030\006 \001(\0132\r" +
+      ".zaluum.Label\022 \n\tlabel_gui\030\007 \001(\0132\r.zaluu" +
+      "m.Label\022\022\n\nclass_name\030\010 \002(\t\022\036\n\007gui_pos\030\t" +
+      " \001(\0132\r.zaluum.Point\022\037\n\010gui_size\030\n \001(\0132\r." +
+      "zaluum.Point\022\035\n\025constructor_parameter\030\013 " +
+      "\003(\t\022\031\n\021constructor_types\030\014 \003(\t\022\"\n\010templa" +
+      "te\030\r \001(\0132\020.zaluum.Template\"8\n\005Label\022\023\n\013d",
+      "escription\030\001 \002(\t\022\032\n\003pos\030\002 \002(\0132\r.zaluum.P" +
+      "oint\"\'\n\tParameter\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030" +
+      "\002 \002(\t\":\n\007PortRef\022\020\n\010box_name\030\001 \001(\t\022\021\n\tpo" +
+      "rt_name\030\002 \002(\t\022\n\n\002in\030\003 \001(\010\"\222\001\n\004Port\022\014\n\004na" +
+      "me\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022$\n\tdirection\030\003 \002(" +
+      "\0162\021.zaluum.Direction\022#\n\014pos_internal\030\004 \002" +
+      "(\0132\r.zaluum.Point\022#\n\014pos_external\030\005 \002(\0132" +
+      "\r.zaluum.Point\"K\n\003Ref\022%\n\010junction\030\001 \001(\0132" +
+      "\023.zaluum.JunctionRef\022\035\n\004port\030\002 \001(\0132\017.zal" +
+      "uum.PortRef\"d\n\nConnection\022\033\n\006source\030\001 \002(",
+      "\0132\013.zaluum.Ref\022\033\n\006target\030\002 \002(\0132\013.zaluum." +
+      "Ref\022\034\n\005point\030\003 \003(\0132\r.zaluum.Point\"4\n\010Jun" +
+      "ction\022\014\n\004name\030\001 \002(\t\022\032\n\003pos\030\002 \002(\0132\r.zaluu" +
+      "m.Point\"\033\n\013JunctionRef\022\014\n\004name\030\001 \002(\t\"\035\n\005" +
+      "Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005\"t\n\tClipboard" +
+      "\022\"\n\010instance\030\001 \003(\0132\020.zaluum.Instance\022\032\n\004" +
+      "port\030\003 \003(\0132\014.zaluum.Port\022\'\n\013connnection\030" +
+      "\004 \003(\0132\022.zaluum.Connection*\'\n\tDirection\022\006" +
+      "\n\002IN\020\000\022\007\n\003OUT\020\001\022\t\n\005SHIFT\020\002B*\n\030org.zaluum" +
+      ".nide.protobufB\016ZaluumProtobuf"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -6712,7 +6754,7 @@ public final class ZaluumProtobuf {
           internal_static_zaluum_Template_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Template_descriptor,
-              new java.lang.String[] { "Port", "Block", },
+              new java.lang.String[] { "Port", "Block", "CurrentBlock", },
               org.zaluum.nide.protobuf.ZaluumProtobuf.Template.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Template.Builder.class);
           internal_static_zaluum_Block_descriptor =

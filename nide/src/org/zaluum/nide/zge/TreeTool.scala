@@ -35,6 +35,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           i.selectionSubject foreach { controller.blink(_, viewer) }
         }
       (beingSelected, port) match {
+        case (Some(b:Button), _ ) => actButton(b)
         case (Some(o: OpenPortDeclFigure), _) ⇒ selectItem(o)
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
@@ -53,6 +54,21 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case _ ⇒
       }
 
+    }
+    def actButton(b:Button) = {
+      val template = b.openBox.template
+      val i = b.openBox.templateSym.nextBlockIndex
+      val command = new EditTransformer() {
+        val trans: PartialFunction[Tree, Tree] = {
+          case t: Template if t == template ⇒
+            t.copy(blocks =transformTrees(t.blocks),
+                ports = transformTrees(t.ports),
+                currentBlock = Some(i.toString))
+        }
+      }
+      controller.exec(command)
+      viewer.selection.deselectAll()
+      viewer.refresh()
     }
     val portsTrack = new PortTrack {
       override def onEnter(p: PortFigure) { super.onEnter(p); port = Some(p); viewer.setCursor(Cursors.CROSS) }

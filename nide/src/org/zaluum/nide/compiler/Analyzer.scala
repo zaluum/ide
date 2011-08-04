@@ -222,7 +222,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
           val template = currentOwner.asInstanceOf[TemplateSymbol]
           val blockSym = new BlockSymbol(template)
           bind(blockSym, b, false) {
-            template.blocks ::= blockSym
+            template.blocks :+=  blockSym
           }
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
           val template = currentOwner.asInstanceOf[TemplateSymbol]

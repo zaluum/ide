@@ -42,18 +42,13 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
   setOutline(true)
 }
 
-abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure) extends RectangleFigure with Item with HasPorts with RectFeedback {
-  def extPos: Point
+abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure) extends RectangleFigure with OverlappedItem with HasPorts with RectFeedback {
   def dir: PortDir
-  def container = openBox.container
   def myLayer = container.portsLayer
   val size = Dimension(openBox.getInsets.left, openBox.getInsets.left)
 
   // tree.extPos must be (0,relY)
-  def xDisplacement = if (left) Vector2(0, 0) else Vector2(openBox.size.w - size.w, 0)
-  def absDisplacement = Vector2(openBox.pos.x, openBox.pos.y)
-  def relPos = extPos + xDisplacement
-  def pos = extPos + xDisplacement + absDisplacement // abs coordinates
+  def constantDisplacement = if (left) Vector2(0, 0) else Vector2(openBox.size.w - size.w, 0)
   var left = false
   val extPort: PortFigure = new PortFigure(container)
   val intPort: PortFigure = new PortFigure(openBox)
@@ -87,22 +82,16 @@ class OpenPortDeclFigure(openBox: OpenBoxFigure) extends OpenPortBaseFigure(open
     super.update(intPs, extPs, left)
   }
 }
-class OpenPortFixedFigure(openBox:OpenBoxFigure) extends OpenPortBaseFigure(openBox) {
-  var extPos = Point(0,0)
-  var dir : PortDir = _
-  def update(intPs:PortSide, extPs:PortSide, left:Boolean, dir:PortDir, extPos:Point) {
+class OpenPortFixedFigure(openBox: OpenBoxFigure) extends OpenPortBaseFigure(openBox) {
+  var extPos = Point(0, 0)
+  var dir: PortDir = _
+  def update(intPs: PortSide, extPs: PortSide, left: Boolean, dir: PortDir, extPos: Point) {
     this.extPos = extPos
     this.dir = dir
-    update(intPs,extPs,left)
+    update(intPs, extPs, left)
   }
 }
-object PortDeclFigure {
-  private def str(dir: PortDir) = dir match {
-    case In    ⇒ "In"
-    case Out   ⇒ "Out"
-    case Shift ⇒ "Shift"
-  }
-}
+
 abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) extends AutoDisposeImageFigure with Item with HasPorts with RectFeedback {
   def myLayer = container.layer
   def pos: MPoint
@@ -123,6 +112,13 @@ abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) 
   }
   def blink(b: Boolean) {}
 
+}
+object PortDeclFigure {
+  private def str(dir: PortDir) = dir match {
+    case In    ⇒ "In"
+    case Out   ⇒ "Out"
+    case Shift ⇒ "Shift"
+  }
 }
 class PortDeclFigure(val tree: PortDef, ps: PortSide, container: ContainerItem) extends PortHolderFigure(container, ps) {
   def pos = tree.inPos

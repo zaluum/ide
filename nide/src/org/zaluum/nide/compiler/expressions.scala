@@ -9,6 +9,7 @@ sealed abstract class ExprType(nameStr: String) extends BoxType {
   def lookupPort(a: Name) = ports.get(a)
   def lookupPortWithSuper(a:Name) = lookupPort(a)
   def lookupParam(a: Name) = params.get(a)
+  def templateTree = null
 }
 sealed abstract class ResultExprType(nameStr:String) extends ExprType(nameStr) {
   val o = new PortSymbol(this, Name("o"), Point(0, 0), Out)

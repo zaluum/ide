@@ -22,6 +22,7 @@ object Serializer {
     val p = ZaluumProtobuf.Template.newBuilder
     t.ports sortBy { _.name.str } foreach { port ⇒ p.addPort(proto(port)) }
     t.blocks foreach { b => p.addBlock(proto(b)) }
+    t.currentBlock foreach { c=> p.setCurrentBlock(c)}
     p.build
   }
   def proto(b: Block): ZaluumProtobuf.Block = {

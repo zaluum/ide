@@ -166,16 +166,6 @@ trait Item extends Hover {
   def moveFeed(loc: MPoint) {
     feed.setInnerLocation(point(loc))
   }
-  /*def feedCenterVector = {
-    Vector2((feed.getSize.w-size.w)/2, (feed.getSize.h-size.h)/2)
-  }
-  def moveCenteredFeed(loc : MPoint) {
-    moveFeed(loc + feedCenterVector)    
-  }*/
- /* def moveDeltaFeed(delta: Vector2) {
-    val loc = pos + delta
-    feed.setInnerLocation(point(loc))
-  }*/
   def blink(on:Boolean) 
   def blink() { 
     blink(true);
@@ -209,7 +199,15 @@ trait HasPorts extends Item {
     }
   }
 }
-
+trait OverlappedItem extends Item {
+  def openBox:OpenBoxFigure
+  def container = openBox.container
+  def containerDisplacement = Vector2(openBox.pos.x, openBox.pos.y)
+  def constantDisplacement : Vector2 
+  def extPos: MPoint
+  def relPos = extPos + constantDisplacement
+  def pos = extPos + constantDisplacement + containerDisplacement // abs coordinates
+}
 trait RectFeedback {
   self : Item =>
   val feed = new ItemFeedbackFigure(container)

@@ -16,6 +16,7 @@ message BoxClass
 message Template {
 	repeated Port port = 1;
 	repeated Block block = 2;
+	optional string current_block =3;
 }
 message Block 
 {

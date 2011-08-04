@@ -83,20 +83,32 @@ case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var con
 sealed trait TemplateSymbol extends Symbol {
   var ports = Map[Name, PortSymbol]()
   var blocks = List[BlockSymbol]()
+  def templateTree: Template
+  def currentBlockIndex = {
+    val parsed = templateTree.currentBlock.map { c ⇒
+      try { c.toInt } catch { case _ ⇒ 0 }
+    }.getOrElse(0)
+    if (parsed<0 || parsed>=blocks.length) 0 else parsed
+  }
+  def currentBlock = blocks(currentBlockIndex)
+  def nextBlockIndex = if (currentBlockIndex>=blocks.length-1) 0 else currentBlockIndex +1
   def lookupParam(name: Name): Option[ParamSymbol]
   var thisVal: ValSymbol = _ // should be template
 }
 trait BoxType extends TemplateSymbol with Type {
   def portsWithSuper = ports
   def lookupPortWithSuper(name: Name): Option[PortSymbol]
+  def templateTree : Template 
 }
 class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   def name = null
   def owner = template
   var vals = Map[Name, ValSymbol]()
   var executionOrder = List[ValSymbol]()
-  def numeral = template.blocks.indexOf(this)
   private val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
+
+  override def tdecl : Block = decl.asInstanceOf[Block] 
+  def numeral = template.blocks.indexOf(this)
   def usedNames = (valsList ++ missingVals.values ++ template.ports.values).map { _.name.str }.toSet
   def valsList = vals.values.toList
   def lookupValWithMissing(name: Name) = vals.get(name).orElse { missingVals.get(name) }
@@ -108,7 +120,7 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
     var junctions = Set[Junction]()
     def usedNames = junctions map { _.name.str }
     var flow = Map[PortInstance, Set[PortInstance]]()
-    var connectedFrom = Map[PortInstance,(PortInstance,ConnectionDef)]()
+    var connectedFrom = Map[PortInstance, (PortInstance, ConnectionDef)]()
     var clumps = Buffer[Clump]()
     def clumpOf(c: ConnectionDef) = clumps find { _.connections.contains(c) }
     def clumpOf(p: PortSide) = clumps find { _.ports.contains(p) }
@@ -182,6 +194,7 @@ class BoxTypeSymbol(
   var source: String = "" // TODO
   tpe = this
   override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
+  override def templateTree = tdecl.template
   override def portsWithSuper: Map[Name, PortSymbol] =
     ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
   def fqName: Name = if (pkg.str != "") Name(pkg.str + "." + name.str) else name
@@ -274,6 +287,7 @@ class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolea
 }
 class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   override def tdecl = decl.asInstanceOf[ValDef]
+  def templateTree = tdecl.template.get
   def lookupParam(name: Name): Option[ParamSymbol] = sys.error("")
   var info: AnyRef = null
   var params = Map[ParamSymbol, Any]()

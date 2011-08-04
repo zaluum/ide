@@ -91,18 +91,18 @@ object ByteCodeGen {
             case (Nil,Nil) => 
             case (tb, Nil) => 
               emit(cond)
-              mv.visitJumpInsn(IFNE,end)
+              mv.visitJumpInsn(IFEQ,end)
               tb.foreach (emit)
               mv.visitLabel(end)
             case (Nil, fb) =>
               emit(cond)
-              mv.visitJumpInsn(IFEQ,end)
+              mv.visitJumpInsn(IFNE,end)
               fb.foreach(emit)
               mv.visitLabel(end)
             case (tb, fb) =>
               val elseLabel = new Label()
               emit(cond)
-              mv.visitJumpInsn(IFNE,elseLabel)
+              mv.visitJumpInsn(IFEQ,elseLabel)
               tb.foreach(emit)
               mv.visitJumpInsn(GOTO, end)
               mv.visitLabel(elseLabel)

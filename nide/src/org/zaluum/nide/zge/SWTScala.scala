@@ -13,7 +13,7 @@ import org.eclipse.swt.events.SelectionListener
 import org.eclipse.swt.widgets.Control
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{ SelectionAdapter, SelectionEvent, DisposeListener, DisposeEvent, KeyListener, KeyEvent }
-import org.eclipse.swt.widgets.{ Button, Text, Listener, Event }
+import org.eclipse.swt.widgets.{ Text, Listener, Event }
 import org.eclipse.swt.events.ModifyListener
 import org.eclipse.swt.events.ModifyEvent
 object SWTScala {
@@ -44,7 +44,7 @@ object SWTScala {
     l
   }
   def newButton(c:Composite, txt:String="", style:Int=SWT.PUSH, layout:AnyRef=null) = {
-    val b = new Button(c,style)
+    val b = new org.eclipse.swt.widgets.Button(c,style)
     b.setText(txt)
     b.setLayoutData(layout)
     b

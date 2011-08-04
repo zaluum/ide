@@ -41,7 +41,8 @@ object Parser {
   def parse(t: ZaluumProtobuf.Template): Template = {
     Template(
       blocks = t.getBlockList() map parse toList,
-      ports = t.getPortList() map parse toList)
+      ports = t.getPortList() map parse toList,
+      currentBlock = if (t.hasCurrentBlock()) Some(t.getCurrentBlock) else None )
   }
   def parse(t: ZaluumProtobuf.Block): Block = {
     Block(junctions = t.getJunctionList map parse toList,

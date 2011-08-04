@@ -3,6 +3,8 @@ Agenda
 week 1-7 compiler week
 	- BUG Change type of a box to While or if (doesn't have template)
 	- FIXME? Non connected ports var initialization
+	- BUG? make sure 0 and 1 blocks don't get reversed
+	- better gui support to change block view
 	- check "end" or "cond" port names 
 	- restore clipboard
 	- New
