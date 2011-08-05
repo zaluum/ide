@@ -1,23 +1,43 @@
 package org.zaluum.nide.eclipse.integration
 
-import model.ZaluumCompilationUnit
-import org.codehaus.jdt.groovy.integration.{EventHandler, LanguageSupport}
+import org.codehaus.jdt.groovy.integration.EventHandler
+import org.codehaus.jdt.groovy.integration.LanguageSupport
 import org.eclipse.core.resources.IProject
-import org.eclipse.jdt.core.search.{SearchMatch, SearchPattern, SearchRequestor, TypeDeclarationMatch, TypeReferenceMatch}
+import org.eclipse.jdt.core.search.SearchMatch
+import org.eclipse.jdt.core.search.SearchPattern
+import org.eclipse.jdt.core.search.SearchRequestor
+import org.eclipse.jdt.core.search.TypeDeclarationMatch
+import org.eclipse.jdt.core.search.TypeReferenceMatch
 import org.eclipse.jdt.core.WorkingCopyOwner
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import org.eclipse.jdt.internal.compiler.parser.Parser
-import org.eclipse.jdt.internal.compiler.problem.{DefaultProblemFactory, ProblemReporter}
-import org.eclipse.jdt.internal.compiler.{CompilationResult, DefaultErrorHandlingPolicies, IProblemFactory, ISourceElementRequestor, SourceElementParser}
+import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory
+import org.eclipse.jdt.internal.compiler.problem.ProblemReporter
+import org.eclipse.jdt.internal.compiler.CompilationResult
+import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies
+import org.eclipse.jdt.internal.compiler.IProblemFactory
+import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
+import org.eclipse.jdt.internal.compiler.SourceElementParser
 import org.eclipse.jdt.internal.core.search.indexing.IndexingParser
-import org.eclipse.jdt.internal.core.search.matching.{ImportMatchLocatorParser, MatchLocator, MatchLocatorParser, PossibleMatch, TypeDeclarationPattern, TypeReferencePattern}
+import org.eclipse.jdt.internal.core.search.matching.ImportMatchLocatorParser
+import org.eclipse.jdt.internal.core.search.matching.MatchLocator
+import org.eclipse.jdt.internal.core.search.matching.MatchLocatorParser
+import org.eclipse.jdt.internal.core.search.matching.PossibleMatch
+import org.eclipse.jdt.internal.core.search.matching.TypeDeclarationPattern
+import org.eclipse.jdt.internal.core.search.matching.TypeReferencePattern
 import org.eclipse.jdt.internal.core.util.Util
-import org.eclipse.jdt.internal.core.{BinaryType, CompilationUnit, PackageFragment}
+import org.eclipse.jdt.internal.core.BinaryType
+import org.eclipse.jdt.internal.core.CompilationUnit
+import org.eclipse.jdt.internal.core.PackageFragment
 import org.eclipse.text.edits.TextEdit
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Serializer
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
 import org.zaluum.nide.eclipse.ZaluumNature
+
+import model.ZaluumCompilationUnit
 
 class ZaluumLanguageSupport extends LanguageSupport {
 
@@ -31,7 +51,7 @@ class ZaluumLanguageSupport extends LanguageSupport {
   }
 
   def getIndexingParser(requestor: ISourceElementRequestor, problemFactory: IProblemFactory, options: CompilerOptions, reportLocalDeclarations: Boolean,
-    optimizeStringLiterals: Boolean, useSourceJavadocParser: Boolean): IndexingParser = {
+                        optimizeStringLiterals: Boolean, useSourceJavadocParser: Boolean): IndexingParser = {
     new MultiplexingIndexingParser(requestor, problemFactory, options, reportLocalDeclarations, optimizeStringLiterals,
       useSourceJavadocParser);
   }
@@ -45,8 +65,8 @@ class ZaluumLanguageSupport extends LanguageSupport {
   }
 
   def getSourceElementParser(requestor: ISourceElementRequestor, problemFactory: IProblemFactory,
-    options: CompilerOptions, reportLocalDeclarations: Boolean, optimizeStringLiterals: Boolean,
-    useSourceJavadocParser: Boolean): SourceElementParser = {
+                             options: CompilerOptions, reportLocalDeclarations: Boolean, optimizeStringLiterals: Boolean,
+                             useSourceJavadocParser: Boolean): SourceElementParser = {
     val problemReporter = new ProblemReporter(DefaultErrorHandlingPolicies.proceedWithAllProblems(), options,
       new DefaultProblemFactory());
     new MultiplexingSourceElementRequestorParser(problemReporter, requestor, problemFactory, options,
@@ -149,16 +169,16 @@ class ZaluumLanguageSupport extends LanguageSupport {
           pattern match {
             case dec: TypeDeclarationPattern ⇒
               val tpe = z.findPrimaryType
-              if (dec.simpleName.mkString.equalsIgnoreCase(tpe.getElementName)){   
+              if (dec.simpleName.mkString.equalsIgnoreCase(tpe.getElementName)) {
                 requestor.acceptSearchMatch(new TypeDeclarationMatch(z, SearchMatch.A_ACCURATE, 0, 0, participant, z.getResource()));
                 true
-              }else false
-            
+              } else false
+
             case ref: TypeReferencePattern ⇒
-              if (ref.getIndexKey.mkString.equalsIgnoreCase("box")){   
-                requestor.acceptSearchMatch(new TypeReferenceMatch(z.findPrimaryType, SearchMatch.A_ACCURATE, 0, 0, false,participant, z.getResource()))
+              if (ref.getIndexKey.mkString.equalsIgnoreCase("box")) {
+                requestor.acceptSearchMatch(new TypeReferenceMatch(z.findPrimaryType, SearchMatch.A_ACCURATE, 0, 0, false, participant, z.getResource()))
                 true
-              }else false
+              } else false
             case _ ⇒ false
           }
       }
@@ -169,25 +189,25 @@ class ZaluumLanguageSupport extends LanguageSupport {
   def getEventHandler(): EventHandler = new ZaluumEventHandler()
 
   def filterNonSourceMembers(binaryType: BinaryType) {}
-  
-  def updateContent(cu: org.eclipse.jdt.core.ICompilationUnit ,  destPackageName : Array[String], currPackageName : Array[String],
-      newName: String) : TextEdit = {
+
+  def updateContent(cu: org.eclipse.jdt.core.ICompilationUnit, destPackageName: Array[String], currPackageName: Array[String],
+                    newName: String): TextEdit = {
     val packageDecls = cu.getPackageDeclarations();
     val doPackage = !Util.equalArraysOrNull(currPackageName.asInstanceOf[Array[Object]], destPackageName.asInstanceOf[Array[Object]])
     val doName = newName != null;
-    import org.zaluum.nide.compiler.{Name,Serializer}
+    import org.zaluum.nide.compiler.{ Name, Serializer }
     if (doPackage || doName) {
       cu match {
-        case c:CompilationUnit =>
-            val s = c.getSource
-            val name = if (newName!=null) newName else cu.getElementName.split('.').last
-            val tree = org.zaluum.nide.compiler.Parser.readTree(s,Name(name));
-            val refactored = tree.copy ( name = Name(name), pkg = Name(destPackageName.mkString(".")))
-            val str = Serializer.writeToIsoString(Serializer.proto(refactored))
-            return new org.eclipse.text.edits.ReplaceEdit(0,s.length,str);
-        case _ =>
+        case c: CompilationUnit ⇒
+          val s = c.getSource
+          val name = if (newName != null) newName else cu.getElementName.split('.').last
+          val tree = org.zaluum.nide.compiler.Parser.readTree(s, Name(name));
+          val refactored = tree.copy(name = Name(name), pkg = Name(destPackageName.mkString(".")))
+          val str = Serializer.writeToIsoString(Serializer.proto(refactored))
+          return new org.eclipse.text.edits.ReplaceEdit(0, s.length, str);
+        case _ ⇒
       }
     }
     null;
- }
+  }
 }

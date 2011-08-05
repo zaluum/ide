@@ -1,31 +1,55 @@
 package org.zaluum.nide.zge.dialogs
 
+import scala.collection.JavaConversions.asScalaBuffer
+
+import org.eclipse.jface.dialogs.Dialog
+import org.eclipse.jface.viewers.CellEditor
+import org.eclipse.jface.viewers.ICellModifier
+import org.eclipse.jface.viewers.IStructuredContentProvider
+import org.eclipse.jface.viewers.ITableLabelProvider
+import org.eclipse.jface.viewers.LabelProvider
+import org.eclipse.jface.viewers.StructuredSelection
+import org.eclipse.jface.viewers.TableViewer
+import org.eclipse.jface.viewers.TextCellEditor
+import org.eclipse.swt.graphics.Image
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets.Control
+import org.eclipse.swt.widgets.Table
+import org.eclipse.swt.widgets.TableColumn
+import org.eclipse.swt.widgets.TableItem
+import org.eclipse.swt.SWT
 import org.eclipse.ui.ISharedImages
 import org.eclipse.ui.PlatformUI
+import org.zaluum.nide.compiler.BoxTypeSymbol
+import org.zaluum.nide.compiler.EditTransformer
+import org.zaluum.nide.compiler.ExprType
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Param
+import org.zaluum.nide.compiler.ParamSymbol
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.compiler.ValSymbol
+import org.zaluum.nide.zge.SWTScala.addKeyReleasedReaction
+import org.zaluum.nide.zge.SWTScala.newLabel
+import org.zaluum.nide.zge.SWTScala.newMenuItem
+import org.zaluum.nide.zge.SWTScala.newPopupMenu
+import org.zaluum.nide.zge.Viewer
+
 import net.miginfocom.swt.MigLayout
-import org.eclipse.jface.dialogs.Dialog
-import org.eclipse.jface.viewers.{Viewer => _, _}
-import org.eclipse.swt.graphics.Image
-import org.eclipse.swt.widgets.{ Menu,MenuItem,Table, TableItem, Shell, Composite, TableColumn, Label, Control }
-import org.eclipse.swt.SWT
-import org.eclipse.swt.events.{ KeyListener, KeyEvent }
-import org.zaluum.nide.compiler._
-import org.zaluum.nide.zge._
-import SWTScala._
 // TODO merge table functionality with ConstructorDialog
 class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   var tableContents = List[TableEntry]()
-  case class TableEntry(var sym: Option[ParamSymbol], var key:String, var value: String)
+  case class TableEntry(var sym: Option[ParamSymbol], var key: String, var value: String)
   def v = vs.decl.asInstanceOf[ValDef]
   def params = vs.tpe match {
-    case null => List()
-    case bs:BoxTypeSymbol => bs.paramsInOrder
-    case e:ExprType => e.params.values.toList sortBy {_.name.str} // TODO merge in boxType
+    case null              ⇒ List()
+    case bs: BoxTypeSymbol ⇒ bs.paramsInOrder
+    case e: ExprType       ⇒ e.params.values.toList sortBy { _.name.str } // TODO merge in boxType
   }
   override protected def okPressed() {
-    val newParams = tableContents.filterNot(_.key=="").map(t => (Param(Name(t.key),t.value))).sortBy(_.key.str)
+    val newParams = tableContents.filterNot(_.key == "").map(t ⇒ (Param(Name(t.key), t.value))).sortBy(_.key.str)
     val origParams = v.params.asInstanceOf[List[Param]].sortBy(_.key.str)
-    if (newParams != origParams){ 
+    if (newParams != origParams) {
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case v: ValDef if vs.decl == v ⇒
@@ -43,11 +67,11 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
       SWT.FULL_SELECTION | SWT.HIDE_SELECTION)
     table.setLinesVisible(true);
     table.setHeaderVisible(true);
-    def newColumn(str: String, w: Int) {
-      val col = new TableColumn(table, SWT.CENTER, 0);
-      col.setText(str);
-      col.setWidth(w);
-    }
+      def newColumn(str: String, w: Int) {
+        val col = new TableColumn(table, SWT.CENTER, 0);
+        col.setText(str);
+        col.setWidth(w);
+      }
     newColumn("Name", 150)
     newColumn("Type", 150)
     newColumn("Value", 150)
@@ -62,7 +86,7 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
     val sup = super.createDialogArea(parent).asInstanceOf[Composite];
     val c = new Composite(sup, SWT.NONE)
     c.setLayout(new MigLayout)
-    newLabel(c,"Parameter values",layout="wrap")
+    newLabel(c, "Parameter values", layout = "wrap")
     // TABLE
     tableContents = createTableValue()
     val table = createTable(c)
@@ -99,35 +123,35 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
       }
     })
     tableViewer.setInput(this)
-    // listeners
-    // DELETE
-    def delete() {
-      val sel = tableViewer.getSelection.asInstanceOf[StructuredSelection]
-      if (!sel.isEmpty) {
-        import scala.collection.JavaConversions._
-        val selected = sel.toList.toList.asInstanceOf[List[TableEntry]]
-        val toDelete = selected filter { _.sym.isEmpty }
-        if (!toDelete.isEmpty) {
-          tableContents = tableContents filterNot (toDelete.contains(_))
-          tableViewer.refresh()
+      // listeners
+      // DELETE
+      def delete() {
+        val sel = tableViewer.getSelection.asInstanceOf[StructuredSelection]
+        if (!sel.isEmpty) {
+          import scala.collection.JavaConversions._
+          val selected = sel.toList.toList.asInstanceOf[List[TableEntry]]
+          val toDelete = selected filter { _.sym.isEmpty }
+          if (!toDelete.isEmpty) {
+            tableContents = tableContents filterNot (toDelete.contains(_))
+            tableViewer.refresh()
+          }
         }
       }
-    }
-    newPopupMenu(getShell,table) { m=>
+    newPopupMenu(getShell, table) { m ⇒
       newMenuItem(m, "Delete", Some(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_ELCL_REMOVE))) {
         delete()
       }
     }
-    addKeyReleasedReaction(table,SWT.DEL) {delete()}
+    addKeyReleasedReaction(table, SWT.DEL) { delete() }
     c
   }
 
   def createTableValue() = {
     val declared = v.params.asInstanceOf[List[Param]]
-    def declaredValue(k:Name) =declared.find(_.key == k).map(_.value).getOrElse("")
+      def declaredValue(k: Name) = declared.find(_.key == k).map(_.value).getOrElse("")
     val parSymbols = for (p ← params) yield p
-    val withSymbol = for (p<-parSymbols; val key = p.name) yield { TableEntry(Some(p), key.str,declaredValue(key) ) }
-    val unknown = for (Param(k,v) ← declared; if !parSymbols.exists(_.name==k)) yield { TableEntry(None, k.str, v) }
+    val withSymbol = for (p ← parSymbols; val key = p.name) yield { TableEntry(Some(p), key.str, declaredValue(key)) }
+    val unknown = for (Param(k, v) ← declared; if !parSymbols.exists(_.name == k)) yield { TableEntry(None, k.str, v) }
     withSymbol ++ unknown
   }
   override def isResizable = true

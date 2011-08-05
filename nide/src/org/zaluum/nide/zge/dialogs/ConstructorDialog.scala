@@ -1,17 +1,44 @@
 package org.zaluum.nide.zge.dialogs
 
+import scala.collection.JavaConversions.asScalaBuffer
+
+import org.eclipse.jface.dialogs.Dialog
+import org.eclipse.jface.viewers.ArrayContentProvider
+import org.eclipse.jface.viewers.CellEditor
+import org.eclipse.jface.viewers.ComboViewer
+import org.eclipse.jface.viewers.ICellModifier
+import org.eclipse.jface.viewers.ISelectionChangedListener
+import org.eclipse.jface.viewers.IStructuredContentProvider
+import org.eclipse.jface.viewers.IStructuredSelection
+import org.eclipse.jface.viewers.ITableLabelProvider
+import org.eclipse.jface.viewers.LabelProvider
+import org.eclipse.jface.viewers.SelectionChangedEvent
+import org.eclipse.jface.viewers.StructuredSelection
+import org.eclipse.jface.viewers.TableViewer
+import org.eclipse.jface.viewers.TextCellEditor
+import org.eclipse.swt.graphics.Image
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets.Control
+import org.eclipse.swt.widgets.Table
+import org.eclipse.swt.widgets.TableColumn
+import org.eclipse.swt.widgets.TableItem
+import org.eclipse.swt.SWT
 import org.eclipse.ui.ISharedImages
 import org.eclipse.ui.PlatformUI
+import org.zaluum.nide.compiler.BoxTypeSymbol
+import org.zaluum.nide.compiler.Constructor
+import org.zaluum.nide.compiler.EditTransformer
+import org.zaluum.nide.compiler.ParamSymbol
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.compiler.ValSymbol
+import org.zaluum.nide.zge.SWTScala.addKeyReleasedReaction
+import org.zaluum.nide.zge.SWTScala.newLabel
+import org.zaluum.nide.zge.SWTScala.newMenuItem
+import org.zaluum.nide.zge.SWTScala.newPopupMenu
+import org.zaluum.nide.zge.Viewer
+
 import net.miginfocom.swt.MigLayout
-import org.eclipse.jface.dialogs.Dialog
-import org.eclipse.jface.viewers.{ Viewer => _, _ }
-import org.eclipse.swt.graphics.Image
-import org.eclipse.swt.widgets.{ Menu, MenuItem, Table, TableItem, Shell, Composite, TableColumn, Label, Control }
-import org.eclipse.swt.SWT
-import org.eclipse.swt.events.{ KeyListener, KeyEvent }
-import org.zaluum.nide.compiler._
-import org.zaluum.nide.zge._
-import SWTScala._
 
 class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   var combo: ComboViewer = _
@@ -48,11 +75,11 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
     val nameCol = new TableColumn(table, SWT.RIGHT)
     table.setLinesVisible(true);
     table.setHeaderVisible(true);
-    def newColumn(str: String, w: Int) {
-      val col = new TableColumn(table, SWT.CENTER, 0);
-      col.setText(str);
-      col.setWidth(w);
-    }
+      def newColumn(str: String, w: Int) {
+        val col = new TableColumn(table, SWT.CENTER, 0);
+        col.setText(str);
+        col.setWidth(w);
+      }
     newColumn("Type", 150)
     newColumn("Value", 150)
     newColumn("Name", 150)
@@ -75,8 +102,8 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
     combo.setInput(tpe.constructors.toArray)
     combo.getControl.setLayoutData("span,wrap")
     val constructor = vs match {
-      case vs: ValSymbol => vs.constructor
-      case _ => None
+      case vs: ValSymbol ⇒ vs.constructor
+      case _             ⇒ None
     }
     constructor foreach { cons ⇒
       combo.setSelection(new StructuredSelection(cons));
@@ -124,20 +151,20 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
         tableViewer.refresh()
       }
     })
-    // DELETE
-    def delete() {
-      val sel = tableViewer.getSelection.asInstanceOf[StructuredSelection]
-      if (!sel.isEmpty) {
-        import scala.collection.JavaConversions._
-        val selected = sel.toList.toList.asInstanceOf[List[TableEntry]]
-        val toDelete = selected filter { _.sym.isEmpty }
-        if (!toDelete.isEmpty) {
-          tableContents = tableContents filterNot (toDelete.contains(_))
-          tableViewer.refresh()
+      // DELETE
+      def delete() {
+        val sel = tableViewer.getSelection.asInstanceOf[StructuredSelection]
+        if (!sel.isEmpty) {
+          import scala.collection.JavaConversions._
+          val selected = sel.toList.toList.asInstanceOf[List[TableEntry]]
+          val toDelete = selected filter { _.sym.isEmpty }
+          if (!toDelete.isEmpty) {
+            tableContents = tableContents filterNot (toDelete.contains(_))
+            tableViewer.refresh()
+          }
         }
       }
-    }
-    newPopupMenu(getShell, table) { m =>
+    newPopupMenu(getShell, table) { m ⇒
       newMenuItem(m, "Delete", Some(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_ELCL_REMOVE))) {
         delete()
       }

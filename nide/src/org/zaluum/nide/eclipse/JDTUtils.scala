@@ -1,26 +1,27 @@
 package org.zaluum.nide.eclipse
 
 import scala.collection.mutable.Buffer
-import org.eclipse.jdt.core.IMember
-import org.eclipse.jdt.core.IMethod
-import org.eclipse.core.runtime.NullProgressMonitor
-import org.eclipse.jdt.core.IElementChangedListener
-import org.eclipse.jdt.core.JavaCore
-import org.zaluum.annotation.Box
-import org.zaluum.annotation.BoxImage
-import org.eclipse.jdt.core.search.TypeDeclarationMatch
-import org.zaluum.nide.compiler._
-import javax.swing.JComponent
-import java.net.URLClassLoader
-import java.net.URL
-import org.eclipse.core.resources.{ IProject, IFile, IResource }
-import org.eclipse.core.runtime.{ Path, IPath }
-import org.eclipse.jdt.core.{ ICompilationUnit, IJavaElement, IJavaElementDelta, IType, IAnnotatable, IJavaProject, IAnnotation, IMemberValuePair, IClasspathEntry, Flags, ElementChangedEvent }
-import org.eclipse.jdt.core.search.{ SearchEngine, SearchPattern, SearchRequestor, SearchMatch, IJavaSearchConstants, TypeReferenceMatch }
-import org.eclipse.jdt.internal.core.JavaModelManager
-import scala.util.control.Exception._
+
 import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.core.runtime.NullProgressMonitor
+import org.eclipse.jdt.core.search.IJavaSearchConstants
 import org.eclipse.jdt.core.search.IJavaSearchScope
+import org.eclipse.jdt.core.search.SearchEngine
+import org.eclipse.jdt.core.search.SearchMatch
+import org.eclipse.jdt.core.search.SearchPattern
+import org.eclipse.jdt.core.search.SearchRequestor
+import org.eclipse.jdt.core.search.TypeDeclarationMatch
+import org.eclipse.jdt.core.search.TypeReferenceMatch
+import org.eclipse.jdt.core.Flags
+import org.eclipse.jdt.core.IAnnotatable
+import org.eclipse.jdt.core.IAnnotation
+import org.eclipse.jdt.core.IJavaElement
+import org.eclipse.jdt.core.IJavaProject
+import org.eclipse.jdt.core.IMember
+import org.eclipse.jdt.core.IMemberValuePair
+import org.eclipse.jdt.core.IMethod
+import org.eclipse.jdt.core.IType
+import org.zaluum.nide.compiler.Point
 object JDTUtils {
   def allMethodsOf(t: IType) = {
     val hier = t.newSupertypeHierarchy(new NullProgressMonitor)
@@ -29,10 +30,10 @@ object JDTUtils {
   }
   def visibleMethodsOf(t: IType) = {
     var methods = Buffer[IMethod]()
-    def process(m: IMethod) {
-      methods.filterNot(m.isSimilar(_))
-      methods += m
-    }
+      def process(m: IMethod) {
+        methods.filterNot(m.isSimilar(_))
+        methods += m
+      }
     for (m ← allMethodsOf(t)) process(m)
     methods.toList
   }
@@ -54,7 +55,7 @@ object AnnotationUtils {
     val oy = findIntegerValueOfAnnotation(a, "y")
     (ox, oy) match {
       case (Some(x), Some(y)) ⇒ Point(x, y)
-      case _ ⇒ Point(0, 0)
+      case _                  ⇒ Point(0, 0)
     }
   }
   def findAnnotations(t: IType, ann: IAnnotatable, str: String) =
@@ -90,12 +91,12 @@ object SearchUtils {
     var list = List[IType]()
     val searchRequestor = new SearchRequestor() {
       def acceptSearchMatch(matchh: SearchMatch) {
-        def processElement(a: AnyRef) = a match {
-          case t: IType ⇒ list = t :: list
-          case other ⇒
-        }
+          def processElement(a: AnyRef) = a match {
+            case t: IType ⇒ list = t :: list
+            case other    ⇒
+          }
         matchh match {
-          case t: TypeReferenceMatch ⇒ processElement(t.getElement)
+          case t: TypeReferenceMatch   ⇒ processElement(t.getElement)
           case t: TypeDeclarationMatch ⇒ processElement(t.getElement)
         }
       }
@@ -104,7 +105,7 @@ object SearchUtils {
     list
   }
   def projectScope(jproject: IJavaProject) =
-    SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject),IJavaSearchScope.APPLICATION_LIBRARIES | IJavaSearchScope.SOURCES | IJavaSearchScope.REFERENCED_PROJECTS)
+    SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject), IJavaSearchScope.APPLICATION_LIBRARIES | IJavaSearchScope.SOURCES | IJavaSearchScope.REFERENCED_PROJECTS)
 
   def sourcesScope(jproject: IJavaProject) =
     SearchEngine.createJavaSearchScope(Array[IJavaElement](jproject), IJavaSearchScope.SOURCES | IJavaSearchScope.APPLICATION_LIBRARIES)

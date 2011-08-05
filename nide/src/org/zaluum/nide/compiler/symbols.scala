@@ -1,10 +1,9 @@
 package org.zaluum.nide.compiler
 
 import scala.collection.mutable.Buffer
-import javax.swing.JComponent
-import org.eclipse.jdt.internal.compiler.lookup.Binding
-import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
+
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
+import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
@@ -88,17 +87,17 @@ sealed trait TemplateSymbol extends Symbol {
     val parsed = templateTree.currentBlock.map { c ⇒
       try { c.toInt } catch { case _ ⇒ 0 }
     }.getOrElse(0)
-    if (parsed<0 || parsed>=blocks.length) 0 else parsed
+    if (parsed < 0 || parsed >= blocks.length) 0 else parsed
   }
   def currentBlock = blocks(currentBlockIndex)
-  def nextBlockIndex = if (currentBlockIndex>=blocks.length-1) 0 else currentBlockIndex +1
+  def nextBlockIndex = if (currentBlockIndex >= blocks.length - 1) 0 else currentBlockIndex + 1
   def lookupParam(name: Name): Option[ParamSymbol]
   var thisVal: ValSymbol = _ // should be template
 }
 trait BoxType extends TemplateSymbol with Type {
   def portsWithSuper = ports
   def lookupPortWithSuper(name: Name): Option[PortSymbol]
-  def templateTree : Template 
+  def templateTree: Template
 }
 class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   def name = null
@@ -107,7 +106,7 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   var executionOrder = List[ValSymbol]()
   private val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
 
-  override def tdecl : Block = decl.asInstanceOf[Block] 
+  override def tdecl: Block = decl.asInstanceOf[Block]
   def numeral = template.blocks.indexOf(this)
   def usedNames = (valsList ++ missingVals.values ++ template.ports.values).map { _.name.str }.toSet
   def valsList = vals.values.toList

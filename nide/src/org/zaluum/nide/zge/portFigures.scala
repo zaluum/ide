@@ -1,13 +1,21 @@
 package org.zaluum.nide.zge
 
+import org.eclipse.draw2d.geometry.Rectangle
+import org.eclipse.draw2d.ColorConstants
+import org.eclipse.draw2d.Ellipse
 import org.eclipse.draw2d.RectangleFigure
+import org.zaluum.nide.compiler.Dimension
+import org.zaluum.nide.compiler.In
+import org.zaluum.nide.compiler.Out
+import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
+import org.zaluum.nide.compiler.PortDef
+import org.zaluum.nide.compiler.PortDir
+import org.zaluum.nide.compiler.PortSide
+import org.zaluum.nide.compiler.PortSymbol
+import org.zaluum.nide.compiler.Shift
+import org.zaluum.nide.compiler.Vector2
+
 import draw2dConversions._
-import org.eclipse.draw2d.{ Ellipse, ColorConstants, Figure, ImageFigure }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
-import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
-import scala.collection.mutable.Buffer
-import org.zaluum.nide.compiler.Point
 
 class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
   def size = Dimension(6, 6)
@@ -83,9 +91,9 @@ class OpenPortDeclFigure(openBox: OpenBoxFigure) extends OpenPortBaseFigure(open
   }
 }
 class OpenPortFixedFigure(openBox: OpenBoxFigure) extends OpenPortBaseFigure(openBox) {
-  var extPos = Point(0, 0)
+  var extPos = MPoint(0, 0)
   var dir: PortDir = _
-  def update(intPs: PortSide, extPs: PortSide, left: Boolean, dir: PortDir, extPos: Point) {
+  def update(intPs: PortSide, extPs: PortSide, left: Boolean, dir: PortDir, extPos: MPoint) {
     this.extPos = extPos
     this.dir = dir
     update(intPs, extPs, left)

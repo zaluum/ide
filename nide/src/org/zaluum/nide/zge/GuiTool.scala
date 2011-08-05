@@ -1,25 +1,26 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.zge.dialogs.ValDefMenu
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.math.max
+
 import org.eclipse.draw2d.geometry.Rectangle
-import org.eclipse.draw2d.IFigure
 import org.eclipse.draw2d.Cursors
-import org.zaluum.nide.compiler._
-import javax.swing.JButton
-import javax.swing.JComponent
-import java.awt.{ Graphics ⇒ AG }
-import java.awt.image.BufferedImage
-import org.eclipse.draw2d.{ Figure, Graphics }
-import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
-import org.eclipse.swt.SWT
-import scala.collection.mutable.Buffer
+import org.eclipse.draw2d.IFigure
+import org.zaluum.nide.compiler.BoxDef
+import org.zaluum.nide.compiler.Dimension
+import org.zaluum.nide.compiler.EditTransformer
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.compiler.Vector2
+import org.zaluum.nide.zge.dialogs.ValDefMenu
 
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   override val resizing = new Resizing {
     override def command(newPos: Point, newSize: Dimension, t: Tree) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
-        case v:ValDef if (v == t) ⇒
-          v.copy(guiPos=Some(newPos), guiSize=Some(newSize))
+        case v: ValDef if (v == t) ⇒
+          v.copy(guiPos = Some(newPos), guiSize = Some(newSize))
       }
     }
   }
@@ -31,9 +32,9 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
     def buttonUp {
       beingSelected match {
-        case Some(s: Item) ⇒ 
+        case Some(s: Item) ⇒
           viewer.selection.updateSelection(s.selectionSubject.toSet, shift)
-          s.selectionSubject foreach {controller.blink(_,viewer)}
+          s.selectionSubject foreach { controller.blink(_, viewer) }
         case None ⇒ viewer.selection.deselectAll()
       }
       viewer.refresh()
@@ -45,10 +46,10 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
     override def move {
       borderDistance match {
-      case (true, true) ⇒ viewer.setCursor(Cursors.SIZESE)
-      case (false, true) ⇒ viewer.setCursor(Cursors.SIZES)
-      case (true, false) ⇒ viewer.setCursor(Cursors.SIZEE)
-      case _ ⇒ viewer.setCursor(Cursors.ARROW)
+        case (true, true)  ⇒ viewer.setCursor(Cursors.SIZESE)
+        case (false, true) ⇒ viewer.setCursor(Cursors.SIZES)
+        case (true, false) ⇒ viewer.setCursor(Cursors.SIZEE)
+        case _             ⇒ viewer.setCursor(Cursors.ARROW)
       }
       super.move
     }
@@ -66,23 +67,23 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
             }
           }
           fig match {
-            case s:SwingFigure => moving.enter(initDrag, initContainer)
-            case l:LabelItem => movingLabel.enter(initDrag,initContainer,l)
+            case s: SwingFigure ⇒ moving.enter(initDrag, initContainer)
+            case l: LabelItem   ⇒ movingLabel.enter(initDrag, initContainer, l)
           }
         case (None, None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
     override def doubleClick() {
       itemUnderMouse match {
-        case Some(l:TextEditFigure) => directEditing.enter(l,true)
-        case None =>
+        case Some(l: TextEditFigure) ⇒ directEditing.enter(l, true)
+        case None                    ⇒
       }
     }
     override def menu() = {
       itemUnderMouse match {
-        case Some(l: LabelItem) ⇒ ValDefMenu.show(viewer, l,true)
-        case Some(s: SwingFigure) ⇒ ValDefMenu.show(viewer, s,true)
-        case _ ⇒ 
+        case Some(l: LabelItem)   ⇒ ValDefMenu.show(viewer, l, true)
+        case Some(s: SwingFigure) ⇒ ValDefMenu.show(viewer, s, true)
+        case _                    ⇒
       }
     }
   }
@@ -119,11 +120,11 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
             case b: BoxDef if (b == viewer.boxDef) ⇒
               b.copy(
                 guiSize = Some(newSize),
-                template=transform(b.template))
+                template = transform(b.template))
           }
         }
         controller.exec(command)
-      }else {
+      } else {
         exit()
       }
     }
@@ -136,7 +137,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     def exit() { selecting.enter() }
   }
   object resizingGui extends ResizingGui with DeltaMove
-  
+
   // MOVING
   trait Moving extends ToolState {
     self: DeltaMove ⇒
@@ -151,7 +152,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       }.toMap
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
-          case v:ValDef if (positions.contains(v)) ⇒
+          case v: ValDef if (positions.contains(v)) ⇒
             v.copy(guiPos = Some(positions(v)))
         }
       }
@@ -160,17 +161,17 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { viewer.selectedItems foreach { f=> f.moveFeed(snap(f.pos + delta)) } }
+    def move() { viewer.selectedItems foreach { f ⇒ f.moveFeed(snap(f.pos + delta)) } }
     def abort() {
-      viewer.selectedItems foreach { f=> f.moveFeed(f.pos) }
+      viewer.selectedItems foreach { f ⇒ f.moveFeed(f.pos) }
       exit()
     }
     def currentMouseLocation = GuiTool.this.currentMouseLocation
   }
   object moving extends Moving with DeltaMove
   // Moving label
-  trait MovingLabel extends SpecialMove[LabelItem]{ // TODO inherit treetool movingLabel
-    self : ToolState with DeltaMove with SingleContainer =>
+  trait MovingLabel extends SpecialMove[LabelItem] { // TODO inherit treetool movingLabel
+    self: ToolState with DeltaMove with SingleContainer ⇒
     def clampDelta = delta
     def buttonUp {
       val oldPos = fig.valDef.labelGui.get.pos
@@ -178,7 +179,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case v: ValDef if (fig.valDef == v) ⇒
-            v.copy(labelGui = Some(v.labelGui.get.copy(pos=newPos)))
+            v.copy(labelGui = Some(v.labelGui.get.copy(pos = newPos)))
         }
       }
       controller.exec(command)

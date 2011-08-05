@@ -1,12 +1,14 @@
 package org.zaluum.nide.compiler
 
 import scala.collection.mutable.Buffer
-import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
-import javax.swing.JPanel
+
 import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
-import org.zaluum.nide.eclipse.integration.model.{ ZaluumCompilationUnitScope, ZaluumTypeDeclaration }
+import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
+
+import javax.swing.JPanel
 
 class Reporter {
   case class Error(msg: String, mark: Option[Int])
@@ -66,38 +68,38 @@ object Literals {
   def parse(value: String, tpe: Name): Option[Any] = {
     try {
       Some(tpe match {
-        case Name("byte") ⇒ value.toByte
-        case Name("short") ⇒ value.toShort
-        case Name("int") ⇒ value.toInt
-        case Name("float") ⇒ value.toFloat
-        case Name("double") ⇒ value.toDouble
-        case Name("boolean") ⇒ value.toBoolean
+        case Name("byte")             ⇒ value.toByte
+        case Name("short")            ⇒ value.toShort
+        case Name("int")              ⇒ value.toInt
+        case Name("float")            ⇒ value.toFloat
+        case Name("double")           ⇒ value.toDouble
+        case Name("boolean")          ⇒ value.toBoolean
         case Name("java.lang.String") ⇒ value
-        case Name("char") ⇒ value.charAt(0)
+        case Name("char")             ⇒ value.charAt(0)
       })
     } catch {
       case e ⇒ None
     }
   }
   def parseNarrowestLiteral(v: String, zaluumScope: ZaluumCompilationUnitScope) = {
-    def parseIntOpt = try { Some(v.toInt) } catch { case e => None }
-    def parseDoubleOpt = try { Some(v.toDouble) } catch { case e => None }
+      def parseIntOpt = try { Some(v.toInt) } catch { case e ⇒ None }
+      def parseDoubleOpt = try { Some(v.toDouble) } catch { case e ⇒ None }
     if (v.toLowerCase == "true") Some(true, primitives.Boolean)
     else if (v.toLowerCase == "false") Some(false, primitives.Boolean)
     else if (v.endsWith("f") || v.endsWith("F")) {
-      try { Some((v.toFloat, primitives.Float)) } catch { case e => None }
+      try { Some((v.toFloat, primitives.Float)) } catch { case e ⇒ None }
     } else if (v.endsWith("l") || v.endsWith("L")) {
-      try { Some((v.dropRight(1).toLong, primitives.Long)) } catch { case e => e.printStackTrace; println("long fail " + v); None }
+      try { Some((v.dropRight(1).toLong, primitives.Long)) } catch { case e ⇒ e.printStackTrace; println("long fail " + v); None }
     } else if (v.startsWith("\"") && v.endsWith("\"")) {
 
       Some(v.substring(1, v.length - 1), zaluumScope.getZJavaLangString)
     } else {
       parseIntOpt match { // char?
-        case Some(i) => Some(narrowestInt(i))
-        case None =>
+        case Some(i) ⇒ Some(narrowestInt(i))
+        case None ⇒
           parseDoubleOpt match {
-            case Some(d) => Some(d, primitives.Double)
-            case None => Some(v, zaluumScope.getZJavaLangString)
+            case Some(d) ⇒ Some(d, primitives.Double)
+            case None    ⇒ Some(v, zaluumScope.getZJavaLangString)
           }
       }
     }
@@ -133,37 +135,37 @@ object primitives {
   def numericTypes = List(Byte, Short, Int, Long, Float, Double, Char)
   def widening(from: PrimitiveJavaType, to: PrimitiveJavaType) = {
     from match {
-      case Byte => List(Short, Int, Long, Float, Double).contains(to)
-      case Short => List(Int, Long, Float, Double).contains(to)
-      case Char => List(Int, Long, Float, Double).contains(to)
-      case Int => List(Long, Float, Double).contains(to)
-      case Long => List(Float, Double).contains(to)
-      case Float => to == Double
-      case _ => false
+      case Byte  ⇒ List(Short, Int, Long, Float, Double).contains(to)
+      case Short ⇒ List(Int, Long, Float, Double).contains(to)
+      case Char  ⇒ List(Int, Long, Float, Double).contains(to)
+      case Int   ⇒ List(Long, Float, Double).contains(to)
+      case Long  ⇒ List(Float, Double).contains(to)
+      case Float ⇒ to == Double
+      case _     ⇒ false
     }
   }
   def toOperationType(t: PrimitiveJavaType): PrimitiveJavaType = {
     t match {
-      case Byte => Int
-      case Short => Int
-      case Char => Int
-      case Int => Int
-      case Long => Long
-      case Float => Float
-      case Double => Double
+      case Byte   ⇒ Int
+      case Short  ⇒ Int
+      case Char   ⇒ Int
+      case Int    ⇒ Int
+      case Long   ⇒ Long
+      case Float  ⇒ Float
+      case Double ⇒ Double
     }
   }
   def getUnboxedType(p: ClassJavaType): Option[PrimitiveJavaType] = {
     p.name.str match {
-      case "java.lang.Boolean" => Some(primitives.Boolean)
-      case "java.lang.Char" => Some(primitives.Char)
-      case "java.lang.Byte" => Some(primitives.Byte)
-      case "java.lang.Short" => Some(primitives.Short)
-      case "java.lang.Integer" => Some(primitives.Int)
-      case "java.lang.Float" => Some(primitives.Float)
-      case "java.lang.Double" => Some(primitives.Double)
-      case "java.lang.Long" => Some(primitives.Long)
-      case _ => None
+      case "java.lang.Boolean" ⇒ Some(primitives.Boolean)
+      case "java.lang.Char"    ⇒ Some(primitives.Char)
+      case "java.lang.Byte"    ⇒ Some(primitives.Byte)
+      case "java.lang.Short"   ⇒ Some(primitives.Short)
+      case "java.lang.Integer" ⇒ Some(primitives.Int)
+      case "java.lang.Float"   ⇒ Some(primitives.Float)
+      case "java.lang.Double"  ⇒ Some(primitives.Double)
+      case "java.lang.Long"    ⇒ Some(primitives.Long)
+      case _                   ⇒ None
     }
   }
   /** must be int long float or double (operationtype) */
@@ -173,9 +175,9 @@ object primitives {
   }
   def isNumeric(tpe: Type): Boolean = {
     tpe match {
-      case p: PrimitiveJavaType if (p != primitives.Boolean) => true
-      case j: JavaType => false
-      case _ => false
+      case p: PrimitiveJavaType if (p != primitives.Boolean) ⇒ true
+      case j: JavaType ⇒ false
+      case _ ⇒ false
     }
   }
   def isIntNumeric(tpe: Type): Boolean = tpe == primitives.Int ||
@@ -198,7 +200,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
 
-    private def bind(symbol: Symbol, tree: Tree, dupl: Boolean)(block: => Unit) {
+    private def bind(symbol: Symbol, tree: Tree, dupl: Boolean)(block: ⇒ Unit) {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
       tree.symbol = symbol
       symbol.decl = tree
@@ -215,14 +217,14 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
           tree.tpe = sym
           if (b.template.blocks.size != 1) error("Fatal BoxDef has no block defined", b) // FATAL
         // FIXME reported errors do not show in the editor (valdef)
-        case t: Template =>
+        case t: Template ⇒
           val template = currentOwner.asInstanceOf[TemplateSymbol]
           t.symbol = template
-        case b: Block =>
+        case b: Block ⇒
           val template = currentOwner.asInstanceOf[TemplateSymbol]
           val blockSym = new BlockSymbol(template)
           bind(blockSym, b, false) {
-            template.blocks :+=  blockSym
+            template.blocks :+= blockSym
           }
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
           val template = currentOwner.asInstanceOf[TemplateSymbol]
@@ -246,21 +248,21 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
   class Resolver(global: Scope) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
-    def createPortInstances(ports: Iterable[PortSymbol], vsym: ValSymbol, inside: Boolean, outside:Boolean) = {
-      vsym.portInstances :::= (for (p <- ports; if p.isInstanceOf[PortSymbol]) yield {
+    def createPortInstances(ports: Iterable[PortSymbol], vsym: ValSymbol, inside: Boolean, outside: Boolean) = {
+      vsym.portInstances :::= (for (p ← ports; if p.isInstanceOf[PortSymbol]) yield {
         val pi = new PortInstance(p.name, vsym, p.dir, Some(p))
         pi
       }).toList;
-      vsym.portSides :::= (for (pi <- vsym.portInstances; ps <- pi.portSymbol) yield {
-        def define(fromInside: Boolean) = ps.dir match {
-          case In => List(new PortSide(pi, true, fromInside))
-          case Out => List(new PortSide(pi, false, fromInside))
-          case Shift => List(new PortSide(pi, true, fromInside), new PortSide(pi, false, fromInside))
-        }
+      vsym.portSides :::= (for (pi ← vsym.portInstances; ps ← pi.portSymbol) yield {
+          def define(fromInside: Boolean) = ps.dir match {
+            case In    ⇒ List(new PortSide(pi, true, fromInside))
+            case Out   ⇒ List(new PortSide(pi, false, fromInside))
+            case Shift ⇒ List(new PortSide(pi, true, fromInside), new PortSide(pi, false, fromInside))
+          }
         val i = if (inside) define(true) else List()
         val o = if (outside) define(false) else List()
         i ::: o
-      }).flatMap(a => a);
+      }).flatMap(a ⇒ a);
     }
     private def catchAbort[T](b: ⇒ Option[T]): Option[T] =
       try { b } catch { case e: AbortCompilation ⇒ None }
@@ -278,13 +280,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
                 error("Super box type not found " + sn, tree)
             }
           }
-          createPortInstances(bs.portsWithSuper.values, bs.thisVal, true,false)
-        case bl: Block =>
+          createPortInstances(bs.portsWithSuper.values, bs.thisVal, true, false)
+        case bl: Block ⇒
           bl.sym.template match {
-            case bs: BoxTypeSymbol =>
+            case bs: BoxTypeSymbol ⇒
               bs.thisVal = new ValSymbol(bl.sym, Name("this")) // feels wrong
               bs.thisVal.tpe = bs
-            case v: ValSymbol =>
+            case v: ValSymbol ⇒
               v.thisVal = v
           }
         case PortDef(name, typeName, in, inPos, extPos) ⇒
@@ -335,21 +337,21 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
                   case None ⇒ error("Cannot find parameter " + p.key, tree)
                 }
               }
-              createPortInstances(bs.portsWithSuper.values, vsym, false,true)
+              createPortInstances(bs.portsWithSuper.values, vsym, false, true)
               vsym.params
-            case Some(b: ExprType) =>
+            case Some(b: ExprType) ⇒
               v.symbol.tpe = b
               val vsym = v.sym
               for (p ← v.params.asInstanceOf[List[Param]]) {
                 b.lookupParam(p.key) match {
-                  case Some(parSym) =>
+                  case Some(parSym) ⇒
                     vsym.params += (parSym -> p.value) // FIXME always string?
-                  case None => error("Cannot find parameter " + p.key, tree)
+                  case None ⇒ error("Cannot find parameter " + p.key, tree)
                 }
               }
               val createInside = b.isInstanceOf[TemplateExprType]
-              createPortInstances(vsym.ports.values, vsym, createInside,true)
-              createPortInstances(b.ports.values, vsym, createInside,true)
+              createPortInstances(vsym.ports.values, vsym, createInside, true)
+              createPortInstances(b.ports.values, vsym, createInside, true)
             case a ⇒
               v.symbol.tpe = NoSymbol
               error("Box class " + v.typeName + " not found", tree);
@@ -376,7 +378,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
         case ThisRef() ⇒
           val block = currentOwner.asInstanceOf[BlockSymbol]
           tree.symbol = NoSymbol
-          tree.tpe = NoSymbol  // FIXME
+          tree.tpe = NoSymbol // FIXME
         case _ ⇒
       }
     }
@@ -394,8 +396,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
   }
   def runCheck(): Tree = {
     toCompile.template.blocks.headOption foreach {
-      bl =>
-        new CheckConnections(bl,true).run()
+      bl ⇒
+        new CheckConnections(bl, true).run()
     }
     toCompile
   }

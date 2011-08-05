@@ -1,15 +1,16 @@
 package org.zaluum.nide.compiler
 
-import org.zaluum.nide.zge.V
-import org.zaluum.nide.zge.H
-import org.zaluum.nide.protobuf.ZaluumProtobuf
-import scala.collection.JavaConversions._
+import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.nio.charset.Charset
-import java.io.ByteArrayInputStream
-import com.google.protobuf.ExtensionRegistry
-import org.zaluum.nide.NotImplemented._
+
+import scala.collection.JavaConversions.asScalaBuffer
+
+import org.zaluum.nide.protobuf.ZaluumProtobuf
 import org.zaluum.nide.zge.Clipboard
+
+import com.google.protobuf.ExtensionRegistry
+
 object Parser {
   def readTree(i: InputStream, className: Name): BoxDef = {
     val a = try {
@@ -43,7 +44,7 @@ object Parser {
     Template(
       blocks = t.getBlockList() map parse toList,
       ports = t.getPortList() map parse toList,
-      currentBlock = if (t.hasCurrentBlock()) Some(t.getCurrentBlock) else None )
+      currentBlock = if (t.hasCurrentBlock()) Some(t.getCurrentBlock) else None)
   }
   def parse(t: ZaluumProtobuf.Block): Block = {
     Block(junctions = t.getJunctionList map parse toList,
@@ -107,8 +108,8 @@ object Parser {
       extPos = parse(p.getPosExternal))
   }
   def parseDir(dir: ZaluumProtobuf.Direction) = dir match {
-    case ZaluumProtobuf.Direction.IN ⇒ In
-    case ZaluumProtobuf.Direction.OUT ⇒ Out
+    case ZaluumProtobuf.Direction.IN    ⇒ In
+    case ZaluumProtobuf.Direction.OUT   ⇒ Out
     case ZaluumProtobuf.Direction.SHIFT ⇒ Shift
   }
   def parse(p: ZaluumProtobuf.Point) = Point(p.getX, p.getY)

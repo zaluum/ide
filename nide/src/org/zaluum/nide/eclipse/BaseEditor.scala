@@ -1,11 +1,15 @@
 package org.zaluum.nide.eclipse
 
-import org.eclipse.core.resources.{ IResourceDeltaVisitor, IResourceChangeEvent, IResourceDelta, ResourcesPlugin, IResourceChangeListener, IFile }
-import org.eclipse.swt.widgets.Shell
-import org.eclipse.ui.part.{ EditorPart, FileEditorInput }
-import org.eclipse.ui.{ IFileEditorInput, IEditorInput }
+import org.eclipse.core.resources.IResourceChangeEvent
+import org.eclipse.core.resources.IResourceChangeListener
+import org.eclipse.core.resources.IResourceDelta
+import org.eclipse.core.resources.IResourceDeltaVisitor
 import org.eclipse.jdt.core.JavaCore
+import org.eclipse.ui.part.EditorPart
+import org.eclipse.ui.part.FileEditorInput
+import org.eclipse.ui.IEditorInput
 import org.eclipse.ui.IEditorPart
+import org.eclipse.ui.IFileEditorInput
 
 abstract class BaseEditor extends EditorPart {
   abstract class InputChangedTracker extends IResourceChangeListener with IResourceDeltaVisitor {
@@ -42,10 +46,10 @@ abstract class BaseEditor extends EditorPart {
           }*/
         case IResourceDelta.REMOVED ⇒
           //if (hasMovedToFlag(delta)) {
-            EclipseUtils.async(display) { 
-              closeEditor(false) 
-            }
-          /*} else {
+          EclipseUtils.async(display) {
+            closeEditor(false)
+          }
+        /*} else {
             val newFile = ResourcesPlugin.getWorkspace()
               .getRoot().getFile(delta.getMovedToPath());
             EclipseUtils.async(display) { 
@@ -85,5 +89,5 @@ abstract class BaseEditor extends EditorPart {
   def jproject = JavaCore.create(project)
   def input = inputFile.getContents(true)
   val fireDirtyClosure: () ⇒ Unit = () ⇒ firePropertyChange(IEditorPart.PROP_DIRTY)
- 
+
 }

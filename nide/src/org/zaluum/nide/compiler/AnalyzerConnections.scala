@@ -1,29 +1,17 @@
 package org.zaluum.nide.compiler
-import org.jgrapht.traverse.TopologicalOrderIterator
+import scala.collection.JavaConversions.asScalaIterator
+
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import org.jgrapht.graph.DefaultEdge
-import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
-import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
-import org.eclipse.jdt.internal.compiler.lookup.InvocationSite
-import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
-import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
+import org.jgrapht.traverse.TopologicalOrderIterator
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
-import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
-import org.eclipse.jdt.internal.core.builder.NameEnvironment
-import org.eclipse.jdt.internal.compiler.util.ObjectVector
-import org.eclipse.jdt.internal.core.SearchableEnvironment
-import org.eclipse.jdt.internal.core.JavaProject
-import org.eclipse.jdt.core.ICompilationUnit
-import org.eclipse.jdt.internal.core.CompilationUnit
-import org.eclipse.jdt.internal.core.builder.SourceFile
-import org.eclipse.jdt.internal.core.JavaModel
-import org.eclipse.jdt.internal.core.JavaModelManager
-import org.zaluum.nide.eclipse.integration.model.PreParsedZaluumCompilationUnit
-import org.zaluum.nide.eclipse.integration.model.{ ZaluumCompilationUnitDeclaration, ZaluumTypeDeclaration }
-import org.eclipse.jdt.internal.core.BasicCompilationUnit
 
 trait AnalyzerConnections {
   self: Analyzer ⇒

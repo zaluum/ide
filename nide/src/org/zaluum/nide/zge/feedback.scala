@@ -1,10 +1,15 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.compiler.Vector2
-import HandleSizes._
-import org.eclipse.draw2d.{ Cursors, RectangleFigure, Figure, ColorConstants, Shape }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point }
+import org.eclipse.draw2d.geometry.Point
+import org.eclipse.draw2d.geometry.Rectangle
+import org.eclipse.draw2d.ColorConstants
+import org.eclipse.draw2d.Cursors
+import org.eclipse.draw2d.Figure
+import org.eclipse.draw2d.RectangleFigure
 import org.eclipse.swt.SWT
+import org.zaluum.nide.compiler.Vector2
+
+import HandleSizes.expansion
 
 object HandleSizes {
   val expansion = 8
@@ -28,7 +33,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) ex
       case (0, 2) ⇒ Cursors.SIZESW
       case (1, 2) ⇒ Cursors.SIZES
       case (2, 2) ⇒ Cursors.SIZESE
-      case _ ⇒ Cursors.SIZEALL
+      case _      ⇒ Cursors.SIZEALL
     }
   }
   def deltaAdd(delta: Vector2, b: Rectangle) = {

@@ -1,8 +1,10 @@
 package org.zaluum.nide.compiler
 
-import org.zaluum.nide.zge.H
-import org.zaluum.nide.protobuf.ZaluumProtobuf
 import java.nio.charset.Charset
+
+import scala.collection.JavaConversions.seqAsJavaList
+
+import org.zaluum.nide.protobuf.ZaluumProtobuf
 import org.zaluum.nide.zge.Clipboard
 object Serializer {
   def writeToIsoString(d: ZaluumProtobuf.BoxClass): String =
@@ -22,15 +24,15 @@ object Serializer {
   def proto(t: Template): ZaluumProtobuf.Template = {
     val p = ZaluumProtobuf.Template.newBuilder
     t.ports sortBy { _.name.str } foreach { port ⇒ p.addPort(proto(port)) }
-    t.blocks foreach { b => p.addBlock(proto(b)) }
-    t.currentBlock foreach { c=> p.setCurrentBlock(c)}
+    t.blocks foreach { b ⇒ p.addBlock(proto(b)) }
+    t.currentBlock foreach { c ⇒ p.setCurrentBlock(c) }
     p.build
   }
   def proto(b: Block): ZaluumProtobuf.Block = {
     val p = ZaluumProtobuf.Block.newBuilder()
     b.valDefs sortBy { _.name.str } foreach { va ⇒ p.addInstance(proto(va)) }
-    b.connections foreach { c => p.addConnection(proto(c)) } // TODO sort
-    b.junctions foreach { j => p.addJunction(proto(j)) }
+    b.connections foreach { c ⇒ p.addConnection(proto(c)) } // TODO sort
+    b.junctions foreach { j ⇒ p.addJunction(proto(j)) }
     b.parameters // FIXME
     p.build()
   }
@@ -44,9 +46,9 @@ object Serializer {
     import scala.collection.JavaConversions._
     val b = ZaluumProtobuf.Instance.newBuilder
     p.params collect { case p: Param ⇒ p } sortBy { _.key.str } foreach { p ⇒ b.addParameter(proto(p)) }
-    p.label foreach { l => b.setLabel(proto(l)) }
-    p.labelGui foreach { l => b.setLabelGui(proto(l)) }
-    p.template foreach { t => b.setTemplate(proto(t)) }
+    p.label foreach { l ⇒ b.setLabel(proto(l)) }
+    p.labelGui foreach { l ⇒ b.setLabelGui(proto(l)) }
+    p.template foreach { t ⇒ b.setTemplate(proto(t)) }
     b.setGuiPos(proto(p.guiPos.getOrElse { Point(0, 0) }))
       .setGuiSize(proto(p.guiSize.getOrElse { Dimension(50, 50) }))
       .setClassName(p.typeName.str)
@@ -110,16 +112,16 @@ object Serializer {
     ZaluumProtobuf.Point.newBuilder.setX(d.w).setY(d.h).build;
 
   def proto(d: PortDir): ZaluumProtobuf.Direction = d match {
-    case In ⇒ ZaluumProtobuf.Direction.IN
-    case Out ⇒ ZaluumProtobuf.Direction.OUT
+    case In    ⇒ ZaluumProtobuf.Direction.IN
+    case Out   ⇒ ZaluumProtobuf.Direction.OUT
     case Shift ⇒ ZaluumProtobuf.Direction.SHIFT
   }
   import scala.collection.JavaConversions._
-  def proto(c:Clipboard):ZaluumProtobuf.Clipboard = {
+  def proto(c: Clipboard): ZaluumProtobuf.Clipboard = {
     ZaluumProtobuf.Clipboard.newBuilder
-      .addAllInstance(c.valDefs map { proto(_)})
-      .addAllPort(c.ports map { proto(_)})
-      .addAllConnnection(c.connections map { proto(_)})
+      .addAllInstance(c.valDefs map { proto(_) })
+      .addAllPort(c.ports map { proto(_) })
+      .addAllConnnection(c.connections map { proto(_) })
       .build;
   }
 }

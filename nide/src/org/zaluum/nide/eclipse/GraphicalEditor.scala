@@ -1,23 +1,29 @@
 package org.zaluum.nide.eclipse
 
-import org.eclipse.ui.IWorkbenchPage
-import org.zaluum.nide.zge.PaletteView
-import org.eclipse.core.commands.{ AbstractHandler, ExecutionEvent }
-import org.eclipse.core.resources.{ IFile, IMarker }
+import org.eclipse.core.commands.AbstractHandler
+import org.eclipse.core.commands.ExecutionEvent
+import org.eclipse.core.resources.IMarker
 import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.jdt.core.{ IType, JavaCore }
-import org.eclipse.jface.viewers.StructuredSelection
-import org.eclipse.swt.events.{ DisposeEvent, DisposeListener }
+import org.eclipse.jdt.core.IType
+import org.eclipse.jdt.core.JavaCore
+import org.eclipse.swt.events.DisposeEvent
+import org.eclipse.swt.events.DisposeListener
 import org.eclipse.swt.layout.FillLayout
-import org.eclipse.swt.widgets.{ Composite, Shell }
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.SWT
 import org.eclipse.ui.contexts.IContextService
 import org.eclipse.ui.handlers.HandlerUtil
 import org.eclipse.ui.ide.IGotoMarker
-import org.eclipse.ui.part.EditorPart
-import org.eclipse.ui.{ IEditorInput, IEditorPart, IEditorSite }
+import org.eclipse.ui.IEditorInput
+import org.eclipse.ui.IEditorPart
+import org.eclipse.ui.IEditorSite
+import org.eclipse.ui.IWorkbenchPage
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
-import org.zaluum.nide.zge.{ Controller, GuiViewer, TreeViewer, Viewer }
+import org.zaluum.nide.zge.Controller
+import org.zaluum.nide.zge.GuiViewer
+import org.zaluum.nide.zge.PaletteView
+import org.zaluum.nide.zge.TreeViewer
 
 class GraphicalEditor extends BaseEditor with IGotoMarker {
 
@@ -108,7 +114,7 @@ class OpenGUIHandler extends AbstractHandler {
   override def execute(event: ExecutionEvent) = {
     Option(HandlerUtil.getActiveEditor(event)) match {
       case Some(g: GraphicalEditor) ⇒ g.openGUI()
-      case _ ⇒
+      case _                        ⇒
     }
     null
   }

@@ -1,31 +1,48 @@
 package org.zaluum.nide.zge
 
+import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.mutable.Buffer
+
+import org.eclipse.draw2d.PositionConstants.EAST
+import org.eclipse.draw2d.PositionConstants.NORTH
+import org.eclipse.draw2d.PositionConstants.SOUTH
+import org.eclipse.draw2d.PositionConstants.WEST
+import org.eclipse.draw2d.geometry.Point
+import org.eclipse.draw2d.geometry.Rectangle
+import org.eclipse.draw2d.ColorConstants
+import org.eclipse.draw2d.Figure
+import org.eclipse.draw2d.Graphics
+import org.eclipse.draw2d.ImageFigure
+import org.eclipse.draw2d.Layer
+import org.eclipse.draw2d.LayeredPane
+import org.eclipse.draw2d.LineBorder
 import org.eclipse.draw2d.PositionConstants
 import org.eclipse.draw2d.Triangle
-import org.eclipse.swt.widgets.Text
-import org.eclipse.swt.events.{ FocusListener, FocusEvent }
-import org.eclipse.jface.viewers.TextCellEditor
-import org.eclipse.jface.viewers.ICellEditorListener
-import org.eclipse.draw2d.text.FlowPage
-import org.eclipse.draw2d.text.TextFlow
-import org.eclipse.draw2d.geometry.Point
-import org.eclipse.draw2d.GroupBoxBorder
-import org.eclipse.draw2d.RectangleFigure
-import org.eclipse.draw2d.Graphics
-import org.eclipse.draw2d.LayeredPane
-import org.eclipse.draw2d.Layer
-import org.eclipse.draw2d.LineBorder
-import draw2dConversions._
-import org.eclipse.draw2d.{ FreeformLayer, Ellipse, ColorConstants, Figure, ImageFigure, Polyline, ScalableFreeformLayeredPane, IFigure }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
-import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.compiler.{ Point ⇒ MPoint, _ }
-import scala.collection.mutable.Buffer
-import scala.collection.JavaConversions._
-import RichFigure._
-import org.eclipse.swt.graphics.Color
 import org.eclipse.jface.resource.ImageDescriptor
+import org.zaluum.expr.Invoke
+import org.zaluum.expr.Literal
+import org.zaluum.nide.compiler.Block
+import org.zaluum.nide.compiler.BoxTypeSymbol
+import org.zaluum.nide.compiler.ConnectionDef
+import org.zaluum.nide.compiler.ConnectionEnd
+import org.zaluum.nide.compiler.Dimension
+import org.zaluum.nide.compiler.IfExprType
+import org.zaluum.nide.compiler.In
+import org.zaluum.nide.compiler.Junction
+import org.zaluum.nide.compiler.JunctionRef
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Out
+import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
+import org.zaluum.nide.compiler.PortRef
+import org.zaluum.nide.compiler.PortSide
+import org.zaluum.nide.compiler.Shift
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.compiler.ValSymbol
+import org.zaluum.nide.compiler.Vector2
+
+import draw2dConversions._
+import RichFigure._
 
 trait ContainerItem extends Item {
   def viewer: Viewer
@@ -335,22 +352,22 @@ abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with Overl
   def myLayer = container.layer
   def blink(b: Boolean) {}
   def extPos = MPoint(16, 0)
-  def constantDisplacement = Vector2(0,- size.h + openBox.getInsets().top)
-  def imageDesc : ImageDescriptor
-  var currentDesc : Option[ImageDescriptor] = None
+  def constantDisplacement = Vector2(0, -size.h + openBox.getInsets().top)
+  def imageDesc: ImageDescriptor
+  var currentDesc: Option[ImageDescriptor] = None
   def update() {
-    def loadImage() {
-      currentDesc = Some(imageDesc)
-      val img = imageFactory(imageDesc)
-	  setImage(img)
-	  size = Dimension(img.getBounds.width,img.getBounds().height)
-    }
+      def loadImage() {
+        currentDesc = Some(imageDesc)
+        val img = imageFactory(imageDesc)
+        setImage(img)
+        size = Dimension(img.getBounds.width, img.getBounds().height)
+      }
     currentDesc match {
-      case Some(c) if (c!=imageDesc) =>
+      case Some(c) if (c != imageDesc) ⇒
         imageFactory.destroy(c)
         loadImage()
-      case None => loadImage()
-      case _=>
+      case None ⇒ loadImage()
+      case _    ⇒
     }
     updateSize()
   }
@@ -363,9 +380,9 @@ abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with Overl
 class IfOpenBoxFigure(container: ContainerItem, viewer: Viewer) extends OpenBoxFigure(container, viewer) {
   val buttons = Buffer[Button]()
   buttons += new Button(this) {
-    def imageDesc = 
-      if (openBox.symbol.numeral == 0) 
-        imageFactory.buttonIfTrue 
+    def imageDesc =
+      if (openBox.symbol.numeral == 0)
+        imageFactory.buttonIfTrue
       else imageFactory.buttonIfFalse
   }
   override def show() {

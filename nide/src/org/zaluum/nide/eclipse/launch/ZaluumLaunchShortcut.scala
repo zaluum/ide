@@ -1,24 +1,28 @@
 package org.zaluum.nide.eclipse.launch
 
-import org.eclipse.core.resources.{ IFile, IResource }
-import org.eclipse.core.runtime.IAdaptable
-import org.eclipse.debug.core.{ DebugPlugin, ILaunchConfigurationType, ILaunchConfiguration }
-import org.eclipse.debug.ui.{ DebugUITools, ILaunchShortcut }
-import org.eclipse.jdt.core.{ IType, IJavaElement }
-import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants
-import org.eclipse.jface.viewers.{ IStructuredSelection, ISelection }
-import org.eclipse.ui.IEditorPart
-import org.zaluum.nide.eclipse.ZaluumNature._
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
-import org.zaluum.nide.eclipse.GraphicalEditor
 import scala.collection.mutable.Buffer
-import org.eclipse.core.resources.IProject
+
+import org.eclipse.core.resources.IResource
+import org.eclipse.core.runtime.IAdaptable
+import org.eclipse.debug.core.DebugPlugin
+import org.eclipse.debug.core.ILaunchConfiguration
+import org.eclipse.debug.ui.DebugUITools
+import org.eclipse.debug.ui.ILaunchShortcut
+import org.eclipse.jdt.core.IType
 import org.eclipse.jdt.internal.core.JavaProject
-import org.zaluum.nide.eclipse.SearchUtils._
-import org.zaluum.annotation.Box
 import org.eclipse.jdt.internal.debug.ui.launcher.DebugTypeSelectionDialog
 import org.eclipse.jdt.internal.debug.ui.JDIDebugUIPlugin
+import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants
+import org.eclipse.jface.viewers.ISelection
+import org.eclipse.jface.viewers.IStructuredSelection
 import org.eclipse.jface.window.Window
+import org.eclipse.ui.IEditorPart
+import org.zaluum.annotation.Box
+import org.zaluum.nide.eclipse.SearchUtils.patternAnnotation
+import org.zaluum.nide.eclipse.SearchUtils.search
+import org.zaluum.nide.eclipse.SearchUtils.sourcesScope
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
+import org.zaluum.nide.eclipse.GraphicalEditor
 
 class ZaluumLaunchShortcut extends ILaunchShortcut {
 
@@ -27,10 +31,10 @@ class ZaluumLaunchShortcut extends ILaunchShortcut {
       case s: IStructuredSelection ⇒
         if (!s.isEmpty)
           s.getFirstElement match {
-            case jp : JavaProject => 
+            case jp: JavaProject ⇒
               val tpe = choose(search(patternAnnotation(classOf[Box].getName), sourcesScope(jp), null))
-              tpe foreach { t=> 
-                doLaunch(t.getCompilationUnit.asInstanceOf[ZaluumCompilationUnit],mode)
+              tpe foreach { t ⇒
+                doLaunch(t.getCompilationUnit.asInstanceOf[ZaluumCompilationUnit], mode)
               }
             case a: IAdaptable ⇒
               val cu = a.getAdapter(classOf[ZaluumCompilationUnit]).asInstanceOf[ZaluumCompilationUnit]
@@ -40,12 +44,12 @@ class ZaluumLaunchShortcut extends ILaunchShortcut {
           }
     }
   }
-  def choose(types: List[IType]) : Option[IType] = {
+  def choose(types: List[IType]): Option[IType] = {
     val mmsd = new DebugTypeSelectionDialog(JDIDebugUIPlugin.getShell(), types.toArray, "Choose Main Zaluum Class")
     if (mmsd.open() == Window.OK) {
       Option(mmsd.getResult()(0).asInstanceOf[IType])
-    }else
-     None
+    } else
+      None
   }
   def launch(editor: IEditorPart, mode: String): Unit = {
     editor match {
@@ -102,7 +106,7 @@ class ZaluumLaunchShortcut extends ILaunchShortcut {
   def getLaunchableResource(editorPart: IEditorPart): IResource = {
     editorPart match {
       case g: GraphicalEditor ⇒ g.inputFile
-      case _ ⇒ null
+      case _                  ⇒ null
     }
   }
 }

@@ -11,7 +11,7 @@ import org.eclipse.core.runtime.jobs.Job
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.core.runtime.IStatus
 object NotImplemented {
-	def ??? = sys.error("not implemented")
+  def ??? = sys.error("not implemented")
 }
 object Utils {
 
@@ -41,9 +41,9 @@ object Utils {
       else display).asyncExec(new Runnable { override def run { toRun } })
     }
   }
-   def job (name:String)(a: IProgressMonitor => IStatus) = 
+  def job(name: String)(a: IProgressMonitor ⇒ IStatus) =
     new Job(name) {
-     protected def run(monitor : IProgressMonitor) : IStatus = a(monitor) 
+      protected def run(monitor: IProgressMonitor): IStatus = a(monitor)
     }
 }
 
@@ -77,40 +77,40 @@ trait Subject {
 trait Observer {
   def receiveUpdate(subject: Subject)
 }
-class DoOnce[A](once: => A)(otherwise : =>A) {
+class DoOnce[A](once: ⇒ A)(otherwise: ⇒ A) {
   var done = false
-  def get() : A = if (done) otherwise else {
-    done=true
+  def get(): A = if (done) otherwise else {
+    done = true
     once
   }
-  def reset() { done = false}
+  def reset() { done = false }
 }
-class ResetableLazy[A](calc: =>A) {
-  var cached :Option[A] = None
-  def apply :A = {
+class ResetableLazy[A](calc: ⇒ A) {
+  var cached: Option[A] = None
+  def apply: A = {
     if (!cached.isDefined) cached = Some(calc)
     cached.get
   }
 }
-class Cached[A](compute: =>Option[A]) {
-  private var value : Option[A] = None
+class Cached[A](compute: ⇒ Option[A]) {
+  private var value: Option[A] = None
   def apply() = {
-    if (value == None) value=compute
+    if (value == None) value = compute
     value
   }
-  def replace(a:A) { value = Some(a)} 
-  def reset() {value=None}
+  def replace(a: A) { value = Some(a) }
+  def reset() { value = None }
 }
-class Cache[A,B](compute : A=>Option[B]) {
-  private var map = Map[A,B]()
-  def get(a:A) : Option[B] = {
+class Cache[A, B](compute: A ⇒ Option[B]) {
+  private var map = Map[A, B]()
+  def get(a: A): Option[B] = {
     map.get(a).orElse {
       val computed = compute(a)
-      computed foreach { c => add(a,c)}
+      computed foreach { c ⇒ add(a, c) }
       computed
     }
   }
-  def add(a:A,b:B) {map +=(a->b)}
+  def add(a: A, b: B) { map += (a -> b) }
   def reset() { map = Map() }
   def values = map.values
 }

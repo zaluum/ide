@@ -1,65 +1,60 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.Activator
-import org.eclipse.ui.PlatformUI
-import org.eclipse.core.runtime.Platform
+import org.eclipse.draw2d.ColorConstants
+import org.eclipse.jface.resource.DeviceResourceDescriptor
+import org.eclipse.jface.resource.ImageDescriptor
+import org.eclipse.jface.resource.JFaceResources
+import org.eclipse.jface.resource.LocalResourceManager
+import org.eclipse.jface.resource.ResourceManager
+import org.eclipse.swt.graphics.Color
+import org.eclipse.swt.graphics.Device
+import org.eclipse.swt.graphics.GC
+import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.graphics.TextLayout
 import org.eclipse.swt.widgets.Control
-import org.eclipse.jface.resource.LocalResourceManager
-import org.eclipse.swt.graphics.Device
-import org.eclipse.jface.resource.DeviceResourceDescriptor
-import org.eclipse.jface.resource.JFaceResources
-import org.eclipse.jface.resource.ResourceManager
-import org.eclipse.draw2d.ColorConstants
-import org.eclipse.draw2d.geometry.Rectangle
-import org.eclipse.draw2d.IFigure
-import org.eclipse.draw2d.AbstractBackground
-import org.eclipse.draw2d.Graphics
-import org.eclipse.draw2d.Figure
-import org.zaluum.nide.eclipse.ClassPath
-import org.zaluum.nide.compiler._
-import org.eclipse.jface.dialogs.PopupDialog
-import org.eclipse.jface.resource.{ ImageRegistry, ImageDescriptor }
 import org.eclipse.swt.SWT
-import org.eclipse.swt.custom.ScrolledComposite
-import org.eclipse.swt.graphics.{ Image, GC, Font, Point }
-import org.eclipse.swt.layout.{ GridLayout, FillLayout }
-import org.eclipse.swt.widgets.{ Display, Shell, Composite }
-import org.zaluum.nide.icons.Icons
+import org.zaluum.nide.compiler.BoxType
+import org.zaluum.nide.compiler.BoxTypeSymbol
+import org.zaluum.nide.compiler.In
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Out
+import org.zaluum.nide.compiler.PortDir
+import org.zaluum.nide.compiler.Shift
+import org.zaluum.nide.compiler.Type
 import org.zaluum.nide.eclipse.ZaluumProject
-import org.eclipse.core.resources.IProject
-import org.eclipse.swt.graphics.Color
+import org.zaluum.nide.icons.Icons
+import org.zaluum.nide.Activator
 
 class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def this(zp: ZaluumProject) = this(zp, new LocalResourceManager(JFaceResources.getResources))
   def this(i: ImageFactory) = this(i.zp, new LocalResourceManager(i.rm))
-  def this(i: ImageFactory,c:Control) = this(i.zp, new LocalResourceManager(i.rm,c))
-  
+  def this(i: ImageFactory, c: Control) = this(i.zp, new LocalResourceManager(i.rm, c))
+
   def notFound = ImageDescriptor.createFromFile(classOf[Icons], "notFound.png")
   def portDeclIn = ImageDescriptor.createFromFile(classOf[Icons], "portDeclIn.png")
   def portDeclOut = ImageDescriptor.createFromFile(classOf[Icons], "portDeclOut.png")
   def portDeclShift = ImageDescriptor.createFromFile(classOf[Icons], "portDeclShift.png")
   def buttonIfTrue = ImageDescriptor.createFromFile(classOf[Icons], "buttonIfTrue.png")
   def buttonIfFalse = ImageDescriptor.createFromFile(classOf[Icons], "buttonIfFalse.png")
-  
+
   def portImg(dir: PortDir) = dir match {
-    case In ⇒ (rm.createImage(portDeclIn), portDeclIn)
-    case Out ⇒ (rm.createImage(portDeclOut), portDeclOut)
+    case In    ⇒ (rm.createImage(portDeclIn), portDeclIn)
+    case Out   ⇒ (rm.createImage(portDeclOut), portDeclOut)
     case Shift ⇒ (rm.createImage(portDeclShift), portDeclShift)
   }
   def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
   def destroyAll() = rm.dispose();
-  def invokeImage(txt:String) = imageForText(txt, ColorConstants.blue)
-  def invokeImageError(txt:String) = imageForText(txt, ColorConstants.red)
+  def invokeImage(txt: String) = imageForText(txt, ColorConstants.blue)
+  def invokeImageError(txt: String) = imageForText(txt, ColorConstants.red)
   def apply(name: Name): (Image, DeviceResourceDescriptor) = imageFor(None, name);
   def apply(tpe: Type): (Image, DeviceResourceDescriptor) = {
     tpe match {
       case b: BoxTypeSymbol ⇒ imageFor(b.image, b.fqName)
-      case b: BoxType ⇒ imageFor(None, b.fqName)
-      case _ ⇒ (rm.createImage(notFound), notFound)
+      case b: BoxType       ⇒ imageFor(None, b.fqName)
+      case _                ⇒ (rm.createImage(notFound), notFound)
     }
   }
-  def apply(d:ImageDescriptor) = rm.createImage(d)
+  def apply(d: ImageDescriptor) = rm.createImage(d)
   private def resourceToDescriptor(resource: String) =
     zp.getResource(resource) map { ImageDescriptor.createFromURL }
 
@@ -74,14 +69,14 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
     imageName flatMap { resourceToImage } orElse {
       resourceToImage(name.toRelativePath + ".png")
     } getOrElse {
-      imageForText(name.classNameWithoutPackage,ColorConstants.black)
+      imageForText(name.classNameWithoutPackage, ColorConstants.black)
     }
   }
-  private def imageForText(txt:String, color:Color) = {
+  private def imageForText(txt: String, color: Color) = {
     val desc = GeneratedIconImageDescriptor(txt, color)
     (rm.create(desc).asInstanceOf[Image], desc)
   }
-  case class GeneratedIconImageDescriptor(text: String, color:Color) extends DeviceResourceDescriptor {
+  case class GeneratedIconImageDescriptor(text: String, color: Color) extends DeviceResourceDescriptor {
     def createResource(device: Device): Object = {
       val img = new Image(device, 48, 48);
       val gc = new GC(img)
@@ -93,7 +88,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
       t.setFont(font)
       t.setWidth(47)
       gc.drawRectangle(0, 0, 47, 47)
-      t.draw(gc,0,math.max(0,(47-t.getBounds.height)/2))
+      t.draw(gc, 0, math.max(0, (47 - t.getBounds.height) / 2))
       t.dispose
       gc.dispose
       img

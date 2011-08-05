@@ -1,15 +1,22 @@
 package org.zaluum.nide.zge
 
+import scala.annotation.elidable
+import scala.collection.JavaConversions.setAsJavaSet
+import scala.math.abs
+
+import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint }
+import org.eclipse.draw2d.Cursors
+import org.eclipse.draw2d.Figure
 import org.eclipse.draw2d.Polyline
-import org.eclipse.swt.SWT
-import org.eclipse.swt.widgets.ToolTip
+import org.zaluum.nide.compiler.Block
+import org.zaluum.nide.compiler.EditTransformer
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.PortDef
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.ValDef
+
+import FigureHelper.isOrHas
 import draw2dConversions._
-import org.eclipse.draw2d.{ Cursors, Figure }
-import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle }
-import org.zaluum.nide.compiler.{ _ }
-import scala.collection.JavaConversions._
-import org.zaluum.basic.LoopBox
-import FigureHelper._
 
 trait ConnectionsTool {
   this: TreeTool ⇒
@@ -43,7 +50,7 @@ trait ConnectionsTool {
       g.vertexs.find(v ⇒ v.p == snap).getOrElse {
         o match {
           case Some(l: LineItem) ⇒ new Joint(snap)
-          case _ ⇒ new EmptyVertex(snap)
+          case _                 ⇒ new EmptyVertex(snap)
         }
       }
     }
@@ -67,9 +74,9 @@ trait ConnectionsTool {
       move()
     }
     def snapMouse(f: Option[Figure], p: Point): Point = f match {
-      case Some(l: LineItem) ⇒ l.l.project(p)
+      case Some(l: LineItem)   ⇒ l.l.project(p)
       case Some(p: PortFigure) ⇒ p.anchor
-      case _ ⇒ p
+      case _                   ⇒ p
     }
     def doEnter {}
     /**
@@ -142,7 +149,7 @@ trait ConnectionsTool {
       dst = portsTrack.current orElse {
         initContainer.itemAt(point(currentMouseLocation), false) match {
           case Some(l: LineItem) ⇒ Some(l)
-          case _ ⇒ None
+          case _                 ⇒ None
         }
       }
       val now = snapMouse(dst, currentMouseLocation)
@@ -229,9 +236,9 @@ trait ConnectionsTool {
       // collect moved ends
       val movedEnds = vertexs.collect { case p: PortVertex ⇒ p }.filter { p ⇒
         val pi = p.ps.pi
-        if (p.ps.fromInside) 
+        if (p.ps.fromInside)
           portdefs.contains(pi.valSymbol.tpe.decl)
-        else 
+        else
           valdefs.contains(pi.valSymbol.decl)
       }
       // update edge vertexs
@@ -279,9 +286,9 @@ trait ConnectionsTool {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { viewer.selectedItems foreach { f => f.moveFeed(snap(f.pos + delta)) } }
+    def move() { viewer.selectedItems foreach { f ⇒ f.moveFeed(snap(f.pos + delta)) } }
     def abort() {
-      viewer.selectedItems foreach { f => f.moveFeed(f.pos) }
+      viewer.selectedItems foreach { f ⇒ f.moveFeed(f.pos) }
       exit()
     }
   }

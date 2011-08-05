@@ -1,71 +1,77 @@
 package org.zaluum.nide.eclipse
 
-import org.eclipse.jdt.ui.JavaUI
-import org.eclipse.jdt.core.IType
-import org.eclipse.jdt.internal.ui.JavaPlugin
-import scala.collection.mutable.Buffer
-import org.zaluum.nide.compiler.Name
-import org.eclipse.core.runtime.Path
+import java.io.IOException
 import java.net.URL
-import org.eclipse.core.runtime.IPath
-import org.eclipse.core.resources.{ IFile, IResourceVisitor, IResource, IContainer }
-import org.eclipse.jdt.core.{ IJavaProject, IClasspathEntry }
-import scala.util.control.Exception._
+
+import scala.collection.mutable.Buffer
+import scala.util.control.Exception.catching
+
+import org.eclipse.core.resources.IContainer
+import org.eclipse.core.resources.IFile
+import org.eclipse.core.resources.IResource
+import org.eclipse.core.resources.IResourceVisitor
 import org.eclipse.core.resources.ResourcesPlugin
-import org.eclipse.core.resources.IProject
-import org.eclipse.jdt.core.JavaCore
+import org.eclipse.core.runtime.IPath
 import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.ui.PlatformUI
+import org.eclipse.core.runtime.Path
+import org.eclipse.jdt.core.IClasspathEntry
+import org.eclipse.jdt.core.IJavaProject
+import org.eclipse.jdt.core.IType
+import org.eclipse.jdt.internal.ui.infoviews.JavadocView
+import org.eclipse.jdt.internal.ui.JavaPlugin
+import org.eclipse.jdt.ui.JavaUI
+import org.eclipse.jface.internal.text.html.BrowserInput
 import org.eclipse.jface.operation.IRunnableWithProgress
-import org.eclipse.core.runtime.Platform
 import org.eclipse.swt.widgets.Display
+import org.eclipse.ui.PlatformUI
+import org.zaluum.nide.compiler.Name
 object EclipseUtils {
-  def pathToResource(path:IPath) = {
+  def pathToResource(path: IPath) = {
     Option(ResourcesPlugin.getWorkspace.getRoot.findMember(path))
   }
-  def withProgress[A >: Null](name:String)(body : IProgressMonitor => A) : A = {
-    var a : A = null
+  def withProgress[A >: Null](name: String)(body: IProgressMonitor ⇒ A): A = {
+    var a: A = null
     val ps = PlatformUI.getWorkbench().getProgressService
     val run = new IRunnableWithProgress() {
-       def run(monitor: IProgressMonitor) {
-         monitor.setTaskName(name)
-         a = body(monitor)
-         monitor.done;
-       }
+      def run(monitor: IProgressMonitor) {
+        monitor.setTaskName(name)
+        a = body(monitor)
+        monitor.done;
+      }
     }
     ps.busyCursorWhile(run)
     a
   }
-  def async(display:Display)(body : =>Unit) {
-    display.asyncExec(new Runnable(){
+  def async(display: Display)(body: ⇒ Unit) {
+    display.asyncExec(new Runnable() {
       def run {
         body
       }
     })
   }
-  def async(body : =>Unit) {
+  def async(body: ⇒ Unit) {
     async(Display.getCurrent)(body _)
   }
 }
 trait EclipseUtils {
   def jProject: IJavaProject
   def project = jProject.getProject
-  def allSourceZaluums : Seq[IFile] = {
-    val b= Buffer[IFile]()
+  def allSourceZaluums: Seq[IFile] = {
+    val b = Buffer[IFile]()
     project.accept(
       new IResourceVisitor {
         def visit(resource: IResource) = resource match {
           case f: IFile if ("zaluum" == f.getFileExtension && isSource(f)) ⇒
-            b+=f
+            b += f
             false
           case c: IContainer ⇒ true
-          case _ ⇒ true
+          case _             ⇒ true
         }
       })
     b.toSeq
   }
-  def extractPackageName(res:IResource) : Option[String] = {
-    sourcePaths find { _.isPrefixOf(res.getFullPath) } map { sp =>
+  def extractPackageName(res: IResource): Option[String] = {
+    sourcePaths find { _.isPrefixOf(res.getFullPath) } map { sp ⇒
       val path = res.getFullPath
       val pkgPath = path.removeFirstSegments(sp.segmentCount).removeFileExtension.removeLastSegments(1)
       pkgPath.segments.mkString(".")
@@ -82,7 +88,7 @@ trait EclipseUtils {
       val result = relativePath.segments.reduceLeft(_ + "." + _)
       Option(relativePath.getFileExtension) match {
         case Some(str: String) ⇒ result.dropRight(str.length + 1)
-        case None ⇒ result
+        case None              ⇒ result
       }
     } map { Name(_) }
   }
@@ -113,14 +119,14 @@ trait EclipseUtils {
     case _ ⇒
       path.getFileExtension match {
         case "jar" ⇒ jarURL(path, file)
-        case _ ⇒ pathToURL(path.append(new Path(file)))
+        case _     ⇒ pathToURL(path.append(new Path(file)))
       }
   }
   def getResource(str: String): Option[URL] = {
     val cpaths = jProject.getResolvedClasspath(true)
     cpaths.view.flatMap { cp ⇒ pathFileToURL(cp.getPath, str) } headOption
   }
-  def forceViewJavaDoc(i:IType) {
+  def forceViewJavaDoc(i: IType) {
     import org.eclipse.jdt.internal.ui.infoviews.JavadocView
     import org.eclipse.jface.internal.text.html.BrowserInput;
     // force JavaDoc

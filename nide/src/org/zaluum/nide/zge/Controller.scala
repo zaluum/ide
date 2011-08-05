@@ -1,18 +1,32 @@
 package org.zaluum.nide.zge
 
-import java.nio.charset.Charset
-import org.eclipse.jdt.core.dom.{AST, ASTParser}
-import org.eclipse.jdt.core.{ElementChangedEvent, ICompilationUnit, IElementChangedListener, IJavaElement, IJavaElementDelta, IJavaProject, JavaCore}
+import scala.collection.mutable.Buffer
+import scala.collection.mutable.Stack
+
+import org.eclipse.jdt.core.dom.AST
+import org.eclipse.jdt.core.dom.ASTParser
+import org.eclipse.jdt.core.ElementChangedEvent
+import org.eclipse.jdt.core.ICompilationUnit
+import org.eclipse.jdt.core.IElementChangedListener
+import org.eclipse.jdt.core.IJavaElement
+import org.eclipse.jdt.core.IJavaElementDelta
+import org.eclipse.jdt.core.IJavaProject
+import org.eclipse.jdt.core.JavaCore
+import org.eclipse.swt.widgets.Display
 import org.eclipse.text.edits.ReplaceEdit
 import org.zaluum.nide.Utils.inSWT
-import org.zaluum.nide.compiler._
+import org.zaluum.nide.compiler.BoxDef
+import org.zaluum.nide.compiler.MapTransformer
+import org.zaluum.nide.compiler.Reporter
+import org.zaluum.nide.compiler.SelectionSubject
+import org.zaluum.nide.compiler.Serializer
+import org.zaluum.nide.compiler.Traverser
+import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.eclipse.integration.model.ZaluumASTParser
 import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
 import org.zaluum.nide.eclipse.ZaluumProject
-import scala.collection.mutable.{Buffer, Stack}
-import org.eclipse.swt.widgets.Display
 
-class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit val display:Display) {
+class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit val display: Display) {
   private var nowTree: BoxDef = _
 
   private var viewers = Buffer[Viewer]()
@@ -52,9 +66,9 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
     update(c.map)
   }
   // uses a special parser to keep the mutated tree.
-  def compile(parse : Boolean) = {
+  def compile(parse: Boolean) = {
     val parser = if (parse) ASTParser.newParser(AST.JLS3)
-      else new ZaluumASTParser(AST.JLS3, nowTree)
+    else new ZaluumASTParser(AST.JLS3, nowTree)
     parser.setKind(ASTParser.K_COMPILATION_UNIT)
     parser.setSource(cu)
     parser.setResolveBindings(true)
@@ -137,7 +151,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
     case Some(markMut) ⇒ markMut.now
     case None ⇒ undoStack.lastOption match {
       case Some(mut) ⇒ mut.before
-      case None ⇒ nowTree
+      case None      ⇒ nowTree
     }
   }
   def fromSaveMutations = { // returns the mutations to go from saved state to nowTree
@@ -176,39 +190,39 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
     listeners -= action
   }
   def notifyListeners() {
-    inSWT{
+    inSWT {
       listeners foreach { _() }
     }
   }
   // core listener
   val coreListener = new IElementChangedListener() {
-    def isDeltaElemUpdated(delta: IJavaElementDelta) : Boolean = {
-      def isPrimaryResource = (delta.getFlags & IJavaElementDelta.F_PRIMARY_RESOURCE) != 0
-      def isJavaProject = delta.getElement.getElementType == IJavaElement.JAVA_PROJECT
-      def isJavaCompilationUnit = delta.getElement.getElementType == IJavaElement.COMPILATION_UNIT
-      def isAdded = delta.getKind == IJavaElementDelta.ADDED
-      def isRemoved = delta.getKind == IJavaElementDelta.REMOVED
-      def isChanged = delta.getKind == IJavaElementDelta.CHANGED;
-      def parseChildren = { delta.getAffectedChildren exists { isDeltaElemUpdated(_) } }
+    def isDeltaElemUpdated(delta: IJavaElementDelta): Boolean = {
+        def isPrimaryResource = (delta.getFlags & IJavaElementDelta.F_PRIMARY_RESOURCE) != 0
+        def isJavaProject = delta.getElement.getElementType == IJavaElement.JAVA_PROJECT
+        def isJavaCompilationUnit = delta.getElement.getElementType == IJavaElement.COMPILATION_UNIT
+        def isAdded = delta.getKind == IJavaElementDelta.ADDED
+        def isRemoved = delta.getKind == IJavaElementDelta.REMOVED
+        def isChanged = delta.getKind == IJavaElementDelta.CHANGED;
+        def parseChildren = { delta.getAffectedChildren exists { isDeltaElemUpdated(_) } }
       // TODO look for used types  
-      if (isPrimaryResource && isJavaProject){
+      if (isPrimaryResource && isJavaProject) {
         val jproj = delta.getElement.asInstanceOf[IJavaProject]
         if (isAdded) true
         else if (isRemoved) true
         else parseChildren
-      }else if (isPrimaryResource && isJavaCompilationUnit){
+      } else if (isPrimaryResource && isJavaCompilationUnit) {
         if (isChanged || isRemoved) {
           val res = delta.getElement.getResource
           true
-        }else{
+        } else {
           parseChildren
         }
-      }else
+      } else
         parseChildren
     }
-    def elementChanged(event: ElementChangedEvent) { 
-      if (isDeltaElemUpdated(event.getDelta)) 
-        recompile(noChangeMap) 
+    def elementChanged(event: ElementChangedEvent) {
+      if (isDeltaElemUpdated(event.getDelta))
+        recompile(noChangeMap)
     }
   }
   // init

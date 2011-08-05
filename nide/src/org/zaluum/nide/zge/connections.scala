@@ -1,7 +1,7 @@
 package org.zaluum.nide.zge
 
-import scala.collection.mutable.Buffer
-import org.zaluum.nide.compiler._
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.Tuple2
 
 sealed trait OrtoDirection {
   def const(p: Tuple2): Int
@@ -26,20 +26,20 @@ case class Interval(start: Int, end: Int) {
   def high = math.max(start, end)
   def intersect(other: Interval, nearEnd: Boolean): List[Int] = {
     if (other.high < low || other.low > high) List() // |--| <-->
-    else if (other.high == low && high >= other.high) List(low)// <-->--|
-    else if (other.low == high && low <= other.low) List(high)// |--<-->
+    else if (other.high == low && high >= other.high) List(low) // <-->--|
+    else if (other.low == high && low <= other.low) List(high) // |--<-->
     else {
       val res = if (end > start) {
-        if (other.low <= start && other.high >= end) List(end,start)                  // <--s--(e)-->
+        if (other.low <= start && other.high >= end) List(end, start) // <--s--(e)-->
         else if (other.low >= start && other.high <= end) List(other.high, other.low) // s--<--(>)--e
-        else if (other.low <= end && other.high >= end) List(end, other.low)          // s--<--(e)-->
-        else if (other.low <= start && other.high>= start) List(other.high, start)    // <--s--(>)--e
+        else if (other.low <= end && other.high >= end) List(end, other.low) // s--<--(e)-->
+        else if (other.low <= start && other.high >= start) List(other.high, start) // <--s--(>)--e
         else throw new RuntimeException()
       } else {
-        if (other.low<=end && other.high>=start) List(end,start)                      // <--(e)--s-->
+        if (other.low <= end && other.high >= start) List(end, start) // <--(e)--s-->
         else if (other.low >= end && other.high <= start) List(other.low, other.high) // e--(<)-->--s
-        else if (other.low <= start && other.high>=start) List(other.low, start)      // e--(<)--s-->
-        else if ( other.low <= end && other.high >= end) List(end, other.high)        // <--(e)-->--s
+        else if (other.low <= start && other.high >= start) List(other.low, start) // e--(<)--s-->
+        else if (other.low <= end && other.high >= end) List(end, other.high) // <--(e)-->--s
         else throw new RuntimeException()
       }
       if (nearEnd) res else res.reverse
@@ -55,11 +55,11 @@ case class Line(val from: Point, val to: Point, horizontal: Boolean) {
   def low = {
     if (horizontal) {
       if (start.x < end.x) start else end
-    }else {
+    } else {
       if (start.y < end.y) start else end
     }
   }
-  def high = if (low==start) end else start
+  def high = if (low == start) end else start
   override def toString = "(" + start + "," + end + ")"
   def project(p: Point): Point = {
     val a = p - start

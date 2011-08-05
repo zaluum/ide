@@ -1,19 +1,33 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.zge.dialogs._
-import org.eclipse.draw2d.RectangleFigure
+import scala.annotation.tailrec
+
+import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.ColorConstants
+import org.eclipse.draw2d.Cursors
 import org.eclipse.draw2d.Label
-import org.eclipse.swt.SWT
-import org.eclipse.swt.widgets.ToolTip
-import draw2dConversions._
-import org.eclipse.draw2d.{ Cursors, Figure }
-import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint, Rectangle, Dimension ⇒ EDimension }
-import org.zaluum.nide.compiler.{ _ }
-import scala.collection.JavaConversions._
-import org.zaluum.basic.LoopBox
-import org.zaluum.nide.eclipse.BoxTypeProxy
 import org.eclipse.draw2d.MarginBorder
+import org.eclipse.draw2d.RectangleFigure
+import org.zaluum.nide.compiler.Block
+import org.zaluum.nide.compiler.Dimension
+import org.zaluum.nide.compiler.EditTransformer
+import org.zaluum.nide.compiler.Expressions
+import org.zaluum.nide.compiler.In
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Out
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.PortDef
+import org.zaluum.nide.compiler.PortDir
+import org.zaluum.nide.compiler.Shift
+import org.zaluum.nide.compiler.Template
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.compiler.Vector2
+import org.zaluum.nide.eclipse.BoxTypeProxy
+import org.zaluum.nide.zge.dialogs.PortDeclPopup
+import org.zaluum.nide.zge.dialogs.ValDefMenu
+
+import draw2dConversions.point
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -35,7 +49,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           i.selectionSubject foreach { controller.blink(_, viewer) }
         }
       (beingSelected, port) match {
-        case (Some(b:Button), _ ) => actButton(b)
+        case (Some(b: Button), _)             ⇒ actButton(b)
         case (Some(o: OpenPortDeclFigure), _) ⇒ selectItem(o)
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
@@ -55,15 +69,15 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
 
     }
-    def actButton(b:Button) = {
+    def actButton(b: Button) = {
       val template = b.openBox.template
       val i = b.openBox.templateSym.nextBlockIndex
       val command = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case t: Template if t == template ⇒
-            t.copy(blocks =transformTrees(t.blocks),
-                ports = transformTrees(t.ports),
-                currentBlock = Some(i.toString))
+            t.copy(blocks = transformTrees(t.blocks),
+              ports = transformTrees(t.ports),
+              currentBlock = Some(i.toString))
         }
       }
       controller.exec(command)
@@ -123,7 +137,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     def delete() {
-      controller.exec(Delete.deleteSelection(viewer.selectedItems,viewer.graphOf))
+      controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.graphOf))
     }
     def cut() {
       viewer.updateClipboard
@@ -202,7 +216,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         }
       }
     }
-    private def newInstanceTemplate(dst: Point, requiredBlocks : Int) = {
+    private def newInstanceTemplate(dst: Point, requiredBlocks: Int) = {
       new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒

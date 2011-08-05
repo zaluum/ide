@@ -2,7 +2,6 @@ package org.zaluum.nide.compiler
 
 import javax.swing.JComponent
 
-  
 /*  def createGUI(bcd: BoxClassDecl,bcp:BoxClassPath) : JComponent= {
     import javax.swing.JPanel
     val component = new JPanel(null)

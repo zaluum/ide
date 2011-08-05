@@ -1,31 +1,39 @@
 package org.zaluum.nide.eclipse.integration.model
 
-import org.eclipse.jdt.internal.compiler.lookup.CompilationUnitScope
-import org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment
-import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration
-import org.eclipse.jdt.internal.compiler.lookup.Scope
-import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
-import org.zaluum.nide.compiler.{ Scope=>ZScope,_}
-import org.eclipse.jdt.internal.compiler.lookup.BinaryTypeBinding
-import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding
-import org.zaluum.annotation.Box
-import JDTInternalUtils._
 import scala.collection.mutable.Map
-import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
-import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
-import org.eclipse.jdt.core.compiler.CharOperation
-import org.eclipse.jdt.internal.compiler.env.ISourceType
-import org.eclipse.jdt.core.Signature
-import org.eclipse.jdt.core.JavaModelException
-import org.eclipse.jdt.internal.core.SourceMethod
-import org.eclipse.jdt.internal.core.SourceMethodElementInfo
-import org.eclipse.jdt.internal.core.SourceTypeElementInfo
-import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+
+import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
+import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.CompilationUnitScope
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
-import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding
-import org.eclipse.jdt.internal.compiler.lookup.UnresolvedReferenceBinding
+import org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.MissingTypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
+import org.eclipse.jdt.internal.compiler.lookup.Scope
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.UnresolvedReferenceBinding
+import org.zaluum.nide.compiler.ArrayType
+import org.zaluum.nide.compiler.BoxTypeSymbol
+import org.zaluum.nide.compiler.ClassJavaType
+import org.zaluum.nide.compiler.Constructor
+import org.zaluum.nide.compiler.In
+import org.zaluum.nide.compiler.JavaType
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.NoSymbol
+import org.zaluum.nide.compiler.Out
+import org.zaluum.nide.compiler.ParamSymbol
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.PortSymbol
+import org.zaluum.nide.compiler.PrimitiveJavaType
+import org.zaluum.nide.compiler.{ Scope ⇒ ZScope }
+import org.zaluum.nide.compiler.Type
+import org.zaluum.nide.compiler.primitives
+
+import JDTInternalUtils.aToString
+import JDTInternalUtils.stringToA
 class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cudp, lookupEnvironment) with ZScope {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
@@ -35,13 +43,13 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   private val cacheJava = Map[TypeBinding, ClassJavaType]()
 
   def cud = referenceContext.asInstanceOf[ZaluumCompilationUnitDeclaration]
-  def name = Name("root")          
-  def owner= null
+  def name = Name("root")
+  def owner = null
   def getBoxedType(p: PrimitiveJavaType): JavaType =
     getJavaType(p.boxedName).get
 
   def getZJavaLangString = getJavaType(Name("java.lang.String")).get;
-  def javaScope : ZaluumCompilationUnitScope = this
+  def javaScope: ZaluumCompilationUnitScope = this
   def lookupType(name: Name): Option[Type] = getJavaType(name)
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray
@@ -66,9 +74,9 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   }
   def getJavaType(tpe: TypeBinding): JavaType = {
     tpe match {
-      case m: MissingTypeBinding => NoSymbol
-      case p: ProblemReferenceBinding => NoSymbol
-      case u: UnresolvedReferenceBinding => NoSymbol
+      case m: MissingTypeBinding         ⇒ NoSymbol
+      case p: ProblemReferenceBinding    ⇒ NoSymbol
+      case u: UnresolvedReferenceBinding ⇒ NoSymbol
       case r: ReferenceBinding ⇒
         val tpe = lookupEnvironment.convertToRawType(r, false).asInstanceOf[ReferenceBinding]
         cacheJava.getOrElseUpdate(tpe, {
@@ -78,14 +86,14 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
         })
       case b: BaseTypeBinding ⇒
         b.simpleName.mkString match {
-          case "byte" ⇒ primitives.Byte
-          case "short" ⇒ primitives.Short
-          case "int" ⇒ primitives.Int
-          case "long" ⇒ primitives.Long
-          case "float" ⇒ primitives.Float
-          case "double" ⇒ primitives.Double
+          case "byte"    ⇒ primitives.Byte
+          case "short"   ⇒ primitives.Short
+          case "int"     ⇒ primitives.Int
+          case "long"    ⇒ primitives.Long
+          case "float"   ⇒ primitives.Float
+          case "double"  ⇒ primitives.Double
           case "boolean" ⇒ primitives.Boolean
-          case "char" ⇒ primitives.Char
+          case "char"    ⇒ primitives.Char
           //case _ ⇒ None
         }
       case a: ArrayBinding ⇒
@@ -111,9 +119,9 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
           val sperO = r.superclass match {
             case null ⇒ None
             case spr ⇒ aToString(spr.compoundName) match {
-              case null ⇒ None
+              case null               ⇒ None
               case "java.lang.Object" ⇒ None
-              case other ⇒ Some(Name(other))
+              case other              ⇒ Some(Name(other))
             }
           }
 
@@ -125,14 +133,14 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
           bs.scope = this
           for (f ← allFieldsFor(r); if f.isPublic && !f.isStatic) {
             val fname = f.name.mkString
-            def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
-              aToString(a.getAnnotationType.compoundName) == c.getName
-            }
-            def createPort(in: Boolean) = {
-              val port = new PortSymbol(bs, Name(fname), Point(0, 0), if (in) In else Out)
-              port.tpe = getJavaType(f.`type`)
-              bs.ports += (port.name -> port)
-            }
+              def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
+                aToString(a.getAnnotationType.compoundName) == c.getName
+              }
+              def createPort(in: Boolean) = {
+                val port = new PortSymbol(bs, Name(fname), Point(0, 0), if (in) In else Out)
+                port.tpe = getJavaType(f.`type`)
+                bs.ports += (port.name -> port)
+              }
             if (hasAnnotation(classOf[org.zaluum.annotation.In])) createPort(true)
             else if (hasAnnotation(classOf[org.zaluum.annotation.Out])) createPort(false)
             if (fname == "_widget") {

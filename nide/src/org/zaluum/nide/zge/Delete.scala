@@ -1,6 +1,16 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.compiler._
+import org.zaluum.nide.compiler.Block
+import org.zaluum.nide.compiler.ConnectionDef
+import org.zaluum.nide.compiler.ConnectionEnd
+import org.zaluum.nide.compiler.EditTransformer
+import org.zaluum.nide.compiler.PortDef
+import org.zaluum.nide.compiler.PortRef
+import org.zaluum.nide.compiler.PortSymbol
+import org.zaluum.nide.compiler.Template
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.compiler.ValSymbol
 
 object Delete {
   def deleteSelection(selected: Set[Item], g: (Block ⇒ Option[ConnectionGraph])) = {

@@ -49,23 +49,24 @@ public class ZaluumCompletionEngine {
 
 	public void findMethods(char[] selector, TypeBinding[] typeArgTypes,
 			TypeBinding[] argTypes, ReferenceBinding receiverType, Scope scope,
-			ObjectVector methodsFound, boolean onlyStaticMethods, boolean noStaticMethods,
-			boolean exactMatch, InvocationSite invocationSite,
-			Scope invocationScope, boolean implicitCall, boolean superCall,
-			boolean canBePrefixed, Binding[] missingElements,
-			int[] missingElementsStarts, int[] missingElementsEnds,
-			boolean missingElementsHaveProblems, char[] castedReceiver,
-			int receiverStart, int receiverEnd) {
+			ObjectVector methodsFound, boolean onlyStaticMethods,
+			boolean noStaticMethods, boolean exactMatch,
+			InvocationSite invocationSite, Scope invocationScope,
+			boolean implicitCall, boolean superCall, boolean canBePrefixed,
+			Binding[] missingElements, int[] missingElementsStarts,
+			int[] missingElementsEnds, boolean missingElementsHaveProblems,
+			char[] castedReceiver, int receiverStart, int receiverEnd) {
 
 		ReferenceBinding currentType = receiverType;
 		if (receiverType.isInterface()) {
 			findInterfacesMethods(selector, typeArgTypes, argTypes,
 					receiverType, new ReferenceBinding[] { currentType },
-					scope, methodsFound, onlyStaticMethods, noStaticMethods, exactMatch,
-					invocationSite, invocationScope, implicitCall, superCall,
-					canBePrefixed, missingElements, missingElementsStarts,
-					missingElementsEnds, missingElementsHaveProblems,
-					castedReceiver, receiverStart, receiverEnd);
+					scope, methodsFound, onlyStaticMethods, noStaticMethods,
+					exactMatch, invocationSite, invocationScope, implicitCall,
+					superCall, canBePrefixed, missingElements,
+					missingElementsStarts, missingElementsEnds,
+					missingElementsHaveProblems, castedReceiver, receiverStart,
+					receiverEnd);
 
 			currentType = scope.getJavaLangObject();
 		}
@@ -75,12 +76,13 @@ public class ZaluumCompletionEngine {
 			MethodBinding[] methods = currentType.availableMethods();
 			if (methods != null) {
 				findLocalMethods(selector, typeArgTypes, argTypes, methods,
-						scope, methodsFound, onlyStaticMethods, noStaticMethods, exactMatch,
-						receiverType, invocationSite, invocationScope,
-						implicitCall, superCall, canBePrefixed,
-						missingElements, missingElementsStarts,
-						missingElementsEnds, missingElementsHaveProblems,
-						castedReceiver, receiverStart, receiverEnd);
+						scope, methodsFound, onlyStaticMethods,
+						noStaticMethods, exactMatch, receiverType,
+						invocationSite, invocationScope, implicitCall,
+						superCall, canBePrefixed, missingElements,
+						missingElementsStarts, missingElementsEnds,
+						missingElementsHaveProblems, castedReceiver,
+						receiverStart, receiverEnd);
 			}
 
 			if (hasPotentialDefaultAbstractMethods
@@ -101,11 +103,12 @@ public class ZaluumCompletionEngine {
 
 				findInterfacesMethods(selector, typeArgTypes, argTypes,
 						receiverType, superInterfaces, scope, methodsFound,
-						onlyStaticMethods, noStaticMethods, exactMatch, invocationSite,
-						invocationScope, implicitCall, superCall,
-						canBePrefixed, missingElements, missingElementsStarts,
-						missingElementsEnds, missingElementsHaveProblems,
-						castedReceiver, receiverStart, receiverEnd);
+						onlyStaticMethods, noStaticMethods, exactMatch,
+						invocationSite, invocationScope, implicitCall,
+						superCall, canBePrefixed, missingElements,
+						missingElementsStarts, missingElementsEnds,
+						missingElementsHaveProblems, castedReceiver,
+						receiverStart, receiverEnd);
 			} else {
 				hasPotentialDefaultAbstractMethods = false;
 			}
@@ -116,13 +119,13 @@ public class ZaluumCompletionEngine {
 	private void findInterfacesMethods(char[] selector,
 			TypeBinding[] typeArgTypes, TypeBinding[] argTypes,
 			ReferenceBinding receiverType, ReferenceBinding[] itsInterfaces,
-			Scope scope, ObjectVector methodsFound, boolean onlyStaticMethods, boolean noStaticMethods,
-			boolean exactMatch, InvocationSite invocationSite,
-			Scope invocationScope, boolean implicitCall, boolean superCall,
-			boolean canBePrefixed, Binding[] missingElements,
-			int[] missingElementssStarts, int[] missingElementsEnds,
-			boolean missingElementsHaveProblems, char[] castedReceiver,
-			int receiverStart, int receiverEnd) {
+			Scope scope, ObjectVector methodsFound, boolean onlyStaticMethods,
+			boolean noStaticMethods, boolean exactMatch,
+			InvocationSite invocationSite, Scope invocationScope,
+			boolean implicitCall, boolean superCall, boolean canBePrefixed,
+			Binding[] missingElements, int[] missingElementssStarts,
+			int[] missingElementsEnds, boolean missingElementsHaveProblems,
+			char[] castedReceiver, int receiverStart, int receiverEnd) {
 
 		if (selector == null)
 			return;
@@ -136,12 +139,13 @@ public class ZaluumCompletionEngine {
 				MethodBinding[] methods = currentType.availableMethods();
 				if (methods != null) {
 					findLocalMethods(selector, typeArgTypes, argTypes, methods,
-							scope, methodsFound, onlyStaticMethods, noStaticMethods, exactMatch,
-							receiverType, invocationSite, invocationScope,
-							implicitCall, superCall, canBePrefixed,
-							missingElements, missingElementssStarts,
-							missingElementsEnds, missingElementsHaveProblems,
-							castedReceiver, receiverStart, receiverEnd);
+							scope, methodsFound, onlyStaticMethods,
+							noStaticMethods, exactMatch, receiverType,
+							invocationSite, invocationScope, implicitCall,
+							superCall, canBePrefixed, missingElements,
+							missingElementssStarts, missingElementsEnds,
+							missingElementsHaveProblems, castedReceiver,
+							receiverStart, receiverEnd);
 				}
 
 				itsInterfaces = currentType.superInterfaces();
@@ -168,13 +172,14 @@ public class ZaluumCompletionEngine {
 
 	public void findLocalMethods(char[] methodName, TypeBinding[] typeArgTypes,
 			TypeBinding[] argTypes, MethodBinding[] methods, Scope scope,
-			ObjectVector methodsFound, boolean onlyStaticMethods, boolean noStaticMethods,
-			boolean exactMatch, ReferenceBinding receiverType,
-			InvocationSite invocationSite, Scope invocationScope,
-			boolean implicitCall, boolean superCall, boolean canBePrefixed,
-			Binding[] missingElements, int[] missingElementsStarts,
-			int[] missingElementsEnds, boolean missingElementsHaveProblems,
-			char[] castedReceiver, int receiverStart, int receiverEnd) {
+			ObjectVector methodsFound, boolean onlyStaticMethods,
+			boolean noStaticMethods, boolean exactMatch,
+			ReferenceBinding receiverType, InvocationSite invocationSite,
+			Scope invocationScope, boolean implicitCall, boolean superCall,
+			boolean canBePrefixed, Binding[] missingElements,
+			int[] missingElementsStarts, int[] missingElementsEnds,
+			boolean missingElementsHaveProblems, char[] castedReceiver,
+			int receiverStart, int receiverEnd) {
 
 		ObjectVector newMethodsFound = new ObjectVector();
 		// Inherited methods which are hidden by subclasses are filtered out
@@ -208,7 +213,7 @@ public class ZaluumCompletionEngine {
 			// BaseTypes.VoidBinding) continue next;
 			if (noStaticMethods && method.isStatic())
 				continue next;
-			
+
 			if (onlyStaticMethods && !method.isStatic())
 				continue next;
 

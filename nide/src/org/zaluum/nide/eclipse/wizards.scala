@@ -1,72 +1,55 @@
 package org.zaluum.nide.eclipse
 
-import org.zaluum.nide.compiler.Serializer
-import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.compiler.BoxDef
-import org.zaluum.nide.compiler.Dimension
-import java.io.ByteArrayOutputStream
-import org.eclipse.core.resources.IFile
-import org.eclipse.jface.viewers.{ IStructuredSelection }
-import org.eclipse.jface.wizard.Wizard
-import org.eclipse.swt.SWT
-import org.eclipse.swt.widgets.{ Label, Composite }
-import org.eclipse.ui.{ INewWizard, IWorkbenchWindow, IWorkbenchPage, IWorkbench }
-import org.eclipse.ui.dialogs.WizardNewFileCreationPage
-import org.eclipse.ui.ide.IDE
-import org.eclipse.ui.IWorkbenchWindowActionDelegate
-import org.eclipse.jface.action.IAction
-import org.eclipse.jface.viewers.ISelection
-import org.eclipse.jdt.ui.actions.AbstractOpenWizardAction
-import org.eclipse.jface.util.IPropertyChangeListener
-import org.eclipse.ui.IWorkbenchWindow
-import org.eclipse.jdt.internal.ui.wizards.NewElementWizard
-import org.eclipse.core.runtime.IExecutableExtension
-import org.eclipse.ui.INewWizard
-import org.zaluum.nide.Activator
-import org.eclipse.jdt.ui.wizards.NewJavaProjectWizardPageOne
-import org.eclipse.jdt.ui.wizards.NewJavaProjectWizardPageTwo
-import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.ui.wizards.newresource.BasicNewProjectResourceWizard
-import org.eclipse.ui.PlatformUI
-import org.eclipse.core.runtime.IConfigurationElement
-import org.eclipse.swt.widgets.Shell
 import java.lang.reflect.InvocationTargetException
-import org.eclipse.jdt.internal.ui.util.ExceptionHandler
+
+import scala.collection.mutable.ArrayBuffer
+
+import org.eclipse.core.resources.IFile
 import org.eclipse.core.resources.IProject
 import org.eclipse.core.resources.IncrementalProjectBuilder
-import org.eclipse.jface.viewers.StructuredSelection
-import org.eclipse.core.resources.IProject
 import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.IConfigurationElement
+import org.eclipse.core.runtime.IExecutableExtension
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.core.runtime.IStatus
-import org.eclipse.core.runtime.SubProgressMonitor
-import org.eclipse.jdt.core.IJavaProject
-import org.eclipse.jdt.core.IMethod
-import org.eclipse.jdt.core.IPackageDeclaration
-import org.eclipse.jdt.core.IPackageFragment
-import org.eclipse.jdt.core.IPackageFragmentRoot
-import org.eclipse.jdt.core.ISourceRange
-import org.eclipse.jdt.core.IType
-import org.eclipse.jdt.core.JavaModelException
-import org.eclipse.jdt.internal.core.ClasspathEntry
-import org.eclipse.jdt.internal.core.util.Util
-import org.eclipse.jdt.internal.ui.dialogs.StatusInfo
-import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages
-import org.eclipse.jdt.internal.ui.wizards.dialogfields.SelectionButtonDialogFieldGroup
-import org.eclipse.jdt.ui.wizards.NewTypeWizardPage
-import org.eclipse.swt.widgets.Composite
-import org.eclipse.text.edits.DeleteEdit
-import org.eclipse.text.edits.ReplaceEdit
-import org.eclipse.text.edits.TextEdit
-import org.eclipse.jdt.ui.wizards.NewClassWizardPage
-import org.zaluum.nide.eclipse.integration.ReflectionUtils
-import java.nio.charset.Charset
-import org.eclipse.jdt.internal.ui.JavaPluginImages
-import org.eclipse.jdt.internal.ui.JavaPlugin
-import org.eclipse.jdt.core.IClasspathEntry
-import org.eclipse.jdt.core.JavaCore
 import org.eclipse.core.runtime.Path
-import scala.collection.mutable.ArrayBuffer
+import org.eclipse.core.runtime.SubProgressMonitor
+import org.eclipse.jdt.core.IClasspathEntry
+import org.eclipse.jdt.core.IPackageFragmentRoot
+import org.eclipse.jdt.core.IType
+import org.eclipse.jdt.core.JavaCore
+import org.eclipse.jdt.core.JavaModelException
+import org.eclipse.jdt.internal.core.util.Util
+import org.eclipse.jdt.internal.core.ClasspathEntry
+import org.eclipse.jdt.internal.ui.dialogs.StatusInfo
+import org.eclipse.jdt.internal.ui.util.ExceptionHandler
+import org.eclipse.jdt.internal.ui.wizards.dialogfields.SelectionButtonDialogFieldGroup
+import org.eclipse.jdt.internal.ui.wizards.NewElementWizard
+import org.eclipse.jdt.internal.ui.wizards.NewWizardMessages
+import org.eclipse.jdt.internal.ui.JavaPlugin
+import org.eclipse.jdt.internal.ui.JavaPluginImages
+import org.eclipse.jdt.ui.actions.AbstractOpenWizardAction
+import org.eclipse.jdt.ui.wizards.NewClassWizardPage
+import org.eclipse.jdt.ui.wizards.NewJavaProjectWizardPageOne
+import org.eclipse.jdt.ui.wizards.NewJavaProjectWizardPageTwo
+import org.eclipse.jdt.ui.wizards.NewTypeWizardPage
+import org.eclipse.jface.action.IAction
+import org.eclipse.jface.viewers.ISelection
+import org.eclipse.jface.viewers.IStructuredSelection
+import org.eclipse.jface.viewers.StructuredSelection
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets.Shell
+import org.eclipse.swt.SWT
+import org.eclipse.text.edits.ReplaceEdit
+import org.eclipse.ui.wizards.newresource.BasicNewProjectResourceWizard
+import org.eclipse.ui.INewWizard
+import org.eclipse.ui.IWorkbenchWindow
+import org.eclipse.ui.IWorkbenchWindowActionDelegate
+import org.eclipse.ui.PlatformUI
+import org.zaluum.nide.compiler.BoxDef
+import org.zaluum.nide.compiler.Serializer
+import org.zaluum.nide.eclipse.integration.ReflectionUtils
+import org.zaluum.nide.Activator
 
 class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
   setDefaultPageImageDescriptor(null)
@@ -79,8 +62,8 @@ class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
   override def addPages {
     super.addPages()
     firstPage = new NewJavaProjectWizardPageOne() {
-    override def getDefaultClasspathEntries() : Array[IClasspathEntry] = {
-        val others = ArrayBuffer(super.getDefaultClasspathEntries : _*)
+      override def getDefaultClasspathEntries(): Array[IClasspathEntry] = {
+        val others = ArrayBuffer(super.getDefaultClasspathEntries: _*)
         others += JavaCore.newContainerEntry(Path.fromPortableString(Activator.plugin.zaluumLibId))
         others.toArray
       }
@@ -88,7 +71,7 @@ class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
     addPage(firstPage)
     firstPage.setTitle("Create Zaluum Project")
     firstPage.setDescription("Create a new Zaluum Project")
-    secondPage = new NewJavaProjectWizardPageTwo(firstPage) 
+    secondPage = new NewJavaProjectWizardPageTwo(firstPage)
     secondPage.setTitle("Build settings")
     secondPage.setDescription("Build settings")
     addPage(secondPage)
@@ -145,7 +128,7 @@ abstract class OpenWizardAction extends AbstractOpenWizardAction with IWorkbench
   def selectionChanged(action: IAction, selection: ISelection): Unit = {
     selection match {
       case i: IStructuredSelection ⇒ setSelection(i)
-      case _ ⇒ setSelection(StructuredSelection.EMPTY)
+      case _                       ⇒ setSelection(StructuredSelection.EMPTY)
     }
   }
 }
@@ -154,7 +137,7 @@ class OpenZaluumProjectWizardAction extends OpenWizardAction {
   override def doCreateProjectFirstOnEmptyWorkspace(shell: Shell) = true
 }
 class OpenZaluumNewClassWizardAction extends OpenWizardAction {
-  protected def createWizard(): INewWizard = { new ZaluumNewClassWizard() }  
+  protected def createWizard(): INewWizard = { new ZaluumNewClassWizard() }
 }
 class ZaluumNewClassWizard extends NewElementWizard {
   var fPage: ZNewClassWizardPage = _
@@ -230,7 +213,7 @@ class ZNewClassWizardPage extends NewClassWizardPage {
   }
 
   override protected def createTypeMembers(tpe: IType,
-    imports: NewTypeWizardPage.ImportsManager, monitor: IProgressMonitor) {
+                                           imports: NewTypeWizardPage.ImportsManager, monitor: IProgressMonitor) {
     super.createTypeMembers(tpe, imports, monitor);
     if (isCreateMain()) {
       // replace main method with a more groovy version
@@ -325,18 +308,19 @@ class ZNewClassWizardPage extends NewClassWizardPage {
     } else {
       monitor.worked(1);
     }
-    def getInitialContents = {
-      val model = BoxDef.emptyBox(getTypeNameWithoutParameters,pack.getElementName)
-      Serializer.writeToIsoString(Serializer.proto(model))
-    }
+      def getInitialContents = {
+        val model = BoxDef.emptyBox(getTypeNameWithoutParameters, pack.getElementName)
+        Serializer.writeToIsoString(Serializer.proto(model))
+      }
     val cuName = getCompilationUnitName(getTypeNameWithoutParameters())
     val contents = getInitialContents
     val cu = pack.createCompilationUnit(cuName, contents, true, monitor)
     val res = cu.getResource.asInstanceOf[IFile]
     res.setCharset("ISO-8859-1", null)
-    try{
-    cu.becomeWorkingCopy(null)
-    } catch { case e => 
+    try {
+      cu.becomeWorkingCopy(null)
+    } catch {
+      case e ⇒
       // TODO first creatCompilationUnit has bad encoding.  
     }
     cu.applyTextEdit(new ReplaceEdit(0, cu.getBuffer.getLength, contents), null)

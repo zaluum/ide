@@ -1,11 +1,18 @@
 package org.zaluum.nide.eclipse.launch
 
 import java.text.MessageFormat
-import org.eclipse.core.runtime.{NullProgressMonitor, IProgressMonitor}
+
+import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.core.runtime.NullProgressMonitor
 import org.eclipse.core.variables.VariablesPlugin
-import org.eclipse.debug.core.{ILaunch, ILaunchConfiguration}
+import org.eclipse.debug.core.ILaunch
+import org.eclipse.debug.core.ILaunchConfiguration
 import org.eclipse.jdt.internal.launching.LaunchingMessages
-import org.eclipse.jdt.launching.{IJavaLaunchConfigurationConstants, VMRunnerConfiguration, ExecutionArguments, AbstractJavaLaunchConfigurationDelegate}
+import org.eclipse.jdt.launching.AbstractJavaLaunchConfigurationDelegate
+import org.eclipse.jdt.launching.ExecutionArguments
+import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants
+import org.eclipse.jdt.launching.VMRunnerConfiguration
+import org.zaluum.launch.Run
 object ZaluumLaunchDelegate {
 
 }
@@ -20,7 +27,7 @@ class ZaluumLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
   }
   def getMainBoxName(configuration: ILaunchConfiguration): String = {
     val mainType = configuration.getAttribute(
-      ZaluumLauncherTab.ATTR_MAIN_BOX,null.asInstanceOf[String]);
+      ZaluumLauncherTab.ATTR_MAIN_BOX, null.asInstanceOf[String]);
     if (mainType != null)
       VariablesPlugin.getDefault().getStringVariableManager()
         .performStringSubstitution(mainType);
@@ -51,7 +58,7 @@ class ZaluumLaunchDelegate extends AbstractJavaLaunchConfigurationDelegate {
       // Program & VM arguments
       // ZALUUM
       val boxName = verifyMainBoxName(configuration)
-      val pgmArgs =  boxName + " " + getProgramArguments(configuration);
+      val pgmArgs = boxName + " " + getProgramArguments(configuration);
       // ZALUUM
       val vmArgs = getVMArguments(configuration);
       val execArgs = new ExecutionArguments(vmArgs, pgmArgs);

@@ -2,11 +2,31 @@ package org.zaluum.nide.zge
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import org.eclipse.swt.dnd.TransferData
-import org.eclipse.swt.dnd.Transfer
+
+import scala.annotation.tailrec
+import scala.collection.mutable.Map
+
 import org.eclipse.swt.dnd.ByteArrayTransfer
-import scala.collection.mutable.Buffer
-import org.zaluum.nide.compiler._
+import org.eclipse.swt.dnd.Transfer
+import org.eclipse.swt.dnd.TransferData
+import org.zaluum.nide.compiler.Block
+import org.zaluum.nide.compiler.ConnectionDef
+import org.zaluum.nide.compiler.ConnectionEnd
+import org.zaluum.nide.compiler.EditTransformer
+import org.zaluum.nide.compiler.MapTransformer
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Namer
+import org.zaluum.nide.compiler.Parser
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.PortDef
+import org.zaluum.nide.compiler.PortRef
+import org.zaluum.nide.compiler.SelectionSubject
+import org.zaluum.nide.compiler.Serializer
+import org.zaluum.nide.compiler.Template
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.compiler.ValRef
+import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.protobuf.ZaluumProtobuf
 
 case class Clipboard(valDefs: List[ValDef], ports: List[PortDef], connections: List[ConnectionDef]) {

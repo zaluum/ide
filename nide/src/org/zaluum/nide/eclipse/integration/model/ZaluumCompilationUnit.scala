@@ -1,48 +1,33 @@
 package org.zaluum.nide.eclipse.integration.model
 
+import java.util.{ Map ⇒ JMap }
+
+import scala.collection.JavaConversions.collectionAsScalaIterable
+
+import org.eclipse.core.resources.IResource
+import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.core.runtime.OperationCanceledException
+import org.eclipse.jdt.core.ICompilationUnit.NO_AST
+import org.eclipse.jdt.core.compiler.CategorizedProblem
+import org.eclipse.jdt.core.dom.AST
+import org.eclipse.jdt.core.CompletionRequestor
+import org.eclipse.jdt.core.ITypeRoot
+import org.eclipse.jdt.core.JavaCore
+import org.eclipse.jdt.core.WorkingCopyOwner
+import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
+import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory
+import org.eclipse.jdt.internal.compiler.problem.ProblemReporter
+import org.eclipse.jdt.internal.compiler.IErrorHandlingPolicy
+import org.eclipse.jdt.internal.core.util.Util
+import org.eclipse.jdt.internal.core.CompilationUnitElementInfo
+import org.eclipse.jdt.internal.core.ASTHolderCUInfo
+import org.eclipse.jdt.internal.core.CompilationUnit
+import org.eclipse.jdt.internal.core.CompilationUnitProblemFinder
+import org.eclipse.jdt.internal.core.JavaProject
+import org.eclipse.jdt.internal.core.OpenableElementInfo
+import org.eclipse.jdt.internal.core.PackageFragment
 import org.zaluum.nide.eclipse.integration.MultiplexingSourceElementRequestorParser
 import org.zaluum.nide.eclipse.integration.ReflectionUtils
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.runtime.Assert;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.core.runtime.PerformanceStats;
-import org.eclipse.jdt.core.CompletionRequestor;
-import org.eclipse.jdt.core.IBuffer;
-import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaModelStatusConstants;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.ITypeRoot;
-import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.WorkingCopyOwner;
-import org.eclipse.jdt.core.compiler.CategorizedProblem;
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.util.CompilerUtils;
-import org.eclipse.jdt.internal.compiler.IErrorHandlingPolicy;
-import org.eclipse.jdt.internal.compiler.IProblemFactory;
-import org.eclipse.jdt.internal.compiler.SourceElementParser;
-import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
-import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
-import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
-import org.eclipse.jdt.internal.core.ASTHolderCUInfo;
-import org.eclipse.jdt.internal.core.CompilationUnit;
-import org.eclipse.jdt.internal.core.CompilationUnitElementInfo;
-import org.eclipse.jdt.internal.core.CompilationUnitProblemFinder;
-import org.eclipse.jdt.internal.core.DefaultWorkingCopyOwner;
-import org.eclipse.jdt.internal.core.JavaModelManager;
-import org.eclipse.jdt.internal.core.JavaModelManager.PerWorkingCopyInfo;
-import org.eclipse.jdt.internal.core.JavaProject;
-import org.eclipse.jdt.internal.core.OpenableElementInfo;
-import org.eclipse.jdt.internal.core.PackageFragment;
-import org.eclipse.jdt.internal.core.ReconcileWorkingCopyOperation;
-import org.eclipse.jdt.internal.core.util.Util;
-import ICompilationUnit._
-import java.util.{ Map ⇒ JMap }
 
 class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: WorkingCopyOwner) extends CompilationUnit(parent, name, owner) {
 
@@ -132,14 +117,14 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
   }
   // No idea why it's useful
   override def cloneCachingContents() = {
-    new ZaluumCompilationUnit(parent,name,owner) {
+    new ZaluumCompilationUnit(parent, name, owner) {
       val cachedContents = ZaluumCompilationUnit.this.getContents
       override def getContents() = cachedContents
       override def originalFromClone = ZaluumCompilationUnit.this
       override def getFileName = ZaluumCompilationUnit.this.getFileName
     }
   }
-  override def getAdapter(adapter:Class[_]) = { 
+  override def getAdapter(adapter: Class[_]) = {
     if (adapter == classOf[ZaluumCompilationUnit]) this
     else super.getAdapter(adapter)
   }
@@ -148,15 +133,15 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
     val primary = getType(typeName)
     if (primary.exists) primary else null
   }
-  def withoutDotZaluum(str:String) = {
+  def withoutDotZaluum(str: String) = {
     if (str.endsWith(".zaluum")) str.dropRight(".zaluum".length) else str
   }
-  override protected def codeComplete(cu :org.eclipse.jdt.internal.compiler.env.ICompilationUnit,
-      unitToSkip : org.eclipse.jdt.internal.compiler.env.ICompilationUnit, position : Int, requestor : CompletionRequestor,
-      owner : WorkingCopyOwner, typeRoot : ITypeRoot, monitor :  IProgressMonitor) {
-    
+  override protected def codeComplete(cu: org.eclipse.jdt.internal.compiler.env.ICompilationUnit,
+                                      unitToSkip: org.eclipse.jdt.internal.compiler.env.ICompilationUnit, position: Int, requestor: CompletionRequestor,
+                                      owner: WorkingCopyOwner, typeRoot: ITypeRoot, monitor: IProgressMonitor) {
+
   }
-  
+
 }
 class ZaluumErrorHandlingPolicy(stopOnFirst: Boolean) extends IErrorHandlingPolicy {
   def proceedOnErrors = !stopOnFirst;

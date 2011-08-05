@@ -1,21 +1,16 @@
 package org.zaluum.nide.eclipse.integration.model
-import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.eclipse.jdt.core.IJavaProject
+import org.eclipse.jdt.core.JavaModelException
 import org.eclipse.jdt.internal.compiler.ast.ASTNode
-import org.eclipse.jdt.internal.compiler.lookup.ExtraCompilerModifiers
+import org.eclipse.jdt.internal.compiler.env.INameEnvironment
 import org.eclipse.jdt.internal.compiler.lookup.Binding
+import org.eclipse.jdt.internal.compiler.lookup.ExtraCompilerModifiers
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding
-import org.eclipse.jdt.internal.core.SearchableEnvironment
-import org.eclipse.jdt.core.JavaModelException
 import org.eclipse.jdt.internal.core.SourceMethod
-import org.eclipse.jdt.internal.core.SourceTypeElementInfo
 import org.eclipse.jdt.internal.core.SourceMethodElementInfo
-import org.eclipse.jdt.internal.compiler.env.INameEnvironment
-import org.eclipse.jdt.internal.core.NameLookup
-import org.eclipse.jdt.internal.core.builder.NameEnvironment
-import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
-import org.eclipse.jdt.core.IJavaProject
-import org.eclipse.jdt.core.Signature
+import org.eclipse.jdt.internal.core.SourceTypeElementInfo
 
 object MethodUtils {
   def toMethodSig(m: MethodBinding) = m.selector.mkString + m.signature().mkString
@@ -34,7 +29,7 @@ object MethodUtils {
         val padded = paramNames.padTo(m.parameters.length, "?")
         val zip = padded.zip(m.parameters)
         val str = zip.map {
-          case (name, p) =>
+          case (name, p) ⇒
             if (p != null) p.debugName() + " " + name else "<no argument type>"
         } mkString (", ")
         output.append(str); //$NON-NLS-1$
@@ -47,7 +42,7 @@ object MethodUtils {
     if (m.thrownExceptions != null) {
       if (m.thrownExceptions != Binding.NO_EXCEPTIONS) {
         output.append("throws "); //$NON-NLS-1$
-        val s = m.thrownExceptions.map { t =>
+        val s = m.thrownExceptions.map { t ⇒
           if (t != null) t.debugName() else "<no exception type>"
         }.mkString(", ")
         output.append(s)
@@ -73,11 +68,11 @@ object MethodUtils {
     }
     None
   }
- 
-  private def findMethodParameterNamesBinaryEnv(m: MethodBinding, 
-      rb: ReferenceBinding, nameEnvironment: INameEnvironment): Option[Array[String]] = {
+
+  private def findMethodParameterNamesBinaryEnv(m: MethodBinding,
+                                                rb: ReferenceBinding, nameEnvironment: INameEnvironment): Option[Array[String]] = {
     nameEnvironment.findType(rb.compoundName) match {
-      case null => None
+      case null ⇒ None
       case answer if answer.isSourceType && answer.getSourceTypes()(0) != null ⇒
         val sourceType = answer.getSourceTypes()(0);
         val typeHandle = sourceType.asInstanceOf[SourceTypeElementInfo].getHandle();
@@ -101,31 +96,30 @@ object MethodUtils {
         } map { foundM ⇒ foundM.getArgumentNames map { _.mkString } }
     }
   }
-  def findMethodParamNames(m:MethodBinding, javaProject:IJavaProject) = {
+  def findMethodParamNames(m: MethodBinding, javaProject: IJavaProject) = {
     val e = m.declaringClass.erasure()
     val tpeName = e.qualifiedPackageName.mkString + "." + e.qualifiedSourceName().mkString
     try {
-    	val tpe = javaProject.findType(tpeName)
-    	tpe.getMethods() find { im=>
-    	  im.getElementName == m.selector.mkString && im.getSignature == m.signature.mkString
-    	} map { meth =>
-    	  meth.getParameterNames()
-    	}
-    }catch { case j:JavaModelException => None }
+      val tpe = javaProject.findType(tpeName)
+      tpe.getMethods() find { im ⇒
+        im.getElementName == m.selector.mkString && im.getSignature == m.signature.mkString
+      } map { meth ⇒
+        meth.getParameterNames()
+      }
+    } catch { case j: JavaModelException ⇒ None }
   }
-  private def findMethodParams(m:MethodBinding, binFunc : ReferenceBinding => Option[Array[String]]) : Option[Array[String]]= {
+  private def findMethodParams(m: MethodBinding, binFunc: ReferenceBinding ⇒ Option[Array[String]]): Option[Array[String]] = {
     val erasure = m.declaringClass.erasure();
     erasure match {
       case sourceType: SourceTypeBinding ⇒
         findMethodParameterNamesSource(m, sourceType)
       case rb: ReferenceBinding ⇒
-      	binFunc(rb)
+        binFunc(rb)
       case _ ⇒ None
-    } 
+    }
   }
-    
-  def findMethodParameterNamesEnv(m: MethodBinding, nameEnvironment: INameEnvironment): Option[Array[String]] = 
-    findMethodParams(m, findMethodParameterNamesBinaryEnv(m,_,nameEnvironment))
- 
-  
+
+  def findMethodParameterNamesEnv(m: MethodBinding, nameEnvironment: INameEnvironment): Option[Array[String]] =
+    findMethodParams(m, findMethodParameterNamesBinaryEnv(m, _, nameEnvironment))
+
 }

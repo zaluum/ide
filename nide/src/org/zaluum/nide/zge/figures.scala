@@ -1,11 +1,8 @@
 package org.zaluum.nide.zge
 
 import org.eclipse.jface.resource.DeviceResourceDescriptor
-import org.eclipse.draw2d.Label
-import org.eclipse.draw2d.Shape
 import org.eclipse.swt.graphics.Color
 import org.eclipse.draw2d.Ellipse
-import org.eclipse.swt.events.FocusListener
 import org.eclipse.jface.viewers.ICellEditorListener
 import org.eclipse.swt.widgets.Text
 import org.eclipse.jface.viewers.TextCellEditor
@@ -13,19 +10,16 @@ import org.eclipse.draw2d.text.TextFlow
 import org.eclipse.draw2d.text.FlowPage
 import org.eclipse.draw2d.RectangleFigure
 import draw2dConversions._
-import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline, Graphics }
+import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Graphics }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.{ Image, Font, GC }
 import org.zaluum.nide.compiler._
-import scala.collection.mutable.Buffer
 import org.eclipse.swt.widgets.{ Composite, Display, Shell, Listener, Event }
-import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 import java.awt.{ Graphics ⇒ AG }
 import java.awt.image.BufferedImage
-import javax.swing.BoxLayout
 import org.eclipse.draw2d.FigureUtilities
 import org.zaluum.nide.Activator
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
@@ -59,14 +53,14 @@ trait ValFigure extends ValDefItem with HasPorts {
     val (unsortedins, unsortedouts) = bports.partition { _.inPort } // SHIFT?
     val ins = unsortedins.toList.sortBy(_.name.str);
     val outs = unsortedouts.toList.sortBy(_.name.str);
-    def space(s: PortSide) = if (s.inPort) size.h / (ins.size + 1) else size.h / (outs.size + 1)
-    def createPort(s: PortSide, i: Int) {
-      val p = new PortFigure(container)
-      val x = if (s.inPort) 0 else size.w
-      val point = Point(x, (i + 1) * space(s))
-      p.update(point + Vector2(getBounds.x, getBounds.y), s)
-      ports += p
-    }
+      def space(s: PortSide) = if (s.inPort) size.h / (ins.size + 1) else size.h / (outs.size + 1)
+      def createPort(s: PortSide, i: Int) {
+        val p = new PortFigure(container)
+        val x = if (s.inPort) 0 else size.w
+        val point = Point(x, (i + 1) * space(s))
+        p.update(point + Vector2(getBounds.x, getBounds.y), s)
+        ports += p
+      }
     for ((p, i) ← ins.zipWithIndex) createPort(p, i)
     for ((p, i) ← outs.zipWithIndex) createPort(p, i)
 
@@ -104,23 +98,23 @@ class InvokeValFigure(container: ContainerItem) extends ImageValFigure(container
   override def updateValPorts() {
     super.updateValPorts()
     sym.info match {
-      case m: MethodBinding =>
-        MethodUtils.findMethodParamNames(m, jproject).foreach { names =>
+      case m: MethodBinding ⇒
+        MethodUtils.findMethodParamNames(m, jproject).foreach { names ⇒
           names.zipWithIndex.foreach {
-            case (name, i) =>
+            case (name, i) ⇒
               ports filter { _.ps.name.str == "p" + i } foreach { // remove literal "p"
                 _.nameOverride = name
               }
           }
         }
-      case _ =>
+      case _ ⇒
     }
   }
   override def img = {
     sym.info match {
-      case m: MethodBinding =>
+      case m: MethodBinding ⇒
         imageFactory.invokeImage(m.selector.mkString)
-      case _ =>
+      case _ ⇒
         val str = sym.params.values.headOption map { _.toString } getOrElse { "right click to select method" }
         imageFactory.invokeImageError(str)
     }
@@ -146,7 +140,7 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
     repaint()
   }
 }
-class DirectValFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure with RectFeedback{
+class DirectValFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure with RectFeedback {
   def size = {
     pg.getPreferredSize().ensureMin(Dimension(Tool.gridSize * 3, Tool.gridSize * 3)) + Vector2(Tool.gridSize, 0)
   }
@@ -161,7 +155,7 @@ class DirectValFigure(val container: ContainerItem) extends RectangleFigure with
     this.setXOR(c)
   }
 }
-trait TextEditFigure extends Item  {
+trait TextEditFigure extends Item {
   def text: String;
   setFont(Activator.getDefault.directEditFont) // https://bugs.eclipse.org/bugs/show_bug.cgi?id=308964
   val pg = new FlowPage()
@@ -211,20 +205,20 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
   }
 
   override def updateValDef(valDef: ValDef) = {
-    def instance(cl: Class[_]) = {
-      try {
-        Some(cl.newInstance().asInstanceOf[JComponent])
-      } catch { case e ⇒ e.printStackTrace; None }
-    }
+      def instance(cl: Class[_]) = {
+        try {
+          Some(cl.newInstance().asInstanceOf[JComponent])
+        } catch { case e ⇒ e.printStackTrace; None }
+      }
     component = valDef.tpe match {
-      case bs: BoxTypeSymbol =>
+      case bs: BoxTypeSymbol ⇒
         for (
           c ← bs.visualClass;
           if c.str != classOf[JPanel].getName;
           cl ← forName(c.str);
           i ← instance(cl)
         ) yield i
-      case _ => None
+      case _ ⇒ None
     }
     super.updateValDef(valDef)
   }
@@ -244,7 +238,7 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
     val rect = getClientArea()
     g.setXORMode(blinkOn)
     component match {
-      case Some(c) =>
+      case Some(c) ⇒
         val aimage = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB)
         val ag = aimage.createGraphics
         c.setBounds(0, 0, rect.width, rect.height);
@@ -255,12 +249,12 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
         g.drawImage(image, rect.x, rect.y)
         image.dispose()
         ag.dispose();
-      case None =>
+      case None ⇒
         g.setForegroundColor(ColorConstants.lightGray)
         g.fillRectangle(rect)
         g.setForegroundColor(ColorConstants.gray)
         val data = g.getFont.getFontData
-        for (d <- data) {
+        for (d ← data) {
           d.setHeight(rect.height / 2)
         }
         val font = new Font(Display.getCurrent, data)

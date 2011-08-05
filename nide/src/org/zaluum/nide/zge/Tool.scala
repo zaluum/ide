@@ -1,12 +1,22 @@
 package org.zaluum.nide.zge
 
-import org.eclipse.ui.IViewSite
-import org.eclipse.ui.PlatformUI
-import scala.annotation.tailrec
-import org.eclipse.draw2d.{ Figure, IFigure }
-import org.zaluum.nide.compiler.Point
+import org.eclipse.swt.events.DragDetectEvent
+import org.eclipse.swt.events.DragDetectListener
+import org.eclipse.swt.events.FocusEvent
+import org.eclipse.swt.events.FocusListener
+import org.eclipse.swt.events.KeyEvent
+import org.eclipse.swt.events.KeyListener
+import org.eclipse.swt.events.MenuDetectEvent
+import org.eclipse.swt.events.MenuDetectListener
+import org.eclipse.swt.events.MouseEvent
+import org.eclipse.swt.events.MouseListener
+import org.eclipse.swt.events.MouseMoveListener
+import org.eclipse.swt.events.MouseTrackListener
+import org.eclipse.swt.events.MouseWheelListener
+import org.eclipse.swt.events.TraverseEvent
+import org.eclipse.swt.events.TraverseListener
 import org.eclipse.swt.SWT
-import org.eclipse.swt.events._
+import org.zaluum.nide.compiler.Point
 object Tool {
   val gridSize = 6
 }
@@ -73,12 +83,12 @@ abstract class Tool(viewer: Viewer) {
   var stateMask = 0
   var absMouseLocation = Point(0, 0)
 
-  def snap(p:Point) : Point = {
-    def snap(a:Int) = (math.round(a / Tool.gridSize) * Tool.gridSize).asInstanceOf[Int]
+  def snap(p: Point): Point = {
+      def snap(a: Int) = (math.round(a / Tool.gridSize) * Tool.gridSize).asInstanceOf[Int]
     Point(snap(p.x), snap(p.y))
   }
   var swtMouseLocation = new org.eclipse.swt.graphics.Point(0, 0)
-  def updateMouseWithDisplayCoordinates(x:Int, y:Int) {
+  def updateMouseWithDisplayCoordinates(x: Int, y: Int) {
     swtMouseLocation.x = x
     swtMouseLocation.y = y
     val canvasLocation = canvas.getDisplay.map(null, canvas, swtMouseLocation)
@@ -103,20 +113,20 @@ abstract class Tool(viewer: Viewer) {
     def delete()
   }
   trait DropState {
-    def drop(s:String)
+    def drop(s: String)
   }
   def handleDel() {
     state match {
       case d: DeleteState ⇒ d.delete()
-      case _ ⇒
+      case _              ⇒
     }
   }
-  def handleDrop(x:Int,y:Int, s:String) {
-    updateMouseWithDisplayCoordinates(x,y)
+  def handleDrop(x: Int, y: Int, s: String) {
+    updateMouseWithDisplayCoordinates(x, y)
     state.move()
     state match {
-      case d: DropState => d.drop(s)
-      case _ =>
+      case d: DropState ⇒ d.drop(s)
+      case _            ⇒
     }
   }
   trait ClipboardState {
@@ -125,15 +135,15 @@ abstract class Tool(viewer: Viewer) {
     def paste()
   }
   def handleCut() = state match {
-      case c:ClipboardState => c.cut
-      case _=> 
+    case c: ClipboardState ⇒ c.cut
+    case _                 ⇒
   }
   def handleCopy() = state match {
-    case c:ClipboardState => c.copy
-    case _ => 
+    case c: ClipboardState ⇒ c.copy
+    case _                 ⇒
   }
   def handlePaste() = state match {
-    case c:ClipboardState => c.paste
-    case _ => 
+    case c: ClipboardState ⇒ c.paste
+    case _                 ⇒
   }
 }

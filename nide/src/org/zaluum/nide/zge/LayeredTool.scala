@@ -1,33 +1,36 @@
 package org.zaluum.nide.zge
-import draw2dConversions._
+import scala.annotation.implicitNotFound
+import scala.reflect.Manifest.singleType
+
+import org.eclipse.draw2d.Cursors
+import org.eclipse.draw2d.Figure
 import org.eclipse.swt.graphics.Cursor
-import org.eclipse.draw2d.{ Cursors, Figure, IFigure }
-import org.eclipse.draw2d.geometry.{ Point => EPoint, Rectangle }
-import org.zaluum.nide.compiler.{_ }
-import scala.collection.JavaConversions._
-import scala.reflect.Manifest._
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.Vector2
+
+import draw2dConversions._
 import RichFigure._
 abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   type C <: ContainerItem
-  def itemUnderMouse = current.itemAt(point(currentMouseLocation),false) 
-  def currentMouseLocation : Point = current.translateFromViewport(absMouseLocation)
-  def current : C = viewer.findDeepContainerAt(point(absMouseLocation)) {
+  def itemUnderMouse = current.itemAt(point(currentMouseLocation), false)
+  def currentMouseLocation: Point = current.translateFromViewport(absMouseLocation)
+  def current: C = viewer.findDeepContainerAt(point(absMouseLocation)) {
     case (f: OpenBoxFigure) ⇒ f.asInstanceOf[C]
   } getOrElse { viewer.asInstanceOf[C] }
   abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
-    var current : Option[F] = None
+    var current: Option[F] = None
     protected var last: Option[F] = None
-    val partial : PartialFunction[AnyRef,F] = { case s if singleType(s)<:<m => s.asInstanceOf[F]}
+    val partial: PartialFunction[AnyRef, F] = { case s if singleType(s) <:< m ⇒ s.asInstanceOf[F] }
     def update() {
-      val near = viewer.deepChildrenNear(point(absMouseLocation),10)
-      val fil= for ((f,d) <- near; if (partial.isDefinedAt(f))) yield (partial(f),d)
-      val under = if (fil.isEmpty)  None
-        else Some(fil.minBy( _._2)._1)
+      val near = viewer.deepChildrenNear(point(absMouseLocation), 10)
+      val fil = for ((f, d) ← near; if (partial.isDefinedAt(f))) yield (partial(f), d)
+      val under = if (fil.isEmpty) None
+      else Some(fil.minBy(_._2)._1)
       if (under == last) return ;
       last foreach { f ⇒ last = None; onExit(f); }
-      under foreach { f ⇒ last = Some(f); onEnter(f);  }
+      under foreach { f ⇒ last = Some(f); onEnter(f); }
     }
-    def onEnter(f: F) { current = last}
+    def onEnter(f: F) { current = last }
     def onExit(f: F) { current = None }
   }
   trait Allower extends ToolState {

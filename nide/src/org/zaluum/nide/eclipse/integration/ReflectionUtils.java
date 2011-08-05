@@ -37,14 +37,15 @@ public class ReflectionUtils {
 	 * 
 	 */
 	@SuppressWarnings("rawtypes")
-  private static final Class[] NO_TYPES = new Class[0];
+	private static final Class[] NO_TYPES = new Class[0];
 	/**
 	 * 
 	 */
 	private static final Object[] NO_ARGS = new Object[0];
 	private static Map<String, Field> fieldMap = new HashMap<String, Field>();
 
-	public static <T> Object getPrivateField(Class<T> clazz, String fieldName, Object target) {
+	public static <T> Object getPrivateField(Class<T> clazz, String fieldName,
+			Object target) {
 		String key = clazz.getCanonicalName() + fieldName;
 		Field field = fieldMap.get(key);
 		try {
@@ -55,16 +56,18 @@ public class ReflectionUtils {
 			}
 			return field.get(target);
 		} catch (Exception e) {
-			/*Activator.getDefault().getLog()
-					.log(new Status(IStatus.ERROR, "id", "Error getting private field '" + fieldName //$NON-NLS-1$
-							+ "' on class " + clazz, e)); //$NON-NLS-1$
-							*/
-							e.printStackTrace();
+			/*
+			 * Activator.getDefault().getLog() .log(new Status(IStatus.ERROR,
+			 * "id", "Error getting private field '" + fieldName //$NON-NLS-1$ +
+			 * "' on class " + clazz, e)); //$NON-NLS-1$
+			 */
+			e.printStackTrace();
 		}
 		return null;
 	}
 
-	public static <T> void setPrivateField(Class<T> clazz, String fieldName, Object target, Object newValue) {
+	public static <T> void setPrivateField(Class<T> clazz, String fieldName,
+			Object target, Object newValue) {
 		String key = clazz.getCanonicalName() + fieldName;
 		Field field = fieldMap.get(key);
 		try {
@@ -75,36 +78,42 @@ public class ReflectionUtils {
 			}
 			field.set(target, newValue);
 		} catch (Exception e) {
-			/*Activator.getDefault().getLog()
-					.log(new Status(IStatus.ERROR, "id", "Error setting private field '" + fieldName //$NON-NLS-1$
-							+ "' on class " + clazz, e)); //$NON-NLS-1$*/
-		  e.printStackTrace();
+			/*
+			 * Activator.getDefault().getLog() .log(new Status(IStatus.ERROR,
+			 * "id", "Error setting private field '" + fieldName //$NON-NLS-1$ +
+			 * "' on class " + clazz, e)); //$NON-NLS-1$
+			 */
+			e.printStackTrace();
 		}
 	}
 
-	public static <T> Object executeNoArgPrivateMethod(Class<T> clazz, String methodName, Object target) {
-		return executePrivateMethod(clazz, methodName, NO_TYPES, target, NO_ARGS);
+	public static <T> Object executeNoArgPrivateMethod(Class<T> clazz,
+			String methodName, Object target) {
+		return executePrivateMethod(clazz, methodName, NO_TYPES, target,
+				NO_ARGS);
 	}
 
-	public static <T> Object executePrivateMethod(Class<T> clazz, String methodName, Class<?>[] types, Object target, Object[] args) {
+	public static <T> Object executePrivateMethod(Class<T> clazz,
+			String methodName, Class<?>[] types, Object target, Object[] args) {
 		// forget caching for now...
 		try {
 			Method method = clazz.getDeclaredMethod(methodName, types);
 			method.setAccessible(true);
 			return method.invoke(target, args);
 		} catch (Exception e) {
-		  /*
-			Activator.getDefault().getLog()
-					.log(new Status(IStatus.ERROR, "id", "Error executing private method '" + methodName //$NON-NLS-1$
-							+ "' on class " + clazz, e)); //$NON-NLS-1$
-							*/
-		  e.printStackTrace();
+			/*
+			 * Activator.getDefault().getLog() .log(new Status(IStatus.ERROR,
+			 * "id", "Error executing private method '" + methodName
+			 * //$NON-NLS-1$ + "' on class " + clazz, e)); //$NON-NLS-1$
+			 */
+			e.printStackTrace();
 		}
 		return null;
 	}
 
-	public static <T> Object throwableExecutePrivateMethod(Class<T> clazz, String methodName, Class<?>[] types, Object target,
-			Object[] args) throws Exception {
+	public static <T> Object throwableExecutePrivateMethod(Class<T> clazz,
+			String methodName, Class<?>[] types, Object target, Object[] args)
+			throws Exception {
 		// forget caching for now...
 		Method method = clazz.getDeclaredMethod(methodName, types);
 		method.setAccessible(true);
@@ -112,8 +121,9 @@ public class ReflectionUtils {
 	}
 
 	/**
-	 * The signature for the {@link LocalVariable} constructor has changed between 3.6 and 3.7. Use this method to generate a
-	 * {@link LocalVariable} regardless of which Eclipse version being used.
+	 * The signature for the {@link LocalVariable} constructor has changed
+	 * between 3.6 and 3.7. Use this method to generate a {@link LocalVariable}
+	 * regardless of which Eclipse version being used.
 	 * 
 	 * @param offsetInParent
 	 * @param start
@@ -122,7 +132,8 @@ public class ReflectionUtils {
 	 * @param unit
 	 * @return
 	 */
-	public static LocalVariable createLocalVariable(IJavaElement parent, String varName, int start, String returnTypeSignature) {
+	public static LocalVariable createLocalVariable(IJavaElement parent,
+			String varName, int start, String returnTypeSignature) {
 		// 3.7 version - two extra trailing parameters:
 		// LocalVariable var = new LocalVariable((JavaElement) unit.getType(
 		// className).getChildren()[offsetInParent], matchedVarName,
@@ -130,7 +141,8 @@ public class ReflectionUtils {
 		// declStart, declStart + matchedVarName.length(),
 		// Signature.SIG_INT, new Annotation[0],0,false);
 
-		// LocalVariable localVariable = new LocalVariable((JavaElement) unit.getType(
+		// LocalVariable localVariable = new LocalVariable((JavaElement)
+		// unit.getType(
 		// className).getChildren()[offsetInParent], matchedVarName,
 		// declStart, declStart + matchedVarName.length(),
 		// declStart, declStart + matchedVarName.length(),
@@ -139,23 +151,34 @@ public class ReflectionUtils {
 		LocalVariable localVariable;
 		try {
 			// 3.6 variant
-			Constructor<LocalVariable> cons = LocalVariable.class.getConstructor(JavaElement.class, String.class, int.class,
-					int.class, int.class, int.class, String.class, Annotation[].class);
-			localVariable = cons.newInstance(parent, varName, start, start + varName.length() - 1, start, start + varName.length()
-					- 1, returnTypeSignature, new Annotation[0]);
+			Constructor<LocalVariable> cons = LocalVariable.class
+					.getConstructor(JavaElement.class, String.class, int.class,
+							int.class, int.class, int.class, String.class,
+							Annotation[].class);
+			localVariable = cons.newInstance(parent, varName, start, start
+					+ varName.length() - 1, start,
+					start + varName.length() - 1, returnTypeSignature,
+					new Annotation[0]);
 			return localVariable;
 		} catch (Exception e) {
 			// 3.7 variant
 			try {
-				Constructor<LocalVariable> cons = LocalVariable.class.getConstructor(JavaElement.class, String.class, int.class,
-						int.class, int.class, int.class, String.class, Annotation[].class, int.class, boolean.class);
-				localVariable = cons.newInstance(parent, varName, start, start + varName.length() - 1, start,
-						start + varName.length() - 1, returnTypeSignature, new Annotation[0], 0, false);
+				Constructor<LocalVariable> cons = LocalVariable.class
+						.getConstructor(JavaElement.class, String.class,
+								int.class, int.class, int.class, int.class,
+								String.class, Annotation[].class, int.class,
+								boolean.class);
+				localVariable = cons.newInstance(parent, varName, start, start
+						+ varName.length() - 1, start, start + varName.length()
+						- 1, returnTypeSignature, new Annotation[0], 0, false);
 				return localVariable;
 			} catch (Exception e1) {
-				/*Activator.getDefault().getLog()
-						.log(new Status(IStatus.ERROR, "id", "Error creating local variable'" + varName //$NON-NLS-1$
-								+ "' in element " + parent.getHandleIdentifier(), e)); //$NON-NLS-1$*/
+				/*
+				 * Activator.getDefault().getLog() .log(new
+				 * Status(IStatus.ERROR, "id", "Error creating local variable'"
+				 * + varName //$NON-NLS-1$ + "' in element " +
+				 * parent.getHandleIdentifier(), e)); //$NON-NLS-1$
+				 */
 				e.printStackTrace();
 				return null;
 			}

@@ -1,13 +1,15 @@
 package org.zaluum.nide.eclipse;
 
-import org.eclipse.core.runtime.CoreException
-import org.eclipse.core.resources.{ IProjectNature, IProjectDescription, IProject, ICommand }
-import org.eclipse.jdt.core.JavaCore
 import scala.collection.mutable.ArrayBuffer
-import org.zaluum.nide.Activator
-import org.eclipse.jdt.core.IJavaProject
+
+import org.eclipse.core.resources.IProject
+import org.eclipse.core.resources.IProjectNature
+import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.Path
+import org.eclipse.jdt.core.IJavaProject
+import org.eclipse.jdt.core.JavaCore
 import org.eclipse.jdt.launching.JavaRuntime
+import org.zaluum.nide.Activator
 object ZaluumNature {
   val NATURE_ID = "org.zaluum.nide.zaluumNature";
   def hasZaluumNature(project: IProject) = {

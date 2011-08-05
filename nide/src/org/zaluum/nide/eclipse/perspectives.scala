@@ -1,5 +1,6 @@
 package org.zaluum.nide.eclipse
-import org.eclipse.ui.{ IPerspectiveFactory, IPageLayout, IFolderLayout }
+import org.eclipse.ui.IPageLayout
+import org.eclipse.ui.IPerspectiveFactory
 
 class BoxPerspective extends IPerspectiveFactory {
   var factory: IPageLayout = _

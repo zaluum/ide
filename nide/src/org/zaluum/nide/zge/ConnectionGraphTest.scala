@@ -1,10 +1,8 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.compiler.Point
-import junit.framework._
-import org.junit.Assert._
+import org.junit.Assert.assertEquals
 import org.junit.Test
-class ConnectionGraphTest { 
+class ConnectionGraphTest {
   /*val a = new End(Point(0, 0))
   val b1 = new End(Point(10, 10))
   val b2 = new End(Point(10, 20))
@@ -52,13 +50,13 @@ class ConnectionGraphTest {
    *     |   |
    *     |----
    *     |
-   *------          
+   * ------
    * @return
    */
 
   @Test
   def intersectEdge() = {
-  /*  val xwp = List(Point(15, 8), Point(5, 8), Point(0, 0))
+    /*  val xwp = List(Point(15, 8), Point(5, 8), Point(0, 0))
     val x = new Edge(x1, x3, xwp)
     x.firstIntersection(y, Set()) match {
       case Some(Point(5, 5)) ⇒
@@ -101,14 +99,14 @@ class ConnectionGraphTest {
   }*/
   @Test
   def interval {
-    // s--<-->--e
-    def test(s:Int,e:Int, s1:Int,e1:Int , solution:List[Int]) = {
-      assertEquals(new Interval(s,e).intersect(new Interval(s1,e1),false), solution)
-    }
-    test(5,10 , 7,8,  List(7,8))
-    test(5,10 , 7,15, List(7,10))
-    test(5,10 , 2,6, List(5,6))
-    test(10,5 , 7,10, List(10,7))
+      // s--<-->--e
+      def test(s: Int, e: Int, s1: Int, e1: Int, solution: List[Int]) = {
+        assertEquals(new Interval(s, e).intersect(new Interval(s1, e1), false), solution)
+      }
+    test(5, 10, 7, 8, List(7, 8))
+    test(5, 10, 7, 15, List(7, 10))
+    test(5, 10, 2, 6, List(5, 6))
+    test(10, 5, 7, 10, List(10, 7))
   }
   /*@Test
   def untangle {

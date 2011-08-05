@@ -1,20 +1,30 @@
 package org.zaluum.nide.eclipse.integration
 
 import java.util.Collections
-import model.JDTInternalUtils
+
 import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.jdt.internal.compiler.ast.{ TypeDeclaration, CompilationUnitDeclaration }
+import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
+import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import org.eclipse.jdt.internal.compiler.parser.Parser
 import org.eclipse.jdt.internal.compiler.problem.ProblemReporter
 import org.eclipse.jdt.internal.compiler.util.HashtableOfObjectToInt
-import org.eclipse.jdt.internal.compiler.{ SourceElementNotifier, SourceElementParser, IProblemFactory, ISourceElementRequestor, CompilationResult }
+import org.eclipse.jdt.internal.compiler.CompilationResult
+import org.eclipse.jdt.internal.compiler.IProblemFactory
+import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
+import org.eclipse.jdt.internal.compiler.SourceElementNotifier
+import org.eclipse.jdt.internal.compiler.SourceElementParser
 import org.eclipse.jdt.internal.core.search.indexing.IndexingParser
-import org.eclipse.jdt.internal.core.search.matching.{ MatchLocatorParser, MatchLocator, ImportMatchLocatorParser }
+import org.eclipse.jdt.internal.core.search.matching.ImportMatchLocatorParser
+import org.eclipse.jdt.internal.core.search.matching.MatchLocator
+import org.eclipse.jdt.internal.core.search.matching.MatchLocatorParser
 import org.eclipse.jdt.internal.core.util.CommentRecorderParser
 import org.zaluum.annotation.Box
-import org.zaluum.nide.eclipse.integration.model.{ ZaluumCompilationUnitDeclaration, ZaluumParser }
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
+import org.zaluum.nide.eclipse.integration.model.ZaluumParser
+
+import model.JDTInternalUtils.stringToA
 
 trait ParserParams {
   def compilerOptions: CompilerOptions
@@ -37,20 +47,20 @@ class MultiplexingParser(
   val compilerOptions: CompilerOptions,
   val problemReporterAccessor: ProblemReporter,
   optimizeStringLiterals: Boolean)
-  extends Parser(problemReporterAccessor, optimizeStringLiterals)
-  with ZaluumDietParse
+    extends Parser(problemReporterAccessor, optimizeStringLiterals)
+    with ZaluumDietParse
 
 class MultiplexingCommentRecorderParser(
   val compilerOptions: CompilerOptions,
   val problemReporterAccessor: ProblemReporter,
   optimizeStringLiterals: Boolean)
-  extends CommentRecorderParser(problemReporterAccessor, optimizeStringLiterals)
-  with ZaluumDietParse
+    extends CommentRecorderParser(problemReporterAccessor, optimizeStringLiterals)
+    with ZaluumDietParse
 
 class MultiplexingImportMatchLocatorParser(
   val problemReporterAccessor: ProblemReporter,
   locator: MatchLocator)
-  extends ImportMatchLocatorParser(problemReporterAccessor, locator) with ZaluumDietParse {
+    extends ImportMatchLocatorParser(problemReporterAccessor, locator) with ZaluumDietParse {
 
   def compilerOptions = locator.options
 }
@@ -58,7 +68,7 @@ class MultiplexingImportMatchLocatorParser(
 class MultiplexingMatchLocatorParser(
   val problemReporterAccessor: ProblemReporter,
   locator: MatchLocator)
-  extends MatchLocatorParser(problemReporterAccessor, locator) with ZaluumDietParse {
+    extends MatchLocatorParser(problemReporterAccessor, locator) with ZaluumDietParse {
   def compilerOptions = locator.options
 }
 
@@ -83,16 +93,16 @@ trait ZaluumParseCompilationUnit extends SourceElementParser with FixEnds with P
   def withCUD(cud: ZaluumCompilationUnitDeclaration) {}
 }
 class MultiplexingIndexingParser(r: ISourceElementRequestor,
-  problemFactory: IProblemFactory,
-  val compilerOptions: CompilerOptions,
-  val reportLocalDeclarationsAccessor: Boolean,
-  optimizeStringLiterals: Boolean,
-  useSourceJavadocParser: Boolean) extends IndexingParser(r, problemFactory, compilerOptions, reportLocalDeclarationsAccessor, optimizeStringLiterals, useSourceJavadocParser)
-  with ZaluumParseCompilationUnit {
+                                 problemFactory: IProblemFactory,
+                                 val compilerOptions: CompilerOptions,
+                                 val reportLocalDeclarationsAccessor: Boolean,
+                                 optimizeStringLiterals: Boolean,
+                                 useSourceJavadocParser: Boolean) extends IndexingParser(r, problemFactory, compilerOptions, reportLocalDeclarationsAccessor, optimizeStringLiterals, useSourceJavadocParser)
+    with ZaluumParseCompilationUnit {
   def notifierAccessor = notifier
   def problemReporterAccessor = problemReporter
   override def withCUD(cud: ZaluumCompilationUnitDeclaration) = {
-    import JDTInternalUtils._
+    import org.zaluum.nide.eclipse.integration.model.JDTInternalUtils._
     requestor.acceptPackage(cud.currentPackage)
     requestor.acceptTypeReference(stringToA(cud.fqName), 0, 1)
     requestor.acceptAnnotationTypeReference(stringToA(classOf[Box].getName), 2, 3)
@@ -106,8 +116,8 @@ class MultiplexingSourceElementRequestorParser(
   val compilerOptions: CompilerOptions,
   val reportLocalDeclarationsAccessor: Boolean,
   optimizeStringLiterals: Boolean)
-  extends SourceElementParser(requestor, problemFactory, compilerOptions, reportLocalDeclarationsAccessor, optimizeStringLiterals)
-  with ZaluumParseCompilationUnit with ZaluumDietParse {
+    extends SourceElementParser(requestor, problemFactory, compilerOptions, reportLocalDeclarationsAccessor, optimizeStringLiterals)
+    with ZaluumParseCompilationUnit with ZaluumDietParse {
   def notifierAccessor = notifier
   reportReferenceInfo = false
   notifier = new SourceElementNotifier(requestor, reportLocalDeclarationsAccessor);

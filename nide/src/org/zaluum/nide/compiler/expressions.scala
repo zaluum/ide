@@ -7,11 +7,11 @@ sealed abstract class ExprType(nameStr: String) extends BoxType {
   val fqName = Name("org.zaluum.expr." + nameStr)
   val params = Map[Name, ParamSymbol]()
   def lookupPort(a: Name) = ports.get(a)
-  def lookupPortWithSuper(a:Name) = lookupPort(a)
+  def lookupPortWithSuper(a: Name) = lookupPort(a)
   def lookupParam(a: Name) = params.get(a)
   def templateTree = null
 }
-sealed abstract class ResultExprType(nameStr:String) extends ExprType(nameStr) {
+sealed abstract class ResultExprType(nameStr: String) extends ExprType(nameStr) {
   val o = new PortSymbol(this, Name("o"), Point(0, 0), Out)
   ports = Map(o.name -> o)
   def outPort(v: ValSymbol) = v.findPortInstance(o).get
@@ -27,7 +27,7 @@ sealed abstract class UnaryExprType(nameStr: String) extends ResultExprType(name
 sealed abstract class BinExprType(nameStr: String) extends ResultExprType(nameStr) {
   val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
   val b = new PortSymbol(this, Name("b"), Point(0, 0), In)
-  ports = List(a, b, o) map { a => (a.name -> a) } toMap
+  ports = List(a, b, o) map { a ⇒ (a.name -> a) } toMap
   def binaryPortInstancesOf(v: ValSymbol) =
     (v.findPortInstance(a).get, v.findPortInstance(b).get, v.findPortInstance(o).get)
 
@@ -39,8 +39,8 @@ sealed abstract class EqualityExprType(nameStr: String) extends BinExprType(name
 sealed abstract class BitBinExprType(nameStr: String) extends BinExprType(nameStr)
 sealed abstract class CastExprType(nameStr: String) extends UnaryExprType(nameStr)
 
-sealed abstract class TemplateExprType(nameStr:String) extends ExprType(nameStr) {
-  val requiredBlocks : Int
+sealed abstract class TemplateExprType(nameStr: String) extends ExprType(nameStr) {
+  val requiredBlocks: Int
 }
 object IfExprType extends TemplateExprType("If") {
   val requiredBlocks = 2
@@ -58,13 +58,13 @@ object WhileExprType extends TemplateExprType("While") {
 object InvokeExprType extends ExprType("Invoke") {
   val Sig = """(.+)(\(.*)""".r
   val signatureName = Name("signature")
-  val signatureSymbol = new ParamSymbol(null,signatureName)
-  override val params = Map(signatureName-> signatureSymbol)
-  val thiz = new PortSymbol(this,Name("this"), Point(0,0), In)
-  val thizOut = new PortSymbol(this, Name("thisOut"), Point(0,0),Out)
+  val signatureSymbol = new ParamSymbol(null, signatureName)
+  override val params = Map(signatureName -> signatureSymbol)
+  val thiz = new PortSymbol(this, Name("this"), Point(0, 0), In)
+  val thizOut = new PortSymbol(this, Name("thisOut"), Point(0, 0), Out)
   ports = Map(thiz.name -> thiz, thizOut.name -> thizOut)
-  def thisPort (vs:ValSymbol) = vs.findPortInstance(thiz).get
-  def thisOutPort (vs:ValSymbol) = vs.findPortInstance(thizOut).get
+  def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
+  def thisOutPort(vs: ValSymbol) = vs.findPortInstance(thizOut).get
 }
 
 object LiteralExprType extends ResultExprType("Literal") {
@@ -137,11 +137,11 @@ object Expressions {
     SubExprType,
     MulExprType,
     DivExprType,
-    RemExprType) map { e => e.fqName -> e } toMap
+    RemExprType) map { e ⇒ e.fqName -> e } toMap
   val templateExpressions = List(
-      IfExprType,
-      WhileExprType) map { e => e.fqName -> e} toMap
+    IfExprType,
+    WhileExprType) map { e ⇒ e.fqName -> e } toMap
   def find(name: Name) = all.get(name)
-  def isTemplateExpression(className:Name) = templateExpressions.contains(className)
+  def isTemplateExpression(className: Name) = templateExpressions.contains(className)
 
 }

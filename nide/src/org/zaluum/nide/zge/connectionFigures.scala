@@ -1,22 +1,19 @@
 package org.zaluum.nide.zge
 
-import org.eclipse.draw2d.Shape
-import org.eclipse.swt.graphics.Color
-import org.eclipse.draw2d.Ellipse
-import org.eclipse.swt.events.FocusListener
-import org.eclipse.jface.viewers.ICellEditorListener
-import org.eclipse.swt.widgets.Text
-import org.eclipse.jface.viewers.TextCellEditor
-import org.eclipse.draw2d.text.TextFlow
-import org.eclipse.draw2d.text.FlowPage
-import org.eclipse.draw2d.RectangleFigure
-import draw2dConversions._
-import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Polyline, Graphics }
-import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
-import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.Image
-import org.zaluum.nide.compiler._
 import scala.collection.mutable.Buffer
+
+import org.eclipse.draw2d.geometry.Rectangle
+import org.eclipse.draw2d.ColorConstants
+import org.eclipse.draw2d.Ellipse
+import org.eclipse.draw2d.Graphics
+import org.eclipse.swt.SWT
+import org.zaluum.nide.compiler.ConnectionDef
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.SelectionSubject
+import org.zaluum.nide.compiler.Type
+import org.zaluum.nide.compiler.Vector2
+
+import draw2dConversions._
 
 case class LineSelectionSubject(c: ConnectionDef, l: Line) extends SelectionSubject
 class LineItem(val container: ContainerItem) extends Item with RectFeedback {
@@ -60,7 +57,7 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
     b.contains(x, y)
   }
   def connectionDef = for (cf ← con; cdef ← cf.e.srcCon) yield cdef
-  def blink(c:Boolean) {}
+  def blink(c: Boolean) {}
   override def paintFigure(g: Graphics) = {
     g.setForegroundColor(getForegroundColor);
     g.setLineStyle(style)
@@ -116,7 +113,7 @@ class ConnectionPainter(container: ContainerItem) {
       lines += nl
     }
     lines foreach { l ⇒ l.show }
-    if (feedback) lines foreach {_.showFeedback() }
+    if (feedback) lines foreach { _.showFeedback() }
   }
   def clear() {
     lines.foreach { _.hide() }
@@ -132,7 +129,7 @@ class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Item {
   val feed = null
   def myLayer = null
   def paint = painter.paintRoute(e, feedback, e.isComplete, Some(this))
-  def blink(c:Boolean) = {}
+  def blink(c: Boolean) = {}
   override def show() = {
     container.connectionsLayer.add(this);
     paint

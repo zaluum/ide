@@ -1,8 +1,9 @@
 package org.zaluum.nide.compiler
 
-import javax.swing.JLabel
 import org.zaluum.basic.RunnableBox
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
+
+import javax.swing.JLabel
 
 trait BinaryExpr extends Tree {
   def a: Tree
@@ -19,7 +20,7 @@ case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
 case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)]) extends Tree
 case class Assign(lhs: Ref, rhs: Tree) extends Tree
 case class While(body: List[Tree], cond: Tree) extends Tree
-case class If(cond:Tree, trueBlock: List[Tree], falseBlock:List[Tree]) extends Tree
+case class If(cond: Tree, trueBlock: List[Tree], falseBlock: List[Tree]) extends Tree
 case class Not(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
 case class Minus(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
 
@@ -101,18 +102,18 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
       case ps: PortSymbol ⇒
         val a = ps.dir match {
           case Out ⇒ classOf[org.zaluum.annotation.Out]
-          case _ ⇒ classOf[org.zaluum.annotation.In]
+          case _   ⇒ classOf[org.zaluum.annotation.In]
         }
         List(FieldDef(ps.name, ps.tpe.name, Some(Name(a.getName)), false))
       case vs: ValSymbol ⇒
         vs.tpe match {
-          case bs: BoxTypeSymbol =>
+          case bs: BoxTypeSymbol ⇒
             List(FieldDef(vs.fqName, bs.fqName, None, true))
-          case e: ExprType =>
+          case e: ExprType ⇒
             for (
-              bl <- vs.blocks;
-              vs <- bl.executionOrder;
-              fd <- field(vs)
+              bl ← vs.blocks;
+              vs ← bl.executionOrder;
+              fd ← field(vs)
             ) yield fd
         }
       case _ ⇒ List()
@@ -120,39 +121,39 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
     def cons(b: BoxDef) = {
       val bs = b.sym
       val bsVals = bs.blocks.head.executionOrder
-      // boxes
-      def boxCreation(vs: ValSymbol): List[Tree] = vs.tpe match {
-        case tpe: BoxTypeSymbol ⇒
-          val sig = vs.constructor.get.signature
-          val values = for ((v, t) ← vs.constructorParams) yield {
-            Const(v, t)
-          }
-          List(Assign(
-            Select(This, FieldRef(vs.fqName, tpe.fqName, bs.fqName)),
-            New(tpe.fqName, values, sig)))
-        case e: ExprType ⇒
-          for (
-            bl <- vs.blocks;
-            vs <- bl.executionOrder;
-            bc <- boxCreation(vs)
-          ) yield bc
-      }
-      // params
-      def params(vs:ValSymbol):List[Tree] = vs.tpe match {
-        case tpe:BoxTypeSymbol ⇒
-          vs.params map {
-            case (param, v) ⇒
-              Invoke(
-                Select(This, FieldRef(vs.fqName, tpe.fqName, bs.fqName)),
-                param.name.str,
-                List(Const(v, param.tpe)),
-                tpe.fqName,
-                "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V",
-                interface = false) // FIXME not always JavaType
-          } toList
-        case e:ExprType =>  
-          for (bl<-vs.blocks; vs<- bl.executionOrder; p<-params(vs) ) yield p
-      }
+        // boxes
+        def boxCreation(vs: ValSymbol): List[Tree] = vs.tpe match {
+          case tpe: BoxTypeSymbol ⇒
+            val sig = vs.constructor.get.signature
+            val values = for ((v, t) ← vs.constructorParams) yield {
+              Const(v, t)
+            }
+            List(Assign(
+              Select(This, FieldRef(vs.fqName, tpe.fqName, bs.fqName)),
+              New(tpe.fqName, values, sig)))
+          case e: ExprType ⇒
+            for (
+              bl ← vs.blocks;
+              vs ← bl.executionOrder;
+              bc ← boxCreation(vs)
+            ) yield bc
+        }
+        // params
+        def params(vs: ValSymbol): List[Tree] = vs.tpe match {
+          case tpe: BoxTypeSymbol ⇒
+            vs.params map {
+              case (param, v) ⇒
+                Invoke(
+                  Select(This, FieldRef(vs.fqName, tpe.fqName, bs.fqName)),
+                  param.name.str,
+                  List(Const(v, param.tpe)),
+                  tpe.fqName,
+                  "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V",
+                  interface = false) // FIXME not always JavaType
+            } toList
+          case e: ExprType ⇒
+            for (bl ← vs.blocks; vs ← bl.executionOrder; p ← params(vs)) yield p
+        }
       // widgets
       val widgets = bs.visualClass.toList flatMap { vn ⇒
         val widgetCreation: List[Tree] = List(
@@ -166,25 +167,25 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
             Name("javax.swing.JComponent"),
             "(II)V",
             interface = false))
-        widgetCreation ++ bsVals.flatMap(createWidgets(_,bs.tdecl))
-      } 
-      val bcs= bsVals.flatMap(boxCreation)
-      val par= bsVals.flatMap(params)
+        widgetCreation ++ bsVals.flatMap(createWidgets(_, bs.tdecl))
+      }
+      val bcs = bsVals.flatMap(boxCreation)
+      val par = bsVals.flatMap(params)
       ConstructorMethod(bcs ++ par ++ widgets)
     }
 
     val widgetName = Name("_widget")
-    def fieldRef(vs: ValSymbol, bs:BoxTypeSymbol) = {
+    def fieldRef(vs: ValSymbol, bs: BoxTypeSymbol) = {
       val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
       FieldRef(vs.fqName, tpe.fqName, bs.fqName)
     }
-    def createWidget(vs:ValSymbol, mainBox: BoxDef): List[Tree] = {
+    def createWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
         case tpe: BoxTypeSymbol ⇒
           val valDef = vs.tdecl
           val mainTpe = mainBox.sym
           tpe.visualClass map { cl ⇒
-            val widgetSelect = Select(fieldRef(vs,mainTpe), FieldRef(widgetName, cl, tpe.fqName))
+            val widgetSelect = Select(fieldRef(vs, mainTpe), FieldRef(widgetName, cl, tpe.fqName))
             List[Tree](
               Invoke(
                 widgetSelect,
@@ -240,9 +241,9 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
     }
     def createWidgets(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
-        case tpe:BoxTypeSymbol=> createWidget(vs,mainBox)
-        case e:ExprType => 
-          for(bl<-vs.blocks; vs<-bl.executionOrder; w<-createWidgets(vs,mainBox)) yield w
+        case tpe: BoxTypeSymbol ⇒ createWidget(vs, mainBox)
+        case e: ExprType ⇒
+          for (bl ← vs.blocks; vs ← bl.executionOrder; w ← createWidgets(vs, mainBox)) yield w
       }
     }
   }

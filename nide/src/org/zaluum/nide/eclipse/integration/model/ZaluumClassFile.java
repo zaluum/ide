@@ -26,8 +26,9 @@ import org.eclipse.jdt.internal.compiler.lookup.SyntheticMethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 
 /**
- * Simple subtype of the JDT ClassFile that represents a fully built class file from groovy. It is immutable and just intended to be
- * a 'holder' for bytes from groovy that are passed back to JDT.
+ * Simple subtype of the JDT ClassFile that represents a fully built class file
+ * from groovy. It is immutable and just intended to be a 'holder' for bytes
+ * from groovy that are passed back to JDT.
  * 
  * @author Andy Clement
  */
@@ -38,7 +39,8 @@ class ZaluumClassFile extends ClassFile {
 	private char[][] name;
 	private char[] filename;
 
-	public ZaluumClassFile(String name, byte[] bs, SourceTypeBinding sourceTypeBinding, String filename) {
+	public ZaluumClassFile(String name, byte[] bs,
+			SourceTypeBinding sourceTypeBinding, String filename) {
 		this.name = CharOperation.splitOn('.', name.toCharArray());
 		this.bytes = bs;
 		this.referenceBinding = sourceTypeBinding;
@@ -50,7 +52,8 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	@Override
-	public void addAbstractMethod(AbstractMethodDeclaration method, MethodBinding methodBinding) {
+	public void addAbstractMethod(AbstractMethodDeclaration method,
+			MethodBinding methodBinding) {
 		throw new IllegalStateException();
 	}
 
@@ -75,24 +78,28 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	@Override
-	public void addProblemConstructor(AbstractMethodDeclaration method, MethodBinding methodBinding, CategorizedProblem[] problems,
+	public void addProblemConstructor(AbstractMethodDeclaration method,
+			MethodBinding methodBinding, CategorizedProblem[] problems,
 			int savedOffset) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void addProblemConstructor(AbstractMethodDeclaration method, MethodBinding methodBinding, CategorizedProblem[] problems) {
+	public void addProblemConstructor(AbstractMethodDeclaration method,
+			MethodBinding methodBinding, CategorizedProblem[] problems) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void addProblemMethod(AbstractMethodDeclaration method, MethodBinding methodBinding, CategorizedProblem[] problems,
+	public void addProblemMethod(AbstractMethodDeclaration method,
+			MethodBinding methodBinding, CategorizedProblem[] problems,
 			int savedOffset) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void addProblemMethod(AbstractMethodDeclaration method, MethodBinding methodBinding, CategorizedProblem[] problems) {
+	public void addProblemMethod(AbstractMethodDeclaration method,
+			MethodBinding methodBinding, CategorizedProblem[] problems) {
 		throw new IllegalStateException();
 	}
 
@@ -102,32 +109,38 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	@Override
-	public void addSyntheticConstructorAccessMethod(SyntheticMethodBinding methodBinding) {
+	public void addSyntheticConstructorAccessMethod(
+			SyntheticMethodBinding methodBinding) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void addSyntheticEnumValueOfMethod(SyntheticMethodBinding methodBinding) {
+	public void addSyntheticEnumValueOfMethod(
+			SyntheticMethodBinding methodBinding) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void addSyntheticEnumValuesMethod(SyntheticMethodBinding methodBinding) {
+	public void addSyntheticEnumValuesMethod(
+			SyntheticMethodBinding methodBinding) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void addSyntheticFieldReadAccessMethod(SyntheticMethodBinding methodBinding) {
+	public void addSyntheticFieldReadAccessMethod(
+			SyntheticMethodBinding methodBinding) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void addSyntheticFieldWriteAccessMethod(SyntheticMethodBinding methodBinding) {
+	public void addSyntheticFieldWriteAccessMethod(
+			SyntheticMethodBinding methodBinding) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void addSyntheticMethodAccessMethod(SyntheticMethodBinding methodBinding) {
+	public void addSyntheticMethodAccessMethod(
+			SyntheticMethodBinding methodBinding) {
 		throw new IllegalStateException();
 	}
 
@@ -142,7 +155,8 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	@Override
-	public void completeCodeAttributeForClinit(int codeAttributeOffset, int problemLine) {
+	public void completeCodeAttributeForClinit(int codeAttributeOffset,
+			int problemLine) {
 		throw new IllegalStateException();
 	}
 
@@ -152,36 +166,42 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	@Override
-	public void completeCodeAttributeForMissingAbstractProblemMethod(MethodBinding binding, int codeAttributeOffset,
+	public void completeCodeAttributeForMissingAbstractProblemMethod(
+			MethodBinding binding, int codeAttributeOffset,
 			int[] startLineIndexes, int problemLine) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void completeCodeAttributeForProblemMethod(AbstractMethodDeclaration method, MethodBinding binding,
+	public void completeCodeAttributeForProblemMethod(
+			AbstractMethodDeclaration method, MethodBinding binding,
 			int codeAttributeOffset, int[] startLineIndexes, int problemLine) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void completeCodeAttributeForSyntheticMethod(boolean hasExceptionHandlers, SyntheticMethodBinding binding,
+	public void completeCodeAttributeForSyntheticMethod(
+			boolean hasExceptionHandlers, SyntheticMethodBinding binding,
 			int codeAttributeOffset, int[] startLineIndexes) {
 		throw new IllegalStateException();
 	}
 
 	@Override
-	public void completeCodeAttributeForSyntheticMethod(SyntheticMethodBinding binding, int codeAttributeOffset,
+	public void completeCodeAttributeForSyntheticMethod(
+			SyntheticMethodBinding binding, int codeAttributeOffset,
 			int[] startLineIndexes) {
 		throw new IllegalStateException();
 	}
 
 	// For 3.6:
-	public void completeMethodInfo(int methodAttributeOffset, int attributeNumber) {
+	public void completeMethodInfo(int methodAttributeOffset,
+			int attributeNumber) {
 		throw new IllegalStateException();
 	}
-	
+
 	// For 3.7
-	public void completeMethodInfo(MethodBinding methodBinding, int methodAttributeOffset, int attributeNumber) {
+	public void completeMethodInfo(MethodBinding methodBinding,
+			int methodAttributeOffset, int attributeNumber) {
 		throw new IllegalStateException();
 	}
 
@@ -196,16 +216,18 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	// these two for 3.6
-	public int generateMethodInfoAttribute(MethodBinding methodBinding, AnnotationMethodDeclaration declaration) {
+	public int generateMethodInfoAttribute(MethodBinding methodBinding,
+			AnnotationMethodDeclaration declaration) {
 		throw new IllegalStateException();
 	}
 
 	public int generateMethodInfoAttribute(MethodBinding methodBinding) {
 		throw new IllegalStateException();
 	}
-	
+
 	// these two for 3.7
-	public int generateMethodInfoAttributes(MethodBinding methodBinding, AnnotationMethodDeclaration declaration) {
+	public int generateMethodInfoAttributes(MethodBinding methodBinding,
+			AnnotationMethodDeclaration declaration) {
 		throw new IllegalStateException();
 	}
 
@@ -214,7 +236,8 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	@Override
-	public void generateMethodInfoHeader(MethodBinding methodBinding, int accessFlags) {
+	public void generateMethodInfoHeader(MethodBinding methodBinding,
+			int accessFlags) {
 		throw new IllegalStateException();
 	}
 
@@ -229,7 +252,9 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	@Override
-	public void generateMissingAbstractMethods(MethodDeclaration[] methodDeclarations, CompilationResult compilationResult) {
+	public void generateMissingAbstractMethods(
+			MethodDeclaration[] methodDeclarations,
+			CompilationResult compilationResult) {
 		throw new IllegalStateException();
 	}
 
@@ -249,7 +274,8 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	@Override
-	public void initialize(SourceTypeBinding type, ClassFile parentClassFile, boolean createProblemType) {
+	public void initialize(SourceTypeBinding type, ClassFile parentClassFile,
+			boolean createProblemType) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -276,13 +302,15 @@ class ZaluumClassFile extends ClassFile {
 	}
 
 	@Override
-	public void traverse(MethodBinding methodBinding, int maxLocals, byte[] bytecodes, int codeOffset, int codeLength,
+	public void traverse(MethodBinding methodBinding, int maxLocals,
+			byte[] bytecodes, int codeOffset, int codeLength,
 			@SuppressWarnings("rawtypes") ArrayList frames, boolean isClinit) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public char[] utf8At(byte[] reference, int absoluteOffset, int bytesAvailable) {
+	public char[] utf8At(byte[] reference, int absoluteOffset,
+			int bytesAvailable) {
 		throw new UnsupportedOperationException();
 	}
 

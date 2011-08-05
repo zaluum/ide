@@ -1,28 +1,25 @@
 package org.zaluum.nide.zge
 
-import org.eclipse.jface.viewers.StructuredSelection
-import org.eclipse.jdt.core.IJavaElement
-import org.eclipse.core.runtime.IAdaptable
-import org.eclipse.jdt.core.JavaCore
-import org.zaluum.nide.eclipse.GraphicalEditor
-import org.eclipse.swt.dnd.ByteArrayTransfer
-import org.eclipse.swt.dnd.Transfer
-import org.eclipse.draw2d.Graphics
-import org.eclipse.draw2d.FreeformLayer
-import org.eclipse.draw2d.IFigure
 import scala.collection.mutable.Buffer
-import org.eclipse.jface.resource.ImageRegistry
-import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.compiler._
-import org.eclipse.draw2d.Label
+
 import org.eclipse.draw2d.geometry.Rectangle
-import org.eclipse.draw2d.ScalableFreeformLayeredPane
 import org.eclipse.draw2d.ColorConstants
+import org.eclipse.draw2d.FreeformLayer
+import org.eclipse.draw2d.Label
+import org.eclipse.draw2d.ScalableFreeformLayeredPane
+import org.eclipse.swt.widgets.Composite
+import org.zaluum.nide.compiler.Block
+import org.zaluum.nide.compiler.ConnectionDef
+import org.zaluum.nide.compiler.Dimension
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.PortDef
+import org.zaluum.nide.compiler.SelectionSubject
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.eclipse.GraphicalEditor
 import org.zaluum.nide.Activator
-import org.eclipse.swt.SWT
 
 class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
-  extends ItemViewer(parent, controller)  with ClipboardViewer {
+    extends ItemViewer(parent, controller) with ClipboardViewer {
   /*MODEL*/
   def tree = controller.tree
   def boxDef = tree
@@ -53,17 +50,17 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def updatePorts(changes: Map[Tree, Tree]) {
     ports.foreach { _.hide }
     ports.clear
-    symbol.template.thisVal.portSides foreach { pside =>
+    symbol.template.thisVal.portSides foreach { pside ⇒
       pside.pi.portSymbol match {
-        case Some(ps) =>
+        case Some(ps) ⇒
           ps.decl match {
-            case pd: PortDef =>
+            case pd: PortDef ⇒
               val f = new PortDeclFigure(pd, pside, TreeViewer.this)
               f.update()
               ports += f
-            case _ =>
+            case _ ⇒
           }
-        case _ =>
+        case _ ⇒
       }
     }
     ports.foreach { _.show }
@@ -98,9 +95,9 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
 
   def itemToIType(i: Item) = {
     i match {
-      case v: ValDefItem if (v.valSym.tpe != null) =>
+      case v: ValDefItem if (v.valSym.tpe != null) ⇒
         controller.zproject.jProject.findType(v.valSym.tpe.name.str)
-      case _ => null
+      case _ ⇒ null
     }
   }
   val emptyLabel = new Label("Empty File. Start by dropping items from the palette...")
@@ -121,9 +118,9 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   }
   def deepChildrenWithoutLayers = this.deepChildren.filter {
     _ match {
-      case _: FreeformLayer => false
-      case _: ScalableFreeformLayeredPane => false
-      case _ => true
+      case _: FreeformLayer               ⇒ false
+      case _: ScalableFreeformLayeredPane ⇒ false
+      case _                              ⇒ true
     }
   }
   def refresh() {
@@ -131,7 +128,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
     updateContents(Map()) // FIXME
     if (deepChildrenWithoutLayers.isEmpty) showEmptyLabel()
     selectedItems foreach { _.showFeedback() }
-    selectedItems.headOption foreach { i => editor.setSelection(itemToIType(i)) }
+    selectedItems.headOption foreach { i ⇒ editor.setSelection(itemToIType(i)) }
     /*for (s <- selectedItems; ss <- s.selectionSubject) {
       println ("selected : " + ss)
       ss match {

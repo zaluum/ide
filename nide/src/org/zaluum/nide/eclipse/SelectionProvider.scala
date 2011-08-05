@@ -1,8 +1,14 @@
 package org.zaluum.nide.eclipse
 
-import org.eclipse.jface.viewers.{ IStructuredSelection, IPostSelectionProvider, SelectionChangedEvent, ISelection, ISelectionProvider, StructuredSelection, ISelectionChangedListener }
-import org.eclipse.jface.util.SafeRunnable
+import org.eclipse.jdt.core.IJavaElement
 import org.eclipse.jdt.core.IType
+import org.eclipse.jface.util.SafeRunnable
+import org.eclipse.jface.viewers.IPostSelectionProvider
+import org.eclipse.jface.viewers.ISelection
+import org.eclipse.jface.viewers.ISelectionChangedListener
+import org.eclipse.jface.viewers.ISelectionProvider
+import org.eclipse.jface.viewers.SelectionChangedEvent
+import org.eclipse.jface.viewers.StructuredSelection
 object SelectionProvider {
   def adaptType(i: IType): StructuredSelection = {
     val El = classOf[org.eclipse.jdt.core.IJavaElement]
@@ -10,7 +16,7 @@ object SelectionProvider {
       def getAdapter(cl: Class[_]) = {
         cl match {
           case El ⇒ i
-          case _ ⇒ null
+          case _  ⇒ null
         }
       }
     }

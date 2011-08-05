@@ -1,11 +1,9 @@
 package org.zaluum.nide.eclipse
 
-import java.net.{URL, URLClassLoader}
-import org.eclipse.core.resources.IResource
-import org.eclipse.core.runtime.IPath
-import org.eclipse.jdt.core.{IJavaProject, IClasspathEntry}
-import org.zaluum.nide.compiler._
-import org.zaluum.nide.{Cache, DoOnce, Subject}
+import java.net.URL
+import java.net.URLClassLoader
+
+import org.eclipse.jdt.core.IJavaProject
 
 trait GlobalClassPath extends EclipseUtils with ClassPath {
   def jProject: IJavaProject

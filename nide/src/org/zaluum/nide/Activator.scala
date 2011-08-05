@@ -35,9 +35,9 @@ class Activator extends AbstractUIPlugin {
     Activator.plugin = this;
 
   }
-  def generatedIconFont = getFont("org.zaluum.nide.fonts.generatedIconFont") 
+  def generatedIconFont = getFont("org.zaluum.nide.fonts.generatedIconFont")
   def directEditFont = getFont("org.zaluum.nide.fonts.directEditFont")
-  def getFont(str:String) = {
+  def getFont(str: String) = {
     val themeManager = PlatformUI.getWorkbench().getThemeManager();
     val currentTheme = themeManager.getCurrentTheme();
     val fontRegistry = currentTheme.getFontRegistry();
@@ -65,16 +65,16 @@ class Activator extends AbstractUIPlugin {
   val noEmbeddedEntries = List("org.zaluum.runtime", "jchart2d", "org.apache.commons.math")
   def libEntries = {
     val prop = System.getProperty("zaluum.noEmbeddedClasspath")
-    if (prop != null && prop=="true") {
+    if (prop != null && prop == "true") {
       println("DEBUG: no embedded classPath")
-      val l:List[(IPath,Option[IPath])] = 
-        noEmbeddedEntries map { urlForBundleName(_) } flatMap { urlToPath(_) } map { (_,None)}
+      val l: List[(IPath, Option[IPath])] =
+        noEmbeddedEntries map { urlForBundleName(_) } flatMap { urlToPath(_) } map { (_, None) }
       l
-    }else {
+    } else {
       embeddedLib
     }
   }
-  private def embeddedLib : List[(IPath, Option[IPath])]= {
+  private def embeddedLib: List[(IPath, Option[IPath])] = {
     val path = "lib/"
     val paths = embeddedBundle.getEntryPaths(path)
     import scala.collection.JavaConversions._
@@ -88,16 +88,16 @@ class Activator extends AbstractUIPlugin {
     for (bin ← bins) {
       bin match {
         case Activator.NameExtractor(name) ⇒
-          val src = srcs.find {s =>  s.contains(name) && s.contains("source") }
-          def stringToPath(p: String) = urlToPath(Option(embeddedBundle.getEntry(p)))
+          val src = srcs.find { s ⇒ s.contains(name) && s.contains("source") }
+            def stringToPath(p: String) = urlToPath(Option(embeddedBundle.getEntry(p)))
           stringToPath(bin) match {
-            case Some(p) => 
-              result += ((p,src flatMap { s ⇒ stringToPath(s) }))
-            case None =>
+            case Some(p) ⇒
+              result += ((p, src flatMap { s ⇒ stringToPath(s) }))
+            case None ⇒
           }
         case _ ⇒
       }
-    } 
+    }
     result.toList
   }
   def version = "1.0.0"

@@ -1,13 +1,22 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.compiler._
-import org.zaluum.nide.zge.draw2dConversions._
+import scala.annotation.elidable
 import scala.annotation.tailrec
+
+import org.zaluum.nide.compiler.ConnectionDef
+import org.zaluum.nide.compiler.ConnectionEnd
+import org.zaluum.nide.compiler.Junction
+import org.zaluum.nide.compiler.JunctionRef
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Namer
+import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.PortSide
+import org.zaluum.nide.compiler.Vector2
 trait Vertex {
   def p: Point
   def isEnd = false
-  def move(p: Point) :Vertex
-  def isComplete : Boolean
+  def move(p: Point): Vertex
+  def isComplete: Boolean
   //override def toString = "v(" + p + ")"
 }
 class CreatingVertex(val p: Point) extends Vertex {
@@ -20,22 +29,22 @@ class Joint(val p: Point) extends Vertex {
   def move(q: Point) = new Joint(q)
   def isComplete = true
 }
-class PortVertex(val ps:PortSide,val p: Point) extends Vertex {
+class PortVertex(val ps: PortSide, val p: Point) extends Vertex {
   override def isEnd = true
   def move(q: Point) = new PortVertex(ps, q)
-  override def toString = "PortVertex(" + ps + ","+p+")"
+  override def toString = "PortVertex(" + ps + "," + p + ")"
   def isComplete = true
 }
-class MissingPortVertex(val key:PortSide, val p :Point) extends Vertex {
+class MissingPortVertex(val key: PortSide, val p: Point) extends Vertex {
   override def isEnd = true
   def move(q: Point) = new MissingPortVertex(key, q)
   override def toString = "PortVertex(" + key + ")"
   def isComplete = false
 }
-class EmptyVertex(val p:Point) extends Vertex {
+class EmptyVertex(val p: Point) extends Vertex {
   override def isEnd = true
-  def move(q:Point) = new EmptyVertex(q)
-  override def toString = "EmptyVertex("+p+")"
+  def move(q: Point) = new EmptyVertex(q)
+  override def toString = "EmptyVertex(" + p + ")"
   def isComplete = false
 }
 object Edge {
@@ -70,8 +79,8 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
   def isComplete = a.isComplete && b.isComplete
   private def makePath(path: List[Point]): List[Line] = {
     path match {
-      case Nil ⇒ Nil
-      case e :: Nil ⇒ Nil
+      case Nil                ⇒ Nil
+      case e :: Nil           ⇒ Nil
       case from :: to :: tail ⇒ ¬(from, to) ::: makePath(to :: tail)
     }
   }
@@ -178,7 +187,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
       new Edge(VertexWP(a), VertexWP(b), List(a, b), srcCon)
     }.toSet
     var g: ConnectionGraph = new ConnectionGraphV(fakeVertexs, Set(fakeEdges.head))
-    def fill(g: ConnectionGraph, edges: List[Edge]) =  edges.foldLeft(g)((g, e) ⇒ g.addNoParallel(e))
+      def fill(g: ConnectionGraph, edges: List[Edge]) = edges.foldLeft(g)((g, e) ⇒ g.addNoParallel(e))
     g = fakeEdges.tail.foldLeft(g)((g, e) ⇒ g.cutAddToTree(e)(fill))
     val path = g.findShortestPath(VertexWP(a.p), VertexWP(b.p), Set())
     new Edge(a, b, path map { _.p }, srcCon).simplifyPoints
@@ -197,18 +206,18 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
   def liesIn(from: Point, mid: Point, to: Point) = mid.y == from.y || mid.x == to.x // FIXME?
   // merges two adjacent edges
   def merge(e: Edge): (Vertex, Edge) = {
-    def mergePoints(from: List[Point], to: List[Point]) = {
-      assert(from.last == to.head)
-      assert(from.size >= 2)
-      assert(to.size >= 2)
-      val nfrom = from.dropRight(1)
-      val nto = to.tail
-      val mid = to.head
-      if (liesIn(nfrom.last, mid, nto.head))
-        nfrom ::: nto
-      else
-        nfrom ::: mid :: nto
-    }
+      def mergePoints(from: List[Point], to: List[Point]) = {
+        assert(from.last == to.head)
+        assert(from.size >= 2)
+        assert(to.size >= 2)
+        val nfrom = from.dropRight(1)
+        val nto = to.tail
+        val mid = to.head
+        if (liesIn(nfrom.last, mid, nto.head))
+          nfrom ::: nto
+        else
+          nfrom ::: mid :: nto
+      }
     if (e.a == a) { // <-=>
       (a, new Edge(e.b, b, mergePoints(e.reverse.points, points), e.srcCon))
     } else if (e.a == b) { //   =>->
@@ -221,7 +230,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
   }
   private def extendPoints(points: List[Point], to: Point, dir: OrtoDirection): List[Point] = {
     points match {
-      case Nil ⇒ to :: Nil
+      case Nil         ⇒ to :: Nil
       case from :: Nil ⇒ from :: to :: Nil
       case h ⇒
         val mid = h.last
@@ -281,7 +290,7 @@ abstract class ConnectionGraph {
   lazy val components: Set[ConnectionGraph] = {
     var vxs = Set[Set[Vertex]]()
     for (v ← vertexs; if !vxs.exists(_.contains(v))) {
-        vxs += connectedFrom(v,Set())
+      vxs += connectedFrom(v, Set())
     }
     vxs map { vs: Set[Vertex] ⇒
       new ConnectionGraphV(vs, edges filter { e ⇒ vs.contains(e.a) && vs.contains(e.b) })
@@ -289,13 +298,13 @@ abstract class ConnectionGraph {
   }
   lazy val hasCycle: Boolean = {
     var visited = Set[Vertex]()
-    def findCycle(v: Vertex, from: Vertex): Boolean = { // turn into iterative
-      if (visited.contains(v)) true
-      else {
-        visited += v
-        vertexConnect(v).view.filter { _ != from } exists { u ⇒ findCycle(u, v) }
+      def findCycle(v: Vertex, from: Vertex): Boolean = { // turn into iterative
+        if (visited.contains(v)) true
+        else {
+          visited += v
+          vertexConnect(v).view.filter { _ != from } exists { u ⇒ findCycle(u, v) }
+        }
       }
-    }
     vertexs.exists { v ⇒ !visited.contains(v) && findCycle(v, null) }
   }
   /**
@@ -307,11 +316,11 @@ abstract class ConnectionGraph {
    */
   def split(e1: Edge, e2: Edge, inivertexs: Set[Vertex]): (Vector[Edge], Set[Vertex], List[Point]) = {
     var myvertexs = inivertexs
-    def vertexAt(p: Point) = myvertexs find { _.p == p } getOrElse {
-      val j = new Joint(p)
-      myvertexs += j
-      j
-    }
+      def vertexAt(p: Point) = myvertexs find { _.p == p } getOrElse {
+        val j = new Joint(p)
+        myvertexs += j
+        j
+      }
     val (isecs1, isecs2) = e1.intersections(e2)
     var segments = Vector[Edge]()
     var remainingMe = e2
@@ -344,26 +353,26 @@ abstract class ConnectionGraph {
       myVertexs = nv
       edgesResult ++= efs
     }
-    /**
-     * cuts edges on the points.  |-*--*--| -> |-||--||--|
-     *
-     */
-    @tailrec // TODO this looks similar to other functions. can be done more efficiently
-    def splitMaster(edges: Set[Edge], remaining: Set[Point]): Set[Edge] = {
-      if (remaining.isEmpty) edges
-      else {
-        var newEdges = Set[Edge]()
-        val p = remaining.head
-        for (e ← edges) {
-          if (e.contains(p)) {
-            val (e1, e2) = e.splitAt(myVertexs.find(_.p == p).get)
-            newEdges += e1
-            newEdges ++= e2
-          } else newEdges += e
+      /**
+       * cuts edges on the points.  |-*--*--| -> |-||--||--|
+       *
+       */
+      @tailrec // TODO this looks similar to other functions. can be done more efficiently
+      def splitMaster(edges: Set[Edge], remaining: Set[Point]): Set[Edge] = {
+        if (remaining.isEmpty) edges
+        else {
+          var newEdges = Set[Edge]()
+          val p = remaining.head
+          for (e ← edges) {
+            if (e.contains(p)) {
+              val (e1, e2) = e.splitAt(myVertexs.find(_.p == p).get)
+              newEdges += e1
+              newEdges ++= e2
+            } else newEdges += e
+          }
+          splitMaster(newEdges, remaining.tail)
         }
-        splitMaster(newEdges, remaining.tail)
       }
-    }
     val masters = splitMaster(Set(master), masterPoints)
     fill(new ConnectionGraphV(myVertexs, masters), edgesResult)
   }
@@ -481,12 +490,12 @@ abstract class ConnectionGraph {
       val e = edgesToProcess.head
       val aAdj = current filter { o ⇒ o != e && (e.a == o.a || e.a == o.b) }
       val bAdj = current filter { o ⇒ o != e && (e.b == o.a || e.b == o.b) }
-      def mergeOne(other: Edge) = {
-        val (v, merged) = e.merge(other)
-        edgesToProcess = edgesToProcess - e - other + merged
-        current = current - e - other + merged
-        removedVertexs += v
-      }
+        def mergeOne(other: Edge) = {
+          val (v, merged) = e.merge(other)
+          edgesToProcess = edgesToProcess - e - other + merged
+          current = current - e - other + merged
+          removedVertexs += v
+        }
       if (aAdj.size == 1) mergeOne(aAdj.head)
       else if (bAdj.size == 1) mergeOne(bAdj.head)
       else {
@@ -497,7 +506,7 @@ abstract class ConnectionGraph {
     new ConnectionGraphV(used ++ ends -- removedVertexs, current)
   }
   def ends = vertexs.filter { _.isEnd }
-  
+
   def toTree = {
     var map = Map[Vertex, Junction]()
     val namer = new Namer {
@@ -510,12 +519,12 @@ abstract class ConnectionGraph {
         j
     }
     val connections: List[ConnectionDef] = edges.map { e ⇒
-      def vertexRef(v: Vertex): Option[ConnectionEnd] = v match {
-        case p: PortVertex ⇒ Some(p.ps.toRef)
-        case m: MissingPortVertex => Some(m.key.toRef)
-        case e : EmptyVertex => None 
-        case v : Joint ⇒ Some(JunctionRef(map(v).name))
-      }
+        def vertexRef(v: Vertex): Option[ConnectionEnd] = v match {
+          case p: PortVertex        ⇒ Some(p.ps.toRef)
+          case m: MissingPortVertex ⇒ Some(m.key.toRef)
+          case e: EmptyVertex       ⇒ None
+          case v: Joint             ⇒ Some(JunctionRef(map(v).name))
+        }
       ConnectionDef(vertexRef(e.a), vertexRef(e.b), e.points)
     }.toList
     (connections, junctions)

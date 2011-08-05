@@ -1,23 +1,42 @@
 package org.zaluum.nide.eclipse.launch
 import java.text.MessageFormat
-import org.eclipse.core.resources.{IResource, ResourcesPlugin}
+
+import scala.util.control.Exception.failAsValue
+
+import org.eclipse.core.resources.IResource
+import org.eclipse.core.resources.ResourcesPlugin
 import org.eclipse.core.runtime.CoreException
-import org.eclipse.debug.core.{ILaunchConfiguration, ILaunchConfigurationWorkingCopy}
+import org.eclipse.debug.core.ILaunchConfiguration
+import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy
 import org.eclipse.debug.internal.ui.SWTFactory
-import org.eclipse.debug.ui.ILaunchConfigurationDialog
-import org.eclipse.jdt.core.{IClassFile, ICompilationUnit, IMember, IJavaElement, IJavaProject, JavaModelException, IType}
+import org.eclipse.jdt.core.IClassFile
+import org.eclipse.jdt.core.ICompilationUnit
+import org.eclipse.jdt.core.IJavaElement
+import org.eclipse.jdt.core.IJavaProject
+import org.eclipse.jdt.core.IMember
+import org.eclipse.jdt.core.IType
+import org.eclipse.jdt.core.JavaModelException
 import org.eclipse.jdt.internal.debug.ui.actions.ControlAccessibleListener
-import org.eclipse.jdt.internal.debug.ui.launcher.{DebugTypeSelectionDialog, LauncherMessages, AbstractJavaMainTab}
+import org.eclipse.jdt.internal.debug.ui.launcher.AbstractJavaMainTab
+import org.eclipse.jdt.internal.debug.ui.launcher.DebugTypeSelectionDialog
+import org.eclipse.jdt.internal.debug.ui.launcher.LauncherMessages
 import org.eclipse.jdt.internal.debug.ui.IJavaDebugHelpContextIds
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants
-import org.eclipse.jdt.ui.{ISharedImages, JavaUI}
+import org.eclipse.jdt.ui.ISharedImages
+import org.eclipse.jdt.ui.JavaUI
 import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.window.Window
-import org.eclipse.swt.layout.{GridData, GridLayout}
-import org.eclipse.swt.widgets.{Text, Composite}
+import org.eclipse.swt.layout.GridData
+import org.eclipse.swt.layout.GridLayout
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets.Text
 import org.eclipse.ui.PlatformUI
-import org.zaluum.nide.eclipse.SearchUtils
-import org.zaluum.nide.zge.SWTScala
+import org.zaluum.annotation.Box
+import org.zaluum.nide.eclipse.SearchUtils.patternAnnotation
+import org.zaluum.nide.eclipse.SearchUtils.search
+import org.zaluum.nide.eclipse.SearchUtils.sourcesScope
+import org.zaluum.nide.zge.SWTScala.addModifyReaction
+import org.zaluum.nide.zge.SWTScala.addReaction
 import org.zaluum.nide.Activator
 object ZaluumLauncherTab {
   val ATTR_MAIN_BOX = Activator.PLUGIN_ID + ".MAIN_BOX"
@@ -36,7 +55,6 @@ class ZaluumLauncherTab extends AbstractJavaMainTab {
     PlatformUI.getWorkbench().getHelpSystem().setHelp(getControl(), IJavaDebugHelpContextIds.LAUNCH_CONFIGURATION_DIALOG_MAIN_TAB);
 
   }
-  import SWTScala._
   protected def createMainBoxEditor(parent: Composite) {
     val txt = "Main box:"
     val group = SWTFactory.createGroup(parent, txt, 2, 1, GridData.FILL_HORIZONTAL);
@@ -60,11 +78,11 @@ class ZaluumLauncherTab extends AbstractJavaMainTab {
           "There are no compiled Zaluum classes to run in this project");
         return ;
       }
-      val mmsd = new DebugTypeSelectionDialog(getShell(), types.toArray, "Select Main Zaluum Class"); 
+      val mmsd = new DebugTypeSelectionDialog(getShell(), types.toArray, "Select Main Zaluum Class");
       if (mmsd.open() == Window.CANCEL) {
-        return;
+        return ;
       }
-      val results = mmsd.getResult();  
+      val results = mmsd.getResult();
       val tpe = results(0).asInstanceOf[IType];
       if (tpe != null) {
         mainText.setText(tpe.getFullyQualifiedName());
@@ -76,7 +94,6 @@ class ZaluumLauncherTab extends AbstractJavaMainTab {
     }
   }
   protected def findAllRunnableTypes(javaProject: IJavaProject): List[IType] = {
-    import SearchUtils._
     search(patternAnnotation(classOf[org.zaluum.annotation.Box].getName), sourcesScope(javaProject), null)
   }
   override def initializeFrom(config: ILaunchConfiguration) {
@@ -135,14 +152,14 @@ class ZaluumLauncherTab extends AbstractJavaMainTab {
   def initializeMainBox(origElement: IJavaElement, config: ILaunchConfigurationWorkingCopy) {
     val javaElement = origElement match {
       case member: IMember ⇒ if (member.isBinary) member.getClassFile else member.getCompilationUnit
-      case _ ⇒ origElement
+      case _               ⇒ origElement
     }
     val mainType: Option[IType] = javaElement match {
       case c: ICompilationUnit ⇒ c.getAllTypes.headOption
-      case c: IClassFile ⇒ Option(c.getType)
-      case _ => None
+      case c: IClassFile       ⇒ Option(c.getType)
+      case _                   ⇒ None
     }
-    mainType foreach { t=>
+    mainType foreach { t ⇒
       val name = t.getFullyQualifiedName
       config.setAttribute(ZaluumLauncherTab.ATTR_MAIN_BOX, name);
       if (!name.isEmpty) {
@@ -156,7 +173,7 @@ class ZaluumLauncherTab extends AbstractJavaMainTab {
     if (fqName.length() > 0) {
       val index = fqName.lastIndexOf('.')
       if (index > 0) return fqName.substring(index + 1);
-    } 
+    }
     fqName
   }
 }

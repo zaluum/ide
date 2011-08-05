@@ -1,72 +1,50 @@
 package org.zaluum.nide.eclipse.integration.model
 
 import scala.collection.mutable.Buffer
+
 import org.eclipse.jdt.core.compiler.CategorizedProblem
 import org.eclipse.jdt.core.compiler.CharOperation
-import org.eclipse.jdt.internal.compiler.ast.SingleMemberAnnotation
-import org.eclipse.jdt.internal.compiler.ast.MarkerAnnotation
-import org.eclipse.jdt.internal.compiler.ASTVisitor
-import org.eclipse.jdt.internal.compiler.CompilationResult
 import org.eclipse.jdt.internal.compiler.ast.ASTNode
 import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration
-import org.eclipse.jdt.internal.compiler.ast.Annotation
-import org.eclipse.jdt.internal.compiler.ast.AnnotationMethodDeclaration
-import org.eclipse.jdt.internal.compiler.ast.Argument
-import org.eclipse.jdt.internal.compiler.ast.ArrayInitializer
-import org.eclipse.jdt.internal.compiler.ast.ArrayQualifiedTypeReference
 import org.eclipse.jdt.internal.compiler.ast.ArrayTypeReference
-import org.eclipse.jdt.internal.compiler.ast.ClassLiteralAccess
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
 import org.eclipse.jdt.internal.compiler.ast.ConstructorDeclaration
 import org.eclipse.jdt.internal.compiler.ast.FieldDeclaration
 import org.eclipse.jdt.internal.compiler.ast.ImportReference
-import org.eclipse.jdt.internal.compiler.ast.Javadoc
+import org.eclipse.jdt.internal.compiler.ast.MarkerAnnotation
 import org.eclipse.jdt.internal.compiler.ast.MethodDeclaration
-import org.eclipse.jdt.internal.compiler.ast.ParameterizedQualifiedTypeReference
-import org.eclipse.jdt.internal.compiler.ast.ParameterizedSingleTypeReference
 import org.eclipse.jdt.internal.compiler.ast.QualifiedTypeReference
 import org.eclipse.jdt.internal.compiler.ast.SingleTypeReference
-import org.eclipse.jdt.internal.compiler.ast.StringLiteral
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration
-import org.eclipse.jdt.internal.compiler.ast.TypeParameter
 import org.eclipse.jdt.internal.compiler.ast.TypeReference
-import org.eclipse.jdt.internal.compiler.ast.Wildcard
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants
+import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
-import org.eclipse.jdt.internal.compiler.impl.IrritantSet
-import org.eclipse.jdt.internal.compiler.lookup.BlockScope
-import org.eclipse.jdt.internal.compiler.lookup.CompilationUnitScope
-import org.eclipse.jdt.internal.compiler.lookup.LocalTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment
 import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeIds
-import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory
 import org.eclipse.jdt.internal.compiler.problem.ProblemReporter
 import org.eclipse.jdt.internal.compiler.problem.ProblemSeverities
-import org.eclipse.jdt.internal.core.util.Util
-import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
-import org.zaluum.nide.compiler._
-import java.nio.charset.Charset
-import java.io.ByteArrayInputStream
-import org.objectweb.asm.Opcodes
-import org.zaluum.nide.compiler.Reporter
-import org.zaluum.nide.compiler.Scope
-import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
-import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding
-import org.eclipse.jdt.internal.compiler.lookup.BinaryTypeBinding
-import org.eclipse.jdt.internal.compiler.lookup.Binding
-import org.eclipse.jdt.internal.compiler.ast.NormalAnnotation
+import org.eclipse.jdt.internal.compiler.CompilationResult
+import org.objectweb.asm._
 import org.zaluum.annotation.Box
-import org.eclipse.jdt.internal.compiler.ISourceElementRequestor
-import org.eclipse.core.runtime.Path
-import org.eclipse.core.runtime.Platform
-import org.eclipse.ui.PlatformUI
-import org.eclipse.jdt.core.JavaCore
-import org.eclipse.core.resources.ResourcesPlugin
-import org.zaluum.nide.eclipse.EclipseUtils
+import org.zaluum.nide.compiler.Analyzer
+import org.zaluum.nide.compiler.BoxDef
+import org.zaluum.nide.compiler.ByteCodeGen
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Out
+import org.zaluum.nide.compiler.Parser
+import org.zaluum.nide.compiler.Reporter
+import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler.TreeToClass
+
+import JDTInternalUtils.aToString
+import JDTInternalUtils.stringToA
+import ZaluumCompilationUnitDeclaration.NON_EXISTENT_POSITION
+import ZaluumCompilationUnitDeclaration.nameToPrimitiveTypeId
+import ZaluumCompilationUnitDeclaration.toMainName
 import javax.swing.JPanel
-import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
@@ -74,7 +52,7 @@ class ZaluumCompilationUnitDeclaration(
   sourceLength: Int,
   sourceUnit: ICompilationUnit,
   compilerOptions: CompilerOptions)
-  extends CompilationUnitDeclaration(problemReporter, compilationResult, sourceLength) {
+    extends CompilationUnitDeclaration(problemReporter, compilationResult, sourceLength) {
   import ZaluumCompilationUnitDeclaration._
 
   var tree: BoxDef = _
@@ -119,7 +97,7 @@ class ZaluumCompilationUnitDeclaration(
       a.runNamer()
       createPackageDeclaration()
       createTypeDeclarations()
-    } catch { case e => e.printStackTrace }
+    } catch { case e ⇒ e.printStackTrace }
   }
 
   def createProblem(msg: String, line: Int) {
@@ -213,7 +191,7 @@ class ZaluumCompilationUnitDeclaration(
       f.`type` = createTypeReference(p.typeName, p)
       val cl = p.dir match {
         case Out ⇒ classOf[org.zaluum.annotation.Out].getName
-        case _ ⇒ classOf[org.zaluum.annotation.In].getName
+        case _   ⇒ classOf[org.zaluum.annotation.In].getName
       }
       val annotation = new MarkerAnnotation(createTypeReference(Name(cl), p), start(p))
       f.annotations = Array(annotation)
@@ -255,21 +233,21 @@ class ZaluumCompilationUnitDeclaration(
   }
 
   override def generateCode() {
-    def generate(tpe: ZaluumTypeDeclaration, enclosing: Option[ZaluumTypeDeclaration]) {
-      val binding: SourceTypeBinding = tpe.binding
-      if (binding != null) {
-        val boxDef = tpe.b
-        val classTree = new TreeToClass(boxDef, zaluumScope /*should be per class*/, this.zaluumScope).run()
-        val name = binding.constantPoolName()
-        compilationResult.record(name,
-          new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.', '/')))
-        for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
+      def generate(tpe: ZaluumTypeDeclaration, enclosing: Option[ZaluumTypeDeclaration]) {
+        val binding: SourceTypeBinding = tpe.binding
+        if (binding != null) {
+          val boxDef = tpe.b
+          val classTree = new TreeToClass(boxDef, zaluumScope /*should be per class*/ , this.zaluumScope).run()
+          val name = binding.constantPoolName()
+          compilationResult.record(name,
+            new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.', '/')))
+          for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
+        }
       }
-    }
     if (!ignoreFurtherInvestigation && !ignoreMethodBodies && a.reporter.errors.isEmpty) {
       try {
         generate(types(0).asInstanceOf[ZaluumTypeDeclaration], None)
-      } catch { case e => e.printStackTrace }
+      } catch { case e ⇒ e.printStackTrace }
     }
   }
   override def resolve() {
@@ -281,7 +259,7 @@ class ZaluumCompilationUnitDeclaration(
       a.runResolve(this, zaluumScope)
       a.runCheck()
       checkZaluumLibraryPresent()
-    } catch { case e => e.printStackTrace }
+    } catch { case e ⇒ e.printStackTrace }
   }
   def checkZaluumLibraryPresent() {
     // add a descriptive error to help users

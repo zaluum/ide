@@ -1,29 +1,16 @@
 package org.zaluum.nide.zge
 
-import org.eclipse.jface.resource.LocalResourceManager
-import org.eclipse.swt.graphics.Device
-import org.eclipse.jface.resource.DeviceResourceDescriptor
-import org.eclipse.jface.resource.JFaceResources
-import org.eclipse.jface.resource.ResourceManager
-import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.geometry.Rectangle
-import org.eclipse.draw2d.IFigure
-import org.eclipse.draw2d.AbstractBackground
+import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.Graphics
-import org.eclipse.draw2d.Figure
-import org.zaluum.nide.eclipse.ClassPath
-import org.zaluum.nide.compiler._
 import org.eclipse.jface.dialogs.PopupDialog
-import org.eclipse.jface.resource.{ ImageRegistry, ImageDescriptor }
-import org.eclipse.swt.SWT
 import org.eclipse.swt.custom.ScrolledComposite
-import org.eclipse.swt.graphics.{ Image, GC, Font, Point }
-import org.eclipse.swt.layout.{ GridLayout, FillLayout }
-import org.eclipse.swt.widgets.{ Display, Shell, Composite }
-import org.zaluum.nide.icons.Icons
-import org.zaluum.nide.eclipse.ZaluumProject
-import org.eclipse.core.resources.IProject
-
+import org.eclipse.swt.graphics.Point
+import org.eclipse.swt.layout.FillLayout
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets.Display
+import org.eclipse.swt.widgets.Shell
+import org.eclipse.swt.SWT
 
 class SelectionManager[A] {
   protected var selected = Set[A]()

@@ -1,18 +1,19 @@
 package org.zaluum.nide.zge
 
-import org.zaluum.nide.compiler.SelectionSubject
-import org.zaluum.nide.compiler.Tree
-import draw2dConversions._
-import org.eclipse.draw2d.{ Figure, FigureCanvas, ScalableFreeformLayeredPane, FreeformLayer, ColorConstants, RectangleFigure, Graphics }
 import org.eclipse.draw2d.geometry.Rectangle
-import org.eclipse.swt.SWT
-import org.eclipse.swt.widgets.{ Composite, MessageBox }
-import scala.collection.JavaConversions._
-import org.eclipse.swt.dnd.DropTarget
+import org.eclipse.draw2d.ColorConstants
+import org.eclipse.draw2d.FigureCanvas
+import org.eclipse.draw2d.FreeformLayer
+import org.eclipse.draw2d.RectangleFigure
+import org.eclipse.draw2d.ScalableFreeformLayeredPane
 import org.eclipse.swt.dnd.DND
-import org.eclipse.swt.dnd.TextTransfer
+import org.eclipse.swt.dnd.DropTarget
 import org.eclipse.swt.dnd.DropTargetAdapter
 import org.eclipse.swt.dnd.DropTargetEvent
+import org.eclipse.swt.dnd.TextTransfer
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.SWT
+import org.zaluum.nide.compiler.SelectionSubject
 
 abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with ContainerItem {
   /*SWT*/
@@ -32,11 +33,11 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
     val dt = new DropTarget(viewer.canvas, DND.DROP_MOVE);
     dt.setTransfer(Array(TextTransfer.getInstance()));
     dt.addDropListener(new DropTargetAdapter() {
-      override def dragEnter(event:DropTargetEvent) {        
+      override def dragEnter(event: DropTargetEvent) {
         canvas.setFocus
       }
       override def drop(event: DropTargetEvent) {
-        tool.handleDrop(event.x, event.y,event.data.asInstanceOf[String])
+        tool.handleDrop(event.x, event.y, event.data.asInstanceOf[String])
       }
     })
     background.setOpaque(true);
@@ -59,7 +60,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
     this.deepChildren foreach {
       _ match {
         case a: AutoDisposeImageFigure ⇒ a.disposeImage()
-        case _ ⇒
+        case _                         ⇒
       }
     }
     super.dispose()
@@ -68,7 +69,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
   def blink(s: SelectionSubject) {
     this.deepChildren.find {
       case i: Item ⇒ i.selectionSubject == Some(s)
-      case _ ⇒ false
+      case _       ⇒ false
     } foreach {
       case i: Item ⇒ i.blink();
     }
