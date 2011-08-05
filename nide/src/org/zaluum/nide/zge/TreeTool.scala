@@ -126,11 +126,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       controller.exec(Delete.deleteSelection(viewer.selectedItems,viewer.graphOf))
     }
     def cut() {
-      // FIXME viewer.updateClipboard
+      viewer.updateClipboard
       delete
     }
-    def copy() = {} // FIXME  viewer.updateClipboard
-    def paste() = {} // FIXME viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
+    def copy() = viewer.updateClipboard
+    def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
 
     override def menu() {
       itemUnderMouse match {
@@ -144,7 +144,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   // PASTING
-  /*abstract class Pasting extends ToolState {
+  abstract class Pasting extends ToolState {
     self: SingleContainer ⇒
     var feed: ItemFeedbackFigure = _
     var clipboard: Clipboard = _
@@ -168,7 +168,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       selecting.enter()
     }
   }
-  object pasting extends Pasting with SingleContainerAllower*/
+  object pasting extends Pasting with SingleContainerAllower
   // CREATING
   abstract class Creating extends ToolState {
     self: SingleContainer ⇒

@@ -3,6 +3,7 @@ package org.zaluum.nide.compiler
 import org.zaluum.nide.zge.H
 import org.zaluum.nide.protobuf.ZaluumProtobuf
 import java.nio.charset.Charset
+import org.zaluum.nide.zge.Clipboard
 object Serializer {
   def writeToIsoString(d: ZaluumProtobuf.BoxClass): String =
     new String(d.toByteArray, Charset.forName("ISO-8859-1"))
@@ -114,12 +115,11 @@ object Serializer {
     case Shift ⇒ ZaluumProtobuf.Direction.SHIFT
   }
   import scala.collection.JavaConversions._
-  /*def proto(c:Clipboard):ZaluumProtobuf.Clipboard = {
+  def proto(c:Clipboard):ZaluumProtobuf.Clipboard = {
     ZaluumProtobuf.Clipboard.newBuilder
       .addAllInstance(c.valDefs map { proto(_)})
-      .addAllBoxClass(c.boxes map { proto(_)})
       .addAllPort(c.ports map { proto(_)})
       .addAllConnnection(c.connections map { proto(_)})
       .build;
-  }*/
+  }
 }

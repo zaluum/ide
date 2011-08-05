@@ -6,48 +6,49 @@ import java.io.StringWriter
 
 trait SelectionSubject
 abstract class Tree extends Product with SelectionSubject {
-  //var pos : Position = NoPosition
   var tpe: Type = null
   var symbol: Symbol = null
-  var line : Int = 0
+  var line: Int = 0
   def hasSymbol = false
   def isDef = false
   def isEmpty = false
-  private def findPath0(l:Int) : (Option[Tree],Int) = {
-    if (l<=0) (None,0)
-    else if (l==1) (Some(this),1)
+  private def findPath0(l: Int): (Option[Tree], Int) = {
+    if (l <= 0) (None, 0)
+    else if (l == 1) (Some(this), 1)
     else {
       var visited = 1
-      for (c<-children) {
-        val (t, visits) = c.findPath0(l-visited)
+      for (c ← children) {
+        val (t, visits) = c.findPath0(l - visited)
         visited += visits
         if (t.isDefined) {
-          return (t,visited)
+          return (t, visited)
         }
       }
-      (None,visited)
+      (None, visited)
     }
   }
   def findPath(l: Int): Option[Tree] = findPath0(l)._1
-  def assignLine(l:Int) : Int = {
+  def assignLine(l: Int): Int = {
     this.line = l
-    var x = l+1
-    for (c<-children) {
+    var x = l + 1
+    for (c ← children) {
       x = c.assignLine(x)
     }
     x
   }
+  def deepchildren: List[Tree] =
+    for (c ← children; dc ← c :: c.deepchildren) yield dc
+
   def children: List[Tree] = {
-    def subtrees(x: Any): List[Tree] = x match {
-      case t: Tree ⇒ List(t)
-      case o : Option[_] => o.toList flatMap subtrees
-      case xs: List[_] ⇒ xs flatMap subtrees
-      case _ ⇒ List()
-    }
+      def subtrees(x: Any): List[Tree] = x match {
+        case t: Tree      ⇒ List(t)
+        case o: Option[_] ⇒ for (ot ← o.toList; st ← subtrees(ot)) yield st
+        case xs: List[_]  ⇒ xs flatMap subtrees
+        case _            ⇒ List()
+      }
     productIterator.toList flatMap subtrees
   }
   private[zaluum] def copyAttrs(tree: Tree): this.type = {
-    //pos = tree.pos
     tpe = tree.tpe
     symbol = tree.symbol
     this
@@ -57,25 +58,25 @@ abstract class Tree extends Product with SelectionSubject {
 
   override def equals(that: Any): Boolean = that match {
     case t: Tree ⇒ this eq t
-    case _ ⇒ false
+    case _       ⇒ false
   }
-  def print(depth : Int) : String = {
-    def print(a:Any) : String =  {
-      a match {
-        case t:Tree => t.print(depth+1)
-        case l:List[_] => l.map {print(_)}.mkString("\n")
-        case _ => (" "*(depth+1)) + a.toString
+  def print(depth: Int): String = {
+      def print(a: Any): String = {
+        a match {
+          case t: Tree    ⇒ t.print(depth + 1)
+          case l: List[_] ⇒ l.map { print(_) }.mkString("\n")
+          case _          ⇒ (" " * (depth + 1)) + a.toString
+        }
       }
-    }
     val prods = productIterator.toList
-    (" "*depth) + this.productPrefix + "(" +
-    (if (prods.isEmpty) ")"
-    else {
-      "\n" + (for (e<-prods) yield {
-        print(e)
-      }).mkString("\n") + 
-      "\n"+(" "*depth)+")"
-    })
+    (" " * depth) + this.productPrefix + "(" +
+      (if (prods.isEmpty) ")"
+      else {
+        "\n" + (for (e ← prods) yield {
+          print(e)
+        }).mkString("\n") +
+          "\n" + (" " * depth) + ")"
+      })
   }
 }
 
@@ -93,50 +94,49 @@ abstract class EditTransformer extends CopyTransformer with MapTransformer
 
 trait MapTransformer extends Transformer {
   var map = Map[SelectionSubject, SelectionSubject]()
-  abstract override protected def transform[A<:Tree](tree: A): A = {
+  abstract override protected def transform[A <: Tree](tree: A): A = {
     val transformed = super.transform(tree)
     map += (tree -> transformed)
     transformed
   }
 }
 trait CopySymbolTransformer extends Transformer {
-  abstract override protected def transform[A<:Tree](tree: A): A =
+  abstract override protected def transform[A <: Tree](tree: A): A =
     super.transform(tree).copyAttrs(tree)
 }
 trait CopyTransformer extends Transformer {
   val defaultTransform: PartialFunction[Tree, Tree] = {
-    case b:BoxDef⇒
+    case b: BoxDef ⇒
       atOwner(b.symbol) {
-      b.copy(template = transform(b.template))
+        b.copy(template = transform(b.template))
       }
-    case t:Template=> 
-      t.copy (blocks = transformTrees(t.blocks),
-          ports = transformTrees(t.ports))
-    case b:Block => 
-      b.copy (
-          junctions = transformTrees(b.junctions),
-          connections = transformTrees(b.connections),
-          parameters = transformTrees(b.parameters),
-          valDefs = transformTrees(b.valDefs)
-          )
+    case t: Template ⇒
+      t.copy(blocks = transformTrees(t.blocks),
+        ports = transformTrees(t.ports))
+    case b: Block ⇒
+      b.copy(
+        junctions = transformTrees(b.junctions),
+        connections = transformTrees(b.connections),
+        parameters = transformTrees(b.parameters),
+        valDefs = transformTrees(b.valDefs))
     case PortDef(name, typeName, dir, inPos, extPos) ⇒
       PortDef(name, typeName, dir, inPos, extPos)
-    case v:ValDef ⇒
+    case v: ValDef ⇒
       atOwner(v.symbol) {
         v.copy(params = transformTrees(v.params),
-            template = transformOption(v.template))
+          template = transformOption(v.template))
       }
     case p: Param ⇒ p.copy()
-    case c@ConnectionDef(a, b, wp) ⇒
+    case c @ ConnectionDef(a, b, wp) ⇒
       atOwner(c.symbol) {
         ConnectionDef(transformOption(a), transformOption(b), wp)
       }
     case PortRef(from, name, in) ⇒
       PortRef(transform(from), name, in)
-    case ValRef(name) ⇒ ValRef(name)
+    case ValRef(name)   ⇒ ValRef(name)
     case j: JunctionRef ⇒ j.copy()
-    case j: Junction ⇒ j.copy()
-    case t: ThisRef ⇒ ThisRef()
+    case j: Junction    ⇒ j.copy()
+    case t: ThisRef     ⇒ ThisRef()
   }
 }
 abstract class Transformer extends OwnerHelper[Tree] {
@@ -147,10 +147,10 @@ abstract class Transformer extends OwnerHelper[Tree] {
     currentOwner = initOwner
     transform(tree)
   }
-  protected def transform[A<:Tree](tree: A): A = finalTrans.apply(tree).asInstanceOf[A]
-  protected def transformOption[A<:Tree](tree: Option[A]) : Option[A] = 
+  protected def transform[A <: Tree](tree: A): A = finalTrans.apply(tree).asInstanceOf[A]
+  protected def transformOption[A <: Tree](tree: Option[A]): Option[A] =
     tree map (transform(_))
-  protected def transformTrees[A<:Tree](trees: List[A]): List[A] =
+  protected def transformTrees[A <: Tree](trees: List[A]): List[A] =
     trees mapConserve (transform(_))
 }
 // Traverser
@@ -158,21 +158,21 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
   currentOwner = initSymbol
   def traverse(tree: Tree): Unit = {
     tree match {
-      case b:BoxDef⇒
+      case b: BoxDef ⇒
         atOwner(tree.symbol) {
           traverse(b.template)
         }
-      case t:Template => 
+      case t: Template ⇒
         atOwner(tree.symbol) {
           traverseTrees(t.ports)
           traverseTrees(t.blocks)
         }
-      case b:Block =>
+      case b: Block ⇒
         atOwner(tree.symbol) {
-	      	traverseTrees(b.valDefs)
-	        traverseTrees(b.junctions)
-	        traverseTrees(b.connections)
-	        traverseTrees(b.parameters)
+          traverseTrees(b.valDefs)
+          traverseTrees(b.junctions)
+          traverseTrees(b.connections)
+          traverseTrees(b.parameters)
         }
       case v: ValDef ⇒
         atOwner(tree.symbol) {
@@ -186,16 +186,16 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
       case p: PortDef ⇒
       case PortRef(tree, _, _) ⇒
         traverse(tree)
-      case j: Junction ⇒
+      case j: Junction    ⇒
       case j: JunctionRef ⇒
-      case ValRef(_) ⇒
-      case ThisRef() ⇒
+      case ValRef(_)      ⇒
+      case ThisRef()      ⇒
     }
   }
   def traverseTrees(trees: List[Tree]) {
     trees foreach traverse
   }
-  def traverseOption(o : Option[Tree]) {
+  def traverseOption(o: Option[Tree]) {
     o foreach traverse
   }
 }
@@ -208,43 +208,43 @@ object PrettyPrinter {
   }
   def sym(tree: Tree) = " sym= " + tree.symbol + " tpe= " + tree.tpe
   def print(tree: Tree, deep: Int): Unit = tree match {
-    case b:BoxDef ⇒
+    case b: BoxDef ⇒
       print("BoxDef(" + b.pkg + " " + b.name + " extends " + b.superName + ", " + b.image, deep)
       print(b.guiSize.toString, deep + 1)
-      print(b.template, deep +1)
+      print(b.template, deep + 1)
       print(")" + sym(b), deep)
-    case t:Template =>
-      print("Template( ",deep )
-      print(t.blocks, deep+1)
-      print(t.ports, deep+1)
+    case t: Template ⇒
+      print("Template( ", deep)
+      print(t.blocks, deep + 1)
+      print(t.ports, deep + 1)
       print(")", deep)
-    case b: Block =>
+    case b: Block ⇒
       print("Block( ", deep)
-      print(b.valDefs, deep +1)
-      print(b.connections, deep +1)
-      print(b.junctions, deep +1)
-      print(b.parameters, deep +1)
+      print(b.valDefs, deep + 1)
+      print(b.connections, deep + 1)
+      print(b.junctions, deep + 1)
+      print(b.parameters, deep + 1)
       print(")", deep)
     case v: ValDef ⇒
       print("ValDef(" + List(v.name, v.pos, v.size, v.typeName, v.guiPos, v.guiSize).mkString(","), deep)
       print("params: " + v.params, deep + 1)
-      print("constructors:" + v.constructorParams.mkString(","), deep +1)
-      print("constructorTypes:("+ v.constructorTypes.mkString(",") +")" , deep +1)
-      print(v.template.toList, deep+1)
+      print("constructors:" + v.constructorParams.mkString(","), deep + 1)
+      print("constructorTypes:(" + v.constructorTypes.mkString(",") + ")", deep + 1)
+      print(v.template.toList, deep + 1)
       print(")" + sym(v), deep)
     case p: Param ⇒
       print(p.toString + sym(p), deep)
-    case c@ConnectionDef(a, b, wp) ⇒
+    case c @ ConnectionDef(a, b, wp) ⇒
       print("ConnectionDef(", deep)
-      a foreach { print(_, deep + 1) } 
+      a foreach { print(_, deep + 1) }
       b foreach { print(_, deep + 1) }
       for (p ← wp) {
         print(p.toString, deep + 1)
       }
       print(")" + sym(c), deep)
-    case p@PortDef(_, _, _, _, _) ⇒
+    case p @ PortDef(_, _, _, _, _) ⇒
       print(p.toString + sym(p), deep)
-    case p@PortRef(tree, a, b) ⇒
+    case p @ PortRef(tree, a, b) ⇒
       print("PortRef(", deep)
       print(tree, deep + 1)
       print(a + ", " + b, deep + 1)
@@ -265,19 +265,14 @@ abstract class OwnerHelper[A] {
 }
 // ----- tree node alternatives --------------------------------------
 
-/** The empty tree */
-/*case object EmptyTree extends Tree {
-  override def isEmpty = true
-}*/
-
 /* Definition */
 object BoxDef {
-  def emptyBox(name:String,pkg:String) = {
+  def emptyBox(name: String, pkg: String) = {
     val block = Block(junctions = List(),
       connections = List(),
       parameters = List(),
       valDefs = List())
-    val template = Template(ports = List(), blocks = List(block), currentBlock=None)
+    val template = Template(ports = List(), blocks = List(block), currentBlock = None)
     BoxDef(name = Name(name),
       pkg = Name(pkg),
       superName = None,
@@ -287,40 +282,39 @@ object BoxDef {
   }
 }
 case class BoxDef(name: Name, // simple name
-  pkg:Name, superName: Option[Name],
-  guiSize: Option[Dimension],
-  image: Option[String],
-  template : Template) extends Tree {
+                  pkg: Name, superName: Option[Name],
+                  guiSize: Option[Dimension],
+                  image: Option[String],
+                  template: Template) extends Tree {
   def sym = symbol.asInstanceOf[BoxTypeSymbol]
 }
 object Template {
-  def emptyTemplate(blocks:Int) = {
-    Template(List.fill(blocks){Block.empty}, List(), None)
+  def emptyTemplate(blocks: Int) = {
+    Template(List.fill(blocks) { Block.empty }, List(), None)
   }
 }
-case class Template(blocks : List[Block], ports: List[PortDef], currentBlock:Option[String]) extends Tree {
-  def sym :TemplateSymbol = symbol.asInstanceOf[TemplateSymbol]
+case class Template(blocks: List[Block], ports: List[PortDef], currentBlock: Option[String]) extends Tree {
+  def sym: TemplateSymbol = symbol.asInstanceOf[TemplateSymbol]
 }
 object Block {
-  def empty =  Block(List(),List(),List(),List())
+  def empty = Block(List(), List(), List(), List())
 }
 case class Block(
-    junctions : List[Junction],
-    connections : List[ConnectionDef],
-    parameters : List[Param],
-    valDefs : List[ValDef]
-    ) extends Tree {
+    junctions: List[Junction],
+    connections: List[ConnectionDef],
+    parameters: List[Param],
+    valDefs: List[ValDef]) extends Tree {
   def sym = symbol.asInstanceOf[BlockSymbol]
 }
 object PortDir {
-  def fromStr(str:String) = str match {
-    case In.str => In
-    case Out.str => Out
-    case Shift.str => Shift
+  def fromStr(str: String) = str match {
+    case In.str    ⇒ In
+    case Out.str   ⇒ Out
+    case Shift.str ⇒ Shift
   }
 }
-sealed abstract class PortDir(val str:String, val desc:String) 
-case object In extends PortDir("<in>", "Port In") 
+sealed abstract class PortDir(val str: String, val desc: String)
+case object In extends PortDir("<in>", "Port In")
 case object Out extends PortDir("<out>", "Port Out")
 case object Shift extends PortDir("<shift>", "Port Shift")
 case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPos: Point) extends Tree with Positionable {
@@ -331,40 +325,32 @@ case class ThisRef() extends Tree
 trait ConnectionEnd extends Tree
 case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd // in as flow or as PortDir?
 case class Param(key: Name, value: String) extends Tree
-case class LabelDesc(description:String, pos:Vector2)
+case class LabelDesc(description: String, pos: Vector2)
 object ValDef {
-  def emptyValDef(name:Name, tpeName:Name, dst:Point) =
-    ValDef(name, tpeName, dst, None, None, None, List(), List(), List(),None, None, None)
-  
+  def emptyValDef(name: Name, tpeName: Name, dst: Point) =
+    ValDef(name, tpeName, dst, None, None, None, List(), List(), List(), None, None, None)
 }
 case class ValDef(
-  name: Name,
-  typeName: Name,
-  pos: Point,
-  size: Option[Dimension],
-  guiPos: Option[Point],
-  guiSize: Option[Dimension],
-  params: List[Tree], 
-  constructorParams:List[String],
-  constructorTypes:List[Name],
-  label : Option[LabelDesc],
-  labelGui : Option[LabelDesc],
-  template : Option[Template]
-  ) extends Tree with Positionable {
-  /*def localTypeDecl = tpe match {
-    case NoSymbol ⇒ None
-    case b: BoxTypeSymbol ⇒ if (b.isLocal) Some(b.decl.asInstanceOf[BoxDef]) else None
-    case _ => None
-  }*/
+    name: Name,
+    typeName: Name,
+    pos: Point,
+    size: Option[Dimension],
+    guiPos: Option[Point],
+    guiSize: Option[Dimension],
+    params: List[Tree],
+    constructorParams: List[String],
+    constructorTypes: List[Name],
+    label: Option[LabelDesc],
+    labelGui: Option[LabelDesc],
+    template: Option[Template]) extends Tree with Positionable {
   def sym = symbol.asInstanceOf[ValSymbol]
 }
-//case class SizeDef(pos: Point, size: Dimension) extends Tree
 case class ConnectionDef(
-    a: Option[ConnectionEnd], 
-    b: Option[ConnectionEnd], 
+    a: Option[ConnectionEnd],
+    b: Option[ConnectionEnd],
     points: List[Point]) extends Tree {
- def headPoint = points.headOption.getOrElse(Point(0, 0))
- def lastPoint = points.lastOption.getOrElse(Point(0, 0))
+  def headPoint = points.headOption.getOrElse(Point(0, 0))
+  def lastPoint = points.lastOption.getOrElse(Point(0, 0))
 
 }
 case class Junction(name: Name, p: Point) extends Tree

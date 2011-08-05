@@ -22,7 +22,7 @@ import org.zaluum.nide.Activator
 import org.eclipse.swt.SWT
 
 class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
-  extends ItemViewer(parent, controller) /* FIXME with ClipboardViewer*/ {
+  extends ItemViewer(parent, controller)  with ClipboardViewer {
   /*MODEL*/
   def tree = controller.tree
   def boxDef = tree

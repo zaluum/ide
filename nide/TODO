@@ -2,15 +2,12 @@ Agenda
 
 week 1-7 compiler week
 	- BUG Change type of a box to While or if (doesn't have template)
-	- FIXME? Non connected ports var initialization
-	- BUG? make sure 0 and 1 blocks don't get reversed
-	- check "end" or "cond" port names 
-	- restore clipboard
 	- New
 	- Static box?
 	- field access
 	- write one article
 week 8-14 
+	- check "end" or "cond" port names 
 	- type auto
 	- infer types on while/ifs
 	- array creation/access
@@ -109,6 +106,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- restore clipboard
 	- gui support to change block vi
 	- If box and Switch support.
 	- GUI per seleccionar el tipus dels port

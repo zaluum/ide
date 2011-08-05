@@ -9,6 +9,7 @@ import java.nio.charset.Charset
 import java.io.ByteArrayInputStream
 import com.google.protobuf.ExtensionRegistry
 import org.zaluum.nide.NotImplemented._
+import org.zaluum.nide.zge.Clipboard
 object Parser {
   def readTree(i: InputStream, className: Name): BoxDef = {
     val a = try {
@@ -112,11 +113,10 @@ object Parser {
   }
   def parse(p: ZaluumProtobuf.Point) = Point(p.getX, p.getY)
   def parseDim(p: ZaluumProtobuf.Point) = Dimension(p.getX, p.getY)
-  /*def parse(p: ZaluumProtobuf.Clipboard): Clipboard = {
-    val boxes = p.getBoxClassList map { parse(_) } toList
+  def parse(p: ZaluumProtobuf.Clipboard): Clipboard = {
     val vals = p.getInstanceList map { parse(_) } toList
     val ports = p.getPortList map { parse(_) } toList
     val connections = p.getConnnectionList map { parse(_) } toList;
-    Clipboard(boxes, vals, ports, connections)
-  }*/
+    Clipboard(vals, ports, connections)
+  }
 }
