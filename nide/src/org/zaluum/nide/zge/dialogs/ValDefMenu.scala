@@ -15,7 +15,9 @@ import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.zge.LabelItem
 import org.zaluum.nide.zge.ValDefItem
 import org.zaluum.nide.zge.Viewer
-import org.zaluum.nide.compiler.FieldAccessExprType
+import org.zaluum.nide.compiler.GetFieldExprType
+import org.zaluum.nide.compiler.GetStaticFieldExprType
+import org.zaluum.nide.compiler.InvokeStaticExprType
 
 object ValDefMenu {
   def show(viewer: Viewer, fig: ValDefItem, gui: Boolean = false) {
@@ -33,6 +35,7 @@ object ValDefMenu {
         })
         item
       }
+      def staticMenu = newItem("Target class...") { new StaticSelectDialog(viewer, v).open }
       def methodMenu = newItem("Method...") { new MethodSelectDialog(viewer, v).open }
       def fieldMenu = newItem("Field...") { new FieldSelectDialog(viewer, v).open }
       def tpeMenu = newItem("Type...") { new ValDefDialog(viewer, v).open() }
@@ -62,10 +65,18 @@ object ValDefMenu {
             cons
             params
             tpeMenu
+          case InvokeStaticExprType ⇒
+            staticMenu
+            methodMenu
+            tpeMenu
+          case GetStaticFieldExprType ⇒
+            staticMenu
+            fieldMenu
+            tpeMenu
           case InvokeExprType ⇒
             methodMenu
             tpeMenu
-          case FieldAccessExprType => 
+          case GetFieldExprType ⇒
             fieldMenu
             tpeMenu
           case _ ⇒

@@ -344,6 +344,15 @@ case class ValDef(
     labelGui: Option[LabelDesc],
     template: Option[Template]) extends Tree with Positionable {
   def sym = symbol.asInstanceOf[ValSymbol]
+  def addOrReplaceParam(param: Param) = new EditTransformer() {
+    val trans: PartialFunction[Tree, Tree] = {
+      case v: ValDef if v == ValDef.this ⇒
+        val filtered = v.params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
+        v.copy(
+          template = transformOption(v.template),
+          params = param :: filtered)
+    }
+  }
 }
 case class ConnectionDef(
     a: Option[ConnectionEnd],

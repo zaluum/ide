@@ -3,10 +3,10 @@ sealed trait BinOp
 
 sealed trait ExprType extends BoxType {
   val owner = null
-  def nameStr : String
+  def nameStr: String
   lazy val name = Name(nameStr)
   lazy val fqName = Name("org.zaluum.expr." + nameStr)
-  val params = Map[Name, ParamSymbol]()
+  var params = Map[Name, ParamSymbol]()
   def lookupPort(a: Name) = ports.get(a)
   def lookupPortWithSuper(a: Name) = lookupPort(a)
   def lookupParam(a: Name) = params.get(a)
@@ -56,28 +56,35 @@ object WhileExprType extends TemplateExprType("While") {
   ports += (end.name -> end)
   def endPort(v: ValSymbol) = v.findPortInstance(end).get
 }
-sealed abstract class ThisExprType(val nameStr: String) extends ExprType {
+trait SignatureExprType extends ExprType {
+  val Sig = """(.+)(\(.*)""".r
+  val signatureName = Name("signature")
+  val signatureSymbol = new ParamSymbol(null, signatureName)
+  params += (signatureName -> signatureSymbol)
+}
+sealed abstract class ThisExprType(val nameStr: String) extends SignatureExprType {
   val thiz = new PortSymbol(this, Name("this"), Point(0, 0), In)
   val thizOut = new PortSymbol(this, Name("thisOut"), Point(0, 0), Out)
   ports += (thiz.name -> thiz)
   ports += (thizOut.name -> thizOut)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
   def thisOutPort(vs: ValSymbol) = vs.findPortInstance(thizOut).get
-  val signatureName = Name("signature")
-  val signatureSymbol = new ParamSymbol(null, signatureName)
-  override val params = Map(signatureName -> signatureSymbol)
 
 }
-object InvokeExprType extends ThisExprType("Invoke") {
-  val Sig = """(.+)(\(.*)""".r
+sealed abstract class StaticExprType(val nameStr: String) extends SignatureExprType {
+  val className = Name("class")
+  val classSymbol = new ParamSymbol(null, className)
+  params += (className -> classSymbol)
 }
-object FieldAccessExprType extends ThisExprType("FieldAccess") with ResultExprType{
-}
+object InvokeExprType extends ThisExprType("Invoke")
+object InvokeStaticExprType extends StaticExprType("InvokeStatic")
+object GetFieldExprType extends ThisExprType("GetField") with ResultExprType
+object GetStaticFieldExprType extends StaticExprType("GetStaticField") with ResultExprType
 object LiteralExprType extends ResultExprType {
   val nameStr = "Literal"
   val paramName = Name("literal")
   val paramSymbol = new ParamSymbol(null, paramName)
-  override val params = Map(paramName -> paramSymbol)
+  params += (paramName -> paramSymbol)
 }
 
 object ToByteType extends CastExprType("ToByte")
@@ -114,10 +121,12 @@ object DivExprType extends MathExprType("Div")
 object RemExprType extends MathExprType("Rem")
 object Expressions {
   val all = List(
-    FieldAccessExprType,
+    InvokeExprType,
+    InvokeStaticExprType,
+    GetFieldExprType,
+    GetStaticFieldExprType,
     WhileExprType,
     IfExprType,
-    InvokeExprType,
     LiteralExprType,
     ToByteType,
     ToShortType,

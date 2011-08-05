@@ -23,7 +23,11 @@ import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.zaluum.nide.eclipse.integration.model.MethodUtils
 import org.zaluum.nide.zge.Viewer
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
-import org.zaluum.nide.compiler.FieldAccessExprType
+import org.zaluum.nide.compiler.GetFieldExprType
+import org.zaluum.nide.compiler.StaticExprType
+import org.zaluum.nide.compiler.SignatureExprType
+import org.zaluum.nide.compiler.GetStaticFieldExprType
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 
 class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItemsSelectionDialog2(viewer.shell, false) {
   override def isResizable = true
@@ -34,14 +38,8 @@ class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItems
   def execCommand() {
     getSelectedItems().getFirstElement() match {
       case m: FieldBinding ⇒
-        val tr = new EditTransformer() {
-          val trans: PartialFunction[Tree, Tree] = {
-            case v: ValDef if vs.decl == v ⇒
-              v.copy(
-                  template = transformOption(v.template),
-                  params = List(Param(FieldAccessExprType.signatureName, m.name.mkString)))
-          }
-        }
+        val sig = vs.tpe.asInstanceOf[SignatureExprType].signatureName
+        val tr = vs.tdecl.addOrReplaceParam(Param(sig, m.name.mkString))
         viewer.controller.exec(tr)
     }
   }
@@ -64,16 +62,23 @@ class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItems
 
   val id = "org.zaluum.nide.methodSelectDialog"
   val settings = new DialogSettings(id);
-  val items: Array[FieldBinding] = vs.findPortInstance(FieldAccessExprType.thiz) match {
-    case Some(pi) ⇒
-      pi.finalTpe match {
-        case c: ClassJavaType ⇒
-          val engine = ZaluumCompletionEngineScala.engineForVs(vs)
-          val fields = ZaluumCompletionEngineScala.allFields(engine, vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope, c) // FIXME
-          fields.sortBy(_.name.mkString).toArray
-        case _ ⇒ Array()
+  val static = vs.tpe.isInstanceOf[StaticExprType]
+  val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME 
+
+  val binding = vs.tpe match {
+    case GetFieldExprType ⇒ GetFieldExprType.thisPort(vs).finalTpe.binding
+    case GetStaticFieldExprType ⇒
+      vs.classinfo match {
+        case cl: ClassJavaType ⇒ cl.binding
+        case _                 ⇒ null
       }
-    case None ⇒ Array()
+  }
+  val items: Array[FieldBinding] = binding match {
+    case r: ReferenceBinding ⇒
+      val engine = ZaluumCompletionEngineScala.engineForVs(vs)
+      val fields = ZaluumCompletionEngineScala.allFields(engine, scope, r, static)
+      fields.sortBy(_.name.mkString).toArray
+    case _ ⇒ Array()
   }
   val currentFieldName = vs.params.values.headOption
   val currentField = currentFieldName flatMap { mstr ⇒
@@ -109,7 +114,7 @@ class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItems
   protected def createFilter = new FieldItemsFilter()
   def getElementName(item: Object) = item match {
     case f: FieldBinding ⇒ f.name.mkString
-    case _                  ⇒ null
+    case _               ⇒ null
   }
 }
 

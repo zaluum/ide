@@ -78,6 +78,9 @@ object ByteCodeGen {
                 emit(a)
                 emit(rhs)
                 mv.visitFieldInsn(PUTFIELD, fromClass.internal, id.str, descriptor)
+              case FieldStaticRef(id, descriptor, fromClass) ⇒
+                emit(rhs)
+                mv.visitFieldInsn(PUTSTATIC, fromClass.internal, id.str, descriptor)
               
             }
           case While(body, cond) ⇒
@@ -115,6 +118,8 @@ object ByteCodeGen {
             emit(b)
           case FieldRef(id, descriptor, fromClass) ⇒
             mv.visitFieldInsn(GETFIELD, fromClass.internal, id.str, descriptor)
+          case FieldStaticRef(id,descriptor,fromClass) => 
+            mv.visitFieldInsn(GETSTATIC, fromClass.internal, id.str, descriptor)
           case This ⇒
             mv.visitVarInsn(ALOAD, 0);
           case InvokeStatic(meth, params, fromClass, descriptor) ⇒

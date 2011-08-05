@@ -49,14 +49,20 @@ trait ContentsToClass {
       }
       def runOne(vs: ValSymbol, bl: BlockSymbol): List[Tree] = {
         // propagate inputs
-        val ins = for (ps ← vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
+        val propagate = for (ps ← vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
           bl.connections.connectedFrom.get(pi) match {
             case Some((o, blame)) ⇒ assign(pi, o)
             case None             ⇒ Assign(toRef(pi), Const(0, pi.finalTpe))
           }
         }
         import primitives._
-        val invoke: List[Tree] = vs.tpe match {
+          def invokeHelper(vs: ValSymbol, m: MethodBinding, invoke: Tree): Tree = // TODO find a better place
+            if (m.returnType != null && m.returnType != TypeBinding.VOID) {
+              val out = vs.portInstances find (_.name == Name("return")) get;
+              Assign(toRef(out), invoke)
+            } else invoke
+
+        val insn: List[Tree] = vs.tpe match {
           case vbs: BoxTypeSymbol ⇒
             val tpe = vbs.fqName
             List(
@@ -89,16 +95,23 @@ trait ContentsToClass {
               Name(m.declaringClass.constantPoolName().mkString),
               m.signature().mkString,
               m.declaringClass.isInterface)
-            val assOut = if (m.returnType != null && m.returnType != TypeBinding.VOID) {
-              val out = vs.portInstances find (_.name == Name("return")) get;
-              Assign(toRef(out), invoke)
-            } else invoke
-            List(assOut, Assign(toRef(thisOut), toRef(obj)))
-          case FieldAccessExprType ⇒
+            List(invokeHelper(vs, m, invoke), Assign(toRef(thisOut), toRef(obj)))
+          case InvokeStaticExprType ⇒
+            val m = vs.info.asInstanceOf[MethodBinding]
+            // TODO share with invoke
+            val params = vs.portSides filter { ps ⇒ ps.inPort } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
+            val invoke =
+              InvokeStatic(
+                meth = m.selector.mkString,
+                param = params,
+                fromClass = Name(m.declaringClass.constantPoolName.mkString),
+                descriptor = m.signature.mkString)
+            List(invokeHelper(vs, m, invoke))
+          case GetFieldExprType ⇒
             val f = vs.info.asInstanceOf[FieldBinding]
-            val out = FieldAccessExprType.outPort(vs)
-            val obj = FieldAccessExprType.thisPort(vs)
-            val thisOut = FieldAccessExprType.thisOutPort(vs) // XXX optimize and use only 1 var
+            val out = GetFieldExprType.outPort(vs)
+            val obj = GetFieldExprType.thisPort(vs)
+            val thisOut = GetFieldExprType.thisOutPort(vs) // XXX optimize and use only 1 var
             List(
               Assign(
                 toRef(out),
@@ -108,8 +121,14 @@ trait ContentsToClass {
                     Name(f.name.mkString),
                     f.`type`.signature.mkString,
                     Name(f.declaringClass.constantPoolName.mkString)))),
-              Assign(toRef(thisOut), toRef(obj))
-              )
+              Assign(toRef(thisOut), toRef(obj)))
+          case GetStaticFieldExprType ⇒
+            val f = vs.info.asInstanceOf[FieldBinding]
+            val out = GetStaticFieldExprType.outPort(vs)
+            List(Assign(toRef(out), FieldStaticRef(
+              Name(f.name.mkString),
+              f.`type`.signature.mkString,
+              Name(f.declaringClass.constantPoolName.mkString))))
           case LiteralExprType ⇒
             val o = LiteralExprType.outPort(vs)
             val c = vs.params.headOption match {
@@ -161,7 +180,7 @@ trait ContentsToClass {
             }
             List(Assign(toRef(o), eTree))
         }
-        ins ::: invoke
+        propagate ::: insn
       }
 
     val invokes = runBlock(bs.blocks.head)
@@ -189,6 +208,7 @@ trait ContentsToClass {
         "()" + unboxedTpe.descriptor,
         false))
   }
+
   def cast(from: Type, to: Type, t: Tree): Tree = {
     (from, to) match {
       case (from: PrimitiveJavaType, to: ClassJavaType) ⇒

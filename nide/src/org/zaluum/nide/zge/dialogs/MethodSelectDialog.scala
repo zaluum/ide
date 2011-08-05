@@ -1,9 +1,7 @@
 package org.zaluum.nide.zge.dialogs
 
 import java.util.Comparator
-
 import scala.collection.JavaConversions
-
 import org.eclipse.core.runtime.Status
 import org.eclipse.jdt.internal.compiler.ast.ASTNode
 import org.eclipse.jdt.internal.compiler.lookup.Binding
@@ -16,7 +14,6 @@ import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.ClassJavaType
 import org.zaluum.nide.compiler.EditTransformer
-import org.zaluum.nide.compiler.InvokeExprType
 import org.zaluum.nide.compiler.Param
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
@@ -24,6 +21,11 @@ import org.zaluum.nide.compiler.ValSymbol
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.zaluum.nide.eclipse.integration.model.MethodUtils
 import org.zaluum.nide.zge.Viewer
+import org.zaluum.nide.compiler.SignatureExprType
+import org.zaluum.nide.compiler.StaticExprType
+import org.zaluum.nide.compiler.InvokeStaticExprType
+import org.zaluum.nide.compiler.InvokeExprType
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 
 class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItemsSelectionDialog2(viewer.shell, false) {
   override def isResizable = true
@@ -34,14 +36,8 @@ class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItem
   def execCommand() {
     getSelectedItems().getFirstElement() match {
       case m: MethodWithNames ⇒
-        val tr = new EditTransformer() {
-          val trans: PartialFunction[Tree, Tree] = {
-            case v: ValDef if vs.decl == v ⇒
-              v.copy(
-                template = transformOption(v.template),
-                params = List(Param(InvokeExprType.signatureName, m.methodSignature)))
-          }
-        }
+        val tpe = vs.tpe.asInstanceOf[SignatureExprType]
+        val tr = vs.tdecl.addOrReplaceParam(Param(tpe.signatureName, m.methodSignature))
         viewer.controller.exec(tr)
     }
   }
@@ -64,23 +60,29 @@ class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItem
 
   val id = "org.zaluum.nide.methodSelectDialog"
   val settings = new DialogSettings(id);
-  val items: Array[MethodWithNames] = vs.findPortInstance(InvokeExprType.thiz) match {
-    case Some(pi) ⇒
-      pi.finalTpe match {
-        case c: ClassJavaType ⇒
-          val engine = ZaluumCompletionEngineScala.engineForVs(vs)
-          val methods = ZaluumCompletionEngineScala.allMethods(engine, vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope, c) // FIXME
-          val jproject = viewer.zproject.jProject.asInstanceOf[JavaProject]
-          val nameLookup = jproject.newNameLookup(Array[org.eclipse.jdt.core.ICompilationUnit]())
-          val paramNames = methods map { m ⇒
-            val names = MethodUtils.findMethodParamNames(m, jproject)
-            val params = names.toList.flatMap(a ⇒ a)
-            MethodWithNames(m, params)
-          }
-          paramNames.sortBy(_.selector).toArray
-        case _ ⇒ Array()
+  val static = vs.tpe.isInstanceOf[StaticExprType]
+  val binding = vs.tpe match {
+    case InvokeExprType ⇒ InvokeExprType.thisPort(vs).finalTpe.binding
+    case InvokeStaticExprType ⇒
+      vs.classinfo match {
+        case cl: ClassJavaType ⇒ cl.binding
+        case _                 ⇒ null
       }
-    case None ⇒ Array()
+  }
+  val items: Array[MethodWithNames] = binding match {
+    case r: ReferenceBinding ⇒
+      val engine = ZaluumCompletionEngineScala.engineForVs(vs)
+      val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope; // FIXME?
+      val methods = ZaluumCompletionEngineScala.allMethods(engine, scope, r, static) // FIXME
+      val jproject = viewer.zproject.jProject.asInstanceOf[JavaProject]
+      val nameLookup = jproject.newNameLookup(Array[org.eclipse.jdt.core.ICompilationUnit]())
+      val paramNames = methods map { m ⇒
+        val names = MethodUtils.findMethodParamNames(m, jproject)
+        val params = names.toList.flatMap(a ⇒ a)
+        MethodWithNames(m, params)
+      }
+      paramNames.sortBy(_.selector).toArray
+    case _ ⇒ Array()
   }
   val currentMethodSig = vs.params.values.headOption
   val currentMethod = currentMethodSig flatMap { mstr ⇒

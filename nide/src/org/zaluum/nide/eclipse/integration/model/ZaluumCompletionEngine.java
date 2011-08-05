@@ -23,7 +23,7 @@ public class ZaluumCompletionEngine {
 	}
 
 	public ObjectVector findAllMethods(ReferenceBinding receiverType,
-			ClassScope scope) {
+			ClassScope scope, boolean statics) {
 		ObjectVector methodsFound = new ObjectVector();
 		findMethods(new char[0], // selector
 				null, // typeArgTypes
@@ -31,8 +31,8 @@ public class ZaluumCompletionEngine {
 				receiverType, // receiverType
 				scope, // scope
 				methodsFound, // methodsFound
-				false, // onlystatic
-				true, // noStaticMethods
+				statics, // onlystatic
+				!statics, // noStaticMethods
 				false, // exactmatch
 				new FakeInvocationSite(null), // invocationSite
 				scope, // invocationScope
@@ -51,7 +51,7 @@ public class ZaluumCompletionEngine {
 	}
 
 	public ObjectVector findAllFields(ReferenceBinding receiverType,
-			ClassScope scope) {
+			ClassScope scope, boolean statics) {
 		ObjectVector fieldsFound = new ObjectVector();
 		ObjectVector localsFound = new ObjectVector();
 
@@ -60,7 +60,7 @@ public class ZaluumCompletionEngine {
 				scope, // scope
 				fieldsFound, // fieldsFound
 				localsFound, // localsFound
-				false, // onlystatic
+				statics, // onlystatic
 				new FakeInvocationSite(null), // invocationSite
 				scope, // invocationScope
 				false, // implicitCall

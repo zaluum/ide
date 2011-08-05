@@ -13,6 +13,7 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.eclipse.jdt.internal.compiler.lookup.ProblemFieldBinding
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 
 trait AnalyzerConnections {
   self: Analyzer ⇒
@@ -286,6 +287,80 @@ trait AnalyzerConnections {
           }
       }
     }
+    /*
+     * helpers for methods and fields
+     */
+    def processField(vs: ValSymbol, f: Option[FieldBinding]) = f match {
+      case Some(p: ProblemFieldBinding) ⇒
+        error("problem field " + p + p.problemId(), vs.decl)
+      case Some(f: FieldBinding) ⇒
+        val out = vs.tpe.asInstanceOf[ResultExprType].outPort(vs)
+        out.finalTpe = cud.zaluumScope.getJavaType(f.`type`)
+        if (out.finalTpe == NoSymbol) error("field type not found", vs.decl)
+        vs.info = f
+      case None ⇒
+        error("field not found", vs.decl)
+    }
+    def processMethod(vs: ValSymbol, m: Option[MethodBinding]) = m match {
+      case Some(p: ProblemMethodBinding) ⇒
+        error("problem method " + p + p.problemId(), vs.decl)
+      case Some(m) ⇒
+        if (m.returnType != null && m.returnType != TypeBinding.VOID) {
+          val out = vs.portInstances find { _.name == Name("return") } getOrElse { vs.createOutsideOut(Name("return")).pi }
+          out.missing = false
+          out.finalTpe = cud.zaluumScope.getJavaType(m.returnType)
+          if (out.finalTpe == NoSymbol) error("return type not found", vs.decl)
+        }
+        for ((p, i) ← m.parameters.zipWithIndex) {
+          val name = Name("p" + i)
+          val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(Name("p" + i)).pi }
+          in.missing = false
+          in.finalTpe = cud.zaluumScope.getJavaType(p);
+        }
+        vs.info = m
+      // check connections
+      case None ⇒
+        error("method not found", vs.decl)
+    }
+    def scope(vs: ValSymbol) = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME
+    /*
+     *  statics
+     */
+    def checkStaticExprType(vs: ValSymbol) {
+      val tpe = vs.tpe.asInstanceOf[StaticExprType]
+      vs.params.get(tpe.classSymbol) match {
+        case Some(className: String) ⇒
+          cud.zaluumScope.getJavaType(Name(className)) match {
+            case Some(c: ClassJavaType) ⇒
+              vs.classinfo = c
+              tpe match {
+                case InvokeStaticExprType   ⇒ invokeStatic(vs, c)
+                case GetStaticFieldExprType ⇒ getStaticField(vs, c)
+              }
+            case _ ⇒ error("Class " + className + " not found", vs.decl)
+          }
+        case None ⇒ error("no class specified", vs.decl)
+      }
+    }
+    def invokeStatic(vs: ValSymbol, c: ClassJavaType) {
+      vs.params.get(InvokeStaticExprType.signatureSymbol) match {
+        case Some(InvokeStaticExprType.Sig(selector, signature)) ⇒
+          val m = ZaluumCompletionEngineScala.findBySignature(cud, scope(vs), c, selector, signature, true)
+          processMethod(vs, m)
+        case _ ⇒ error("Static method not specified", vs.decl)
+      }
+    }
+    def getStaticField(vs: ValSymbol, c: ClassJavaType) {
+      vs.params.get(GetStaticFieldExprType.signatureSymbol) match {
+        case Some(fieldName: String) ⇒
+          val f = ZaluumCompletionEngineScala.findField(cud, scope(vs), c.binding, fieldName, true)
+          processField(vs, f)
+        case _ ⇒ error("Static field not specified", vs.decl)
+      }
+    }
+    /*
+     * this
+     */
     def checkThisExprType(vs: ValSymbol) {
       val tpe = vs.tpe.asInstanceOf[ThisExprType]
       val thiz = tpe.thisPort(vs)
@@ -296,8 +371,8 @@ trait AnalyzerConnections {
           from.finalTpe match {
             case c: ClassJavaType ⇒
               tpe match {
-                case InvokeExprType      ⇒ invoke(vs, thiz, thizOut, c)
-                case FieldAccessExprType ⇒ fieldAccess(vs, thiz, thizOut, c)
+                case InvokeExprType   ⇒ invoke(vs, thiz, thizOut, c)
+                case GetFieldExprType ⇒ getField(vs, thiz, thizOut, c)
               }
             case _ ⇒
               error("bad type", blame)
@@ -305,23 +380,13 @@ trait AnalyzerConnections {
         case None ⇒ // not connected
       }
     }
-    def fieldAccess(vs: ValSymbol, obj: PortInstance, thisOut: PortInstance, c: ClassJavaType) {
+    def getField(vs: ValSymbol, obj: PortInstance, thisOut: PortInstance, c: ClassJavaType) {
       obj.finalTpe = c
       thisOut.finalTpe = c
-      vs.params.get(FieldAccessExprType.signatureSymbol) match {
+      vs.params.get(GetFieldExprType.signatureSymbol) match {
         case Some(fieldName: String) ⇒
-          val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME
-          ZaluumCompletionEngineScala.findField(cud, scope, c, fieldName) match {
-            case Some(p: ProblemFieldBinding) ⇒
-              error("problem field " + p + p.problemId(), vs.decl)
-            case Some(f: FieldBinding) ⇒
-              val out = FieldAccessExprType.outPort(vs)
-              out.finalTpe = cud.zaluumScope.getJavaType(f.`type`)
-              if (out.finalTpe == NoSymbol) error("field type not found", vs.decl)
-              vs.info = f
-            case None ⇒
-              error("field not found", vs.decl)
-          }
+          val f = ZaluumCompletionEngineScala.findField(cud, scope(vs), c.binding, fieldName, false)
+          processField(vs, f)
         case _ ⇒ error("no field specified", vs.decl)
       }
     }
@@ -331,32 +396,14 @@ trait AnalyzerConnections {
       thisOut.finalTpe = c
       vs.params.get(InvokeExprType.signatureSymbol) match {
         case Some(InvokeExprType.Sig(selector, signature)) ⇒
-          val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME
-          ZaluumCompletionEngineScala.findBySignature(cud, scope, c, selector, signature) match {
-            case Some(p: ProblemMethodBinding) ⇒
-              error("problem method " + p + p.problemId(), vs.decl)
-            case Some(m) ⇒
-              if (m.returnType != null && m.returnType != TypeBinding.VOID) {
-                val out = vs.portInstances find { _.name == Name("return") } getOrElse { vs.createOutsideOut(Name("return")).pi }
-                out.missing = false
-                out.finalTpe = cud.zaluumScope.getJavaType(m.returnType)
-                if (out.finalTpe == NoSymbol) error("return type not found", vs.decl)
-              }
-              for ((p, i) ← m.parameters.zipWithIndex) {
-                val name = Name("p" + i)
-                val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(Name("p" + i)).pi }
-                in.missing = false
-                in.finalTpe = cud.zaluumScope.getJavaType(p);
-              }
-              vs.info = m
-            // check connections
-            case None ⇒
-              error("method not found", vs.decl)
-          }
-
+          val m = ZaluumCompletionEngineScala.findBySignature(cud, scope(vs), c, selector, signature, false)
+          processMethod(vs, m)
         case _ ⇒ error("signature missing", vs.decl)
       }
     }
+    /*
+     * expressions with templates
+     */
     def checkTemplateExprType(vs: ValSymbol) = { // FIXME share code with While
       val t = vs.tpe.asInstanceOf[TemplateExprType]
       vs.tdecl.template match {
@@ -398,6 +445,7 @@ trait AnalyzerConnections {
           case LiteralExprType     ⇒ checkLiteralExprType(vs)
           case e: UnaryExprType    ⇒ checkUnaryExprType(vs)
           case t: ThisExprType     ⇒ checkThisExprType(vs); checkPortConnectionsTypes(vs)
+          case t: StaticExprType   => checkStaticExprType(vs); checkPortConnectionsTypes(vs)
           case t: TemplateExprType ⇒ checkTemplateExprType(vs)
         }
         checkGhostPorts(vs)
@@ -417,17 +465,17 @@ object ZaluumCompletionEngineScala {
   def findBySignature(
     cud: ZaluumCompilationUnitDeclaration,
     zcs: ZaluumClassScope,
-    c: ClassJavaType, selector: String, signature: String) = {
+    c: ClassJavaType, selector: String, signature: String, static: Boolean) = {
 
-    allMethods(engineFor(cud), zcs, c) find { m ⇒
+    allMethods(engineFor(cud), zcs, c.binding, static) find { m ⇒
       m.selector.mkString == selector &&
         m.signature().mkString == signature
     }
   }
   def findField(cud: ZaluumCompilationUnitDeclaration,
                 zcs: ZaluumClassScope,
-                c: ClassJavaType, name: String) = {
-    allFields(engineFor(cud), zcs, c) find { f ⇒
+                r: ReferenceBinding, name: String, static: Boolean) = {
+    allFields(engineFor(cud), zcs, r, static) find { f ⇒
       f.name.mkString == name
     }
   }
@@ -440,8 +488,8 @@ object ZaluumCompletionEngineScala {
   def engineForVs(vs: ValSymbol): ZaluumCompletionEngine =
     engineFor(vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope.compilationUnitScope
       .asInstanceOf[ZaluumCompilationUnitScope].cud)
-  def allFields(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, c: ClassJavaType): List[FieldBinding] = {
-    val fieldsFound = engine.findAllFields(c.binding, zcs)
+  def allFields(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, binding: ReferenceBinding, static: Boolean): List[FieldBinding] = {
+    val fieldsFound = engine.findAllFields(binding, zcs, static)
 
     var l = List[FieldBinding]()
     for (i ← 0 until fieldsFound.size) {
@@ -452,8 +500,8 @@ object ZaluumCompletionEngineScala {
     }
     l
   }
-  def allMethods(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, c: ClassJavaType): List[MethodBinding] = {
-    val methodsFound = engine.findAllMethods(c.binding, zcs)
+  def allMethods(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, c: ReferenceBinding, static: Boolean): List[MethodBinding] = {
+    val methodsFound = engine.findAllMethods(c, zcs, static)
 
     var l = List[MethodBinding]()
     for (i ← 0 until methodsFound.size) {

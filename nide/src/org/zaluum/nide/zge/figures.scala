@@ -114,9 +114,11 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
   override def img = {
     sym.info match {
       case m: MethodBinding ⇒
-        imageFactory.invokeImage(m.selector.mkString)
+        val prefix = if (m.isStatic()) m.declaringClass.compoundName.last.mkString  else ""
+        imageFactory.invokeImage(prefix +"." + m.selector.mkString + "()")
       case f: FieldBinding => 
-        imageFactory.invokeImage("."+f.name.mkString)
+        val prefix = if (f.isStatic()) f.declaringClass.compoundName.last.mkString else ""
+        imageFactory.invokeImage(prefix + "."+f.name.mkString)
       case _ ⇒
         val str = sym.params.values.headOption map { _.toString } getOrElse { "right click to select" }
         imageFactory.invokeImageError(str)

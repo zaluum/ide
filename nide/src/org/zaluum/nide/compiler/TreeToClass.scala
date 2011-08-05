@@ -52,7 +52,7 @@ trait Ref extends Tree
 case class Select(a: Tree, b: Tree) extends Ref
 case class LocalRef(id: Int, typeName: Name) extends Ref
 case class FieldRef(id:Name,descriptor:String, fromClass:Name) extends Ref 
-
+case class FieldStaticRef(id:Name,descriptor:String,fromClass:Name) extends Ref
 case class Invoke(
   obj: Tree, meth: String, param: List[Tree],
   fromClass: Name, descriptor: String, interface: Boolean) extends Tree

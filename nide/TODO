@@ -2,9 +2,9 @@ Agenda
 
 week 1-7 compiler week
 	- New
-	- Static box?
 	- write feature list on freemind
 week 8-14 
+	- field write (and static)
 	- check "end" or "cond" port names 
 	- type auto
 	- infer types on while/ifs
@@ -58,14 +58,13 @@ article ideas
 bugs
 	-s'ha d'engegar RCP en unity amb UBUNTU_MENUPROXY=0
 	-sembla que xulrunner dona algun problema d'alt consum de cpu. xulrunner 2 no?
+	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
-	- BUG Change type of a box to While or if (doesn't have template)
 	- Timed loop?
 	-suport per a multiples directors (multi-threading)
 	-backend soot? backend JDT? suport per multi backend? (generacio codi c/hadoop?)
 	-Feedback connections
-	*herencia de .zaluums? 
 	-write javadoc on zaluum files
 	-com gestionar excepcions?
 	-Extensible in/out with unfolded array inputs
@@ -82,6 +81,7 @@ LATER
 	-revisar format protobuf (simplificar, fer servir text pla?)	
 	-align tool
 	-double click or ctrl click goes to definition
+	*herencia de .zaluums? 
 	-refactor
 		- org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester
 		- org.eclipse.jdt.internal.corext.refactoring.reorg.ReorgUtils.getJavaElements .getResources
@@ -105,6 +105,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- Static method and field access
 	- field access
 	- restore clipboard
 	- gui support to change block vi

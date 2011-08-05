@@ -288,7 +288,9 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   override def tdecl = decl.asInstanceOf[ValDef]
   def templateTree = tdecl.template.get
   def lookupParam(name: Name): Option[ParamSymbol] = sys.error("")
+  // var refactor
   var info: AnyRef = null
+  var classinfo : AnyRef = null
   var params = Map[ParamSymbol, Any]()
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()

@@ -152,13 +152,18 @@ trait ContainerItem extends Item {
           o.updateOpenBox(v, Map())
           o
         case None ⇒
+          // can do better
           val Lit = Name(classOf[org.zaluum.expr.Literal].getName)
           val Inv = Name(classOf[org.zaluum.expr.Invoke].getName)
-          val Fie = Name(classOf[org.zaluum.expr.FieldAccess].getName)
+          val Fie = Name(classOf[org.zaluum.expr.GetField].getName)
+          val SFi = Name(classOf[org.zaluum.expr.GetStaticField].getName)
+          val SIn = Name(classOf[org.zaluum.expr.InvokeStatic].getName)
           val valf = v.tpe.fqName match {
             case Lit ⇒ new DirectValFigure(ContainerItem.this)
             case Inv ⇒ new ThisOpValFigure(ContainerItem.this)
             case Fie ⇒ new ThisOpValFigure(ContainerItem.this)
+            case SFi ⇒ new ThisOpValFigure(ContainerItem.this)
+            case SIn ⇒ new ThisOpValFigure(ContainerItem.this)
             case _   ⇒ new ImageValFigure(ContainerItem.this)
           }
           valf.updateValDef(v)
