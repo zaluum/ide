@@ -25,6 +25,7 @@ import org.zaluum.nide.Activator
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.zaluum.nide.eclipse.integration.model.MethodUtils
 import org.eclipse.jdt.internal.core.JavaProject
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item {
@@ -93,7 +94,7 @@ trait AutoDisposeImageFigure extends ImageFigure {
       imageFactory.destroy(desc)
   }
 }
-class InvokeValFigure(container: ContainerItem) extends ImageValFigure(container) {
+class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container) {
   private def jproject = container.viewer.zproject.jProject.asInstanceOf[JavaProject]
   override def updateValPorts() {
     super.updateValPorts()
@@ -114,8 +115,10 @@ class InvokeValFigure(container: ContainerItem) extends ImageValFigure(container
     sym.info match {
       case m: MethodBinding ⇒
         imageFactory.invokeImage(m.selector.mkString)
+      case f: FieldBinding => 
+        imageFactory.invokeImage("."+f.name.mkString)
       case _ ⇒
-        val str = sym.params.values.headOption map { _.toString } getOrElse { "right click to select method" }
+        val str = sym.params.values.headOption map { _.toString } getOrElse { "right click to select" }
         imageFactory.invokeImageError(str)
     }
   }

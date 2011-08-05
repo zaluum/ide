@@ -154,9 +154,11 @@ trait ContainerItem extends Item {
         case None ⇒
           val Lit = Name(classOf[org.zaluum.expr.Literal].getName)
           val Inv = Name(classOf[org.zaluum.expr.Invoke].getName)
+          val Fie = Name(classOf[org.zaluum.expr.FieldAccess].getName)
           val valf = v.tpe.fqName match {
             case Lit ⇒ new DirectValFigure(ContainerItem.this)
-            case Inv ⇒ new InvokeValFigure(ContainerItem.this)
+            case Inv ⇒ new ThisOpValFigure(ContainerItem.this)
+            case Fie ⇒ new ThisOpValFigure(ContainerItem.this)
             case _   ⇒ new ImageValFigure(ContainerItem.this)
           }
           valf.updateValDef(v)

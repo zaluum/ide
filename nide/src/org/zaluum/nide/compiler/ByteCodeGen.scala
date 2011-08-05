@@ -74,10 +74,11 @@ object ByteCodeGen {
               case LocalRef(id, tpe) ⇒
                 emit(rhs)
                 store(id, tpe)
-              case Select(a, FieldRef(id, typeName, fromClass)) ⇒
+              case Select(a, FieldRef(id, descriptor, fromClass)) ⇒
                 emit(a)
                 emit(rhs)
-                mv.visitFieldInsn(PUTFIELD, fromClass.internal, id.str, descriptor(typeName))
+                mv.visitFieldInsn(PUTFIELD, fromClass.internal, id.str, descriptor)
+              
             }
           case While(body, cond) ⇒
             val start = new Label()
@@ -112,8 +113,8 @@ object ByteCodeGen {
           case Select(a, b) ⇒
             emit(a)
             emit(b)
-          case FieldRef(id, typeName, fromClass) ⇒
-            mv.visitFieldInsn(GETFIELD, fromClass.internal, id.str, descriptor(typeName))
+          case FieldRef(id, descriptor, fromClass) ⇒
+            mv.visitFieldInsn(GETFIELD, fromClass.internal, id.str, descriptor)
           case This ⇒
             mv.visitVarInsn(ALOAD, 0);
           case InvokeStatic(meth, params, fromClass, descriptor) ⇒

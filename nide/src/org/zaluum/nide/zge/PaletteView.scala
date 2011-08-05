@@ -267,6 +267,7 @@ trait PageCoreListener {
           case _ if (delta.getFlags & interestingFlags) != 0 ⇒ reload()
           case _ ⇒ for (d ← delta.getAffectedChildren) processDeltaSimple(d)
         }
+      case _ => 
     }
   }
   def dispose() {

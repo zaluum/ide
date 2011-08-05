@@ -51,7 +51,8 @@ case object NullConst extends Tree
 trait Ref extends Tree
 case class Select(a: Tree, b: Tree) extends Ref
 case class LocalRef(id: Int, typeName: Name) extends Ref
-case class FieldRef(id: Name, typeName: Name, fromClass: Name) extends Ref
+case class FieldRef(id:Name,descriptor:String, fromClass:Name) extends Ref 
+
 case class Invoke(
   obj: Tree, meth: String, param: List[Tree],
   fromClass: Name, descriptor: String, interface: Boolean) extends Tree
@@ -81,7 +82,7 @@ case class L2I(a: Tree) extends UnaryExpr
 class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScope) extends ReporterAdapter with ContentsToClass {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
-
+  import ByteCodeGen.descriptor
   object rewrite {
     def apply(t: Tree) = t match {
       case b: BoxDef ⇒
@@ -129,7 +130,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
               Const(v, t)
             }
             List(Assign(
-              Select(This, FieldRef(vs.fqName, tpe.fqName, bs.fqName)),
+              Select(This, FieldRef(vs.fqName, ByteCodeGen.descriptor(tpe.fqName), bs.fqName)),
               New(tpe.fqName, values, sig)))
           case e: ExprType ⇒
             for (
@@ -144,7 +145,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
             vs.params map {
               case (param, v) ⇒
                 Invoke(
-                  Select(This, FieldRef(vs.fqName, tpe.fqName, bs.fqName)),
+                  Select(This, FieldRef(vs.fqName, descriptor(tpe.fqName), bs.fqName)),
                   param.name.str,
                   List(Const(v, param.tpe)),
                   tpe.fqName,
@@ -157,10 +158,10 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
       // widgets
       val widgets = bs.visualClass.toList flatMap { vn ⇒
         val widgetCreation: List[Tree] = List(
-          Assign(Select(This, FieldRef(widgetName, vn, bs.fqName)),
+          Assign(Select(This, FieldRef(widgetName, descriptor(vn), bs.fqName)),
             New(vn, List(NullConst), "(Ljava/awt/LayoutManager;)V")),
           Invoke(
-            Select(This, FieldRef(widgetName, vn, bs.fqName)),
+            Select(This, FieldRef(widgetName, descriptor(vn), bs.fqName)),
             "setSize",
             List(Const(b.guiSize.map(_.w).getOrElse(100), primitives.Int),
               Const(b.guiSize.map(_.h).getOrElse(100), primitives.Int)),
@@ -177,7 +178,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
     val widgetName = Name("_widget")
     def fieldRef(vs: ValSymbol, bs: BoxTypeSymbol) = {
       val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
-      FieldRef(vs.fqName, tpe.fqName, bs.fqName)
+      FieldRef(vs.fqName, descriptor(tpe.fqName), bs.fqName)
     }
     def createWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
@@ -185,7 +186,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
           val valDef = vs.tdecl
           val mainTpe = mainBox.sym
           tpe.visualClass map { cl ⇒
-            val widgetSelect = Select(fieldRef(vs, mainTpe), FieldRef(widgetName, cl, tpe.fqName))
+            val widgetSelect = Select(fieldRef(vs, mainTpe), FieldRef(widgetName, descriptor(cl), tpe.fqName))
             List[Tree](
               Invoke(
                 widgetSelect,
@@ -198,7 +199,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
                 "(IIII)V",
                 interface = false),
               Invoke(
-                Select(This, FieldRef(widgetName, mainBox.sym.visualClass.get, mainTpe.fqName)),
+                Select(This, FieldRef(widgetName, descriptor(mainBox.sym.visualClass.get), mainTpe.fqName)),
                 "add",
                 List(widgetSelect),
                 Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;",
@@ -230,7 +231,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
               "(IIII)V",
               interface = false),
             Invoke(
-              Select(This, FieldRef(widgetName, mainBox.sym.visualClass.get, mainTpe.fqName)),
+              Select(This, FieldRef(widgetName, descriptor(mainBox.sym.visualClass.get), mainTpe.fqName)),
               "add",
               List(ALoad(1)),
               Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;",

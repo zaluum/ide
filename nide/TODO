@@ -1,11 +1,9 @@
 Agenda
 
 week 1-7 compiler week
-	- BUG Change type of a box to While or if (doesn't have template)
 	- New
 	- Static box?
-	- field access
-	- write one article
+	- write feature list on freemind
 week 8-14 
 	- check "end" or "cond" port names 
 	- type auto
@@ -62,6 +60,7 @@ bugs
 	-sembla que xulrunner dona algun problema d'alt consum de cpu. xulrunner 2 no?
 	
 LATER
+	- BUG Change type of a box to While or if (doesn't have template)
 	- Timed loop?
 	-suport per a multiples directors (multi-threading)
 	-backend soot? backend JDT? suport per multi backend? (generacio codi c/hadoop?)
@@ -106,6 +105,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- field access
 	- restore clipboard
 	- gui support to change block vi
 	- If box and Switch support.

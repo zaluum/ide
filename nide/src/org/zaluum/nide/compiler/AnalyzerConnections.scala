@@ -1,6 +1,5 @@
 package org.zaluum.nide.compiler
 import scala.collection.JavaConversions.asScalaIterator
-
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
@@ -12,6 +11,8 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
+import org.eclipse.jdt.internal.compiler.lookup.ProblemFieldBinding
 
 trait AnalyzerConnections {
   self: Analyzer ⇒
@@ -285,17 +286,43 @@ trait AnalyzerConnections {
           }
       }
     }
-    def checkInvokeExprType(vs: ValSymbol) {
-      val thiz = InvokeExprType.thisPort(vs)
-      val thizOut = InvokeExprType.thisOutPort(vs)
+    def checkThisExprType(vs: ValSymbol) {
+      val tpe = vs.tpe.asInstanceOf[ThisExprType]
+      val thiz = tpe.thisPort(vs)
+      val thizOut = tpe.thisOutPort(vs)
       InvokeExprType.signatureSymbol.tpe = cud.zaluumScope.getZJavaLangString // XXX ugly
       connectedFrom(thiz) match {
         case Some((from, blame)) ⇒
           from.finalTpe match {
-            case c: ClassJavaType ⇒ invoke(vs, thiz, thizOut, c)
-            case _                ⇒ error("bad type", blame)
+            case c: ClassJavaType ⇒
+              tpe match {
+                case InvokeExprType      ⇒ invoke(vs, thiz, thizOut, c)
+                case FieldAccessExprType ⇒ fieldAccess(vs, thiz, thizOut, c)
+              }
+            case _ ⇒
+              error("bad type", blame)
           }
         case None ⇒ // not connected
+      }
+    }
+    def fieldAccess(vs: ValSymbol, obj: PortInstance, thisOut: PortInstance, c: ClassJavaType) {
+      obj.finalTpe = c
+      thisOut.finalTpe = c
+      vs.params.get(FieldAccessExprType.signatureSymbol) match {
+        case Some(fieldName: String) ⇒
+          val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME
+          ZaluumCompletionEngineScala.findField(cud, scope, c, fieldName) match {
+            case Some(p: ProblemFieldBinding) ⇒
+              error("problem field " + p + p.problemId(), vs.decl)
+            case Some(f: FieldBinding) ⇒
+              val out = FieldAccessExprType.outPort(vs)
+              out.finalTpe = cud.zaluumScope.getJavaType(f.`type`)
+              if (out.finalTpe == NoSymbol) error("field type not found", vs.decl)
+              vs.info = f
+            case None ⇒
+              error("field not found", vs.decl)
+          }
+        case _ ⇒ error("no field specified", vs.decl)
       }
     }
 
@@ -304,7 +331,6 @@ trait AnalyzerConnections {
       thisOut.finalTpe = c
       vs.params.get(InvokeExprType.signatureSymbol) match {
         case Some(InvokeExprType.Sig(selector, signature)) ⇒
-          //val m = ztd.scope.getMethod(c.binding, "toString".toCharArray(), Array(), new FakeInvocationSite(TypeBinding.VOID))
           val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME
           ZaluumCompletionEngineScala.findBySignature(cud, scope, c, selector, signature) match {
             case Some(p: ProblemMethodBinding) ⇒
@@ -371,7 +397,7 @@ trait AnalyzerConnections {
           case b: BinExprType      ⇒ checkBinExprTypes(vs)
           case LiteralExprType     ⇒ checkLiteralExprType(vs)
           case e: UnaryExprType    ⇒ checkUnaryExprType(vs)
-          case InvokeExprType      ⇒ checkInvokeExprType(vs); checkPortConnectionsTypes(vs)
+          case t: ThisExprType     ⇒ checkThisExprType(vs); checkPortConnectionsTypes(vs)
           case t: TemplateExprType ⇒ checkTemplateExprType(vs)
         }
         checkGhostPorts(vs)
@@ -398,6 +424,13 @@ object ZaluumCompletionEngineScala {
         m.signature().mkString == signature
     }
   }
+  def findField(cud: ZaluumCompilationUnitDeclaration,
+                zcs: ZaluumClassScope,
+                c: ClassJavaType, name: String) = {
+    allFields(engineFor(cud), zcs, c) find { f ⇒
+      f.name.mkString == name
+    }
+  }
 
   def engineFor(cud: ZaluumCompilationUnitDeclaration): ZaluumCompletionEngine = {
     val lookup = cud.zaluumScope.environment
@@ -407,7 +440,18 @@ object ZaluumCompletionEngineScala {
   def engineForVs(vs: ValSymbol): ZaluumCompletionEngine =
     engineFor(vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope.compilationUnitScope
       .asInstanceOf[ZaluumCompilationUnitScope].cud)
+  def allFields(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, c: ClassJavaType): List[FieldBinding] = {
+    val fieldsFound = engine.findAllFields(c.binding, zcs)
 
+    var l = List[FieldBinding]()
+    for (i ← 0 until fieldsFound.size) {
+      val o = fieldsFound.elementAt(i).asInstanceOf[Array[_]]
+      val field = o(0).asInstanceOf[FieldBinding]
+      l ::= field
+      val tpe = o(1).asInstanceOf[Object]
+    }
+    l
+  }
   def allMethods(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, c: ClassJavaType): List[MethodBinding] = {
     val methodsFound = engine.findAllMethods(c.binding, zcs)
 

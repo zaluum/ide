@@ -3,11 +3,14 @@ package org.zaluum.nide.eclipse.integration.model;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
 import org.eclipse.jdt.internal.compiler.lookup.ClassScope;
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.InvocationSite;
+import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Scope;
+import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 import org.eclipse.jdt.internal.compiler.util.ObjectVector;
 
@@ -45,6 +48,32 @@ public class ZaluumCompletionEngine {
 				-1 // receiverEnd
 		);
 		return methodsFound;
+	}
+
+	public ObjectVector findAllFields(ReferenceBinding receiverType,
+			ClassScope scope) {
+		ObjectVector fieldsFound = new ObjectVector();
+		ObjectVector localsFound = new ObjectVector();
+
+		findFields(new char[0], // selector
+				receiverType, // receiverType
+				scope, // scope
+				fieldsFound, // fieldsFound
+				localsFound, // localsFound
+				false, // onlystatic
+				new FakeInvocationSite(null), // invocationSite
+				scope, // invocationScope
+				false, // implicitCall
+				false, // canbePrefixed
+				null, // missingelements
+				null, // missingElementsStarts
+				null, // missingElementsEnds
+				false, // missingElementsHaveProblems
+				null, // castedReceiver
+				-1, // receiverStart
+				-1 // receiverEnd
+		);
+		return fieldsFound;
 	}
 
 	public void findMethods(char[] selector, TypeBinding[] typeArgTypes,
@@ -319,4 +348,188 @@ public class ZaluumCompletionEngine {
 		methodsFound.addAll(newMethodsFound);
 	}
 
+	/****************************************
+	 * 
+	 * 
+	 */
+
+	// Helper method for findFields(char[], ReferenceBinding, Scope,
+	// ObjectVector, boolean)
+	private void findFields(char[] fieldName, FieldBinding[] fields,
+			Scope scope, ObjectVector fieldsFound, ObjectVector localsFound,
+			boolean onlyStaticFields, ReferenceBinding receiverType,
+			InvocationSite invocationSite, Scope invocationScope,
+			boolean implicitCall, boolean canBePrefixed,
+			Binding[] missingElements, int[] missingElementsStarts,
+			int[] missingElementsEnds, boolean missingElementsHaveProblems,
+			char[] castedReceiver, int receiverStart, int receiverEnd) {
+
+		ObjectVector newFieldsFound = new ObjectVector();
+		// Inherited fields which are hidden by subclasses are filtered out
+		// No visibility checks can be performed without the scope &
+		// invocationSite
+
+		int fieldLength = fieldName.length;
+		next: for (int f = fields.length; --f >= 0;) {
+			FieldBinding field = fields[f];
+
+			if (field.isSynthetic())
+				continue next;
+
+			if (onlyStaticFields && !field.isStatic())
+				continue next;
+
+			if (fieldLength > field.name.length)
+				continue next;
+
+			if (!CharOperation.prefixEquals(fieldName, field.name, false /*
+																		 * ignore
+																		 * case
+																		 */))
+				continue next;
+
+			if (true && !field.canBeSeenBy(receiverType, invocationSite, scope))
+				continue next;
+
+			for (int i = fieldsFound.size; --i >= 0;) {
+				Object[] other = (Object[]) fieldsFound.elementAt(i);
+				FieldBinding otherField = (FieldBinding) other[0];
+				ReferenceBinding otherReceiverType = (ReferenceBinding) other[1];
+				if (field == otherField && receiverType == otherReceiverType)
+					continue next;
+				if (CharOperation.equals(field.name, otherField.name, true)) {
+					if (field.declaringClass
+							.isSuperclassOf(otherField.declaringClass))
+						continue next;
+					if (otherField.declaringClass.isInterface()) {
+						if (field.declaringClass == scope.getJavaLangObject())
+							continue next;
+						if (field.declaringClass.implementsInterface(
+								otherField.declaringClass, true))
+							continue next;
+					}
+					if (field.declaringClass.isInterface())
+						if (otherField.declaringClass.implementsInterface(
+								field.declaringClass, true))
+							continue next;
+					if (!canBePrefixed)
+						continue next;
+				}
+			}
+
+			for (int l = localsFound.size; --l >= 0;) {
+				LocalVariableBinding local = (LocalVariableBinding) localsFound
+						.elementAt(l);
+
+				if (CharOperation.equals(field.name, local.name, true)) {
+					SourceTypeBinding declarationType = scope
+							.enclosingSourceType();
+					if (declarationType.isAnonymousType()
+							&& declarationType != invocationScope
+									.enclosingSourceType()) {
+						continue next;
+					}
+					if (!canBePrefixed)
+						continue next;
+					break;
+				}
+			}
+
+			newFieldsFound.add(new Object[] { field, receiverType });
+
+			char[] completion = field.name;
+
+			if (castedReceiver != null) {
+				completion = CharOperation.concat(castedReceiver, completion);
+			}
+
+		}
+		fieldsFound.addAll(newFieldsFound);
+	}
+
+	public void findFields(char[] fieldName, ReferenceBinding receiverType,
+			Scope scope, ObjectVector fieldsFound, ObjectVector localsFound,
+			boolean onlyStaticFields, InvocationSite invocationSite,
+			Scope invocationScope, boolean implicitCall, boolean canBePrefixed,
+			Binding[] missingElements, int[] missingElementsStarts,
+			int[] missingElementsEnds, boolean missingElementsHaveProblems,
+			char[] castedReceiver, int receiverStart, int receiverEnd) {
+
+		if (fieldName == null)
+			return;
+
+		ReferenceBinding currentType = receiverType;
+		ReferenceBinding[] interfacesToVisit = null;
+		int nextPosition = 0;
+		do {
+			ReferenceBinding[] itsInterfaces = currentType.superInterfaces();
+			if (itsInterfaces != Binding.NO_SUPERINTERFACES) {
+				if (interfacesToVisit == null) {
+					interfacesToVisit = itsInterfaces;
+					nextPosition = interfacesToVisit.length;
+				} else {
+					int itsLength = itsInterfaces.length;
+					if (nextPosition + itsLength >= interfacesToVisit.length)
+						System.arraycopy(
+								interfacesToVisit,
+								0,
+								interfacesToVisit = new ReferenceBinding[nextPosition
+										+ itsLength + 5], 0, nextPosition);
+					nextInterface: for (int a = 0; a < itsLength; a++) {
+						ReferenceBinding next = itsInterfaces[a];
+						for (int b = 0; b < nextPosition; b++)
+							if (next == interfacesToVisit[b])
+								continue nextInterface;
+						interfacesToVisit[nextPosition++] = next;
+					}
+				}
+			}
+
+			FieldBinding[] fields = currentType.availableFields();
+			if (fields != null && fields.length > 0) {
+				findFields(fieldName, fields, scope, fieldsFound, localsFound,
+						onlyStaticFields, receiverType, invocationSite,
+						invocationScope, implicitCall, canBePrefixed,
+						missingElements, missingElementsStarts,
+						missingElementsEnds, missingElementsHaveProblems,
+						castedReceiver, receiverStart, receiverEnd);
+			}
+			currentType = currentType.superclass();
+		} while (currentType != null);
+
+		if (interfacesToVisit != null) {
+			for (int i = 0; i < nextPosition; i++) {
+				ReferenceBinding anInterface = interfacesToVisit[i];
+				FieldBinding[] fields = anInterface.availableFields();
+				if (fields != null) {
+					findFields(fieldName, fields, scope, fieldsFound,
+							localsFound, onlyStaticFields, receiverType,
+							invocationSite, invocationScope, implicitCall,
+							canBePrefixed, missingElements,
+							missingElementsStarts, missingElementsEnds,
+							missingElementsHaveProblems, castedReceiver,
+							receiverStart, receiverEnd);
+				}
+
+				ReferenceBinding[] itsInterfaces = anInterface
+						.superInterfaces();
+				if (itsInterfaces != Binding.NO_SUPERINTERFACES) {
+					int itsLength = itsInterfaces.length;
+					if (nextPosition + itsLength >= interfacesToVisit.length)
+						System.arraycopy(
+								interfacesToVisit,
+								0,
+								interfacesToVisit = new ReferenceBinding[nextPosition
+										+ itsLength + 5], 0, nextPosition);
+					nextInterface: for (int a = 0; a < itsLength; a++) {
+						ReferenceBinding next = itsInterfaces[a];
+						for (int b = 0; b < nextPosition; b++)
+							if (next == interfacesToVisit[b])
+								continue nextInterface;
+						interfacesToVisit[nextPosition++] = next;
+					}
+				}
+			}
+		}
+	}
 }

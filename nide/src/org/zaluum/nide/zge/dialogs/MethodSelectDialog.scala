@@ -37,7 +37,9 @@ class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItem
         val tr = new EditTransformer() {
           val trans: PartialFunction[Tree, Tree] = {
             case v: ValDef if vs.decl == v ⇒
-              v.copy(params = List(Param(InvokeExprType.signatureName, m.methodSignature)))
+              v.copy(
+                template = transformOption(v.template),
+                params = List(Param(InvokeExprType.signatureName, m.methodSignature)))
           }
         }
         viewer.controller.exec(tr)

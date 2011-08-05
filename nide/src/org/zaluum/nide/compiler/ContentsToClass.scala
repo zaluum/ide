@@ -1,10 +1,11 @@
 package org.zaluum.nide.compiler
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 
 trait ContentsToClass {
   self: TreeToClass ⇒
-
+  import ByteCodeGen.descriptor
   def appl(b: BoxDef): Method = {
     val bs = b.sym
     // create locals for expressions
@@ -23,14 +24,14 @@ trait ContentsToClass {
         if (pi.valSymbol == bs.thisVal) {
           Select(
             This,
-            FieldRef(pi.name, pi.finalTpe.name, bs.fqName))
+            FieldRef(pi.name, descriptor(pi.finalTpe.name), bs.fqName))
         } else {
           val vfrom = pi.valSymbol
           vfrom.tpe match {
             case vfromBs: BoxTypeSymbol ⇒
               Select(
-                Select(This, FieldRef(vfrom.fqName, vfromBs.fqName, bs.fqName)),
-                FieldRef(pi.name, pi.finalTpe.name, vfromBs.fqName))
+                Select(This, FieldRef(vfrom.fqName, descriptor(vfromBs.fqName), bs.fqName)),
+                FieldRef(pi.name, descriptor(pi.finalTpe.name), vfromBs.fqName))
             case _ ⇒
               LocalRef(localsMap(pi), pi.finalTpe.name)
           }
@@ -60,7 +61,7 @@ trait ContentsToClass {
             val tpe = vbs.fqName
             List(
               Invoke(
-                Select(This, FieldRef(vs.fqName, tpe, bs.fqName)),
+                Select(This, FieldRef(vs.fqName, descriptor(tpe), bs.fqName)),
                 "apply",
                 List(),
                 tpe,
@@ -93,6 +94,22 @@ trait ContentsToClass {
               Assign(toRef(out), invoke)
             } else invoke
             List(assOut, Assign(toRef(thisOut), toRef(obj)))
+          case FieldAccessExprType ⇒
+            val f = vs.info.asInstanceOf[FieldBinding]
+            val out = FieldAccessExprType.outPort(vs)
+            val obj = FieldAccessExprType.thisPort(vs)
+            val thisOut = FieldAccessExprType.thisOutPort(vs) // XXX optimize and use only 1 var
+            List(
+              Assign(
+                toRef(out),
+                Select(
+                  toRef(obj),
+                  FieldRef(
+                    Name(f.name.mkString),
+                    f.`type`.signature.mkString,
+                    Name(f.declaringClass.constantPoolName.mkString)))),
+              Assign(toRef(thisOut), toRef(obj))
+              )
           case LiteralExprType ⇒
             val o = LiteralExprType.outPort(vs)
             val c = vs.params.headOption match {

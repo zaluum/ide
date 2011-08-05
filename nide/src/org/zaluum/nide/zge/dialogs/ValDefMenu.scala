@@ -15,6 +15,7 @@ import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.zge.LabelItem
 import org.zaluum.nide.zge.ValDefItem
 import org.zaluum.nide.zge.Viewer
+import org.zaluum.nide.compiler.FieldAccessExprType
 
 object ValDefMenu {
   def show(viewer: Viewer, fig: ValDefItem, gui: Boolean = false) {
@@ -33,6 +34,7 @@ object ValDefMenu {
         item
       }
       def methodMenu = newItem("Method...") { new MethodSelectDialog(viewer, v).open }
+      def fieldMenu = newItem("Field...") { new FieldSelectDialog(viewer, v).open }
       def tpeMenu = newItem("Type...") { new ValDefDialog(viewer, v).open() }
       def params = newItem("Parameters...") { new ParamsDialog(viewer, v).open() }
       def cons = newItem("Constructor...") { new ConstructorDialog(viewer, v).open() }
@@ -62,6 +64,9 @@ object ValDefMenu {
             tpeMenu
           case InvokeExprType ⇒
             methodMenu
+            tpeMenu
+          case FieldAccessExprType => 
+            fieldMenu
             tpeMenu
           case _ ⇒
             params
