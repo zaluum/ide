@@ -24,6 +24,8 @@ case class If(cond: Tree, trueBlock: List[Tree], falseBlock: List[Tree]) extends
 case class Not(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
 case class Minus(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
 
+case class ArrayRef(index:Tree, arrRef:Tree, arrTpe: Type) extends Ref
+
 case class ShiftLeft(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr
 case class ShiftRight(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr
 case class UShiftRight(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr

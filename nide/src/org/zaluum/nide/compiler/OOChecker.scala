@@ -112,19 +112,42 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     connectedFrom(thiz) match {
       case Some((from, blame)) ⇒
         from.finalTpe match {
+          case a: ArrayType => 
+            thiz.finalTpe = a
+            thizOut.finalTpe = a
+            tpe match {
+              case ArrayExprType => array(vs,a)
+              case _=> error("Type must be a class", vs.decl)
+            }
           case c: ClassJavaType ⇒
             thiz.finalTpe = c
             thizOut.finalTpe = c
             tpe match {
-              case InvokeExprType ⇒ invoke(vs, thiz, thizOut, c)
+              case InvokeExprType ⇒ invoke(vs, c)
               case GetFieldExprType ⇒ withSigField(vs, c)(processGet)
               case PutFieldExprType ⇒ withSigField(vs, c)(processPut)
+              case ArrayExprType => error("Type must be array",vs.decl)
             }
           case _ ⇒
             error("bad type", blame)
         }
       case None ⇒ // not connected
     }
+  }
+  def array(vs:ValSymbol, a:ArrayType) {
+    val index = ArrayExprType.indexPort(vs)
+    val thisPort = ArrayExprType.thisPort(vs)
+    val thisOutPort =ArrayExprType.thisOutPort(vs)
+    val aPort = ArrayExprType.aPort(vs)
+    val oPort = ArrayExprType.outPort(vs)
+    index.finalTpe = primitives.Int
+    val tpe = a.dim match {
+      case 1 => a.of
+      case i if (i>1) => cud.zaluumScope.getArrayType(a.of,i-1)
+    }
+    aPort.finalTpe = tpe
+    oPort.finalTpe = tpe
+    thisPort
   }
   def withSigField(vs: ValSymbol, c: ClassJavaType)(body: (ValSymbol, Option[FieldBinding]) ⇒ Unit) {
     val tpe = vs.tpe.asInstanceOf[SignatureExprType]
@@ -135,7 +158,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case _ ⇒ error("no field specified", vs.decl)
     }
   }
-  def invoke(vs: ValSymbol, obj: PortInstance, thisOut: PortInstance, c: ClassJavaType) {
+  def invoke(vs: ValSymbol, c: ClassJavaType) {
     vs.params.get(InvokeExprType.signatureSymbol) match {
       case Some(InvokeExprType.Sig(selector, signature)) ⇒
         val m = ZaluumCompletionEngineScala.findBySignature(cud, scope(vs), c, selector, signature, false)

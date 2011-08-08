@@ -51,15 +51,18 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   def getZJavaLangString = getJavaType(Name("java.lang.String")).get;
   def javaScope: ZaluumCompilationUnitScope = this
   def lookupType(name: Name): Option[Type] = getJavaType(name)
+  def getArrayType(t:JavaType, dim: Int): ArrayType = {
+      val bind = createArrayType(t.binding, dim)
+      val a = new ArrayType(this, t, dim)
+      a.binding = bind
+      a
+  }
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray
     if (arr.isDefined) {
       val (leafname, dim) = arr.get
-      getJavaType(leafname) map { l ⇒
-        val bind = createArrayType(l.binding, dim)
-        val a = new ArrayType(this, l, dim)
-        a.binding = bind
-        a
+      getJavaType(leafname) map { t=>
+    	  getArrayType(t, dim)
       }
     } else {
       val tpe =

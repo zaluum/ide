@@ -81,6 +81,11 @@ object ByteCodeGen {
               case FieldStaticRef(id, descriptor, fromClass) ⇒
                 emit(rhs)
                 mv.visitFieldInsn(PUTSTATIC, fromClass.internal, id.str, descriptor)
+              case ArrayRef(index,arr,tpe) =>
+                emit(arr)
+                emit(index)
+                emit(rhs)
+                astore(tpe)
             }
           case While(body, cond) ⇒
             val start = new Label()
@@ -115,9 +120,13 @@ object ByteCodeGen {
           case Select(a, b) ⇒
             emit(a)
             emit(b)
+          case ArrayRef(index,array, tpe) ⇒
+            emit(array)
+          	emit(index)
+            aload(tpe)
           case FieldRef(id, descriptor, fromClass) ⇒
             mv.visitFieldInsn(GETFIELD, fromClass.internal, id.str, descriptor)
-          case FieldStaticRef(id,descriptor,fromClass) => 
+          case FieldStaticRef(id, descriptor, fromClass) ⇒
             mv.visitFieldInsn(GETSTATIC, fromClass.internal, id.str, descriptor)
           case This ⇒
             mv.visitVarInsn(ALOAD, 0);
@@ -177,6 +186,32 @@ object ByteCodeGen {
             case Double  ⇒ mv.visitLdcInsn(d.asInstanceOf[Double])
             case _       ⇒ mv.visitLdcInsn(d.asInstanceOf[String])
           }
+        }
+      }
+      def aload(t: Type) = {
+        t match {
+          case primitives.Long    ⇒ mv.visitInsn(LALOAD)
+          case primitives.Double  ⇒ mv.visitInsn(DALOAD)
+          case primitives.Float   ⇒ mv.visitInsn(FALOAD)
+          case primitives.Int     ⇒ mv.visitInsn(IALOAD)
+          case primitives.Boolean ⇒ mv.visitInsn(BALOAD)
+          case primitives.Byte    ⇒ mv.visitInsn(BALOAD)
+          case primitives.Char    ⇒ mv.visitInsn(CALOAD)
+          case primitives.Short   ⇒ mv.visitInsn(SALOAD)
+          case _                  ⇒ mv.visitInsn(AALOAD)
+        }
+      }
+      def astore(t: Type) = {
+        t match {
+          case primitives.Long    ⇒ mv.visitInsn(LASTORE)
+          case primitives.Double  ⇒ mv.visitInsn(DASTORE)
+          case primitives.Float   ⇒ mv.visitInsn(FASTORE)
+          case primitives.Int     ⇒ mv.visitInsn(IASTORE)
+          case primitives.Boolean ⇒ mv.visitInsn(BASTORE)
+          case primitives.Byte    ⇒ mv.visitInsn(BASTORE)
+          case primitives.Char    ⇒ mv.visitInsn(CASTORE)
+          case primitives.Short   ⇒ mv.visitInsn(SASTORE)
+          case _                  ⇒ mv.visitInsn(AASTORE)
         }
       }
       def store(id: Int, t: Name) = {

@@ -83,6 +83,27 @@ trait ContentsToClass {
                 toRef(IfExprType.condPort(vs)),
                 runBlock(vs.blocks(0)),
                 runBlock(vs.blocks(1))))
+          case ArrayExprType ⇒
+            val index = ArrayExprType.indexPort(vs)
+            val thisPort = ArrayExprType.thisPort(vs)
+            val thisOutPort = ArrayExprType.thisOutPort(vs)
+            val aPort = ArrayExprType.aPort(vs)
+            val oPort = ArrayExprType.outPort(vs)
+            def arrayRef = ArrayRef(index=toRef(index),arrRef=toRef(thisPort),arrTpe=aPort.finalTpe)
+            def load = Assign(toRef(oPort), arrayRef)
+            def store = Assign(arrayRef, toRef(aPort))
+            def thisOut = Assign(toRef(thisOutPort), toRef(thisPort))
+            bl.connections.connectedFrom.get(aPort) match {
+            	case Some(_) => // do store
+            	  List(
+            	      store,
+            	      Assign(toRef(oPort), toRef(aPort)),
+            	      thisOut
+            	      )
+            	case None => List(
+            	    load,
+            	    thisOut)
+          	}	
           case InvokeExprType ⇒
             val m = vs.info.asInstanceOf[MethodBinding]
             val obj = InvokeExprType.thisPort(vs)
