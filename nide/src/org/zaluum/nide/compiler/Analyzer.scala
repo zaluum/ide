@@ -193,7 +193,7 @@ trait ReporterAdapter {
   def reporter: Reporter
   def error(str: String, tree: Tree) = reporter.report(str, Some(location(tree)))
 }
-class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerConnections {
+class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
   def globLocation(t: Tree) = t.line
 
   class Namer extends Traverser(null) with ReporterAdapter {
@@ -397,7 +397,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) extends AnalyzerCo
   def runCheck(): Tree = {
     toCompile.template.blocks.headOption foreach {
       bl ⇒
-        new CheckConnections(bl, true).run()
+        new CheckConnections(bl, true,this).run()
     }
     toCompile
   }

@@ -26,8 +26,10 @@ import org.zaluum.nide.compiler.StaticExprType
 import org.zaluum.nide.compiler.InvokeStaticExprType
 import org.zaluum.nide.compiler.InvokeExprType
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
+import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 
-class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItemsSelectionDialog2(viewer.shell, false) {
+abstract class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItemsSelectionDialog2(viewer.shell, false) {
   override def isResizable = true
   override protected def okPressed() {
     execCommand()
@@ -63,20 +65,20 @@ class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItem
   val static = vs.tpe.isInstanceOf[StaticExprType]
   val binding = vs.tpe match {
     case InvokeExprType ⇒ InvokeExprType.thisPort(vs).finalTpe.binding
-    case InvokeStaticExprType ⇒
+    case s:StaticExprType ⇒
       vs.classinfo match {
         case cl: ClassJavaType ⇒ cl.binding
         case _                 ⇒ null
       }
   }
+  def findMethods(engine : ZaluumCompletionEngine, scope:ZaluumClassScope, r:ReferenceBinding) : List[MethodBinding]
   val items: Array[MethodWithNames] = binding match {
     case r: ReferenceBinding ⇒
       val engine = ZaluumCompletionEngineScala.engineForVs(vs)
       val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope; // FIXME?
-      val methods = ZaluumCompletionEngineScala.allMethods(engine, scope, r, static) // FIXME
       val jproject = viewer.zproject.jProject.asInstanceOf[JavaProject]
       val nameLookup = jproject.newNameLookup(Array[org.eclipse.jdt.core.ICompilationUnit]())
-      val paramNames = methods map { m ⇒
+      val paramNames = findMethods(engine,scope,r) map { m ⇒
         val names = MethodUtils.findMethodParamNames(m, jproject)
         val params = names.toList.flatMap(a ⇒ a)
         MethodWithNames(m, params)

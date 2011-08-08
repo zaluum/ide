@@ -1,15 +1,13 @@
 Agenda
 
-week 1-7 compiler week
-	- New
-	- write feature list on freemind
 week 8-14 
+	- write feature list on freemind
 	- field write (and static)
 	- check "end" or "cond" port names 
 	- type auto
 	- infer types on while/ifs
 	- array creation/access
-	- compilador amb parametres out apply(in in in)
+	* compilador amb parametres out apply(in in in)
 	- @Apply marks method to invoke
 	- analyzerConnections check correctness (missing ports eg)
 	- visual only boxes
@@ -105,6 +103,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- New
 	- Static method and field access
 	- field access
 	- restore clipboard

@@ -102,7 +102,9 @@ object MethodUtils {
     try {
       val tpe = javaProject.findType(tpeName)
       tpe.getMethods() find { im ⇒
-        im.getElementName == m.selector.mkString && im.getSignature == m.signature.mkString
+        (if (m.isConstructor())
+          im.isConstructor()
+        else im.getElementName == m.selector.mkString) && im.getSignature == m.signature.mkString
       } map { meth ⇒
         meth.getParameterNames()
       }

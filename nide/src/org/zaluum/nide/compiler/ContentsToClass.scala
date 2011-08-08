@@ -96,6 +96,15 @@ trait ContentsToClass {
               m.signature().mkString,
               m.declaringClass.isInterface)
             List(invokeHelper(vs, m, invoke), Assign(toRef(thisOut), toRef(obj)))
+          case NewExprType ⇒
+            val m = vs.info.asInstanceOf[MethodBinding]
+            val thiz = NewExprType.thisPort(vs)
+            val params = vs.portSides filter { ps ⇒ ps.inPort } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
+            List(
+              Assign(toRef(thiz),
+                New(Name(m.declaringClass.constantPoolName.mkString),
+                  params,
+                  m.signature().mkString)))
           case InvokeStaticExprType ⇒
             val m = vs.info.asInstanceOf[MethodBinding]
             // TODO share with invoke

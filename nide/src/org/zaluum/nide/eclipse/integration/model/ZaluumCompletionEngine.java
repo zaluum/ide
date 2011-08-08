@@ -1,5 +1,8 @@
 package org.zaluum.nide.eclipse.integration.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
 import org.eclipse.jdt.internal.compiler.lookup.ClassScope;
@@ -20,6 +23,37 @@ public class ZaluumCompletionEngine {
 
 	public ZaluumCompletionEngine(LookupEnvironment lookupEnvironment) {
 		this.lookupEnvironment = lookupEnvironment;
+	}
+
+	public List<MethodBinding> findAllConstructors(ReferenceBinding currentType,
+			Scope scope) {
+		FakeInvocationSite invocationSite = new FakeInvocationSite(null);
+		// No visibility checks can be performed without the scope &
+		// invocationSite
+		List<MethodBinding> found = new ArrayList<MethodBinding>();
+		MethodBinding[] methods = currentType.availableMethods();
+		if (methods != null) {
+			next: for (int f = methods.length; --f >= 0;) {
+				MethodBinding constructor = methods[f];
+				if (constructor.isConstructor()) {
+
+					if (constructor.isSynthetic())
+						continue next;
+
+					if (constructor.isViewedAsDeprecated()
+							&& !scope
+									.isDefinedInSameUnit(constructor.declaringClass))
+						continue next;
+
+					if (!constructor.canBeSeenBy(invocationSite, scope)) {
+						if (!constructor.isProtected())
+							continue next;
+					}
+					found.add(constructor);
+				}
+			}
+		}
+		return found;
 	}
 
 	public ObjectVector findAllMethods(ReferenceBinding receiverType,

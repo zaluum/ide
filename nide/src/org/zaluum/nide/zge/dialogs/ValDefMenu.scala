@@ -18,6 +18,11 @@ import org.zaluum.nide.zge.Viewer
 import org.zaluum.nide.compiler.GetFieldExprType
 import org.zaluum.nide.compiler.GetStaticFieldExprType
 import org.zaluum.nide.compiler.InvokeStaticExprType
+import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
+import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
+import org.zaluum.nide.compiler.NewExprType
 
 object ValDefMenu {
   def show(viewer: Viewer, fig: ValDefItem, gui: Boolean = false) {
@@ -36,7 +41,21 @@ object ValDefMenu {
         item
       }
       def staticMenu = newItem("Target class...") { new StaticSelectDialog(viewer, v).open }
-      def methodMenu = newItem("Method...") { new MethodSelectDialog(viewer, v).open }
+      def findMethods(static:Boolean) = 
+        new MethodSelectDialog(viewer, v) {
+          def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) = 
+            ZaluumCompletionEngineScala.allMethods(engine, scope, r, static)
+        }
+      
+      def methodMenu = newItem("Method...") { findMethods(false).open }
+      def staticMethodMenu = newItem("Method...") { findMethods(true).open }
+      def constructorSelectMenu = newItem("Constructor...") { 
+        new MethodSelectDialog(viewer, v) {
+          def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) = 
+            ZaluumCompletionEngineScala.allConstructors(engine, scope, r)
+        }.open 
+      }
+
       def fieldMenu = newItem("Field...") { new FieldSelectDialog(viewer, v).open }
       def tpeMenu = newItem("Type...") { new ValDefDialog(viewer, v).open() }
       def params = newItem("Parameters...") { new ParamsDialog(viewer, v).open() }
@@ -67,7 +86,7 @@ object ValDefMenu {
             tpeMenu
           case InvokeStaticExprType ⇒
             staticMenu
-            methodMenu
+            staticMethodMenu
             tpeMenu
           case GetStaticFieldExprType ⇒
             staticMenu
@@ -79,6 +98,9 @@ object ValDefMenu {
           case GetFieldExprType ⇒
             fieldMenu
             tpeMenu
+          case NewExprType =>
+            staticMenu
+            constructorSelectMenu
           case _ ⇒
             params
             tpeMenu
