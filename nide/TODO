@@ -1,12 +1,12 @@
 Agenda
 
 week 8-14 
+	- BUG null at org.zaluum.nide.zge.RichFigure.translateFromViewport(baseFigures.scala:63)
+	- array creation/access
 	- write feature list on freemind
-	- field write (and static)
 	- check "end" or "cond" port names 
 	- type auto
 	- infer types on while/ifs
-	- array creation/access
 	* compilador amb parametres out apply(in in in)
 	- @Apply marks method to invoke
 	- analyzerConnections check correctness (missing ports eg)

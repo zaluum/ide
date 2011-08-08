@@ -17,9 +17,12 @@ sealed trait ResultExprType extends ExprType {
   ports += (o.name -> o)
   def outPort(v: ValSymbol) = v.findPortInstance(o).get
 }
-sealed abstract class UnaryExprType(val nameStr: String) extends ResultExprType {
+sealed trait OneParameter extends ExprType {
   val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
   ports += (a.name -> a)
+  def aPort(vs:ValSymbol) = vs.findPortInstance(a).get
+}
+sealed abstract class UnaryExprType(val nameStr: String) extends ResultExprType with OneParameter{
 
   def unaryPortInstancesOf(v: ValSymbol) =
     (v.findPortInstance(a).get, v.findPortInstance(o).get)
@@ -85,6 +88,10 @@ object InvokeExprType extends ThisExprType("Invoke")
 object InvokeStaticExprType extends StaticExprType("InvokeStatic")
 object GetFieldExprType extends ThisExprType("GetField") with ResultExprType
 object GetStaticFieldExprType extends StaticExprType("GetStaticField") with ResultExprType
+
+object PutFieldExprType extends ThisExprType("PutField") with OneParameter
+object PutStaticFieldExprType extends StaticExprType("PutStaticField") with OneParameter
+
 object LiteralExprType extends ResultExprType {
   val nameStr = "Literal"
   val paramName = Name("literal")
@@ -129,6 +136,8 @@ object Expressions {
     NewExprType,
     InvokeExprType,
     InvokeStaticExprType,
+    PutFieldExprType,
+    PutStaticFieldExprType,
     GetFieldExprType,
     GetStaticFieldExprType,
     WhileExprType,
@@ -161,6 +170,8 @@ object Expressions {
     MulExprType,
     DivExprType,
     RemExprType) map { e ⇒ e.fqName -> e } toMap
+  lazy val thisFigureExpressions = all.values.filter { f => 
+    f.isInstanceOf[ThisExprType] || f.isInstanceOf[StaticExprType] }.map { e=> e.fqName -> e} toMap
   val templateExpressions = List(
     IfExprType,
     WhileExprType) map { e ⇒ e.fqName -> e } toMap

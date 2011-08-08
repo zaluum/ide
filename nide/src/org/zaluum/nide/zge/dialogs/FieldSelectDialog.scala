@@ -28,6 +28,7 @@ import org.zaluum.nide.compiler.StaticExprType
 import org.zaluum.nide.compiler.SignatureExprType
 import org.zaluum.nide.compiler.GetStaticFieldExprType
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
+import org.zaluum.nide.compiler.ThisExprType
 
 class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItemsSelectionDialog2(viewer.shell, false) {
   override def isResizable = true
@@ -66,8 +67,8 @@ class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItems
   val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME 
 
   val binding = vs.tpe match {
-    case GetFieldExprType ⇒ GetFieldExprType.thisPort(vs).finalTpe.binding
-    case GetStaticFieldExprType ⇒
+    case t:ThisExprType ⇒ t.thisPort(vs).finalTpe.binding
+    case s:StaticExprType  ⇒
       vs.classinfo match {
         case cl: ClassJavaType ⇒ cl.binding
         case _                 ⇒ null

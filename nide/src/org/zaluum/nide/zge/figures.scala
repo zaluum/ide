@@ -108,6 +108,14 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
               }
           }
         }
+      case f: FieldBinding ⇒
+        val opi = sym.tpe match {
+          case r: ResultExprType ⇒ Some(r.outPort(sym))
+          case o: OneParameter   ⇒ Some(o.aPort(sym))
+          case _                 ⇒ None
+        }
+        for (pi ← opi; port ← ports.find(_.ps.pi == pi))
+          port.nameOverride = f.name.mkString
       case _ ⇒
     }
   }
@@ -119,7 +127,7 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
             "new " + m.declaringClass.compoundName.last.mkString
           else {
             (if (m.isStatic()) m.declaringClass.compoundName.last.mkString else "") +
-             "." + m.selector.mkString + "()"
+              "." + m.selector.mkString + "()"
           }
         imageFactory.invokeImage(txt)
       case f: FieldBinding ⇒

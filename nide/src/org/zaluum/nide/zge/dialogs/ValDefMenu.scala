@@ -23,6 +23,8 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.zaluum.nide.compiler.NewExprType
+import org.zaluum.nide.compiler.PutFieldExprType
+import org.zaluum.nide.compiler.PutStaticFieldExprType
 
 object ValDefMenu {
   def show(viewer: Viewer, fig: ValDefItem, gui: Boolean = false) {
@@ -92,10 +94,17 @@ object ValDefMenu {
             staticMenu
             fieldMenu
             tpeMenu
+          case PutStaticFieldExprType ⇒
+            staticMenu
+            fieldMenu
+            tpeMenu
           case InvokeExprType ⇒
             methodMenu
             tpeMenu
           case GetFieldExprType ⇒
+            fieldMenu
+            tpeMenu
+          case PutFieldExprType => 
             fieldMenu
             tpeMenu
           case NewExprType =>

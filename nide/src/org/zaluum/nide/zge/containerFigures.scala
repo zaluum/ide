@@ -2,7 +2,6 @@ package org.zaluum.nide.zge
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.mutable.Buffer
-
 import org.eclipse.draw2d.PositionConstants.EAST
 import org.eclipse.draw2d.PositionConstants.NORTH
 import org.eclipse.draw2d.PositionConstants.SOUTH
@@ -40,9 +39,10 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.ValSymbol
 import org.zaluum.nide.compiler.Vector2
-
 import draw2dConversions._
 import RichFigure._
+import org.zaluum.nide.compiler.LiteralExprType
+import org.zaluum.nide.compiler.Expressions
 
 trait ContainerItem extends Item {
   def viewer: Viewer
@@ -152,21 +152,13 @@ trait ContainerItem extends Item {
           o.updateOpenBox(v, Map())
           o
         case None ⇒
-          // can do better
-          val New = Name(classOf[org.zaluum.expr.New].getName)
-          val Lit = Name(classOf[org.zaluum.expr.Literal].getName)
-          val Inv = Name(classOf[org.zaluum.expr.Invoke].getName)
-          val Fie = Name(classOf[org.zaluum.expr.GetField].getName)
-          val SFi = Name(classOf[org.zaluum.expr.GetStaticField].getName)
-          val SIn = Name(classOf[org.zaluum.expr.InvokeStatic].getName)
           val valf = v.tpe.fqName match {
-            case Lit ⇒ new DirectValFigure(ContainerItem.this)
-            case New ⇒ new ThisOpValFigure(ContainerItem.this)
-            case Inv ⇒ new ThisOpValFigure(ContainerItem.this)
-            case Fie ⇒ new ThisOpValFigure(ContainerItem.this)
-            case SFi ⇒ new ThisOpValFigure(ContainerItem.this)
-            case SIn ⇒ new ThisOpValFigure(ContainerItem.this)
-            case _   ⇒ new ImageValFigure(ContainerItem.this)
+            case LiteralExprType.fqName ⇒
+              new DirectValFigure(ContainerItem.this)
+            case name if (Expressions.thisFigureExpressions.contains(name)) ⇒
+              new ThisOpValFigure(ContainerItem.this)
+            case _ ⇒
+              new ImageValFigure(ContainerItem.this)
           }
           valf.updateValDef(v)
           valf

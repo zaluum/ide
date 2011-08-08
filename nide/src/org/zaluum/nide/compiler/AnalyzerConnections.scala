@@ -1,10 +1,10 @@
 package org.zaluum.nide.compiler
 import scala.collection.JavaConversions.asScalaIterator
-
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph.CycleFoundException
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.traverse.TopologicalOrderIterator
+import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 
 class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends ReporterAdapter {
   def location(tree: Tree) = analyzer.globLocation(tree)
@@ -184,7 +184,12 @@ trait CheckerPart extends ReporterAdapter {
   def bl = c.bl
   def location(tree: Tree) = c.location(tree)
   def reporter = c.reporter
-  def scope(vs: ValSymbol) = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME
+  def scope(vs: ValSymbol) : ZaluumClassScope = {
+    vs.owner.template match {
+      case b:BoxTypeSymbol => b.javaScope
+      case own:ValSymbol => scope(own) 
+    }
+  }
   def connectedFrom(p: PortInstance) = bl.connections.connectedFrom.get(p)
   def fromTpe(p: PortInstance) = connectedFrom(p).map { _._1.finalTpe }.getOrElse(NoSymbol)
   def blame(p: PortInstance) = connectedFrom(p) map { _._2 }

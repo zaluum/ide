@@ -81,7 +81,6 @@ object ByteCodeGen {
               case FieldStaticRef(id, descriptor, fromClass) ⇒
                 emit(rhs)
                 mv.visitFieldInsn(PUTSTATIC, fromClass.internal, id.str, descriptor)
-              
             }
           case While(body, cond) ⇒
             val start = new Label()

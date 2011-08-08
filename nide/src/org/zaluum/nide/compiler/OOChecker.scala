@@ -9,18 +9,26 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
   /*
      * helpers for methods and fields
      */
-  def processField(vs: ValSymbol, f: Option[FieldBinding]) = f match {
-    case Some(p: ProblemFieldBinding) ⇒
-      error("problem field " + p + p.problemId(), vs.decl)
-    case Some(f: FieldBinding) ⇒
+  def processField(vs: ValSymbol, f: Option[FieldBinding])(body: (ValSymbol, FieldBinding) ⇒ Unit) = f match {
+    case Some(p: ProblemFieldBinding) ⇒ error("problem field " + p + p.problemId(), vs.decl)
+    case Some(f: FieldBinding)        ⇒ body(vs, f); vs.info = f
+    case None                         ⇒ error("field not found", vs.decl)
+  }
+  def processGet(vs: ValSymbol, f: Option[FieldBinding]) {
+    processField(vs, f) { (vs, f) ⇒
       val out = vs.tpe.asInstanceOf[ResultExprType].outPort(vs)
       out.finalTpe = cud.zaluumScope.getJavaType(f.`type`)
       if (out.finalTpe == NoSymbol) error("field type not found", vs.decl)
-      vs.info = f
-    case None ⇒
-      error("field not found", vs.decl)
+    }
   }
-  def processMethod(vs: ValSymbol, m: Option[MethodBinding])(body: MethodBinding=>Unit) = m match {
+  def processPut(vs: ValSymbol, f: Option[FieldBinding]) {
+    processField(vs, f) { (vs, f) ⇒
+      val a = vs.tpe.asInstanceOf[OneParameter].aPort(vs)
+      a.finalTpe = cud.zaluumScope.getJavaType(f.`type`)
+      if (a.finalTpe == NoSymbol) error("field type not found", vs.decl)
+    }
+  }
+  def processMethod(vs: ValSymbol, m: Option[MethodBinding])(body: MethodBinding ⇒ Unit) = m match {
     case Some(p: ProblemMethodBinding) ⇒
       error("problem method " + p + p.problemId(), vs.decl)
     case Some(m) ⇒
@@ -54,7 +62,8 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
             tpe match {
               case NewExprType            ⇒ checkNew(vs, c)
               case InvokeStaticExprType   ⇒ invokeStatic(vs, c)
-              case GetStaticFieldExprType ⇒ getStaticField(vs, c)
+              case GetStaticFieldExprType ⇒ processStaticField(vs, c)(processGet)
+              case PutStaticFieldExprType ⇒ processStaticField(vs, c)(processPut)
             }
           case _ ⇒ error("Class " + className + " not found", vs.decl)
         }
@@ -63,14 +72,14 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
   }
   def checkNew(vs: ValSymbol, c: ClassJavaType) {
     if (!c.binding.canBeInstantiated()) {
-      error("Class " + c.name.str + " cannot be instantiated",vs.decl);
+      error("Class " + c.name.str + " cannot be instantiated", vs.decl);
     }
     vs.params.get(NewExprType.signatureSymbol) match {
-      case Some(NewExprType.Sig(name,signature)) ⇒
-        val cons = ZaluumCompletionEngineScala.findConstructor(cud, scope(vs),c.binding, signature)
-        processMethod(vs,cons){ m=>
+      case Some(NewExprType.Sig(name, signature)) ⇒
+        val cons = ZaluumCompletionEngineScala.findConstructor(cud, scope(vs), c.binding, signature)
+        processMethod(vs, cons) { m ⇒
           NewExprType.thisPort(vs).finalTpe = cud.zaluumScope.getJavaType(m.declaringClass)
-      	}
+        }
       case _ ⇒ error("No constructor specified", vs.decl) // XXdefault?
     }
   }
@@ -78,18 +87,20 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     vs.params.get(InvokeStaticExprType.signatureSymbol) match {
       case Some(InvokeStaticExprType.Sig(selector, signature)) ⇒
         val m = ZaluumCompletionEngineScala.findBySignature(cud, scope(vs), c, selector, signature, true)
-        processMethod(vs,m){_=>}
+        processMethod(vs, m) { _ ⇒ }
       case _ ⇒ error("Static method not specified", vs.decl)
     }
   }
-  def getStaticField(vs: ValSymbol, c: ClassJavaType) {
-    vs.params.get(GetStaticFieldExprType.signatureSymbol) match {
+  def processStaticField(vs: ValSymbol, c: ClassJavaType)(body: (ValSymbol, Option[FieldBinding]) ⇒ Unit) {
+    val tpe = vs.tpe.asInstanceOf[SignatureExprType]
+    vs.params.get(tpe.signatureSymbol) match {
       case Some(fieldName: String) ⇒
         val f = ZaluumCompletionEngineScala.findField(cud, scope(vs), c.binding, fieldName, true)
-        processField(vs, f)
+        withSigField(vs, c)(body)
       case _ ⇒ error("Static field not specified", vs.decl)
     }
   }
+
   /*
      * this
      */
@@ -102,9 +113,12 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case Some((from, blame)) ⇒
         from.finalTpe match {
           case c: ClassJavaType ⇒
+            thiz.finalTpe = c
+            thizOut.finalTpe = c
             tpe match {
-              case InvokeExprType   ⇒ invoke(vs, thiz, thizOut, c)
-              case GetFieldExprType ⇒ getField(vs, thiz, thizOut, c)
+              case InvokeExprType ⇒ invoke(vs, thiz, thizOut, c)
+              case GetFieldExprType ⇒ withSigField(vs, c)(processGet)
+              case PutFieldExprType ⇒ withSigField(vs, c)(processPut)
             }
           case _ ⇒
             error("bad type", blame)
@@ -112,24 +126,20 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case None ⇒ // not connected
     }
   }
-  def getField(vs: ValSymbol, obj: PortInstance, thisOut: PortInstance, c: ClassJavaType) {
-    obj.finalTpe = c
-    thisOut.finalTpe = c
-    vs.params.get(GetFieldExprType.signatureSymbol) match {
+  def withSigField(vs: ValSymbol, c: ClassJavaType)(body: (ValSymbol, Option[FieldBinding]) ⇒ Unit) {
+    val tpe = vs.tpe.asInstanceOf[SignatureExprType]
+    vs.params.get(tpe.signatureSymbol) match {
       case Some(fieldName: String) ⇒
         val f = ZaluumCompletionEngineScala.findField(cud, scope(vs), c.binding, fieldName, false)
-        processField(vs, f)
+        body(vs, f)
       case _ ⇒ error("no field specified", vs.decl)
     }
   }
-
   def invoke(vs: ValSymbol, obj: PortInstance, thisOut: PortInstance, c: ClassJavaType) {
-    obj.finalTpe = c
-    thisOut.finalTpe = c
     vs.params.get(InvokeExprType.signatureSymbol) match {
       case Some(InvokeExprType.Sig(selector, signature)) ⇒
         val m = ZaluumCompletionEngineScala.findBySignature(cud, scope(vs), c, selector, signature, false)
-        processMethod(vs, m){_=>}
+        processMethod(vs, m) { _ ⇒ }
       case _ ⇒ error("signature missing", vs.decl)
     }
   }

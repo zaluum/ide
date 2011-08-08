@@ -116,6 +116,21 @@ trait ContentsToClass {
                 fromClass = Name(m.declaringClass.constantPoolName.mkString),
                 descriptor = m.signature.mkString)
             List(invokeHelper(vs, m, invoke))
+          case PutFieldExprType ⇒
+            val f = vs.info.asInstanceOf[FieldBinding]
+            val a = PutFieldExprType.aPort(vs)
+            val obj = PutFieldExprType.thisPort(vs)
+            val thisOut = PutFieldExprType.thisOutPort(vs)
+            List(
+              Assign(
+                Select(
+                  toRef(obj),
+                  FieldRef(
+                    Name(f.name.mkString),
+                    f.`type`.signature.mkString,
+                    Name(f.declaringClass.constantPoolName.mkString))),
+                toRef(a)),
+              Assign(toRef(thisOut), toRef(obj)))
           case GetFieldExprType ⇒
             val f = vs.info.asInstanceOf[FieldBinding]
             val out = GetFieldExprType.outPort(vs)
@@ -134,10 +149,23 @@ trait ContentsToClass {
           case GetStaticFieldExprType ⇒
             val f = vs.info.asInstanceOf[FieldBinding]
             val out = GetStaticFieldExprType.outPort(vs)
-            List(Assign(toRef(out), FieldStaticRef(
-              Name(f.name.mkString),
-              f.`type`.signature.mkString,
-              Name(f.declaringClass.constantPoolName.mkString))))
+            List(
+              Assign(
+                toRef(out),
+                FieldStaticRef(
+                  Name(f.name.mkString),
+                  f.`type`.signature.mkString,
+                  Name(f.declaringClass.constantPoolName.mkString))))
+          case PutStaticFieldExprType ⇒
+            val f = vs.info.asInstanceOf[FieldBinding]
+            val a = PutStaticFieldExprType.aPort(vs)
+            List(
+              Assign(
+                FieldStaticRef(
+                  Name(f.name.mkString),
+                  f.`type`.signature.mkString,
+                  Name(f.declaringClass.constantPoolName.mkString)),
+                toRef(a)))
           case LiteralExprType ⇒
             val o = LiteralExprType.outPort(vs)
             val c = vs.params.headOption match {
