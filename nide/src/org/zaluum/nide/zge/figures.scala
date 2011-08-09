@@ -134,8 +134,19 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
         val prefix = if (f.isStatic()) f.declaringClass.compoundName.last.mkString else ""
         imageFactory.invokeImage(prefix + "." + f.name.mkString)
       case _ ⇒
-        val str = sym.params.values.headOption map { _.toString } getOrElse { "right click to select" }
-        imageFactory.invokeImageError(str)
+        val str = sym.tpe match {
+          case NewArrayExprType=>
+            val pi = NewArrayExprType.thisPort(sym)
+            pi.finalTpe match {
+              case tpe:ArrayType => Some("new " + tpe.of.name.str.split('.').last + "[]"*tpe.dim)
+              case _ => None
+            }
+          case _ => None 
+        }
+        str match {
+          case Some(str) => imageFactory.invokeImage(str)
+          case None => imageFactory.invokeImageError("right click me")
+        }
     }
   }
 }

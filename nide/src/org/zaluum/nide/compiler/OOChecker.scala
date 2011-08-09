@@ -41,14 +41,36 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
           case Some(c: ClassJavaType) ⇒
             vs.classinfo = c
             tpe match {
+              case NewArrayExprType     ⇒ checkNewArray(vs, c)
               case NewExprType          ⇒ checkNew(vs, c)
               case InvokeStaticExprType ⇒ invokeStatic(vs, c)
               case StaticFieldExprType  ⇒ processStaticField(vs, c)
+            }
+          case Some(p: PrimitiveJavaType) ⇒
+            vs.classinfo = p
+            tpe match {
+              case NewArrayExprType ⇒ checkNewArray(vs, p)
+              case _                ⇒ error("Type must be a class", vs.decl)
             }
           case _ ⇒ error("Class " + className + " not found", vs.decl)
         }
       case None ⇒ error("no class specified", vs.decl)
     }
+  }
+  def checkNewArray(vs: ValSymbol, t: JavaType) {
+    val dims = vs.params.get(NewArrayExprType.arrayDimSymbol) match {
+      case Some(dimsStr: String) ⇒
+        try { dimsStr.toInt } catch { case e ⇒ error("Cannot parse", vs.decl); 1 }
+      case None ⇒ 1
+    }
+    for (i ← 1 to dims) {
+      val name = Name("d"+i)
+      val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(name).pi }
+      in.missing = false
+      in.finalTpe = primitives.Int
+    }
+    val result = NewArrayExprType.thisPort(vs)
+    result.finalTpe = cud.zaluumScope.getArrayType(t,dims)
   }
   def checkNew(vs: ValSymbol, c: ClassJavaType) {
     if (!c.binding.canBeInstantiated()) {

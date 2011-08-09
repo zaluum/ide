@@ -23,6 +23,7 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.zaluum.nide.compiler.NewExprType
+import org.zaluum.nide.compiler.NewArrayExprType
 
 object ValDefMenu {
   def show(viewer: Viewer, fig: ValDefItem, gui: Boolean = false) {
@@ -41,21 +42,21 @@ object ValDefMenu {
         item
       }
       def staticMenu = newItem("Target class...") { new StaticSelectDialog(viewer, v).open }
-      def findMethods(static:Boolean) = 
+      def findMethods(static: Boolean) =
         new MethodSelectDialog(viewer, v) {
-          def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) = 
+          def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) =
             ZaluumCompletionEngineScala.allMethods(engine, scope, r, static)
         }
-      
+
       def methodMenu = newItem("Method...") { findMethods(false).open }
       def staticMethodMenu = newItem("Method...") { findMethods(true).open }
-      def constructorSelectMenu = newItem("Constructor...") { 
+      def constructorSelectMenu = newItem("Constructor...") {
         new MethodSelectDialog(viewer, v) {
-          def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) = 
+          def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) =
             ZaluumCompletionEngineScala.allConstructors(engine, scope, r)
-        }.open 
+        }.open
       }
-
+      def dimensionsMenu = newItem("Dimensions...") { new DimensionsDialog(viewer, v).open }
       def fieldMenu = newItem("Field...") { new FieldSelectDialog(viewer, v).open }
       def tpeMenu = newItem("Type...") { new ValDefDialog(viewer, v).open() }
       def params = newItem("Parameters...") { new ParamsDialog(viewer, v).open() }
@@ -83,28 +84,26 @@ object ValDefMenu {
           case b: BoxTypeSymbol ⇒
             cons
             params
-            tpeMenu
           case InvokeStaticExprType ⇒
             staticMenu
             staticMethodMenu
-            tpeMenu
           case StaticFieldExprType ⇒
             staticMenu
             fieldMenu
-            tpeMenu
           case InvokeExprType ⇒
             methodMenu
-            tpeMenu
           case FieldExprType ⇒
             fieldMenu
-            tpeMenu
-          case NewExprType =>
+          case NewExprType ⇒
             staticMenu
             constructorSelectMenu
+          case NewArrayExprType ⇒
+            staticMenu
+            dimensionsMenu
           case _ ⇒
             params
-            tpeMenu
         }
+        tpeMenu
     }
 
     label.setSelection(if (gui) valDef.labelGui.isDefined else valDef.label.isDefined)

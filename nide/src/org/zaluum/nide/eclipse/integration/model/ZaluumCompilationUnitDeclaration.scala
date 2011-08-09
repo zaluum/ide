@@ -1,7 +1,6 @@
 package org.zaluum.nide.eclipse.integration.model
 
 import scala.collection.mutable.Buffer
-
 import org.eclipse.jdt.core.compiler.CategorizedProblem
 import org.eclipse.jdt.core.compiler.CharOperation
 import org.eclipse.jdt.internal.compiler.ast.ASTNode
@@ -38,13 +37,13 @@ import org.zaluum.nide.compiler.Parser
 import org.zaluum.nide.compiler.Reporter
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.TreeToClass
-
 import JDTInternalUtils.aToString
 import JDTInternalUtils.stringToA
 import ZaluumCompilationUnitDeclaration.NON_EXISTENT_POSITION
 import ZaluumCompilationUnitDeclaration.nameToPrimitiveTypeId
 import ZaluumCompilationUnitDeclaration.toMainName
 import javax.swing.JPanel
+import org.eclipse.jdt.internal.compiler.ast.ArrayQualifiedTypeReference
 
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
@@ -216,7 +215,13 @@ class ZaluumCompilationUnitDeclaration(
     val tpe =
       name.asArray match {
         case Some((leaf, dim)) ⇒
-          new ArrayTypeReference(leaf.str.toCharArray, dim, NON_EXISTENT_POSITION);
+          if (nameToPrimitiveTypeId.contains(leaf.str)) {
+            TypeReference.baseTypeReference(nameToPrimitiveTypeId(leaf.str), dim)
+          }else if (leaf.str.contains('.')) {
+            val compoundName = CharOperation.splitOn('.', leaf.str.toCharArray)
+            new ArrayQualifiedTypeReference(compoundName, dim, Array.fill(compoundName.length)(NON_EXISTENT_POSITION))
+          }else 
+        	new ArrayTypeReference(leaf.str.toCharArray, dim, NON_EXISTENT_POSITION);
         case None ⇒
           if (nameToPrimitiveTypeId.contains(name.str)) {
             TypeReference.baseTypeReference(nameToPrimitiveTypeId(name.str), 0)

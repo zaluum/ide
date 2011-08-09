@@ -79,10 +79,17 @@ sealed abstract class StaticExprType(val nameStr: String) extends SignatureExprT
   val classSymbol = new ParamSymbol(null, className)
   params += (className -> classSymbol)
 }
+object NewArrayExprType extends StaticExprType("NewArray") {
+  val thiz = new PortSymbol(this, Name("this"), Point(0, 0), Out)
+  ports += (thiz.name -> thiz)
+  def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
+  val arrayDimName = Name("arrayDim")
+  val arrayDimSymbol = new ParamSymbol(null, arrayDimName)
+  params += (arrayDimName -> arrayDimSymbol)
+}
 object NewExprType extends StaticExprType("New") {
   val thiz = new PortSymbol(this, Name("this"), Point(0, 0), Out)
   ports += (thiz.name -> thiz)
-
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
 }
 object InvokeExprType extends ThisExprType("Invoke")
@@ -137,6 +144,7 @@ object RemExprType extends MathExprType("Rem")
 object Expressions {
   val all = List(
     ArrayExprType,
+    NewArrayExprType,
     NewExprType,
     InvokeExprType,
     InvokeStaticExprType,

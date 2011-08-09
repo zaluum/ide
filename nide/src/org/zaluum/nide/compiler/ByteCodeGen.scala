@@ -120,6 +120,21 @@ object ByteCodeGen {
           case Select(a, b) ⇒
             emit(a)
             emit(b)
+          case NewArray(sizes, tpe) => 
+            sizes match {
+              case i :: Nil =>
+                emit(i)
+                tpe match {
+                  case p:PrimitiveJavaType => 
+                  	mv.visitIntInsn(NEWARRAY,asmType(p))
+                  case j:ClassJavaType=>
+                    mv.visitTypeInsn(ANEWARRAY,j.fqName.internal)
+                }
+              case more =>
+                sizes foreach { i => emit(i)}
+                val desc = "["*sizes.length + descriptor(tpe.fqName)
+                mv.visitMultiANewArrayInsn(desc, sizes.length)
+            }
           case ArrayRef(index,array, tpe) ⇒
             emit(array)
           	emit(index)
@@ -187,6 +202,16 @@ object ByteCodeGen {
             case _       ⇒ mv.visitLdcInsn(d.asInstanceOf[String])
           }
         }
+      }
+      def asmType(t:Type) = t match {
+          case primitives.Long    ⇒ T_LONG
+          case primitives.Double  ⇒ T_DOUBLE
+          case primitives.Float   ⇒ T_FLOAT
+          case primitives.Int     ⇒ T_INT
+          case primitives.Boolean ⇒ T_BOOLEAN
+          case primitives.Byte    ⇒ T_BYTE
+          case primitives.Char    ⇒ T_CHAR
+          case primitives.Short   ⇒ T_SHORT
       }
       def aload(t: Type) = {
         t match {

@@ -2,6 +2,7 @@ package org.zaluum.nide.compiler
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
+import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 
 trait ContentsToClass {
   self: TreeToClass ⇒
@@ -89,21 +90,20 @@ trait ContentsToClass {
             val thisOutPort = ArrayExprType.thisOutPort(vs)
             val aPort = ArrayExprType.aPort(vs)
             val oPort = ArrayExprType.outPort(vs)
-            def arrayRef = ArrayRef(index=toRef(index),arrRef=toRef(thisPort),arrTpe=aPort.finalTpe)
-            def load = Assign(toRef(oPort), arrayRef)
-            def store = Assign(arrayRef, toRef(aPort))
-            def thisOut = Assign(toRef(thisOutPort), toRef(thisPort))
+              def arrayRef = ArrayRef(index = toRef(index), arrRef = toRef(thisPort), arrTpe = aPort.finalTpe)
+              def load = Assign(toRef(oPort), arrayRef)
+              def store = Assign(arrayRef, toRef(aPort))
+              def thisOut = Assign(toRef(thisOutPort), toRef(thisPort))
             bl.connections.connectedFrom.get(aPort) match {
-            	case Some(_) => // do store
-            	  List(
-            	      store,
-            	      Assign(toRef(oPort), toRef(aPort)),
-            	      thisOut
-            	      )
-            	case None => List(
-            	    load,
-            	    thisOut)
-          	}	
+              case Some(_) ⇒ // do store
+                List(
+                  store,
+                  Assign(toRef(oPort), toRef(aPort)),
+                  thisOut)
+              case None ⇒ List(
+                load,
+                thisOut)
+            }
           case InvokeExprType ⇒
             val m = vs.info.asInstanceOf[MethodBinding]
             val obj = InvokeExprType.thisPort(vs)
@@ -126,6 +126,14 @@ trait ContentsToClass {
                 New(Name(m.declaringClass.constantPoolName.mkString),
                   params,
                   m.signature().mkString)))
+          case NewArrayExprType ⇒
+            val thiz = NewArrayExprType.thisPort(vs)
+            val ab = thiz.finalTpe.asInstanceOf[ArrayType]
+            val dimPorts = vs.portInstances.filter { pi ⇒ pi.dir == In && pi.name.str.startsWith("d") }.sortBy { _.name.str.drop(1).toInt } // XXX ugly
+            List(
+              Assign(
+                toRef(thiz),
+                NewArray(dimPorts.map { toRef(_) }, ab.of)))
           case InvokeStaticExprType ⇒
             val m = vs.info.asInstanceOf[MethodBinding]
             // TODO share with invoke
@@ -143,40 +151,39 @@ trait ContentsToClass {
             val o = FieldExprType.outPort(vs)
             val obj = FieldExprType.thisPort(vs)
             val thisOut = FieldExprType.thisOutPort(vs)
-            def fieldRef = Select(
-                  toRef(obj),
-                  FieldRef(
-                    Name(f.name.mkString),
-                    f.`type`.signature.mkString,
-                    Name(f.declaringClass.constantPoolName.mkString)))
-            def store = Assign(fieldRef, toRef(a))
-            def load = Assign(toRef(o), fieldRef)
-            def storeThisOut = Assign(toRef(thisOut), toRef(obj))
+              def fieldRef = Select(
+                toRef(obj),
+                FieldRef(
+                  Name(f.name.mkString),
+                  f.`type`.signature.mkString,
+                  Name(f.declaringClass.constantPoolName.mkString)))
+              def store = Assign(fieldRef, toRef(a))
+              def load = Assign(toRef(o), fieldRef)
+              def storeThisOut = Assign(toRef(thisOut), toRef(obj))
             bl.connections.connectedFrom.get(a) match {
-            	case Some(_) => // do store
-            	  List(
-            	      store,
-            	      Assign(toRef(o), toRef(a)),
-            	      storeThisOut
-            	      )
-            	case None => List(
-            	    load,
-            	    storeThisOut)
-          	}	
+              case Some(_) ⇒ // do store
+                List(
+                  store,
+                  Assign(toRef(o), toRef(a)),
+                  storeThisOut)
+              case None ⇒ List(
+                load,
+                storeThisOut)
+            }
           case StaticFieldExprType ⇒ // share with field
             val f = vs.info.asInstanceOf[FieldBinding]
             val a = StaticFieldExprType.aPort(vs)
             val o = StaticFieldExprType.outPort(vs)
-            def fieldRef = FieldStaticRef(
-                  Name(f.name.mkString),
-                  f.`type`.signature.mkString,
-                  Name(f.declaringClass.constantPoolName.mkString))
-            def store = Assign(fieldRef, toRef(a))
-            def load = Assign(toRef(o), fieldRef)
+              def fieldRef = FieldStaticRef(
+                Name(f.name.mkString),
+                f.`type`.signature.mkString,
+                Name(f.declaringClass.constantPoolName.mkString))
+              def store = Assign(fieldRef, toRef(a))
+              def load = Assign(toRef(o), fieldRef)
             bl.connections.connectedFrom.get(a) match {
-            	case Some(_) => List(store, Assign(toRef(o),toRef(a)))
-            	case None => List(load)
-          	}
+              case Some(_) ⇒ List(store, Assign(toRef(o), toRef(a)))
+              case None    ⇒ List(load)
+            }
           case LiteralExprType ⇒
             val o = LiteralExprType.outPort(vs)
             val c = vs.params.headOption match {
