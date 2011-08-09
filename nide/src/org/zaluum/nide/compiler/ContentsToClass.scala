@@ -137,56 +137,46 @@ trait ContentsToClass {
                 fromClass = Name(m.declaringClass.constantPoolName.mkString),
                 descriptor = m.signature.mkString)
             List(invokeHelper(vs, m, invoke))
-          case PutFieldExprType ⇒
+          case FieldExprType ⇒
             val f = vs.info.asInstanceOf[FieldBinding]
-            val a = PutFieldExprType.aPort(vs)
-            val obj = PutFieldExprType.thisPort(vs)
-            val thisOut = PutFieldExprType.thisOutPort(vs)
-            List(
-              Assign(
-                Select(
+            val a = FieldExprType.aPort(vs)
+            val o = FieldExprType.outPort(vs)
+            val obj = FieldExprType.thisPort(vs)
+            val thisOut = FieldExprType.thisOutPort(vs)
+            def fieldRef = Select(
                   toRef(obj),
                   FieldRef(
                     Name(f.name.mkString),
                     f.`type`.signature.mkString,
-                    Name(f.declaringClass.constantPoolName.mkString))),
-                toRef(a)),
-              Assign(toRef(thisOut), toRef(obj)))
-          case GetFieldExprType ⇒
+                    Name(f.declaringClass.constantPoolName.mkString)))
+            def store = Assign(fieldRef, toRef(a))
+            def load = Assign(toRef(o), fieldRef)
+            def storeThisOut = Assign(toRef(thisOut), toRef(obj))
+            bl.connections.connectedFrom.get(a) match {
+            	case Some(_) => // do store
+            	  List(
+            	      store,
+            	      Assign(toRef(o), toRef(a)),
+            	      storeThisOut
+            	      )
+            	case None => List(
+            	    load,
+            	    storeThisOut)
+          	}	
+          case StaticFieldExprType ⇒ // share with field
             val f = vs.info.asInstanceOf[FieldBinding]
-            val out = GetFieldExprType.outPort(vs)
-            val obj = GetFieldExprType.thisPort(vs)
-            val thisOut = GetFieldExprType.thisOutPort(vs) // XXX optimize and use only 1 var
-            List(
-              Assign(
-                toRef(out),
-                Select(
-                  toRef(obj),
-                  FieldRef(
-                    Name(f.name.mkString),
-                    f.`type`.signature.mkString,
-                    Name(f.declaringClass.constantPoolName.mkString)))),
-              Assign(toRef(thisOut), toRef(obj)))
-          case GetStaticFieldExprType ⇒
-            val f = vs.info.asInstanceOf[FieldBinding]
-            val out = GetStaticFieldExprType.outPort(vs)
-            List(
-              Assign(
-                toRef(out),
-                FieldStaticRef(
+            val a = StaticFieldExprType.aPort(vs)
+            val o = StaticFieldExprType.outPort(vs)
+            def fieldRef = FieldStaticRef(
                   Name(f.name.mkString),
                   f.`type`.signature.mkString,
-                  Name(f.declaringClass.constantPoolName.mkString))))
-          case PutStaticFieldExprType ⇒
-            val f = vs.info.asInstanceOf[FieldBinding]
-            val a = PutStaticFieldExprType.aPort(vs)
-            List(
-              Assign(
-                FieldStaticRef(
-                  Name(f.name.mkString),
-                  f.`type`.signature.mkString,
-                  Name(f.declaringClass.constantPoolName.mkString)),
-                toRef(a)))
+                  Name(f.declaringClass.constantPoolName.mkString))
+            def store = Assign(fieldRef, toRef(a))
+            def load = Assign(toRef(o), fieldRef)
+            bl.connections.connectedFrom.get(a) match {
+            	case Some(_) => List(store, Assign(toRef(o),toRef(a)))
+            	case None => List(load)
+          	}
           case LiteralExprType ⇒
             val o = LiteralExprType.outPort(vs)
             val c = vs.params.headOption match {

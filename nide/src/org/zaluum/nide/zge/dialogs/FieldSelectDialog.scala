@@ -23,10 +23,10 @@ import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.zaluum.nide.eclipse.integration.model.MethodUtils
 import org.zaluum.nide.zge.Viewer
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
-import org.zaluum.nide.compiler.GetFieldExprType
+import org.zaluum.nide.compiler.FieldExprType
 import org.zaluum.nide.compiler.StaticExprType
 import org.zaluum.nide.compiler.SignatureExprType
-import org.zaluum.nide.compiler.GetStaticFieldExprType
+import org.zaluum.nide.compiler.StaticFieldExprType
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.zaluum.nide.compiler.ThisExprType
 

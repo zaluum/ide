@@ -15,16 +15,14 @@ import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.zge.LabelItem
 import org.zaluum.nide.zge.ValDefItem
 import org.zaluum.nide.zge.Viewer
-import org.zaluum.nide.compiler.GetFieldExprType
-import org.zaluum.nide.compiler.GetStaticFieldExprType
+import org.zaluum.nide.compiler.FieldExprType
+import org.zaluum.nide.compiler.StaticFieldExprType
 import org.zaluum.nide.compiler.InvokeStaticExprType
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.zaluum.nide.compiler.NewExprType
-import org.zaluum.nide.compiler.PutFieldExprType
-import org.zaluum.nide.compiler.PutStaticFieldExprType
 
 object ValDefMenu {
   def show(viewer: Viewer, fig: ValDefItem, gui: Boolean = false) {
@@ -90,21 +88,14 @@ object ValDefMenu {
             staticMenu
             staticMethodMenu
             tpeMenu
-          case GetStaticFieldExprType ⇒
-            staticMenu
-            fieldMenu
-            tpeMenu
-          case PutStaticFieldExprType ⇒
+          case StaticFieldExprType ⇒
             staticMenu
             fieldMenu
             tpeMenu
           case InvokeExprType ⇒
             methodMenu
             tpeMenu
-          case GetFieldExprType ⇒
-            fieldMenu
-            tpeMenu
-          case PutFieldExprType => 
+          case FieldExprType ⇒
             fieldMenu
             tpeMenu
           case NewExprType =>

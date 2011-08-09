@@ -9,25 +9,6 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
   /*
      * helpers for methods and fields
      */
-  def processField(vs: ValSymbol, f: Option[FieldBinding])(body: (ValSymbol, FieldBinding) ⇒ Unit) = f match {
-    case Some(p: ProblemFieldBinding) ⇒ error("problem field " + p + p.problemId(), vs.decl)
-    case Some(f: FieldBinding)        ⇒ body(vs, f); vs.info = f
-    case None                         ⇒ error("field not found", vs.decl)
-  }
-  def processGet(vs: ValSymbol, f: Option[FieldBinding]) {
-    processField(vs, f) { (vs, f) ⇒
-      val out = vs.tpe.asInstanceOf[ResultExprType].outPort(vs)
-      out.finalTpe = cud.zaluumScope.getJavaType(f.`type`)
-      if (out.finalTpe == NoSymbol) error("field type not found", vs.decl)
-    }
-  }
-  def processPut(vs: ValSymbol, f: Option[FieldBinding]) {
-    processField(vs, f) { (vs, f) ⇒
-      val a = vs.tpe.asInstanceOf[OneParameter].aPort(vs)
-      a.finalTpe = cud.zaluumScope.getJavaType(f.`type`)
-      if (a.finalTpe == NoSymbol) error("field type not found", vs.decl)
-    }
-  }
   def processMethod(vs: ValSymbol, m: Option[MethodBinding])(body: MethodBinding ⇒ Unit) = m match {
     case Some(p: ProblemMethodBinding) ⇒
       error("problem method " + p + p.problemId(), vs.decl)
@@ -60,10 +41,9 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
           case Some(c: ClassJavaType) ⇒
             vs.classinfo = c
             tpe match {
-              case NewExprType            ⇒ checkNew(vs, c)
-              case InvokeStaticExprType   ⇒ invokeStatic(vs, c)
-              case GetStaticFieldExprType ⇒ processStaticField(vs, c)(processGet)
-              case PutStaticFieldExprType ⇒ processStaticField(vs, c)(processPut)
+              case NewExprType          ⇒ checkNew(vs, c)
+              case InvokeStaticExprType ⇒ invokeStatic(vs, c)
+              case StaticFieldExprType  ⇒ processStaticField(vs, c)
             }
           case _ ⇒ error("Class " + className + " not found", vs.decl)
         }
@@ -91,12 +71,12 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case _ ⇒ error("Static method not specified", vs.decl)
     }
   }
-  def processStaticField(vs: ValSymbol, c: ClassJavaType)(body: (ValSymbol, Option[FieldBinding]) ⇒ Unit) {
+  def processStaticField(vs: ValSymbol, c: ClassJavaType) {
     val tpe = vs.tpe.asInstanceOf[SignatureExprType]
     vs.params.get(tpe.signatureSymbol) match {
       case Some(fieldName: String) ⇒
         val f = ZaluumCompletionEngineScala.findField(cud, scope(vs), c.binding, fieldName, true)
-        withSigField(vs, c)(body)
+        processField(vs, c)
       case _ ⇒ error("Static field not specified", vs.decl)
     }
   }
@@ -112,21 +92,20 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     connectedFrom(thiz) match {
       case Some((from, blame)) ⇒
         from.finalTpe match {
-          case a: ArrayType => 
+          case a: ArrayType ⇒
             thiz.finalTpe = a
             thizOut.finalTpe = a
             tpe match {
-              case ArrayExprType => array(vs,a)
-              case _=> error("Type must be a class", vs.decl)
+              case ArrayExprType ⇒ array(vs, a)
+              case _             ⇒ error("Type must be a class", vs.decl)
             }
           case c: ClassJavaType ⇒
             thiz.finalTpe = c
             thizOut.finalTpe = c
             tpe match {
               case InvokeExprType ⇒ invoke(vs, c)
-              case GetFieldExprType ⇒ withSigField(vs, c)(processGet)
-              case PutFieldExprType ⇒ withSigField(vs, c)(processPut)
-              case ArrayExprType => error("Type must be array",vs.decl)
+              case FieldExprType  ⇒ processField(vs, c)
+              case ArrayExprType  ⇒ error("Type must be array", vs.decl)
             }
           case _ ⇒
             error("bad type", blame)
@@ -134,27 +113,36 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case None ⇒ // not connected
     }
   }
-  def array(vs:ValSymbol, a:ArrayType) {
+  def array(vs: ValSymbol, a: ArrayType) {
     val index = ArrayExprType.indexPort(vs)
     val thisPort = ArrayExprType.thisPort(vs)
-    val thisOutPort =ArrayExprType.thisOutPort(vs)
+    val thisOutPort = ArrayExprType.thisOutPort(vs)
     val aPort = ArrayExprType.aPort(vs)
     val oPort = ArrayExprType.outPort(vs)
     index.finalTpe = primitives.Int
     val tpe = a.dim match {
-      case 1 => a.of
-      case i if (i>1) => cud.zaluumScope.getArrayType(a.of,i-1)
+      case 1            ⇒ a.of
+      case i if (i > 1) ⇒ cud.zaluumScope.getArrayType(a.of, i - 1)
     }
     aPort.finalTpe = tpe
     oPort.finalTpe = tpe
     thisPort
   }
-  def withSigField(vs: ValSymbol, c: ClassJavaType)(body: (ValSymbol, Option[FieldBinding]) ⇒ Unit) {
+  def processField(vs: ValSymbol, c: ClassJavaType) {
     val tpe = vs.tpe.asInstanceOf[SignatureExprType]
     vs.params.get(tpe.signatureSymbol) match {
       case Some(fieldName: String) ⇒
-        val f = ZaluumCompletionEngineScala.findField(cud, scope(vs), c.binding, fieldName, false)
-        body(vs, f)
+        ZaluumCompletionEngineScala.findField(cud, scope(vs), c.binding, fieldName, false) match {
+          case Some(p: ProblemFieldBinding) ⇒ error("problem field " + p + p.problemId(), vs.decl)
+          case Some(f: FieldBinding) ⇒
+            val out = vs.tpe.asInstanceOf[ResultExprType].outPort(vs)
+            val a = vs.tpe.asInstanceOf[OneParameter].aPort(vs)
+            a.finalTpe = cud.zaluumScope.getJavaType(f.`type`)
+            out.finalTpe = a.finalTpe
+            if (out.finalTpe == NoSymbol) error("field type not found", vs.decl)
+            vs.info = f
+          case None ⇒ error("field not found", vs.decl)
+        }
       case _ ⇒ error("no field specified", vs.decl)
     }
   }
