@@ -7,18 +7,16 @@ sealed trait ExprType extends BoxType {
   lazy val name = Name(nameStr)
   lazy val fqName = Name("org.zaluum.expr." + nameStr)
   var params = Map[Name, ParamSymbol]()
-  def lookupPort(a: Name) = ports.get(a)
-  def lookupPortWithSuper(a: Name) = lookupPort(a)
   def lookupParam(a: Name) = params.get(a)
   def templateTree = null
 }
 sealed trait ResultExprType extends ExprType {
-  val o = new PortSymbol(this, Name("o"), Point(0, 0), Out)
+  val o = new PortSymbol(this, Name("o"), Out)
   ports += (o.name -> o)
   def outPort(v: ValSymbol) = v.findPortInstance(o).get
 }
 sealed trait OneParameter extends ExprType {
-  val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
+  val a = new PortSymbol(this, Name("a"),  In)
   ports += (a.name -> a)
   def aPort(vs: ValSymbol) = vs.findPortInstance(a).get
 }
@@ -29,8 +27,8 @@ sealed abstract class UnaryExprType(val nameStr: String) extends ResultExprType 
 
 }
 sealed abstract class BinExprType(val nameStr: String) extends ResultExprType {
-  val a = new PortSymbol(this, Name("a"), Point(0, 0), In)
-  val b = new PortSymbol(this, Name("b"), Point(0, 0), In)
+  val a = new PortSymbol(this, Name("a"),  In)
+  val b = new PortSymbol(this, Name("b"),  In)
   ports += (a.name -> a)
   ports += (b.name -> b)
   def binaryPortInstancesOf(v: ValSymbol) =
@@ -49,13 +47,13 @@ sealed abstract class TemplateExprType(val nameStr: String) extends ExprType {
 }
 object IfExprType extends TemplateExprType("If") {
   val requiredBlocks = 2
-  val cond = new PortSymbol(this, Name("cond"), Point(0, 0), In)
+  val cond = new PortSymbol(this, Name("cond"),  In)
   ports += (cond.name -> cond)
   def condPort(v: ValSymbol) = v.findPortInstance(cond).get
 }
 object WhileExprType extends TemplateExprType("While") {
   val requiredBlocks = 1
-  val end = new PortSymbol(this, Name("end"), Point(0, 0), Out)
+  val end = new PortSymbol(this, Name("end"), Out)
   ports += (end.name -> end)
   def endPort(v: ValSymbol) = v.findPortInstance(end).get
 }
@@ -66,8 +64,8 @@ trait SignatureExprType extends ExprType {
   params += (signatureName -> signatureSymbol)
 }
 sealed abstract class ThisExprType(val nameStr: String) extends SignatureExprType {
-  val thiz = new PortSymbol(this, Name("this"), Point(0, 0), In)
-  val thizOut = new PortSymbol(this, Name("thisOut"), Point(0, 0), Out)
+  val thiz = new PortSymbol(this, Name("this"), In)
+  val thizOut = new PortSymbol(this, Name("thisOut"),  Out)
   ports += (thiz.name -> thiz)
   ports += (thizOut.name -> thizOut)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
@@ -80,7 +78,7 @@ sealed abstract class StaticExprType(val nameStr: String) extends SignatureExprT
   params += (className -> classSymbol)
 }
 object NewArrayExprType extends StaticExprType("NewArray") {
-  val thiz = new PortSymbol(this, Name("this"), Point(0, 0), Out)
+  val thiz = new PortSymbol(this, Name("this"), Out)
   ports += (thiz.name -> thiz)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
   val arrayDimName = Name("arrayDim")
@@ -88,7 +86,7 @@ object NewArrayExprType extends StaticExprType("NewArray") {
   params += (arrayDimName -> arrayDimSymbol)
 }
 object NewExprType extends StaticExprType("New") {
-  val thiz = new PortSymbol(this, Name("this"), Point(0, 0), Out)
+  val thiz = new PortSymbol(this, Name("this"), Out)
   ports += (thiz.name -> thiz)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
 }
@@ -98,7 +96,7 @@ object FieldExprType extends ThisExprType("Field") with ResultExprType with OneP
 object StaticFieldExprType extends StaticExprType("StaticField") with ResultExprType with OneParameter
 
 object ArrayExprType extends ThisExprType("Array") with ResultExprType with OneParameter {
-  val index = new PortSymbol(this, Name("index"), Point(0, 0), In)
+  val index = new PortSymbol(this, Name("index"), In)
   ports += (index.name -> index)
   def indexPort(vs: ValSymbol) = vs.findPortInstance(index).get
 }

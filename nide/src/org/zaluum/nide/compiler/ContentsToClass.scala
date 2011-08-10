@@ -6,7 +6,6 @@ import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 
 trait ContentsToClass {
   self: TreeToClass ⇒
-  import ByteCodeGen.descriptor
   def appl(b: BoxDef): Method = {
     val bs = b.sym
     // create locals for expressions
@@ -23,16 +22,19 @@ trait ContentsToClass {
       }
       def toRef(pi: PortInstance): Ref = {
         if (pi.valSymbol == bs.thisVal) {
-          Select(
-            This,
-            FieldRef(pi.name, descriptor(pi.finalTpe.name), bs.fqName))
+          if (pi.dir == Out && pi.portSymbol.get.place != 0) {
+            Select(
+              This,
+              FieldRef(pi.name, pi.finalTpe.name.descriptor, bs.fqName))
+          } else
+            LocalRef(localsMap(pi), pi.finalTpe.name)
         } else {
           val vfrom = pi.valSymbol
           vfrom.tpe match {
             case vfromBs: BoxTypeSymbol ⇒
               Select(
-                Select(This, FieldRef(vfrom.fqName, descriptor(vfromBs.fqName), bs.fqName)),
-                FieldRef(pi.name, descriptor(pi.finalTpe.name), vfromBs.fqName))
+                Select(This, FieldRef(vfrom.fqName, vfromBs.fqName.descriptor, bs.fqName)),
+                FieldRef(pi.name, pi.finalTpe.name.descriptor, vfromBs.fqName))
             case _ ⇒
               LocalRef(localsMap(pi), pi.finalTpe.name)
           }
@@ -66,14 +68,19 @@ trait ContentsToClass {
         val insn: List[Tree] = vs.tpe match {
           case vbs: BoxTypeSymbol ⇒
             val tpe = vbs.fqName
-            List(
-              Invoke(
-                Select(This, FieldRef(vs.fqName, descriptor(tpe), bs.fqName)),
-                "apply",
-                List(),
-                tpe,
-                "()V",
-                interface = false))
+            val args = vbs.argsInOrder map { ps ⇒ toRef(vs.findPortInstance(ps).get) }
+            val invoke = Invoke(
+              Select(This, FieldRef(vs.fqName, tpe.descriptor, bs.fqName)),
+              vbs.methodSelector.str,
+              args,
+              tpe,
+              vbs.methodSignature,
+              interface = false)
+            val res = vbs.returnPort map { p ⇒
+              val pi = vs.findPortInstance(p).get
+              Assign(toRef(pi), invoke)
+            } getOrElse (invoke)
+            List(res)
           case WhileExprType ⇒
             List(While(
               runBlock(vs.blocks.head),
@@ -243,7 +250,14 @@ trait ContentsToClass {
       case (a, i) ⇒
         (a.valSymbol.fqName.str + "_" + a.name.str, a.finalTpe.asInstanceOf[JavaType].descriptor, i)
     } toList;
-    Method(Name("contents"), "()V", invokes, localsDecl)
+
+    val paramsDesc = bs.ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.place } map { p ⇒
+      p.tpe.name.descriptor
+    } mkString;
+    bs.ports.values find { p ⇒ p.dir == Out && p.place == 0 } match {
+      case Some(p) ⇒ Method(p.name, "(" + paramsDesc + ")" + p.name.descriptor, invokes, localsDecl)
+      case None    ⇒ Method(Name("apply"), "(" + paramsDesc + ")V", invokes, localsDecl)
+    }
   }
   def box(p: PrimitiveJavaType, t: Tree) =
     InvokeStatic(
@@ -279,6 +293,13 @@ trait ContentsToClass {
 
   def createLocalsMap(bs: BoxTypeSymbol): Map[PortInstance, Int] = {
     var locals = 1; // 0 for "this"
+
+      def createArgumentLocal(ps: PortSymbol): (PortInstance, Int) = {
+        val l = locals
+        val pi = bs.thisVal.findPortInstance(ps).get
+        locals = locals + pi.finalTpe.javaSize
+        (pi, l)
+      }
       def createLocals(vs: ValSymbol): List[(PortInstance, Int)] = {
         vs.tpe match {
           case b: BoxTypeSymbol ⇒
@@ -292,7 +313,10 @@ trait ContentsToClass {
           case _ ⇒ List()
         }
       }
-    bs.blocks.head.executionOrder flatMap { createLocals } toMap
+    val ret = bs.returnPort.toList map { createArgumentLocal }
+    val args = bs.argsInOrder map { createArgumentLocal }
+    val vals = bs.blocks.head.executionOrder flatMap { createLocals }
+    (ret ++ args ++ vals).toMap
   }
   def primitiveCast(from: PrimitiveJavaType, to: PrimitiveJavaType, t: Tree) = {
     import primitives._

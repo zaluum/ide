@@ -13,7 +13,7 @@ trait UnaryExpr extends Tree {
   def a: Tree
 }
 
-case class BoxClass(name: Name, superName: Name, contents: List[Tree]) extends Tree
+case class BoxClass(name: Name, contents: List[Tree]) extends Tree
 case class FieldDef(name: Name, typeName: Name, annotation: Option[Name], priv: Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
@@ -81,34 +81,32 @@ case class D2L(a: Tree) extends UnaryExpr
 case class L2D(a: Tree) extends UnaryExpr
 case class L2F(a: Tree) extends UnaryExpr
 case class L2I(a: Tree) extends UnaryExpr
-
+object TreeToClass {
+  val defaultMethodName = "run"
+}
 class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScope) extends ReporterAdapter with ContentsToClass {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
-  import ByteCodeGen.descriptor
   object rewrite {
     def apply(t: Tree) = t match {
       case b: BoxDef ⇒
         val tpe = b.tpe.asInstanceOf[BoxType]
         val bs = b.sym
-        val baseFields = (bs.blocks.head.executionOrder ++ bs.ports.values).flatMap { field(_) }
+        val outs = bs.ports.values.toList.filter { p=> p.place!=0 && p.dir==Out} sortBy {_.place}
+        val baseFields = (bs.blocks.head.executionOrder ++ outs).flatMap { field(_) }
         val fields = bs.visualClass map { vn ⇒
           FieldDef(Name("_widget"), vn, None, false) :: baseFields
         } getOrElse { baseFields }
         val baseMethods = List(cons(b), appl(b))
         BoxClass(
           tpe.fqName,
-          // TODO check super-name
-          b.superName getOrElse { Name(classOf[RunnableBox].getName) },
           baseMethods ++ fields)
     }
     def field(s: Symbol): List[FieldDef] = s match {
       case ps: PortSymbol ⇒
-        val a = ps.dir match {
-          case Out ⇒ classOf[org.zaluum.annotation.Out]
-          case _   ⇒ classOf[org.zaluum.annotation.In]
-        }
-        List(FieldDef(ps.name, ps.tpe.name, Some(Name(a.getName)), false))
+        assert( ps.dir == Out)
+        val outName = Name(classOf[org.zaluum.annotation.Out].getName)
+        List(FieldDef(ps.name, ps.tpe.name, Some(outName), false))
       case vs: ValSymbol ⇒
         vs.tpe match {
           case bs: BoxTypeSymbol ⇒
@@ -133,7 +131,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
               Const(v, t)
             }
             List(Assign(
-              Select(This, FieldRef(vs.fqName, ByteCodeGen.descriptor(tpe.fqName), bs.fqName)),
+              Select(This, FieldRef(vs.fqName,tpe.fqName.descriptor, bs.fqName)),
               New(tpe.fqName, values, sig)))
           case e: ExprType ⇒
             for (
@@ -148,7 +146,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
             vs.params map {
               case (param, v) ⇒
                 Invoke(
-                  Select(This, FieldRef(vs.fqName, descriptor(tpe.fqName), bs.fqName)),
+                  Select(This, FieldRef(vs.fqName, tpe.fqName.descriptor, bs.fqName)),
                   param.name.str,
                   List(Const(v, param.tpe)),
                   tpe.fqName,
@@ -161,10 +159,10 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
       // widgets
       val widgets = bs.visualClass.toList flatMap { vn ⇒
         val widgetCreation: List[Tree] = List(
-          Assign(Select(This, FieldRef(widgetName, descriptor(vn), bs.fqName)),
+          Assign(Select(This, FieldRef(widgetName, vn.descriptor, bs.fqName)),
             New(vn, List(NullConst), "(Ljava/awt/LayoutManager;)V")),
           Invoke(
-            Select(This, FieldRef(widgetName, descriptor(vn), bs.fqName)),
+            Select(This, FieldRef(widgetName, vn.descriptor, bs.fqName)),
             "setSize",
             List(Const(b.guiSize.map(_.w).getOrElse(100), primitives.Int),
               Const(b.guiSize.map(_.h).getOrElse(100), primitives.Int)),
@@ -181,7 +179,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
     val widgetName = Name("_widget")
     def fieldRef(vs: ValSymbol, bs: BoxTypeSymbol) = {
       val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
-      FieldRef(vs.fqName, descriptor(tpe.fqName), bs.fqName)
+      FieldRef(vs.fqName, tpe.fqName.descriptor, bs.fqName)
     }
     def createWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
@@ -189,7 +187,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
           val valDef = vs.tdecl
           val mainTpe = mainBox.sym
           tpe.visualClass map { cl ⇒
-            val widgetSelect = Select(fieldRef(vs, mainTpe), FieldRef(widgetName, descriptor(cl), tpe.fqName))
+            val widgetSelect = Select(fieldRef(vs, mainTpe), FieldRef(widgetName, cl.descriptor, tpe.fqName))
             List[Tree](
               Invoke(
                 widgetSelect,
@@ -202,7 +200,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
                 "(IIII)V",
                 interface = false),
               Invoke(
-                Select(This, FieldRef(widgetName, descriptor(mainBox.sym.visualClass.get), mainTpe.fqName)),
+                Select(This, FieldRef(widgetName, mainBox.sym.visualClass.get.descriptor, mainTpe.fqName)),
                 "add",
                 List(widgetSelect),
                 Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;",
@@ -234,7 +232,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
               "(IIII)V",
               interface = false),
             Invoke(
-              Select(This, FieldRef(widgetName, descriptor(mainBox.sym.visualClass.get), mainTpe.fqName)),
+              Select(This, FieldRef(widgetName, mainBox.sym.visualClass.get.descriptor, mainTpe.fqName)),
               "add",
               List(ALoad(1)),
               Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;",

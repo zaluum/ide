@@ -44,6 +44,9 @@ import ZaluumCompilationUnitDeclaration.nameToPrimitiveTypeId
 import ZaluumCompilationUnitDeclaration.toMainName
 import javax.swing.JPanel
 import org.eclipse.jdt.internal.compiler.ast.ArrayQualifiedTypeReference
+import org.zaluum.nide.compiler.In
+import org.eclipse.jdt.internal.compiler.ast.Argument
+import org.zaluum.annotation.Apply
 
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
@@ -128,9 +131,6 @@ class ZaluumCompilationUnitDeclaration(
         typeDeclaration.annotations = Array(annotation);
 
     }
-    tree.superName foreach { n ⇒
-      typeDeclaration.superclass = createTypeReference(n, b)
-    }
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
     typeDeclaration.fields = createFieldDeclarations(b)
@@ -155,14 +155,25 @@ class ZaluumCompilationUnitDeclaration(
     constructor.bits |= ASTNode.IsDefaultConstructor
     constructor.modifiers = ClassFileConstants.AccPublic
     constructor.selector = b.name.str.toCharArray
-
-    val ref = createTypeReference(Name("void"), b)
-    //val arg = new Argument("par".toCharArray, NON_EXISTENT_POSITION, ref, ClassFileConstants.AccPublic)
     val meth = new MethodDeclaration(compilationResult)
+   /* b.template.ports find { _.dir == Out } match {
+      case Some(p) ⇒
+        meth.selector = p.name.str.toCharArray
+        meth.returnType = createTypeReference(p.typeName, b)
+        println(p.typeName)
+      case None ⇒*/
+        meth.selector = "apply".toCharArray//TreeToClass.defaultMethodName.toCharArray
+        meth.returnType = createTypeReference(Name("void"), b)
+    //}
+    println(meth.selector.mkString)
+    //val ins = b.template.ports filter { _.dir == In }
+    /*    meth.arguments = ins map { p=>
+      val ref = createTypeReference(p.typeName,p)
+      new Argument(p.name.str.toCharArray, NON_EXISTENT_POSITION, ref, ClassFileConstants.AccPublic)
+    } toArray;*/
+    meth.arguments = Array()
+    //meth.annotations = Array(new MarkerAnnotation(createTypeReference(Name(classOf[Apply].getName), b), start(b))) 
     meth.modifiers = ClassFileConstants.AccPublic
-    meth.selector = "apply".toCharArray
-    //meth.arguments = Array(arg)
-    meth.returnType = createTypeReference(Name("void"), b)
     meth.thrownExceptions = null
     meth.sourceStart = start(b)
     meth.sourceEnd = end(b)
@@ -170,28 +181,26 @@ class ZaluumCompilationUnitDeclaration(
     meth.bodyEnd = end(b)
     meth.declarationSourceStart = start(b)
     meth.declarationSourceEnd = end(b)
-    Array(constructor, meth)
+    //Array(constructor, meth)
+    //Array(constructor, meth)
+    Array(constructor,meth)
   }
   // tpe not yet initialized
   def createFieldDeclarations(b: BoxDef): Array[FieldDeclaration] = {
     val res = Buffer[FieldDeclaration]()
     //vals 
-    val block = b.template.blocks.head
-    for (v ← block.valDefs) {
-      val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v))
+    for (block ← b.template.blocks; v ← block.valDefs) {
+      val f = new FieldDeclaration(v.sym.fqName.str.toCharArray, start(v), end(v))
       f.modifiers = Opcodes.ACC_PUBLIC
       f.`type` = createTypeReference(v.typeName, v)
       res += f
     }
-    //ports
-    for (p ← b.template.ports) {
+    //fields
+    for (p ← b.template.ports filter { _.dir == Out } drop (1)) {
       val f = new FieldDeclaration(p.name.str.toCharArray, start(p), end(p))
       f.modifiers = Opcodes.ACC_PUBLIC
       f.`type` = createTypeReference(p.typeName, p)
-      val cl = p.dir match {
-        case Out ⇒ classOf[org.zaluum.annotation.Out].getName
-        case _   ⇒ classOf[org.zaluum.annotation.In].getName
-      }
+      val cl = classOf[org.zaluum.annotation.Out].getName
       val annotation = new MarkerAnnotation(createTypeReference(Name(cl), p), start(p))
       f.annotations = Array(annotation)
       res += f
@@ -212,24 +221,31 @@ class ZaluumCompilationUnitDeclaration(
     res.toArray
   }
   def createTypeReference(name: Name, t: Tree): TypeReference = {
+    val pos = toPos(start(t),end(t))
     val tpe =
       name.asArray match {
         case Some((leaf, dim)) ⇒
           if (nameToPrimitiveTypeId.contains(leaf.str)) {
-            TypeReference.baseTypeReference(nameToPrimitiveTypeId(leaf.str), dim)
-          }else if (leaf.str.contains('.')) {
+            val br = TypeReference.baseTypeReference(nameToPrimitiveTypeId(leaf.str), dim)
+            br.sourceStart = -1
+            br.sourceEnd = -2
+            br
+          } else if (leaf.str.contains('.')) {
             val compoundName = CharOperation.splitOn('.', leaf.str.toCharArray)
-            new ArrayQualifiedTypeReference(compoundName, dim, Array.fill(compoundName.length)(NON_EXISTENT_POSITION))
-          }else 
-        	new ArrayTypeReference(leaf.str.toCharArray, dim, NON_EXISTENT_POSITION);
+            new ArrayQualifiedTypeReference(compoundName, dim, Array.fill(compoundName.length)(pos))
+          } else
+            new ArrayTypeReference(leaf.str.toCharArray, dim, pos);
         case None ⇒
           if (nameToPrimitiveTypeId.contains(name.str)) {
-            TypeReference.baseTypeReference(nameToPrimitiveTypeId(name.str), 0)
+            val br = TypeReference.baseTypeReference(nameToPrimitiveTypeId(name.str), 0)
+            br.sourceStart = -1
+            br.sourceEnd = -2
+            br
           } else if (!name.str.contains('.')) {
-            new SingleTypeReference(name.str.toCharArray, NON_EXISTENT_POSITION)
+            new SingleTypeReference(name.str.toCharArray, pos)
           } else {
             val compoundName = CharOperation.splitOn('.', name.str.toCharArray)
-            new QualifiedTypeReference(compoundName, Array.fill(compoundName.length)(NON_EXISTENT_POSITION))
+            new QualifiedTypeReference(compoundName, Array.fill(compoundName.length)(pos))
           }
       }
     tpe.sourceStart = start(t)
@@ -313,6 +329,7 @@ object ZaluumCompilationUnitDeclaration {
     }
     return result;
   }
+  def compressPos(start:Int, end:Int) = (start << 32) | end;
   def toMainName(fileName: Array[Char]): Array[Char] = {
     if (fileName == null) {
       return Array.ofDim(0);

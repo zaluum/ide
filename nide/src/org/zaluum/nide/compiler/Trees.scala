@@ -209,7 +209,7 @@ object PrettyPrinter {
   def sym(tree: Tree) = " sym= " + tree.symbol + " tpe= " + tree.tpe
   def print(tree: Tree, deep: Int): Unit = tree match {
     case b: BoxDef ⇒
-      print("BoxDef(" + b.pkg + " " + b.name + " extends " + b.superName + ", " + b.image, deep)
+      print("BoxDef(" + b.pkg + " " + b.name + ", " + b.image, deep)
       print(b.guiSize.toString, deep + 1)
       print(b.template, deep + 1)
       print(")" + sym(b), deep)
@@ -275,14 +275,13 @@ object BoxDef {
     val template = Template(ports = List(), blocks = List(block), currentBlock = None)
     BoxDef(name = Name(name),
       pkg = Name(pkg),
-      superName = None,
       guiSize = Some(Dimension(250, 250)),
       image = None,
       template = template)
   }
 }
 case class BoxDef(name: Name, // simple name
-                  pkg: Name, superName: Option[Name],
+                  pkg: Name, 
                   guiSize: Option[Dimension],
                   image: Option[String],
                   template: Template) extends Tree {

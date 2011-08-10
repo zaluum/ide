@@ -14,7 +14,6 @@ object Serializer {
     val p = ZaluumProtobuf.BoxClass.newBuilder
     p.setClassName(b.name.str)
     p.setPackage(b.pkg.str)
-    b.superName foreach { n ⇒ p.setSuper(n.str) }
     b.image foreach { p.setImageName(_) }
     p.setTemplate(proto(b.template))
     p.setGuiSize(proto(b.guiSize.getOrElse(Dimension(100, 100))))

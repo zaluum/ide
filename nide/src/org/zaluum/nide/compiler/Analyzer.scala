@@ -38,6 +38,22 @@ case class Name(str: String) {
   def toRelativePath: String = str.replace('.', '/')
   def toRelativePathClass = toRelativePath + ".class"
   def internal = str.replace('.', '/')
+  def descriptor: String =
+    asArray match {
+      case Some((arrTpe, dim)) ⇒ ("[" * dim) + arrTpe.descriptor
+      case None ⇒
+        this match {
+          case Name("byte")    ⇒ "B"
+          case Name("short")   ⇒ "S"
+          case Name("int")     ⇒ "I"
+          case Name("long")    ⇒ "J"
+          case Name("float")   ⇒ "F"
+          case Name("double")  ⇒ "D"
+          case Name("boolean") ⇒ "Z"
+          case Name("char")    ⇒ "C"
+          case _               ⇒ "L" + internal + ";"
+        }
+    }
   def asArray: Option[(Name, Int)] = {
     val i = str.indexOf('[')
     if (i == -1) None
@@ -206,11 +222,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
       symbol.decl = tree
       block
     }
+    var ins = 0
+    var outs = 0
     override def traverse(tree: Tree) {
       tree match {
         case b: BoxDef ⇒
           val cl = Some(Name(classOf[JPanel].getName))
-          val sym = new BoxTypeSymbol(b.name, b.pkg, b.superName, b.image, cl)
+          val sym = new BoxTypeSymbol(b.name, b.pkg, b.image, cl)
           sym.hasApply = true
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
           sym.constructors = List(new Constructor(sym, List()))
@@ -228,7 +246,18 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
           }
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
           val template = currentOwner.asInstanceOf[TemplateSymbol]
-          val port = new PortSymbol(template, name, extPos, dir)
+          val port = dir match {
+	          case In => 
+	            val p = new PortSymbol(template, Name("p"+ins),name, extPos, dir,ins)
+	            ins = ins+1
+	            p
+	          case Out => 
+	            val p =new PortSymbol(template, name,name, extPos, dir,outs)
+	            outs = outs +1
+	            p
+	          case Shift =>
+	            new PortSymbol(template, name,name, extPos, dir,0)
+          }
           bind(port, p, template.ports.contains(p.name)) {
             template.ports += (name -> port)
           }
@@ -272,15 +301,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
         case b: BoxDef ⇒
           val bs = b.sym
           bs.scope = global
-          b.superName foreach { sn ⇒
-            catchAbort(global.lookupBoxType(sn)) match {
-              case Some(sbs: BoxTypeSymbol) ⇒
-                bs._superSymbol = Some(sbs)
-              case None ⇒
-                error("Super box type not found " + sn, tree)
-            }
-          }
-          createPortInstances(bs.portsWithSuper.values, bs.thisVal, true, false)
+          createPortInstances(bs.ports.values, bs.thisVal, true, false)
         case bl: Block ⇒
           bl.sym.template match {
             case bs: BoxTypeSymbol ⇒
@@ -337,7 +358,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
                   case None ⇒ error("Cannot find parameter " + p.key, tree)
                 }
               }
-              createPortInstances(bs.portsWithSuper.values, vsym, false, true)
+              createPortInstances(bs.ports.values, vsym, false, true)
               vsym.params
             case Some(b: ExprType) ⇒
               v.symbol.tpe = b
@@ -368,7 +389,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
           val block = currentOwner.asInstanceOf[BlockSymbol]
           tree.symbol = fromTree.tpe match {
             case b: BoxTypeSymbol ⇒
-              catchAbort(b.lookupPortWithSuper(name)).getOrElse {
+              catchAbort(b.lookupPort(name)).getOrElse {
                 error("Port not found " + name + " in box type " + b, tree);
                 NoSymbol
               }

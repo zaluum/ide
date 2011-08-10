@@ -12,13 +12,16 @@ week 8-14
 	- analyzerConnections check correctness (missing ports eg)
 	- visual only boxes
 	- write feature list on freemind
+	- remove expr .javas and organize better packages for exprs IF javadoc support ok
+	- how to get all methods with visibleFrom ZaluumCompilationUnitScope?
+	- ensure method/field order in generated code
 week 15-21 GUI week
 	- change port names
 	- nested guis as new window
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- Swing thread synchronization / refresh rate	
 	- al connectar o desconnectar cables de vegades fa coses rares
-	- quan es vol moure un fil, costa de que no s'activi el de fer extensions
+	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
 	- when a visual component moves, resize the canvas size
 	- notes/ visual only on diagram
 week 22-28 library week
@@ -62,6 +65,7 @@ bugs
 LATER
 	- @Apply marks method to invoke
 	- Timed loop?
+	- getter/setter boxes with all fields at once instead of selecting one
 	-suport per a multiples directors (multi-threading)
 	-backend soot? backend JDT? suport per multi backend? (generacio codi c/hadoop?)
 	-Feedback connections

@@ -6,13 +6,11 @@ import info.monitorenter.gui.chart.traces.Trace2DLtd;
 
 import java.awt.Color;
 
+import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
-import org.zaluum.annotation.In;
-
 
 @Box
 public class Chart {
-  @In public double data;
   private ITrace2D trace;
   private long i = 0;
   public Chart2D _widget;
@@ -25,7 +23,8 @@ public class Chart {
     _widget.getAxisX().setRangePolicy(new MyRangePolicy(2000));
     _widget.setPaintLabels(false);
   }
-  public void apply() {
+  @Apply
+  public void apply(double data) {
     trace.addPoint(i++, data);
   }
 }

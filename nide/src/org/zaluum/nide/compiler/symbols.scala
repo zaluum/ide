@@ -82,6 +82,7 @@ case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var con
 sealed trait TemplateSymbol extends Symbol {
   var ports = Map[Name, PortSymbol]()
   var blocks = List[BlockSymbol]()
+  def lookupPort(name:Name) = ports.get(name)
   def templateTree: Template
   def currentBlockIndex = {
     val parsed = templateTree.currentBlock.map { c ⇒
@@ -95,8 +96,8 @@ sealed trait TemplateSymbol extends Symbol {
   var thisVal: ValSymbol = _ // should be template
 }
 trait BoxType extends TemplateSymbol with Type {
-  def portsWithSuper = ports
-  def lookupPortWithSuper(name: Name): Option[PortSymbol]
+ // def portsWithSuper = ports
+ // def lookupPortWithSuper(name: Name): Option[PortSymbol]
   def templateTree: Template
 }
 class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
@@ -176,10 +177,10 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
 class BoxTypeSymbol(
     val name: Name, //Class name without package
     val pkg: Name, // pkgdecl
-    val superName: Option[Name], //fqname
+   // val superName: Option[Name], //fqname
     val image: Option[String],
     var visualClass: Option[Name],
-    val abstractCl: Boolean = false) extends TemplateSymbol with BoxType {
+    val abstractCl: Boolean = false) extends TemplateSymbol with BoxType with Namer {
 
   type B = ReferenceBinding
   var javaScope: ZaluumClassScope = null
@@ -194,34 +195,27 @@ class BoxTypeSymbol(
   tpe = this
   override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
   override def templateTree = tdecl.template
-  override def portsWithSuper: Map[Name, PortSymbol] =
-    ports ++ superSymbol.map { _.portsWithSuper }.getOrElse(Map())
+  def usedNames = ports.keySet map { _.str } // FIXME what else?
   def fqName: Name = if (pkg.str != "") Name(pkg.str + "." + name.str) else name
   def block = blocks.head
-  def superSymbol = {
-    _superSymbol match {
-      case Some(s) ⇒ _superSymbol
-      case None ⇒ superName match {
-        case Some(sn) ⇒
-          _superSymbol = scope.lookupBoxType(sn)
-          _superSymbol
-        case None ⇒ None
-      }
-    }
-  }
   def IOInOrder = (ports.values ++ params.values).toList.sortBy(_.name.str)
   def paramsInOrder = params.values.toList.sortBy(_.name.str)
   def lookupParam(name: Name) = params.get(name)
-  def lookupPortWithSuper(name: Name): Option[PortSymbol] =
-    ports.get(name) orElse (superSymbol flatMap { _.lookupPortWithSuper(name) })
+  def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.place }
+  def returnPort = ports.values find { p ⇒ p.dir == Out && p.place == 0 }
+  def fieldReturns = ports.values.toList filter { p ⇒ p.dir == Out && p.place != 0 } sortBy { _.place }
+  def methodSelector = returnPort map {_.name} getOrElse(Name(TreeToClass.defaultMethodName))
+  def returnDescriptor = returnPort map {_.tpe.fqName.descriptor} getOrElse("V")
+  def methodSignature = "("+argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor 
 }
 
-//class ConnectionSymbol(val owner:Symbol, val name:Name, val from:Tree, val to:Tree) extends Symbol 
 // TODO make two classes one that has values from the declaring tree and the other directly from symbol
 class IOSymbol(val owner: TemplateSymbol, val name: Name, val dir: PortDir) extends Symbol {
   def box = owner
 }
-class PortSymbol(owner: TemplateSymbol, name: Name, val extPos: Point, dir: PortDir) extends IOSymbol(owner, name, dir) {
+class PortSymbol(owner: TemplateSymbol, name: Name, val helpName: Name, val extPos: Point, dir: PortDir, val place: Int) extends IOSymbol(owner, name, dir) {
+  def this(owner: TemplateSymbol, name: Name, dir: PortDir) =
+    this(owner, name, name, Point(0, 0), dir, 0)
   override def toString = "PortSymbol(" + name + ")"
 }
 class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
@@ -290,7 +284,7 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   def lookupParam(name: Name): Option[ParamSymbol] = sys.error("")
   // var refactor
   var info: AnyRef = null
-  var classinfo : AnyRef = null
+  var classinfo: AnyRef = null
   var params = Map[ParamSymbol, Any]()
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
@@ -320,4 +314,18 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
     portSides.find(ps ⇒ ps.pi.name == pr.name && ps.inPort == pr.in && ps.fromInside == inside)
 
   override def toString = "ValSymbol(" + name + ")"
+}
+trait Namer {
+  def usedNames: Set[String]
+  def isNameTaken(str: String): Boolean = usedNames.contains(str)
+  def nextName(str: String): String = {
+    val digits = str.reverse.takeWhile(_.isDigit).reverse
+    val nextValue = if (digits.isEmpty) 1 else digits.toInt + 1
+    str.slice(0, str.length - digits.length) + nextValue
+  }
+  @scala.annotation.tailrec
+  final def freshName(str: String): String = {
+    if (!isNameTaken(str)) str
+    else freshName(nextName(str))
+  }
 }

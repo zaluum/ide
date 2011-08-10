@@ -35,7 +35,6 @@ object Parser {
   def parse(b: ZaluumProtobuf.BoxClass, name: Option[Name] = None): BoxDef = {
     BoxDef(name.getOrElse(Name(b.getClassName)),
       pkg = if (b.hasPackage) Name(b.getPackage) else Name(""),
-      superName = if (b.hasSuper) Some(Name(b.getSuper)) else None,
       guiSize = if (b.hasGuiSize) Some(parseDim(b.getGuiSize)) else None,
       image = if (b.hasImageName) Some(b.getImageName) else None,
       template = parse(b.getTemplate))

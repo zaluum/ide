@@ -4,38 +4,21 @@ import org.objectweb.asm._
 import Opcodes._
 import org.zaluum.annotation.Box
 object ByteCodeGen {
-  def descriptor(n: Name): String =
-    n.asArray match {
-      case Some((arrTpe, dim)) ⇒ ("[" * dim) + descriptor(arrTpe)
-      case None ⇒
-        n match {
-          case Name("byte")    ⇒ "B"
-          case Name("short")   ⇒ "S"
-          case Name("int")     ⇒ "I"
-          case Name("long")    ⇒ "J"
-          case Name("float")   ⇒ "F"
-          case Name("double")  ⇒ "D"
-          case Name("boolean") ⇒ "Z"
-          case Name("char")    ⇒ "C"
-          case _               ⇒ "L" + n.internal + ";"
-        }
-    }
   def dump(bc: BoxClass): Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, bc.superName.internal, null);
-    cw.visitAnnotation(descriptor(Name(classOf[Box].getName)), true).visitEnd
+    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, null, null);
+    cw.visitAnnotation(Name(classOf[Box].getName).descriptor, true).visitEnd
     var mv: MethodVisitor = null
-    val thisDescriptor = descriptor(bc.name)
+    val thisDescriptor = bc.name.descriptor
       def emitMethod(name: String, signature: String, tree: Tree, locals: List[(String, String, Int)], constructor: Boolean) {
         mv = cw.visitMethod(ACC_PUBLIC, name, signature, null, null);
         mv.visitCode();
         if (constructor) {
           mv.visitVarInsn(ALOAD, 0);
-          mv.visitMethodInsn(INVOKESPECIAL, bc.superName.internal, "<init>", "()V");
+          mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
         }
         val l0 = new Label();
         mv.visitLabel(l0);
-
         tree.children foreach { emit(_) }
         val lend = new Label();
         mv.visitInsn(RETURN);
@@ -51,9 +34,9 @@ object ByteCodeGen {
         tree match {
           case FieldDef(name, tpe, annotation, priv) ⇒
             // FIXME not really private field always public
-            val f = cw.visitField(if (priv) ACC_PUBLIC else ACC_PUBLIC, name.str, descriptor(tpe), null, null)
+            val f = cw.visitField(if (priv) ACC_PUBLIC else ACC_PUBLIC, name.str, tpe.descriptor, null, null)
             annotation foreach { name ⇒
-              f.visitAnnotation(descriptor(name), true).visitEnd()
+              f.visitAnnotation(name.descriptor, true).visitEnd()
             }
             f.visitEnd
           case ConstructorMethod(c) ⇒
@@ -132,7 +115,7 @@ object ByteCodeGen {
                 }
               case more =>
                 sizes foreach { i => emit(i)}
-                val desc = "["*sizes.length + descriptor(tpe.fqName)
+                val desc = "["*sizes.length + tpe.fqName.descriptor
                 mv.visitMultiANewArrayInsn(desc, sizes.length)
             }
           case ArrayRef(index,array, tpe) ⇒

@@ -1,6 +1,5 @@
 package org.zaluum.nide.compiler
 
-import scala.annotation.tailrec
 import org.zaluum.nide.protobuf.ZaluumProtobuf
 
 trait Tuple2 {
@@ -51,18 +50,4 @@ trait Positionable {
 }
 trait Resizable extends Positionable {
   def size: Dimension
-}
-trait Namer {
-  def usedNames: Set[String]
-  def isNameTaken(str: String): Boolean = usedNames.contains(str)
-  def nextName(str: String): String = {
-    val digits = str.reverse.takeWhile(_.isDigit).reverse
-    val nextValue = if (digits.isEmpty) 1 else digits.toInt + 1
-    str.slice(0, str.length - digits.length) + nextValue
-  }
-  @tailrec
-  final def freshName(str: String): String = {
-    if (!isNameTaken(str)) str
-    else freshName(nextName(str))
-  }
 }

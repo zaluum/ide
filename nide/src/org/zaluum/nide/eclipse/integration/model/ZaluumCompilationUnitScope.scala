@@ -1,7 +1,6 @@
 package org.zaluum.nide.eclipse.integration.model
 
 import scala.collection.mutable.Map
-
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
@@ -31,9 +30,9 @@ import org.zaluum.nide.compiler.PrimitiveJavaType
 import org.zaluum.nide.compiler.{ Scope ⇒ ZScope }
 import org.zaluum.nide.compiler.Type
 import org.zaluum.nide.compiler.primitives
-
 import JDTInternalUtils.aToString
 import JDTInternalUtils.stringToA
+import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cudp, lookupEnvironment) with ZScope {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
@@ -51,18 +50,18 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   def getZJavaLangString = getJavaType(Name("java.lang.String")).get;
   def javaScope: ZaluumCompilationUnitScope = this
   def lookupType(name: Name): Option[Type] = getJavaType(name)
-  def getArrayType(t:JavaType, dim: Int): ArrayType = {
-      val bind = createArrayType(t.binding, dim)
-      val a = new ArrayType(this, t, dim)
-      a.binding = bind
-      a
+  def getArrayType(t: JavaType, dim: Int): ArrayType = {
+    val bind = createArrayType(t.binding, dim)
+    val a = new ArrayType(this, t, dim)
+    a.binding = bind
+    a
   }
   def getJavaType(name: Name): Option[JavaType] = {
     val arr = name.asArray
     if (arr.isDefined) {
       val (leafname, dim) = arr.get
-      getJavaType(leafname) map { t=>
-    	  getArrayType(t, dim)
+      getJavaType(leafname) map { t ⇒
+        getArrayType(t, dim)
       }
     } else {
       val tpe =
@@ -113,49 +112,42 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
   def allMethodsFor(r: ReferenceBinding): List[MethodBinding] = {
     r.methods.toList ++ { if (r.superclass != null) allMethodsFor(r.superclass) else List() }
   }
+
   def lookupBoxType(name: Name): Option[BoxTypeSymbol] = {
     cache.get(name).orElse {
       val compoundName = stringToA(name.str)
       getType(compoundName, compoundName.length) match {
         case r: ReferenceBinding ⇒
-          // should not check for Box annotation to let boxes inherit non annotated classes
-          val sperO = r.superclass match {
-            case null ⇒ None
-            case spr ⇒ aToString(spr.compoundName) match {
-              case null               ⇒ None
-              case "java.lang.Object" ⇒ None
-              case other              ⇒ Some(Name(other))
-            }
-          }
-
           val srcName = Name(r.compoundName.last.mkString)
           val pkgName = Name(r.qualifiedPackageName.mkString)
           val bs = new BoxTypeSymbol(
             srcName, pkgName,
-            sperO, None, None, r.isAbstract)
+            None, None, r.isAbstract)
           bs.scope = this
-          for (f ← allFieldsFor(r); if f.isPublic && !f.isStatic) {
-            val fname = f.name.mkString
-              def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
+          var outs = 0
+          var ins = 0
+            def createInPort(helpName: Name, tpe: TypeBinding) {
+              val port = new PortSymbol(bs, Name("p" + ins), helpName, Point(0, 0),
+                In, ins)
+              ins = ins + 1
+              port.tpe = getJavaType(tpe)
+              bs.ports += (port.name -> port)
+            }
+            def createOutPort(name: Name, tpe: TypeBinding) {
+              val port = new PortSymbol(bs, name, name, Point(0, 0),
+                Out, outs)
+              outs = outs + 1
+              port.tpe = getJavaType(tpe)
+              bs.ports += (port.name -> port)
+            }
+          /*
+             TODO use this. We need a ClassScope, so move this to ZaluumClassScope
+            val engine = new ZaluumCompletionEngine(environment)
+            ZaluumCompletionEngineScala.allMethods(engine, null, r, false)*/
+          for (m ← allMethodsFor(r)) {
+              def hasAnnotation(c: Class[_]) = m.getAnnotations.exists { a ⇒
                 aToString(a.getAnnotationType.compoundName) == c.getName
               }
-              def createPort(in: Boolean) = {
-                val port = new PortSymbol(bs, Name(fname), Point(0, 0), if (in) In else Out)
-                port.tpe = getJavaType(f.`type`)
-                bs.ports += (port.name -> port)
-              }
-            if (hasAnnotation(classOf[org.zaluum.annotation.In])) createPort(true)
-            else if (hasAnnotation(classOf[org.zaluum.annotation.Out])) createPort(false)
-            if (fname == "_widget") {
-              f.`type` match {
-                case r: ReferenceBinding ⇒
-                  bs.visualClass = Some(Name(aToString(r.compoundName)))
-                case _ ⇒
-              }
-            }
-          }
-
-          for (m ← allMethodsFor(r)) {
             val parameterNames = MethodUtils.findMethodParameterNamesEnv(m, environment.nameEnvironment) getOrElse {
               (for (i ← 0 until m.parameters.length) yield "$" + i).toArray
             }
@@ -173,11 +165,36 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
                 val p = new ParamSymbol(bs, Name(mName))
                 p.tpe = ptpe
                 bs.params += (p.name -> p)
-              } else if (mName == "apply" && !m.isStatic && !m.isAbstract && m.parameters.size == 0 && m.returnType == TypeBinding.VOID) {
+              } else if (hasAnnotation(classOf[org.zaluum.annotation.Apply]) &&
+                !m.isStatic && !m.isAbstract && m.isPublic && !bs.hasApply) {
                 bs.hasApply = true
+                for ((p, name) ← m.parameters zip parameterNames) {
+                  createInPort(Name(name), p)
+                }
+                m.returnType match {
+                  case TypeBinding.VOID => outs = 1 //skip return 
+                  case r => createOutPort(Name(m.selector.mkString),r)
+                }
               }
             }
           }
+
+          for (f ← allFieldsFor(r); if f.isPublic && !f.isStatic) {
+            val fname = f.name.mkString
+              def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
+                aToString(a.getAnnotationType.compoundName) == c.getName
+              }
+            if (hasAnnotation(classOf[org.zaluum.annotation.Out])) 
+              createOutPort(Name(fname), f.`type`)
+            if (fname == "_widget") {
+              f.`type` match {
+                case r: ReferenceBinding ⇒
+                  bs.visualClass = Some(Name(aToString(r.compoundName)))
+                case _ ⇒
+              }
+            }
+          }
+
           if (bs.constructors.isEmpty)
             bs.constructors = List(new Constructor(bs, List()))
           bs.binding = r
