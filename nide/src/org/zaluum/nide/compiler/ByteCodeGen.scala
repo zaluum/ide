@@ -6,13 +6,22 @@ import org.zaluum.annotation.Box
 object ByteCodeGen {
   def dump(bc: BoxClass): Array[Byte] = {
     val cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, null, null);
+    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, "java/lang/Object", null);
     cw.visitAnnotation(Name(classOf[Box].getName).descriptor, true).visitEnd
     var mv: MethodVisitor = null
     val thisDescriptor = bc.name.descriptor
-      def emitMethod(name: String, signature: String, tree: Tree, locals: List[(String, String, Int)], constructor: Boolean) {
+      def emitMethod(name: String, signature: String, tree: Tree, locals: List[(String, String, Int)], constructor: Boolean, annotation:Option[List[Name]]) {
         mv = cw.visitMethod(ACC_PUBLIC, name, signature, null, null);
+        annotation foreach { a => 
+          val name =Name(classOf[org.zaluum.annotation.Apply].getName).descriptor
+        	val av = mv.visitAnnotation(name,true)
+        	val p = av.visitArray("paramNames")
+        	a.foreach(v => p.visit(null/*ok for array*/,v.str))
+        	p.visitEnd()
+        	av.visitEnd()
+        }
         mv.visitCode();
+        
         if (constructor) {
           mv.visitVarInsn(ALOAD, 0);
           mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
@@ -21,7 +30,6 @@ object ByteCodeGen {
         mv.visitLabel(l0);
         tree.children foreach { emit(_) }
         val lend = new Label();
-        mv.visitInsn(RETURN);
         mv.visitLabel(lend);
         mv.visitLocalVariable("this", thisDescriptor, null, l0, lend, 0);
         for ((name, desc, i) ← locals) {
@@ -40,9 +48,9 @@ object ByteCodeGen {
             }
             f.visitEnd
           case ConstructorMethod(c) ⇒
-            emitMethod("<init>", "()V", tree, List(), true)
-          case Method(name, signature, stats, locals) ⇒
-            emitMethod(name.str, signature, tree, locals, false)
+            emitMethod("<init>", "()V", tree, List(), true, None)
+          case Method(name, signature, stats, locals, paramsNames) ⇒
+            emitMethod(name.str, signature, tree, locals, false, paramsNames)
           case New(typeName, param, signature) ⇒
             mv.visitTypeInsn(NEW, typeName.internal);
             mv.visitInsn(DUP);
@@ -64,7 +72,7 @@ object ByteCodeGen {
               case FieldStaticRef(id, descriptor, fromClass) ⇒
                 emit(rhs)
                 mv.visitFieldInsn(PUTSTATIC, fromClass.internal, id.str, descriptor)
-              case ArrayRef(index,arr,tpe) =>
+              case ArrayRef(index, arr, tpe) ⇒
                 emit(arr)
                 emit(index)
                 emit(rhs)
@@ -103,24 +111,24 @@ object ByteCodeGen {
           case Select(a, b) ⇒
             emit(a)
             emit(b)
-          case NewArray(sizes, tpe) => 
+          case NewArray(sizes, tpe) ⇒
             sizes match {
-              case i :: Nil =>
+              case i :: Nil ⇒
                 emit(i)
                 tpe match {
-                  case p:PrimitiveJavaType => 
-                  	mv.visitIntInsn(NEWARRAY,asmType(p))
-                  case j:ClassJavaType=>
-                    mv.visitTypeInsn(ANEWARRAY,j.fqName.internal)
+                  case p: PrimitiveJavaType ⇒
+                    mv.visitIntInsn(NEWARRAY, asmType(p))
+                  case j: ClassJavaType ⇒
+                    mv.visitTypeInsn(ANEWARRAY, j.fqName.internal)
                 }
-              case more =>
-                sizes foreach { i => emit(i)}
-                val desc = "["*sizes.length + tpe.fqName.descriptor
+              case more ⇒
+                sizes foreach { i ⇒ emit(i) }
+                val desc = "[" * sizes.length + tpe.fqName.descriptor
                 mv.visitMultiANewArrayInsn(desc, sizes.length)
             }
-          case ArrayRef(index,array, tpe) ⇒
+          case ArrayRef(index, array, tpe) ⇒
             emit(array)
-          	emit(index)
+            emit(index)
             aload(tpe)
           case FieldRef(id, descriptor, fromClass) ⇒
             mv.visitFieldInsn(GETFIELD, fromClass.internal, id.str, descriptor)
@@ -144,9 +152,11 @@ object ByteCodeGen {
             mv.visitVarInsn(ALOAD, i)
           case Const(d: Any, constTpe: Type) ⇒
             emitConst(d, constTpe)
-          case Return(t) ⇒
+          case Return(t, tpe) ⇒
             emit(t)
-            mv.visitInsn(IRETURN)
+            doReturn(tpe)
+          case Return => 
+            mv.visitInsn(RETURN)
           case True ⇒
             mv.visitInsn(ICONST_1)
           case Dup ⇒
@@ -156,6 +166,20 @@ object ByteCodeGen {
           case u: UnaryExpr ⇒
             emitUnaryExpr(u)
 
+        }
+      }
+      def doReturn(t: Type) {
+        import primitives._
+        t match {
+          case Boolean ⇒ mv.visitInsn(IRETURN)
+          case Byte    ⇒ mv.visitInsn(IRETURN)
+          case Char    ⇒ mv.visitInsn(IRETURN)
+          case Short   ⇒ mv.visitInsn(IRETURN)
+          case Int     ⇒ mv.visitInsn(IRETURN)
+          case Long    ⇒ mv.visitInsn(LRETURN)
+          case Float   ⇒ mv.visitInsn(FRETURN)
+          case Double  ⇒ mv.visitInsn(DRETURN)
+          case _       ⇒ mv.visitInsn(ARETURN)
         }
       }
       def emitConst(d: Any, constTpe: Type) {
@@ -186,15 +210,15 @@ object ByteCodeGen {
           }
         }
       }
-      def asmType(t:Type) = t match {
-          case primitives.Long    ⇒ T_LONG
-          case primitives.Double  ⇒ T_DOUBLE
-          case primitives.Float   ⇒ T_FLOAT
-          case primitives.Int     ⇒ T_INT
-          case primitives.Boolean ⇒ T_BOOLEAN
-          case primitives.Byte    ⇒ T_BYTE
-          case primitives.Char    ⇒ T_CHAR
-          case primitives.Short   ⇒ T_SHORT
+      def asmType(t: Type) = t match {
+        case primitives.Long    ⇒ T_LONG
+        case primitives.Double  ⇒ T_DOUBLE
+        case primitives.Float   ⇒ T_FLOAT
+        case primitives.Int     ⇒ T_INT
+        case primitives.Boolean ⇒ T_BOOLEAN
+        case primitives.Byte    ⇒ T_BYTE
+        case primitives.Char    ⇒ T_CHAR
+        case primitives.Short   ⇒ T_SHORT
       }
       def aload(t: Type) = {
         t match {

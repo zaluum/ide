@@ -35,6 +35,7 @@ class Reporter {
 }
 case class Name(str: String) {
   def classNameWithoutPackage = str.split('.').last
+  def packageProxy = str.split('.').dropRight(1).mkString(".")
   def toRelativePath: String = str.replace('.', '/')
   def toRelativePathClass = toRelativePath + ".class"
   def internal = str.replace('.', '/')
@@ -222,8 +223,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
       symbol.decl = tree
       block
     }
-    var ins = 0
-    var outs = 0
     override def traverse(tree: Tree) {
       tree match {
         case b: BoxDef ⇒
@@ -246,20 +245,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
           }
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
           val template = currentOwner.asInstanceOf[TemplateSymbol]
-          val port = dir match {
-	          case In => 
-	            val p = new PortSymbol(template, Name("p"+ins),name, extPos, dir,ins)
-	            ins = ins+1
-	            p
-	          case Out => 
-	            val p =new PortSymbol(template, name,name, extPos, dir,outs)
-	            outs = outs +1
-	            p
-	          case Shift =>
-	            new PortSymbol(template, name,name, extPos, dir,0)
-          }
+          val port = new PortSymbol(template, name, name, extPos, dir)
           bind(port, p, template.ports.contains(p.name)) {
-            template.ports += (name -> port)
+            template.ports += (port.name -> port)
           }
         case v: ValDef ⇒
           val block = currentOwner.asInstanceOf[BlockSymbol]
@@ -301,6 +289,11 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
         case b: BoxDef ⇒
           val bs = b.sym
           bs.scope = global
+          val fields = bs.ports.values.toList
+            .filter { _.dir == Out }
+            .sortBy { _.name.str }
+            .drop(1)
+          fields.foreach { _.isField = true }
           createPortInstances(bs.ports.values, bs.thisVal, true, false)
         case bl: Block ⇒
           bl.sym.template match {
@@ -310,9 +303,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
             case v: ValSymbol ⇒
               v.thisVal = v
           }
-        case PortDef(name, typeName, in, inPos, extPos) ⇒
-          tree.symbol.tpe = catchAbort(global.lookupType(typeName)) getOrElse {
-            error("Port type not found " + typeName, tree); NoSymbol
+        case p: PortDef ⇒
+          tree.symbol.tpe = catchAbort(global.lookupType(p.typeName)) getOrElse {
+            error("Port type not found " + p.typeName, tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
@@ -418,7 +411,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
   def runCheck(): Tree = {
     toCompile.template.blocks.headOption foreach {
       bl ⇒
-        new CheckConnections(bl, true,this).run()
+        new CheckConnections(bl, true, this).run()
     }
     toCompile
   }

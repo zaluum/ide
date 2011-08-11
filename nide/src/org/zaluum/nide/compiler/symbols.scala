@@ -82,7 +82,7 @@ case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var con
 sealed trait TemplateSymbol extends Symbol {
   var ports = Map[Name, PortSymbol]()
   var blocks = List[BlockSymbol]()
-  def lookupPort(name:Name) = ports.get(name)
+  def lookupPort(name: Name) = ports.get(name)
   def templateTree: Template
   def currentBlockIndex = {
     val parsed = templateTree.currentBlock.map { c ⇒
@@ -96,8 +96,6 @@ sealed trait TemplateSymbol extends Symbol {
   var thisVal: ValSymbol = _ // should be template
 }
 trait BoxType extends TemplateSymbol with Type {
- // def portsWithSuper = ports
- // def lookupPortWithSuper(name: Name): Option[PortSymbol]
   def templateTree: Template
 }
 class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
@@ -177,7 +175,6 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
 class BoxTypeSymbol(
     val name: Name, //Class name without package
     val pkg: Name, // pkgdecl
-   // val superName: Option[Name], //fqname
     val image: Option[String],
     var visualClass: Option[Name],
     val abstractCl: Boolean = false) extends TemplateSymbol with BoxType with Namer {
@@ -201,23 +198,24 @@ class BoxTypeSymbol(
   def IOInOrder = (ports.values ++ params.values).toList.sortBy(_.name.str)
   def paramsInOrder = params.values.toList.sortBy(_.name.str)
   def lookupParam(name: Name) = params.get(name)
-  def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.place }
-  def returnPort = ports.values find { p ⇒ p.dir == Out && p.place == 0 }
-  def fieldReturns = ports.values.toList filter { p ⇒ p.dir == Out && p.place != 0 } sortBy { _.place }
-  def methodSelector = returnPort map {_.name} getOrElse(Name(TreeToClass.defaultMethodName))
-  def returnDescriptor = returnPort map {_.tpe.fqName.descriptor} getOrElse("V")
-  def methodSignature = "("+argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor 
+  def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
+  def returnPort = ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
+  def fieldReturns = ports.values.toList filter { p ⇒ p.isField && p.dir == Out } sortBy { _.name.str }
+  def methodSelector = returnPort map { _.name } getOrElse (Name(TreeToClass.defaultMethodName))
+  def returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
+  def methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
 }
 
 // TODO make two classes one that has values from the declaring tree and the other directly from symbol
 class IOSymbol(val owner: TemplateSymbol, val name: Name, val dir: PortDir) extends Symbol {
   def box = owner
 }
-class PortSymbol(owner: TemplateSymbol, name: Name, val helpName: Name, val extPos: Point, dir: PortDir, val place: Int) extends IOSymbol(owner, name, dir) {
+class PortSymbol(owner: TemplateSymbol, name: Name, val helpName: Name, val extPos: Point, dir: PortDir, var isField: Boolean = false) extends IOSymbol(owner, name, dir) {
   def this(owner: TemplateSymbol, name: Name, dir: PortDir) =
-    this(owner, name, name, Point(0, 0), dir, 0)
+    this(owner, name, name, Point(0, 0), dir)
   override def toString = "PortSymbol(" + name + ")"
 }
+//class ResultPortSymbol(owner: TemplateSymbol, name: Name, val helpName: Name, val extPos: Point) extends PortSymbol(owner,name,helpName,extPos,Out)
 class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
   override def toString = {
     if (params.isEmpty) "<default>()" else

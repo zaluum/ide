@@ -93,7 +93,12 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         addDag(out, in)
     }
   }
-
+  def assignBoxTypeSymbolTypes(vs:ValSymbol) {
+    for (pi<-vs.portInstances; ps <- pi.portSymbol) {
+      pi.missing = false
+      pi.finalTpe = ps.tpe
+    }
+  }
   def checkBoxTypes(vs: ValSymbol) {
     checkGhostPorts(vs)
     checkPortConnectionsTypes(vs)
@@ -158,7 +163,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     val objectChecker = new OOChecker(this)
     for (vs ← bl.executionOrder) {
       vs.tpe match {
-        case bs: BoxTypeSymbol   ⇒ checkBoxTypes(vs)
+        case bs: BoxTypeSymbol   ⇒ assignBoxTypeSymbolTypes(vs); checkBoxTypes(vs)
         case b: BinExprType      ⇒ exprChecker.checkBinExprTypes(vs)
         case LiteralExprType     ⇒ exprChecker.checkLiteralExprType(vs)
         case e: UnaryExprType    ⇒ exprChecker.checkUnaryExprType(vs)

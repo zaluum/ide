@@ -47,6 +47,12 @@ import org.eclipse.jdt.internal.compiler.ast.ArrayQualifiedTypeReference
 import org.zaluum.nide.compiler.In
 import org.eclipse.jdt.internal.compiler.ast.Argument
 import org.zaluum.annotation.Apply
+import org.eclipse.jdt.internal.compiler.ast.NormalAnnotation
+import org.eclipse.jdt.internal.compiler.ast.MemberValuePair
+import org.eclipse.jdt.internal.compiler.ast.ArrayInitializer
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.eclipse.jdt.internal.compiler.impl.StringConstant
+import org.eclipse.jdt.internal.compiler.ast.StringLiteral
 
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
@@ -155,24 +161,29 @@ class ZaluumCompilationUnitDeclaration(
     constructor.bits |= ASTNode.IsDefaultConstructor
     constructor.modifiers = ClassFileConstants.AccPublic
     constructor.selector = b.name.str.toCharArray
+    // TODO sorted methods accsortedmethods?
     val meth = new MethodDeclaration(compilationResult)
-   /* b.template.ports find { _.dir == Out } match {
+    b.template.ports find { _.dir == Out } match {
       case Some(p) ⇒
         meth.selector = p.name.str.toCharArray
         meth.returnType = createTypeReference(p.typeName, b)
-        println(p.typeName)
-      case None ⇒*/
-        meth.selector = "apply".toCharArray//TreeToClass.defaultMethodName.toCharArray
+      case None ⇒
+        meth.selector = TreeToClass.defaultMethodName.toCharArray
         meth.returnType = createTypeReference(Name("void"), b)
-    //}
-    println(meth.selector.mkString)
-    //val ins = b.template.ports filter { _.dir == In }
-    /*    meth.arguments = ins map { p=>
-      val ref = createTypeReference(p.typeName,p)
-      new Argument(p.name.str.toCharArray, NON_EXISTENT_POSITION, ref, ClassFileConstants.AccPublic)
-    } toArray;*/
-    meth.arguments = Array()
-    //meth.annotations = Array(new MarkerAnnotation(createTypeReference(Name(classOf[Apply].getName), b), start(b))) 
+    }
+    val ins = b.template.ports filter { _.dir == In } sortBy { _.name.str }
+    meth.arguments = ins map { p ⇒
+      val ref = createTypeReference(p.typeName, p)
+      val a = new Argument(p.name.str.toCharArray, compressPos(start(b), end(b)), ref, 0)
+      a.declarationSourceStart = start(b);
+      a
+    } toArray;
+    if (meth.arguments.size == 0) meth.arguments = null;
+    val annotation = new NormalAnnotation(createTypeReference(Name(classOf[Apply].getName), b), start(b))
+    val expr = new ArrayInitializer
+    expr.expressions = ins.map { i ⇒ new StringLiteral(i.name.str.toCharArray, start(b), end(b), b.line) }.toArray
+    annotation.memberValuePairs = Array(new MemberValuePair("paramNames".toCharArray, start(b), end(b), expr))
+    meth.annotations = Array(annotation)
     meth.modifiers = ClassFileConstants.AccPublic
     meth.thrownExceptions = null
     meth.sourceStart = start(b)
@@ -181,9 +192,7 @@ class ZaluumCompilationUnitDeclaration(
     meth.bodyEnd = end(b)
     meth.declarationSourceStart = start(b)
     meth.declarationSourceEnd = end(b)
-    //Array(constructor, meth)
-    //Array(constructor, meth)
-    Array(constructor,meth)
+    Array(constructor, meth)
   }
   // tpe not yet initialized
   def createFieldDeclarations(b: BoxDef): Array[FieldDeclaration] = {
@@ -221,7 +230,7 @@ class ZaluumCompilationUnitDeclaration(
     res.toArray
   }
   def createTypeReference(name: Name, t: Tree): TypeReference = {
-    val pos = toPos(start(t),end(t))
+    val pos = toPos(start(t), end(t))
     val tpe =
       name.asArray match {
         case Some((leaf, dim)) ⇒
@@ -329,7 +338,7 @@ object ZaluumCompilationUnitDeclaration {
     }
     return result;
   }
-  def compressPos(start:Int, end:Int) = (start << 32) | end;
+  def compressPos(start: Int, end: Int) = (start << 32) | end;
   def toMainName(fileName: Array[Char]): Array[Char] = {
     if (fileName == null) {
       return Array.ofDim(0);

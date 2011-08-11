@@ -2,7 +2,6 @@ package org.zaluum.nide.zge
 
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.Stack
-
 import org.eclipse.jdt.core.dom.AST
 import org.eclipse.jdt.core.dom.ASTParser
 import org.eclipse.jdt.core.ElementChangedEvent

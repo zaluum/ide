@@ -1,7 +1,10 @@
 Agenda
 
 week 8-14 
-	* compilador amb parametres out apply(in in in)
+	- fix widget
+	- check return port name collision with java keywords object methods
+	- helperNames for java 
+	- connection in->out
 	- infer types of while/ifs
 	- type auto (white color on add, remove, etc)
 	- better port names (this,thisOut)
@@ -13,7 +16,6 @@ week 8-14
 	- visual only boxes
 	- write feature list on freemind
 	- remove expr .javas and organize better packages for exprs IF javadoc support ok
-	- how to get all methods with visibleFrom ZaluumCompilationUnitScope?
 	- ensure method/field order in generated code
 week 15-21 GUI week
 	- change port names
@@ -63,7 +65,8 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
-	- @Apply marks method to invoke
+	- optimize locals usage in code generation 
+	- how to get all methods with visibleFrom ZaluumCompilationUnitScope?
 	- Timed loop?
 	- getter/setter boxes with all fields at once instead of selecting one
 	-suport per a multiples directors (multi-threading)
@@ -109,6 +112,8 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- @Apply marks method to invoke
+	* compilador amb parametres out apply(in in in)
 	- consider array style for get/put
 	- array creation
 	- array access

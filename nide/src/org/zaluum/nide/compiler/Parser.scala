@@ -20,9 +20,8 @@ object Parser {
     } catch {
       case e ⇒
         // TODO fixme better handling
-        //e.printStackTrace;
-        println("PARSING ERROR! " + e)
-        BoxDef.emptyBox("", "")
+        println("PARSING ERROR! First after file creation is expected" + e.toString)
+        BoxDef.emptyBox(className.classNameWithoutPackage, className.packageProxy)
     }
     a.assignLine(1)
     a

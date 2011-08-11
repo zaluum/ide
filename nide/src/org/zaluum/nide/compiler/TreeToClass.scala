@@ -17,13 +17,12 @@ case class BoxClass(name: Name, contents: List[Tree]) extends Tree
 case class FieldDef(name: Name, typeName: Name, annotation: Option[Name], priv: Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
-case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)]) extends Tree
+case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)], applyAnnotation:Option[List[Name]]) extends Tree
 case class Assign(lhs: Ref, rhs: Tree) extends Tree
 case class While(body: List[Tree], cond: Tree) extends Tree
 case class If(cond: Tree, trueBlock: List[Tree], falseBlock: List[Tree]) extends Tree
 case class Not(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
 case class Minus(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
-
 case class ArrayRef(index:Tree, arrRef:Tree, arrTpe: Type) extends Ref
 case class NewArray(sizes:List[Tree], arrTpe: Type) extends Ref
 
@@ -61,7 +60,8 @@ case class Invoke(
   fromClass: Name, descriptor: String, interface: Boolean) extends Tree
 case class InvokeStatic(meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
 case class Const(i: Any, constTpe: Type) extends Tree
-case class Return(t: Tree) extends Tree
+case class Return(t: Tree, retTpe:Type) extends Tree
+case object Return extends Tree
 case object True extends Tree
 case object Dup extends Tree
 case class ALoad(i: Int) extends Tree
@@ -84,7 +84,7 @@ case class L2I(a: Tree) extends UnaryExpr
 object TreeToClass {
   val defaultMethodName = "run"
 }
-class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScope) extends ReporterAdapter with ContentsToClass {
+class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScope) extends ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
   object rewrite {
@@ -92,19 +92,18 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
       case b: BoxDef ⇒
         val tpe = b.tpe.asInstanceOf[BoxType]
         val bs = b.sym
-        val outs = bs.ports.values.toList.filter { p=> p.place!=0 && p.dir==Out} sortBy {_.place}
-        val baseFields = (bs.blocks.head.executionOrder ++ outs).flatMap { field(_) }
+        val baseFields = (bs.blocks.head.executionOrder ++ bs.fieldReturns ).flatMap { field(_) }
         val fields = bs.visualClass map { vn ⇒
           FieldDef(Name("_widget"), vn, None, false) :: baseFields
         } getOrElse { baseFields }
-        val baseMethods = List(cons(b), appl(b))
+        val baseMethods = List(cons(b), new ApplyMethodGenerator(b).appl)
         BoxClass(
           tpe.fqName,
           baseMethods ++ fields)
     }
     def field(s: Symbol): List[FieldDef] = s match {
       case ps: PortSymbol ⇒
-        assert( ps.dir == Out)
+        assert( ps.dir == Out && ps.isField)
         val outName = Name(classOf[org.zaluum.annotation.Out].getName)
         List(FieldDef(ps.name, ps.tpe.name, Some(outName), false))
       case vs: ValSymbol ⇒
@@ -173,7 +172,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
       }
       val bcs = bsVals.flatMap(boxCreation)
       val par = bsVals.flatMap(params)
-      ConstructorMethod(bcs ++ par ++ widgets)
+      ConstructorMethod(bcs ++ par /*++ widgets */:+ Return)
     }
 
     val widgetName = Name("_widget")

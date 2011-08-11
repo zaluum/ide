@@ -33,6 +33,8 @@ import org.zaluum.nide.compiler.primitives
 import JDTInternalUtils.aToString
 import JDTInternalUtils.stringToA
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
+import org.eclipse.jdt.internal.compiler.impl.StringConstant
+import org.zaluum.nide.compiler.PortDir
 class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupEnvironment: LookupEnvironment) extends CompilationUnitScope(cudp, lookupEnvironment) with ZScope {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
     new ZaluumClassScope(parent, typeDecl)
@@ -124,19 +126,8 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
             srcName, pkgName,
             None, None, r.isAbstract)
           bs.scope = this
-          var outs = 0
-          var ins = 0
-            def createInPort(helpName: Name, tpe: TypeBinding) {
-              val port = new PortSymbol(bs, Name("p" + ins), helpName, Point(0, 0),
-                In, ins)
-              ins = ins + 1
-              port.tpe = getJavaType(tpe)
-              bs.ports += (port.name -> port)
-            }
-            def createOutPort(name: Name, tpe: TypeBinding) {
-              val port = new PortSymbol(bs, name, name, Point(0, 0),
-                Out, outs)
-              outs = outs + 1
+            def createPort(name: Name, tpe: TypeBinding, dir: PortDir, field:Boolean=false) {
+              val port = new PortSymbol(bs, name, name, Point(0, 0), dir,field)
               port.tpe = getJavaType(tpe)
               bs.ports += (port.name -> port)
             }
@@ -145,16 +136,19 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
             val engine = new ZaluumCompletionEngine(environment)
             ZaluumCompletionEngineScala.allMethods(engine, null, r, false)*/
           for (m ← allMethodsFor(r)) {
-              def hasAnnotation(c: Class[_]) = m.getAnnotations.exists { a ⇒
-                aToString(a.getAnnotationType.compoundName) == c.getName
-              }
-            val parameterNames = MethodUtils.findMethodParameterNamesEnv(m, environment.nameEnvironment) getOrElse {
-              (for (i ← 0 until m.parameters.length) yield "$" + i).toArray
+            val annotation = m.getAnnotations.find { a ⇒
+              aToString(a.getAnnotationType.compoundName) == classOf[org.zaluum.annotation.Apply].getName
             }
+            val hasAnnotation = annotation.isDefined
+
+            val helperNames = MethodUtils.findMethodParameterNamesEnv(m, environment.nameEnvironment)
+            val numericNames = (1 to m.parameters.length) map { i ⇒ "p" + i } toList
+            
             val mName = m.selector.mkString
             if (m.isConstructor && m.isPublic) {
-              val params = for ((p, name) ← m.parameters zip parameterNames) yield {
-                val ps = new ParamSymbol(bs, Name(name))
+              val params = for ((p, i) ← m.parameters zipWithIndex) yield {
+                val name = numericNames(i)
+                val ps = new ParamSymbol(bs, Name(name.toString)) // helper name
                 ps.tpe = getJavaType(p)
                 ps
               }
@@ -165,27 +159,51 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
                 val p = new ParamSymbol(bs, Name(mName))
                 p.tpe = ptpe
                 bs.params += (p.name -> p)
-              } else if (hasAnnotation(classOf[org.zaluum.annotation.Apply]) &&
+              } else if (hasAnnotation &&
                 !m.isStatic && !m.isAbstract && m.isPublic && !bs.hasApply) {
+                  def arrOption(a: Any) = a match {
+                    case a: Array[Object] ⇒ Some(a)
+                    case _                ⇒ None
+                  }
+                  def stringConstant(a: Object) = a match {
+                    case s: StringConstant ⇒ Some(s.stringValue())
+                  }
+                val annotatedParameters = {
+                  val arrValues = for (
+                    a ← annotation;
+                    pair ← a.getElementValuePairs.find { _.getName.mkString == "paramNames" };
+                    arr ← arrOption(pair.getValue)
+                  ) yield { arr }
+                  val names = arrValues.map { arr ⇒
+                    for (
+                      component ← arr.toList;
+                      str ← stringConstant(component)
+                    ) yield str
+                  }
+                  names match {
+                    case Some(l) if l.size == m.parameters.size ⇒ Some(l)
+                    case _                                      ⇒ None
+                  }
+                }
+                val argumentNames = annotatedParameters.getOrElse(numericNames)
                 bs.hasApply = true
-                for ((p, name) ← m.parameters zip parameterNames) {
-                  createInPort(Name(name), p)
+                for ((p, name) ← m.parameters zip argumentNames) {
+                  createPort(Name(name), p, In)
                 }
                 m.returnType match {
-                  case TypeBinding.VOID => outs = 1 //skip return 
-                  case r => createOutPort(Name(m.selector.mkString),r)
+                  case TypeBinding.VOID ⇒ //skip return 
+                  case r                ⇒ createPort(Name(m.selector.mkString), r,Out)
                 }
               }
             }
           }
-
           for (f ← allFieldsFor(r); if f.isPublic && !f.isStatic) {
             val fname = f.name.mkString
               def hasAnnotation(c: Class[_]) = f.getAnnotations.exists { a ⇒
                 aToString(a.getAnnotationType.compoundName) == c.getName
               }
-            if (hasAnnotation(classOf[org.zaluum.annotation.Out])) 
-              createOutPort(Name(fname), f.`type`)
+            if (hasAnnotation(classOf[org.zaluum.annotation.Out]))
+              createPort(Name(fname), f.`type`,Out,field=true)
             if (fname == "_widget") {
               f.`type` match {
                 case r: ReferenceBinding ⇒
