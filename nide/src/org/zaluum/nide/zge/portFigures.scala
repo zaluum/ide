@@ -22,7 +22,6 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
   def pos = MPoint(ipos.x - size.w / 2, ipos.y - size.h / 2)
   def anchor = getBounds.getCenter
   private var ipos = MPoint(0, 0)
-  var nameOverride = ""
   var in = false
   var ps: PortSide = _
   def update(ipos: MPoint, ps: PortSide) {

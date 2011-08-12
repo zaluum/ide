@@ -1,10 +1,8 @@
 Agenda
 
 week 8-14 
-	- helperNames for java 
-	- Automatic icon grows/shrinks depending on number of ports
 	- connection in->out
-	- ensure method/field order in generated code
+	- Automatic icon grows/shrinks depending on number of ports
 	- infer types of while/ifs
 	- type auto (white color on add, remove, etc)
 	- better port names (this,thisOut)
@@ -63,6 +61,7 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
+	- ensure method/field order in generated code
 	* Dependecy tracking for incremental compilation when a box changes port names but not the method signature
 	- optimize locals usage in code generation 
 	- how to get all methods with visibleFrom ZaluumCompilationUnitScope?
@@ -111,6 +110,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- helperNames for java 
 	- fix widget
 	- @Apply marks method to invoke
 	* compilador amb parametres out apply(in in in)

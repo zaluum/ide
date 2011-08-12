@@ -210,9 +210,9 @@ class BoxTypeSymbol(
 class IOSymbol(val owner: TemplateSymbol, val name: Name, val dir: PortDir) extends Symbol {
   def box = owner
 }
-class PortSymbol(owner: TemplateSymbol, name: Name, val helpName: Name, val extPos: Point, dir: PortDir, var isField: Boolean = false) extends IOSymbol(owner, name, dir) {
+class PortSymbol(owner: TemplateSymbol, name: Name, val helperName: Option[Name], val extPos: Point, dir: PortDir, var isField: Boolean = false) extends IOSymbol(owner, name, dir) {
   def this(owner: TemplateSymbol, name: Name, dir: PortDir) =
-    this(owner, name, name, Point(0, 0), dir)
+    this(owner, name, None, Point(0, 0), dir)
   override def toString = "PortSymbol(" + name + ")"
 }
 //class ResultPortSymbol(owner: TemplateSymbol, name: Name, val helpName: Name, val extPos: Point) extends PortSymbol(owner,name,helpName,extPos,Out)
@@ -231,7 +231,7 @@ class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
 class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name, In) {
   override def toString = "ParamSymbol(" + name + ")"
 }
-class PortInstance(val name: Name, val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) {
+class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) {
   var missing = false
   var finalTpe: Type = NoSymbol
   def hasDecl = portSymbol.map { _.decl != null } getOrElse { false }
@@ -249,7 +249,7 @@ object PortSide {
   def findOrCreateMissing(p: PortRef, bl: BlockSymbol) = {
       def createMissing(vs: ValSymbol, inside: Boolean) = {
         val dir = if (p.in) In else Out // FIXME shift ? 
-        val missing = new PortInstance(p.name, vs, dir)
+        val missing = new PortInstance(p.name, None, vs, dir)
         missing.missing = true
         val side = new PortSide(missing, p.in, inside)
         vs.portInstances ::= missing
@@ -270,6 +270,7 @@ object PortSide {
 class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolean) {
   def flowIn = if (fromInside) !inPort else inPort
   def name = pi.name
+  def helperName = pi.helperName
   def toRef = {
     if (fromInside) PortRef(ThisRef(), name, inPort) // ok?
     else PortRef(ValRef(pi.valSymbol.name), name, inPort)
@@ -295,16 +296,16 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
     }
     Name(prefix + owner.numeral + name.str)
   }
-  private def createOutsidePs(name: Name, dir: Boolean) = {
+  private def createOutsidePs(name: Name, dir: Boolean, helperName: Option[Name] = None) = {
     val pdir = if (dir) In else Out
-    val pi = new PortInstance(name, this, pdir)
+    val pi = new PortInstance(name, helperName, this, pdir)
     val ps = new PortSide(pi, dir, false)
     portInstances ::= pi
     portSides ::= ps
     ps
   }
-  def createOutsideIn(name: Name) = createOutsidePs(name, true)
-  def createOutsideOut(name: Name) = createOutsidePs(name, false)
+  def createOutsideIn(name: Name, helperName: Option[Name] = None) = createOutsidePs(name, true, helperName)
+  def createOutsideOut(name: Name, helperName: Option[Name] = None) = createOutsidePs(name, false, helperName)
   def findPortInstance(p: PortSymbol): Option[PortInstance] = {
     portInstances.find(_.portSymbol == Some(p))
   }

@@ -245,7 +245,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
           }
         case p @ PortDef(name, typeName, dir, inPos, extPos) ⇒
           val template = currentOwner.asInstanceOf[TemplateSymbol]
-          val port = new PortSymbol(template, name, name, extPos, dir)
+          val port = new PortSymbol(template, name, None, extPos, dir)
           bind(port, p, template.ports.contains(p.name)) {
             template.ports += (port.name -> port)
           }
@@ -267,7 +267,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
     def location(tree: Tree) = globLocation(tree)
     def createPortInstances(ports: Iterable[PortSymbol], vsym: ValSymbol, inside: Boolean, outside: Boolean) = {
       vsym.portInstances :::= (for (p ← ports; if p.isInstanceOf[PortSymbol]) yield {
-        val pi = new PortInstance(p.name, vsym, p.dir, Some(p))
+        val pi = new PortInstance(p.name, p.helperName, vsym, p.dir, Some(p))
         pi
       }).toList;
       vsym.portSides :::= (for (pi ← vsym.portInstances; ps ← pi.portSymbol) yield {

@@ -54,7 +54,7 @@ class ApplyMethodGenerator(b: BoxDef) {
   def runBlock(bl: BlockSymbol): List[Tree] = {
     bl.executionOrder flatMap { vs ⇒
       val outs = for {
-        (from, to) ← bl.connections.flow;
+        (from, to) ← bl.connections.flow; // order
         if from.valSymbol == vs;
         a ← execConnection((from, to))
       } yield a
@@ -303,7 +303,7 @@ class ApplyMethodGenerator(b: BoxDef) {
             val ret = b.returnPort.toList map { createLocal }
             args ::: ret
           case e: ExprType ⇒
-            val res = vs.portInstances map { pi ⇒
+            val res = vs.portInstances.sortBy(_.name.str) map { pi ⇒
               (pi -> { val l = locals; locals = locals + pi.finalTpe.javaSize; l })
             }
             val children = for (bl ← vs.blocks; vs ← bl.executionOrder; l ← createLocals(vs)) yield l

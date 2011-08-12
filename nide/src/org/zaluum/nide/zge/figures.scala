@@ -99,23 +99,12 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
   override def updateValPorts() {
     super.updateValPorts()
     sym.info match {
-      case m: MethodBinding ⇒
-        MethodUtils.findMethodParamNames(m, jproject).foreach { names ⇒
-          names.zipWithIndex.foreach {
-            case (name, i) ⇒
-              ports filter { _.ps.name.str == "p" + i } foreach { // remove literal "p"
-                _.nameOverride = name
-              }
-          }
-        }
       case f: FieldBinding ⇒
         val opi = sym.tpe match {
           case r: ResultExprType ⇒ Some(r.outPort(sym))
           case o: OneParameter   ⇒ Some(o.aPort(sym))
           case _                 ⇒ None
         }
-        for (pi ← opi; port ← ports.find(_.ps.pi == pi))
-          port.nameOverride = f.name.mkString
       case _ ⇒
     }
   }
