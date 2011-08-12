@@ -1,7 +1,6 @@
 Agenda
 
 week 8-14 
-	- connection in->out
 	- Automatic icon grows/shrinks depending on number of ports
 	- infer types of while/ifs
 	- type auto (white color on add, remove, etc)
@@ -110,6 +109,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- connection in->out
 	- helperNames for java 
 	- fix widget
 	- @Apply marks method to invoke

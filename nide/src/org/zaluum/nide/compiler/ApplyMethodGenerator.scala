@@ -10,16 +10,13 @@ class ApplyMethodGenerator(b: BoxDef) {
 
   def appl: Method = {
     val invokes = runBlock(bs.blocks.head)
+    val assign = assignFlowInConnections(bs.thisVal,bs.blocks.head)
     val ret = bs.returnPort match {
       case Some(r) ⇒
         val pi = bs.thisVal.findPortInstance(r).get
-        val as = bs.block.connections.connectedFrom.get(pi) match {
-          case Some(p) ⇒ List()
-          case None    ⇒ List(Assign(toRef(pi), Const(0, pi.finalTpe)))
-        }
-        as :+ Return(toRef(pi), pi.finalTpe)
+        Return(toRef(pi), pi.finalTpe)
       case None ⇒
-        List(Return)
+        Return
     }
     val localsDecl = localsMap map {
       case (pi, i) ⇒
@@ -27,8 +24,8 @@ class ApplyMethodGenerator(b: BoxDef) {
         else pi.valSymbol.fqName.str + "_" + pi.name.str
         (name, pi.finalTpe.asInstanceOf[JavaType].descriptor, i)
     } toList;
-    val annotation = bs.argsInOrder.map {_.name}
-    Method(bs.methodSelector, bs.methodSignature, invokes ::: ret, localsDecl, Some(annotation))
+    val annotation = bs.argsInOrder.map { _.name }
+    Method(bs.methodSelector, bs.methodSignature, invokes ::: (assign :+ ret), localsDecl, Some(annotation))
   }
 
   def execConnection(c: (PortInstance, Set[PortInstance])) = {
@@ -61,14 +58,17 @@ class ApplyMethodGenerator(b: BoxDef) {
       runOne(vs, bl) ::: outs.toList
     }
   }
-  def runOne(vs: ValSymbol, bl: BlockSymbol): List[Tree] = {
-    // propagate inputs
-    val propagate = for (ps ← vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
+  def assignFlowInConnections(vs: ValSymbol, bl: BlockSymbol): List[Tree] = {
+    for (ps ← vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
       bl.connections.connectedFrom.get(pi) match {
         case Some((o, blame)) ⇒ assign(pi, o)
         case None             ⇒ Assign(toRef(pi), Const(0, pi.finalTpe))
       }
     }
+  }
+  def runOne(vs: ValSymbol, bl: BlockSymbol): List[Tree] = {
+    // propagate inputs
+    val propagate = assignFlowInConnections(vs,bl)
     import primitives._
       def invokeHelper(vs: ValSymbol, m: MethodBinding, invoke: Tree): Tree = // TODO find a better place
         if (m.returnType != null && m.returnType != TypeBinding.VOID) {
