@@ -172,13 +172,13 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScop
       }
       val bcs = bsVals.flatMap(boxCreation)
       val par = bsVals.flatMap(params)
-      ConstructorMethod(bcs ++ par /*++ widgets */:+ Return)
+      ConstructorMethod(bcs ++ par ++ widgets :+ Return)
     }
 
     val widgetName = Name("_widget")
     def fieldRef(vs: ValSymbol, bs: BoxTypeSymbol) = {
       val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
-      FieldRef(vs.fqName, tpe.fqName.descriptor, bs.fqName)
+      Select(This,FieldRef(vs.fqName, tpe.fqName.descriptor, bs.fqName))
     }
     def createWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
