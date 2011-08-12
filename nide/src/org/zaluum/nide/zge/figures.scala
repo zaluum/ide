@@ -46,22 +46,36 @@ trait ValDefItem extends Item {
 trait ValFigure extends ValDefItem with HasPorts {
   def sym = valDef.sym
   def myLayer = container.layer
-  def updateValPorts() {
-    for (p ← ports) container.portsLayer.remove(p)
-    ports.clear
-
+  var ins = List[PortSide]()
+  var outs = List[PortSide]()
+  var minYSize = 0
+  override def updateMe() {
     val bports = sym.portSides;
     val (unsortedins, unsortedouts) = bports.partition { _.inPort } // SHIFT?
-    val ins = unsortedins.toList.sortBy(_.name.str);
-    val outs = unsortedouts.toList.sortBy(_.name.str);
-      def space(s: PortSide) = if (s.inPort) size.h / (ins.size + 1) else size.h / (outs.size + 1)
+    ins = unsortedins.toList.sortBy(_.name.str);
+    outs = unsortedouts.toList.sortBy(_.name.str);
+    val max = math.max(ins.size,outs.size)
+    val correctedMax = if (max == 2) 3 else max 
+    // spread 2 ports like X _ X
+    minYSize = correctedMax * Tool.gridSize
+  }
+  def updateValPorts() {
+    val center = size.h / 2
+    val separation= Tool.gridSize
+    val insStartY = center - separation*(ins.size/2)
+    val outStartY = center - separation*(outs.size/2)
       def createPort(s: PortSide, i: Int) {
         val p = new PortFigure(container)
         val x = if (s.inPort) 0 else size.w
-        val point = Point(x, (i + 1) * space(s))
+        val sourceList = if (s.inPort) ins else outs
+        val skipCenter = if (sourceList.size==2 && i==1) 1 else 0 // skip 1 position 
+        val starty = if (s.inPort) insStartY else outStartY
+        val point = Point(x, + starty + ((i+skipCenter) * separation))
         p.update(point + Vector2(getBounds.x, getBounds.y), s)
         ports += p
       }
+    for (p ← ports) container.portsLayer.remove(p)
+    ports.clear
     for ((p, i) ← ins.zipWithIndex) createPort(p, i)
     for ((p, i) ← outs.zipWithIndex) createPort(p, i)
 
@@ -96,18 +110,6 @@ trait AutoDisposeImageFigure extends ImageFigure {
 }
 class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container) {
   private def jproject = container.viewer.zproject.jProject.asInstanceOf[JavaProject]
-  override def updateValPorts() {
-    super.updateValPorts()
-    sym.info match {
-      case f: FieldBinding ⇒
-        val opi = sym.tpe match {
-          case r: ResultExprType ⇒ Some(r.outPort(sym))
-          case o: OneParameter   ⇒ Some(o.aPort(sym))
-          case _                 ⇒ None
-        }
-      case _ ⇒
-    }
-  }
   override def img = {
     sym.info match {
       case m: MethodBinding ⇒
@@ -118,10 +120,11 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
             (if (m.isStatic()) m.declaringClass.compoundName.last.mkString else "") +
               "." + m.selector.mkString + "()"
           }
-        imageFactory.invokeImage(txt)
+        sym.portInstances
+        imageFactory.invokeIcon(txt,minYSize)
       case f: FieldBinding ⇒
         val prefix = if (f.isStatic()) f.declaringClass.compoundName.last.mkString else ""
-        imageFactory.invokeImage(prefix + "." + f.name.mkString)
+        imageFactory.invokeIcon(prefix + "." + f.name.mkString,minYSize)
       case _ ⇒
         val str = sym.tpe match {
           case NewArrayExprType=>
@@ -133,8 +136,8 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
           case _ => None 
         }
         str match {
-          case Some(str) => imageFactory.invokeImage(str)
-          case None => imageFactory.invokeImageError("right click me")
+          case Some(str) => imageFactory.invokeIcon(str,minYSize)
+          case None => imageFactory.invokeIconError("right click me",minYSize)
         }
     }
   }
@@ -142,8 +145,9 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
 class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def imageFactory = container.viewer.zproject.imageFactory
-  def img = imageFactory(valDef.tpe)
-  def updateMe() {
+  def img = imageFactory.icon(valDef.tpe,minYSize)
+  override def updateMe() {
+    super.updateMe()
     disposeImage()
     val (newImg, newDesc) = img
     desc = newDesc
@@ -159,13 +163,14 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
     repaint()
   }
 }
-class DirectValFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure with RectFeedback {
+class LiteralFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure with RectFeedback {
   def size = {
     pg.getPreferredSize().ensureMin(Dimension(Tool.gridSize * 3, Tool.gridSize * 3)) + Vector2(Tool.gridSize, 0)
   }
   def param = valDef.params.headOption.asInstanceOf[Option[Param]]
   def text = param.map { _.value }.getOrElse { "0" }
-  def updateMe {
+  override def updateMe {
+    super.updateMe()
     fl.setText(text)
     setForegroundColor(Colorizer.color(param.map(_.tpe).getOrElse(null)))
     pg.setBounds(new Rectangle(new EPoint(2, 2), dimension(size)))

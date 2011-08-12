@@ -18,7 +18,7 @@ import org.zaluum.nide.compiler.Vector2
 import draw2dConversions._
 
 class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
-  def size = Dimension(6, 6)
+  def size = Dimension(5, 5)
   def pos = MPoint(ipos.x - size.w / 2, ipos.y - size.h / 2)
   def anchor = getBounds.getCenter
   private var ipos = MPoint(0, 0)
@@ -28,18 +28,21 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
     this.ps = ps
     this.ipos = ipos
     this.in = in
-    setBounds(new Rectangle(pos.x, pos.y, size.w, size.h))
     setBackgroundColor(Colorizer.color(ps.pi.finalTpe))
+    updateHoverColor()
     setBounds(new Rectangle(pos.x, pos.y, size.w, size.h))
   }
   var _hover = false
   def hover = _hover
   def hover_=(b: Boolean) = {
     _hover = b
-    if (b)
+    updateHoverColor()
+  }
+  def updateHoverColor() {
+    if (_hover)
       setForegroundColor(ColorConstants.lightGray)
     else
-      setForegroundColor(ColorConstants.black)
+      setForegroundColor(getBackgroundColor())
   }
   override def toString() =
     "PortFigure(" + ps + ")"

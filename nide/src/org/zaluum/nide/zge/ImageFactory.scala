@@ -44,41 +44,72 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   }
   def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
   def destroyAll() = rm.dispose();
-  def invokeImage(txt: String) = imageForText(txt, ColorConstants.blue)
-  def invokeImageError(txt: String) = imageForText(txt, ColorConstants.red)
-  def apply(name: Name): (Image, DeviceResourceDescriptor) = imageFor(None, name);
-  def apply(tpe: Type): (Image, DeviceResourceDescriptor) = {
+  def image48(name: Name): (Image, DeviceResourceDescriptor) = iconFor(None, name, 48);
+  def icon(tpe: Type, minY: Int): (Image, DeviceResourceDescriptor) = {
     tpe match {
-      case b: BoxTypeSymbol ⇒ imageFor(b.image, b.fqName)
-      case b: BoxType       ⇒ imageFor(None, b.fqName)
-      case _                ⇒ (rm.createImage(notFound), notFound)
+      case b: BoxTypeSymbol ⇒ iconFor(b.image, b.fqName, minY)
+      case b: BoxType       ⇒ iconFor(None, b.fqName, minY)
+      case _                ⇒ imageForText("<missing>", minY, ColorConstants.red)
     }
   }
-  def apply(d: ImageDescriptor) = rm.createImage(d)
+  def invokeIcon(str: String, miny: Int) = imageForText(str, miny, ColorConstants.blue)
+  def invokeIconError(str: String, miny: Int) = imageForText(str, miny, ColorConstants.red)
+  def image(d: ImageDescriptor) = rm.createImage(d)
   private def resourceToDescriptor(resource: String) =
     zp.getResource(resource) map { ImageDescriptor.createFromURL }
 
-  private def resourceToImage(resource: String): Option[(Image, DeviceResourceDescriptor)] =
+  private def resourceToImage(resource: String): Option[(Image, ImageDescriptor)] =
     resourceToDescriptor(resource) flatMap { desc ⇒
       try {
         Some((rm.create(desc).asInstanceOf[Image], desc))
       } catch { case e ⇒ None }
     }
+  private def nestedImageFor(imageName: Option[String], name: Name): Option[(Image, ImageDescriptor)] = {
+    imageName.flatMap { imgName => 
+      resourceToImage(imgName) 
+    }.orElse {resourceToImage(name.toRelativePath + ".png")}
+  }
+  private def iconFor(imageName: Option[String], name: Name, minY: Int) = {
+    nestedImageFor(imageName, name) match {
+      case Some((img, desc)) ⇒
+        val newDesc = GeneratedImageIconImageDescriptor(desc, minY)
+        val img = rm.create(newDesc).asInstanceOf[Image]
+        destroy(desc)
+        (img, desc)
+      case None ⇒ imageForText(name.classNameWithoutPackage, minY, ColorConstants.black)
 
-  private def imageFor(imageName: Option[String], name: Name): (Image, DeviceResourceDescriptor) = {
-    imageName flatMap { resourceToImage } orElse {
-      resourceToImage(name.toRelativePath + ".png")
-    } getOrElse {
-      imageForText(name.classNameWithoutPackage, ColorConstants.black)
     }
   }
-  private def imageForText(txt: String, color: Color) = {
-    val desc = GeneratedIconImageDescriptor(txt, color)
+  private def imageForText(txt: String, ySize: Int, color: Color) = {
+    val desc = GeneratedTextIconImageDescriptor(txt, ySize + Tool.gridSize*2, color)
     (rm.create(desc).asInstanceOf[Image], desc)
   }
-  case class GeneratedIconImageDescriptor(text: String, color: Color) extends DeviceResourceDescriptor {
+  case class GeneratedImageIconImageDescriptor(desc: ImageDescriptor, minY: Int) extends DeviceResourceDescriptor {
     def createResource(device: Device): Object = {
-      val img = new Image(device, 48, 48);
+      val nestedImg = image(desc)
+      val nestedY = nestedImg.getBounds().height
+      val nestedX = nestedImg.getBounds().width
+      val y = if (nestedY >= minY) 0 else (minY - nestedY) / 2
+      val height = math.max(nestedY, minY)
+      val img = new Image(device, nestedX, height)
+      val gc = new GC(img)
+      gc.drawImage(nestedImg, 0, y)
+      if(nestedY<minY) {
+	      gc.setForeground(ColorConstants.gray)
+	      gc.drawRectangle(0,0, nestedX-1,height-1)
+      }
+      destroy(desc)
+      gc.dispose
+      img
+    }
+
+    def destroyResource(previouslyCreatedObject: Object) {
+      previouslyCreatedObject.asInstanceOf[Image].dispose();
+    }
+  }
+  case class GeneratedTextIconImageDescriptor(text: String, ySize: Int, color: Color) extends DeviceResourceDescriptor {
+    def createResource(device: Device): Object = {
+      val img = new Image(device, 48, ySize);
       val gc = new GC(img)
       val t = new TextLayout(device)
       gc.setForeground(color)
@@ -87,8 +118,8 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
       t.setAlignment(SWT.CENTER)
       t.setFont(font)
       t.setWidth(47)
-      gc.drawRectangle(0, 0, 47, 47)
-      t.draw(gc, 0, math.max(0, (47 - t.getBounds.height) / 2))
+      gc.drawRectangle(0, 0, 47, ySize - 1)
+      t.draw(gc, 0, math.max(0, (ySize - 1 - t.getBounds.height) / 2))
       t.dispose
       gc.dispose
       img

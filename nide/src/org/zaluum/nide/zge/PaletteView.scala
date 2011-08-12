@@ -171,7 +171,7 @@ class Page(val zproject: ZaluumProject, paletteView: PaletteView) extends PageDN
     case Page.portsPkg                                   ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
     case f: String                                       ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
     case b: BoxTypeProxy if (b.pkgName == Page.portsPkg) ⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1 // XXX destroy
-    case b: BoxTypeProxy                                 ⇒ imgFactory(b.name)._1 // XXX destroy
+    case b: BoxTypeProxy                                 ⇒ imgFactory.image48(b.name)._1 // XXX destroy
   }
   viewer.setSorter(new ViewerSorter())
   viewer.setInput(proxies);

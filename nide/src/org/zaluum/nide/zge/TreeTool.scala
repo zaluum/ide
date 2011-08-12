@@ -194,7 +194,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       state = this
       this.tpeName = tpename
       tpe = controller.zproject.getBoxSymbol(tpeName);
-      val (img, desc) = zproject.imageFactory(tpeName);
+      val (img, desc) = zproject.imageFactory.image48(tpeName);
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
       zproject.imageFactory.destroy(desc)

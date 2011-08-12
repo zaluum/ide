@@ -154,7 +154,7 @@ trait ContainerItem extends Item {
         case None ⇒
           val valf = v.tpe.fqName match {
             case LiteralExprType.fqName ⇒
-              new DirectValFigure(ContainerItem.this)
+              new LiteralFigure(ContainerItem.this)
             case name if (Expressions.thisFigureExpressions.contains(name)) ⇒
               new ThisOpValFigure(ContainerItem.this)
             case _ ⇒
@@ -359,7 +359,7 @@ abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with Overl
   def update() {
       def loadImage() {
         currentDesc = Some(imageDesc)
-        val img = imageFactory(imageDesc)
+        val img = imageFactory.image(imageDesc)
         setImage(img)
         size = Dimension(img.getBounds.width, img.getBounds().height)
       }
