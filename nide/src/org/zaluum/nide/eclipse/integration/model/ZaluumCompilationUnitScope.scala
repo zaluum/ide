@@ -63,8 +63,8 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
     val arr = name.asArray
     if (arr.isDefined) {
       val (leafname, dim) = arr.get
-      getJavaType(leafname) map { t ⇒
-        getArrayType(t, dim)
+      for (t<-getJavaType(leafname); b<-Option(t.binding)) yield {
+      	getArrayType(t, dim)        
       }
     } else {
       val tpe =
@@ -84,11 +84,13 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
       case u: UnresolvedReferenceBinding ⇒ NoSymbol
       case r: ReferenceBinding ⇒
         val tpe = lookupEnvironment.convertToRawType(r, false).asInstanceOf[ReferenceBinding]
-        cacheJava.getOrElseUpdate(tpe, {
-          val jtpe = new ClassJavaType(this, Name(aToString(tpe.compoundName)))
-          jtpe.binding = tpe
-          jtpe
-        })
+        if (tpe != null) {
+          cacheJava.getOrElseUpdate(tpe, {
+            val jtpe = new ClassJavaType(this, Name(aToString(tpe.compoundName)))
+            jtpe.binding = tpe
+            jtpe
+          })
+        } else NoSymbol
       case b: BaseTypeBinding ⇒
         b.simpleName.mkString match {
           case "byte"    ⇒ primitives.Byte
@@ -174,7 +176,7 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
       }
     }
   }
-  private def createPort(bs: BoxTypeSymbol, name: Name, tpe: TypeBinding, dir: PortDir, field: Boolean = false, helperName:Option[Name] = None) {
+  private def createPort(bs: BoxTypeSymbol, name: Name, tpe: TypeBinding, dir: PortDir, field: Boolean = false, helperName: Option[Name] = None) {
     val port = new PortSymbol(bs, name, helperName, Point(0, 0), dir, field)
     port.tpe = getJavaType(tpe)
     bs.ports += (port.name -> port)
@@ -200,14 +202,14 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
     val helpers = helperNames(m)
     val nums = numericNames(m)
     for ((p, i) ← m.parameters zipWithIndex) {
-      val (name,hName) = argumentNames match {
-        case Some(l) => (l(i),None)
-        case None => helpers match {
-          case Some(h) => (nums(i),Some(h(i)))
-          case None => (nums(i),None)
+      val (name, hName) = argumentNames match {
+        case Some(l) ⇒ (l(i), None)
+        case None ⇒ helpers match {
+          case Some(h) ⇒ (nums(i), Some(h(i)))
+          case None    ⇒ (nums(i), None)
         }
       }
-      createPort(bs, Name(name), p, In, helperName=hName.map{Name(_)})
+      createPort(bs, Name(name), p, In, helperName = hName.map { Name(_) })
     }
     m.returnType match {
       case TypeBinding.VOID ⇒ //skip return 
@@ -243,6 +245,5 @@ class ZaluumCompilationUnitScope(cudp: ZaluumCompilationUnitDeclaration, lookupE
     (1 to m.parameters.length) map { i ⇒ "p" + i } toList
   private def helperNames(m: MethodBinding) =
     MethodUtils.findMethodParameterNamesEnv(m, environment.nameEnvironment).map(_.toList)
-  
-  
+
 }
