@@ -14,7 +14,7 @@ class ApplyMethodGenerator(b: BoxDef) {
     val ret = bs.returnPort match {
       case Some(r) ⇒
         val pi = bs.thisVal.findPortInstance(r).get
-        Return(toRef(pi), pi.finalTpe)
+        Return(toRef(pi), pi.tpe)
       case None ⇒
         Return
     }
@@ -22,7 +22,7 @@ class ApplyMethodGenerator(b: BoxDef) {
       case (pi, i) ⇒
         val name = if (pi.valSymbol == bs.thisVal) pi.name.str
         else pi.valSymbol.fqName.str + "_" + pi.name.str
-        (name, pi.finalTpe.asInstanceOf[JavaType].descriptor, i)
+        (name, pi.tpe.asInstanceOf[JavaType].descriptor, i)
     } toList;
     val annotation = bs.argsInOrder.map { _.name }
     Method(bs.methodSelector, bs.methodSignature, invokes ::: (assign :+ ret), localsDecl, Some(annotation))
@@ -33,19 +33,19 @@ class ApplyMethodGenerator(b: BoxDef) {
     ins.toList map { in ⇒ assign(in, out) }
   }
   def assign(to: PortInstance, from: PortInstance): Assign = {
-    Assign(toRef(to), cast(from.finalTpe, to.finalTpe, toRef(from)))
+    Assign(toRef(to), cast(from.tpe, to.tpe, toRef(from)))
   }
   def toRef(pi: PortInstance): Ref = {
     if (pi.valSymbol == bs.thisVal) {
       if (pi.portSymbol.get.isField) {
         Select(
           This,
-          FieldRef(pi.name, pi.finalTpe.name.descriptor, bs.fqName)) // field return
+          FieldRef(pi.name, pi.tpe.name.descriptor, bs.fqName)) // field return
       } else
-        LocalRef(localsMap(pi), pi.finalTpe.name) // return local
+        LocalRef(localsMap(pi), pi.tpe.name) // return local
     } else {
       val vfrom = pi.valSymbol
-      LocalRef(localsMap(pi), pi.finalTpe.name)
+      LocalRef(localsMap(pi), pi.tpe.name)
     }
   }
   def runBlock(bl: BlockSymbol): List[Tree] = {
@@ -62,7 +62,7 @@ class ApplyMethodGenerator(b: BoxDef) {
     for (ps ← vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
       bl.connections.connectedFrom.get(pi) match {
         case Some((o, blame)) ⇒ assign(pi, o)
-        case None             ⇒ Assign(toRef(pi), Const(0, pi.finalTpe))
+        case None             ⇒ Assign(toRef(pi), Const(0, pi.tpe))
       }
     }
   }
@@ -108,7 +108,7 @@ class ApplyMethodGenerator(b: BoxDef) {
         val thisOutPort = ArrayExprType.thisOutPort(vs)
         val aPort = ArrayExprType.aPort(vs)
         val oPort = ArrayExprType.outPort(vs)
-          def arrayRef = ArrayRef(index = toRef(index), arrRef = toRef(thisPort), arrTpe = aPort.finalTpe)
+          def arrayRef = ArrayRef(index = toRef(index), arrRef = toRef(thisPort), arrTpe = aPort.tpe)
           def load = Assign(toRef(oPort), arrayRef)
           def store = Assign(arrayRef, toRef(aPort))
           def thisOut = Assign(toRef(thisOutPort), toRef(thisPort))
@@ -146,7 +146,7 @@ class ApplyMethodGenerator(b: BoxDef) {
               m.signature().mkString)))
       case NewArrayExprType ⇒
         val thiz = NewArrayExprType.thisPort(vs)
-        val ab = thiz.finalTpe.asInstanceOf[ArrayType]
+        val ab = thiz.tpe.asInstanceOf[ArrayType]
         val dimPorts = vs.portInstances.filter { pi ⇒ pi.dir == In && pi.name.str.startsWith("d") }.sortBy { _.name.str.drop(1).toInt } // XXX ugly
         List(
           Assign(
@@ -206,7 +206,7 @@ class ApplyMethodGenerator(b: BoxDef) {
         val o = LiteralExprType.outPort(vs)
         val c = vs.params.headOption match {
           case Some((t, v: String)) ⇒
-            o.finalTpe match {
+            o.tpe match {
               case primitives.Boolean ⇒ Const(v.toBoolean, primitives.Boolean)
               case primitives.Byte    ⇒ Const(v.toByte, primitives.Byte)
               case primitives.Short   ⇒ Const(v.toShort, primitives.Short)
@@ -223,15 +223,15 @@ class ApplyMethodGenerator(b: BoxDef) {
         val (a, o) = u.unaryPortInstancesOf(vs)
         List(
           u match {
-            case c: CastExprType ⇒ Assign(toRef(o), cast(a.finalTpe, o.finalTpe, toRef(a)))
-            case NotExprType     ⇒ Assign(toRef(o), Not(toRef(a), a.finalTpe.asInstanceOf[PrimitiveJavaType]))
-            case MinusExprType   ⇒ Assign(toRef(o), Minus(toRef(a), a.finalTpe.asInstanceOf[PrimitiveJavaType]))
+            case c: CastExprType ⇒ Assign(toRef(o), cast(a.tpe, o.tpe, toRef(a)))
+            case NotExprType     ⇒ Assign(toRef(o), Not(toRef(a), a.tpe.asInstanceOf[PrimitiveJavaType]))
+            case MinusExprType   ⇒ Assign(toRef(o), Minus(toRef(a), a.tpe.asInstanceOf[PrimitiveJavaType]))
           })
       case s: BinExprType ⇒
         val (a, b, o) = s.binaryPortInstancesOf(vs)
         val aTree = toRef(a)
         val bTree = toRef(b)
-        val etpe = a.finalTpe.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
+        val etpe = a.tpe.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
         val eTree = s match {
           case ShiftLeftExprType   ⇒ ShiftLeft(aTree, bTree, etpe)
           case ShiftRightExprType  ⇒ ShiftRight(aTree, bTree, etpe)
@@ -296,7 +296,7 @@ class ApplyMethodGenerator(b: BoxDef) {
             def createLocal(ps: PortSymbol): (PortInstance, Int) = {
                 val l = locals
                 val pi = vs.findPortInstance(ps).get
-                locals = locals + pi.finalTpe.javaSize
+                locals = locals + pi.tpe.javaSize
                 (pi, l)
               }
             val args = b.argsInOrder map { createLocal }
@@ -304,7 +304,7 @@ class ApplyMethodGenerator(b: BoxDef) {
             args ::: ret
           case e: ExprType ⇒
             val res = vs.portInstances.sortBy(_.name.str) map { pi ⇒
-              (pi -> { val l = locals; locals = locals + pi.finalTpe.javaSize; l })
+              (pi -> { val l = locals; locals = locals + pi.tpe.javaSize; l })
             }
             val children = for (bl ← vs.blocks; vs ← bl.executionOrder; l ← createLocals(vs)) yield l
             res ::: children

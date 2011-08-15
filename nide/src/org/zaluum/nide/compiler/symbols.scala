@@ -12,7 +12,9 @@ trait Symbol {
   def name: Name
   var decl: Tree = null
   def tdecl: Tree = decl
-  var tpe: Type = NoSymbol
+  private var _tpe: Type = NoSymbol
+  def tpe = _tpe
+  def tpe_=(t:Type) { _tpe=t }
   override def toString = "Symbol(" + (if (name != null) name.str else "NoSymbol") + ")"
 }
 trait Type extends Symbol { // merge with javatype
@@ -125,6 +127,7 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
       val pk = PortSide.findOrCreateMissing(a, BlockSymbol.this)
+      a.symbol = pk
       val newClump = merge(clumpOf(pk), clumpOf(j))
       newClump.connections += c
       newClump.ports += pk
@@ -132,6 +135,8 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
     }
     def addPorts(a: PortRef, b: PortRef, c: ConnectionDef) {
       val (as, bs) = (PortSide.findOrCreateMissing(a, BlockSymbol.this), PortSide.findOrCreateMissing(b, BlockSymbol.this))
+      a.symbol = as
+      b.symbol = bs
       val newClump = merge(clumpOf(as), clumpOf(bs))
       newClump.connections += c
       newClump.ports ++= Set(as, bs)
@@ -231,9 +236,9 @@ class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
 class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name, In) {
   override def toString = "ParamSymbol(" + name + ")"
 }
-class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) {
+class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) extends Symbol{
   var missing = false
-  var finalTpe: Type = NoSymbol
+  def owner = valSymbol
   def hasDecl = portSymbol.map { _.decl != null } getOrElse { false }
   def fqName = Name(valSymbol.fqName.str + "_" + name.str)
   override def toString = "PortInstance(" + portSymbol + ", " + valSymbol + ")"
@@ -267,7 +272,10 @@ object PortSide {
     }
   }
 }
-class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolean) {
+class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolean) extends Symbol {
+  override def tpe = pi.tpe
+  override def tpe_=(t:Type) { pi.tpe = t}
+  def owner = pi
   def flowIn = if (fromInside) !inPort else inPort
   def name = pi.name
   def helperName = pi.helperName

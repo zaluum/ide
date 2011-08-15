@@ -7,9 +7,9 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
     val s = vs.tpe.asInstanceOf[BinExprType]
     val (a, b, o) = s.binaryPortInstancesOf(vs)
       def assignAll(tpe: Type, outTpe: Type) = {
-        a.finalTpe = tpe
-        b.finalTpe = tpe
-        o.finalTpe = outTpe
+        a.tpe = tpe
+        b.tpe = tpe
+        o.tpe = outTpe
       }
 
     val at = unboxIfNeeded(fromTpe(a))
@@ -36,7 +36,7 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
           if (isIntNumeric(at) || at == NoSymbol) {
             assignAll(Int, Int)
           } else if (at == Long) {
-            a.finalTpe = Long; b.finalTpe = Int; o.finalTpe = Long
+            a.tpe = Long; b.tpe = Int; o.tpe = Long
           } else
             error("Shift only operates on Int and Long", blame(a).getOrElse(vs.decl))
 
@@ -78,15 +78,15 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
         unboxIfNeeded(fromTpe(a)) match {
           case p: PrimitiveJavaType if isNumeric(p) ⇒
             val t = toOperationType(p)
-            a.finalTpe = t; o.finalTpe = t
-          case NoSymbol ⇒ a.finalTpe = Int; o.finalTpe = Int
+            a.tpe = t; o.tpe = t
+          case NoSymbol ⇒ a.tpe = Int; o.tpe = Int
           case _        ⇒ error("Incompatible type", blame(a).get)
         }
       case NotExprType ⇒
         unboxIfNeeded(fromTpe(a)) match {
-          case Boolean              ⇒ a.finalTpe = Boolean; o.finalTpe = Boolean
-          case p if isIntNumeric(p) ⇒ a.finalTpe = Int; o.finalTpe = Int
-          case NoSymbol             ⇒ a.finalTpe = Boolean; o.finalTpe = Boolean
+          case Boolean              ⇒ a.tpe = Boolean; o.tpe = Boolean
+          case p if isIntNumeric(p) ⇒ a.tpe = Int; o.tpe = Int
+          case NoSymbol             ⇒ a.tpe = Boolean; o.tpe = Boolean
           case _                    ⇒ error("Incompatible type", blame(a).get)
         }
     }
@@ -96,20 +96,20 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
     val e = vs.tpe.asInstanceOf[CastExprType]
     val (a, o) = e.unaryPortInstancesOf(vs)
     e match {
-      case ToByteType   ⇒ o.finalTpe = Byte
-      case ToShortType  ⇒ o.finalTpe = Short
-      case ToCharType   ⇒ o.finalTpe = Char
-      case ToIntType    ⇒ o.finalTpe = Int
-      case ToLongType   ⇒ o.finalTpe = Long
-      case ToFloatType  ⇒ o.finalTpe = Float
-      case ToDoubleType ⇒ o.finalTpe = Double
+      case ToByteType   ⇒ o.tpe = Byte
+      case ToShortType  ⇒ o.tpe = Short
+      case ToCharType   ⇒ o.tpe = Char
+      case ToIntType    ⇒ o.tpe = Int
+      case ToLongType   ⇒ o.tpe = Long
+      case ToFloatType  ⇒ o.tpe = Float
+      case ToDoubleType ⇒ o.tpe = Double
     }
-    connectedFrom(a).map { case (pi, blame) ⇒ (unboxIfNeeded(pi.finalTpe), blame) } match {
+    connectedFrom(a).map { case (pi, blame) ⇒ (unboxIfNeeded(pi.tpe), blame) } match {
       case Some((t, blame)) ⇒ t match {
-        case j: PrimitiveJavaType if isNumeric(j) ⇒ a.finalTpe = j
-        case _                                    ⇒ a.finalTpe = o.finalTpe; error("Cast between incompatible types", blame)
+        case j: PrimitiveJavaType if isNumeric(j) ⇒ a.tpe = j
+        case _                                    ⇒ a.tpe = o.tpe; error("Cast between incompatible types", blame)
       }
-      case None ⇒ a.finalTpe = o.finalTpe
+      case None ⇒ a.tpe = o.tpe
     }
   }
   def checkLiteralExprType(vs: ValSymbol) {
@@ -120,11 +120,11 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
         p.tpe = cud.zaluumScope.getZJavaLangString
         val v = vuntrimmed.trim
         Literals.parseNarrowestLiteral(v, cud.zaluumScope) match {
-          case Some((_, tpe)) ⇒ o.finalTpe = tpe
+          case Some((_, tpe)) ⇒ o.tpe = tpe
           case None           ⇒ error("Cannot parse literal " + v, vs.decl)
         }
       case e ⇒
-        o.finalTpe = primitives.Byte;
+        o.tpe = primitives.Byte;
     }
   }
 

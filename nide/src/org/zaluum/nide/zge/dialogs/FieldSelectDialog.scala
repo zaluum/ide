@@ -67,7 +67,7 @@ class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItems
   val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME 
 
   val binding = vs.tpe match {
-    case t:ThisExprType ⇒ t.thisPort(vs).finalTpe.binding
+    case t:ThisExprType ⇒ t.thisPort(vs).tpe.binding
     case s:StaticExprType  ⇒
       vs.classinfo match {
         case cl: ClassJavaType ⇒ cl.binding

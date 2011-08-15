@@ -28,7 +28,6 @@ import org.zaluum.nide.zge.dialogs.ValDefMenu
 import draw2dConversions.point
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.BoxTypeSymbol
-import org.zaluum.nide.compiler.PortRef
 import org.zaluum.nide.compiler.NoSymbol
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
@@ -350,7 +349,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def showTip(pf: PortFigure) {
       val abs = pf.anchor.getCopy
       val name = pf.ps.helperName.getOrElse(pf.ps.name).str
-      val text = name + " : " + pf.ps.pi.finalTpe.name.str
+      val text = name + " : " + pf.ps.pi.tpe.name.str
       tooltip.setText(text)
       viewer.feedbackLayer.add(tooltip)
     }

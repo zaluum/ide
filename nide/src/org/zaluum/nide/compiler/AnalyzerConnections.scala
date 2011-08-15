@@ -96,7 +96,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
   def assignBoxTypeSymbolTypes(vs:ValSymbol) {
     for (pi<-vs.portInstances; ps <- pi.portSymbol) {
       pi.missing = false
-      pi.finalTpe = ps.tpe
+      pi.tpe = ps.tpe
     }
   }
   def checkBoxTypes(vs: ValSymbol) {
@@ -110,10 +110,10 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
   }
   def checkPortConnectionsTypes(vs: ValSymbol) {
     for (pi ← vs.portInstances) {
-      if (pi.finalTpe == NoSymbol) error("Port type not found " + pi, b)
+      if (pi.tpe == NoSymbol) error("Port type not found " + pi, b)
       else {
         for ((from, blame) ← bl.connections.connectedFrom.get(pi)) {
-          if (!checkAssignmentPossible(from.finalTpe, pi.finalTpe)) {
+          if (!checkAssignmentPossible(from.tpe, pi.tpe)) {
             error("Connection with incompatible types", blame)
           }
         }
@@ -154,7 +154,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         val pi = api.asInstanceOf[PortInstance]
         pi.missing = false
         pi.portSymbol match {
-          case Some(ps) ⇒ pi.finalTpe = ps.tpe
+          case Some(ps) ⇒ pi.tpe = ps.tpe
           case None     ⇒ error("Cannot find port " + api, bl.decl)
         }
       }
@@ -178,8 +178,8 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
   def storeTypesInConnectionsAndJunctions(c: Clump) {
     val outO = c.ports.find(p ⇒ !p.flowIn) map { _.pi }
     outO foreach { out ⇒
-      for (con ← c.connections) { con.tpe = out.finalTpe }
-      for (jun ← c.junctions) { jun.tpe = out.finalTpe }
+      for (con ← c.connections) { con.tpe = out.tpe }
+      for (jun ← c.junctions) { jun.tpe = out.tpe }
     }
   }
 }
@@ -196,7 +196,7 @@ trait CheckerPart extends ReporterAdapter {
     }
   }
   def connectedFrom(p: PortInstance) = bl.connections.connectedFrom.get(p)
-  def fromTpe(p: PortInstance) = connectedFrom(p).map { _._1.finalTpe }.getOrElse(NoSymbol)
+  def fromTpe(p: PortInstance) = connectedFrom(p).map { _._1.tpe }.getOrElse(NoSymbol)
   def blame(p: PortInstance) = connectedFrom(p) map { _._2 }
   def unboxIfNeeded(t: Type) = t match {
     case p: ClassJavaType ⇒ primitives.getUnboxedType(p).getOrElse(t)

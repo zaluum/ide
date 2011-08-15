@@ -16,14 +16,14 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       if (m.returnType != null && m.returnType != TypeBinding.VOID) {
         val out = vs.portInstances find { _.name == Name("return") } getOrElse { vs.createOutsideOut(Name("return")).pi }
         out.missing = false
-        out.finalTpe = cud.zaluumScope.getJavaType(m.returnType)
-        if (out.finalTpe == NoSymbol) error("return type not found", vs.decl)
+        out.tpe = cud.zaluumScope.getJavaType(m.returnType)
+        if (out.tpe == NoSymbol) error("return type not found", vs.decl)
       }
       for ((p, i) ← m.parameters.zipWithIndex) {
         val name = Name("p" + i)
         val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(Name("p" + i)).pi }
         in.missing = false
-        in.finalTpe = cud.zaluumScope.getJavaType(p);
+        in.tpe = cud.zaluumScope.getJavaType(p);
       }
       vs.info = m
       body(m)
@@ -67,10 +67,10 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       val name = Name("d"+i)
       val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(name).pi }
       in.missing = false
-      in.finalTpe = primitives.Int
+      in.tpe = primitives.Int
     }
     val result = NewArrayExprType.thisPort(vs)
-    result.finalTpe = cud.zaluumScope.getArrayType(t,dims)
+    result.tpe = cud.zaluumScope.getArrayType(t,dims)
   }
   def checkNew(vs: ValSymbol, c: ClassJavaType) {
     if (!c.binding.canBeInstantiated()) {
@@ -80,7 +80,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case Some(NewExprType.Sig(name, signature)) ⇒
         val cons = ZaluumCompletionEngineScala.findConstructor(cud, scope(vs), c.binding, signature)
         processMethod(vs, cons) { m ⇒
-          NewExprType.thisPort(vs).finalTpe = cud.zaluumScope.getJavaType(m.declaringClass)
+          NewExprType.thisPort(vs).tpe = cud.zaluumScope.getJavaType(m.declaringClass)
         }
       case _ ⇒ error("No constructor specified", vs.decl) // XXdefault?
     }
@@ -113,17 +113,17 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     InvokeExprType.signatureSymbol.tpe = cud.zaluumScope.getZJavaLangString // XXX ugly
     connectedFrom(thiz) match {
       case Some((from, blame)) ⇒
-        from.finalTpe match {
+        from.tpe match {
           case a: ArrayType ⇒
-            thiz.finalTpe = a
-            thizOut.finalTpe = a
+            thiz.tpe = a
+            thizOut.tpe = a
             tpe match {
               case ArrayExprType ⇒ array(vs, a)
               case _             ⇒ error("Type must be a class", vs.decl)
             }
           case c: ClassJavaType ⇒
-            thiz.finalTpe = c
-            thizOut.finalTpe = c
+            thiz.tpe = c
+            thizOut.tpe = c
             tpe match {
               case InvokeExprType ⇒ invoke(vs, c)
               case FieldExprType  ⇒ processField(vs, c)
@@ -141,13 +141,13 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     val thisOutPort = ArrayExprType.thisOutPort(vs)
     val aPort = ArrayExprType.aPort(vs)
     val oPort = ArrayExprType.outPort(vs)
-    index.finalTpe = primitives.Int
+    index.tpe = primitives.Int
     val tpe = a.dim match {
       case 1            ⇒ a.of
       case i if (i > 1) ⇒ cud.zaluumScope.getArrayType(a.of, i - 1)
     }
-    aPort.finalTpe = tpe
-    oPort.finalTpe = tpe
+    aPort.tpe = tpe
+    oPort.tpe = tpe
     thisPort
   }
   def processField(vs: ValSymbol, c: ClassJavaType) {
@@ -159,9 +159,9 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
           case Some(f: FieldBinding) ⇒
             val out = vs.tpe.asInstanceOf[ResultExprType].outPort(vs)
             val a = vs.tpe.asInstanceOf[OneParameter].aPort(vs)
-            a.finalTpe = cud.zaluumScope.getJavaType(f.`type`)
-            out.finalTpe = a.finalTpe
-            if (out.finalTpe == NoSymbol) error("field type not found", vs.decl)
+            a.tpe = cud.zaluumScope.getJavaType(f.`type`)
+            out.tpe = a.tpe
+            if (out.tpe == NoSymbol) error("field type not found", vs.decl)
             vs.info = f
           case None ⇒ error("field not found", vs.decl)
         }
@@ -187,11 +187,11 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
           error(t.name.classNameWithoutPackage + " must have " + t.requiredBlocks + " blocks", vs.decl) // FIXME tolerate
         else {
           for (pi ← vs.portInstances; ps ← pi.portSymbol) {
-            pi.finalTpe = ps.tpe
+            pi.tpe = ps.tpe
           }
           t.ports.values foreach { ps ⇒
             val pi = vs.findPortInstance(ps).get
-            pi.finalTpe = primitives.Boolean
+            pi.tpe = primitives.Boolean
           }
           template.blocks.foreach { b ⇒
             new CheckConnections(b, false, c.analyzer).run()

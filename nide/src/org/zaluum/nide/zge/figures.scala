@@ -128,7 +128,7 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
         val str = sym.tpe match {
           case NewArrayExprType=>
             val pi = NewArrayExprType.thisPort(sym)
-            pi.finalTpe match {
+            pi.tpe match {
               case tpe:ArrayType => Some("new " + tpe.of.name.str.split('.').last + "[]"*tpe.dim)
               case _ => None
             }

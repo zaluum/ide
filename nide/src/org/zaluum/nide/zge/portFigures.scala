@@ -28,7 +28,7 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
     this.ps = ps
     this.ipos = ipos
     this.in = in
-    setBackgroundColor(Colorizer.color(ps.pi.finalTpe))
+    setBackgroundColor(Colorizer.color(ps.pi.tpe))
     updateHoverColor()
     setBounds(new Rectangle(pos.x, pos.y, size.w, size.h))
   }
@@ -69,7 +69,7 @@ abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure) extends RectangleF
   }
   protected def update(intPs: PortSide, extPs: PortSide, left: Boolean) {
     this.left = left
-    setBackgroundColor(Colorizer.color(intPs.pi.finalTpe))
+    setBackgroundColor(Colorizer.color(intPs.pi.tpe))
     setForegroundColor(if (dir == Shift) ColorConstants.yellow else ColorConstants.white)
     updateSize()
     // external
@@ -114,7 +114,7 @@ abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) 
   ports += port
   def update() {
     updateText() // XXX super.update; updateText doesn't show text. Why?
-    setForegroundColor(Colorizer.color(ps.pi.finalTpe))
+    setForegroundColor(Colorizer.color(ps.pi.tpe))
     updateSize()
     val position = pos + (if (dir == In) Vector2(size.w, 8) else Vector2(0, 8))
     port.update(position, ps)
@@ -133,7 +133,7 @@ object PortDeclFigure {
 class PortDeclFigure(val tree: PortDef, ps: PortSide, container: ContainerItem) extends PortHolderFigure(container, ps) {
   def pos = tree.inPos
   def dir = tree.dir
-  def sym = tree.symbol.asInstanceOf[PortSymbol]
+  def sym = tree.sym
   def text = ps.name.str
   override def selectionSubject = Some(tree)
   

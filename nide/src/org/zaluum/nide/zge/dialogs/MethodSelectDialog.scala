@@ -64,7 +64,7 @@ abstract class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends Fil
   val settings = new DialogSettings(id);
   val static = vs.tpe.isInstanceOf[StaticExprType]
   val binding = vs.tpe match {
-    case InvokeExprType ⇒ InvokeExprType.thisPort(vs).finalTpe.binding
+    case InvokeExprType ⇒ InvokeExprType.thisPort(vs).tpe.binding
     case s:StaticExprType ⇒
       vs.classinfo match {
         case cl: ClassJavaType ⇒ cl.binding

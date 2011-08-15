@@ -336,7 +336,9 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
 case class ValRef(name: Name) extends Tree
 case class ThisRef() extends Tree
 trait ConnectionEnd extends Tree
-case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd // in as flow or as PortDir?
+case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd {// in as flow or as PortDir?
+ def sym : PortSide = symbol.asInstanceOf[PortSide] 
+}
 case class Param(key: Name, value: String) extends Tree
 case class LabelDesc(description: String, pos: Vector2)
 object ValDef {

@@ -29,8 +29,8 @@ object Delete {
             case _ ⇒ false
           }
           def connectsRemovedPortDef(o: Option[ConnectionEnd]) = o match {
-            case Some(p: PortRef) ⇒ p.symbol match {
-              case p: PortSymbol ⇒ selection.contains(p.decl)
+            case Some(p: PortRef) ⇒ p.sym.pi.portSymbol match {
+              case Some(p) ⇒ selection.contains(p.decl)
               case _             ⇒ false
             }
             case _ ⇒ false
