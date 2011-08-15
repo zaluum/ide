@@ -49,7 +49,7 @@ trait ValFigure extends ValDefItem with HasPorts {
   var ins = List[PortSide]()
   var outs = List[PortSide]()
   var minYSize = 0
-  override def updateMe() {
+  def updateMe() {
     val bports = sym.portSides;
     val (unsortedins, unsortedouts) = bports.partition { _.inPort } // SHIFT?
     ins = unsortedins.toList.sortBy(_.name.str);
@@ -84,7 +84,7 @@ trait ValFigure extends ValDefItem with HasPorts {
 class LabelItem(val container: ContainerItem, gui: Boolean = false) extends TextEditFigure with ValDefItem with RectFeedback {
   setForegroundColor(Colorizer.color(null))
   def blink(b: Boolean) {}
-  def size = pg.getPreferredSize
+  def size = preferredTextSize
   def baseVector = Vector2(0, -size.h)
   def lbl = if (gui) valDef.labelGui else valDef.label
   def text = {
@@ -95,8 +95,7 @@ class LabelItem(val container: ContainerItem, gui: Boolean = false) extends Text
   override def pos = basePos + baseVector + (lbl.map { _.pos } getOrElse { Vector2(0, 0) })
   def myLayer = container.layer
   def updateMe() {
-    fl.setText(text)
-    pg.setBounds(new Rectangle(new EPoint(0, 0), dimension(size)))
+    updateText()
   }
   def updateValPorts() {}
 }
@@ -164,16 +163,14 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
   }
 }
 class LiteralFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure with RectFeedback {
-  def size = {
-    pg.getPreferredSize().ensureMin(Dimension(Tool.gridSize * 3, Tool.gridSize * 3)) + Vector2(Tool.gridSize, 0)
-  }
+  def size = preferredSize
   def param = valDef.params.headOption.asInstanceOf[Option[Param]]
   def text = param.map { _.value }.getOrElse { "0" }
+  override val textPos = new EPoint(2,2)
   override def updateMe {
     super.updateMe()
-    fl.setText(text)
+    updateText()
     setForegroundColor(Colorizer.color(param.map(_.tpe).getOrElse(null)))
-    pg.setBounds(new Rectangle(new EPoint(2, 2), dimension(size)))
   }
   def blink(c: Boolean) {
     this.setXOR(c)
@@ -181,13 +178,20 @@ class LiteralFigure(val container: ContainerItem) extends RectangleFigure with T
 }
 trait TextEditFigure extends Item {
   def text: String;
+  def preferredSize = 
+    preferredTextSize.ensureMin(Dimension(Tool.gridSize * 3, Tool.gridSize * 3)) + Vector2(Tool.gridSize, 0)
+  def preferredTextSize = pg.getPreferredSize()
+  val textPos = new EPoint(2,2)
   setFont(Activator.getDefault.directEditFont) // https://bugs.eclipse.org/bugs/show_bug.cgi?id=308964
-  val pg = new FlowPage()
+  private val pg = new FlowPage()
   pg.setForegroundColor(ColorConstants.black)
-  val fl = new TextFlow()
+  private val fl = new TextFlow()
   pg.add(fl)
   add(pg)
-
+  def updateText() {
+    fl.setText(text)
+    pg.setBounds(new Rectangle(textPos, preferredTextSize))
+  }
   var textCellEditor: TextCellEditor = null
   def edit(onComplete: (String) ⇒ Unit, onCancel: () ⇒ Unit) = {
     if (textCellEditor == null) {

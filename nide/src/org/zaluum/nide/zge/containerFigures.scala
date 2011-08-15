@@ -83,7 +83,7 @@ trait ContainerItem extends Item {
                 junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
               case Some(p: PortRef) ⇒
                 val ps = PortSide.find(p, symbol).get
-                portVertexs.find(_.ps == ps).get
+                portVertexs.find(_.ps == ps).get // BUG not found
               case None ⇒
                 val e = new EmptyVertex(pos)
                 emptyVertexs += e

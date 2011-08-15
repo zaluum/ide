@@ -102,22 +102,21 @@ class OpenPortFixedFigure(openBox: OpenBoxFigure) extends OpenPortBaseFigure(ope
   }
 }
 
-abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) extends AutoDisposeImageFigure with Item with HasPorts with RectFeedback {
+abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) extends RectangleFigure
+    with TextEditFigure with Item with HasPorts with RectFeedback {
+  setLineWidthFloat(2)
   def myLayer = container.layer
   def pos: MPoint
   def dir: PortDir
-  var size = Dimension(50, 20)
+  def size = preferredSize
   val port = new PortFigure(container)
   def imageFactory = container.viewer.zproject.imageFactory
   ports += port
   def update() {
-    disposeImage()
-    val (image, newdesc) = container.viewer.zproject.imageFactory.portImg(dir)
-    desc = newdesc
-    setImage(image)
-    size = Dimension(image.getBounds.width, image.getBounds.height)
+    updateText() // XXX super.update; updateText doesn't show text. Why?
+    setForegroundColor(Colorizer.color(ps.pi.finalTpe))
     updateSize()
-    val position = pos + (if (dir == In) Vector2(48, 8) else Vector2(0, 8))
+    val position = pos + (if (dir == In) Vector2(size.w, 8) else Vector2(0, 8))
     port.update(position, ps)
   }
   def blink(b: Boolean) {}
@@ -130,13 +129,17 @@ object PortDeclFigure {
     case Shift ⇒ "Shift"
   }
 }
+
 class PortDeclFigure(val tree: PortDef, ps: PortSide, container: ContainerItem) extends PortHolderFigure(container, ps) {
   def pos = tree.inPos
   def dir = tree.dir
   def sym = tree.symbol.asInstanceOf[PortSymbol]
+  def text = ps.name.str
   override def selectionSubject = Some(tree)
+  
 }
 class PortSymbolFigure(ps: PortSide, openBox: OpenBoxFigure) extends PortHolderFigure(openBox, ps) {
-  def pos = MPoint(openBox.getSize.w - Tool.gridSize * 10, openBox.getSize.h - Tool.gridSize * 5)
+  def pos = MPoint(openBox.getClientArea.getBottomRight.x - size.w - 1, openBox.getClientArea.getBottomRight.y - size.h - 1)
   def dir = ps.pi.dir
+  def text = ps.name.str
 }

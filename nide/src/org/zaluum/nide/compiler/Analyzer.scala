@@ -378,21 +378,21 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
             error("Box not found " + name, tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case p @ PortRef(fromTree, name, in) ⇒ // TODO filter in?
+        case p @ PortRef(fromTree, name, in) ⇒ // FIXME symbol should be PortInstance
           val block = currentOwner.asInstanceOf[BlockSymbol]
           tree.symbol = fromTree.tpe match {
-            case b: BoxTypeSymbol ⇒
-              catchAbort(b.lookupPort(name)).getOrElse {
-                error("Port not found " + name + " in box type " + b, tree);
+            case t: BoxTypeSymbol ⇒
+              catchAbort(t.lookupPort(name)).getOrElse {
+                error("Port not found " + name + " in box type " + t, tree);
                 NoSymbol
               }
             case tpe ⇒ NoSymbol
           }
           tree.tpe = tree.symbol.tpe
-        case ThisRef() ⇒
+        case ThisRef() ⇒ // 
           val block = currentOwner.asInstanceOf[BlockSymbol]
-          tree.symbol = NoSymbol
-          tree.tpe = NoSymbol // FIXME
+          tree.symbol = block.owner
+          tree.tpe =  tree.symbol.tpe
         case _ ⇒
       }
     }

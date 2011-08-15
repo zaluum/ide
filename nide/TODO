@@ -1,25 +1,20 @@
 Agenda
 
-week 8-14 
-	- Automatic icon grows/shrinks depending on number of ports
-	- infer types of while/ifs
-	- type auto (white color on add, remove, etc)
-	- better port names (this,thisOut)
-	- unified interface to select port type/name, array type/dim, class/method/field
-	- improve error messages
-	- visual only boxes
-	- check return port name collision with java keywords object methods
-	- remove expr .javas and organize better packages for exprs IF javadoc support ok
 week 15-21 GUI week
-	- write feature list on freemind
-	- change port names
-	- nested guis as new window
-	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
+	- unified interface to select port type/name, array type/dim, class/method/field
+	- remove expr .javas and organize better packages for exprs IF javadoc support ok
+	- visual only boxes
 	- Swing thread synchronization / refresh rate	
 	- al connectar o desconnectar cables de vegades fa coses rares
 	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
+	- respawn test framework
 	- when a visual component moves, resize the canvas size
+	- nested guis as new window
+	- improve error messages
 	- notes/ visual only on diagram
+	- better port names (this,thisOut)
+	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
+	- write feature list on freemind
 week 22-28 library week
 	- Graphing widget properties. Color/etc( see labview)
 	- drivers
@@ -34,9 +29,9 @@ week 29-4 doc week -> ampliar detalls
 	- build scripts
 week 5-11 bug hunting
 	- test cases bug fixing
-	- box unbox
-	- generics
-	- protected/private
+		- box unbox
+		- generics
+		- protected/private
 	- compilation with errors in java ProblemBinding, etc
 week 12-18 launch week
 	- beta nag screen/ watermark
@@ -60,6 +55,9 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
+
+	- infer types of while/ifs
+	- type auto (white color on add, remove, etc)
 	- ensure method/field order in generated code
 	* Dependecy tracking for incremental compilation when a box changes port names but not the method signature
 	- optimize locals usage in code generation 
@@ -109,6 +107,9 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- change port names
+	- check return port name collision with java keywords object methods
+	- Automatic icon grows/shrinks depending on number of ports
 	- connection in->out
 	- helperNames for java 
 	- fix widget

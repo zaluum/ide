@@ -317,14 +317,19 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
 trait Namer {
   def usedNames: Set[String]
   def isNameTaken(str: String): Boolean = usedNames.contains(str)
-  def nextName(str: String): String = {
+  private def nextName(str: String): String = {
     val digits = str.reverse.takeWhile(_.isDigit).reverse
     val nextValue = if (digits.isEmpty) 1 else digits.toInt + 1
     str.slice(0, str.length - digits.length) + nextValue
   }
+  def toIdentifierBase(baseStr:String) = {
+    val id = baseStr.dropWhile( !Character.isJavaIdentifierStart(_) ).filter{ Character.isJavaIdentifierPart }
+    if (id=="") "a" else id
+  }
+  def freshName(baseStr:String) = freshName_(toIdentifierBase(baseStr))
   @scala.annotation.tailrec
-  final def freshName(str: String): String = {
+  private final def freshName_(str: String): String = {
     if (!isNameTaken(str)) str
-    else freshName(nextName(str))
+    else freshName_(nextName(str))
   }
 }

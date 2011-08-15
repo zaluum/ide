@@ -12,8 +12,8 @@ import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
-
 import draw2dConversions._
+import org.zaluum.nide.compiler.MapTransformer
 
 /**
  * Implements basic selecting, marquee and resizing of ItemFigures
@@ -30,6 +30,16 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var initDrag: Point = _
     var initContainer: C = _
     var filterDouble = false
+    def doubleClickPF: PartialFunction[Item, String ⇒ MapTransformer] = {
+      case e: LiteralFigure ⇒ s ⇒ e.valDef.addOrReplaceParam(Param(Name("literal"), s))
+      case l: LabelItem     ⇒ l.valDef.editLabel(false, _)
+    }
+    override def doubleClick() = itemUnderMouse match {
+      case Some(e: TextEditFigure) ⇒
+        doubleClickPF.lift(e) foreach { directEditing.enter(e, _) }
+      case _ ⇒
+    }
+
     def enter() { state = this }
 
     def buttonDown {
@@ -80,55 +90,19 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
   }
   // Direct edit
-  object directEditing extends ToolState {
+  object directEditing extends ToolState { // move logic to figure?
     var e: TextEditFigure = null
     var gui = false
-    def enter(e: TextEditFigure, gui: Boolean = false) {
+    def enter(e: TextEditFigure, command: String ⇒ MapTransformer, gui: Boolean = false) {
       state = this
       this.e = e;
       this.gui = gui
-      e match {
-        case d: DirectValFigure ⇒
-          d.edit(editDirectParam(d, Name("literal"), _), exit _)
-        case l: LabelItem ⇒
-          l.edit(editLabel(l, _), exit _)
-        case _ ⇒ exit
-      }
+      e.edit({ str ⇒ controller.exec(command(str)) }, exit _)
     }
-    def editDirectParam(dvf: DirectValFigure, key: Name, value: String) {
-      val valDef = dvf.valDef
-      val c = valDef.params find { p ⇒ p.asInstanceOf[Param].key == key } match {
-        case Some(par: Param) if (par.value != value) ⇒
-          controller.exec(
-            new EditTransformer() {
-              val trans: PartialFunction[Tree, Tree] = {
-                case p: Param if Some(p) == dvf.param ⇒ Param(p.key, value)
-              }
-            })
-        case None ⇒
-          controller.exec(
-            new EditTransformer() {
-              val trans: PartialFunction[Tree, Tree] = {
-                case v: ValDef if v == valDef ⇒ v.copy(params = Param(key, value) :: transformTrees(v.params))
-              }
-            })
-        case _ ⇒ // TODO exit?
-      }
+    def renamePort(p: PortDeclFigure, str: String) {
+      println("rename! " + str)
     }
-    def editLabel(l: LabelItem, s: String) {
-      controller.exec(
-        new EditTransformer() {
-          val trans: PartialFunction[Tree, Tree] = {
-            case v: ValDef if (v == l.valDef) ⇒
-              val oldl = if (gui) v.labelGui else v.label
-              val lDesc = LabelDesc(s, oldl map { _.pos } getOrElse { Vector2(0, 0) })
-              if (gui)
-                v.copy(labelGui = Some(lDesc))
-              else
-                v.copy(label = Some(lDesc))
-          }
-        })
-    }
+
     def exit() { e.hideEdit(); viewer.focus; selecting.enter(); }
     def buttonDown() { exit() }
     def move() {}

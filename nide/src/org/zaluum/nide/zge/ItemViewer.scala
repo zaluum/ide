@@ -45,8 +45,8 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
     background.setForegroundColor(ColorConstants.blue)
     innerLayers.add(background)
     innerLayers.add(layer)
-    innerLayers.add(portsLayer)
     innerLayers.add(connectionsLayer)
+    innerLayers.add(portsLayer)
     innerLayers.add(pointsLayer)
     innerLayers.add(feedbackLayer)
     this.setContents(innerLayers);

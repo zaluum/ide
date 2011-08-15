@@ -1,7 +1,6 @@
 package org.zaluum.nide.zge
 
 import scala.annotation.tailrec
-
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.Cursors
@@ -26,8 +25,11 @@ import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.eclipse.BoxTypeProxy
 import org.zaluum.nide.zge.dialogs.PortDeclPopup
 import org.zaluum.nide.zge.dialogs.ValDefMenu
-
 import draw2dConversions.point
+import org.zaluum.nide.compiler.MapTransformer
+import org.zaluum.nide.compiler.BoxTypeSymbol
+import org.zaluum.nide.compiler.PortRef
+import org.zaluum.nide.compiler.NoSymbol
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -35,12 +37,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   val connectionLineDistance = 2
   object selecting extends Selecting with DeleteState with ClipboardState with DropState {
     var port: Option[PortFigure] = None
-    override def doubleClick() {
-      itemUnderMouse match {
-        case Some(e: TextEditFigure) ⇒ directEditing.enter(e)
-        case _                       ⇒
+    override def doubleClickPF =
+      super.doubleClickPF.orElse {
+        case e: PortDeclFigure ⇒ e.tree.renamePort(_)
       }
-    }
+   
     def buttonUp {
       if (filterDouble) { filterDouble = false; return }
         def selectItem(i: Item) {

@@ -73,12 +73,6 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
         case (None, None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
-    override def doubleClick() {
-      itemUnderMouse match {
-        case Some(l: TextEditFigure) ⇒ directEditing.enter(l, true)
-        case None                    ⇒
-      }
-    }
     override def menu() = {
       itemUnderMouse match {
         case Some(l: LabelItem)   ⇒ ValDefMenu.show(viewer, l, true)

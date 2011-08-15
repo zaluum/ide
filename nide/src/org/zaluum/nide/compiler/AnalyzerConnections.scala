@@ -110,7 +110,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
   }
   def checkPortConnectionsTypes(vs: ValSymbol) {
     for (pi ← vs.portInstances) {
-      if (pi.finalTpe == NoSymbol) error("Port type not found " + pi, vs.decl)
+      if (pi.finalTpe == NoSymbol) error("Port type not found " + pi, b)
       else {
         for ((from, blame) ← bl.connections.connectedFrom.get(pi)) {
           if (!checkAssignmentPossible(from.finalTpe, pi.finalTpe)) {
