@@ -45,13 +45,37 @@ class SelectionManager[A] {
     notifyListeners()
   }
 }
+abstract class Popup(mainShell:Shell) {
+  var loc: Point = _
+  def display = mainShell.getDisplay
+  def name: String
+  def size = new Point(450, 100)
+  def populate(content: Composite)
+  val popup = new PopupDialog(mainShell, SWT.ON_TOP, true,
+    true, true,
+    false, false,
+    null, name) {
+    override def createDialogArea(parent: Composite) = {
+      val composite = super.createDialogArea(parent).asInstanceOf[Composite]
+      populate(composite)
+      composite
+    }
+    override def getDefaultLocation(iniSize: Point) = loc
+  }
+  def show() {
+    this.loc = Display.getCurrent.getCursorLocation
+    popup.open;
 
+  }
+  def hide() {
+    popup.close
+  }
+}
 abstract class ScrollPopup(mainShell: Shell) {
   var loc: Point = _
   def display = mainShell.getDisplay
   def name: String
-  def columns: Int
-  def size = new Point(400, 300)
+  def size = new Point(450, 100)
   def populate(content: Composite, scroll: ScrolledComposite)
   val popup = new PopupDialog(mainShell, SWT.ON_TOP, true,
     true, true,

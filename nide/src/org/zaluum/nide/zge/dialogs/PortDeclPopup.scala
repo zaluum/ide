@@ -25,25 +25,28 @@ import org.zaluum.nide.compiler.primitives
 import org.zaluum.nide.zge.SWTScala.addReaction
 import org.zaluum.nide.zge.ScrollPopup
 import org.zaluum.nide.zge.TreeViewer
-
 import net.miginfocom.swt.MigLayout
+import org.zaluum.nide.zge.Popup
 
 class PortDeclPopup(
     viewer: TreeViewer,
-    portDef: PortDef) extends ScrollPopup(viewer.shell) {
-  def name = "Properties"
-  def columns = 2
-  def populate(content: Composite, scroll: ScrolledComposite) {
-    content.setLayout(new MigLayout)
+    portDef: PortDef) extends Popup(viewer.shell) {
+  def name = "Port " + portDef.name.str
+  def populate(content: Composite) {
+    content.setLayout(new MigLayout( 
+        "",
+        "[][grow][]",
+        "[]"))
     val lbl = new Label(content, SWT.NONE)
     lbl.setText("Type")
     val txt = new Text(content, SWT.BORDER)
+    txt.setLayoutData("width 125::, growx")
     txt.setText(portDef.typeName.str)
-    txt.setLayoutData("span 5,width 250::")
     val proposals = primitives.allTypes map { _.name.str } sorted
     val complete = new AutoCompleteField(txt, new TextContentAdapter(), proposals.toArray)
     val srchbtn = new Button(content, SWT.PUSH)
     srchbtn.setText("Search...")
+    srchbtn.setLayoutData("align right, wrap")
     txt.selectAll()
     txt.setFocus
       def work(now: String) {

@@ -1,7 +1,8 @@
 Agenda
 
 week 15-21 GUI week
-	- unified interface to select port type/name, array type/dim, class/method/field
+	- improve error messages
+	- mark errors on boxes/connections/ports
 	- remove expr .javas and organize better packages for exprs IF javadoc support ok
 	- visual only boxes
 	- Swing thread synchronization / refresh rate	
@@ -10,7 +11,6 @@ week 15-21 GUI week
 	- respawn test framework
 	- when a visual component moves, resize the canvas size
 	- nested guis as new window
-	- improve error messages
 	- notes/ visual only on diagram
 	- better port names (this,thisOut)
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
@@ -55,7 +55,7 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
-
+	- unified interface to select port type, array type/dim, class/method/field
 	- infer types of while/ifs
 	- type auto (white color on add, remove, etc)
 	- ensure method/field order in generated code
