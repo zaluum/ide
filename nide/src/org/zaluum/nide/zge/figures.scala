@@ -84,6 +84,7 @@ trait ValFigure extends ValDefItem with HasPorts {
 class LabelItem(val container: ContainerItem, gui: Boolean = false) extends TextEditFigure with ValDefItem with RectFeedback {
   setForegroundColor(Colorizer.color(null))
   def blink(b: Boolean) {}
+  override val textPos = new EPoint(0,0)
   def size = preferredTextSize
   def baseVector = Vector2(0, -size.h)
   def lbl = if (gui) valDef.labelGui else valDef.label
