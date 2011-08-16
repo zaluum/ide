@@ -94,14 +94,14 @@ abstract class EditTransformer extends CopyTransformer with MapTransformer
 
 trait MapTransformer extends Transformer {
   var map = Map[SelectionSubject, SelectionSubject]()
-  abstract override protected def transform[A <: Tree](tree: A): A = {
+  abstract override def transform[A <: Tree](tree: A): A = {
     val transformed = super.transform(tree)
     map += (tree -> transformed)
     transformed
   }
 }
 trait CopySymbolTransformer extends Transformer {
-  abstract override protected def transform[A <: Tree](tree: A): A =
+  abstract override def transform[A <: Tree](tree: A): A =
     super.transform(tree).copyAttrs(tree)
 }
 trait CopyTransformer extends Transformer {
@@ -147,10 +147,10 @@ abstract class Transformer extends OwnerHelper[Tree] {
     currentOwner = initOwner
     transform(tree)
   }
-  protected def transform[A <: Tree](tree: A): A = finalTrans.apply(tree).asInstanceOf[A]
-  protected def transformOption[A <: Tree](tree: Option[A]): Option[A] =
+  def transform[A <: Tree](tree: A): A = finalTrans.apply(tree).asInstanceOf[A]
+  def transformOption[A <: Tree](tree: Option[A]): Option[A] =
     tree map (transform(_))
-  protected def transformTrees[A <: Tree](trees: List[A]): List[A] =
+  def transformTrees[A <: Tree](trees: List[A]): List[A] =
     trees mapConserve (transform(_))
 }
 // Traverser
@@ -362,40 +362,33 @@ case class ValDef(
     labelGui: Option[LabelDesc],
     template: Option[Template]) extends Tree with Positionable {
   def sym = symbol.asInstanceOf[ValSymbol]
-  
-  def changeType(str: String) = new EditTransformer() {
+  def transformThis(body: EditTransformer ⇒ ValDef) = new EditTransformer() {
     val trans: PartialFunction[Tree, Tree] = {
-      case v: ValDef if v == ValDef.this ⇒
-        v.copy(
-          typeName = Name(str),
-          template = transformOption(v.template),
-          params = transformTrees(v.params))
+      case v: ValDef if v == ValDef.this ⇒ body(this)
     }
   }
-  def addOrReplaceParam(param: Param) = new EditTransformer() {
-    val trans: PartialFunction[Tree, Tree] = {
-      case v: ValDef if v == ValDef.this ⇒
-        val filtered = v.params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
-        v.copy(
-          template = transformOption(v.template),
-          params = param :: filtered)
-    }
+  def changeType(str: String) = transformThis { e ⇒
+    copy(typeName = Name(str),
+      template = e.transformOption(template),
+      params = e.transformTrees(params))
   }
-  def editLabel(gui: Boolean, s: String) =
-    new EditTransformer() {
-      val trans: PartialFunction[Tree, Tree] = {
-        case v: ValDef if (v == ValDef.this) ⇒
-          val oldl = if (gui) v.labelGui else v.label
-          val lDesc = s match {
-            case "" => None 
-            case _ => Some(LabelDesc(s, oldl map { _.pos } getOrElse { Vector2(0, 0) }))
-          }
-          if (gui)
-            v.copy(labelGui = lDesc, template=transformOption(v.template), params=transformTrees(v.params))
-          else
-            v.copy(label = lDesc, template=transformOption(v.template), params=transformTrees(v.params))
-      }
+  def addOrReplaceParam(param: Param) = transformThis { e ⇒
+    val filtered = params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
+    copy(
+      template = e.transformOption(template),
+      params = param :: filtered)
+  }
+  def editLabel(gui: Boolean, s: String) = transformThis { e ⇒
+    val oldl = if (gui) labelGui else label
+    val lDesc = s match {
+      case "" ⇒ None
+      case _  ⇒ Some(LabelDesc(s, oldl map { _.pos } getOrElse { Vector2(0, 0) }))
     }
+    if (gui)
+      copy(labelGui = lDesc, template = e.transformOption(template), params = e.transformTrees(params))
+    else
+      copy(label = lDesc, template = e.transformOption(template), params = e.transformTrees(params))
+  }
 }
 case class ConnectionDef(
     a: Option[ConnectionEnd],
