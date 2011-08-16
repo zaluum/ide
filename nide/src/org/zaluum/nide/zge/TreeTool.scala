@@ -24,11 +24,11 @@ import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.eclipse.BoxTypeProxy
 import org.zaluum.nide.zge.dialogs.PortDeclPopup
-import org.zaluum.nide.zge.dialogs.ValDefMenu
 import draw2dConversions.point
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.NoSymbol
+import org.zaluum.nide.zge.dialogs.ValDefPopup
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -38,9 +38,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     var port: Option[PortFigure] = None
     override def doubleClickPF =
       super.doubleClickPF.orElse {
-        case e: PortDeclFigure ⇒ e.tree.renamePort(_)
+        case e: PortDeclFigure ⇒ e.tree.renamePort(_, None)
       }
-   
+
     def buttonUp {
       if (filterDouble) { filterDouble = false; return }
         def selectItem(i: Item) {
@@ -148,11 +148,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
 
     override def menu() {
       itemUnderMouse match {
-        case Some(p: PortDeclFigure)     ⇒ new PortDeclPopup(viewer, p.tree).show() // TODO Dispose?
-        case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).show()
-        case Some(o: OpenBoxFigure)      ⇒ ValDefMenu.show(viewer, o)
-        case Some(l: LabelItem)          ⇒ ValDefMenu.show(viewer, l)
-        case Some(b: ValFigure)          ⇒ ValDefMenu.show(viewer, b);
+        case Some(p: PortDeclFigure)     ⇒ new PortDeclPopup(viewer, p.tree).open() // TODO Dispose?
+        case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).open()
+        case Some(o: OpenBoxFigure)      ⇒ new ValDefPopup(viewer, o, false).open()
+        case Some(l: LabelItem)          ⇒ new ValDefPopup(viewer, l, false).open()
+        case Some(b: ValFigure)          ⇒ new ValDefPopup(viewer, b, false).open();
         case _                           ⇒
       }
     }

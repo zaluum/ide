@@ -11,6 +11,8 @@ import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Display
 import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.SWT
+import org.eclipse.swt.widgets.Control
+import net.miginfocom.swt.MigLayout
 
 class SelectionManager[A] {
   protected var selected = Set[A]()
@@ -45,30 +47,29 @@ class SelectionManager[A] {
     notifyListeners()
   }
 }
-abstract class Popup(mainShell:Shell) {
+abstract class Popup(mainShell: Shell, name: String) extends PopupDialog(mainShell, PopupDialog.INFOPOPUP_SHELLSTYLE, true,
+  true, true,
+  false, false,
+  null, name) {
   var loc: Point = _
   def display = mainShell.getDisplay
-  def name: String
   def size = new Point(450, 100)
   def populate(content: Composite)
-  val popup = new PopupDialog(mainShell, SWT.ON_TOP, true,
-    true, true,
-    false, false,
-    null, name) {
-    override def createDialogArea(parent: Composite) = {
-      val composite = super.createDialogArea(parent).asInstanceOf[Composite]
-      populate(composite)
-      composite
-    }
-    override def getDefaultLocation(iniSize: Point) = loc
+  var initialFocus: Control = _
+  override def createDialogArea(parent: Composite) = {
+    val composite = super.createDialogArea(parent).asInstanceOf[Composite]
+    composite.setLayout(new MigLayout(
+      "",
+      "[][grow][]",
+      "[]"))
+    populate(composite)
+    composite
   }
-  def show() {
+  override def getDefaultLocation(iniSize: Point) = loc
+  override def getFocusControl() = if (initialFocus == null) super.getFocusControl() else initialFocus
+  override def open() = {
     this.loc = Display.getCurrent.getCursorLocation
-    popup.open;
-
-  }
-  def hide() {
-    popup.close
+    super.open()
   }
 }
 abstract class ScrollPopup(mainShell: Shell) {

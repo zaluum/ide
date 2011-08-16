@@ -55,7 +55,8 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
-	- unified interface to select port type, array type/dim, class/method/field
+	- improve popup usability. Multiple changes at once.
+	- filter @Box on type selection right button
 	- infer types of while/ifs
 	- type auto (white color on add, remove, etc)
 	- ensure method/field order in generated code
@@ -107,6 +108,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- unified interface to select port type, array type/dim, class/method/field
 	- change port names
 	- check return port name collision with java keywords object methods
 	- Automatic icon grows/shrinks depending on number of ports

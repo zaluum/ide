@@ -81,6 +81,7 @@ object NewArrayExprType extends StaticExprType("NewArray") {
   val thiz = new PortSymbol(this, Name("this"), Out)
   ports += (thiz.name -> thiz)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
+  def dimensions (v:ValDef) = v.params.asInstanceOf[List[Param]].find(_.key == NewArrayExprType.arrayDimName).map(_.value).getOrElse("1")
   val arrayDimName = Name("arrayDim")
   val arrayDimSymbol = new ParamSymbol(null, arrayDimName)
   params += (arrayDimName -> arrayDimSymbol)

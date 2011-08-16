@@ -81,7 +81,7 @@ class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItems
       fields.sortBy(_.name.mkString).toArray
     case _ ⇒ Array()
   }
-  val currentFieldName = vs.params.values.headOption
+  val currentFieldName = vs.params.values.headOption // FIXME
   val currentField = currentFieldName flatMap { mstr ⇒
     items.find { _.name.mkString == mstr }
   }

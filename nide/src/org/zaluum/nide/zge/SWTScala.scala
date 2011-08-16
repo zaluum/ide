@@ -21,6 +21,11 @@ import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.widgets.Text
 import org.eclipse.swt.SWT
 object SWTScala {
+  def addTextReaction(b:Text)(r: => Unit) {
+    b.addSelectionListener(new SelectionAdapter() {
+      override def widgetDefaultSelected(e:SelectionEvent) {r}
+    })
+  }
   def addReaction(b: { def addSelectionListener(l: SelectionListener) })(r: ⇒ Unit) {
     b.addSelectionListener(new SelectionAdapter() {
       override def widgetSelected(e: SelectionEvent) { r }

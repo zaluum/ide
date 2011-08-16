@@ -319,16 +319,19 @@ case object Shift extends PortDir("<shift>", "Port Shift")
 case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPos: Point) extends Tree with Positionable {
   def pos = inPos
   def sym = symbol.asInstanceOf[PortSymbol]
-  def renamePort(str: String): MapTransformer = {
-    val newName = Name(sym.box.asInstanceOf[BoxTypeSymbol].freshName(str))
+  def renamePort(str: String, tpe: Option[Name]): MapTransformer = {
+    val newName = if (str == name.str) name else Name(sym.box.asInstanceOf[BoxTypeSymbol].freshName(str))
     new EditTransformer() {
       val trans: PartialFunction[Tree, Tree] = {
         case p: PortDef if (p == PortDef.this) ⇒
-          p.copy(name = newName)
+          p.copy(name = newName, typeName = tpe.getOrElse(p.typeName))
         case pr: PortRef ⇒
-          if (pr.symbol == sym && pr.symbol != NoSymbol) {
+          val portSymbol = pr.sym.pi.portSymbol
+          if (portSymbol == Some(sym)) {
             pr.copy(fromRef = transform(pr.fromRef), newName, pr.in)
-          } else pr
+          } else {
+            pr
+          }
       }
     }
   }
@@ -336,8 +339,8 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
 case class ValRef(name: Name) extends Tree
 case class ThisRef() extends Tree
 trait ConnectionEnd extends Tree
-case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd {// in as flow or as PortDir?
- def sym : PortSide = symbol.asInstanceOf[PortSide] 
+case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd { // in as flow or as PortDir?
+  def sym: PortSide = symbol.asInstanceOf[PortSide]
 }
 case class Param(key: Name, value: String) extends Tree
 case class LabelDesc(description: String, pos: Vector2)
@@ -359,6 +362,16 @@ case class ValDef(
     labelGui: Option[LabelDesc],
     template: Option[Template]) extends Tree with Positionable {
   def sym = symbol.asInstanceOf[ValSymbol]
+  
+  def changeType(str: String) = new EditTransformer() {
+    val trans: PartialFunction[Tree, Tree] = {
+      case v: ValDef if v == ValDef.this ⇒
+        v.copy(
+          typeName = Name(str),
+          template = transformOption(v.template),
+          params = transformTrees(v.params))
+    }
+  }
   def addOrReplaceParam(param: Param) = new EditTransformer() {
     val trans: PartialFunction[Tree, Tree] = {
       case v: ValDef if v == ValDef.this ⇒
@@ -373,11 +386,14 @@ case class ValDef(
       val trans: PartialFunction[Tree, Tree] = {
         case v: ValDef if (v == ValDef.this) ⇒
           val oldl = if (gui) v.labelGui else v.label
-          val lDesc = LabelDesc(s, oldl map { _.pos } getOrElse { Vector2(0, 0) })
+          val lDesc = s match {
+            case "" => None 
+            case _ => Some(LabelDesc(s, oldl map { _.pos } getOrElse { Vector2(0, 0) }))
+          }
           if (gui)
-            v.copy(labelGui = Some(lDesc))
+            v.copy(labelGui = lDesc, template=transformOption(v.template), params=transformTrees(v.params))
           else
-            v.copy(label = Some(lDesc))
+            v.copy(label = lDesc, template=transformOption(v.template), params=transformTrees(v.params))
       }
     }
 }

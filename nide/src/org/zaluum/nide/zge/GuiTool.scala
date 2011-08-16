@@ -2,7 +2,6 @@ package org.zaluum.nide.zge
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.math.max
-
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.Cursors
 import org.eclipse.draw2d.IFigure
@@ -13,7 +12,7 @@ import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
-import org.zaluum.nide.zge.dialogs.ValDefMenu
+import org.zaluum.nide.zge.dialogs.ValDefPopup
 
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   override val resizing = new Resizing {
@@ -75,8 +74,8 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
     override def menu() = {
       itemUnderMouse match {
-        case Some(l: LabelItem)   ⇒ ValDefMenu.show(viewer, l, true)
-        case Some(s: SwingFigure) ⇒ ValDefMenu.show(viewer, s, true)
+        case Some(l: LabelItem)   ⇒ new ValDefPopup(viewer, l, true).open()
+        case Some(s: SwingFigure) ⇒ new ValDefPopup(viewer, s, true).open()
         case _                    ⇒
       }
     }

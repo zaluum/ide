@@ -34,7 +34,7 @@ class DimensionsDialog(viewer: Viewer, val vs: ValSymbol) extends Dialog(viewer.
       viewer.controller.exec(tr)
     }
   }
-  def initial = v.params.asInstanceOf[List[Param]].find(_.key == NewArrayExprType.arrayDimName).map(_.value).getOrElse("1")
+  def initial = NewArrayExprType.dimensions(v)
   def proj = viewer.controller.zproject
   override def createDialogArea(parent: Composite): Control = {
     val sup = super.createDialogArea(parent).asInstanceOf[Composite];
