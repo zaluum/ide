@@ -6,25 +6,24 @@ import java.io.FileFilter
 import java.io.StringWriter
 import java.net.URLClassLoader
 import scala.io.Source
-
-object Compile {
-  val rt = "/home/frede/devel/jdk1.7.0/jre/lib/rt.jar" // TODO remove absolute path
-  val embedded = new File("/home/frede/devel/zaluum/embedded-lib/lib/")
+object RunTestSuite extends App {
+  val baseDir = new File(args(0)) // pass parameter like: /home/user/devel/zaluum 
+  val testSuite = new File(baseDir, "test-suite/")
+  val embedded = new File(baseDir, "embedded-lib/lib/")
+  val runtime = new File(baseDir, "runtime/bin")
   val libs = if (embedded.exists && embedded.isDirectory) {
     embedded.listFiles() filter { _.getName.endsWith(".jar") } map { _.getAbsolutePath } toList
   } else List()
 
   def runTest(path: File): Boolean = {
-    def msg(msg: String) = {
-      println(path + " " + msg)
-    }
-    def error(msg: String) = {
-      println(">>>>>>>>>")
-      println(path + " " + msg)
-      println("<<<<<<<<<")
-    }
+      def msg(msg: String) = {
+        println("OK  " + path + " " + msg)
+      }
+      def error(msg: String) = {
+        println("ERR " + path + " " + msg)
+      }
     val src = path
-    val cp = (src.getPath :: rt :: libs)
+    val cp = (src.getPath :: runtime :: libs)
     val target = new File(path, "target")
     val filesToCompile = javasOrZaluums(path) map { f ⇒ f.getPath } mkString (" ")
     val compilationCheck = new File(path, "compilation.check");
@@ -99,7 +98,9 @@ object Compile {
   }
 
   def dirs(f: File): List[File] = {
-    for (d ← f.listFiles.toList; if d.isDirectory) yield d
+    if (f.exists())
+    	for (d ← f.listFiles.toList; if d.isDirectory) yield d
+    else List()
   }
   def javasOrZaluums(d: File): List[File] = {
     if (d.isDirectory) {
@@ -111,14 +112,12 @@ object Compile {
       }
     } else List()
   }
-  def main(args: Array[String]) {
-    var run = 0;
-    var ok = 0;
-    for (d ← dirs(new File("."))) {
-      if (runTest(d)) ok += 1
-      run += 1
-    }
-    println("RUN: " + run + " OK: " + ok + " FAIL: " + (run - ok))
-
+  // body
+  var run = 0;
+  var ok = 0;
+  for (d ← dirs(testSuite)) {
+    if (runTest(d)) ok += 1
+    run += 1
   }
+  println("RUN: " + run + " OK: " + ok + " FAIL: " + (run - ok))
 }

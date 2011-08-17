@@ -5,7 +5,6 @@ week 15-21 GUI week
 	- Swing thread synchronization / refresh rate	
 	- al connectar o desconnectar cables de vegades fa coses rares
 	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
-	- respawn test framework
 	- when a visual component moves, resize the canvas size
 	- nested guis as new window
 	- better port names (this,thisOut)
@@ -106,6 +105,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- respawn test framework
 	- improve error messages
 	- mark errors on boxes/connections/ports
 	- unified interface to select port type, array type/dim, class/method/field

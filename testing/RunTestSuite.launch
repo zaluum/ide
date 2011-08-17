@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="scala.application">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/testing/src/org/zaluum/testing/RunTestSuite.scala"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="org.zaluum.testing.RunTestSuite"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="/home/frede/devel/zaluum/"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="testing"/>
+<stringAttribute key="org.eclipse.jdt.launching.WORKING_DIRECTORY" value="/home/frede/devel/zaluum/test-suite"/>
+</launchConfiguration>
