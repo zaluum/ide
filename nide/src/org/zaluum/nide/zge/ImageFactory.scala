@@ -109,17 +109,19 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   }
   case class GeneratedTextIconImageDescriptor(text: String, ySize: Int, color: Color) extends DeviceResourceDescriptor {
     def createResource(device: Device): Object = {
-      val img = new Image(device, 48, ySize);
-      val gc = new GC(img)
-      val t = new TextLayout(device)
-      gc.setForeground(color)
       val font = Activator.getDefault.generatedIconFont
+      val t = new TextLayout(device)
       t.setText(text)
       t.setAlignment(SWT.CENTER)
       t.setFont(font)
       t.setWidth(47)
-      gc.drawRectangle(0, 0, 47, ySize - 1)
-      t.draw(gc, 0, math.max(0, (ySize - 1 - t.getBounds.height) / 2))
+      val textY = t.getBounds.height
+      val finalY = math.max(ySize,textY)
+      val img = new Image(device, 48, finalY);
+      val gc = new GC(img)
+      gc.setForeground(color)
+      gc.drawRectangle(0, 0, 47, finalY - 1)
+      t.draw(gc, 0, math.max(0, (finalY -1  - textY)  / 2))
       t.dispose
       gc.dispose
       img

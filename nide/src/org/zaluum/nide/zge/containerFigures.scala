@@ -82,15 +82,15 @@ trait ContainerItem extends Item {
               case Some(JunctionRef(name)) ⇒
                 junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
               case Some(p: PortRef) ⇒
-                val ps = PortSide.find(p, symbol).get
-                portVertexs.find(_.ps == ps).get // BUG not found
+                portVertexs.find(_.ps == p.sym).get // BUG not found
               case None ⇒
                 val e = new EmptyVertex(pos)
                 emptyVertexs += e
                 e
             }
           }
-        (c -> new Edge(toVertex(c.a, true), toVertex(c.b, false), c.points, Some(c)).fixEnds)
+      	val bad = block.sym.connections.isBad(c)
+        (c -> new Edge(toVertex(c.a, true), toVertex(c.b, false), c.points, Some(c), bad).fixEnds)
     }.toMap
     new ConnectionGraphV(
       portVertexs.toSet ++

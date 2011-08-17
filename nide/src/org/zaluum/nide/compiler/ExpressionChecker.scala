@@ -29,7 +29,9 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
           case (Some(p), None) if isIntNumeric(p) ⇒ assignAll(Int, Boolean)
           case (Some(p), Some(p2)) if isIntNumeric(p) && isIntNumeric(p2) ⇒ assignAll(Int, Boolean)
           case (None, _) ⇒ assignAll(Int, Boolean)
-          case _ ⇒ error("Incompatible types", vs.decl)
+          case _ ⇒
+            assignAll(Int, Boolean)
+            error("Binary operation with incompatible types", vs.decl)
         }
       case s: ShiftExprType ⇒
         if (isIntNumeric(bt) || bt == NoSymbol) {
@@ -46,7 +48,9 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
           case (Some(p1: PrimitiveJavaType), None) if isNumeric(p1) ⇒ assignAll(toOperationType(p1), Boolean)
           case (Some(p1: PrimitiveJavaType), Some(p2: PrimitiveJavaType)) if isNumeric(p1) && isNumeric(p2) ⇒ assignAll(toOperationType(p1), Boolean)
           case (None, _) ⇒ assignAll(Int, Boolean)
-          case _ ⇒ error("Incompatible types", vs.decl)
+          case _ ⇒
+            assignAll(Int, Boolean)
+            error("Comparation between incompatible types", vs.decl)
         }
       case e: EqualityExprType ⇒
         (one, other) match {
@@ -55,7 +59,9 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
           case (None, _) ⇒ assignAll(Int, Boolean)
           case (Some(p1), None) if p1 == primitives.Boolean ⇒ assignAll(Boolean, Boolean)
           case (Some(p1), Some(p2)) if p1 == p2 ⇒ assignAll(p1, Boolean)
-          case _ ⇒ error("Incompatible types", vs.decl)
+          case _ ⇒
+            assignAll(Int,Boolean)
+          	error("Relation test between incompatible types", vs.decl)
         }
       case _ ⇒
         (one, other) match {
@@ -64,7 +70,7 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
             val t = largerOperation(toOperationType(p1), toOperationType(p2))
             assignAll(t, t)
           case (None, _) ⇒ assignAll(Int, Int)
-          case _         ⇒ error("Incompatible types", vs.decl)
+          case _         ⇒ assignAll(Int, Int); error("Operation between incompatible types", vs.decl)
         }
     }
   }
@@ -80,14 +86,14 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
             val t = toOperationType(p)
             a.tpe = t; o.tpe = t
           case NoSymbol ⇒ a.tpe = Int; o.tpe = Int
-          case _        ⇒ error("Incompatible type", blame(a).get)
+          case _        ⇒ error("Cannot change sign of non numeric type", blame(a).get)
         }
       case NotExprType ⇒
         unboxIfNeeded(fromTpe(a)) match {
           case Boolean              ⇒ a.tpe = Boolean; o.tpe = Boolean
           case p if isIntNumeric(p) ⇒ a.tpe = Int; o.tpe = Int
           case NoSymbol             ⇒ a.tpe = Boolean; o.tpe = Boolean
-          case _                    ⇒ error("Incompatible type", blame(a).get)
+          case t                    ⇒ error("Cannot apply NOT to type " + t.fqName.str, blame(a).get)
         }
     }
   }

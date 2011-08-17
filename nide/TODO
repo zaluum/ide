@@ -1,17 +1,13 @@
 Agenda
 
 week 15-21 GUI week
-	- improve error messages
-	- mark errors on boxes/connections/ports
 	- remove expr .javas and organize better packages for exprs IF javadoc support ok
-	- visual only boxes
 	- Swing thread synchronization / refresh rate	
 	- al connectar o desconnectar cables de vegades fa coses rares
 	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
 	- respawn test framework
 	- when a visual component moves, resize the canvas size
 	- nested guis as new window
-	- notes/ visual only on diagram
 	- better port names (this,thisOut)
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- write feature list on freemind
@@ -55,6 +51,8 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
+	- notes/ visual only on diagram
+	- visual only boxes
 	- improve popup usability. Multiple changes at once.
 	- filter @Box on type selection right button
 	- infer types of while/ifs
@@ -108,6 +106,8 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- improve error messages
+	- mark errors on boxes/connections/ports
 	- unified interface to select port type, array type/dim, class/method/field
 	- change port names
 	- check return port name collision with java keywords object methods

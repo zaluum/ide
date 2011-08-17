@@ -14,22 +14,31 @@ import org.zaluum.nide.compiler.PortSide
 import org.zaluum.nide.compiler.PortSymbol
 import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.Vector2
-
 import draw2dConversions._
+import org.zaluum.nide.compiler.NoSymbol
 
 class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
-  def size = Dimension(5, 5)
+  var size = Dimension(5, 5)
   def pos = MPoint(ipos.x - size.w / 2, ipos.y - size.h / 2)
   def anchor = getBounds.getCenter
   private var ipos = MPoint(0, 0)
   var in = false
   var ps: PortSide = _
+  def isBad = ps!=null && ps.tpe == NoSymbol
   def update(ipos: MPoint, ps: PortSide) {
     this.ps = ps
     this.ipos = ipos
     this.in = in
-    setBackgroundColor(Colorizer.color(ps.pi.tpe))
-    updateHoverColor()
+    if (ps.pi.tpe == NoSymbol) {
+      setBackgroundColor(ColorConstants.white)
+      setLineWidthFloat(1.5F)
+      size = Dimension(7, 7)
+    } else {
+      setBackgroundColor(Colorizer.color(ps.pi.tpe))
+      setLineWidthFloat(1)
+      size = Dimension(5, 5)
+      updateHoverColor()
+    }
     setBounds(new Rectangle(pos.x, pos.y, size.w, size.h))
   }
   var _hover = false
@@ -39,10 +48,14 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
     updateHoverColor()
   }
   def updateHoverColor() {
-    if (_hover)
-      setForegroundColor(ColorConstants.lightGray)
-    else
-      setForegroundColor(getBackgroundColor())
+    if (isBad) {
+      setForegroundColor(ColorConstants.red)
+    } else {
+      if (_hover)
+        setForegroundColor(ColorConstants.lightGray)
+      else
+        setForegroundColor(getBackgroundColor())
+    }
   }
   override def toString() =
     "PortFigure(" + ps + ")"
@@ -136,7 +149,7 @@ class PortDeclFigure(val tree: PortDef, ps: PortSide, container: ContainerItem) 
   def sym = tree.sym
   def text = ps.name.str
   override def selectionSubject = Some(tree)
-  
+
 }
 class PortSymbolFigure(ps: PortSide, openBox: OpenBoxFigure) extends PortHolderFigure(openBox, ps) {
   def pos = MPoint(openBox.getClientArea.getBottomRight.x - size.w - 1, openBox.getClientArea.getBottomRight.y - size.h - 1)

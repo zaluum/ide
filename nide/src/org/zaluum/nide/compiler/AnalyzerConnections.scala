@@ -27,12 +27,12 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
           case v: ValDef ⇒ acyclic.addVertex(v.sym) // valdefs always have symbol
           case j @ Junction(name, _) ⇒
             bl.connections.lookupJunction(name) match {
-              case Some(j) ⇒ error("junction name already exists", j)
+              case Some(j) ⇒ error("Fatal: junction " + j + " already exists", j)
               case None    ⇒ bl.connections.junctions += j
             }
           case c @ ConnectionDef(a, b, waypoints) ⇒
             if (a.isEmpty || b.isEmpty) {
-              error("incomplete connection " + a + "<->" + b, tree)
+              error("Incomplete connection", tree)
             } else {
               bl.connections.addConnection(c)
             }
@@ -54,13 +54,17 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     // 4- Put calculated types to the clump
     for (c ← bl.connections.clumps) storeTypesInConnectionsAndJunctions(c)
   }
+  def errorConnection(str:String , c:ConnectionDef) {
+    error(str,c)
+    bl.connections.markAsBad(c)
+  }
   def checkClump(c: Clump) {
     val ins = c.ports.filter(p ⇒ p.flowIn) map { _.pi }
     val outs = c.ports.filter(p ⇒ !p.flowIn) map { _.pi }
-    if (outs.size == 0) error("No output connected", c.connections.head)
-    else if (outs.size > 1) error("More than one output is connected", c.connections.head)
-    else if (ins.size == 0) error("No inputs connected", c.connections.head)
-    else if (!usedInputs.intersect(ins).isEmpty) error("input connected multiple times", c.connections.head) // TODO check online to identify offending connection 
+    if (outs.size == 0) errorConnection("Connection has no output attached", c.connections.head)
+    else if (outs.size > 1) errorConnection("Connection with more than one output attached", c.connections.head)
+    else if (ins.size == 0) errorConnection("Connection has no inputs attached", c.connections.head)
+    else if (!usedInputs.intersect(ins).isEmpty) errorConnection("Input can only have one connection", c.connections.head) // TODO check online to identify offending connection 
     else {
       checkGraphFlow(c, ins, outs.head)
       // store flow
@@ -82,7 +86,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         try {
           acyclic.addDagEdge(vout.valSymbol, vin.valSymbol);
         } catch {
-          case e: CycleFoundException      ⇒ errorDag("Cycle found.")
+          case e: CycleFoundException      ⇒ errorDag("Cycle found. Data flow cannot have loops.")
           case e: IllegalArgumentException ⇒ errorDag("Loop connection found. Cannot connect a box to itself.")
         }
       }
@@ -93,29 +97,30 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         addDag(out, in)
     }
   }
-  def assignBoxTypeSymbolTypes(vs:ValSymbol) {
-    for (pi<-vs.portInstances; ps <- pi.portSymbol) {
+  def assignBoxTypeSymbolTypes(vs: ValSymbol) {
+    for (pi ← vs.portInstances; ps ← pi.portSymbol) {
       pi.missing = false
       pi.tpe = ps.tpe
     }
   }
-  def checkBoxTypes(vs: ValSymbol) {
-    checkGhostPorts(vs)
-    checkPortConnectionsTypes(vs)
-  }
-  def checkGhostPorts(vs: ValSymbol) {
+  /*def checkGhostPorts(vs: ValSymbol) {
     for (pi ← vs.portInstances) {
-      if (pi.missing) error("Ghost port. Cannot find port " + pi, vs.decl)
+      if (pi.missing) error("Port " + pi.name.str + " does not exist" + pi, vs.decl)
     }
-  }
+  }*/
   def checkPortConnectionsTypes(vs: ValSymbol) {
     for (pi ← vs.portInstances) {
-      if (pi.tpe == NoSymbol) error("Port type not found " + pi, b)
-      else {
-        for ((from, blame) ← bl.connections.connectedFrom.get(pi)) {
-          if (!checkAssignmentPossible(from.tpe, pi.tpe)) {
-            error("Connection with incompatible types", blame)
-          }
+      val tpeName = pi.declOption.map { _.typeName.str }.getOrElse("")
+      val blame = pi.declOption.getOrElse(vs.decl)
+      if (pi.tpe == NoSymbol)
+        error("Invalid port type " + tpeName, blame)
+      for ((from, blame) ← bl.connections.connectedFrom.get(pi)) {
+        if (from.missing || pi.missing) {
+          errorConnection("Connection to missing port ", blame)
+        } else if (from.tpe == NoSymbol || pi.tpe == NoSymbol) {
+          bl.connections.markAsBad(blame)
+          /*ignore reported as port type not found*/ } else if (!checkAssignmentPossible(from.tpe, pi.tpe)) {
+          errorConnection("Connection with incompatible types: " + from.tpe.name.str + " to " + pi.tpe.name.str, blame)
         }
       }
     }
@@ -155,7 +160,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         pi.missing = false
         pi.portSymbol match {
           case Some(ps) ⇒ pi.tpe = ps.tpe
-          case None     ⇒ error("Cannot find port " + api, bl.decl)
+          case None     ⇒ error("Cannot find port " + api.name.str, b)
         }
       }
     }
@@ -163,17 +168,18 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     val objectChecker = new OOChecker(this)
     for (vs ← bl.executionOrder) {
       vs.tpe match {
-        case bs: BoxTypeSymbol   ⇒ assignBoxTypeSymbolTypes(vs); checkBoxTypes(vs)
+        case bs: BoxTypeSymbol   ⇒ assignBoxTypeSymbolTypes(vs)
         case b: BinExprType      ⇒ exprChecker.checkBinExprTypes(vs)
         case LiteralExprType     ⇒ exprChecker.checkLiteralExprType(vs)
         case e: UnaryExprType    ⇒ exprChecker.checkUnaryExprType(vs)
-        case t: ThisExprType     ⇒ objectChecker.checkThisExprType(vs); checkPortConnectionsTypes(vs)
-        case t: StaticExprType   ⇒ objectChecker.checkStaticExprType(vs); checkPortConnectionsTypes(vs)
+        case t: ThisExprType     ⇒ objectChecker.checkThisExprType(vs)
+        case t: StaticExprType   ⇒ objectChecker.checkStaticExprType(vs)
         case t: TemplateExprType ⇒ objectChecker.checkTemplateExprType(vs)
       }
-      checkGhostPorts(vs)
+      checkPortConnectionsTypes(vs)
+      //checkGhostPorts(vs)
     }
-    checkBoxTypes(template.thisVal)
+    checkPortConnectionsTypes(template.thisVal)
   }
   def storeTypesInConnectionsAndJunctions(c: Clump) {
     val outO = c.ports.find(p ⇒ !p.flowIn) map { _.pi }
@@ -189,10 +195,10 @@ trait CheckerPart extends ReporterAdapter {
   def bl = c.bl
   def location(tree: Tree) = c.location(tree)
   def reporter = c.reporter
-  def scope(vs: ValSymbol) : ZaluumClassScope = {
+  def scope(vs: ValSymbol): ZaluumClassScope = {
     vs.owner.template match {
-      case b:BoxTypeSymbol => b.javaScope
-      case own:ValSymbol => scope(own) 
+      case b: BoxTypeSymbol ⇒ b.javaScope
+      case own: ValSymbol   ⇒ scope(own)
     }
   }
   def connectedFrom(p: PortInstance) = bl.connections.connectedFrom.get(p)

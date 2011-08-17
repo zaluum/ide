@@ -118,6 +118,7 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   def valsAlphabeticOrder = (vals.values ++ missingVals.values).toList.sortBy(_.name.str)
   object connections extends Namer {
     var junctions = Set[Junction]()
+    var badConnections = Set[ConnectionDef]()
     def usedNames = junctions map { _.name.str }
     var flow = Map[PortInstance, Set[PortInstance]]()
     var connectedFrom = Map[PortInstance, (PortInstance, ConnectionDef)]()
@@ -125,6 +126,8 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
     def clumpOf(c: ConnectionDef) = clumps find { _.connections.contains(c) }
     def clumpOf(p: PortSide) = clumps find { _.ports.contains(p) }
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
+    def isBad(b:ConnectionDef) = badConnections.contains(b) || b.tpe == NoSymbol
+    def markAsBad(b:ConnectionDef) { badConnections += b }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
       val pk = PortSide.findOrCreateMissing(a, BlockSymbol.this)
       a.symbol = pk
@@ -240,6 +243,7 @@ class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: 
   var missing = false
   def owner = valSymbol
   def hasDecl = portSymbol.map { _.decl != null } getOrElse { false }
+  def declOption = portSymbol.flatMap { p=>  Option(p.decl.asInstanceOf[PortDef]) }
   def fqName = Name(valSymbol.fqName.str + "_" + name.str)
   override def toString = "PortInstance(" + portSymbol + ", " + valSymbol + ")"
 }
@@ -252,7 +256,7 @@ object PortSide {
     }
   }
   def findOrCreateMissing(p: PortRef, bl: BlockSymbol) = {
-      def createMissing(vs: ValSymbol, inside: Boolean) = {
+      def createMissingPort(vs: ValSymbol, inside: Boolean) = {
         val dir = if (p.in) In else Out // FIXME shift ? 
         val missing = new PortInstance(p.name, None, vs, dir)
         missing.missing = true
@@ -264,11 +268,12 @@ object PortSide {
     p.fromRef match {
       case t: ThisRef ⇒
         bl.template.thisVal.findPortSide(p, inside = true).getOrElse {
-          createMissing(bl.template.thisVal, inside = true)
+          createMissingPort(bl.template.thisVal, inside = true)
         }
       case v: ValRef ⇒
         val vs = bl.lookupValOrCreateMissing(v.name)
-        vs.findPortSide(p, inside = false).getOrElse { createMissing(vs, inside = false) }
+        v.symbol = vs
+        vs.findPortSide(p, inside = false).getOrElse { createMissingPort(vs, inside = false) }
     }
   }
 }

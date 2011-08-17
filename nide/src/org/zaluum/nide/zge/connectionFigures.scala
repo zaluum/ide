@@ -21,16 +21,23 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
   var complete = true
   var l: Line = _
   def helpers = List()
-  def update(con: Option[ConnectionFigure], complete: Boolean, l: Line) {
+  def update(con: Option[ConnectionFigure], complete: Boolean, bad:Boolean, l: Line) {
     this.con = con
     this.complete = complete
     this.l = l
-    setForegroundColor(Colorizer.color(connectionDef.map { _.tpe }.getOrElse { null }))
+    if (bad)
+      setForegroundColor(ColorConstants.red)
+    else
+      setForegroundColor(Colorizer.color(connectionDef.map { _.tpe }.getOrElse { null }))
     width = 1
     if (complete) {
       style = SWT.LINE_SOLID
     } else {
       style = SWT.LINE_DOT
+    }
+    if (bad) {
+      width = 3
+      style = SWT.LINE_DASH
     }
 
   }
@@ -103,13 +110,13 @@ class PointFigure extends Ellipse {
 class ConnectionPainter(container: ContainerItem) {
   val lines = Buffer[LineItem]()
   def paintCreatingRoute(edge: Edge) {
-    paintRoute(edge, false, false)
+    paintRoute(edge, false, false, false)
   }
-  def paintRoute(edge: Edge, feedback: Boolean, complete: Boolean, con: Option[ConnectionFigure] = None) {
+  def paintRoute(edge: Edge, feedback: Boolean, complete: Boolean, bad:Boolean, con: Option[ConnectionFigure] = None) {
     clear()
     edge.lines foreach { l ⇒
       val nl = new LineItem(container)
-      nl.update(con, complete, l)
+      nl.update(con, complete, bad, l)
       lines += nl
     }
     lines foreach { l ⇒ l.show }
@@ -128,7 +135,7 @@ class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Item {
   def pos = null
   val feed = null
   def myLayer = null
-  def paint = painter.paintRoute(e, feedback, e.isComplete, Some(this))
+  def paint = painter.paintRoute(e, feedback, e.isComplete, e.isBad, Some(this))
   def blink(c: Boolean) = {}
   override def show() = {
     container.connectionsLayer.add(this);

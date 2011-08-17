@@ -12,25 +12,14 @@ import javax.swing.JPanel
 
 class Reporter {
   case class Error(msg: String, mark: Option[Int])
+  private var reportMoreErrors = true
+  def ifErrorsDoNotReportMore() {
+    if (errors.size >0) reportMoreErrors=false
+  }
   val errors = Buffer[Error]()
   def report(str: String, mark: Option[Int] = None) {
-    errors += Error(str, mark)
+    if (reportMoreErrors) errors += Error(str, mark)
   }
-  def check() {
-    if (!errors.isEmpty)
-      fail
-  }
-  def fail = throw new CompilationException()
-
-  def fail(err: String, mark: Option[Int] = None): Nothing = {
-    report(err)
-    fail
-  }
-  def apply(assertion: Boolean, res: ⇒ String, mark: Option[Int] = None, fail: Boolean = false) {
-    if (!assertion) report(res) // TODO mark
-    if (fail) check()
-  }
-  def apply() = check()
   override def toString = errors.toString
 }
 case class Name(str: String) {
@@ -232,7 +221,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
           sym.constructors = List(new Constructor(sym, List()))
           tree.tpe = sym
-          if (b.template.blocks.size != 1) error("Fatal BoxDef has no block defined", b) // FATAL
+          if (b.template.blocks.size != 1) error("Fatal: BoxDef must have 1 block defined. Manual edit needed.", b) 
         // FIXME reported errors do not show in the editor (valdef)
         case t: Template ⇒
           val template = currentOwner.asInstanceOf[TemplateSymbol]
@@ -298,14 +287,17 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
         case bl: Block ⇒
           bl.sym.template match {
             case bs: BoxTypeSymbol ⇒
+              assert(bs.thisVal==null)
               bs.thisVal = new ValSymbol(bl.sym, Name("this")) // feels wrong
+              bs.thisVal.decl = bl.sym.template.decl
               bs.thisVal.tpe = bs
             case v: ValSymbol ⇒
               v.thisVal = v
           }
         case p: PortDef ⇒
           tree.symbol.tpe = catchAbort(global.lookupType(p.typeName)) getOrElse {
-            error("Port type not found " + p.typeName, tree); NoSymbol
+            error("Port type \"" + p.typeName + "\" not found in port " + p.sym.name.str,
+                tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
@@ -314,12 +306,12 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
               val vsym = v.sym.asInstanceOf[ValSymbol]
               v.symbol.tpe = bs
               if (!bs.hasApply) {
-                error("Box " + v.typeName.str + " has no apply method", tree)
+                error("Class " + v.typeName.str + " is not a annotated with @Box or has no method annotated with @Apply", tree)
               }
               // Constructor
               val consSign = v.constructorTypes map { name ⇒
                 global.lookupType(name) getOrElse {
-                  error("Constructor type " + name + " not found", tree)
+                  error("Constructor type " + name + " not found" , tree)
                   NoSymbol
                 }
               }
@@ -348,7 +340,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
                       NoSymbol
                     }
                     vsym.params += (parSym -> parsed)
-                  case None ⇒ error("Cannot find parameter " + p.key, tree)
+                  case None ⇒ error(bs.name.str  + " has no parameter " + p.key.str, tree)
                 }
               }
               createPortInstances(bs.ports.values, vsym, false, true)
@@ -360,7 +352,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
                 b.lookupParam(p.key) match {
                   case Some(parSym) ⇒
                     vsym.params += (parSym -> p.value) // FIXME always string?
-                  case None ⇒ error("Cannot find parameter " + p.key, tree)
+                  case None ⇒ error(b.fqName.str + " has no parameter " + p.key, tree)
                 }
               }
               val createInside = b.isInstanceOf[TemplateExprType]
@@ -372,12 +364,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
           }
           // constructor match
           tree.tpe = tree.symbol.tpe
-        case v @ ValRef(name) ⇒
-          val block = currentOwner.asInstanceOf[BlockSymbol]
-          tree.symbol = catchAbort(block.vals.get(name)) getOrElse {
-            error("Box not found " + name, tree); NoSymbol
-          }
-          tree.tpe = tree.symbol.tpe
         case ThisRef() ⇒ // 
           val block = currentOwner.asInstanceOf[BlockSymbol]
           tree.symbol = block.owner
@@ -387,22 +373,19 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
     }
   }
 
-  def runNamer(): Tree = {
-    new Namer().traverse(toCompile)
-    toCompile
-  }
+  def runNamer() = new Namer().traverse(toCompile)
 
   def runResolve(cud: ZaluumCompilationUnitDeclaration, global: Scope): Tree = {
     this.cud = cud
     new Resolver(global).traverse(toCompile)
     toCompile
   }
-  def runCheck(): Tree = {
+  def runCheck() {
+    reporter.ifErrorsDoNotReportMore()
     toCompile.template.blocks.headOption foreach {
       bl ⇒
         new CheckConnections(bl, true, this).run()
     }
-    toCompile
   }
 }
 class CompilationException extends Exception

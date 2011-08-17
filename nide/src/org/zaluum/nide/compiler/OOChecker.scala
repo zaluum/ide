@@ -11,13 +11,13 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
      */
   def processMethod(vs: ValSymbol, m: Option[MethodBinding])(body: MethodBinding ⇒ Unit) = m match {
     case Some(p: ProblemMethodBinding) ⇒
-      error("problem method " + p + p.problemId(), vs.decl)
+      error("Problem with selected method " + p.problemId(), vs.decl) // TODO improve error message
     case Some(m) ⇒
       if (m.returnType != null && m.returnType != TypeBinding.VOID) {
         val out = vs.portInstances find { _.name == Name("return") } getOrElse { vs.createOutsideOut(Name("return")).pi }
         out.missing = false
         out.tpe = cud.zaluumScope.getJavaType(m.returnType)
-        if (out.tpe == NoSymbol) error("return type not found", vs.decl)
+        if (out.tpe == NoSymbol) error("Return type " + m.returnType.readableName().mkString + " cannot be resolved", vs.decl)
       }
       for ((p, i) ← m.parameters.zipWithIndex) {
         val name = Name("p" + i)
@@ -28,7 +28,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       vs.info = m
       body(m)
     case None ⇒
-      error("method not found", vs.decl)
+      error("Method not found", vs.decl)
   }
   /*
      *  statics
@@ -54,7 +54,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
             }
           case _ ⇒ error("Class " + className + " not found", vs.decl)
         }
-      case None ⇒ error("no class specified", vs.decl)
+      case None ⇒ error("No class specified", vs.decl)
     }
   }
   def checkNewArray(vs: ValSymbol, t: JavaType) {
@@ -64,13 +64,13 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case None ⇒ 1
     }
     for (i ← 1 to dims) {
-      val name = Name("d"+i)
+      val name = Name("d" + i)
       val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(name).pi }
       in.missing = false
       in.tpe = primitives.Int
     }
     val result = NewArrayExprType.thisPort(vs)
-    result.tpe = cud.zaluumScope.getArrayType(t,dims)
+    result.tpe = cud.zaluumScope.getArrayType(t, dims)
   }
   def checkNew(vs: ValSymbol, c: ClassJavaType) {
     if (!c.binding.canBeInstantiated()) {
@@ -130,7 +130,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
               case ArrayExprType  ⇒ error("Type must be array", vs.decl)
             }
           case _ ⇒
-            error("bad type", blame)
+            error("Type is not a class", blame)
         }
       case None ⇒ // not connected
     }
@@ -155,17 +155,17 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     vs.params.get(tpe.signatureSymbol) match {
       case Some(fieldName: String) ⇒
         ZaluumCompletionEngineScala.findField(cud, scope(vs), c.binding, fieldName, false) match {
-          case Some(p: ProblemFieldBinding) ⇒ error("problem field " + p + p.problemId(), vs.decl)
+          case Some(p: ProblemFieldBinding) ⇒ error("Problem field " + p + p.problemId(), vs.decl)
           case Some(f: FieldBinding) ⇒
             val out = vs.tpe.asInstanceOf[ResultExprType].outPort(vs)
             val a = vs.tpe.asInstanceOf[OneParameter].aPort(vs)
             a.tpe = cud.zaluumScope.getJavaType(f.`type`)
             out.tpe = a.tpe
-            if (out.tpe == NoSymbol) error("field type not found", vs.decl)
+            if (out.tpe == NoSymbol) error("Field type not found " + f.`type`.readableName.mkString, vs.decl)
             vs.info = f
-          case None ⇒ error("field not found", vs.decl)
+          case None ⇒ error("Field not found", vs.decl)
         }
-      case _ ⇒ error("no field specified", vs.decl)
+      case _ ⇒ error("No field specified", vs.decl)
     }
   }
   def invoke(vs: ValSymbol, c: ClassJavaType) {
@@ -173,12 +173,12 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case Some(InvokeExprType.Sig(selector, signature)) ⇒
         val m = ZaluumCompletionEngineScala.findBySignature(cud, scope(vs), c, selector, signature, false)
         processMethod(vs, m) { _ ⇒ }
-      case _ ⇒ error("signature missing", vs.decl)
+      case _ ⇒ error("Cannot parse selected method signature", vs.decl)
     }
   }
   /*
-     * expressions with templates
-     */
+   * expressions with templates
+   */
   def checkTemplateExprType(vs: ValSymbol) = { // FIXME share code with While
     val t = vs.tpe.asInstanceOf[TemplateExprType]
     vs.tdecl.template match {

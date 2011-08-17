@@ -80,7 +80,7 @@ class ZaluumCompilationUnitDeclaration(
   def fqName = aToString(currentPackage.getImportName) + tree.name.str
   private def createLineSeparator() = {
     // one char per line
-    val treeSize = tree.children.size + 1
+    val treeSize = tree.deepchildren.size + 1
     compilationResult.lineSeparatorPositions = Array.range(1, (treeSize * 2) + 1, 2)
   }
   def populateCompilationUnitDeclaration() {
@@ -166,7 +166,7 @@ class ZaluumCompilationUnitDeclaration(
     b.template.ports find { _.dir == Out } match {
       case Some(p) ⇒
         meth.selector = p.name.str.toCharArray
-        meth.returnType = createTypeReference(p.typeName, b)
+        meth.returnType = createTypeReference(p.typeName, p)
       case None ⇒
         meth.selector = TreeToClass.defaultMethodName.toCharArray
         meth.returnType = createTypeReference(Name("void"), b)
@@ -235,10 +235,7 @@ class ZaluumCompilationUnitDeclaration(
       name.asArray match {
         case Some((leaf, dim)) ⇒
           if (nameToPrimitiveTypeId.contains(leaf.str)) {
-            val br = TypeReference.baseTypeReference(nameToPrimitiveTypeId(leaf.str), dim)
-            br.sourceStart = -1
-            br.sourceEnd = -2
-            br
+            TypeReference.baseTypeReference(nameToPrimitiveTypeId(leaf.str), dim)
           } else if (leaf.str.contains('.')) {
             val compoundName = CharOperation.splitOn('.', leaf.str.toCharArray)
             new ArrayQualifiedTypeReference(compoundName, dim, Array.fill(compoundName.length)(pos))
@@ -246,10 +243,7 @@ class ZaluumCompilationUnitDeclaration(
             new ArrayTypeReference(leaf.str.toCharArray, dim, pos);
         case None ⇒
           if (nameToPrimitiveTypeId.contains(name.str)) {
-            val br = TypeReference.baseTypeReference(nameToPrimitiveTypeId(name.str), 0)
-            br.sourceStart = -1
-            br.sourceEnd = -2
-            br
+            TypeReference.baseTypeReference(nameToPrimitiveTypeId(name.str), 0)
           } else if (!name.str.contains('.')) {
             new SingleTypeReference(name.str.toCharArray, pos)
           } else {
