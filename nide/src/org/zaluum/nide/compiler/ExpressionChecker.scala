@@ -60,8 +60,8 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
           case (Some(p1), None) if p1 == primitives.Boolean ⇒ assignAll(Boolean, Boolean)
           case (Some(p1), Some(p2)) if p1 == p2 ⇒ assignAll(p1, Boolean)
           case _ ⇒
-            assignAll(Int,Boolean)
-          	error("Relation test between incompatible types", vs.decl)
+            assignAll(Int, Boolean)
+            error("Relation test between incompatible types", vs.decl)
         }
       case _ ⇒
         (one, other) match {
@@ -109,13 +109,40 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
       case ToLongType   ⇒ o.tpe = Long
       case ToFloatType  ⇒ o.tpe = Float
       case ToDoubleType ⇒ o.tpe = Double
+      case CastToExprType ⇒
+        vs.params.get(CastToExprType.typeSymbol) match {
+          case Some(typeName: String) ⇒
+            cud.zaluumScope.getJavaType(Name(typeName)) match {
+              case Some(c) ⇒
+                o.tpe = c
+              case None ⇒
+                o.tpe = NoSymbol
+                error("Cast type " + typeName + " not found", vs.decl)
+            }
+          case _ ⇒
+            o.tpe = NoSymbol
+            error("Cast type not specified", vs.decl)
+        }
     }
-    connectedFrom(a).map { case (pi, blame) ⇒ (unboxIfNeeded(pi.tpe), blame) } match {
-      case Some((t, blame)) ⇒ t match {
-        case j: PrimitiveJavaType if isNumeric(j) ⇒ a.tpe = j
-        case _                                    ⇒ a.tpe = o.tpe; error("Cast between incompatible types", blame)
-      }
-      case None ⇒ a.tpe = o.tpe
+    connectedFrom(a).map {
+      case (pi, blame) ⇒ (pi.tpe, blame)
+    } match {
+      case Some((fromType, blame)) ⇒
+      	a.tpe = fromType
+        (fromType, o.tpe) match {
+          // TODO serializable and other specs exceptions
+          case (fromPrim: PrimitiveJavaType, toPrim: PrimitiveJavaType) if (isNumeric(fromPrim) && isNumeric(toPrim)) ⇒
+          case (fromPrim: PrimitiveJavaType, toClass: ClassJavaType) if (primitives.getUnboxedType(toClass) == Some(fromPrim)) ⇒
+          case (fromClass: ClassJavaType, toPrim: PrimitiveJavaType) if (primitives.getUnboxedType(fromClass) == Some(toPrim)) ⇒
+          case (fromClass: ClassJavaType, toClass: ClassJavaType) if (fromClass.binding.isCompatibleWith(toClass.binding)) =>
+          case (fromClass: ClassJavaType, toArray: ArrayType) if (fromClass.fqName.str=="java.lang.Object") =>
+          case (fromArray: ArrayType, toClass: ClassJavaType) if (toClass.fqName.str=="java.lang.Object") =>
+          case (fromArray: ArrayType, toArray: ArrayType) if (fromArray==toArray) =>
+          case _ ⇒
+            a.tpe = NoSymbol
+            error("Cast between incompatible types", blame)
+        }
+      case None ⇒ a.tpe=o.tpe
     }
   }
   def checkLiteralExprType(vs: ValSymbol) {

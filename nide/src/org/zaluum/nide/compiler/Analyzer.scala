@@ -182,8 +182,14 @@ object primitives {
   def isNumeric(tpe: Type): Boolean = {
     tpe match {
       case p: PrimitiveJavaType if (p != primitives.Boolean) ⇒ true
-      case j: JavaType ⇒ false
       case _ ⇒ false
+    }
+  }
+  def isObject(tpe:Type) : Boolean = {
+    tpe match {
+      case c:ClassJavaType => true
+      case a:ArrayType => true
+      case _ => false
     }
   }
   def isIntNumeric(tpe: Type): Boolean = tpe == primitives.Int ||

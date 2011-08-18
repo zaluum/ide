@@ -1,8 +1,7 @@
 Agenda
 
 week 15-21 GUI week
-	- remove expr .javas and organize better packages for exprs IF javadoc support ok
-	- better port names (this,thisOut)
+	- fix find methods and constructors in scope by visibility
 	- Swing thread synchronization / refresh rate	
 	- al connectar o desconnectar cables de vegades fa coses rares
 	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
@@ -23,6 +22,7 @@ week 29-4 doc week -> ampliar detalls
 	- build scripts
 week 5-11 bug hunting
 	- test cases bug fixing
+		- cast
 		- box unbox
 		- generics
 		- protected/private
@@ -104,6 +104,9 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- better port names (this,thisOut)
+	- remove expr .javas and organize better packages for exprs IF javadoc support ok
+	- implement cast to object
 	- when a visual component moves, resize the canvas size
 	- respawn test framework
 	- improve error messages

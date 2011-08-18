@@ -35,7 +35,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
      */
   def checkStaticExprType(vs: ValSymbol) {
     val tpe = vs.tpe.asInstanceOf[StaticExprType]
-    vs.params.get(tpe.classSymbol) match {
+    vs.params.get(tpe.typeSymbol) match {
       case Some(className: String) ⇒
         cud.zaluumScope.getJavaType(Name(className)) match {
           case Some(c: ClassJavaType) ⇒

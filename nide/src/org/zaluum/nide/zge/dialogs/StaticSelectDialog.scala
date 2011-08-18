@@ -35,7 +35,7 @@ import org.eclipse.jdt.core.search.IJavaSearchConstants
 class StaticSelectDialog(viewer: Viewer, val vs: ValSymbol) {
   def work(className: String) {
     val tpe = vs.tpe.asInstanceOf[StaticExprType]
-    val param = Param(tpe.className, className)
+    val param = Param(tpe.typeName, className)
     val tr = vs.tdecl.addOrReplaceParam(param)
     viewer.controller.exec(tr)
   }

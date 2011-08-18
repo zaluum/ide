@@ -42,6 +42,7 @@ import org.zaluum.nide.compiler.Param
 import org.zaluum.nide.compiler.SignatureExprType
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
+import org.zaluum.nide.compiler.CastToExprType
 
 class PortDeclPopup(
     val viewer: TreeViewer, portDef: PortDef) extends Popup(viewer.shell, "Port " + portDef.name.str) {
@@ -85,13 +86,20 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
         }.mkString(", "),
         "Edit...") { new ParamsDialog(viewer, v).open() }
       def staticMenu = {
-        val classSymbol = v.tpe.asInstanceOf[StaticExprType].classSymbol
+        val classSymbol = v.tpe.asInstanceOf[StaticExprType].typeSymbol
         val value = v.params.get(classSymbol).getOrElse("")
         val target = new TpeSelect(content, "Target class", getShell, viewer, value.toString, {
           str ⇒
             viewer.controller.exec(valDef.addOrReplaceParam(
               Param(classSymbol.name, str)))
             close()
+        })
+      }
+      def castTypeSelectMenu = {
+        val initial = v.params.get(CastToExprType.typeSymbol) getOrElse{""}
+        new TpeEdit(content, "Cast to", getShell, viewer, initial.toString, { str =>
+        	viewer.controller.exec(valDef.addOrReplaceParam(Param(CastToExprType.typeName, str)))
+        	close()
         })
       }
       def methodName = v.info match {
@@ -138,6 +146,8 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
           case NewArrayExprType ⇒
             staticMenu
             dimensionsMenu
+          case CastToExprType => 
+            castTypeSelectMenu
           case _ ⇒
             params
         }
