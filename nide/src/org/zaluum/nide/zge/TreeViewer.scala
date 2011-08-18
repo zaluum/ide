@@ -96,7 +96,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def itemToIType(i: Item) = {
     i match {
       case v: ValDefItem if (v.valSym.tpe != null) ⇒
-        controller.zproject.jProject.findType(v.valSym.tpe.name.str)
+        controller.zproject.jProject.findType(v.valSym.tpe.fqName.str)
       case _ ⇒ null
     }
   }

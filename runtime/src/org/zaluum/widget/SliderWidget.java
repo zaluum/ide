@@ -5,7 +5,11 @@ import javax.swing.JSlider;
 import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
 import org.zaluum.annotation.Out;
-
+/**
+ * Hola
+ * @author frede
+ *
+ */
 @Box
 public class SliderWidget {
 	@Out public double out = 0.0;
