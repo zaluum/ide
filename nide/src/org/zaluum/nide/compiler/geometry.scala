@@ -23,6 +23,7 @@ case class Point(x: Int, y: Int) extends Tuple2 {
     p.build
   }
   def toVector: Vector2 = Vector2(x, y)
+  def toDimension = Dimension(x,y)
 }
 case class Vector2(x: Int, y: Int) extends Tuple2 {
   def +(v: Vector2) = Vector2(x + v.x, y + v.y)
@@ -42,6 +43,7 @@ case class Dimension(w: Int, h: Int) {
     p.build
   }
   def +(v: Vector2) = Dimension(w + v.x, h + v.y)
+  def toVector = Vector2(w,h)
   import math.max
   def ensureMin(min: Dimension) = Dimension(max(w, min.w), max(h, min.h))
 }

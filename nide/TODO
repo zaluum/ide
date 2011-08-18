@@ -2,12 +2,11 @@ Agenda
 
 week 15-21 GUI week
 	- remove expr .javas and organize better packages for exprs IF javadoc support ok
+	- better port names (this,thisOut)
 	- Swing thread synchronization / refresh rate	
 	- al connectar o desconnectar cables de vegades fa coses rares
 	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
-	- when a visual component moves, resize the canvas size
 	- nested guis as new window
-	- better port names (this,thisOut)
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- write feature list on freemind
 week 22-28 library week
@@ -105,6 +104,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- when a visual component moves, resize the canvas size
 	- respawn test framework
 	- improve error messages
 	- mark errors on boxes/connections/ports

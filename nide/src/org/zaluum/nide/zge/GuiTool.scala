@@ -13,13 +13,24 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.zge.dialogs.ValDefPopup
-
+import draw2dConversions._
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
+  def calcMin: Dimension = {
+    val bottomRights = viewer.layer.getChildren.collect { case i: IFigure ⇒ rpoint(i.getBounds.getBottomRight) }
+    maxPoint(bottomRights)
+  }
+  def maxPoint(points: Iterable[Point]) = points.foldLeft(Dimension(0, 0))((acc, p) ⇒ Dimension(max(acc.w, p.x), max(acc.h, p.y)))
   override val resizing = new Resizing {
-    override def command(newPos: Point, newSize: Dimension, t: Tree) = new EditTransformer {
-      val trans: PartialFunction[Tree, Tree] = {
-        case v: ValDef if (v == t) ⇒
-          v.copy(guiPos = Some(newPos), guiSize = Some(newSize))
+    override def command(newPos: Point, newSize: Dimension, t: Tree) = {
+      val newDim = Dimension(newPos.x + newSize.w, newPos.y + newSize.h)
+      new EditTransformer {
+        val trans: PartialFunction[Tree, Tree] = {
+          case b: BoxDef if b == viewer.boxDef ⇒
+            b.copy(guiSize = Some(viewer.backRect.getSize.ensureMin(newDim)),
+              template = transform(b.template))
+          case v: ValDef if (v == t) ⇒
+            v.copy(guiPos = Some(newPos), guiSize = Some(newSize))
+        }
       }
     }
   }
@@ -89,11 +100,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     var initSize = Dimension(0, 0)
     var minSize = Dimension(0, 0)
     def currentMouseLocation = GuiTool.this.currentMouseLocation
-    def calcMin: Dimension = {
-      val bottomRights = viewer.layer.getChildren.collect { case i: IFigure ⇒ i.getBounds.getBottomRight }
-      val minRect = new Rectangle
-      bottomRights.foldLeft(Dimension(0, 0))((acc, p) ⇒ Dimension(max(acc.w, p.x), max(acc.h, p.y)))
-    }
+
     def enter(initDrag: Point, mode: (Boolean, Boolean)) {
       enterMoving(initDrag)
       initSize = viewer.backRect.getSize
@@ -139,12 +146,18 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       state = this
     }
     def buttonUp {
-      val positions = viewer.selectedItems.collect {
+      val positionsTuple = viewer.selectedItems.collect {
         case item: SwingFigure ⇒
-          (item.valDef -> snap(item.pos + delta))
-      }.toMap
+          val itemPos = snap(item.pos + delta)
+          val itemBottom = itemPos + item.size.toVector
+          (item.valDef, itemPos, itemBottom)
+      }
+      val positions = positionsTuple.map { case (v, i, _) ⇒ v -> i } toMap
+      val newDim = maxPoint(positionsTuple.map { case (_, _, b) ⇒ b }).ensureMin(viewer.backRect.getSize)
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
+          case b: BoxDef if (b == viewer.boxDef) ⇒
+            b.copy (template=transform(b.template), guiSize = Some(newDim))
           case v: ValDef if (positions.contains(v)) ⇒
             v.copy(guiPos = Some(positions(v)))
         }

@@ -1,7 +1,6 @@
 package org.zaluum.nide.zge
 
 import scala.collection.mutable.Buffer
-
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.RectangleFigure
@@ -13,6 +12,8 @@ import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.compiler.Block
+import org.zaluum.nide.compiler.TemplateExprType
 
 class GuiViewer(parent: Composite, controller: Controller)
     extends ItemViewer(parent, controller) {
@@ -56,33 +57,29 @@ class GuiViewer(parent: Composite, controller: Controller)
   override def updateContents(changes: Map[Tree, Tree]) {
     items.foreach { _.hide }
     items.clear()
-      def updateBoxDef(b: BoxDef) {
-        b.children foreach {
-          _ match {
-            case v: ValDef ⇒
-              val sym = v.sym
-              val tpe = sym.tpe.asInstanceOf[BoxTypeSymbol]
-              if (tpe.visualClass.isDefined) { // removed !tpe.isLocal && 
-                val f = new SwingFigure(GuiViewer.this, controller.zproject.classLoader)
-                f.updateValDef(v)
-                items += f
-                f.show()
-                v.labelGui foreach { l ⇒
-                  val lbl = new LabelItem(GuiViewer.this, gui = true)
-                  lbl.updateValDef(v)
-                  items += lbl
-                  lbl.show()
-                }
+      def updateBlock(b: Block) {
+        b.valDefs foreach { v ⇒
+          v.tpe match {
+            case bs: BoxTypeSymbol if (bs.visualClass.isDefined) ⇒
+              val f = new SwingFigure(GuiViewer.this, controller.zproject.classLoader)
+              f.updateValDef(v)
+              items += f
+              f.show()
+              v.labelGui foreach { l ⇒
+                val lbl = new LabelItem(GuiViewer.this, gui = true)
+                lbl.updateValDef(v)
+                items += lbl
+                lbl.show()
               }
-
-            case childBox: BoxDef ⇒ updateBoxDef(childBox)
-            case _                ⇒
+            case s:TemplateExprType =>
+              v.sym.blocks foreach { b=> updateBlock(b.tdecl) }
+            case _ ⇒
           }
         }
       }
     val Dimension(w, h) = size
     backRect.setBounds(new Rectangle(0, 0, w, h))
-    updateBoxDef(boxDef)
+    updateBlock(block)
   }
   def size = boxDef.guiSize.getOrElse(Dimension(200, 200))
   def refresh() {
