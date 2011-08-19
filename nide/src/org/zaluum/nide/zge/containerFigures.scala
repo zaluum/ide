@@ -381,7 +381,7 @@ class IfOpenBoxFigure(container: ContainerItem, viewer: Viewer) extends OpenBoxF
   val buttons = Buffer[Button]()
   buttons += new Button(this) {
     def imageDesc =
-      if (openBox.symbol.numeral == 0)
+      if (openBox.symbol.blockNumeral==0)
         imageFactory.buttonIfTrue
       else imageFactory.buttonIfFalse
   }

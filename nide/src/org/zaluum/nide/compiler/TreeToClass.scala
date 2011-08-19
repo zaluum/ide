@@ -2,8 +2,8 @@ package org.zaluum.nide.compiler
 
 import org.zaluum.basic.RunnableBox
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
-
 import javax.swing.JLabel
+import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 
 trait BinaryExpr extends Tree {
   def a: Tree
@@ -84,7 +84,7 @@ case class L2I(a: Tree) extends UnaryExpr
 object TreeToClass {
   val defaultMethodName = "run"
 }
-class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumCompilationUnitScope) extends ReporterAdapter {
+class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumClassScope) extends ReporterAdapter {
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
   object rewrite {

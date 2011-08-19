@@ -112,7 +112,7 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
       case CastToExprType ⇒
         vs.params.get(CastToExprType.typeSymbol) match {
           case Some(typeName: String) ⇒
-            cud.zaluumScope.getJavaType(Name(typeName)) match {
+            ztd.zaluumScope.getJavaType(Name(typeName)) match {
               case Some(c) ⇒
                 o.tpe = c
               case None ⇒
@@ -150,9 +150,9 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
     val o = l.outPort(vs)
     val t = vs.params.headOption match {
       case Some((p, vuntrimmed: String)) ⇒
-        p.tpe = cud.zaluumScope.getZJavaLangString
+        p.tpe = ztd.zaluumScope.getZJavaLangString
         val v = vuntrimmed.trim
-        Literals.parseNarrowestLiteral(v, cud.zaluumScope) match {
+        Literals.parseNarrowestLiteral(v, ztd.zaluumScope) match {
           case Some((_, tpe)) ⇒ o.tpe = tpe
           case None           ⇒ error("Cannot parse literal " + v, vs.decl)
         }

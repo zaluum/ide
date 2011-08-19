@@ -1,14 +1,14 @@
 package org.zaluum.nide.compiler
 
 import scala.collection.mutable.Buffer
-
 import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
-
 import javax.swing.JPanel
+import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
+import org.zaluum.nide.eclipse.integration.model.ZaluumTypeDeclaration
 
 class Reporter {
   case class Error(msg: String, mark: Option[Int])
@@ -87,7 +87,7 @@ object Literals {
       case e ⇒ None
     }
   }
-  def parseNarrowestLiteral(v: String, zaluumScope: ZaluumCompilationUnitScope) = {
+  def parseNarrowestLiteral(v: String, zaluumScope: ZaluumClassScope) = {
       def parseIntOpt = try { Some(v.toInt) } catch { case e ⇒ None }
       def parseDoubleOpt = try { Some(v.toDouble) } catch { case e ⇒ None }
     if (v.toLowerCase == "true") Some(true, primitives.Boolean)
@@ -120,7 +120,7 @@ object Literals {
 trait Scope extends Symbol {
   def lookupType(name: Name): Option[Type]
   def lookupBoxType(name: Name): Option[BoxType]
-  def javaScope: ZaluumCompilationUnitScope
+  def javaScope: ZaluumClassScope
 }
 object primitives {
   private def n(str: String, desc: String, b: BaseTypeBinding, boxedName: Name, boxMethod: String, size: Int = 1) = {
@@ -255,7 +255,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
       super.traverse(tree)
     }
   }
-  var cud: ZaluumCompilationUnitDeclaration = _
+  var ztd: ZaluumTypeDeclaration = _
 
   class Resolver(global: Scope) extends Traverser(global) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
@@ -284,12 +284,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
         case b: BoxDef ⇒
           val bs = b.sym
           bs.scope = global
-          val fields = bs.ports.values.toList
+          val outfields = bs.ports.values.toList // minor aplabetically is return and method name
             .filter { _.dir == Out }
             .sortBy { _.name.str }
             .drop(1)
-          fields.foreach { _.isField = true }
+          outfields.foreach { _.isField = true }
           createPortInstances(bs.ports.values, bs.thisVal, true, false)
+          bs.methodSelector = bs.returnPort.map{_.name}.getOrElse(Name(TreeToClass.defaultMethodName))
         case bl: Block ⇒
           bl.sym.template match {
             case bs: BoxTypeSymbol ⇒
@@ -381,8 +382,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
 
   def runNamer() = new Namer().traverse(toCompile)
 
-  def runResolve(cud: ZaluumCompilationUnitDeclaration, global: Scope): Tree = {
-    this.cud = cud
+  def runResolve(ztd: ZaluumTypeDeclaration, global: Scope): Tree = {
+    this.ztd = ztd
     new Resolver(global).traverse(toCompile)
     toCompile
   }

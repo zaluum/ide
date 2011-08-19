@@ -54,6 +54,8 @@ import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.impl.StringConstant
 import org.eclipse.jdt.internal.compiler.ast.StringLiteral
 
+import ZaluumCompilationUnitDeclaration._
+import JDTInternalUtils._
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
   compilationResult: CompilationResult,
@@ -61,22 +63,12 @@ class ZaluumCompilationUnitDeclaration(
   sourceUnit: ICompilationUnit,
   compilerOptions: CompilerOptions)
     extends CompilationUnitDeclaration(problemReporter, compilationResult, sourceLength) {
-  import ZaluumCompilationUnitDeclaration._
 
   var tree: BoxDef = _
-  var a: Analyzer = _
-
-  override def buildCompilationUnitScope(lookupEnvironment: LookupEnvironment) = {
-    new ZaluumCompilationUnitScope(this, lookupEnvironment)
-  }
-  override def getSpecialDomCompilationUnit(ast: org.eclipse.jdt.core.dom.AST): org.eclipse.jdt.core.dom.CompilationUnit = {
-    new ZaluumDomCompilationUnit(ast, tree)
-  }
+  override def buildCompilationUnitScope(lookupEnvironment: LookupEnvironment) = new ZaluumCompilationUnitScope(this, lookupEnvironment)
+  override def getSpecialDomCompilationUnit(ast: org.eclipse.jdt.core.dom.AST): org.eclipse.jdt.core.dom.CompilationUnit = new ZaluumDomCompilationUnit(ast, tree)
   def zaluumScope = scope.asInstanceOf[ZaluumCompilationUnitScope]
-
   def fileMainName = toMainName(compilationResult.getFileName).mkString
-  import JDTInternalUtils._
-
   def fqName = aToString(currentPackage.getImportName) + tree.name.str
   private def createLineSeparator() = {
     // one char per line
@@ -93,25 +85,12 @@ class ZaluumCompilationUnitDeclaration(
           tree = Parser.readTree(contents, Name(fileMainName))
       }
       createLineSeparator()
-      val reporter = new Reporter() {
-        override def report(str: String, mark: Option[Int] = None) {
-          super.report(str, mark)
-          ignoreFurtherInvestigation = true
-          createProblem(str, mark.getOrElse(-1))
-        }
-      }
       val scope = zaluumScope
-      a = new Analyzer(reporter, tree)
-      a.runNamer()
       createPackageDeclaration()
       createTypeDeclarations()
     } catch { case e ⇒ e.printStackTrace }
   }
 
-  def createProblem(msg: String, line: Int) {
-    val p = new DefaultProblemFactory().createProblem(getFileName, 0, Array(msg), 0, Array(msg), ProblemSeverities.Error, 0, 1, line, 1)
-    problemReporter.record(p, compilationResult, this)
-  }
   def createPackageDeclaration() {
     val pkgArr = stringToA(tree.pkg.str)
     if (tree.pkg.str != "") {
@@ -199,7 +178,7 @@ class ZaluumCompilationUnitDeclaration(
     val res = Buffer[FieldDeclaration]()
     //vals 
     for (block ← b.template.blocks; v ← block.valDefs) {
-      val f = new FieldDeclaration(v.sym.fqName.str.toCharArray, start(v), end(v))
+      val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v)) // keep synched with symbols.ValSymbol.fqName 
       f.modifiers = Opcodes.ACC_PUBLIC
       f.`type` = createTypeReference(v.typeName, v)
       res += f
@@ -255,47 +234,28 @@ class ZaluumCompilationUnitDeclaration(
     tpe.sourceEnd = end(t)
     tpe
   }
-
   override def generateCode() {
       def generate(tpe: ZaluumTypeDeclaration, enclosing: Option[ZaluumTypeDeclaration]) {
         val binding: SourceTypeBinding = tpe.binding
         if (binding != null) {
           val boxDef = tpe.b
-          val classTree = new TreeToClass(boxDef, zaluumScope /*should be per class*/ , this.zaluumScope).run()
+          val classTree = new TreeToClass(boxDef, tpe.zaluumScope /*should be per class*/ , tpe.zaluumScope).run()
           val name = binding.constantPoolName()
           compilationResult.record(name,
             new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.', '/')))
           for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
         }
       }
-    if (!ignoreFurtherInvestigation && !ignoreMethodBodies && a.reporter.errors.isEmpty) {
+    
+    val ztd = types(0).asInstanceOf[ZaluumTypeDeclaration]
+    if (!ignoreFurtherInvestigation && ztd.a.reporter.errors.isEmpty) {
       try {
-        generate(types(0).asInstanceOf[ZaluumTypeDeclaration], None)
+        generate(ztd, None)
       } catch { case e ⇒ e.printStackTrace }
     }
   }
-  override def resolve() {
-    super.resolve()
-    try {
-      val ztd = types(0).asInstanceOf[ZaluumTypeDeclaration]
-      val scope = ztd.scope.asInstanceOf[ZaluumClassScope]
-      tree.sym.javaScope = scope //  a bit ugly...
-      a.runResolve(this, zaluumScope)
-      a.runCheck()
-      checkZaluumLibraryPresent()
-    } catch { case e ⇒ e.printStackTrace }
-  }
-  def checkZaluumLibraryPresent() {
-    // add a descriptive error to help users
-    val errors = compilationResult.getErrors
-    if (errors != null && errors.exists(_.getMessage == "org.zaluum cannot be resolved to a type")) {
-      createProblem("Zaluum Runtime library is not in the classpath. Add org.zaluum.runtime jar to fix this problem.", 1)
-    }
-  }
+
   override def analyseCode() {
-  }
-  override def abort(abortLevel: Int, problem: CategorizedProblem) {
-    super.abort(abortLevel, problem)
   }
 }
 

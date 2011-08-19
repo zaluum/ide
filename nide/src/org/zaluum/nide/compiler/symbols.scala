@@ -83,7 +83,7 @@ case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var con
 }
 sealed trait TemplateSymbol extends Symbol {
   var ports = Map[Name, PortSymbol]()
-  var blocks = List[BlockSymbol]()
+  var blocks = List[BlockSymbol]() // same order as tree
   def lookupPort(name: Name) = ports.get(name)
   def templateTree: Template
   def currentBlockIndex = {
@@ -108,7 +108,8 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   private val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
 
   override def tdecl: Block = decl.asInstanceOf[Block]
-  def numeral = template.blocks.indexOf(this)
+  def blockNumeral = template.blocks.indexOf(this)
+  def uniqueBlock = template.blocks.size==1
   def usedNames = (valsList ++ missingVals.values ++ template.ports.values).map { _.name.str }.toSet
   def valsList = vals.values.toList
   def lookupValWithMissing(name: Name) = vals.get(name).orElse { missingVals.get(name) }
@@ -196,6 +197,7 @@ class BoxTypeSymbol(
   var okOverride = false
   var constructors = List[Constructor]()
   var params = Map[Name, ParamSymbol]()
+  var methodSelector : Name = _
   var source: String = "" // TODO
   tpe = this
   override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
@@ -209,7 +211,6 @@ class BoxTypeSymbol(
   def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
   def returnPort = ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
   def fieldReturns = ports.values.toList filter { p ⇒ p.isField && p.dir == Out } sortBy { _.name.str }
-  def methodSelector = returnPort map { _.name } getOrElse (Name(TreeToClass.defaultMethodName))
   def returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
   def methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
 }
@@ -302,12 +303,13 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   var portSides = List[PortSide]()
   var constructor: Option[Constructor] = None
   var constructorParams = List[(Any, Type)]()
-  def fqName: Name = {
+  def fqName: Name = { // synch with ZaluumCompilationUnitDeclaration
     val prefix = owner.template match {
       case b: BoxTypeSymbol ⇒ ""
       case vs: ValSymbol    ⇒ vs.fqName.str
     }
-    Name(prefix + owner.numeral + name.str)
+    val num = if (owner.uniqueBlock) "" else owner.blockNumeral 
+    Name(prefix + num + name.str)
   }
   private def createOutsidePs(name: Name, dir: Boolean, helperName: Option[Name] = None) = {
     val pdir = if (dir) In else Out

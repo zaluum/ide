@@ -14,7 +14,6 @@ object NotImplemented {
   def ??? = sys.error("not implemented")
 }
 object Utils {
-
   def loadIcons(ir: ImageRegistry, base: Class[_], keys: String*) = {
     keys.foreach(k ⇒ { loadImage(ir, k + "_16", base); loadImage(ir, k + "_32", base) })
   }

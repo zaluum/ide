@@ -9,7 +9,7 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends ReporterAdapter {
   def location(tree: Tree) = analyzer.globLocation(tree)
   def reporter = analyzer.reporter
-  def cud = analyzer.cud
+  def ztd = analyzer.ztd
   val bl = b.sym
   val template = bl.template
   val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
@@ -135,7 +135,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
           case t: PrimitiveJavaType ⇒
             t == f || primitives.widening(f, t)
           case t: ClassJavaType ⇒
-            cud.zaluumScope.getBoxedType(f).binding.isCompatibleWith(t.binding)
+            ztd.zaluumScope.getBoxedType(f).binding.isCompatibleWith(t.binding)
           case _ ⇒ false
         }
       case f: ClassJavaType ⇒
@@ -191,7 +191,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
 }
 trait CheckerPart extends ReporterAdapter {
   def c: CheckConnections
-  def cud = c.cud
+  def ztd = c.ztd
   def bl = c.bl
   def location(tree: Tree) = c.location(tree)
   def reporter = c.reporter
