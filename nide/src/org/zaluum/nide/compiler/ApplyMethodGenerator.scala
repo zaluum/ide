@@ -27,7 +27,8 @@ class ApplyMethodGenerator(b: BoxDef) {
     val annotation = bs.argsInOrder.map { _.name }
     Method(bs.methodSelector, bs.methodSignature, invokes ::: (assign :+ ret), localsDecl, Some(annotation))
   }
-
+  def selectVal(vs : ValSymbol) =
+    Select(This, FieldRef(vs.fqName, vs.tpe.fqName.descriptor, bs.fqName))
   def execConnection(c: (PortInstance, Set[PortInstance])) = {
     val (out, ins) = c
     ins.toList map { in ⇒ assign(in, out) }
@@ -45,7 +46,12 @@ class ApplyMethodGenerator(b: BoxDef) {
         LocalRef(localsMap(pi), pi.tpe.name) // return local
     } else {
       val vfrom = pi.valSymbol
-      LocalRef(localsMap(pi), pi.tpe.name)
+      pi.portSymbol match {
+        case Some(ps) if ps.isField =>
+          Select(selectVal(vfrom),FieldRef(pi.name, pi.tpe.name.descriptor, vfrom.tpe.fqName))
+        case _ =>
+          LocalRef(localsMap(pi), pi.tpe.name)
+      }
     }
   }
   def runBlock(bl: BlockSymbol): List[Tree] = {
@@ -81,7 +87,7 @@ class ApplyMethodGenerator(b: BoxDef) {
         val tpe = vbs.fqName
         val args = vbs.argsInOrder map { ps ⇒ toRef(vs.findPortInstance(ps).get) }
         val invoke = Invoke(
-          Select(This, FieldRef(vs.fqName, tpe.descriptor, bs.fqName)),
+          selectVal(vs),
           vbs.methodSelector.str,
           args,
           tpe,

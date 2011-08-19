@@ -20,7 +20,7 @@ public class Run {
     final Object instance = c.newInstance();
     try {
       Field f = c.getField("_widget");
-      final Method m = c.getMethod("apply");
+      final Method m = c.getMethod("run");
       JComponent comp = (JComponent) f.get(instance);
       JFrame frame = new JFrame();
       frame.add(comp);

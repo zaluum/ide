@@ -52,7 +52,7 @@ object IfExprType extends TemplateExprType {
 object WhileExprType extends TemplateExprType {
   def matchingClass = classOf[org.zaluum.expr.While]
   val requiredBlocks = 1
-  val end = new PortSymbol(this, Name("end"), Out)
+  val end = new PortSymbol(this, Name("cond"), Out)
   ports += (end.name -> end)
   def endPort(v: ValSymbol) = v.findPortInstance(end).get
 }
