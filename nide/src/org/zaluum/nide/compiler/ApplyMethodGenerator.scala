@@ -4,13 +4,14 @@ import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 
-class ApplyMethodGenerator(b: BoxDef) {
-  val bs = b.sym
-  val localsMap = createLocalsMap(bs)
-
-  def appl: Method = {
-    val invokes = runBlock(bs.blocks.head)
-    val assign = assignFlowInConnections(bs.thisVal,bs.blocks.head)
+class MainThreadMethodGenerator(bs: BoxTypeSymbol, thread: ZThread) extends MethodGenerator(bs, thread) {
+  def apply(): Method = {
+    val localsDecl = localsMap map {
+      case (pi, i) ⇒
+        (pi.fqName.str, pi.tpe.asInstanceOf[JavaType].descriptor, i)
+    } toList;
+    val invokes = runThread(thread)
+    val assign = assignFlowInConnections(bs.thisVal, bs.blocks.head) // assign outputs
     val ret = bs.returnPort match {
       case Some(r) ⇒
         val pi = bs.thisVal.findPortInstance(r).get
@@ -18,17 +19,28 @@ class ApplyMethodGenerator(b: BoxDef) {
       case None ⇒
         Return
     }
+    val annotation = bs.argsInOrder.map { _.name }
+    Method(bs.methodSelector, bs.methodSignature, invokes ::: (assign :+ ret), localsDecl, Some(annotation))
+  }
+}
+class RunnableMethodGenerator(bs: BoxTypeSymbol, thread: ZThread) extends MethodGenerator(bs, thread) {
+  def apply(): Method = {
+    val invokes = runThread(thread)
     val localsDecl = localsMap map {
       case (pi, i) ⇒
         val name = if (pi.valSymbol == bs.thisVal) pi.name.str
         else pi.valSymbol.fqName.str + "_" + pi.name.str
         (name, pi.tpe.asInstanceOf[JavaType].descriptor, i)
     } toList;
-    val annotation = bs.argsInOrder.map { _.name }
-    Method(bs.methodSelector, bs.methodSignature, invokes ::: (assign :+ ret), localsDecl, Some(annotation))
+    Method(Name("run"), "()V", invokes :+ Return, localsDecl, None)
   }
-  def selectVal(vs : ValSymbol) =
-    Select(This, FieldRef(vs.fqName, vs.tpe.fqName.descriptor, bs.fqName))
+  override def thisRef = {
+    Select(This, FieldRef(Name("$this0"), bs.tpe.fqName.descriptor, thread.fqName(bs.fqName)))
+  }
+}
+class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorHelpers {
+  val localsMap = createLocalsMap()
+
   def execConnection(c: (PortInstance, Set[PortInstance])) = {
     val (out, ins) = c
     ins.toList map { in ⇒ assign(in, out) }
@@ -36,33 +48,26 @@ class ApplyMethodGenerator(b: BoxDef) {
   def assign(to: PortInstance, from: PortInstance): Assign = {
     Assign(toRef(to), cast(from.tpe, to.tpe, toRef(from)))
   }
-  def toRef(pi: PortInstance): Ref = {
-    if (pi.valSymbol == bs.thisVal) {
-      if (pi.portSymbol.get.isField) {
-        Select(
-          This,
-          FieldRef(pi.name, pi.tpe.name.descriptor, bs.fqName)) // field return
-      } else
-        LocalRef(localsMap(pi), pi.tpe.name) // return local
-    } else {
-      val vfrom = pi.valSymbol
-      pi.portSymbol match {
-        case Some(ps) if ps.isField =>
-          Select(selectVal(vfrom),FieldRef(pi.name, pi.tpe.name.descriptor, vfrom.tpe.fqName))
-        case _ =>
-          LocalRef(localsMap(pi), pi.tpe.name)
-      }
-    }
+  def toRef(pi: PortInstance): Ref = pi.internalStorage match {
+    case StorageLocal ⇒ LocalRef(localsMap(pi), pi.tpe.name)
+    case StorageValField ⇒
+      Select(
+        valRef(pi.valSymbol),
+        FieldRef(pi.name, pi.tpe.name.descriptor, pi.valSymbol.tpe.fqName))
+    case StorageJoinField ⇒
+      Select(thisRef,
+        FieldRef(pi.joinfqName, pi.tpe.name.descriptor, bs.fqName))
   }
-  def runBlock(bl: BlockSymbol): List[Tree] = {
-    bl.executionOrder flatMap { vs ⇒
+  def runThread(thread: ZThread): List[Tree] = {
+    thread.instructions flatMap { vs ⇒
       val outs = for {
-        (from, to) ← bl.connections.flow; // order
+        (from, to) ← thread.blockSymbol.connections.flow; // order
         if from.valSymbol == vs;
         a ← execConnection((from, to))
       } yield a
-      runOne(vs, bl) ::: outs.toList
+      runOne(vs, thread) ::: outs.toList
     }
+    // FIXME wait for spawned threads
   }
   def assignFlowInConnections(vs: ValSymbol, bl: BlockSymbol): List[Tree] = {
     for (ps ← vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
@@ -72,9 +77,20 @@ class ApplyMethodGenerator(b: BoxDef) {
       }
     }
   }
-  def runOne(vs: ValSymbol, bl: BlockSymbol): List[Tree] = {
+
+  def runOne(vs: ValSymbol, thread: ZThread): List[Tree] = {
+    // joins
+    val joins = vs.join.toList map { toJoin ⇒
+      Invoke(
+        semaphoreRef(toJoin),
+        "acquire",
+        List(),
+        TreeToClass.semaphoreClassName,
+        "()V",
+        interface = false)
+    }
     // propagate inputs
-    val propagate = assignFlowInConnections(vs,bl)
+    val propagate = assignFlowInConnections(vs, thread.blockSymbol)
     import primitives._
       def invokeHelper(vs: ValSymbol, m: MethodBinding, invoke: Tree): Tree = // TODO find a better place
         if (m.returnType != null && m.returnType != TypeBinding.VOID) {
@@ -87,7 +103,7 @@ class ApplyMethodGenerator(b: BoxDef) {
         val tpe = vbs.fqName
         val args = vbs.argsInOrder map { ps ⇒ toRef(vs.findPortInstance(ps).get) }
         val invoke = Invoke(
-          selectVal(vs),
+          valRef(vs),
           vbs.methodSelector.str,
           args,
           tpe,
@@ -100,14 +116,14 @@ class ApplyMethodGenerator(b: BoxDef) {
         List(res)
       case WhileExprType ⇒
         List(While(
-          runBlock(vs.blocks.head),
+          runThread(vs.blocks.head.threads(0)),
           toRef(WhileExprType.endPort(vs))))
       case IfExprType ⇒
         List(
           If(
             toRef(IfExprType.condPort(vs)),
-            runBlock(vs.blocks(0)),
-            runBlock(vs.blocks(1))))
+            runThread(vs.blocks(0).threads(0)),
+            runThread(vs.blocks(1).threads(0))))
       case ArrayExprType ⇒
         val index = ArrayExprType.indexPort(vs)
         val thisPort = ArrayExprType.thisPort(vs)
@@ -118,7 +134,7 @@ class ApplyMethodGenerator(b: BoxDef) {
           def load = Assign(toRef(oPort), arrayRef)
           def store = Assign(arrayRef, toRef(aPort))
           def thisOut = Assign(toRef(thisOutPort), toRef(thisPort))
-        bl.connections.connectedFrom.get(aPort) match {
+        thread.blockSymbol.connections.connectedFrom.get(aPort) match {
           case Some(_) ⇒ // do store
             List(
               store,
@@ -184,7 +200,7 @@ class ApplyMethodGenerator(b: BoxDef) {
           def store = Assign(fieldRef, toRef(a))
           def load = Assign(toRef(o), fieldRef)
           def storeThisOut = Assign(toRef(thisOut), toRef(obj))
-        bl.connections.connectedFrom.get(a) match {
+        thread.blockSymbol.connections.connectedFrom.get(a) match {
           case Some(_) ⇒ // do store
             List(
               store,
@@ -204,7 +220,7 @@ class ApplyMethodGenerator(b: BoxDef) {
             Name(f.declaringClass.constantPoolName.mkString))
           def store = Assign(fieldRef, toRef(a))
           def load = Assign(toRef(o), fieldRef)
-        bl.connections.connectedFrom.get(a) match {
+        thread.blockSymbol.connections.connectedFrom.get(a) match {
           case Some(_) ⇒ List(store, Assign(toRef(o), toRef(a)))
           case None    ⇒ List(load)
         }
@@ -259,9 +275,38 @@ class ApplyMethodGenerator(b: BoxDef) {
         }
         List(Assign(toRef(o), eTree))
     }
-    propagate ::: insn
+    // release sem
+    val release = if (vs.isJoinPoint) {
+      List(releaseSem(vs))
+    } else List()
+    // forks
+    val forks = for (toFork ← vs.fork.toList) yield {
+      executeThread(toFork)
+    }
+    joins ::: propagate ::: insn ::: release ::: forks
   }
-
+  def executeThread(thread: ZThread) = {
+    InvokeStatic("execute",
+      List(threadRef(thread)),
+      Name(classOf[org.zaluum.basic.Zaluum].getName),
+      "(Ljava/lang/Runnable;)V")
+  }
+  def releaseSem(vs: ValSymbol) =
+    Invoke(
+      semaphoreRef(vs),
+      "release",
+      List(),
+      TreeToClass.semaphoreClassName,
+      "()V",
+      interface = false)
+  def acquireSem(vs: ValSymbol) =
+    Invoke(
+      semaphoreRef(vs),
+      "acquire",
+      List(),
+      TreeToClass.semaphoreClassName,
+      "()V",
+      interface = false)
   def box(p: PrimitiveJavaType, t: Tree) =
     InvokeStatic(
       "valueOf",
@@ -293,33 +338,25 @@ class ApplyMethodGenerator(b: BoxDef) {
       case (from: JavaType, to: JavaType) ⇒ t // already checked
     }
   }
-
-  def createLocalsMap(bs: BoxTypeSymbol): Map[PortInstance, Int] = {
+  def createLocalsMap(): Map[PortInstance, Int] = {
     var locals = 1; // 0 for "this"
-      def createLocals(vs: ValSymbol): List[(PortInstance, Int)] = {
-        vs.tpe match {
-          case b: BoxTypeSymbol ⇒
-            def createLocal(ps: PortSymbol): (PortInstance, Int) = {
-                val l = locals
-                val pi = vs.findPortInstance(ps).get
-                locals = locals + pi.tpe.javaSize
-                (pi, l)
-              }
-            val args = b.argsInOrder map { createLocal }
-            val ret = b.returnPort.toList map { createLocal }
-            args ::: ret
-          case e: ExprType ⇒
-            val res = vs.portInstances.sortBy(_.name.str) map { pi ⇒
-              (pi -> { val l = locals; locals = locals + pi.tpe.javaSize; l })
-            }
-            val children = for (bl ← vs.blocks; vs ← bl.executionOrder; l ← createLocals(vs)) yield l
-            res ::: children
-          case _ ⇒ List()
+    var localsMap = Map[PortInstance, Int]()
+      def createLocal(pi: PortInstance) {
+        if (!localsMap.contains(pi)) {
+          println("creating local " + pi)
+          localsMap += (pi -> locals)
+          locals = locals + pi.tpe.javaSize
         }
       }
-    val thisVals = createLocals(bs.thisVal)
-    val vals = bs.blocks.head.executionOrder.flatMap { createLocals }
-    (thisVals ::: vals).toMap
+
+    bs.argsInOrder map { ps ⇒ createLocal(bs.thisVal.findPortInstance(ps).get) }
+    println(deepValSymbols(bs.thisVal))
+    for {
+      vs ← deepValSymbols(bs.thisVal)
+      pi ← vs.portInstances
+      if (pi.internalStorage == StorageLocal)
+    } createLocal(pi)
+    localsMap
   }
   def primitiveCast(from: PrimitiveJavaType, to: PrimitiveJavaType, t: Tree) = {
     import primitives._

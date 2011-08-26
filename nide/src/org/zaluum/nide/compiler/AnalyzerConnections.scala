@@ -12,7 +12,6 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
   def ztd = analyzer.ztd
   val bl = b.sym
   val template = bl.template
-  val acyclic = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
   var usedInputs = Set[PortInstance]()
   def run() = {
     val connectionNamer = new Traverser(null) {
@@ -24,7 +23,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
             traverseTrees(b.junctions)
             traverseTrees(b.connections)
             check()
-          case v: ValDef ⇒ acyclic.addVertex(v.sym) // valdefs always have symbol
+          case v: ValDef ⇒ bl.dag.addVertex(v.sym) // valdefs always have symbol
           case j @ Junction(name, _) ⇒
             bl.connections.lookupJunction(name) match {
               case Some(j) ⇒ error("Fatal: junction " + j + " already exists", j)
@@ -48,7 +47,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     for (c ← bl.connections.clumps) { checkClump(c) }
     // 2 - compute execution order
     import scala.collection.JavaConversions._
-    bl.executionOrder = new TopologicalOrderIterator(acyclic).toList
+    bl.executionOrder = new TopologicalOrderIterator(bl.dag).toList
     // 3 - Propagate and check types
     checkTypes();
     // 4- Put calculated types to the clump
@@ -84,7 +83,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
               getOrElse (c.connections.head))
           }
         try {
-          acyclic.addDagEdge(vout.valSymbol, vin.valSymbol);
+          bl.dag.addDagEdge(vout.valSymbol, vin.valSymbol);
         } catch {
           case e: CycleFoundException      ⇒ errorDag("Cycle found. Data flow cannot have loops.")
           case e: IllegalArgumentException ⇒ errorDag("Loop connection found. Cannot connect a box to itself.")

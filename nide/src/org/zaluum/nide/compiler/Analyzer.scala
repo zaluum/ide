@@ -1,20 +1,20 @@
 package org.zaluum.nide.compiler
 
 import scala.collection.mutable.Buffer
+
 import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
-import javax.swing.JPanel
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumTypeDeclaration
+
+import javax.swing.JPanel
 
 class Reporter {
   case class Error(msg: String, mark: Option[Int])
   private var reportMoreErrors = true
   def ifErrorsDoNotReportMore() {
-    if (errors.size >0) reportMoreErrors=false
+    if (errors.size > 0) reportMoreErrors = false
   }
   val errors = Buffer[Error]()
   def report(str: String, mark: Option[Int] = None) {
@@ -185,11 +185,11 @@ object primitives {
       case _ ⇒ false
     }
   }
-  def isObject(tpe:Type) : Boolean = {
+  def isObject(tpe: Type): Boolean = {
     tpe match {
-      case c:ClassJavaType => true
-      case a:ArrayType => true
-      case _ => false
+      case c: ClassJavaType ⇒ true
+      case a: ArrayType     ⇒ true
+      case _                ⇒ false
     }
   }
   def isIntNumeric(tpe: Type): Boolean = tpe == primitives.Int ||
@@ -227,7 +227,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
           sym.constructors = List(new Constructor(sym, List()))
           tree.tpe = sym
-          if (b.template.blocks.size != 1) error("Fatal: BoxDef must have 1 block defined. Manual edit needed.", b) 
+          if (b.template.blocks.size != 1) error("Fatal: BoxDef must have 1 block defined. Manual edit needed.", b)
         // FIXME reported errors do not show in the editor (valdef)
         case t: Template ⇒
           val template = currentOwner.asInstanceOf[TemplateSymbol]
@@ -290,11 +290,11 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
             .drop(1)
           outfields.foreach { _.isField = true }
           createPortInstances(bs.ports.values, bs.thisVal, true, false)
-          bs.methodSelector = bs.returnPort.map{_.name}.getOrElse(Name(TreeToClass.defaultMethodName))
+          bs.methodSelector = bs.returnPort.map { _.name }.getOrElse(Name(TreeToClass.defaultMethodName))
         case bl: Block ⇒
           bl.sym.template match {
             case bs: BoxTypeSymbol ⇒
-              assert(bs.thisVal==null)
+              assert(bs.thisVal == null)
               bs.thisVal = new ValSymbol(bl.sym, Name("this")) // feels wrong
               bs.thisVal.decl = bl.sym.template.decl
               bs.thisVal.tpe = bs
@@ -304,7 +304,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
         case p: PortDef ⇒
           tree.symbol.tpe = catchAbort(global.lookupType(p.typeName)) getOrElse {
             error("Port type \"" + p.typeName + "\" not found in port " + p.sym.name.str,
-                tree); NoSymbol
+              tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
@@ -318,7 +318,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
               // Constructor
               val consSign = v.constructorTypes map { name ⇒
                 global.lookupType(name) getOrElse {
-                  error("Constructor type " + name + " not found" , tree)
+                  error("Constructor type " + name + " not found", tree)
                   NoSymbol
                 }
               }
@@ -347,7 +347,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
                       NoSymbol
                     }
                     vsym.params += (parSym -> parsed)
-                  case None ⇒ error(bs.name.str  + " has no parameter " + p.key.str, tree)
+                  case None ⇒ error(bs.name.str + " has no parameter " + p.key.str, tree)
                 }
               }
               createPortInstances(bs.ports.values, vsym, false, true)
@@ -374,7 +374,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
         case ThisRef() ⇒ // 
           val block = currentOwner.asInstanceOf[BlockSymbol]
           tree.symbol = block.owner
-          tree.tpe =  tree.symbol.tpe
+          tree.tpe = tree.symbol.tpe
         case _ ⇒
       }
     }
@@ -392,7 +392,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
     toCompile.template.blocks.headOption foreach {
       bl ⇒
         new CheckConnections(bl, true, this).run()
+        if (reporter.errors.isEmpty)
+          new AnalyzerParallelism(bl.sym, this).run()
     }
   }
 }
-class CompilationException extends Exception

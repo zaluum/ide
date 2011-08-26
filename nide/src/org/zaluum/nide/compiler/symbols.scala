@@ -1,5 +1,8 @@
 package org.zaluum.nide.compiler
 
+import org.jgrapht.experimental.dag.DirectedAcyclicGraph
+import org.jgrapht.graph.DefaultEdge
+import org.jgrapht.DirectedGraph
 import scala.collection.mutable.Buffer
 
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
@@ -14,7 +17,7 @@ trait Symbol {
   def tdecl: Tree = decl
   private var _tpe: Type = NoSymbol
   def tpe = _tpe
-  def tpe_=(t:Type) { _tpe=t }
+  def tpe_=(t: Type) { _tpe = t }
   override def toString = "Symbol(" + (if (name != null) name.str else "NoSymbol") + ")"
 }
 trait Type extends Symbol { // merge with javatype
@@ -101,15 +104,18 @@ trait BoxType extends TemplateSymbol with Type {
   def templateTree: Template
 }
 class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
-  def name = null
+  def name = fqName
+  def fqName = Name(template.thisVal.fqName.str + "_block" + blockNumeral)
   def owner = template
   var vals = Map[Name, ValSymbol]()
   var executionOrder = List[ValSymbol]()
+  val dag = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
+  val threads = Buffer[ZThread]()
   private val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
 
   override def tdecl: Block = decl.asInstanceOf[Block]
   def blockNumeral = template.blocks.indexOf(this)
-  def uniqueBlock = template.blocks.size==1
+  def uniqueBlock = template.blocks.size == 1
   def usedNames = (valsList ++ missingVals.values ++ template.ports.values).map { _.name.str }.toSet
   def valsList = vals.values.toList
   def lookupValWithMissing(name: Name) = vals.get(name).orElse { missingVals.get(name) }
@@ -124,11 +130,12 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
     var flow = Map[PortInstance, Set[PortInstance]]()
     var connectedFrom = Map[PortInstance, (PortInstance, ConnectionDef)]()
     var clumps = Buffer[Clump]()
+    def outgoingConnections(pi: PortInstance): Set[PortInstance] = flow.get(pi).getOrElse(Set())
     def clumpOf(c: ConnectionDef) = clumps find { _.connections.contains(c) }
     def clumpOf(p: PortSide) = clumps find { _.ports.contains(p) }
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
-    def isBad(b:ConnectionDef) = badConnections.contains(b) || b.tpe == NoSymbol
-    def markAsBad(b:ConnectionDef) { badConnections += b }
+    def isBad(b: ConnectionDef) = badConnections.contains(b) || b.tpe == NoSymbol
+    def markAsBad(b: ConnectionDef) { badConnections += b }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
       val pk = PortSide.findOrCreateMissing(a, BlockSymbol.this)
       a.symbol = pk
@@ -197,7 +204,7 @@ class BoxTypeSymbol(
   var okOverride = false
   var constructors = List[Constructor]()
   var params = Map[Name, ParamSymbol]()
-  var methodSelector : Name = _
+  var methodSelector: Name = _
   var source: String = "" // TODO
   tpe = this
   override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
@@ -240,12 +247,15 @@ class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
 class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name, In) {
   override def toString = "ParamSymbol(" + name + ")"
 }
-class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) extends Symbol{
+class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) extends Symbol {
   var missing = false
+  def isField = portSymbol.map(_.isField).getOrElse(false)
+  var internalStorage: StorageType = StorageLocal
   def owner = valSymbol
   def hasDecl = portSymbol.map { _.decl != null } getOrElse { false }
-  def declOption = portSymbol.flatMap { p=>  Option(p.decl.asInstanceOf[PortDef]) }
+  def declOption = portSymbol.flatMap { p ⇒ Option(p.decl.asInstanceOf[PortDef]) }
   def fqName = Name(valSymbol.fqName.str + "_" + name.str)
+  def joinfqName = Name(fqName.str + "_join")
   override def toString = "PortInstance(" + portSymbol + ", " + valSymbol + ")"
 }
 
@@ -280,7 +290,7 @@ object PortSide {
 }
 class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolean) extends Symbol {
   override def tpe = pi.tpe
-  override def tpe_=(t:Type) { pi.tpe = t}
+  override def tpe_=(t: Type) { pi.tpe = t }
   def owner = pi
   def flowIn = if (fromInside) !inPort else inPort
   def name = pi.name
@@ -291,11 +301,23 @@ class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolea
   }
   override def toString() = "PortSide(" + pi.toString + ", in=" + inPort + ", fromInside=" + fromInside + ")"
 }
+case class ZThread(num: Int, blockSymbol: BlockSymbol) {
+  //var forkedBy: Option[ValSymbol] = None
+  def name = Name(blockSymbol.fqName.str + "_thread" + num)
+  def fqName(mainFq: Name) = Name(mainFq.str + "#" + name.str)
+  var instructions = List[ValSymbol]()
+  override def toString = "Thread " + num + " -> " + instructions.map(_.toInstructionsSeq).mkString(", ")
+}
 class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   override def tdecl = decl.asInstanceOf[ValDef]
   def templateTree = tdecl.template.get
   def lookupParam(name: Name): Option[ParamSymbol] = sys.error("")
   // var refactor
+  var thread: ZThread = null
+  var init = false
+  val fork = Buffer[ZThread]()
+  val join = Buffer[ValSymbol]()
+  var isJoinPoint = false
   var info: AnyRef = null
   var classinfo: AnyRef = null
   var params = Map[ParamSymbol, Any]()
@@ -308,9 +330,10 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
       case b: BoxTypeSymbol ⇒ ""
       case vs: ValSymbol    ⇒ vs.fqName.str
     }
-    val num = if (owner.uniqueBlock) "" else owner.blockNumeral 
+    val num = if (owner.uniqueBlock) "" else owner.blockNumeral
     Name(prefix + num + name.str)
   }
+  def semfqName = Name(fqName.str + "_sem")
   private def createOutsidePs(name: Name, dir: Boolean, helperName: Option[Name] = None) = {
     val pdir = if (dir) In else Out
     val pi = new PortInstance(name, helperName, this, pdir)
@@ -328,6 +351,12 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
     portSides.find(ps ⇒ ps.pi.name == pr.name && ps.inPort == pr.in && ps.fromInside == inside)
 
   override def toString = "ValSymbol(" + name + ")"
+  def toInstructionsSeq = {
+    val result = join.map { t ⇒ "Join(" + t.fqName + ")" }
+    result += "Exec(" + fqName + ")"
+    result ++= fork.map { t ⇒ "Fork(" + t.num + ")" }
+    result.mkString(", ")
+  }
 }
 trait Namer {
   def usedNames: Set[String]
@@ -337,11 +366,11 @@ trait Namer {
     val nextValue = if (digits.isEmpty) 1 else digits.toInt + 1
     str.slice(0, str.length - digits.length) + nextValue
   }
-  def toIdentifierBase(baseStr:String) = {
-    val id = baseStr.dropWhile( !Character.isJavaIdentifierStart(_) ).filter{ Character.isJavaIdentifierPart }
-    if (id=="") "a" else id
+  def toIdentifierBase(baseStr: String) = {
+    val id = baseStr.dropWhile(!Character.isJavaIdentifierStart(_)).filter { Character.isJavaIdentifierPart }
+    if (id == "") "a" else id
   }
-  def freshName(baseStr:String) = freshName_(toIdentifierBase(baseStr))
+  def freshName(baseStr: String) = freshName_(toIdentifierBase(baseStr))
   @scala.annotation.tailrec
   private final def freshName_(str: String): String = {
     if (!isNameTaken(str)) str

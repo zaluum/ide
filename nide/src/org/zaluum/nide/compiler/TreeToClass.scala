@@ -12,19 +12,19 @@ trait BinaryExpr extends Tree {
 trait UnaryExpr extends Tree {
   def a: Tree
 }
-
-case class BoxClass(name: Name, contents: List[Tree]) extends Tree
+case class RunnableClass(fqName: Name, simpleName: Name, run: Method) extends Tree
+case class BoxClass(name: Name, contents: List[Tree], inners: List[RunnableClass]) extends Tree
 case class FieldDef(name: Name, typeName: Name, annotation: Option[Name], priv: Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
-case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)], applyAnnotation:Option[List[Name]]) extends Tree
+case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)], applyAnnotation: Option[List[Name]]) extends Tree
 case class Assign(lhs: Ref, rhs: Tree) extends Tree
 case class While(body: List[Tree], cond: Tree) extends Tree
 case class If(cond: Tree, trueBlock: List[Tree], falseBlock: List[Tree]) extends Tree
 case class Not(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
 case class Minus(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
-case class ArrayRef(index:Tree, arrRef:Tree, arrTpe: Type) extends Ref
-case class NewArray(sizes:List[Tree], arrTpe: Type) extends Ref
+case class ArrayRef(index: Tree, arrRef: Tree, arrTpe: Type) extends Ref
+case class NewArray(sizes: List[Tree], arrTpe: Type) extends Ref
 
 case class ShiftLeft(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr
 case class ShiftRight(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr
@@ -47,20 +47,20 @@ case class Ge(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr
 case class Eq(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr
 case class Ne(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr
 
-case object This extends Tree
+case object This extends Ref
 case object Pop extends Tree
 case object NullConst extends Tree
 trait Ref extends Tree
 case class Select(a: Tree, b: Tree) extends Ref
 case class LocalRef(id: Int, typeName: Name) extends Ref
-case class FieldRef(id:Name,descriptor:String, fromClass:Name) extends Ref 
-case class FieldStaticRef(id:Name,descriptor:String,fromClass:Name) extends Ref
+case class FieldRef(id: Name, descriptor: String, fromClass: Name) extends Ref
+case class FieldStaticRef(id: Name, descriptor: String, fromClass: Name) extends Ref
 case class Invoke(
   obj: Tree, meth: String, param: List[Tree],
   fromClass: Name, descriptor: String, interface: Boolean) extends Tree
 case class InvokeStatic(meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
 case class Const(i: Any, constTpe: Type) extends Tree
-case class Return(t: Tree, retTpe:Type) extends Tree
+case class Return(t: Tree, retTpe: Type) extends Tree
 case object Return extends Tree
 case object True extends Tree
 case object Dup extends Tree
@@ -83,41 +83,124 @@ case class L2F(a: Tree) extends UnaryExpr
 case class L2I(a: Tree) extends UnaryExpr
 object TreeToClass {
   val defaultMethodName = "run"
+  val runnableClassName = Name(classOf[java.lang.Runnable].getName)
+  val semaphoreClassName = Name(classOf[java.util.concurrent.Semaphore].getName)
 }
-class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumClassScope) extends ReporterAdapter {
+
+trait GeneratorHelpers {
+  def bs: BoxTypeSymbol
+  def thisRef: Ref = This
+  def threadRef(t: ZThread) =
+    Select(thisRef, FieldRef(t.name, t.fqName(bs.fqName).descriptor, bs.fqName))
+  def valRef(vs: ValSymbol): Ref = {
+    if (vs == bs.thisVal) thisRef
+    else Select(thisRef, FieldRef(vs.fqName, vs.tpe.fqName.descriptor, bs.fqName))
+  }
+  def semaphoreRef(vs: ValSymbol) =
+    Select(thisRef, FieldRef(vs.semfqName, TreeToClass.semaphoreClassName.descriptor, bs.fqName))
+  def deepValSymbols(bl: BlockSymbol): List[ValSymbol] =
+    for (vs ← bl.executionOrder; c ← deepValSymbols(vs)) yield c
+  def deepBlocks(bl: BlockSymbol): List[BlockSymbol] =
+    bl :: (for (
+      vs ← bl.executionOrder;
+      if (vs.tpe.isInstanceOf[ExprType]);
+      nbl ← vs.blocks;
+      res ← deepBlocks(nbl)
+    ) yield res)
+  def deepValSymbols(vs: ValSymbol): List[ValSymbol] = {
+    vs :: (vs.tpe match {
+      case bs: BoxTypeSymbol if (bs.thisVal == vs) ⇒
+        for (
+          bl ← bs.blocks;
+          vs ← deepValSymbols(bl)
+        ) yield vs
+      case bs: BoxTypeSymbol ⇒ List()
+      case et: ExprType ⇒
+        for (
+          bl ← vs.blocks;
+          vs ← deepValSymbols(bl)
+        ) yield vs
+    })
+  }
+  val widgetName = Name("_widget")
+}
+class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) extends ReporterAdapter with GeneratorHelpers {
+  val bs = b.sym
+  val block = bs.block
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
-  object rewrite {
-    def apply(t: Tree) = t match {
-      case b: BoxDef ⇒
-        val tpe = b.tpe.asInstanceOf[BoxType]
-        val bs = b.sym
-        val baseFields = (bs.blocks.head.executionOrder ++ bs.fieldReturns ).flatMap { field(_) }
-        val fields = bs.visualClass map { vn ⇒
-          FieldDef(Name("_widget"), vn, None, false) :: baseFields
-        } getOrElse { baseFields }
-        val baseMethods = List(cons(b), new ApplyMethodGenerator(b).appl)
-        BoxClass(
-          tpe.fqName,
-          baseMethods ++ fields)
+  object run {
+    def apply() = {
+      val enclosed = for (
+        bl ← deepBlocks(block);
+        t ← bl.threads.drop(1)
+      ) yield {
+        val method = new RunnableMethodGenerator(bs, t)()
+        RunnableClass(
+          Name(bs.tpe.fqName.str + "#" + t.name.str),
+          t.name,
+          method)
+      }
+      val baseMethods = List(cons(b), new MainThreadMethodGenerator(bs, block.threads(0))())
+      BoxClass(
+        bs.tpe.fqName,
+        baseMethods ++ fields(bs),
+        enclosed)
+
     }
-    def field(s: Symbol): List[FieldDef] = s match {
-      case ps: PortSymbol ⇒
-        assert( ps.dir == Out && ps.isField)
+
+    /*
+     * Fields:
+     * 	* arguments needed by another thread
+     *  * public second returns of boxtypesymbol  
+     * 	* Widget
+     *       *  
+     *  for all valsymbols
+     *  * valsymbol 
+     *  * if (jointpoint) 
+     *  	if (expression) -holder for all return values
+     *      else -holder for first return value  
+     *      -Semaphores
+     *  * Threads
+     *  
+     *  
+     *  Mark outs as field if valsymbol is jointpoint 
+     */
+    def fields(bs: BoxTypeSymbol): List[Tree] = {
+      // externals  (interface)
+      val returnFields = bs.fieldReturns flatMap { ps ⇒
+        assert(ps.dir == Out && ps.isField)
         val outName = Name(classOf[org.zaluum.annotation.Out].getName)
         List(FieldDef(ps.name, ps.tpe.name, Some(outName), false))
-      case vs: ValSymbol ⇒
+      }
+      // internals 
+      //widget 
+      val widgetField = bs.visualClass.toList map { vn ⇒
+        FieldDef(Name("_widget"), vn, None, false)
+      }
+      // valsymbols
+      val valSymbolFields = deepValSymbols(bs.blocks.head) flatMap { vs ⇒
         vs.tpe match {
-          case bs: BoxTypeSymbol ⇒
-            List(FieldDef(vs.fqName, bs.fqName, None, true))
-          case e: ExprType ⇒
-            for (
-              bl ← vs.blocks;
-              vs ← bl.executionOrder;
-              fd ← field(vs)
-            ) yield fd
+          case bs: BoxTypeSymbol ⇒ List(FieldDef(vs.fqName, bs.fqName, None, false)) // make private?
+          case _                 ⇒ List()
         }
-      case _ ⇒ List()
+      }
+      // join points holder and semaphore
+      val joinsFields = deepValSymbols(bs.blocks.head) flatMap { vs ⇒
+        if (vs.isJoinPoint) {
+          val semaphore = FieldDef(vs.semfqName, TreeToClass.semaphoreClassName, None, false)
+          val joins = for (pi ← vs.portInstances; if pi.internalStorage == StorageJoinField) yield {
+            FieldDef(pi.joinfqName, pi.tpe.fqName, None, false)
+          }
+          semaphore :: joins
+        } else List()
+      }
+      // Threads
+      val threadFields = deepBlocks(bs.blocks.head) flatMap { bl ⇒
+        for (t ← bl.threads.drop(1).toList) yield FieldDef(t.name, t.fqName(bs.fqName), None, false)
+      }
+      widgetField ::: valSymbolFields ::: joinsFields ::: returnFields ::: threadFields
+
     }
     def cons(b: BoxDef) = {
       val bs = b.sym
@@ -129,9 +212,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumClassScope) extends
             val values = for ((v, t) ← vs.constructorParams) yield {
               Const(v, t)
             }
-            List(Assign(
-              Select(This, FieldRef(vs.fqName,tpe.fqName.descriptor, bs.fqName)),
-              New(tpe.fqName, values, sig)))
+            List(Assign(valRef(vs), New(tpe.fqName, values, sig)))
           case e: ExprType ⇒
             for (
               bl ← vs.blocks;
@@ -145,7 +226,7 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumClassScope) extends
             vs.params map {
               case (param, v) ⇒
                 Invoke(
-                  Select(This, FieldRef(vs.fqName, tpe.fqName.descriptor, bs.fqName)),
+                  valRef(vs),
                   param.name.str,
                   List(Const(v, param.tpe)),
                   tpe.fqName,
@@ -170,23 +251,33 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumClassScope) extends
             interface = false))
         widgetCreation ++ bsVals.flatMap(createWidgets(_, bs.tdecl))
       }
+      // semaphores
+      val semaphores = deepValSymbols(bs.blocks.head) flatMap { vs ⇒
+        if (vs.isJoinPoint)
+          List(Assign(semaphoreRef(vs), New(TreeToClass.semaphoreClassName, List(), "()V")))
+        else List()
+      }
+      // threads
+      val threads = deepBlocks(bs.blocks.head) flatMap { bl ⇒
+        for (t ← bl.threads.drop(1)) yield {
+          Assign(threadRef(t), New(t.fqName(bs.fqName), List(This), "(" + bs.tpe.fqName.descriptor + ")V"))
+        }
+      }
       val bcs = bsVals.flatMap(boxCreation)
       val par = bsVals.flatMap(params)
-      ConstructorMethod(bcs ++ par ++ widgets :+ Return)
+      ConstructorMethod(bcs ++ par ++ widgets ++ semaphores ++ threads :+ Return)
     }
-
-    val widgetName = Name("_widget")
-    def fieldRef(vs: ValSymbol, bs: BoxTypeSymbol) = {
+    /*def fieldRef(vs: ValSymbol, bs: BoxTypeSymbol) = {
       val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
-      Select(This,FieldRef(vs.fqName, tpe.fqName.descriptor, bs.fqName))
-    }
+      Select(This, FieldRef(vs.fqName, tpe.fqName.descriptor, bs.fqName))
+    }*/
     def createWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
         case tpe: BoxTypeSymbol ⇒
           val valDef = vs.tdecl
           val mainTpe = mainBox.sym
           tpe.visualClass map { cl ⇒
-            val widgetSelect = Select(fieldRef(vs, mainTpe), FieldRef(widgetName, cl.descriptor, tpe.fqName))
+            val widgetSelect = Select(valRef(vs), FieldRef(widgetName, cl.descriptor, tpe.fqName))
             List[Tree](
               Invoke(
                 widgetSelect,
@@ -247,8 +338,5 @@ class TreeToClass(t: Tree, global: Scope, zaluumScope: ZaluumClassScope) extends
           for (bl ← vs.blocks; vs ← bl.executionOrder; w ← createWidgets(vs, mainBox)) yield w
       }
     }
-  }
-  def run() = {
-    rewrite(t)
   }
 }

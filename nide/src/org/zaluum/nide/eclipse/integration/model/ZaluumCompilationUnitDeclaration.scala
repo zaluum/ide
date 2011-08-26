@@ -235,22 +235,35 @@ class ZaluumCompilationUnitDeclaration(
     tpe
   }
   override def generateCode() {
-      def generate(tpe: ZaluumTypeDeclaration, enclosing: Option[ZaluumTypeDeclaration]) {
+      def generate(tpe: ZaluumTypeDeclaration) {
         val binding: SourceTypeBinding = tpe.binding
         if (binding != null) {
           val boxDef = tpe.b
           val classTree = new TreeToClass(boxDef, tpe.zaluumScope /*should be per class*/ , tpe.zaluumScope).run()
           val name = binding.constantPoolName()
           compilationResult.record(name,
-            new ZaluumClassFile(name.mkString, ByteCodeGen.dump(classTree), binding, name.mkString.replace('.', '/')))
-          for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
+            new ZaluumClassFile(
+              name.mkString,
+              ByteCodeGen.dump(classTree),
+              binding,
+              name.mkString.replace('.', '/')))
+
+          for (inn ← classTree.inners) {
+            val name = inn.fqName
+            compilationResult.record(name.str.toCharArray(),
+              new ZaluumClassFile(
+                name.str,
+                ByteCodeGen.dump(inn, classTree),
+                binding,
+                name.internal))
+          }
+          //for (child ← tpe.memberTypes) generate(child.asInstanceOf[ZaluumTypeDeclaration], Some(tpe));
         }
       }
-    
     val ztd = types(0).asInstanceOf[ZaluumTypeDeclaration]
     if (!ignoreFurtherInvestigation && ztd.a.reporter.errors.isEmpty) {
       try {
-        generate(ztd, None)
+        generate(ztd)
       } catch { case e ⇒ e.printStackTrace }
     }
   }

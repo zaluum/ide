@@ -8,6 +8,11 @@ import org.jgrapht.DirectedGraph
 import scala.collection.JavaConversions._
 import org.jgrapht.traverse.TopologicalOrderIterator
 import scala.collection.mutable.Buffer
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.Semaphore
 object DAGAnalysys {
   case class Thread(num: Int) {
     var forkedBy: Option[Vertex] = None
@@ -20,6 +25,7 @@ object DAGAnalysys {
     var thread: Thread = null
     val fork = Buffer[Thread]()
     val join = Buffer[Vertex]()
+    var isJoinPoint = false
     def toInstructionsSeq = {
       val result = join.map { t ⇒ "Join(" + t.s + ")" }
       result += "Exec(" + s + ")"
@@ -140,6 +146,7 @@ object DAGAnalysys {
           from.fork += to.thread
         }else {
           to.join += from
+          from.isJoinPoint=true
         }
       }
     }
@@ -436,6 +443,31 @@ object DAGAnalysys {
     emitFJ(dag, maxSet)
   }
 }*/
+object Executors2 {
+  def task(body: ⇒ Unit) = new Runnable() {
+    def run() {
+      body
+    }
+  }
+
+  val exec = Executors.newCachedThreadPool();
+  val helloSaidJoin = new Semaphore(0);
+  val cridat = new Semaphore(0);
+  val rebre = task{
+    cridat.acquire()
+    println("pasi pasi")
+    helloSaidJoin.release()
+    println("ok saludat")
+  }
+  def main(args:Array[String]) {
+    println("que hi ha algu?")
+    exec.execute(rebre)
+    cridat.release()
+    helloSaidJoin.acquire()
+    println("paso")
+    exec.shutdown()
+  }
+}
 object ForkJoin2 {
   def fj(body: ⇒ Unit) = ForkJoinTask.adapt(new Runnable() {
     def run() {
