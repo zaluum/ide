@@ -1,6 +1,6 @@
 Agenda
 
-week 15-21 GUI week
+week 29-4 library week
 	- fix show label on gui
 	- Swing thread synchronization / refresh rate	
 	- al connectar o desconnectar cables de vegades fa coses rares
@@ -8,7 +8,6 @@ week 15-21 GUI week
 	- nested guis as new window
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- write feature list on freemind
-week 22-28 library week
 	- Graphing widget properties. Color/etc( see labview)
 	- drivers
 		- template
@@ -16,18 +15,18 @@ week 22-28 library week
 		- tcp/ip 
 	- basic math
 	- sound output clicks?
-week 29-4 doc week -> ampliar detalls
+week 5-11 doc week -> ampliar detalls
 	- tutorials/docs/etc
 	- examples/screencast
 	- build scripts
-week 5-11 bug hunting
+week 12-18 bug hunting
 	- test cases bug fixing
 		- cast
 		- box unbox
 		- generics
 		- protected/private
 	- compilation with errors in java ProblemBinding, etc
-week 12-18 launch week
+week 19-25 launch week
 	- beta nag screen/ watermark
 	- buy hosting
 	- buy template
@@ -49,6 +48,7 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
+	- analyze multi thread with costs
 	- notes/ visual only on diagram
 	- visual only boxes
 	- improve popup usability. Multiple changes at once.
@@ -104,6 +104,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- multi thread code generation
 	- fix find methods and constructors in scope by visibility
 	- better port names (this,thisOut)
 	- remove expr .javas and organize better packages for exprs IF javadoc support ok

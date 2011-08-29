@@ -4,46 +4,50 @@ import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 import java.util.concurrent.CyclicBarrier
+import scala.collection.mutable.Buffer
 
 class MainThreadMethodGenerator(bs: BoxTypeSymbol, thread: ZThread, toSpawn: List[ZThread], allThreads: List[ZThread]) extends MethodGenerator(bs, thread) {
   def apply(): Method = {
+    val ins = Buffer[Tree]()
     val localsDecl = localsMap map {
       case (pi, i) ⇒
         (pi.fqName.str, pi.tpe.asInstanceOf[JavaType].descriptor, i)
     } toList;
-    val assignArgFields = for (arg ← bs.argsInOrder) yield {
+    for (arg ← bs.argsInOrder) {
       val pi = bs.thisVal.findPortInstance(arg).get
-      Assign(toRef(pi), LocalRef(localsMap(pi), pi.tpe.fqName))
+      ins += Assign(toRef(pi), LocalRef(localsMap(pi), pi.tpe.fqName))
     }
-    val forks = for (toFork ← toSpawn) yield {
-      executeThread(toFork)
+    for (toFork ← toSpawn) yield {
+      ins += executeThread(toFork)
     }
-    val invokes = runThread(thread)
-    val endReleases = for (t ← allThreads) yield {
-      Invoke(endSemaphoreRef(t), "acquire", List(), TreeToClass.semaphoreClassName, "()V", false)
+    ins ++= runThread(thread)
+    for (t ← allThreads) {
+      ins += Invoke(endSemaphoreRef(t), "acquire", List(), TreeToClass.semaphoreClassName, "()V", false)
     }
-    val assign = assignFlowInConnections(bs.thisVal, bs.blocks.head) // assign outputs
-    val ret = bs.returnPort match {
+    ins ++= assignFlowInConnections(bs.thisVal, bs.blocks.head) // assign outputs
+    bs.returnPort match {
       case Some(r) ⇒
         val pi = bs.thisVal.findPortInstance(r).get
-        Return(toRef(pi), pi.tpe)
+        ins += Return(toRef(pi), pi.tpe)
       case None ⇒
-        Return
+        ins += Return
     }
     val annotation = bs.argsInOrder.map { _.name }
-    Method(bs.methodSelector, bs.methodSignature, assignArgFields ::: forks ::: invokes ::: endReleases ::: (assign :+ ret), localsDecl, Some(annotation))
+    Method(bs.methodSelector, bs.methodSignature, ins.toList, localsDecl, Some(annotation))
   }
 }
 class RunnableMethodGenerator(bs: BoxTypeSymbol, thread: ZThread) extends MethodGenerator(bs, thread) {
   def apply(): Method = {
-    val invokes = runThread(thread)
+    val ins = Buffer[Tree]()
     val localsDecl = localsMap map {
       case (pi, i) ⇒
         val name = if (pi.valSymbol == bs.thisVal) pi.name.str
         else pi.valSymbol.fqName.str + "_" + pi.name.str
         (name, pi.tpe.asInstanceOf[JavaType].descriptor, i)
     } toList;
-    Method(Name("run"), "()V", invokes :+ Return, localsDecl, None)
+    ins ++= runThread(thread)
+    ins += Return
+    Method(Name("run"), "()V", ins.toList, localsDecl, None)
   }
   override def thisRef = {
     Select(This, FieldRef(Name(TreeToClass.enclosingClassFieldName), bs.tpe.fqName.descriptor, thread.fqName(bs)))
@@ -92,18 +96,13 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
   }
 
   def runOne(vs: ValSymbol, thread: ZThread): List[Tree] = {
+    val ins = Buffer[Tree]()
     // joins
-    val joins = vs.join.toList map { toJoin ⇒
-      Invoke(
-        semaphoreRef(toJoin),
-        "acquire",
-        List(),
-        TreeToClass.semaphoreClassName,
-        "()V",
-        interface = false)
+    vs.join.toList foreach { toJoin ⇒
+      ins += acquireSem(vs)
     }
     // propagate inputs
-    val propagate = assignFlowInConnections(vs, thread.blockSymbol)
+    ins ++= assignFlowInConnections(vs, thread.blockSymbol)
     import primitives._
       def invokeHelper(vs: ValSymbol, m: MethodBinding, invoke: Tree): Tree = // TODO find a better place
         if (m.returnType != null && m.returnType != TypeBinding.VOID) {
@@ -111,7 +110,7 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
           Assign(toRef(out), invoke)
         } else invoke
 
-    val insn: List[Tree] = vs.tpe match {
+    vs.tpe match {
       case vbs: BoxTypeSymbol ⇒
         val tpe = vbs.fqName
         val args = vbs.argsInOrder map { ps ⇒ toRef(vs.findPortInstance(ps).get) }
@@ -126,17 +125,17 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
           val pi = vs.findPortInstance(p).get
           Assign(toRef(pi), invoke)
         } getOrElse (invoke)
-        List(res)
+        ins += res
       case WhileExprType ⇒
-        List(While(
+        ins += While(
           runThread(vs.blocks.head.threads(0)),
-          toRef(WhileExprType.endPort(vs))))
+          toRef(WhileExprType.endPort(vs)))
       case IfExprType ⇒
-        List(
+        ins +=
           If(
             toRef(IfExprType.condPort(vs)),
             runThread(vs.blocks(0).threads(0)),
-            runThread(vs.blocks(1).threads(0))))
+            runThread(vs.blocks(1).threads(0)))
       case ArrayExprType ⇒
         val index = ArrayExprType.indexPort(vs)
         val thisPort = ArrayExprType.thisPort(vs)
@@ -149,14 +148,12 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
           def thisOut = Assign(toRef(thisOutPort), toRef(thisPort))
         thread.blockSymbol.connections.connectedFrom.get(aPort) match {
           case Some(_) ⇒ // do store
-            List(
-              store,
-              Assign(toRef(oPort), toRef(aPort)),
-              thisOut)
-          case None ⇒ List(
-            load,
-            thisOut)
+            ins += store
+            ins += Assign(toRef(oPort), toRef(aPort))
+          case None ⇒
+            ins += load
         }
+        ins += thisOut
       case InvokeExprType ⇒
         val m = vs.info.asInstanceOf[MethodBinding]
         val obj = InvokeExprType.thisPort(vs)
@@ -169,24 +166,25 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
           Name(m.declaringClass.constantPoolName().mkString),
           m.signature().mkString,
           m.declaringClass.isInterface)
-        List(invokeHelper(vs, m, invoke), Assign(toRef(thisOut), toRef(obj)))
+        ins += invokeHelper(vs, m, invoke)
+        ins += Assign(toRef(thisOut), toRef(obj))
       case NewExprType ⇒
         val m = vs.info.asInstanceOf[MethodBinding]
         val thiz = NewExprType.thisPort(vs)
         val params = vs.portSides filter { ps ⇒ ps.inPort } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
-        List(
+        ins +=
           Assign(toRef(thiz),
             New(Name(m.declaringClass.constantPoolName.mkString),
               params,
-              m.signature().mkString)))
+              m.signature().mkString))
       case NewArrayExprType ⇒
         val thiz = NewArrayExprType.thisPort(vs)
         val ab = thiz.tpe.asInstanceOf[ArrayType]
         val dimPorts = vs.portInstances.filter { pi ⇒ pi.dir == In && pi.name.str.startsWith("d") }.sortBy { _.name.str.drop(1).toInt } // XXX ugly
-        List(
+        ins +=
           Assign(
             toRef(thiz),
-            NewArray(dimPorts.map { toRef(_) }, ab.of)))
+            NewArray(dimPorts.map { toRef(_) }, ab.of))
       case InvokeStaticExprType ⇒
         val m = vs.info.asInstanceOf[MethodBinding]
         // TODO share with invoke
@@ -197,7 +195,7 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
             param = params,
             fromClass = Name(m.declaringClass.constantPoolName.mkString),
             descriptor = m.signature.mkString)
-        List(invokeHelper(vs, m, invoke))
+        ins += invokeHelper(vs, m, invoke)
       case FieldExprType ⇒
         val f = vs.info.asInstanceOf[FieldBinding]
         val a = FieldExprType.aPort(vs)
@@ -215,14 +213,12 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
           def storeThisOut = Assign(toRef(thisOut), toRef(obj))
         thread.blockSymbol.connections.connectedFrom.get(a) match {
           case Some(_) ⇒ // do store
-            List(
-              store,
-              Assign(toRef(o), toRef(a)),
-              storeThisOut)
-          case None ⇒ List(
-            load,
-            storeThisOut)
+            ins += store
+            ins += Assign(toRef(o), toRef(a))
+          case None ⇒
+            ins += load
         }
+        ins += storeThisOut
       case StaticFieldExprType ⇒ // share with field
         val f = vs.info.asInstanceOf[FieldBinding]
         val a = StaticFieldExprType.aPort(vs)
@@ -234,8 +230,11 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
           def store = Assign(fieldRef, toRef(a))
           def load = Assign(toRef(o), fieldRef)
         thread.blockSymbol.connections.connectedFrom.get(a) match {
-          case Some(_) ⇒ List(store, Assign(toRef(o), toRef(a)))
-          case None    ⇒ List(load)
+          case Some(_) ⇒
+            ins += store
+            ins += Assign(toRef(o), toRef(a))
+          case None ⇒
+            ins += load
         }
       case LiteralExprType ⇒
         val o = LiteralExprType.outPort(vs)
@@ -253,15 +252,14 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
             }
           case _ ⇒ Const(0, primitives.Byte)
         }
-        List(Assign(toRef(o), c))
+        ins += Assign(toRef(o), c)
       case u: UnaryExprType ⇒
         val (a, o) = u.unaryPortInstancesOf(vs)
-        List(
-          u match {
-            case c: CastExprType ⇒ Assign(toRef(o), cast(a.tpe, o.tpe, toRef(a)))
-            case NotExprType     ⇒ Assign(toRef(o), Not(toRef(a), a.tpe.asInstanceOf[PrimitiveJavaType]))
-            case MinusExprType   ⇒ Assign(toRef(o), Minus(toRef(a), a.tpe.asInstanceOf[PrimitiveJavaType]))
-          })
+        ins += (u match {
+          case c: CastExprType ⇒ Assign(toRef(o), cast(a.tpe, o.tpe, toRef(a)))
+          case NotExprType     ⇒ Assign(toRef(o), Not(toRef(a), a.tpe.asInstanceOf[PrimitiveJavaType]))
+          case MinusExprType   ⇒ Assign(toRef(o), Minus(toRef(a), a.tpe.asInstanceOf[PrimitiveJavaType]))
+        })
       case s: BinExprType ⇒
         val (a, b, o) = s.binaryPortInstancesOf(vs)
         val aTree = toRef(a)
@@ -286,17 +284,16 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
           case EqExprType          ⇒ Eq(aTree, bTree, etpe)
           case NeExprType          ⇒ Ne(aTree, bTree, etpe)
         }
-        List(Assign(toRef(o), eTree))
+        ins += Assign(toRef(o), eTree)
     }
     // release sem
-    val release = if (vs.isJoinPoint) {
-      List(releaseSem(vs))
-    } else List()
+    if (vs.isJoinPoint)
+      ins += releaseSem(vs)
     // forks
-    val forks = for (toFork ← vs.fork.toList) yield {
-      executeThread(toFork)
+    for (toFork ← vs.fork.toList) {
+      ins += executeThread(toFork)
     }
-    joins ::: propagate ::: insn ::: release ::: forks
+    ins.toList
   }
   def executeThread(thread: ZThread) = {
     InvokeStatic("execute",

@@ -4,6 +4,7 @@ import org.zaluum.basic.RunnableBox
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
 import javax.swing.JLabel
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
+import scala.collection.mutable.Buffer
 
 trait BinaryExpr extends Tree {
   def a: Tree
@@ -135,6 +136,14 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = 0 // FIXMELocation(List(0))
   object run {
+    val fieldDecls = Buffer[FieldDef]()
+    val fieldInits = Buffer[Tree]()
+    def field(name: Name, tpe: Name, init: Option[Tree] = None, annotation: Option[Name] = None) {
+      fieldDecls += FieldDef(name, tpe, annotation, false)
+      init foreach { t ⇒
+        fieldInits += Assign(Select(thisRef, FieldRef(name, tpe.descriptor, bs.fqName)), t)
+      }
+    }
     def apply() = {
       val enclosed = for (
         bl ← deepBlocks(block);
@@ -146,12 +155,13 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
           t.name,
           method)
       }
+      populateFields(bs)
       val main = block.threads(0)
       val toSpawn = block.threads.drop(1) filter { _.forkedBy == None } toList
       val baseMethods = List(cons(b), new MainThreadMethodGenerator(bs, main, toSpawn, secondThreads)())
       BoxClass(
         bs.tpe.fqName,
-        baseMethods ++ fields(bs),
+        baseMethods ++ fieldDecls,
         enclosed)
 
     }
@@ -172,45 +182,46 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
      *  
      *  * Cyclic barrier if needed
      */
-    def fields(bs: BoxTypeSymbol): List[Tree] = {
+    def populateFields(bs: BoxTypeSymbol) {
       // externals  (interface)
-      val returnFields = bs.fieldReturns flatMap { ps ⇒
+      bs.fieldReturns foreach { ps ⇒
         assert(ps.dir == Out && ps.isField)
         val outName = Name(classOf[org.zaluum.annotation.Out].getName)
-        List(FieldDef(ps.name, ps.tpe.name, Some(outName), false))
+        field(ps.name, ps.tpe.name, None, annotation = Some(outName))
       }
       // internals 
       //widget 
-      val widgetField = bs.visualClass.toList map { vn ⇒
-        FieldDef(Name("_widget"), vn, None, false)
+      bs.visualClass foreach { vn ⇒
+        field(Name("_widget"), vn)
       }
       // valsymbols
-      val valSymbolFields = deepValSymbols(bs.blocks.head) flatMap { vs ⇒
+      deepValSymbols(bs.blocks.head) foreach { vs ⇒
         vs.tpe match {
-          case bs: BoxTypeSymbol ⇒ List(FieldDef(vs.fqName, bs.fqName, None, false)) // make private?
-          case _                 ⇒ List()
+          case tbs: BoxTypeSymbol if (vs != bs.thisVal) ⇒
+            val sig = vs.constructor.get.signature
+            val values = for ((v, t) ← vs.constructorParams) yield {
+              Const(v, t)
+            }
+            val init = New(vs.tpe.fqName, values, sig)
+            field(vs.fqName, tbs.fqName, init = Some(init)) // make private?
+          case _ ⇒
         }
-      }
-      // join points holder and semaphore
-      val joinsFields = deepValSymbols(bs.blocks.head) flatMap { vs ⇒
-        val joins = for (pi ← vs.portInstances; if pi.internalStorage == StorageJoinField) yield {
-          FieldDef(pi.joinfqName, pi.tpe.fqName, None, false)
+        // join points holder and semaphore
+        for (pi ← vs.portInstances; if pi.internalStorage == StorageJoinField) yield {
+          field(pi.joinfqName, pi.tpe.fqName)
         }
-        val semaphore = if (vs.isJoinPoint)
-          List(FieldDef(vs.semfqName, TreeToClass.semaphoreClassName, None, false))
-        else List()
-        semaphore ::: joins
+        if (vs.isJoinPoint) {
+          field(vs.semfqName, TreeToClass.semaphoreClassName, init = Some(
+            New(TreeToClass.semaphoreClassName, List(Const(0, primitives.Int)), "(I)V")))
+        }
       }
       // thread end semaphore
-      val threadSemFields = for (t ← secondThreads) yield {
-        FieldDef(t.semFqName, TreeToClass.semaphoreClassName, None, false)
+      for (t ← secondThreads) {
+        field(t.semFqName, TreeToClass.semaphoreClassName, init = Some(
+          New(TreeToClass.semaphoreClassName, List(Const(0, primitives.Int)), "(I)V")))
+        field(t.name, t.fqName(bs), init = Some(
+          New(t.fqName(bs), List(This), "(" + bs.tpe.fqName.descriptor + ")V")))
       }
-      // Threads
-      val threadFields = secondThreads map { t ⇒
-        FieldDef(t.name, t.fqName(bs), None, false)
-      }
-      widgetField ::: valSymbolFields ::: joinsFields ::: returnFields ::: threadFields ::: threadSemFields
-
     }
 
     lazy val secondThreads = deepBlocks(bs.blocks.head) flatMap { bl ⇒ bl.threads.drop(1) }
@@ -218,21 +229,6 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
     def cons(b: BoxDef) = {
       val bs = b.sym
       val bsVals = bs.blocks.head.executionOrder
-        // boxes
-        def boxCreation(vs: ValSymbol): List[Tree] = vs.tpe match {
-          case tpe: BoxTypeSymbol ⇒
-            val sig = vs.constructor.get.signature
-            val values = for ((v, t) ← vs.constructorParams) yield {
-              Const(v, t)
-            }
-            List(Assign(valRef(vs), New(tpe.fqName, values, sig)))
-          case e: ExprType ⇒
-            for (
-              bl ← vs.blocks;
-              vs ← bl.executionOrder;
-              bc ← boxCreation(vs)
-            ) yield bc
-        }
         // params
         def params(vs: ValSymbol): List[Tree] = vs.tpe match {
           case tpe: BoxTypeSymbol ⇒
@@ -264,28 +260,9 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
             interface = false))
         widgetCreation ++ bsVals.flatMap(createWidgets(_, bs.tdecl))
       }
-      // semaphores
-      val semaphores = deepValSymbols(bs.blocks.head) flatMap { vs ⇒
-        if (vs.isJoinPoint)
-          List(Assign(semaphoreRef(vs), New(TreeToClass.semaphoreClassName, List(Const(0, primitives.Int)), "(I)V")))
-        else List()
-      }
-      // threads
-      val threads =
-        for (t ← secondThreads) yield {
-          Assign(threadRef(t), New(t.fqName(bs), List(This), "(" + bs.tpe.fqName.descriptor + ")V"))
-        }
-      val threadSem = for (t ← secondThreads) yield {
-        Assign(endSemaphoreRef(t), New(TreeToClass.semaphoreClassName, List(Const(0, primitives.Int)), "(I)V"))
-      }
-      val bcs = bsVals.flatMap(boxCreation)
       val par = bsVals.flatMap(params)
-      ConstructorMethod(bcs ++ par ++ widgets ++ semaphores ++ threads ++ threadSem :+ Return)
+      ConstructorMethod(fieldInits.toList ++ par ++ widgets :+ Return)
     }
-    /*def fieldRef(vs: ValSymbol, bs: BoxTypeSymbol) = {
-      val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
-      Select(This, FieldRef(vs.fqName, tpe.fqName.descriptor, bs.fqName))
-    }*/
     def createWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
         case tpe: BoxTypeSymbol ⇒
