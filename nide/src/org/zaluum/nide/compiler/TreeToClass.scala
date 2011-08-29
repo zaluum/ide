@@ -83,6 +83,7 @@ case class L2F(a: Tree) extends UnaryExpr
 case class L2I(a: Tree) extends UnaryExpr
 object TreeToClass {
   val defaultMethodName = "run"
+  val enclosingClassFieldName = "this$0"
   val runnableClassName = Name(classOf[java.lang.Runnable].getName)
   val semaphoreClassName = Name(classOf[java.util.concurrent.Semaphore].getName)
 }
@@ -91,15 +92,19 @@ trait GeneratorHelpers {
   def bs: BoxTypeSymbol
   def thisRef: Ref = This
   def threadRef(t: ZThread) =
-    Select(thisRef, FieldRef(t.name, t.fqName(bs.fqName).descriptor, bs.fqName))
+    Select(thisRef, FieldRef(t.name, t.fqName(bs).descriptor, bs.fqName))
   def valRef(vs: ValSymbol): Ref = {
     if (vs == bs.thisVal) thisRef
     else Select(thisRef, FieldRef(vs.fqName, vs.tpe.fqName.descriptor, bs.fqName))
   }
   def semaphoreRef(vs: ValSymbol) =
     Select(thisRef, FieldRef(vs.semfqName, TreeToClass.semaphoreClassName.descriptor, bs.fqName))
+  def endSemaphoreRef(t: ZThread) =
+    Select(thisRef, FieldRef(t.semFqName, TreeToClass.semaphoreClassName.descriptor, bs.fqName))
+
   def deepValSymbols(bl: BlockSymbol): List[ValSymbol] =
-    for (vs ← bl.executionOrder; c ← deepValSymbols(vs)) yield c
+    bl.template.thisVal :: (
+      for (vs ← bl.executionOrder; c ← deepValSymbols(vs)) yield c)
   def deepBlocks(bl: BlockSymbol): List[BlockSymbol] =
     bl :: (for (
       vs ← bl.executionOrder;
@@ -137,11 +142,13 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       ) yield {
         val method = new RunnableMethodGenerator(bs, t)()
         RunnableClass(
-          Name(bs.tpe.fqName.str + "#" + t.name.str),
+          t.fqName(bs),
           t.name,
           method)
       }
-      val baseMethods = List(cons(b), new MainThreadMethodGenerator(bs, block.threads(0))())
+      val main = block.threads(0)
+      val toSpawn = block.threads.drop(1) filter { _.forkedBy == None } toList
+      val baseMethods = List(cons(b), new MainThreadMethodGenerator(bs, main, toSpawn, secondThreads)())
       BoxClass(
         bs.tpe.fqName,
         baseMethods ++ fields(bs),
@@ -163,8 +170,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
      *      -Semaphores
      *  * Threads
      *  
-     *  
-     *  Mark outs as field if valsymbol is jointpoint 
+     *  * Cyclic barrier if needed
      */
     def fields(bs: BoxTypeSymbol): List[Tree] = {
       // externals  (interface)
@@ -187,21 +193,28 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       }
       // join points holder and semaphore
       val joinsFields = deepValSymbols(bs.blocks.head) flatMap { vs ⇒
-        if (vs.isJoinPoint) {
-          val semaphore = FieldDef(vs.semfqName, TreeToClass.semaphoreClassName, None, false)
-          val joins = for (pi ← vs.portInstances; if pi.internalStorage == StorageJoinField) yield {
-            FieldDef(pi.joinfqName, pi.tpe.fqName, None, false)
-          }
-          semaphore :: joins
-        } else List()
+        val joins = for (pi ← vs.portInstances; if pi.internalStorage == StorageJoinField) yield {
+          FieldDef(pi.joinfqName, pi.tpe.fqName, None, false)
+        }
+        val semaphore = if (vs.isJoinPoint)
+          List(FieldDef(vs.semfqName, TreeToClass.semaphoreClassName, None, false))
+        else List()
+        semaphore ::: joins
+      }
+      // thread end semaphore
+      val threadSemFields = for (t ← secondThreads) yield {
+        FieldDef(t.semFqName, TreeToClass.semaphoreClassName, None, false)
       }
       // Threads
-      val threadFields = deepBlocks(bs.blocks.head) flatMap { bl ⇒
-        for (t ← bl.threads.drop(1).toList) yield FieldDef(t.name, t.fqName(bs.fqName), None, false)
+      val threadFields = secondThreads map { t ⇒
+        FieldDef(t.name, t.fqName(bs), None, false)
       }
-      widgetField ::: valSymbolFields ::: joinsFields ::: returnFields ::: threadFields
+      widgetField ::: valSymbolFields ::: joinsFields ::: returnFields ::: threadFields ::: threadSemFields
 
     }
+
+    lazy val secondThreads = deepBlocks(bs.blocks.head) flatMap { bl ⇒ bl.threads.drop(1) }
+
     def cons(b: BoxDef) = {
       val bs = b.sym
       val bsVals = bs.blocks.head.executionOrder
@@ -254,18 +267,20 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       // semaphores
       val semaphores = deepValSymbols(bs.blocks.head) flatMap { vs ⇒
         if (vs.isJoinPoint)
-          List(Assign(semaphoreRef(vs), New(TreeToClass.semaphoreClassName, List(), "()V")))
+          List(Assign(semaphoreRef(vs), New(TreeToClass.semaphoreClassName, List(Const(0, primitives.Int)), "(I)V")))
         else List()
       }
       // threads
-      val threads = deepBlocks(bs.blocks.head) flatMap { bl ⇒
-        for (t ← bl.threads.drop(1)) yield {
-          Assign(threadRef(t), New(t.fqName(bs.fqName), List(This), "(" + bs.tpe.fqName.descriptor + ")V"))
+      val threads =
+        for (t ← secondThreads) yield {
+          Assign(threadRef(t), New(t.fqName(bs), List(This), "(" + bs.tpe.fqName.descriptor + ")V"))
         }
+      val threadSem = for (t ← secondThreads) yield {
+        Assign(endSemaphoreRef(t), New(TreeToClass.semaphoreClassName, List(Const(0, primitives.Int)), "(I)V"))
       }
       val bcs = bsVals.flatMap(boxCreation)
       val par = bsVals.flatMap(params)
-      ConstructorMethod(bcs ++ par ++ widgets ++ semaphores ++ threads :+ Return)
+      ConstructorMethod(bcs ++ par ++ widgets ++ semaphores ++ threads ++ threadSem :+ Return)
     }
     /*def fieldRef(vs: ValSymbol, bs: BoxTypeSymbol) = {
       val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]

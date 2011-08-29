@@ -25,7 +25,7 @@ object ByteCodeGen {
     cw.visit(V1_5, ACC_SUPER, inn.fqName.internal, null, "java/lang/Object", Array("java/lang/Runnable"));
     cw.visitInnerClass(inn.fqName.internal, bc.name.internal, inn.simpleName.str, 0);
     {
-      val fv = cw.visitField(ACC_FINAL + ACC_SYNTHETIC, "this$0", bc.name.descriptor, null, null);
+      val fv = cw.visitField(ACC_PUBLIC, TreeToClass.enclosingClassFieldName, bc.name.descriptor, null, null);
       fv.visitEnd();
     }
     {
@@ -35,16 +35,18 @@ object ByteCodeGen {
       mv.visitLabel(l0);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
-      mv.visitFieldInsn(PUTFIELD, inn.fqName.internal, "this$0", bc.name.descriptor);
+      mv.visitFieldInsn(PUTFIELD, inn.fqName.internal, TreeToClass.enclosingClassFieldName, bc.name.descriptor);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
       mv.visitInsn(RETURN);
       val l1 = new Label();
       mv.visitLabel(l1);
       mv.visitLocalVariable("this", inn.fqName.descriptor, null, l0, l1, 0);
+      mv.visitMaxs(-1, -1);
       mv.visitEnd();
     }
     emit(inn.run)
+    mv.visitMaxs(-1, -1);
     cw.visitEnd()
     cw.toByteArray
   }

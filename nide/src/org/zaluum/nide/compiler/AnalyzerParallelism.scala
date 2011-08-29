@@ -33,6 +33,7 @@ class AnalyzerParallelism(bl: BlockSymbol, a: Analyzer) {
       if (from.thread != to.thread) {
         if (to.init) {
           from.fork += to.thread
+          to.thread.forkedBy = Some(from)
         } else {
           to.join += from
           from.isJoinPoint = true
@@ -46,23 +47,28 @@ class AnalyzerParallelism(bl: BlockSymbol, a: Analyzer) {
       if (pi.isField)
         pi.internalStorage = StorageValField
       else {
-        val internalConnectedVals =
+        val connectedVals =
           bl.connections.outgoingConnections(pi)
             .map { _.valSymbol }
-            .filter { _ != thisVal };
+        val internalConnectedVals = connectedVals.filter { _ != thisVal };
         // mark arguments to be stored as field if needed by another thread            
         if (internalConnectedVals.exists(_.thread.num != 0)) { // sure it's In or Shift 
           assert(pi.dir == In || pi.dir == Shift)
           assert(pi.internalStorage != StorageValField)
           pi.internalStorage = StorageJoinField
         }
-        // at least store as local  
       }
     }
 
     // mark outs and shifts as StorageJoinsIf needed by another thread
     for (vs ← bl.executionOrder; pi ← vs.portInstances) {
-      if (pi.portSymbol.map(_.isField).getOrElse(false))
+      val connectedVals =
+        bl.connections.outgoingConnections(pi)
+          .map { _.valSymbol }
+      val isThisValConnected = connectedVals.exists(_ == thisVal)
+      if (isThisValConnected)
+        pi.internalStorage = StorageJoinField
+      else if (pi.portSymbol.map(_.isField).getOrElse(false))
         pi.internalStorage = StorageValField
       else if (pi.dir == Out || pi.dir == Shift)
         pi.internalStorage = if (vs.isJoinPoint) StorageJoinField else StorageLocal
@@ -77,7 +83,6 @@ class AnalyzerParallelism(bl: BlockSymbol, a: Analyzer) {
         case _ ⇒
       }
     }
-    threads foreach (println)
   }
 
 }

@@ -3,14 +3,25 @@ import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
+import java.util.concurrent.CyclicBarrier
 
-class MainThreadMethodGenerator(bs: BoxTypeSymbol, thread: ZThread) extends MethodGenerator(bs, thread) {
+class MainThreadMethodGenerator(bs: BoxTypeSymbol, thread: ZThread, toSpawn: List[ZThread], allThreads: List[ZThread]) extends MethodGenerator(bs, thread) {
   def apply(): Method = {
     val localsDecl = localsMap map {
       case (pi, i) ⇒
         (pi.fqName.str, pi.tpe.asInstanceOf[JavaType].descriptor, i)
     } toList;
+    val assignArgFields = for (arg ← bs.argsInOrder) yield {
+      val pi = bs.thisVal.findPortInstance(arg).get
+      Assign(toRef(pi), LocalRef(localsMap(pi), pi.tpe.fqName))
+    }
+    val forks = for (toFork ← toSpawn) yield {
+      executeThread(toFork)
+    }
     val invokes = runThread(thread)
+    val endReleases = for (t ← allThreads) yield {
+      Invoke(endSemaphoreRef(t), "acquire", List(), TreeToClass.semaphoreClassName, "()V", false)
+    }
     val assign = assignFlowInConnections(bs.thisVal, bs.blocks.head) // assign outputs
     val ret = bs.returnPort match {
       case Some(r) ⇒
@@ -20,7 +31,7 @@ class MainThreadMethodGenerator(bs: BoxTypeSymbol, thread: ZThread) extends Meth
         Return
     }
     val annotation = bs.argsInOrder.map { _.name }
-    Method(bs.methodSelector, bs.methodSignature, invokes ::: (assign :+ ret), localsDecl, Some(annotation))
+    Method(bs.methodSelector, bs.methodSignature, assignArgFields ::: forks ::: invokes ::: endReleases ::: (assign :+ ret), localsDecl, Some(annotation))
   }
 }
 class RunnableMethodGenerator(bs: BoxTypeSymbol, thread: ZThread) extends MethodGenerator(bs, thread) {
@@ -35,7 +46,7 @@ class RunnableMethodGenerator(bs: BoxTypeSymbol, thread: ZThread) extends Method
     Method(Name("run"), "()V", invokes :+ Return, localsDecl, None)
   }
   override def thisRef = {
-    Select(This, FieldRef(Name("$this0"), bs.tpe.fqName.descriptor, thread.fqName(bs.fqName)))
+    Select(This, FieldRef(Name(TreeToClass.enclosingClassFieldName), bs.tpe.fqName.descriptor, thread.fqName(bs)))
   }
 }
 class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorHelpers {
@@ -59,7 +70,7 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
         FieldRef(pi.joinfqName, pi.tpe.name.descriptor, bs.fqName))
   }
   def runThread(thread: ZThread): List[Tree] = {
-    thread.instructions flatMap { vs ⇒
+    val inns = thread.instructions flatMap { vs ⇒
       val outs = for {
         (from, to) ← thread.blockSymbol.connections.flow; // order
         if from.valSymbol == vs;
@@ -67,7 +78,9 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
       } yield a
       runOne(vs, thread) ::: outs.toList
     }
-    // FIXME wait for spawned threads
+    if (thread.num != 0)
+      inns :+ Invoke(endSemaphoreRef(thread), "release", List(), TreeToClass.semaphoreClassName, "()V", false)
+    else inns
   }
   def assignFlowInConnections(vs: ValSymbol, bl: BlockSymbol): List[Tree] = {
     for (ps ← vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
@@ -343,14 +356,11 @@ class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorH
     var localsMap = Map[PortInstance, Int]()
       def createLocal(pi: PortInstance) {
         if (!localsMap.contains(pi)) {
-          println("creating local " + pi)
           localsMap += (pi -> locals)
           locals = locals + pi.tpe.javaSize
         }
       }
-
     bs.argsInOrder map { ps ⇒ createLocal(bs.thisVal.findPortInstance(ps).get) }
-    println(deepValSymbols(bs.thisVal))
     for {
       vs ← deepValSymbols(bs.thisVal)
       pi ← vs.portInstances
