@@ -73,10 +73,10 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
           ZaluumCompletionEngineScala.allMethods(engine, scope, r, static)
       }
       def tpeMenu = new TpeSelect(content, "Box Type", getShell, viewer, valDef.typeName.str, {
-        str ⇒ viewer.controller.exec(valDef.changeType(str));  close()
+        str ⇒ viewer.controller.exec(valDef.changeType(str)); close()
       })
-      def label = text("Label", valDef.label.map(_.description).getOrElse("")) { str =>
-        viewer.controller.exec(valDef.editLabel(false,str)); close()
+      def label = text("Label", (if (gui) valDef.labelGui else valDef.label).map(_.description).getOrElse("")) { str ⇒
+        viewer.controller.exec(valDef.editLabel(gui, str)); close()
       }
       def cons = button("Constructor", valDef.constructorParams.mkString(", "), "Edit...") { new ConstructorDialog(viewer, v).open() }
       def params = button("Parameters",
@@ -96,10 +96,10 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
         })
       }
       def castTypeSelectMenu = {
-        val initial = v.params.get(CastToExprType.typeSymbol) getOrElse{""}
-        new TpeEdit(content, "Cast to", getShell, viewer, initial.toString, { str =>
-        	viewer.controller.exec(valDef.addOrReplaceParam(Param(CastToExprType.typeName, str)))
-        	close()
+        val initial = v.params.get(CastToExprType.typeSymbol) getOrElse { "" }
+        new TpeEdit(content, "Cast to", getShell, viewer, initial.toString, { str ⇒
+          viewer.controller.exec(valDef.addOrReplaceParam(Param(CastToExprType.typeName, str)))
+          close()
         })
       }
       def methodName = v.info match {
@@ -146,7 +146,7 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
           case NewArrayExprType ⇒
             staticMenu
             dimensionsMenu
-          case CastToExprType => 
+          case CastToExprType ⇒
             castTypeSelectMenu
           case _ ⇒
             params
