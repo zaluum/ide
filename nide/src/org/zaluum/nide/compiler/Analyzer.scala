@@ -392,8 +392,12 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
     toCompile.template.blocks.headOption foreach {
       bl ⇒
         new CheckConnections(bl, true, this).run()
+    }
+    toCompile.template.blocks.headOption foreach {
+      bl ⇒
         if (reporter.errors.isEmpty)
           new AnalyzerParallelism(bl.sym, this).run()
     }
+
   }
 }

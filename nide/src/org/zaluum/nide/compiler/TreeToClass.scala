@@ -87,6 +87,7 @@ object TreeToClass {
   val enclosingClassFieldName = "this$0"
   val runnableClassName = Name(classOf[java.lang.Runnable].getName)
   val semaphoreClassName = Name(classOf[java.util.concurrent.Semaphore].getName)
+  val futureClassName = Name(classOf[java.util.concurrent.Future[_]].getName)
 }
 
 trait GeneratorHelpers {
@@ -100,33 +101,51 @@ trait GeneratorHelpers {
   }
   def semaphoreRef(vs: ValSymbol) =
     Select(thisRef, FieldRef(vs.semfqName, TreeToClass.semaphoreClassName.descriptor, bs.fqName))
-  def endSemaphoreRef(t: ZThread) =
-    Select(thisRef, FieldRef(t.semFqName, TreeToClass.semaphoreClassName.descriptor, bs.fqName))
 
-  def deepValSymbols(bl: BlockSymbol): List[ValSymbol] =
-    bl.template.thisVal :: (
-      for (vs ← bl.executionOrder; c ← deepValSymbols(vs)) yield c)
-  def deepBlocks(bl: BlockSymbol): List[BlockSymbol] =
-    bl :: (for (
-      vs ← bl.executionOrder;
-      if (vs.tpe.isInstanceOf[ExprType]);
-      nbl ← vs.blocks;
-      res ← deepBlocks(nbl)
-    ) yield res)
-  def deepValSymbols(vs: ValSymbol): List[ValSymbol] = {
-    vs :: (vs.tpe match {
+  def futureRef(t: ZThread) =
+    Select(thisRef, FieldRef(t.futureFqName, TreeToClass.futureClassName.descriptor, bs.fqName))
+
+  def deepChildValSymbols(bl: BlockSymbol): List[ValSymbol] =
+    bl.executionOrder flatMap { vs ⇒
+      vs :: deepChildValSymbols(vs)
+    }
+  def deepChildBlocks(bl: BlockSymbol): List[BlockSymbol] =
+    bl.executionOrder filter (_.tpe.isInstanceOf[ExprType]) flatMap { vs ⇒
+      vs.blocks flatMap { bl ⇒
+        bl :: deepChildBlocks(bl)
+      }
+    }
+
+  def deepChildThreadZeros(t: ZThread): List[ZThread] = {
+    t.instructions flatMap { vs ⇒
+      vs.tpe match {
+        case bs: BoxTypeSymbol ⇒ List()
+        case et: ExprType ⇒
+          val threads0s = vs.blocks.map { _.threads.head }
+          threads0s ::: (threads0s flatMap { th ⇒ deepChildThreadZeros(th) })
+      }
+    }
+  }
+  def deepChildValSymbolsThread0(vs: ValSymbol): List[ValSymbol] = {
+    vs.tpe match {
       case bs: BoxTypeSymbol if (bs.thisVal == vs) ⇒
-        for (
-          bl ← bs.blocks;
-          vs ← deepValSymbols(bl)
-        ) yield vs
+        bs.blocks flatMap (bl ⇒
+          bl.threads(0).instructions flatMap { vs ⇒
+            deepChildValSymbolsThread0(vs)
+          })
       case bs: BoxTypeSymbol ⇒ List()
       case et: ExprType ⇒
-        for (
-          bl ← vs.blocks;
-          vs ← deepValSymbols(bl)
-        ) yield vs
-    })
+        vs.blocks flatMap (vs ⇒ deepChildValSymbols(vs))
+    }
+  }
+  def deepChildValSymbols(vs: ValSymbol): List[ValSymbol] = {
+    vs.tpe match {
+      case bs: BoxTypeSymbol if (bs.thisVal == vs) ⇒
+        bs.blocks flatMap (bl ⇒ deepChildValSymbols(bl))
+      case bs: BoxTypeSymbol ⇒ List()
+      case et: ExprType ⇒
+        vs.blocks flatMap (vs ⇒ deepChildValSymbols(vs))
+    }
   }
   val widgetName = Name("_widget")
 }
@@ -146,7 +165,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
     }
     def apply() = {
       val enclosed = for (
-        bl ← deepBlocks(block);
+        bl ← (block :: deepChildBlocks(block));
         t ← bl.threads.drop(1)
       ) yield {
         val method = new RunnableMethodGenerator(bs, t)()
@@ -156,9 +175,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
           method)
       }
       populateFields(bs)
-      val main = block.threads(0)
-      val toSpawn = block.threads.drop(1) filter { _.forkedBy == None } toList
-      val baseMethods = List(cons(b), new MainThreadMethodGenerator(bs, main, toSpawn, secondThreads)())
+      val baseMethods = List(cons(b), new MainThreadMethodGenerator(bs, block)())
       BoxClass(
         bs.tpe.fqName,
         baseMethods ++ fieldDecls,
@@ -195,7 +212,8 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         field(Name("_widget"), vn)
       }
       // valsymbols
-      deepValSymbols(bs.blocks.head) foreach { vs ⇒
+
+      (deepChildValSymbols(bs.blocks.head)) foreach { vs ⇒
         vs.tpe match {
           case tbs: BoxTypeSymbol if (vs != bs.thisVal) ⇒
             val sig = vs.constructor.get.signature
@@ -217,14 +235,13 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       }
       // thread end semaphore
       for (t ← secondThreads) {
-        field(t.semFqName, TreeToClass.semaphoreClassName, init = Some(
-          New(TreeToClass.semaphoreClassName, List(Const(0, primitives.Int)), "(I)V")))
+        field(t.futureFqName, TreeToClass.futureClassName, init = None)
         field(t.name, t.fqName(bs), init = Some(
           New(t.fqName(bs), List(This), "(" + bs.tpe.fqName.descriptor + ")V")))
       }
     }
 
-    lazy val secondThreads = deepBlocks(bs.blocks.head) flatMap { bl ⇒ bl.threads.drop(1) }
+    lazy val secondThreads = (bs.blocks.head :: deepChildBlocks(bs.blocks.head)) flatMap { bl ⇒ bl.threads.drop(1) }
 
     def cons(b: BoxDef) = {
       val bs = b.sym

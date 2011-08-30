@@ -304,7 +304,7 @@ class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolea
 case class ZThread(num: Int, blockSymbol: BlockSymbol) {
   def name = Name(blockSymbol.fqName.str + "_thread" + num)
   def fqName(bs: BoxTypeSymbol) = Name(bs.fqName.str + "#" + name.str)
-  def semFqName = Name("sem_" + name.str)
+  def futureFqName = Name("future_" + name.str)
   var instructions = List[ValSymbol]()
   var forkedBy: Option[ValSymbol] = None
   override def toString = "Thread " + num + " -> " + instructions.map(_.toInstructionsSeq).mkString(", ")
@@ -353,8 +353,8 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
 
   override def toString = "ValSymbol(" + name + ")"
   def toInstructionsSeq = {
-    val result = join.map { t ⇒ "Join(" + t.fqName + ")" }
-    result += "Exec(" + fqName + ")"
+    val result = join.map { t ⇒ "Join(" + t.fqName.str + ")" }
+    result += "Exec(" + fqName.str + ")"
     result ++= fork.map { t ⇒ "Fork(" + t.num + ")" }
     result.mkString(", ")
   }

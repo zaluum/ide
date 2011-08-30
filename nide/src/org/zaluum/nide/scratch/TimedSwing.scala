@@ -17,55 +17,47 @@ import java.awt.event.ActionEvent
 import java.util.concurrent.CopyOnWriteArrayList
 
 object Runner {
-  private var b = Set[TimedSwing]()
-  def mark(t:TimedSwing) {
-    this.synchronized {
-      b += t
-    }
-  }
+  private var toUpdateMap = Map[AnyRef, () ⇒ Unit]()
   def run {
     new Timer(10, new ActionListener {
-       def actionPerformed(e:ActionEvent) {
-         val oldb = Runner.this.synchronized {
-           if (b.isEmpty) return;
-           val oldb = b
-           b = Set[TimedSwing]()
-           oldb
-         }
-         for (t <- oldb) t.updateGUI()
-       }
+      def actionPerformed(e: ActionEvent) {
+        val oldb = Runner.this.synchronized {
+          if (toUpdateMap.isEmpty) return ;
+          val oldb = toUpdateMap
+          toUpdateMap = toUpdateMap.empty
+          oldb
+        }
+        for (runner ← oldb.values) runner()
+      }
     })
   }
-}
-trait TimedSwing {
-  def updateGUI()  
-  def widget : Component
-  def markDirty() {
-    Runner.mark(this)
+  def fastUpdate(source: AnyRef)(r: ⇒ Unit) {
+    val rr = () ⇒ r
+    toUpdateMap += (source -> rr)
   }
 }
-class WidgetWrite extends TimedSwing{
+
+class WidgetWrite {
   val widget = new JLabel
   val ref = new AtomicReference[String]
-  def run(s:String) = {
-    if (ref.getAndSet(s)!=s)
-      markDirty()
-  }
-  def updateGUI() {
-    widget.setText(ref.get)
+  def run(s: String) = {
+    if (ref.getAndSet(s) != s)
+      Runner.fastUpdate(this) {
+        widget.setText(ref.get)
+      }
+
   }
 }
-class WidgetRead extends TimedSwing{
+class WidgetRead {
   val widget = new JSlider
   widget.addChangeListener(new ChangeListener {
     def stateChanged(e: ChangeEvent) {
-    i.set(widget.getValue())
+      i.set(widget.getValue())
     }
   })
   val i = new AtomicInteger
   def run = {
     i.get
   }
-  def updateGUI {}
 }
 

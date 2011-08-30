@@ -53,8 +53,8 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     // 4- Put calculated types to the clump
     for (c ← bl.connections.clumps) storeTypesInConnectionsAndJunctions(c)
   }
-  def errorConnection(str:String , c:ConnectionDef) {
-    error(str,c)
+  def errorConnection(str: String, c: ConnectionDef) {
+    error(str, c)
     bl.connections.markAsBad(c)
   }
   def checkClump(c: Clump) {

@@ -179,16 +179,15 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
   /*
    * expressions with templates
    */
-  def checkTemplateExprType(vs: ValSymbol) = { // FIXME share code with While
+  def checkTemplateExprType(vs: ValSymbol) = {
     val t = vs.tpe.asInstanceOf[TemplateExprType]
     vs.tdecl.template match {
       case Some(template) ⇒
         if (template.blocks.size != t.requiredBlocks)
           error(t.name.classNameWithoutPackage + " must have " + t.requiredBlocks + " blocks", vs.decl) // FIXME tolerate
         else {
-          for (pi ← vs.portInstances; ps ← pi.portSymbol) {
+          for (pi ← vs.portInstances; ps ← pi.portSymbol)
             pi.tpe = ps.tpe
-          }
           t.ports.values foreach { ps ⇒
             val pi = vs.findPortInstance(ps).get
             pi.tpe = primitives.Boolean

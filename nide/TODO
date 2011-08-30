@@ -1,7 +1,6 @@
 Agenda
 
 week 29-4 library week
-	- thread inner classes in jmodel
 	- Swing thread synchronization / refresh rate	
 	- al connectar o desconnectar cables de vegades fa coses rares
 	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
@@ -48,6 +47,7 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
+	- thread inner classes in jmodel
 	- analyze multi thread with costs
 	- notes/ visual only on diagram
 	- visual only boxes

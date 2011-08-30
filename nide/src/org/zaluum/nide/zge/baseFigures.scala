@@ -60,6 +60,8 @@ class RichFigure(container: IFigure) {
   def translateFromViewport(p: EPoint): EPoint = {
     if (container.isInstanceOf[Viewport]) p.getCopy
     else {
+      // FIXME rare bug
+      if (container.getParent == null) println("null parent " + container)
       val ep = container.getParent.translateFromViewport(p)
       container.translateFromParent(ep)
       ep
