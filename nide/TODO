@@ -1,8 +1,6 @@
 Agenda
 
 week 29-4 library week
-	- al connectar o desconnectar cables de vegades fa coses rares
-	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
 	- nested guis as new window
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- write feature list on freemind
@@ -39,6 +37,7 @@ article ideas
 	- Scala
 
 bugs
+	- al connectar o desconnectar cables de vegades fa coses rares
 	- BUG null at org.zaluum.nide.zge.RichFigure.translateFromViewport(baseFigures.scala:63)
  	- test new array dimensions
 	-s'ha d'engegar RCP en unity amb UBUNTU_MENUPROXY=0
@@ -103,6 +102,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
 	- Swing thread synchronization / refresh rate	
 	- fix show label on gui
 	- multi thread code generation

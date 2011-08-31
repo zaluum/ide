@@ -1,7 +1,6 @@
 package org.zaluum.nide.zge
 
 import scala.collection.mutable.Buffer
-
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.Ellipse
@@ -12,16 +11,36 @@ import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.compiler.Type
 import org.zaluum.nide.compiler.Vector2
-
 import draw2dConversions._
+import org.eclipse.swt.graphics.Color
 
 case class LineSelectionSubject(c: ConnectionDef, l: Line) extends SelectionSubject
-class LineItem(val container: ContainerItem) extends Item with RectFeedback {
+
+trait Blinker extends Item {
+  private var blinking = false
+  protected var blinkStatus = false
+  def startBlink() {
+    blink(true);
+    blinking = true
+    import org.zaluum.nide.Utils._
+    val display = container.viewer.display
+      def scheduleNext(): Unit =
+        if (blinking) {
+          blink(!blinkStatus)
+          display.timerExec(200, scheduleNext())
+        } else blink(false)
+    scheduleNext()
+  }
+  def stopBlink() {
+    blinking = false
+  }
+}
+class LineItem(val container: ContainerItem) extends Item with Blinker with RectFeedback {
   var con: Option[ConnectionFigure] = None
   var complete = true
   var l: Line = _
   def helpers = List()
-  def update(con: Option[ConnectionFigure], complete: Boolean, bad:Boolean, l: Line) {
+  def update(con: Option[ConnectionFigure], complete: Boolean, bad: Boolean, l: Line) {
     this.con = con
     this.complete = complete
     this.l = l
@@ -64,7 +83,17 @@ class LineItem(val container: ContainerItem) extends Item with RectFeedback {
     b.contains(x, y)
   }
   def connectionDef = for (cf ← con; cdef ← cf.e.srcCon) yield cdef
-  def blink(c: Boolean) {}
+  protected var blinkColorBefore: Color = null
+  def blink(c: Boolean) {
+    if (blinkColorBefore == null) blinkColorBefore = getForegroundColor
+    if (c) {
+      setForegroundColor(ColorConstants.white)
+    } else {
+      setForegroundColor(blinkColorBefore)
+      blinkColorBefore = null
+    }
+    blinkStatus = c
+  }
   override def paintFigure(g: Graphics) = {
     g.setForegroundColor(getForegroundColor);
     g.setLineStyle(style)
@@ -112,7 +141,7 @@ class ConnectionPainter(container: ContainerItem) {
   def paintCreatingRoute(edge: Edge) {
     paintRoute(edge, false, false, false)
   }
-  def paintRoute(edge: Edge, feedback: Boolean, complete: Boolean, bad:Boolean, con: Option[ConnectionFigure] = None) {
+  def paintRoute(edge: Edge, feedback: Boolean, complete: Boolean, bad: Boolean, con: Option[ConnectionFigure] = None) {
     clear()
     edge.lines foreach { l ⇒
       val nl = new LineItem(container)

@@ -146,4 +146,19 @@ abstract class Tool(viewer: Viewer) {
     case c: ClipboardState ⇒ c.paste
     case _                 ⇒
   }
+  trait LineBlinker {
+    private var blinkingLine: Option[LineItem] = None
+
+    def unblinkLine() = {
+      blinkingLine.foreach { _.stopBlink() }
+      blinkingLine = None
+    }
+    def blinkLine(l: LineItem) = {
+      if (blinkingLine != Some(l)) {
+        unblinkLine()
+        blinkingLine = Some(l)
+        l.startBlink()
+      }
+    }
+  }
 }

@@ -33,8 +33,8 @@ import org.zaluum.nide.zge.dialogs.ValDefPopup
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
   def zproject = viewer.controller.zproject
-  val connectionLineDistance = 2
-  object selecting extends Selecting with DeleteState with ClipboardState with DropState {
+  val connectionLineDistance = 3
+  object selecting extends Selecting with DeleteState with ClipboardState with DropState with LineBlinker {
     var port: Option[PortFigure] = None
     override def doubleClickPF =
       super.doubleClickPF.orElse {
@@ -42,6 +42,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
 
     def buttonUp {
+      unblinkLine()
       if (filterDouble) { filterDouble = false; return }
         def selectItem(i: Item) {
           viewer.selection.updateSelection(i.selectionSubject.toSet, shift)
@@ -93,14 +94,19 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       portsTrack.update()
       (portsTrack.current, itemUnderMouse) match {
         case (_, Some(l: OpenPortDeclFigure)) ⇒
+          unblinkLine();
           viewer.setCursor(Cursors.ARROW)
         case (_, Some(l: LineItem)) if (l.l.distance(currentMouseLocation) > connectionLineDistance) ⇒
+          blinkLine(l);
           viewer.setCursor(Cursors.UPARROW)
         case (None, Some(item)) ⇒
+          unblinkLine();
           viewer.setCursor(Cursors.ARROW)
         case (Some(_), _) ⇒
+          unblinkLine();
           viewer.setCursor(Cursors.UPARROW)
         case (None, None) ⇒
+          unblinkLine();
           viewer.setCursor(Cursors.CROSS)
           portsTrack.current match {
             case Some(_) ⇒
@@ -110,6 +116,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def drag {
       portsTrack.hideTip()
+      unblinkLine()
       (handleTrack.current, beingSelected) match {
         case (Some(h), _) ⇒ // resize
           resizing.enter(initDrag, initContainer, h)

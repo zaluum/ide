@@ -22,7 +22,7 @@ trait ConnectionsTool {
   this: TreeTool ⇒
 
   // CONNECT
-  trait Connecting extends ToolState {
+  trait Connecting extends ToolState with LineBlinker {
     self: SingleContainer ⇒
     var g: ConnectionGraph = null
     var edge: Edge = null
@@ -126,7 +126,12 @@ trait ConnectionsTool {
       if (initContainer.feedbackLayer.getChildren.contains(f))
         initContainer.feedbackLayer.remove(f)
     }
+    override def menu {
+      exit()
+    }
     def exit() {
+      dst foreach { _.hover = false }
+      unblinkLine()
       painter.clear
       removeFeed(hFig)
       removeFeed(vFig)
@@ -152,11 +157,15 @@ trait ConnectionsTool {
           case _                 ⇒ None
         }
       }
+      dst match {
+        case Some(l: LineItem) ⇒ blinkLine(l)
+        case _                 ⇒ unblinkLine()
+      }
       val now = snapMouse(dst, currentMouseLocation)
       viewer.setStatusMessage(currentMouseLocation.toString + " " + absMouseLocation.toString)
       dst foreach { _.hover = true }
       if (dst.isDefined)
-        viewer.setCursor(Cursors.ARROW) else viewer.setCursor(Cursors.CROSS)
+        viewer.setCursor(Cursors.UPARROW) else viewer.setCursor(Cursors.CROSS)
       val v = now - last
       val d = abs(v.x) + abs(v.y)
       if (d < 8) center = true
