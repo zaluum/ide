@@ -25,6 +25,7 @@ public class Zaluum {
 
 	private static Map<Object, Runnable> toUpdateMap = new HashMap<Object, Runnable>();
 	public static Object sync = new Object();
+	public static boolean running = false;
 	public static Timer timer = new Timer(20, new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
 			final List<Runnable> oldb;
@@ -39,8 +40,10 @@ public class Zaluum {
 				r.run();
 			}
 			synchronized (sync) {
-				if (toUpdateMap.isEmpty())
+				if (toUpdateMap.isEmpty() && running) {
 					timer.stop();
+					running = false;
+				}
 			}
 		}
 	});
@@ -48,8 +51,11 @@ public class Zaluum {
 	public static void fastUpdate(Object uniqueSource, Runnable runnable) {
 		synchronized (sync) {
 			toUpdateMap.put(uniqueSource, runnable);
-			timer.start();
+			if (!running) {
+				timer.start();
+				running = true;
+			}
 		}
-	}
 
+	}
 }

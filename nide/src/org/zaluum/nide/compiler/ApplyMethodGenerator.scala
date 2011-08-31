@@ -6,31 +6,27 @@ import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 import java.util.concurrent.CyclicBarrier
 import scala.collection.mutable.Buffer
 
-class MainThreadMethodGenerator(bs: BoxTypeSymbol, block: BlockSymbol) extends MethodGenerator(bs, block.threads(0)) {
-
+class MainThreadMethodGenerator(bs: BoxTypeSymbol) extends MethodGenerator(bs) {
+  val block = bs.block
   def apply(): Method = {
     val ins = Buffer[Tree]()
     // create arg locals
     bs.argsInOrder map { ps ⇒ createLocal(bs.thisVal.findPortInstance(ps).get) }
     // create val locals
-    for (pi ← bs.thisVal.portInstances; if (pi.internalStorage == StorageLocal)) {
+    for (pi ← bs.thisVal.portInstances; if (pi.internalStorage == StorageLocal))
       createLocal(pi)
-    }
     //create thread locals
-    createThreadLocals()
-    val localsDecl = localsMap map {
-      case (pi, i) ⇒
-        (pi.fqName.str, pi.tpe.asInstanceOf[JavaType].descriptor, i)
-    } toList;
-    // assign inputs
+    createThreadLocals(block.mainPath)
+    // assign args to fields if needed
     for (arg ← bs.argsInOrder) {
       val pi = bs.thisVal.findPortInstance(arg).get
-      ins += Assign(toRef(pi), LocalRef(localsMap(pi), pi.tpe.fqName))
+      if (pi.internalStorage != StorageLocal)
+        ins += Assign(toRef(pi), LocalRef(localsMap(pi), pi.tpe.fqName))
     }
     // run block
     ins ++= runBlock(block)
     // assign outputs
-    ins ++= assignFlowInConnections(bs.thisVal, bs.blocks.head) // assign outputs
+    ins ++= assignFlowInConnections(bs.thisVal, block)
     bs.returnPort match {
       case Some(r) ⇒
         val pi = bs.thisVal.findPortInstance(r).get
@@ -42,42 +38,40 @@ class MainThreadMethodGenerator(bs: BoxTypeSymbol, block: BlockSymbol) extends M
     Method(bs.methodSelector, bs.methodSignature, ins.toList, localsDecl, Some(annotation))
   }
 }
-class RunnableMethodGenerator(bs: BoxTypeSymbol, thread: ZThread) extends MethodGenerator(bs, thread) {
+class RunnableMethodGenerator(bs: BoxTypeSymbol, startPath: ExecutionPath) extends MethodGenerator(bs) {
   def apply(): Method = {
     val ins = Buffer[Tree]()
-    createThreadLocals();
-    val localsDecl = localsMap map {
-      case (pi, i) ⇒
-        val name = if (pi.valSymbol == bs.thisVal) pi.name.str
-        else pi.valSymbol.fqName.str + "_" + pi.name.str
-        (name, pi.tpe.asInstanceOf[JavaType].descriptor, i)
-    } toList;
-    ins ++= runThread(thread)
+    createThreadLocals(startPath);
+    ins ++= runExecutionPath(startPath)
     ins += Return
     Method(Name("run"), "()V", ins.toList, localsDecl, None)
   }
   override def thisRef = {
-    Select(This, FieldRef(Name(TreeToClass.enclosingClassFieldName), bs.tpe.fqName.descriptor, thread.fqName(bs)))
+    Select(This, FieldRef(Name(TreeToClass.enclosingClassFieldName), bs.tpe.fqName.descriptor, startPath.fqName(bs)))
   }
 }
-abstract class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends GeneratorHelpers {
+abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
   var localsMap = Map[PortInstance, Int]()
   var locals = 1; // 0 for "this"
+  def localsDecl = {
+    localsMap map {
+      case (pi, i) ⇒
+        (pi.fqName.str, pi.tpe.asInstanceOf[JavaType].descriptor, i)
+    } toList;
+  }
   def createLocal(pi: PortInstance) {
     if (!localsMap.contains(pi)) {
       localsMap += (pi -> locals)
       locals = locals + pi.tpe.javaSize
     }
   }
-  def createThreadLocals() {
+  def createThreadLocals(startPath: ExecutionPath) {
     for (
-      t ← (thread :: deepChildThreadZeros(thread));
-      vs ← t.instructions;
+      ep ← (startPath :: deepChildMainPaths(startPath));
+      vs ← ep.instructions;
       pi ← vs.portInstances;
       if (pi.internalStorage == StorageLocal)
-    ) {
-      createLocal(pi)
-    }
+    ) createLocal(pi)
   }
   def execConnection(c: (PortInstance, Set[PortInstance])) = {
     val (out, ins) = c
@@ -97,17 +91,18 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends G
       Select(thisRef,
         FieldRef(pi.joinfqName, pi.tpe.name.descriptor, bs.fqName))
   }
-  def runThread(thread: ZThread) = {
+  def runExecutionPath(execPath: ExecutionPath) = {
     val ins = Buffer[Tree]()
-    thread.instructions foreach { vs ⇒
-      ins ++= runOne(vs, thread)
+    execPath.instructions foreach { vs ⇒
+      ins ++= runOne(vs, execPath)
       for {
-        (from, to) ← thread.blockSymbol.connections.flow; // order
+        (from, to) ← execPath.blockSymbol.connections.flow;
         if from.valSymbol == vs;
         a ← execConnection((from, to))
       } ins += a
     }
-    thread.instructions.flatMap { _.fork } foreach { forked ⇒
+    // can I join the forked threads?
+    execPath.instructions.flatMap { _.fork } foreach { forked ⇒
       assert(forked.num != 0)
       ins ++= getFuture(forked)
     }
@@ -115,12 +110,11 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends G
   }
   def runBlock(block: BlockSymbol): List[Tree] = {
     val ins = Buffer[Tree]()
-    val thread0 = block.threads(0)
-    val spawnThreads = block.threads.drop(1).filter(_.forkedBy.isEmpty)
+    val spawnThreads = block.secondaryPaths.filter(_.forkedBy.isEmpty)
     for (spawn ← spawnThreads) {
       ins += executeThread(spawn)
     }
-    ins ++= runThread(thread0)
+    ins ++= runExecutionPath(block.mainPath)
     for (spawn ← spawnThreads) {
       ins ++= getFuture(spawn)
     }
@@ -135,14 +129,14 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends G
     }
   }
 
-  def runOne(vs: ValSymbol, thread: ZThread): List[Tree] = {
+  def runOne(vs: ValSymbol, execPath: ExecutionPath): List[Tree] = {
     val ins = Buffer[Tree]()
     // joins
     vs.join.toList foreach { toJoin ⇒
       ins += acquireSem(toJoin)
     }
     // propagate inputs
-    ins ++= assignFlowInConnections(vs, thread.blockSymbol)
+    ins ++= assignFlowInConnections(vs, execPath.blockSymbol)
     import primitives._
       def invokeHelper(vs: ValSymbol, m: MethodBinding, invoke: Tree): Tree = // TODO find a better place
         if (m.returnType != null && m.returnType != TypeBinding.VOID) {
@@ -186,7 +180,7 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends G
           def load = Assign(toRef(oPort), arrayRef)
           def store = Assign(arrayRef, toRef(aPort))
           def thisOut = Assign(toRef(thisOutPort), toRef(thisPort))
-        thread.blockSymbol.connections.connectedFrom.get(aPort) match {
+        execPath.blockSymbol.connections.connectedFrom.get(aPort) match {
           case Some(_) ⇒ // do store
             ins += store
             ins += Assign(toRef(oPort), toRef(aPort))
@@ -251,7 +245,7 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends G
           def store = Assign(fieldRef, toRef(a))
           def load = Assign(toRef(o), fieldRef)
           def storeThisOut = Assign(toRef(thisOut), toRef(obj))
-        thread.blockSymbol.connections.connectedFrom.get(a) match {
+        execPath.blockSymbol.connections.connectedFrom.get(a) match {
           case Some(_) ⇒ // do store
             ins += store
             ins += Assign(toRef(o), toRef(a))
@@ -269,7 +263,7 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends G
             Name(f.declaringClass.constantPoolName.mkString))
           def store = Assign(fieldRef, toRef(a))
           def load = Assign(toRef(o), fieldRef)
-        thread.blockSymbol.connections.connectedFrom.get(a) match {
+        execPath.blockSymbol.connections.connectedFrom.get(a) match {
           case Some(_) ⇒
             ins += store
             ins += Assign(toRef(o), toRef(a))
@@ -335,15 +329,15 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol, thread: ZThread) extends G
     }
     ins.toList
   }
-  def executeThread(thread: ZThread) = {
-    Assign(futureRef(thread),
+  def executeThread(startPath: ExecutionPath) = {
+    Assign(futureRef(startPath),
       InvokeStatic("submit",
-        List(threadRef(thread)),
+        List(threadRef(startPath)),
         Name(classOf[org.zaluum.basic.Zaluum].getName),
         "(Ljava/lang/Runnable;)Ljava/util/concurrent/Future;"))
   }
-  def getFuture(thread: ZThread) = List(
-    Invoke(futureRef(thread), "get", List(), TreeToClass.futureClassName, "()Ljava/lang/Object;", true),
+  def getFuture(startPath: ExecutionPath) = List(
+    Invoke(futureRef(startPath), "get", List(), TreeToClass.futureClassName, "()Ljava/lang/Object;", true),
     Pop)
   def releaseSem(vs: ValSymbol) =
     Invoke(

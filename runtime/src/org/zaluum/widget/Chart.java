@@ -5,8 +5,6 @@ import info.monitorenter.gui.chart.ITrace2D;
 import info.monitorenter.gui.chart.traces.Trace2DLtd;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
@@ -17,15 +15,17 @@ public class Chart {
 	private ITrace2D trace;
 	public Chart2D _widget;
 	private long i = 0;
-	private final List<Double> buffer = new ArrayList<Double>(1000);
+	private final CircularBuffer buffer;
+	private final int maxlen = 2000;
 
 	public Chart() {
 		_widget = new Chart2D();
-		trace = new Trace2DLtd(2000);
+		trace = new Trace2DLtd(maxlen);
+		buffer = new CircularBuffer(maxlen);
 		trace.setColor(Color.BLUE);
 		_widget.addTrace(trace);
 		_widget.getAxisX().setPaintScale(true);
-		_widget.getAxisX().setRangePolicy(new MyRangePolicy(2000));
+		_widget.getAxisX().setRangePolicy(new MyRangePolicy(maxlen));
 		_widget.setPaintLabels(false);
 	}
 
@@ -33,15 +33,14 @@ public class Chart {
 		@Override
 		public void run() {
 			final double[] copy;
+			final long savedi;
 			synchronized (Chart.this) {
-				copy = new double[buffer.size()];
-				for (int i = 0; i < buffer.size(); i++) {
-					copy[i] = buffer.get(i);
-				}
+				copy = buffer.orderedCopy();
+				savedi = i - copy.length;
 				buffer.clear();
 			}
-			for (Double d : copy)
-				trace.addPoint(i++, d);
+			for (int j = 0; j < copy.length; j++)
+				trace.addPoint(savedi + j, copy[j]);
 		}
 	};
 
@@ -49,6 +48,7 @@ public class Chart {
 	public void apply(double data) {
 		synchronized (this) {
 			buffer.add(data);
+			i++;
 		}
 		Zaluum.fastUpdate(_widget, runnable);
 	}

@@ -110,7 +110,9 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   var vals = Map[Name, ValSymbol]()
   var executionOrder = List[ValSymbol]()
   val dag = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
-  val threads = Buffer[ZThread]()
+  val execPaths = Buffer[ExecutionPath]()
+  def secondaryPaths = execPaths.drop(1)
+  def mainPath = execPaths(0)
   private val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
 
   override def tdecl: Block = decl.asInstanceOf[Block]
@@ -301,7 +303,7 @@ class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolea
   }
   override def toString() = "PortSide(" + pi.toString + ", in=" + inPort + ", fromInside=" + fromInside + ")"
 }
-case class ZThread(num: Int, blockSymbol: BlockSymbol) {
+case class ExecutionPath(num: Int, blockSymbol: BlockSymbol) {
   def name = Name(blockSymbol.fqName.str + "_thread" + num)
   def fqName(bs: BoxTypeSymbol) = Name(bs.fqName.str + "#" + name.str)
   def futureFqName = Name("future_" + name.str)
@@ -314,9 +316,9 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   def templateTree = tdecl.template.get
   def lookupParam(name: Name): Option[ParamSymbol] = sys.error("")
   // var refactor
-  var thread: ZThread = null
+  var execPath: ExecutionPath = null
   var init = false
-  val fork = Buffer[ZThread]()
+  val fork = Buffer[ExecutionPath]()
   val join = Buffer[ValSymbol]()
   var isJoinPoint = false
   var info: AnyRef = null

@@ -7,42 +7,42 @@ object StorageJoinField extends StorageType
 
 class AnalyzerParallelism(bl: BlockSymbol, a: Analyzer) {
   import scala.collection.JavaConversions._
-  val singleThreaded = false
+  val singleThreaded = true
   def run() {
     val dag = bl.dag
-    val threads = bl.threads
+    val paths = bl.execPaths
 
     if (singleThreaded) {
-      val thread = new ZThread(0, bl)
-      threads += thread
+      val execPath = new ExecutionPath(0, bl)
+      paths += execPath
       for (v ← bl.executionOrder) {
-        v.thread = thread
-        thread.instructions :+= v
+        v.execPath = execPath
+        execPath.instructions :+= v
       }
     } else {
-        def visitS(v: ValSymbol, thread: ZThread) {
-          if (v.thread == null) {
-            v.thread = thread
-            thread.instructions :+= v
-            dag.outgoingEdgesOf(v).map(dag.getEdgeTarget).find(_.thread == null) foreach { next ⇒
-              visitS(next, thread)
+        def visitS(v: ValSymbol, execPath: ExecutionPath) {
+          if (v.execPath == null) {
+            v.execPath = execPath
+            execPath.instructions :+= v
+            dag.outgoingEdgesOf(v).map(dag.getEdgeTarget).find(_.execPath == null) foreach { next ⇒
+              visitS(next, execPath)
             }
           }
         }
       for (v ← bl.executionOrder) {
-        if (v.thread == null) {
-          val thread = new ZThread(threads.size, bl)
-          threads += thread
+        if (v.execPath == null) {
+          val execPath = new ExecutionPath(paths.size, bl)
+          paths += execPath
           v.init = true
-          visitS(v, thread)
+          visitS(v, execPath)
         }
       }
-      if (threads.size == 0) threads += new ZThread(0, bl)
+      if (paths.size == 0) paths += new ExecutionPath(0, bl)
       for (from ← dag.vertexSet(); i ← dag.outgoingEdgesOf(from); val to = dag.getEdgeTarget(i)) {
-        if (from.thread != to.thread) {
+        if (from.execPath != to.execPath) {
           if (to.init) {
-            from.fork += to.thread
-            to.thread.forkedBy = Some(from)
+            from.fork += to.execPath
+            to.execPath.forkedBy = Some(from)
           } else {
             to.join += from
             from.isJoinPoint = true
@@ -53,7 +53,7 @@ class AnalyzerParallelism(bl: BlockSymbol, a: Analyzer) {
 
     // mark thisVal storage
     val thisVal = bl.template.thisVal
-    if (thisVal.thread == null) thisVal.thread = threads(0)
+    if (thisVal.execPath == null) thisVal.execPath = paths(0)
 
     val mainVal = a.toCompile.sym.thisVal
     for (pi ← thisVal.portInstances) {
@@ -62,18 +62,15 @@ class AnalyzerParallelism(bl: BlockSymbol, a: Analyzer) {
           pi.internalStorage = StorageValField
         } else {
           if (pi.dir == In || pi.dir == Shift) {
-            val connectedVals =
-              bl.connections.outgoingConnections(pi)
-                .map { _.valSymbol }
+            val connectedVals = bl.connections.outgoingConnections(pi).map { _.valSymbol }
             val internalConnectedVals = connectedVals.filter { _ != thisVal }; // filter auto connections |--->|
-            if (internalConnectedVals.exists(_.thread.num != 0)) { // sure it's In or Shift 
+            if (internalConnectedVals.exists(_.execPath.num != 0)) {
               pi.internalStorage = StorageJoinField
             }
           }
           if (pi.dir == Out || pi.dir == Shift) {
-            val connectedFrom = bl.connections.connectedFrom.get(pi).map { _._1.valSymbol }
-            connectedFrom match {
-              case Some(from) if (from != thisVal) && from.thread.num != 0 ⇒
+            bl.connections.connectedFrom.get(pi).map { _._1.valSymbol } match {
+              case Some(from) if from != thisVal && from.execPath.num != 0 ⇒
                 pi.internalStorage = StorageJoinField
               case _ ⇒
             }
@@ -89,14 +86,15 @@ class AnalyzerParallelism(bl: BlockSymbol, a: Analyzer) {
         if (isField) {
           pi.internalStorage == StorageValField
         } else {
-          val connectedToThreads =
-            bl.connections.outgoingConnections(pi).map { _.valSymbol.thread }
-          val connectedFromThreads =
-            bl.connections.connectedFrom.get(pi).map { _._1.valSymbol.thread }
-          val connectedThreads = connectedToThreads ++ connectedFromThreads
-          if (connectedThreads.exists(_ != vs.thread)) {
+          val connectedToPaths =
+            bl.connections.outgoingConnections(pi).map { _.valSymbol.execPath }
+          val connectedFromPaths =
+            bl.connections.connectedFrom.get(pi).map { _._1.valSymbol.execPath }
+          val connectedPaths = connectedToPaths ++ connectedFromPaths
+          if (connectedPaths.exists { to ⇒
+            to != vs.execPath && !(vs.execPath.num == 0 && to == thisVal.execPath)
+          })
             pi.internalStorage = StorageJoinField
-          }
         }
       }
     }
