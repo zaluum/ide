@@ -61,7 +61,7 @@ class PortDeclPopup(
 }
 
 class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends Popup(viewer.shell,
-  "Box " + fig.valDef.name.str + " thread " + fig.valSym.execPath.num + fig.valSym.toInstructionsSeq) {
+  "Box " + fig.valDef.name.str) {
   def valDef = fig.valDef
   def v = valDef.sym
   def populate(content: Composite) {

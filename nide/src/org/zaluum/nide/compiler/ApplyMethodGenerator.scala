@@ -82,14 +82,14 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
   }
   def toRef(pi: PortInstance): Ref = pi.internalStorage match {
     case StorageLocal ⇒
-      LocalRef(localsMap(pi), pi.tpe.name)
+      LocalRef(localsMap(pi), pi.tpe.fqName)
     case StorageValField ⇒
       Select(
         valRef(pi.valSymbol),
-        FieldRef(pi.name, pi.tpe.name.descriptor, pi.valSymbol.tpe.fqName))
+        FieldRef(pi.name, pi.tpe.fqName.descriptor, pi.valSymbol.tpe.fqName))
     case StorageJoinField ⇒
       Select(thisRef,
-        FieldRef(pi.joinfqName, pi.tpe.name.descriptor, bs.fqName))
+        FieldRef(pi.joinfqName, pi.tpe.fqName.descriptor, bs.fqName))
   }
   def runExecutionPath(execPath: ExecutionPath) = {
     val ins = Buffer[Tree]()
@@ -230,6 +230,9 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
             fromClass = Name(m.declaringClass.constantPoolName.mkString),
             descriptor = m.signature.mkString)
         ins += invokeHelper(vs, m, invoke)
+      case ThisRefExprType ⇒
+        val port = ThisRefExprType.thisPort(vs)
+        ins += Assign(toRef(port), thisRef)
       case FieldExprType ⇒
         val f = vs.info.asInstanceOf[FieldBinding]
         val a = FieldExprType.aPort(vs)
@@ -369,7 +372,7 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
       Invoke(t,
         unboxedTpe.boxMethod,
         List(),
-        c.name,
+        c.fqName,
         "()" + unboxedTpe.descriptor,
         false))
   }

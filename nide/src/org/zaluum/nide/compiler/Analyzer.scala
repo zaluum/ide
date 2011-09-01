@@ -1,14 +1,13 @@
 package org.zaluum.nide.compiler
 
 import scala.collection.mutable.Buffer
-
 import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumTypeDeclaration
-
 import javax.swing.JPanel
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 
 class Reporter {
   case class Error(msg: String, mark: Option[Int])
@@ -205,7 +204,7 @@ trait ReporterAdapter {
   def reporter: Reporter
   def error(str: String, tree: Tree) = reporter.report(str, Some(location(tree)))
 }
-class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
+class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: ReferenceBinding) {
   def globLocation(t: Tree) = t.line
 
   class Namer extends Traverser(null) with ReporterAdapter {
@@ -223,6 +222,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef) {
         case b: BoxDef ⇒
           val cl = Some(Name(classOf[JPanel].getName))
           val sym = new BoxTypeSymbol(b.name, b.pkg, b.image, cl)
+          sym.binding = binding
           sym.hasApply = true
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
           sym.constructors = List(new Constructor(sym, List()))

@@ -65,9 +65,12 @@ class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int) extends JavaT
   }
   override def toString = "ArrayType(" + of.toString + ", " + dim + ")"
 }
-class ClassJavaType(val owner: Symbol, val fqName: Name) extends JavaType {
+trait ClassJavaType extends JavaType {
   type B = ReferenceBinding
-  def descriptor = "L" + name.internal + ";"
+  def descriptor = "L" + fqName.internal + ";"
+}
+class SimpleClassJavaType(val owner: Symbol, val fqName: Name, bind: ReferenceBinding) extends ClassJavaType {
+  binding = bind
   def name = fqName
 }
 case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bl: BlockSymbol) {
@@ -195,9 +198,8 @@ class BoxTypeSymbol(
     val pkg: Name, // pkgdecl
     val image: Option[String],
     var visualClass: Option[Name],
-    val abstractCl: Boolean = false) extends TemplateSymbol with BoxType with Namer {
+    val abstractCl: Boolean = false) extends ClassJavaType with TemplateSymbol with BoxType with Namer {
 
-  type B = ReferenceBinding
   var javaScope: ZaluumClassScope = null
   var scope: Scope = null
   val owner = null

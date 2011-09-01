@@ -71,6 +71,12 @@ sealed abstract class ThisExprType(val matchingClass: Class[_]) extends Signatur
   def thisOutPort(vs: ValSymbol) = vs.findPortInstance(thizOut).get
 
 }
+object ThisRefExprType extends ExprType {
+  val matchingClass = classOf[org.zaluum.expr.`object`.This]
+  val thiz = new PortSymbol(this, Name("this"), Out)
+  ports += (thiz.name -> thiz)
+  def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
+}
 trait TypeParamExprType extends ExprType {
   val typeName = Name("type")
   val typeSymbol = new ParamSymbol(null, typeName)
@@ -142,6 +148,7 @@ object DivExprType extends MathExprType(classOf[org.zaluum.expr.arithmetic.Div])
 object RemExprType extends MathExprType(classOf[org.zaluum.expr.arithmetic.Rem])
 object Expressions {
   val all = List(
+    ThisRefExprType,
     CastToExprType,
     ArrayExprType,
     NewArrayExprType,

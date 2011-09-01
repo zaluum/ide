@@ -172,6 +172,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         case LiteralExprType     ⇒ exprChecker.checkLiteralExprType(vs)
         case e: UnaryExprType    ⇒ exprChecker.checkUnaryExprType(vs)
         case t: ThisExprType     ⇒ objectChecker.checkThisExprType(vs)
+        case ThisRefExprType     ⇒ objectChecker.checkThisRefExprType(vs)
         case t: StaticExprType   ⇒ objectChecker.checkStaticExprType(vs)
         case t: TemplateExprType ⇒ objectChecker.checkTemplateExprType(vs)
       }

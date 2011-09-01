@@ -20,6 +20,7 @@ import org.eclipse.jdt.internal.compiler.lookup.UnresolvedReferenceBinding
 import org.zaluum.nide.compiler.ArrayType
 import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.ClassJavaType
+import org.zaluum.nide.compiler.SimpleClassJavaType
 import org.zaluum.nide.compiler.Constructor
 import org.zaluum.nide.compiler.In
 import org.zaluum.nide.compiler.JavaType
@@ -45,7 +46,6 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
     new ZaluumClassScope(parent, typeDecl)
   }
   def ztd = referenceContext.asInstanceOf[ZaluumTypeDeclaration]
-  val cache = Map[Name, BoxTypeSymbol]()
   private val cacheJava = Map[TypeBinding, ClassJavaType]()
   def name = Name("root")
   def owner = null
@@ -87,11 +87,7 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
       case r: ReferenceBinding ⇒
         val tpe = environment.convertToRawType(r, false).asInstanceOf[ReferenceBinding]
         if (tpe != null) {
-          cacheJava.getOrElseUpdate(tpe, {
-            val jtpe = new ClassJavaType(this, Name(aToString(tpe.compoundName)))
-            jtpe.binding = tpe
-            jtpe
-          })
+          cacheJava.getOrElseUpdate(tpe, create(tpe))
         } else NoSymbol
       case b: BaseTypeBinding ⇒
         b.simpleName.mkString match {
@@ -111,34 +107,40 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
         t
     }
   }
-  def lookupBoxType(name: Name): Option[BoxTypeSymbol] = {
-    cache.get(name).orElse {
-      val compoundName = stringToA(name.str)
-      getType(compoundName, compoundName.length) match {
-        case r: ReferenceBinding ⇒ generate(r)
-        case a                   ⇒ None
-      }
+  def lookupBoxType(name: Name): Option[BoxTypeSymbol] =
+    getJavaType(name) match {
+      case Some(bs: BoxTypeSymbol) ⇒ Some(bs)
+      case _                       ⇒ None
     }
+
+  protected def create(r: ReferenceBinding) = createBoxType(r).getOrElse {
+    new SimpleClassJavaType(this, Name(aToString(r.compoundName)), r)
   }
-  protected def generate(r: ReferenceBinding) = {
-    val srcName = Name(r.compoundName.last.mkString)
-    val pkgName = Name(r.qualifiedPackageName.mkString)
-    val bs = new BoxTypeSymbol(
-      srcName, pkgName,
-      None, None, r.isAbstract)
-    bs.scope = this
-    val engine = ZaluumCompletionEngineScala.engineFor(this)
-    val allMethods = ZaluumCompletionEngineScala.allMethods(engine, this, r, static = false)
-    val allFields = ZaluumCompletionEngineScala.allFields(engine, this, r, static = false)
-    val allConstructors = ZaluumCompletionEngineScala.allConstructors(engine, this, r)
-    for (m ← allConstructors) processMethod(bs, m)
-    for (m ← allMethods) processMethod(bs, m)
-    for (f ← allFields; if f.isPublic && !f.isStatic) processField(bs, f)
-    if (bs.constructors.isEmpty)
-      bs.constructors = List(new Constructor(bs, List()))
-    bs.binding = r
-    cache += (name -> bs)
-    Some(bs)
+
+  protected def createBoxType(r: ReferenceBinding): Option[BoxTypeSymbol] = {
+    val annotation = r.getAnnotations.find { a ⇒
+      aToString(a.getAnnotationType.compoundName) == classOf[org.zaluum.annotation.Box].getName
+    }
+    annotation map { _ ⇒
+      val srcName = Name(r.compoundName.last.mkString)
+      val pkgName = Name(r.qualifiedPackageName.mkString)
+      val bs = new BoxTypeSymbol(
+        srcName, pkgName,
+        None, None, r.isAbstract)
+
+      bs.scope = this
+      val engine = ZaluumCompletionEngineScala.engineFor(this)
+      val allMethods = ZaluumCompletionEngineScala.allMethods(engine, this, r, static = false)
+      val allFields = ZaluumCompletionEngineScala.allFields(engine, this, r, static = false)
+      val allConstructors = ZaluumCompletionEngineScala.allConstructors(engine, this, r)
+      for (m ← allConstructors) processMethod(bs, m)
+      for (m ← allMethods) processMethod(bs, m)
+      for (f ← allFields; if f.isPublic && !f.isStatic) processField(bs, f)
+      if (bs.constructors.isEmpty)
+        bs.constructors = List(new Constructor(bs, List()))
+      bs.binding = r
+      bs
+    }
   }
   private def processMethod(bs: BoxTypeSymbol, m: MethodBinding) {
     val annotation = m.getAnnotations.find { a ⇒

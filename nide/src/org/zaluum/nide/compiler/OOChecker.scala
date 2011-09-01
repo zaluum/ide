@@ -102,7 +102,9 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case _ ⇒ error("Static field not specified", vs.decl)
     }
   }
-
+  def checkThisRefExprType(vs: ValSymbol) {
+    ThisRefExprType.thisPort(vs).tpe = c.analyzer.toCompile.sym
+  }
   /*
      * this
      */

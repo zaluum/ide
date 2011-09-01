@@ -145,7 +145,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       bs.fieldReturns foreach { ps ⇒
         assert(ps.dir == Out && ps.isField)
         val outName = Name(classOf[org.zaluum.annotation.Out].getName)
-        field(ps.name, ps.tpe.name, None, annotation = Some(outName))
+        field(ps.name, ps.tpe.fqName, None, annotation = Some(outName))
       }
       // internals 
       //widget 

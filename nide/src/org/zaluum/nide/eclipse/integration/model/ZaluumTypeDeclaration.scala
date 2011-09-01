@@ -29,7 +29,8 @@ class ZaluumTypeDeclaration(compilationResult: CompilationResult, val b: BoxDef)
         createProblem(str, mark.getOrElse(-1))
       }
     }
-    a = new Analyzer(reporter, b)
+
+    a = new Analyzer(reporter, b, this.binding)
     a.runNamer()
     try {
       val scope = this.scope.asInstanceOf[ZaluumClassScope]
