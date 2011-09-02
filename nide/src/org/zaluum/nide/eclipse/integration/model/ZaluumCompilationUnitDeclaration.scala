@@ -116,6 +116,7 @@ class ZaluumCompilationUnitDeclaration(
         typeDeclaration.annotations = Array(annotation);
 
     }
+    typeDeclaration.superclass = createTypeReference(Name("javax.swing.JPanel"), b)
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
     typeDeclaration.fields = createFieldDeclarations(b)
@@ -191,19 +192,6 @@ class ZaluumCompilationUnitDeclaration(
       val cl = classOf[org.zaluum.annotation.Out].getName
       val annotation = new MarkerAnnotation(createTypeReference(Name(cl), p), start(p))
       f.annotations = Array(annotation)
-      res += f
-    }
-    //widget
-    {
-      val f = new FieldDeclaration("_widget".toCharArray, 0, 1) // really ugly
-      f.modifiersSourceStart = 0
-      f.declarationEnd = 1
-      f.endPart1Position = 1
-      f.endPart2Position = 1
-      f.declarationSourceStart = 0
-      f.declarationSourceEnd = 1
-      f.modifiers = Opcodes.ACC_PUBLIC
-      f.`type` = createTypeReference(Name(classOf[JPanel].getName), b)
       res += f
     }
     res.toArray

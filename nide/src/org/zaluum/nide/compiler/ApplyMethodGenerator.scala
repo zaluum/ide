@@ -377,7 +377,7 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
         false))
   }
 
-  def cast(from: Type, to: Type, t: Tree): Tree = {
+  def cast(from: JavaType, to: JavaType, t: Tree): Tree = {
     (from, to) match {
       case (from: PrimitiveJavaType, to: ClassJavaType) ⇒
         box(from, t)

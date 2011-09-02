@@ -30,12 +30,10 @@ class ZaluumTypeDeclaration(compilationResult: CompilationResult, val b: BoxDef)
       }
     }
 
-    a = new Analyzer(reporter, b, this.binding)
+    a = new Analyzer(reporter, b, this.binding, zaluumScope)
     a.runNamer()
     try {
-      val scope = this.scope.asInstanceOf[ZaluumClassScope]
-      b.sym.javaScope = scope //  a bit ugly...
-      a.runResolve(this, zaluumScope)
+      a.runResolve(this)
       a.runCheck()
       checkZaluumLibraryPresent()
     } catch { case e ⇒ e.printStackTrace }

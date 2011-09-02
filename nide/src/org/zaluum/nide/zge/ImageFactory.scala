@@ -20,7 +20,7 @@ import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Out
 import org.zaluum.nide.compiler.PortDir
 import org.zaluum.nide.compiler.Shift
-import org.zaluum.nide.compiler.Type
+import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.icons.Icons
 import org.zaluum.nide.Activator
@@ -45,7 +45,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
   def destroyAll() = rm.dispose();
   def image48(name: Name): (Image, DeviceResourceDescriptor) = iconFor(None, name, 48);
-  def icon(tpe: Type, minY: Int): (Image, DeviceResourceDescriptor) = {
+  def icon(tpe: JavaType, minY: Int): (Image, DeviceResourceDescriptor) = {
     tpe match {
       case b: BoxTypeSymbol ⇒ iconFor(b.image, b.fqName, minY)
       case b: BoxType       ⇒ iconFor(None, b.fqName, minY)
@@ -65,9 +65,9 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
       } catch { case e ⇒ None }
     }
   private def nestedImageFor(imageName: Option[String], name: Name): Option[(Image, ImageDescriptor)] = {
-    imageName.flatMap { imgName => 
-      resourceToImage(imgName) 
-    }.orElse {resourceToImage(name.toRelativePath + ".png")}
+    imageName.flatMap { imgName ⇒
+      resourceToImage(imgName)
+    }.orElse { resourceToImage(name.toRelativePath + ".png") }
   }
   private def iconFor(imageName: Option[String], name: Name, minY: Int) = {
     nestedImageFor(imageName, name) match {
@@ -81,7 +81,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
     }
   }
   private def imageForText(txt: String, ySize: Int, color: Color) = {
-    val desc = GeneratedTextIconImageDescriptor(txt, ySize + Tool.gridSize*2, color)
+    val desc = GeneratedTextIconImageDescriptor(txt, ySize + Tool.gridSize * 2, color)
     (rm.create(desc).asInstanceOf[Image], desc)
   }
   case class GeneratedImageIconImageDescriptor(desc: ImageDescriptor, minY: Int) extends DeviceResourceDescriptor {
@@ -94,9 +94,9 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
       val img = new Image(device, nestedX, height)
       val gc = new GC(img)
       gc.drawImage(nestedImg, 0, y)
-      if(nestedY<minY) {
-	      gc.setForeground(ColorConstants.gray)
-	      gc.drawRectangle(0,0, nestedX-1,height-1)
+      if (nestedY < minY) {
+        gc.setForeground(ColorConstants.gray)
+        gc.drawRectangle(0, 0, nestedX - 1, height - 1)
       }
       destroy(desc)
       gc.dispose
@@ -116,12 +116,12 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
       t.setFont(font)
       t.setWidth(47)
       val textY = t.getBounds.height
-      val finalY = math.max(ySize,textY)
+      val finalY = math.max(ySize, textY)
       val img = new Image(device, 48, finalY);
       val gc = new GC(img)
       gc.setForeground(color)
       gc.drawRectangle(0, 0, 47, finalY - 1)
-      t.draw(gc, 0, math.max(0, (finalY -1  - textY)  / 2))
+      t.draw(gc, 0, math.max(0, (finalY - 1 - textY) / 2))
       t.dispose
       gc.dispose
       img

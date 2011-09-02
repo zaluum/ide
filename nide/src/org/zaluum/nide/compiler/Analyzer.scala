@@ -117,24 +117,22 @@ object Literals {
   }
 }
 trait Scope extends Symbol {
-  def lookupType(name: Name): Option[Type]
+  def lookupType(name: Name): Option[JavaType]
   def lookupBoxType(name: Name): Option[BoxType]
   def javaScope: ZaluumClassScope
 }
 object primitives {
-  private def n(str: String, desc: String, b: BaseTypeBinding, boxedName: Name, boxMethod: String, size: Int = 1) = {
-    val p = new PrimitiveJavaType(Name(str), desc, size, boxedName, boxMethod)
-    p.binding = b
-    p
+  private def n(str: String, desc: String, b: BaseTypeBinding, javaType: Class[_], boxedName: Name, boxMethod: String, size: Int = 1) = {
+    new PrimitiveJavaType(Name(str), desc, size, boxedName, boxMethod, b, javaType)
   }
-  val Byte = n("byte", "B", TypeBinding.BYTE, Name("java.lang.Byte"), "byteValue")
-  val Short = n("short", "S", TypeBinding.SHORT, Name("java.lang.Short"), "shortValue")
-  val Int = n("int", "I", TypeBinding.INT, Name("java.lang.Integer"), "intValue")
-  val Long = n("long", "J", TypeBinding.LONG, Name("java.lang.Long"), "longValue", 2)
-  val Float = n("float", "F", TypeBinding.FLOAT, Name("java.lang.Float"), "floatValue")
-  val Double = n("double", "D", TypeBinding.DOUBLE, Name("java.lang.Double"), "doubleValue", 2)
-  val Boolean = n("boolean", "Z", TypeBinding.BOOLEAN, Name("java.lang.Boolean"), "booleanValue")
-  val Char = n("char", "C", TypeBinding.CHAR, Name("java.lang.Char"), "charValue")
+  val Byte = n("byte", "B", TypeBinding.BYTE, java.lang.Byte.TYPE, Name("java.lang.Byte"), "byteValue")
+  val Short = n("short", "S", TypeBinding.SHORT, java.lang.Short.TYPE, Name("java.lang.Short"), "shortValue")
+  val Int = n("int", "I", TypeBinding.INT, java.lang.Integer.TYPE, Name("java.lang.Integer"), "intValue")
+  val Long = n("long", "J", TypeBinding.LONG, java.lang.Long.TYPE, Name("java.lang.Long"), "longValue", 2)
+  val Float = n("float", "F", TypeBinding.FLOAT, java.lang.Float.TYPE, Name("java.lang.Float"), "floatValue")
+  val Double = n("double", "D", TypeBinding.DOUBLE, java.lang.Double.TYPE, Name("java.lang.Double"), "doubleValue", 2)
+  val Boolean = n("boolean", "Z", TypeBinding.BOOLEAN, java.lang.Boolean.TYPE, Name("java.lang.Boolean"), "booleanValue")
+  val Char = n("char", "C", TypeBinding.CHAR, java.lang.Character.TYPE, Name("java.lang.Character"), "charValue")
 
   val allTypes = List(Byte, Short, Int, Long, Float, Double, Boolean, Char)
   def numericTypes = List(Byte, Short, Int, Long, Float, Double, Char)
@@ -178,20 +176,20 @@ object primitives {
     val l = List(Int, Long, Float, Double)
     l(math.max(l.indexOf(a), l.indexOf(b)))
   }
-  def isNumeric(tpe: Type): Boolean = {
+  def isNumeric(tpe: JavaType): Boolean = {
     tpe match {
       case p: PrimitiveJavaType if (p != primitives.Boolean) ⇒ true
       case _ ⇒ false
     }
   }
-  def isObject(tpe: Type): Boolean = {
+  def isObject(tpe: JavaType): Boolean = {
     tpe match {
       case c: ClassJavaType ⇒ true
       case a: ArrayType     ⇒ true
       case _                ⇒ false
     }
   }
-  def isIntNumeric(tpe: Type): Boolean = tpe == primitives.Int ||
+  def isIntNumeric(tpe: JavaType): Boolean = tpe == primitives.Int ||
     tpe == primitives.Short ||
     tpe == primitives.Byte ||
     tpe == primitives.Char
@@ -204,7 +202,7 @@ trait ReporterAdapter {
   def reporter: Reporter
   def error(str: String, tree: Tree) = reporter.report(str, Some(location(tree)))
 }
-class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: ReferenceBinding) {
+class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: ReferenceBinding, scope: ZaluumClassScope) {
   def globLocation(t: Tree) = t.line
 
   class Namer extends Traverser(null) with ReporterAdapter {
@@ -220,9 +218,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
     override def traverse(tree: Tree) {
       tree match {
         case b: BoxDef ⇒
-          val cl = Some(Name(classOf[JPanel].getName))
-          val sym = new BoxTypeSymbol(b.name, b.pkg, b.image, cl)
-          sym.binding = binding
+          val sym = new BoxTypeSymbol(b.image, true, binding, scope)
           sym.hasApply = true
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
           sym.constructors = List(new Constructor(sym, List()))
@@ -257,7 +253,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
   }
   var ztd: ZaluumTypeDeclaration = _
 
-  class Resolver(global: Scope) extends Traverser(global) with ReporterAdapter {
+  class Resolver extends Traverser(scope) with ReporterAdapter {
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
     def createPortInstances(ports: Iterable[PortSymbol], vsym: ValSymbol, inside: Boolean, outside: Boolean) = {
@@ -283,7 +279,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
       tree match {
         case b: BoxDef ⇒
           val bs = b.sym
-          bs.scope = global
           val outfields = bs.ports.values.toList // minor aplabetically is return and method name
             .filter { _.dir == Out }
             .sortBy { _.name.str }
@@ -302,13 +297,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               v.thisVal = v
           }
         case p: PortDef ⇒
-          tree.symbol.tpe = catchAbort(global.lookupType(p.typeName)) getOrElse {
+          tree.symbol.tpe = catchAbort(scope.lookupType(p.typeName)) getOrElse {
             error("Port type \"" + p.typeName + "\" not found in port " + p.sym.name.str,
               tree); NoSymbol
           }
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
-          catchAbort(Expressions.find(v.typeName) orElse global.lookupBoxType(v.typeName)) match {
+          catchAbort(Expressions.find(v.typeName) orElse scope.lookupBoxType(v.typeName)) match {
             case Some(bs: BoxTypeSymbol) ⇒
               val vsym = v.sym.asInstanceOf[ValSymbol]
               v.symbol.tpe = bs
@@ -317,7 +312,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               }
               // Constructor
               val consSign = v.constructorTypes map { name ⇒
-                global.lookupType(name) getOrElse {
+                scope.lookupType(name) getOrElse {
                   error("Constructor type " + name + " not found", tree)
                   NoSymbol
                 }
@@ -339,24 +334,23 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               }
               // params
               for (p ← v.params.asInstanceOf[List[Param]]) {
-                bs.lookupParam(p.key) match {
-                  case Some(parSym) ⇒
-                    val toType = parSym.tpe.name
+                bs.beanProperties.find(_.name == p.key) match {
+                  case Some(bean) ⇒
+                    val toType = bean.tpe.fqName
                     val parsed = Literals.parse(p.value, toType) getOrElse {
                       error("Cannot parse literal \"" + p.value + "\" to " + toType.str + " in parameter " + p.key, tree)
                       NoSymbol
                     }
-                    vsym.params += (parSym -> parsed)
+                    vsym.params += (bean -> parsed)
                   case None ⇒ error(bs.name.str + " has no parameter " + p.key.str, tree)
                 }
               }
               createPortInstances(bs.ports.values, vsym, false, true)
-              vsym.params
             case Some(b: ExprType) ⇒
               v.symbol.tpe = b
               val vsym = v.sym
               for (p ← v.params.asInstanceOf[List[Param]]) {
-                b.lookupParam(p.key) match {
+                b.lookupExprParam(p.key) match {
                   case Some(parSym) ⇒
                     vsym.params += (parSym -> p.value) // FIXME always string?
                   case None ⇒ error(b.fqName.str + " has no parameter " + p.key, tree)
@@ -382,9 +376,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
 
   def runNamer() = new Namer().traverse(toCompile)
 
-  def runResolve(ztd: ZaluumTypeDeclaration, global: Scope): Tree = {
+  def runResolve(ztd: ZaluumTypeDeclaration): Tree = {
     this.ztd = ztd
-    new Resolver(global).traverse(toCompile)
+    new Resolver().traverse(toCompile)
     toCompile
   }
   def runCheck() {

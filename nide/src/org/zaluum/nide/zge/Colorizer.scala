@@ -5,11 +5,11 @@ import org.eclipse.swt.graphics.Color
 import org.zaluum.nide.compiler.ArrayType
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Symbol
-import org.zaluum.nide.compiler.Type
+import org.zaluum.nide.compiler.JavaType
 object Colorizer {
   def color(t: Symbol): Color = t match {
     case a: ArrayType ⇒ ColorConstants.green
-    case t: Type ⇒ t.name match {
+    case t: JavaType ⇒ t.name match {
       case Name("byte")    ⇒ ColorConstants.cyan
       case Name("short")   ⇒ ColorConstants.lightBlue
       case Name("int")     ⇒ ColorConstants.blue

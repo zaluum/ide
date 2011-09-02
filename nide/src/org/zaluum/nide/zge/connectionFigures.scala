@@ -9,7 +9,7 @@ import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler.ConnectionDef
 import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.SelectionSubject
-import org.zaluum.nide.compiler.Type
+import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.Vector2
 import draw2dConversions._
 import org.eclipse.swt.graphics.Color
@@ -127,7 +127,7 @@ class LineItem(val container: ContainerItem) extends Item with Blinker with Rect
 }
 
 class PointFigure extends Ellipse {
-  def update(p: Point, tpe: Type) = {
+  def update(p: Point, tpe: JavaType) = {
     setSize(5, 5)
     setFill(true)
     setLocation(point(p + Vector2(-2, -2)))

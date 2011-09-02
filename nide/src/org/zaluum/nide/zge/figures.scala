@@ -54,23 +54,23 @@ trait ValFigure extends ValDefItem with HasPorts {
     val (unsortedins, unsortedouts) = bports.partition { _.inPort } // SHIFT?
     ins = unsortedins.toList.sortBy(_.name.str);
     outs = unsortedouts.toList.sortBy(_.name.str);
-    val max = math.max(ins.size,outs.size)
-    val correctedMax = if (max == 2) 3 else max 
+    val max = math.max(ins.size, outs.size)
+    val correctedMax = if (max == 2) 3 else max
     // spread 2 ports like X _ X
     minYSize = correctedMax * Tool.gridSize
   }
   def updateValPorts() {
     val center = size.h / 2
-    val separation= Tool.gridSize
-    val insStartY = center - separation*(ins.size/2)
-    val outStartY = center - separation*(outs.size/2)
+    val separation = Tool.gridSize
+    val insStartY = center - separation * (ins.size / 2)
+    val outStartY = center - separation * (outs.size / 2)
       def createPort(s: PortSide, i: Int) {
         val p = new PortFigure(container)
         val x = if (s.inPort) 0 else size.w
         val sourceList = if (s.inPort) ins else outs
-        val skipCenter = if (sourceList.size==2 && i==1) 1 else 0 // skip 1 position 
+        val skipCenter = if (sourceList.size == 2 && i == 1) 1 else 0 // skip 1 position 
         val starty = if (s.inPort) insStartY else outStartY
-        val point = Point(x, + starty + ((i+skipCenter) * separation))
+        val point = Point(x, +starty + ((i + skipCenter) * separation))
         p.update(point + Vector2(getBounds.x, getBounds.y), s)
         ports += p
       }
@@ -84,7 +84,7 @@ trait ValFigure extends ValDefItem with HasPorts {
 class LabelItem(val container: ContainerItem, gui: Boolean = false) extends TextEditFigure with ValDefItem with RectFeedback {
   setForegroundColor(Colorizer.color(null))
   def blink(b: Boolean) {}
-  override val textPos = new EPoint(0,0)
+  override val textPos = new EPoint(0, 0)
   def size = preferredTextSize
   def baseVector = Vector2(0, -size.h)
   def lbl = if (gui) valDef.labelGui else valDef.label
@@ -121,23 +121,23 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
               "." + m.selector.mkString + "()"
           }
         sym.portInstances
-        imageFactory.invokeIcon(txt,minYSize)
+        imageFactory.invokeIcon(txt, minYSize)
       case f: FieldBinding ⇒
         val prefix = if (f.isStatic()) f.declaringClass.compoundName.last.mkString else ""
-        imageFactory.invokeIcon(prefix + "." + f.name.mkString,minYSize)
+        imageFactory.invokeIcon(prefix + "." + f.name.mkString, minYSize)
       case _ ⇒
         val str = sym.tpe match {
-          case NewArrayExprType=>
+          case NewArrayExprType ⇒
             val pi = NewArrayExprType.thisPort(sym)
             pi.tpe match {
-              case tpe:ArrayType => Some("new " + tpe.of.name.str.split('.').last + "[]"*tpe.dim)
-              case _ => None
+              case tpe: ArrayType ⇒ Some("new " + tpe.of.name.str.split('.').last + "[]" * tpe.dim)
+              case _              ⇒ None
             }
-          case _ => None 
+          case _ ⇒ None
         }
         str match {
-          case Some(str) => imageFactory.invokeIcon(str,minYSize)
-          case None => imageFactory.invokeIconError("right click me",minYSize)
+          case Some(str) ⇒ imageFactory.invokeIcon(str, minYSize)
+          case None      ⇒ imageFactory.invokeIconError("right click me", minYSize)
         }
     }
   }
@@ -145,7 +145,7 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
 class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def imageFactory = container.viewer.zproject.imageFactory
-  def img = imageFactory.icon(valDef.tpe,minYSize)
+  def img = imageFactory.icon(valDef.tpe, minYSize)
   override def updateMe() {
     super.updateMe()
     disposeImage()
@@ -167,7 +167,7 @@ class LiteralFigure(val container: ContainerItem) extends RectangleFigure with T
   def size = preferredSize
   def param = valDef.params.headOption.asInstanceOf[Option[Param]]
   def text = param.map { _.value }.getOrElse { "0" }
-  override val textPos = new EPoint(2,2)
+  override val textPos = new EPoint(2, 2)
   override def updateMe {
     super.updateMe()
     updateText()
@@ -179,10 +179,10 @@ class LiteralFigure(val container: ContainerItem) extends RectangleFigure with T
 }
 trait TextEditFigure extends Item {
   def text: String;
-  def preferredSize = 
+  def preferredSize =
     preferredTextSize.ensureMin(Dimension(Tool.gridSize * 3, Tool.gridSize * 3)) + Vector2(Tool.gridSize, 0)
   def preferredTextSize = pg.getPreferredSize()
-  val textPos = new EPoint(2,2)
+  val textPos = new EPoint(2, 2)
   setFont(Activator.getDefault.directEditFont) // https://bugs.eclipse.org/bugs/show_bug.cgi?id=308964
   private val pg = new FlowPage()
   pg.setForegroundColor(ColorConstants.black)
@@ -228,26 +228,37 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
   override def pos = valDef.guiPos getOrElse { Point(0, 0) }
   def myLayer = container.layer
   var component: Option[JComponent] = None
-  def forName(str: String): Option[Class[_]] = {
-    try { Some(cl.loadClass(str)) }
-    catch { case e: Exception ⇒ e.printStackTrace; None }
-  }
 
   override def updateValDef(valDef: ValDef) = {
+    val vs = valDef.sym
       def instance(cl: Class[_]) = {
         try {
           Some(cl.newInstance().asInstanceOf[JComponent])
         } catch { case e ⇒ e.printStackTrace; None }
       }
+
     component = valDef.tpe match {
       case bs: BoxTypeSymbol ⇒
         for (
-          c ← bs.visualClass;
-          if c.str != classOf[JPanel].getName;
-          cl ← forName(c.str);
+          cl ← bs.loadClass(cl);
           i ← instance(cl)
         ) yield i
       case _ ⇒ None
+    }
+    component foreach { c ⇒
+      vs.params.foreach {
+        case (param: BeanParamSymbol, v) ⇒
+          val classParam = param.tpe.loadClass(cl)
+          c.getClass().getMethods() find { m ⇒
+            m.getName == param.setter.selector.mkString &&
+              m.getParameterTypes.size == 1 &&
+              Some(m.getParameterTypes()(0)) == classParam
+          } foreach { m ⇒
+            try {
+              m.invoke(c, v.asInstanceOf[AnyRef])
+            } catch { case e ⇒ e.printStackTrace() }
+          }
+      }
     }
     super.updateValDef(valDef)
   }

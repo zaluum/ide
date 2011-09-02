@@ -43,11 +43,11 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   def v = vs.decl.asInstanceOf[ValDef]
   def params = vs.tpe match {
     case null              ⇒ List()
-    case bs: BoxTypeSymbol ⇒ bs.paramsInOrder
-    case e: ExprType       ⇒ e.params.values.toList sortBy { _.name.str } // TODO merge in boxType
+    case bs: BoxTypeSymbol ⇒ bs.beanProperties.sortBy { _.name.str }
+    case e: ExprType       ⇒ e.exprParams.values.toList sortBy { _.name.str } // TODO merge in boxType
   }
   override protected def okPressed() {
-    val newParams = tableContents.filterNot(_.key == "").map(t ⇒ (Param(Name(t.key), t.value))).sortBy(_.key.str)
+    val newParams = tableContents.filterNot(_.value == "").map(t ⇒ (Param(Name(t.key), t.value))).sortBy(_.key.str)
     val origParams = v.params.asInstanceOf[List[Param]].sortBy(_.key.str)
     if (newParams != origParams) {
       val tr = new EditTransformer() {
@@ -90,7 +90,7 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
     // TABLE
     tableContents = createTableValue()
     val table = createTable(c)
-    table.setLayoutData("span,  height 200")
+    table.setLayoutData("span,  height ::250")
     val tableViewer = new TableViewer(table)
     val columnNames = Array("Name", "Type", "Value")
     tableViewer.setColumnProperties(columnNames);

@@ -64,11 +64,11 @@ class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItems
   val id = "org.zaluum.nide.methodSelectDialog"
   val settings = new DialogSettings(id);
   val static = vs.tpe.isInstanceOf[StaticExprType]
-  val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope // FIXME 
+  val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].scope // FIXME 
 
   val binding = vs.tpe match {
-    case t:ThisExprType ⇒ t.thisPort(vs).tpe.binding
-    case s:StaticExprType  ⇒
+    case t: ThisExprType ⇒ t.thisPort(vs).tpe.binding
+    case s: StaticExprType ⇒
       vs.classinfo match {
         case cl: ClassJavaType ⇒ cl.binding
         case _                 ⇒ null

@@ -1,6 +1,6 @@
 package org.zaluum.nide.compiler
 
-import org.objectweb.asm._
+import org.objectweb.asm.{ Type ⇒ _, _ }
 import Opcodes._
 import org.zaluum.annotation.Box
 object ByteCodeGen {
@@ -10,7 +10,7 @@ object ByteCodeGen {
   def dump(bc: BoxClass): Array[Byte] = {
     thisName = bc.name
     cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, "java/lang/Object", null);
+    cw.visit(V1_5, ACC_PUBLIC + ACC_SUPER, bc.name.internal, null, bc.superName.internal, null);
     for (inn ← bc.inners) {
       cw.visitInnerClass(inn.fqName.internal, bc.name.internal, inn.simpleName.str, 0)
     }
@@ -50,7 +50,7 @@ object ByteCodeGen {
     cw.visitEnd()
     cw.toByteArray
   }
-  def emitMethod(name: String, signature: String, tree: Tree, locals: List[(String, String, Int)], constructor: Boolean, annotation: Option[List[Name]]) {
+  def emitMethod(name: String, signature: String, tree: Tree, locals: List[(String, String, Int)], constructor: Option[Name], annotation: Option[List[Name]]) {
     mv = cw.visitMethod(ACC_PUBLIC, name, signature, null, null);
     annotation foreach { a ⇒
       val name = Name(classOf[org.zaluum.annotation.Apply].getName).descriptor
@@ -61,10 +61,11 @@ object ByteCodeGen {
       av.visitEnd()
     }
     mv.visitCode();
-
-    if (constructor) {
-      mv.visitVarInsn(ALOAD, 0);
-      mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
+    constructor match {
+      case Some(superName) ⇒
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, superName.internal, "<init>", "()V");
+      case None ⇒
     }
     val l0 = new Label();
     mv.visitLabel(l0);
@@ -87,10 +88,10 @@ object ByteCodeGen {
           f.visitAnnotation(name.descriptor, true).visitEnd()
         }
         f.visitEnd
-      case ConstructorMethod(c) ⇒
-        emitMethod("<init>", "()V", tree, List(), true, None)
+      case ConstructorMethod(c, superName) ⇒
+        emitMethod("<init>", "()V", tree, List(), Some(superName), None)
       case Method(name, signature, stats, locals, paramsNames) ⇒
-        emitMethod(name.str, signature, tree, locals, false, paramsNames)
+        emitMethod(name.str, signature, tree, locals, None, paramsNames)
       case New(typeName, param, signature) ⇒
         mv.visitTypeInsn(NEW, typeName.internal);
         mv.visitInsn(DUP);
@@ -190,7 +191,7 @@ object ByteCodeGen {
         mv.visitVarInsn(ASTORE, i)
       case ALoad(i: Int) ⇒
         mv.visitVarInsn(ALOAD, i)
-      case Const(d: Any, constTpe: Type) ⇒
+      case Const(d: Any, constTpe: JavaType) ⇒
         emitConst(d, constTpe)
       case Return(t, tpe) ⇒
         emit(t)
@@ -208,7 +209,7 @@ object ByteCodeGen {
 
     }
   }
-  def doReturn(t: Type) {
+  def doReturn(t: JavaType) {
     import primitives._
     t match {
       case Boolean ⇒ mv.visitInsn(IRETURN)
@@ -222,7 +223,7 @@ object ByteCodeGen {
       case _       ⇒ mv.visitInsn(ARETURN)
     }
   }
-  def emitConst(d: Any, constTpe: Type) {
+  def emitConst(d: Any, constTpe: JavaType) {
     import primitives._
     if (d == null || d == 0 || d == false) {
       constTpe match {
@@ -250,7 +251,7 @@ object ByteCodeGen {
       }
     }
   }
-  def asmType(t: Type) = t match {
+  def asmType(t: JavaType) = t match {
     case primitives.Long    ⇒ T_LONG
     case primitives.Double  ⇒ T_DOUBLE
     case primitives.Float   ⇒ T_FLOAT
@@ -260,7 +261,7 @@ object ByteCodeGen {
     case primitives.Char    ⇒ T_CHAR
     case primitives.Short   ⇒ T_SHORT
   }
-  def aload(t: Type) = {
+  def aload(t: JavaType) = {
     t match {
       case primitives.Long    ⇒ mv.visitInsn(LALOAD)
       case primitives.Double  ⇒ mv.visitInsn(DALOAD)
@@ -273,7 +274,7 @@ object ByteCodeGen {
       case _                  ⇒ mv.visitInsn(AALOAD)
     }
   }
-  def astore(t: Type) = {
+  def astore(t: JavaType) = {
     t match {
       case primitives.Long    ⇒ mv.visitInsn(LASTORE)
       case primitives.Double  ⇒ mv.visitInsn(DASTORE)

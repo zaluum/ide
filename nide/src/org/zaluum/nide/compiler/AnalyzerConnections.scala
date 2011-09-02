@@ -124,7 +124,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
       }
     }
   }
-  def checkAssignmentPossible(from: Type, to: Type): Boolean = {
+  def checkAssignmentPossible(from: JavaType, to: JavaType): Boolean = {
     if (to == NoSymbol) return false
     from match {
       case NoSymbol ⇒ false
@@ -197,14 +197,14 @@ trait CheckerPart extends ReporterAdapter {
   def reporter = c.reporter
   def scope(vs: ValSymbol): ZaluumClassScope = {
     vs.owner.template match {
-      case b: BoxTypeSymbol ⇒ b.javaScope
+      case b: BoxTypeSymbol ⇒ b.scope
       case own: ValSymbol   ⇒ scope(own)
     }
   }
   def connectedFrom(p: PortInstance) = bl.connections.connectedFrom.get(p)
   def fromTpe(p: PortInstance) = connectedFrom(p).map { _._1.tpe }.getOrElse(NoSymbol)
   def blame(p: PortInstance) = connectedFrom(p) map { _._2 }
-  def unboxIfNeeded(t: Type) = t match {
+  def unboxIfNeeded(t: JavaType) = t match {
     case p: ClassJavaType ⇒ primitives.getUnboxedType(p).getOrElse(t)
     case _                ⇒ t
   }

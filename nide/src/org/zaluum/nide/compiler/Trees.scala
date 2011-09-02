@@ -6,7 +6,7 @@ import java.io.StringWriter
 
 trait SelectionSubject
 abstract class Tree extends Product with SelectionSubject {
-  var tpe: Type = null
+  var tpe: JavaType = null
   var symbol: Symbol = null
   var line: Int = 0
   def hasSymbol = false

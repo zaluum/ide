@@ -65,20 +65,20 @@ abstract class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends Fil
   val static = vs.tpe.isInstanceOf[StaticExprType]
   val binding = vs.tpe match {
     case InvokeExprType ⇒ InvokeExprType.thisPort(vs).tpe.binding
-    case s:StaticExprType ⇒
+    case s: StaticExprType ⇒
       vs.classinfo match {
         case cl: ClassJavaType ⇒ cl.binding
         case _                 ⇒ null
       }
   }
-  def findMethods(engine : ZaluumCompletionEngine, scope:ZaluumClassScope, r:ReferenceBinding) : List[MethodBinding]
+  def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding): List[MethodBinding]
   val items: Array[MethodWithNames] = binding match {
     case r: ReferenceBinding ⇒
       val engine = ZaluumCompletionEngineScala.engineForVs(vs)
-      val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope; // FIXME?
+      val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].scope; // FIXME?
       val jproject = viewer.zproject.jProject.asInstanceOf[JavaProject]
       val nameLookup = jproject.newNameLookup(Array[org.eclipse.jdt.core.ICompilationUnit]())
-      val paramNames = findMethods(engine,scope,r) map { m ⇒
+      val paramNames = findMethods(engine, scope, r) map { m ⇒
         val names = MethodUtils.findMethodParamNames(m, jproject)
         val params = names.toList.flatMap(a ⇒ a)
         MethodWithNames(m, params)

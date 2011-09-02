@@ -1,14 +1,19 @@
 package org.zaluum.nide.compiler
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 sealed trait BinOp
 
 sealed trait ExprType extends BoxType {
   val owner = null
+  type B = ReferenceBinding
+  val binding = null
   def matchingClass: Class[_]
   lazy val name = Name(matchingClass.getSimpleName)
   lazy val fqName = Name(matchingClass.getName)
-  var params = Map[Name, ParamSymbol]()
-  def lookupParam(a: Name) = params.get(a)
+  var exprParams = Map[Name, ParamSymbol]()
+  def lookupExprParam(a: Name) = exprParams.get(a)
   def templateTree = null
+  def loadClass(cl: ClassLoader) = None
+  def descriptor = null
 }
 sealed trait ResultExprType extends ExprType {
   val o = new PortSymbol(this, Name("o"), Out)
@@ -60,7 +65,7 @@ trait SignatureExprType extends ExprType {
   val Sig = """(.+)(\(.*)""".r
   val signatureName = Name("signature")
   val signatureSymbol = new ParamSymbol(null, signatureName)
-  params += (signatureName -> signatureSymbol)
+  exprParams += (signatureName -> signatureSymbol)
 }
 sealed abstract class ThisExprType(val matchingClass: Class[_]) extends SignatureExprType {
   val thiz = new PortSymbol(this, Name("objectIn"), In)
@@ -80,7 +85,7 @@ object ThisRefExprType extends ExprType {
 trait TypeParamExprType extends ExprType {
   val typeName = Name("type")
   val typeSymbol = new ParamSymbol(null, typeName)
-  params += (typeName -> typeSymbol)
+  exprParams += (typeName -> typeSymbol)
 }
 sealed abstract class StaticExprType(val matchingClass: Class[_]) extends SignatureExprType with TypeParamExprType
 object NewArrayExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.NewArray]) {
@@ -90,7 +95,7 @@ object NewArrayExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.
   def dimensions(v: ValDef) = v.params.asInstanceOf[List[Param]].find(_.key == NewArrayExprType.arrayDimName).map(_.value).getOrElse("1")
   val arrayDimName = Name("arrayDim")
   val arrayDimSymbol = new ParamSymbol(null, arrayDimName)
-  params += (arrayDimName -> arrayDimSymbol)
+  exprParams += (arrayDimName -> arrayDimSymbol)
 }
 object NewExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.New]) {
   val thiz = new PortSymbol(this, Name("object"), Out)
@@ -110,7 +115,7 @@ object LiteralExprType extends ResultExprType {
   def matchingClass = classOf[org.zaluum.expr.Literal]
   val paramName = Name("literal")
   val paramSymbol = new ParamSymbol(null, paramName)
-  params += (paramName -> paramSymbol)
+  exprParams += (paramName -> paramSymbol)
 }
 
 object ToByteType extends CastExprType(classOf[org.zaluum.expr.cast.ToByte])

@@ -60,7 +60,7 @@ class GuiViewer(parent: Composite, controller: Controller)
       def updateBlock(b: Block) {
         b.valDefs foreach { v ⇒
           v.tpe match {
-            case bs: BoxTypeSymbol if (bs.visualClass.isDefined) ⇒
+            case bs: BoxTypeSymbol if (bs.isVisual) ⇒
               val f = new SwingFigure(GuiViewer.this, controller.zproject.classLoader)
               f.updateValDef(v)
               items += f
@@ -71,8 +71,8 @@ class GuiViewer(parent: Composite, controller: Controller)
                 items += lbl
                 lbl.show()
               }
-            case s:TemplateExprType =>
-              v.sym.blocks foreach { b=> updateBlock(b.tdecl) }
+            case s: TemplateExprType ⇒
+              v.sym.blocks foreach { b ⇒ updateBlock(b.tdecl) }
             case _ ⇒
           }
         }

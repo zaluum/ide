@@ -32,7 +32,6 @@ import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.PortSymbol
 import org.zaluum.nide.compiler.PrimitiveJavaType
 import org.zaluum.nide.compiler.{ Scope ⇒ ZScope }
-import org.zaluum.nide.compiler.Type
 import org.zaluum.nide.compiler.primitives
 import JDTInternalUtils.aToString
 import JDTInternalUtils.stringToA
@@ -51,14 +50,13 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
   def owner = null
   def getBoxedType(p: PrimitiveJavaType): JavaType =
     getJavaType(p.boxedName).get
-
+  lazy val ZComponent = getJavaType(Name(classOf[java.awt.Component].getName)).get;
   def getZJavaLangString = getJavaType(Name("java.lang.String")).get;
   def javaScope: ZaluumClassScope = this
-  def lookupType(name: Name): Option[Type] = getJavaType(name)
+  def lookupType(name: Name): Option[JavaType] = getJavaType(name)
   def getArrayType(t: JavaType, dim: Int): ArrayType = {
     val bind = createArrayType(t.binding, dim)
-    val a = new ArrayType(this, t, dim)
-    a.binding = bind
+    val a = new ArrayType(this, t, dim, bind)
     a
   }
   def getJavaType(name: Name): Option[JavaType] = {
@@ -102,8 +100,7 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
         }
       case a: ArrayBinding ⇒
         val leaf = getJavaType(a.leafComponentType)
-        val t = new ArrayType(this, leaf, a.dimensions)
-        t.binding = a
+        val t = new ArrayType(this, leaf, a.dimensions, a)
         t
     }
   }
@@ -114,7 +111,7 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
     }
 
   protected def create(r: ReferenceBinding) = createBoxType(r).getOrElse {
-    new SimpleClassJavaType(this, Name(aToString(r.compoundName)), r)
+    new SimpleClassJavaType(this, r, this)
   }
 
   protected def createBoxType(r: ReferenceBinding): Option[BoxTypeSymbol] = {
@@ -124,11 +121,10 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
     annotation map { _ ⇒
       val srcName = Name(r.compoundName.last.mkString)
       val pkgName = Name(r.qualifiedPackageName.mkString)
+      val visual = r.isCompatibleWith(ZComponent.binding)
       val bs = new BoxTypeSymbol(
-        srcName, pkgName,
-        None, None, r.isAbstract)
+        None, visual, r, this)
 
-      bs.scope = this
       val engine = ZaluumCompletionEngineScala.engineFor(this)
       val allMethods = ZaluumCompletionEngineScala.allMethods(engine, this, r, static = false)
       val allFields = ZaluumCompletionEngineScala.allFields(engine, this, r, static = false)
@@ -138,7 +134,6 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
       for (f ← allFields; if f.isPublic && !f.isStatic) processField(bs, f)
       if (bs.constructors.isEmpty)
         bs.constructors = List(new Constructor(bs, List()))
-      bs.binding = r
       bs
     }
   }
@@ -147,14 +142,10 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
       aToString(a.getAnnotationType.compoundName) == classOf[org.zaluum.annotation.Apply].getName
     }
     val mName = m.selector.mkString
-    if (m.isConstructor && m.isPublic) {
+    if (m.isConstructor && m.isPublic)
       doConstructor(bs, m)
-    } else {
-      if (mName.startsWith("set") && m.parameters.size == 1 && m.returnType == TypeBinding.VOID)
-        doParam(bs, m)
-      else if (annotation.isDefined && !m.isStatic && !m.isAbstract && m.isPublic && !bs.hasApply)
-        doApply(bs, m, annotation)
-    }
+    else if (annotation.isDefined && !m.isStatic && !m.isAbstract && m.isPublic && !bs.hasApply)
+      doApply(bs, m, annotation)
   }
   private def processField(bs: BoxTypeSymbol, f: FieldBinding) {
     val fname = f.name.mkString
@@ -163,13 +154,6 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
       }
     if (hasAnnotation(classOf[org.zaluum.annotation.Out]))
       createPort(bs, Name(fname), f.`type`, Out, field = true)
-    if (fname == "_widget") {
-      f.`type` match {
-        case r: ReferenceBinding ⇒
-          bs.visualClass = Some(Name(aToString(r.compoundName)))
-        case _ ⇒
-      }
-    }
   }
   private def createPort(bs: BoxTypeSymbol, name: Name, tpe: TypeBinding, dir: PortDir, field: Boolean = false, helperName: Option[Name] = None) {
     val port = new PortSymbol(bs, name, helperName, Point(0, 0), dir, field)
@@ -184,13 +168,6 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
       ps
     }
     bs.constructors = new Constructor(bs, params.toList) :: bs.constructors
-  }
-  private def doParam(bs: BoxTypeSymbol, m: MethodBinding) {
-    val mName = m.selector.mkString
-    val ptpe = getJavaType(m.parameters.head)
-    val p = new ParamSymbol(bs, Name(mName))
-    p.tpe = ptpe
-    bs.params += (p.name -> p)
   }
   private def doApply(bs: BoxTypeSymbol, m: MethodBinding, annotation: Option[AnnotationBinding]) {
     val argumentNames = annotatedParameters(bs, m, annotation)

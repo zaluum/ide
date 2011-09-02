@@ -6,7 +6,7 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
 
     val s = vs.tpe.asInstanceOf[BinExprType]
     val (a, b, o) = s.binaryPortInstancesOf(vs)
-      def assignAll(tpe: Type, outTpe: Type) = {
+      def assignAll(tpe: JavaType, outTpe: JavaType) = {
         a.tpe = tpe
         b.tpe = tpe
         o.tpe = outTpe
@@ -128,21 +128,21 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
       case (pi, blame) ⇒ (pi.tpe, blame)
     } match {
       case Some((fromType, blame)) ⇒
-      	a.tpe = fromType
+        a.tpe = fromType
         (fromType, o.tpe) match {
           // TODO serializable and other specs exceptions
           case (fromPrim: PrimitiveJavaType, toPrim: PrimitiveJavaType) if (isNumeric(fromPrim) && isNumeric(toPrim)) ⇒
           case (fromPrim: PrimitiveJavaType, toClass: ClassJavaType) if (primitives.getUnboxedType(toClass) == Some(fromPrim)) ⇒
           case (fromClass: ClassJavaType, toPrim: PrimitiveJavaType) if (primitives.getUnboxedType(fromClass) == Some(toPrim)) ⇒
-          case (fromClass: ClassJavaType, toClass: ClassJavaType) if (fromClass.binding.isCompatibleWith(toClass.binding)) =>
-          case (fromClass: ClassJavaType, toArray: ArrayType) if (fromClass.fqName.str=="java.lang.Object") =>
-          case (fromArray: ArrayType, toClass: ClassJavaType) if (toClass.fqName.str=="java.lang.Object") =>
-          case (fromArray: ArrayType, toArray: ArrayType) if (fromArray==toArray) =>
+          case (fromClass: ClassJavaType, toClass: ClassJavaType) if (fromClass.binding.isCompatibleWith(toClass.binding)) ⇒
+          case (fromClass: ClassJavaType, toArray: ArrayType) if (fromClass.fqName.str == "java.lang.Object") ⇒
+          case (fromArray: ArrayType, toClass: ClassJavaType) if (toClass.fqName.str == "java.lang.Object") ⇒
+          case (fromArray: ArrayType, toArray: ArrayType) if (fromArray == toArray) ⇒
           case _ ⇒
             a.tpe = NoSymbol
             error("Cast between incompatible types", blame)
         }
-      case None ⇒ a.tpe=o.tpe
+      case None ⇒ a.tpe = o.tpe
     }
   }
   def checkLiteralExprType(vs: ValSymbol) {

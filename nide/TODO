@@ -1,7 +1,6 @@
 Agenda
 
 week 29-4 library week
-	- nested guis as new window
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- write feature list on freemind
 	- Graphing widget properties. Color/etc( see labview)
@@ -44,7 +43,24 @@ bugs
 	-sembla que xulrunner dona algun problema d'alt consum de cpu. xulrunner 2 no?
 	- BUG Change type of a box to While or if (doesn't have template)
 	
+IDEES
+	-Enlloc de _widget heredar directament de Jpanel
+	-lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
+	-buidar metodes boxtypesymbol, fer servir binding
+	-Javabean properties
+	-Special property loader (color, list contents...) -> menu -> code gen
+	-Propietats graph/plot
+	-lv global variable = static field
+	-Select toolkit, GTK+,etc
+	-Millorar generació de codi amb reflection?
+	-Static apply classes boxes sense estat
+	-Com enrutar events swing a boxes?
+	-literal parsing -> expression parsing (field access, method invoke)
+	-Multi apply. Classes Box amb més d'un apply
+	-Clusters, com imitar? Hashmap? Classe interna?
 LATER
+	-miglayout support
+	- nested guis as new window
 	- thread inner classes in jmodel
 	- analyze multi thread with costs
 	- notes/ visual only on diagram

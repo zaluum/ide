@@ -27,7 +27,7 @@ object ZaluumCompletionEngineScala {
   }
   def findConstructor(ztd: ZaluumTypeDeclaration,
                       zcs: ZaluumClassScope,
-                      r: ReferenceBinding, signature: String) = 
+                      r: ReferenceBinding, signature: String) =
     allConstructors(engineFor(ztd), zcs, r) find { _.signature().mkString == signature }
 
   def allFields(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, binding: ReferenceBinding, static: Boolean): List[FieldBinding] =
@@ -36,13 +36,13 @@ object ZaluumCompletionEngineScala {
     rewrapToList(engine.findAllMethods(c, zcs, static))
   def allConstructors(engine: ZaluumCompletionEngine, zcs: ZaluumClassScope, c: ReferenceBinding): List[MethodBinding] =
     engine.findAllConstructors(c, zcs).toList
-  def engineFor(zcs: ZaluumClassScope) : ZaluumCompletionEngine = 
+  def engineFor(zcs: ZaluumClassScope): ZaluumCompletionEngine =
     new ZaluumCompletionEngine(zcs.environment)
-  def engineFor(ztd: ZaluumTypeDeclaration): ZaluumCompletionEngine = 
+  def engineFor(ztd: ZaluumTypeDeclaration): ZaluumCompletionEngine =
     engineFor(ztd.zaluumScope)
 
   def engineForVs(vs: ValSymbol): ZaluumCompletionEngine =
-    engineFor(vs.owner.template.asInstanceOf[BoxTypeSymbol].javaScope.ztd)
+    engineFor(vs.owner.template.asInstanceOf[BoxTypeSymbol].scope.ztd)
 
   private def rewrapToList[A](ov: ObjectVector): List[A] = {
     var l = List[A]()

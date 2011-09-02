@@ -11,22 +11,21 @@ import org.zaluum.annotation.Box;
 import org.zaluum.basic.Zaluum;
 
 @Box
-public class Chart {
+public class Chart extends Chart2D {
+	private static final long serialVersionUID = 1L;
 	private ITrace2D trace;
-	public Chart2D _widget;
 	private long i = 0;
 	private final CircularBuffer buffer;
 	private final int maxlen = 2000;
 
 	public Chart() {
-		_widget = new Chart2D();
 		trace = new Trace2DLtd(maxlen);
 		buffer = new CircularBuffer(maxlen);
 		trace.setColor(Color.BLUE);
-		_widget.addTrace(trace);
-		_widget.getAxisX().setPaintScale(true);
-		_widget.getAxisX().setRangePolicy(new MyRangePolicy(maxlen));
-		_widget.setPaintLabels(false);
+		addTrace(trace);
+		getAxisX().setPaintScale(true);
+		getAxisX().setRangePolicy(new MyRangePolicy(maxlen));
+		setPaintLabels(false);
 	}
 
 	private Runnable runnable = new Runnable() {
@@ -50,6 +49,6 @@ public class Chart {
 			buffer.add(data);
 			i++;
 		}
-		Zaluum.fastUpdate(_widget, runnable);
+		Zaluum.fastUpdate(this, runnable);
 	}
 }

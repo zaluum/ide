@@ -14,18 +14,18 @@ trait UnaryExpr extends Tree {
   def a: Tree
 }
 case class RunnableClass(fqName: Name, simpleName: Name, run: Method) extends Tree
-case class BoxClass(name: Name, contents: List[Tree], inners: List[RunnableClass]) extends Tree
+case class BoxClass(name: Name, contents: List[Tree], superName: Name, inners: List[RunnableClass]) extends Tree
 case class FieldDef(name: Name, typeName: Name, annotation: Option[Name], priv: Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
-case class ConstructorMethod(boxCreation: List[Tree]) extends Tree
+case class ConstructorMethod(boxCreation: List[Tree], superName: Name) extends Tree
 case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)], applyAnnotation: Option[List[Name]]) extends Tree
 case class Assign(lhs: Ref, rhs: Tree) extends Tree
 case class While(body: List[Tree], cond: Tree) extends Tree
 case class If(cond: Tree, trueBlock: List[Tree], falseBlock: List[Tree]) extends Tree
 case class Not(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
 case class Minus(a: Tree, t: PrimitiveJavaType) extends UnaryExpr
-case class ArrayRef(index: Tree, arrRef: Tree, arrTpe: Type) extends Ref
-case class NewArray(sizes: List[Tree], arrTpe: Type) extends Ref
+case class ArrayRef(index: Tree, arrRef: Tree, arrTpe: JavaType) extends Ref
+case class NewArray(sizes: List[Tree], arrTpe: JavaType) extends Ref
 
 case class ShiftLeft(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr
 case class ShiftRight(a: Tree, b: Tree, t: PrimitiveJavaType) extends BinaryExpr
@@ -60,8 +60,8 @@ case class Invoke(
   obj: Tree, meth: String, param: List[Tree],
   fromClass: Name, descriptor: String, interface: Boolean) extends Tree
 case class InvokeStatic(meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
-case class Const(i: Any, constTpe: Type) extends Tree
-case class Return(t: Tree, retTpe: Type) extends Tree
+case class Const(i: Any, constTpe: JavaType) extends Tree
+case class Return(t: Tree, retTpe: JavaType) extends Tree
 case object Return extends Tree
 case object True extends Tree
 case object Dup extends Tree
@@ -120,7 +120,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       BoxClass(
         bs.tpe.fqName,
         baseMethods ++ fieldDecls,
-        enclosed)
+        superName, enclosed)
 
     }
 
@@ -148,10 +148,6 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         field(ps.name, ps.tpe.fqName, None, annotation = Some(outName))
       }
       // internals 
-      //widget 
-      bs.visualClass foreach { vn ⇒
-        field(Name("_widget"), vn)
-      }
       // valsymbols
       deepChildValSymbols(block) foreach { vs ⇒
         // box instance
@@ -191,9 +187,10 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
           case tpe: BoxTypeSymbol ⇒
             vs.params map {
               case (param, v) ⇒
+                val beanProp = tpe.beanProperties.find(_.name == param.name).get
                 Invoke(
                   valRef(vs),
-                  param.name.str,
+                  beanProp.setter.selector.mkString,
                   List(Const(v, param.tpe)),
                   tpe.fqName,
                   "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V",
@@ -203,12 +200,16 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
             for (bl ← vs.blocks; vs ← bl.executionOrder; p ← params(vs)) yield p
         }
       // widgets
-      val widgets = bs.visualClass.toList flatMap { vn ⇒
+      val widgets = if (bs.isVisual) {
         val widgetCreation: List[Tree] = List(
-          Assign(Select(This, FieldRef(widgetName, vn.descriptor, bs.fqName)),
-            New(vn, List(NullConst), "(Ljava/awt/LayoutManager;)V")),
+          Invoke(This,
+            "setLayout",
+            List(NullConst),
+            Name("java.awt.Container"),
+            "(Ljava/awt/LayoutManager;)V",
+            false),
           Invoke(
-            Select(This, FieldRef(widgetName, vn.descriptor, bs.fqName)),
+            This,
             "setSize",
             List(Const(b.guiSize.map(_.w).getOrElse(100), primitives.Int),
               Const(b.guiSize.map(_.h).getOrElse(100), primitives.Int)),
@@ -216,36 +217,37 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
             "(II)V",
             interface = false))
         widgetCreation ++ bsVals.flatMap(createWidgets(_, bs.tdecl))
-      }
+      } else List()
       val par = bsVals.flatMap(params)
-      ConstructorMethod(fieldInits.toList ++ par ++ widgets :+ Return)
+      ConstructorMethod(fieldInits.toList ++ par ++ widgets :+ Return, superName)
     }
-    def createWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
+    def superName = if (bs.isVisual)
+      Name("javax.swing.JPanel")
+    else Name("java.lang.Object")
+
+    def placeWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
-        case tpe: BoxTypeSymbol ⇒
+        case tpe: BoxTypeSymbol if tpe.isVisual ⇒
           val valDef = vs.tdecl
           val mainTpe = mainBox.sym
-          tpe.visualClass map { cl ⇒
-            val widgetSelect = Select(valRef(vs), FieldRef(widgetName, cl.descriptor, tpe.fqName))
-            List[Tree](
-              Invoke(
-                widgetSelect,
-                "setBounds",
-                List(Const(valDef.guiPos.map(_.x).getOrElse(0), primitives.Int),
-                  Const(valDef.guiPos.map(_.y).getOrElse(0), primitives.Int),
-                  Const(valDef.guiSize.map(_.w).getOrElse(50), primitives.Int),
-                  Const(valDef.guiSize.map(_.h).getOrElse(50), primitives.Int)),
-                Name("javax.swing.JComponent"),
-                "(IIII)V",
-                interface = false),
-              Invoke(
-                Select(This, FieldRef(widgetName, mainBox.sym.visualClass.get.descriptor, mainTpe.fqName)),
-                "add",
-                List(widgetSelect),
-                Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;",
-                interface = false),
-              Pop) ++ createLabel(vs, mainBox)
-          } getOrElse List()
+          List[Tree](
+            Invoke(
+              valRef(vs),
+              "setBounds",
+              List(Const(valDef.guiPos.map(_.x).getOrElse(0), primitives.Int),
+                Const(valDef.guiPos.map(_.y).getOrElse(0), primitives.Int),
+                Const(valDef.guiSize.map(_.w).getOrElse(50), primitives.Int),
+                Const(valDef.guiSize.map(_.h).getOrElse(50), primitives.Int)),
+              Name("java.awt.Component"),
+              "(IIII)V",
+              interface = false),
+            Invoke(
+              This,
+              "add",
+              List(valRef(vs)),
+              Name("java.awt.Container"), "(Ljava/awt/Component;)Ljava/awt/Component;",
+              interface = false),
+            Pop) ++ createLabel(vs, mainBox)
         case _ ⇒ List()
       }
     }
@@ -267,14 +269,14 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
                 Const(pos.y, primitives.Int),
                 Const(jdim.width, primitives.Int),
                 Const(jdim.height, primitives.Int)),
-              Name("javax.swing.JComponent"),
+              Name("java.awt.Component"),
               "(IIII)V",
               interface = false),
             Invoke(
-              Select(This, FieldRef(widgetName, mainBox.sym.visualClass.get.descriptor, mainTpe.fqName)),
+              This,
               "add",
               List(ALoad(1)),
-              Name("javax.swing.JComponent"), "(Ljava/awt/Component;)Ljava/awt/Component;",
+              Name("java.awt.Container"), "(Ljava/awt/Component;)Ljava/awt/Component;",
               interface = false),
             Pop)
         case None ⇒ List()
@@ -282,7 +284,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
     }
     def createWidgets(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
-        case tpe: BoxTypeSymbol ⇒ createWidget(vs, mainBox)
+        case tpe: BoxTypeSymbol ⇒ placeWidget(vs, mainBox)
         case e: ExprType ⇒
           for (bl ← vs.blocks; vs ← bl.executionOrder; w ← createWidgets(vs, mainBox)) yield w
       }
@@ -345,5 +347,4 @@ trait GeneratorHelpers {
         vs.blocks flatMap (vs ⇒ deepChildValSymbols(vs))
     }
   }
-  val widgetName = Name("_widget")
 }

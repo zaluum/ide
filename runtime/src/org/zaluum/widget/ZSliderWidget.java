@@ -15,18 +15,21 @@ import org.zaluum.annotation.Box;
  * 
  */
 @Box
-public class SliderWidget {
+public class ZSliderWidget extends JSlider {
+	private static final long serialVersionUID = 1L;
 	private AtomicReference<Double> out = new AtomicReference<Double>();
-	public JSlider _widget = new JSlider();
 
-	public SliderWidget(int min, int max) {
-		_widget.setMaximum(max);
-		_widget.setMinimum(min);
-		_widget.setValue(0);
-		_widget.addChangeListener(new ChangeListener() {
+	public ZSliderWidget() {
+	}
+
+	public ZSliderWidget(int min, int max) {
+		setMaximum(max);
+		setMinimum(min);
+		setValue(0);
+		addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				out.set((double) _widget.getValue());
+				out.set((double) getValue());
 			}
 		});
 	}

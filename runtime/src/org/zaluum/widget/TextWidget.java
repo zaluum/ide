@@ -10,18 +10,19 @@ import org.zaluum.annotation.Box;
 import org.zaluum.basic.Zaluum;
 
 @Box
-public class TextWidget {
-	public JTextField _widget = new JTextField();
+public class TextWidget extends JTextField {
+
+	private static final long serialVersionUID = 1L;
 
 	public TextWidget() {
-		_widget.setEnabled(false);
+		setEnabled(false);
 	}
 
 	private AtomicReference<Double> value = new AtomicReference<Double>(0.0);
 	private Runnable r = new Runnable() {
 		@Override
 		public void run() {
-			_widget.setText("" + value.get());
+			setText("" + value.get());
 		}
 	};
 
@@ -29,6 +30,6 @@ public class TextWidget {
 	public void apply(double d) throws InterruptedException,
 			InvocationTargetException {
 		value.set(d);
-		Zaluum.fastUpdate(_widget, r);
+		Zaluum.fastUpdate(this, r);
 	}
 }

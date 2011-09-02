@@ -1,5 +1,6 @@
 package org.zaluum.nide.compiler
 
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.DirectedGraph
@@ -15,40 +16,43 @@ trait Symbol {
   def name: Name
   var decl: Tree = null
   def tdecl: Tree = decl
-  private var _tpe: Type = NoSymbol
+  private var _tpe: JavaType = NoSymbol
   def tpe = _tpe
-  def tpe_=(t: Type) { _tpe = t }
+  def tpe_=(t: JavaType) { _tpe = t }
   override def toString = "Symbol(" + (if (name != null) name.str else "NoSymbol") + ")"
 }
-trait Type extends Symbol { // merge with javatype
-  def fqName: Name
-  def javaSize = 1
-  type B <: TypeBinding
-  var binding: B = _
-}
 case object NoSymbol extends Symbol with JavaType {
+  type B = ReferenceBinding
   val owner = NoSymbol
   def descriptor = null
   val name = Name("NoSymbol")
   def fqName = name
+  val binding = null
+  def loadClass(cl: ClassLoader) = None
 }
-trait JavaType extends Type {
+trait JavaType extends Symbol {
+  def fqName: Name
+  def javaSize = 1
+  type B <: TypeBinding
+  def binding: B
   val owner: Symbol
   def name: Name
   def descriptor: String
   override def toString = "JavaType(" + name + ")"
+  def loadClass(cl: ClassLoader): Option[Class[_]]
 }
 class PrimitiveJavaType(
     val name: Name,
     override val descriptor: String,
     override val javaSize: Int,
     val boxedName: Name,
-    val boxMethod: String) extends JavaType {
+    val boxMethod: String, val binding: BaseTypeBinding, javaclass: Class[_]) extends JavaType {
   type B = BaseTypeBinding
   val owner = null
   def fqName = name
+  def loadClass(cl: ClassLoader) = Some(javaclass)
 }
-class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int) extends JavaType {
+class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int, val binding: ArrayBinding) extends JavaType {
   type B = ArrayBinding
   assert(!of.isInstanceOf[ArrayType])
   def descriptor = "[" * dim + of.descriptor
@@ -63,16 +67,95 @@ class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int) extends JavaT
   override def hashCode = {
     41 * (41 * (41 + owner.hashCode) + of.hashCode) + dim
   }
+  def loadClass(cl: ClassLoader) = None // FIXME
   override def toString = "ArrayType(" + of.toString + ", " + dim + ")"
+}
+class ParamSymbol(val owner: JavaType, val name: Name) extends Symbol {
+  override def toString = "ParamSymbol(" + name + ")"
+}
+class BeanParamSymbol(
+    owner: JavaType,
+    val getter: MethodBinding,
+    val setter: MethodBinding,
+    initTpe: JavaType) extends ParamSymbol(owner, Name(MethodHelper.propertyName(getter))) {
+  tpe = initTpe;
+}
+object MethodHelper {
+  def isGetter(m: MethodBinding) = {
+    val name = m.selector.mkString
+    m.isPublic() &&
+      (m.parameters == null || m.parameters.size == 0) &&
+      (
+        (name.size > 3 &&
+          name.startsWith("get") &&
+          m.returnType != TypeBinding.VOID) ||
+          (name.size > 2 &&
+            name.startsWith("is") &&
+            m.returnType == TypeBinding.BOOLEAN))
+
+  }
+  def isSetter(m: MethodBinding) = {
+    m.isPublic() &&
+      m.selector.mkString.size > 3 &&
+      m.selector.mkString.startsWith("set") &&
+      m.returnType == TypeBinding.VOID &&
+      m.parameters.size == 1
+  }
+  def propertyName(m: MethodBinding) = {
+    val str = m.selector.mkString
+    val name = if (str.startsWith("get") || str.startsWith("set"))
+      str.drop(3) else str.drop(2)
+    name(0).toLower + name.tail
+  }
+
 }
 trait ClassJavaType extends JavaType {
   type B = ReferenceBinding
+  val binding: B
+  val scope: ZaluumClassScope
   def descriptor = "L" + fqName.internal + ";"
+  lazy val name = Name(binding.compoundName.last.mkString)
+  lazy val pkg = Name(binding.fPackage.compoundName.map(_.mkString).mkString("."))
+  lazy val fqName: Name = if (pkg.str != "") Name(pkg.str + "." + name.str) else name
+  lazy val engine = ZaluumCompletionEngineScala.engineFor(scope)
+  def allMethods = ZaluumCompletionEngineScala.allMethods(engine, scope, binding, static = false)
+  def allFields = ZaluumCompletionEngineScala.allFields(engine, scope, binding, static = false)
+  def allConstructors = ZaluumCompletionEngineScala.allConstructors(engine, scope, binding)
+  lazy val beanProperties = {
+    val getters = allMethods filter { MethodHelper.isGetter }
+    val setters = allMethods filter { MethodHelper.isSetter }
+    for (
+      g ← getters;
+      s ← setters;
+      if (MethodHelper.propertyName(g) == MethodHelper.propertyName(s) &&
+        g.returnType == s.parameters(0))
+    ) yield new BeanParamSymbol(this, g, s, scope.getJavaType(g.returnType))
+  }
+  def loadClass(cl: ClassLoader) = try { Some(cl.loadClass(fqName.str)) }
+  catch { case e: Exception ⇒ e.printStackTrace; None }
 }
-class SimpleClassJavaType(val owner: Symbol, val fqName: Name, bind: ReferenceBinding) extends ClassJavaType {
-  binding = bind
-  def name = fqName
+
+class SimpleClassJavaType(val owner: Symbol, val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType
+class BoxTypeSymbol(
+    val image: Option[String],
+    var isVisual: Boolean, val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType with TemplateSymbol with BoxType with Namer {
+  tpe = this
+  val owner = null
+  var hasApply = false
+  var constructors = List[Constructor]()
+  var methodSelector: Name = _
+  override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
+  override def templateTree = tdecl.template
+
+  def usedNames = ports.keySet map { _.str } // FIXME what else?
+  def block = blocks.head
+  def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
+  def returnPort = ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
+  def fieldReturns = ports.values.toList filter { p ⇒ p.isField && p.dir == Out } sortBy { _.name.str }
+  def returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
+  def methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
 }
+
 case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bl: BlockSymbol) {
   def findConnectionFor(pi: PortInstance) = {
     connections.find { con ⇒
@@ -100,10 +183,10 @@ sealed trait TemplateSymbol extends Symbol {
   }
   def currentBlock = blocks(currentBlockIndex)
   def nextBlockIndex = if (currentBlockIndex >= blocks.length - 1) 0 else currentBlockIndex + 1
-  def lookupParam(name: Name): Option[ParamSymbol]
+  //def lookupParam(name: Name): Option[ParamSymbol]
   var thisVal: ValSymbol = _ // should be template
 }
-trait BoxType extends TemplateSymbol with Type {
+trait BoxType extends TemplateSymbol with JavaType {
   def templateTree: Template
 }
 class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
@@ -193,44 +276,9 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
     }
   }
 }
-class BoxTypeSymbol(
-    val name: Name, //Class name without package
-    val pkg: Name, // pkgdecl
-    val image: Option[String],
-    var visualClass: Option[Name],
-    val abstractCl: Boolean = false) extends ClassJavaType with TemplateSymbol with BoxType with Namer {
 
-  var javaScope: ZaluumClassScope = null
-  var scope: Scope = null
-  val owner = null
-  var hasApply = false
-  var _superSymbol: Option[BoxType] = None
-  var okOverride = false
-  var constructors = List[Constructor]()
-  var params = Map[Name, ParamSymbol]()
-  var methodSelector: Name = _
-  var source: String = "" // TODO
-  tpe = this
-  override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
-  override def templateTree = tdecl.template
-  def usedNames = ports.keySet map { _.str } // FIXME what else?
-  def fqName: Name = if (pkg.str != "") Name(pkg.str + "." + name.str) else name
-  def block = blocks.head
-  def IOInOrder = (ports.values ++ params.values).toList.sortBy(_.name.str)
-  def paramsInOrder = params.values.toList.sortBy(_.name.str)
-  def lookupParam(name: Name) = params.get(name)
-  def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
-  def returnPort = ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
-  def fieldReturns = ports.values.toList filter { p ⇒ p.isField && p.dir == Out } sortBy { _.name.str }
-  def returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
-  def methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
-}
-
-// TODO make two classes one that has values from the declaring tree and the other directly from symbol
-class IOSymbol(val owner: TemplateSymbol, val name: Name, val dir: PortDir) extends Symbol {
+class PortSymbol(val owner: TemplateSymbol, val name: Name, val helperName: Option[Name], val extPos: Point, val dir: PortDir, var isField: Boolean = false) extends Symbol {
   def box = owner
-}
-class PortSymbol(owner: TemplateSymbol, name: Name, val helperName: Option[Name], val extPos: Point, dir: PortDir, var isField: Boolean = false) extends IOSymbol(owner, name, dir) {
   def this(owner: TemplateSymbol, name: Name, dir: PortDir) =
     this(owner, name, None, Point(0, 0), dir)
   override def toString = "PortSymbol(" + name + ")"
@@ -241,16 +289,13 @@ class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
     if (params.isEmpty) "<default>()" else
       params.map(p ⇒ p.name.str + " : " + p.tpe.name.str).mkString(", ")
   }
-  def matchesSignature(sig: List[Type]) = sig == params.map { _.tpe }
+  def matchesSignature(sig: List[JavaType]) = sig == params.map { _.tpe }
   def signature = { // FIXME might not be a JavaType it could be a BoxTypeSymbol
     val pars = params map { p ⇒ p.tpe.asInstanceOf[JavaType].descriptor } mkString;
     "(" + pars + ")V"
   }
 }
 
-class ParamSymbol(owner: BoxTypeSymbol, name: Name) extends IOSymbol(owner, name, In) {
-  override def toString = "ParamSymbol(" + name + ")"
-}
 class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) extends Symbol {
   var missing = false
   def isField = portSymbol.map(_.isField).getOrElse(false)
@@ -294,7 +339,7 @@ object PortSide {
 }
 class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolean) extends Symbol {
   override def tpe = pi.tpe
-  override def tpe_=(t: Type) { pi.tpe = t }
+  override def tpe_=(t: JavaType) { pi.tpe = t }
   def owner = pi
   def flowIn = if (fromInside) !inPort else inPort
   def name = pi.name
@@ -316,20 +361,19 @@ case class ExecutionPath(num: Int, blockSymbol: BlockSymbol) {
 class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   override def tdecl = decl.asInstanceOf[ValDef]
   def templateTree = tdecl.template.get
-  def lookupParam(name: Name): Option[ParamSymbol] = sys.error("")
   // var refactor
   var execPath: ExecutionPath = null
   var init = false
   val fork = Buffer[ExecutionPath]()
   val join = Buffer[ValSymbol]()
+  var params = Map[ParamSymbol, Any]()
   var isJoinPoint = false
   var info: AnyRef = null
   var classinfo: AnyRef = null
-  var params = Map[ParamSymbol, Any]()
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
   var constructor: Option[Constructor] = None
-  var constructorParams = List[(Any, Type)]()
+  var constructorParams = List[(Any, JavaType)]()
   def fqName: Name = { // synch with ZaluumCompilationUnitDeclaration
     val prefix = owner.template match {
       case b: BoxTypeSymbol ⇒ ""
