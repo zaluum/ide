@@ -21,7 +21,7 @@ object Parser {
       case e ⇒
         // TODO fixme better handling
         println("PARSING ERROR! First after file creation is expected" + e.toString)
-        BoxDef.emptyBox(className.classNameWithoutPackage, className.packageProxy)
+        BoxDef.emptyBox(className.classNameWithoutPackage.str, className.packageProxy)
     }
     a.assignLine(1)
     a

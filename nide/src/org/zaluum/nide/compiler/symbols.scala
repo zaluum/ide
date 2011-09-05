@@ -137,8 +137,11 @@ trait ClassJavaType extends JavaType {
 
 class SimpleClassJavaType(val owner: Symbol, val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType
 class BoxTypeSymbol(
-    val image: Option[String],
-    var isVisual: Boolean, val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType with TemplateSymbol with BoxType with Namer {
+  val image: Option[String],
+  var isVisual: Boolean,
+  val binding: ReferenceBinding,
+  val scope: ZaluumClassScope) extends ClassJavaType
+    with TemplateSymbol with BoxType with Namer {
   tpe = this
   val owner = null
   var hasApply = false
@@ -146,14 +149,15 @@ class BoxTypeSymbol(
   var methodSelector: Name = _
   override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
   override def templateTree = tdecl.template
-
-  def usedNames = ports.keySet map { _.str } // FIXME what else?
+  def usedNames = usedValNames ++ (ports.keySet map { _.str }) // FIXME what else?
+  def usedValNames = (block :: block.deepBlocks).flatMap { _.usedValNames }.toSet
   def block = blocks.head
   def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
   def returnPort = ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
   def fieldReturns = ports.values.toList filter { p ⇒ p.isField && p.dir == Out } sortBy { _.name.str }
   def returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
   def methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
+  def parentBS = this
 }
 
 case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bl: BlockSymbol) {
@@ -183,8 +187,8 @@ sealed trait TemplateSymbol extends Symbol {
   }
   def currentBlock = blocks(currentBlockIndex)
   def nextBlockIndex = if (currentBlockIndex >= blocks.length - 1) 0 else currentBlockIndex + 1
-  //def lookupParam(name: Name): Option[ParamSymbol]
   var thisVal: ValSymbol = _ // should be template
+  def parentBS: BoxTypeSymbol
 }
 trait BoxType extends TemplateSymbol with JavaType {
   def templateTree: Template
@@ -204,7 +208,16 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   override def tdecl: Block = decl.asInstanceOf[Block]
   def blockNumeral = template.blocks.indexOf(this)
   def uniqueBlock = template.blocks.size == 1
-  def usedNames = (valsList ++ missingVals.values ++ template.ports.values).map { _.name.str }.toSet
+  def usedValNames = (valsList ++ missingVals.values).map(_.name.str).toSet
+  def usedNames = (template.parentBS.usedValNames ++ (template.ports.values.map { _.name.str })).toSet
+  def deepBlocks: List[BlockSymbol] = {
+    var res = List[BlockSymbol]()
+    for (vs ← this.valsList; other ← vs.blocks) {
+      res ::= other
+      res :::= other.deepBlocks
+    }
+    res
+  }
   def valsList = vals.values.toList
   def lookupValWithMissing(name: Name) = vals.get(name).orElse { missingVals.get(name) }
   def lookupValOrCreateMissing(name: Name) = vals.get(name).getOrElse {
@@ -374,14 +387,8 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   var portSides = List[PortSide]()
   var constructor: Option[Constructor] = None
   var constructorParams = List[(Any, JavaType)]()
-  def fqName: Name = { // synch with ZaluumCompilationUnitDeclaration
-    val prefix = owner.template match {
-      case b: BoxTypeSymbol ⇒ ""
-      case vs: ValSymbol    ⇒ vs.fqName.str
-    }
-    val num = if (owner.uniqueBlock) "" else owner.blockNumeral
-    Name(prefix + num + name.str)
-  }
+  def parentBS = owner.template.parentBS
+  def fqName = name
   def semfqName = Name(fqName.str + "_sem")
   private def createOutsidePs(name: Name, dir: Boolean, helperName: Option[Name] = None) = {
     val pdir = if (dir) In else Out

@@ -53,9 +53,10 @@ import org.eclipse.jdt.internal.compiler.ast.ArrayInitializer
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.impl.StringConstant
 import org.eclipse.jdt.internal.compiler.ast.StringLiteral
-
 import ZaluumCompilationUnitDeclaration._
 import JDTInternalUtils._
+import org.zaluum.nide.compiler.Expressions
+import org.zaluum.nide.compiler.Block
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
   compilationResult: CompilationResult,
@@ -85,7 +86,6 @@ class ZaluumCompilationUnitDeclaration(
           tree = Parser.readTree(contents, Name(fileMainName))
       }
       createLineSeparator()
-      val scope = zaluumScope
       createPackageDeclaration()
       createTypeDeclarations()
     } catch { case e ⇒ e.printStackTrace }
@@ -174,16 +174,25 @@ class ZaluumCompilationUnitDeclaration(
     meth.declarationSourceEnd = end(b)
     Array(constructor, meth)
   }
-  // tpe not yet initialized
+  // !! tpe not yet initialized
   def createFieldDeclarations(b: BoxDef): Array[FieldDeclaration] = {
     val res = Buffer[FieldDeclaration]()
-    //vals 
-    for (block ← b.template.blocks; v ← block.valDefs) {
-      val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v)) // keep synched with symbols.ValSymbol.fqName 
-      f.modifiers = Opcodes.ACC_PUBLIC
-      f.`type` = createTypeReference(v.typeName, v)
-      res += f
-    }
+      //vals 
+      def defineValsInBlock(block: Block) {
+        for (v ← block.valDefs) {
+          if (!Expressions.find(v.typeName).isDefined) {
+            val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v)) // keep synched with symbols.ValSymbol.fqName 
+            f.modifiers = Opcodes.ACC_PUBLIC
+            f.`type` = createTypeReference(v.typeName, v)
+            res += f
+          } else {
+            for (t ← v.template; b ← t.blocks) {
+              defineValsInBlock(b)
+            }
+          }
+        }
+      }
+    defineValsInBlock(b.template.blocks.head)
     //fields
     for (p ← b.template.ports filter { _.dir == Out } drop (1)) {
       val f = new FieldDeclaration(p.name.str.toCharArray, start(p), end(p))

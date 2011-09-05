@@ -76,7 +76,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
         val img = rm.create(newDesc).asInstanceOf[Image]
         destroy(desc)
         (img, desc)
-      case None ⇒ imageForText(name.classNameWithoutPackage, minY, ColorConstants.black)
+      case None ⇒ imageForText(name.classNameWithoutPackage.str, minY, ColorConstants.black)
 
     }
   }

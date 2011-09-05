@@ -22,11 +22,12 @@ class Reporter {
   override def toString = errors.toString
 }
 case class Name(str: String) {
-  def classNameWithoutPackage = str.split('.').last
+  def classNameWithoutPackage = Name(str.split('.').last)
   def packageProxy = str.split('.').dropRight(1).mkString(".")
   def toRelativePath: String = str.replace('.', '/')
   def toRelativePathClass = toRelativePath + ".class"
   def internal = str.replace('.', '/')
+  def firstLowerCase = str.head.toLower + str.tail
   def descriptor: String =
     asArray match {
       case Some((arrTpe, dim)) ⇒ ("[" * dim) + arrTpe.descriptor

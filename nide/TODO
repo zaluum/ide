@@ -1,6 +1,6 @@
 Agenda
 
-week 29-4 library week
+week 5-11 doc week -> ampliar detalls
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- write feature list on freemind
 	- Graphing widget properties. Color/etc( see labview)
@@ -10,7 +10,6 @@ week 29-4 library week
 		- tcp/ip 
 	- basic math
 	- sound output clicks?
-week 5-11 doc week -> ampliar detalls
 	- tutorials/docs/etc
 	- examples/screencast
 	- build scripts
@@ -44,6 +43,7 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 IDEES
+	-Com tractar arrays?
 	-Enlloc de _widget heredar directament de Jpanel
 	-lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
 	-buidar metodes boxtypesymbol, fer servir binding
@@ -118,6 +118,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- each box have an unique name
 	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
 	- Swing thread synchronization / refresh rate	
 	- fix show label on gui
