@@ -125,14 +125,27 @@ trait ClassJavaType extends JavaType {
   def allFields = ZaluumCompletionEngineScala.allFields(engine, scope, binding, static = false)
   def allConstructors = ZaluumCompletionEngineScala.allConstructors(engine, scope, binding)
   lazy val beanProperties = {
-    val getters = allMethods filter { MethodHelper.isGetter }
-    val setters = allMethods filter { MethodHelper.isSetter }
-    for (
-      g ← getters;
-      s ← setters;
-      if (MethodHelper.propertyName(g) == MethodHelper.propertyName(s) &&
-        g.returnType == s.parameters(0))
-    ) yield new BeanParamSymbol(this, g, s, scope.getJavaType(g.returnType))
+    val map = scala.collection.mutable.HashMap[String, (MethodBinding, MethodBinding)]()
+    for (m ← allMethods) {
+      if (MethodHelper.isGetter(m)) {
+        val name = MethodHelper.propertyName(m)
+        map.get(name) match {
+          case Some((g, s)) ⇒ map(name) = (m, s)
+          case _            ⇒ map(name) = (m, null)
+        }
+      } else if (MethodHelper.isSetter(m)) {
+        val name = MethodHelper.propertyName(m)
+        map.get(name) match {
+          case Some((g, s)) ⇒ map(name) = (g, m)
+          case _            ⇒ map(name) = (null, m)
+        }
+      }
+    }
+    var l = List[BeanParamSymbol]()
+    for ((name, (g, s)) ← map; if (g != null && s != null)) {
+      l ::= new BeanParamSymbol(this, g, s, scope.getJavaType(g.returnType))
+    }
+    l.sortBy(_.name.str)
   }
   def loadClass(cl: ClassLoader) = try { Some(cl.loadClass(fqName.str)) }
   catch { case e: Exception ⇒ e.printStackTrace; None }

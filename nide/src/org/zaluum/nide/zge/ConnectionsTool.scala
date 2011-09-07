@@ -223,6 +223,7 @@ trait ConnectionsTool {
       case item: Item if item.container == initContainer ⇒ item
     }
     def buttonUp {
+      //org.zaluum.nide.Timer.go
       val g = initContainer.graph
       val subjects = for (m ← movables; s ← m.selectionSubject) yield s
       val valdefs = subjects collect { case v: ValDef ⇒ v }

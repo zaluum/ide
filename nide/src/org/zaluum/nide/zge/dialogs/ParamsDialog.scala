@@ -43,7 +43,7 @@ class ParamsDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   def v = vs.decl.asInstanceOf[ValDef]
   def params = vs.tpe match {
     case null              ⇒ List()
-    case bs: BoxTypeSymbol ⇒ bs.beanProperties.sortBy { _.name.str }
+    case bs: BoxTypeSymbol ⇒ bs.beanProperties
     case e: ExprType       ⇒ e.exprParams.values.toList sortBy { _.name.str } // TODO merge in boxType
   }
   override protected def okPressed() {

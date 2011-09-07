@@ -24,6 +24,7 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.eclipse.integration.model.ZaluumASTParser
 import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
 import org.zaluum.nide.eclipse.ZaluumProject
+import org.zaluum.nide.Timer
 
 class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit val display: Display) {
   private var nowTree: BoxDef = _
@@ -125,15 +126,22 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
   }
   private def update(m: DMap) {
     nowTree.assignLine(1)
+    //Timer.go
     replaceWorkingCopyContents()
+    //Timer.stop("replaceWorking")
     recompile(m)
   }
   private def recompile(m: DMap) {
+    Timer.go
     compile(false)
+    Timer.stop("compilation")
     //PrettyPrinter.print(nowTree, 0)
+    Timer.go
     updateViewers(m)
     notifyListeners
     refreshTools
+    Timer.stop("updateViewers")
+    println("---")
   }
   def canUndo = !undoStack.isEmpty
   def canRedo = !redoStack.isEmpty

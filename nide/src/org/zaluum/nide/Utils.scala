@@ -113,3 +113,14 @@ class Cache[A, B](compute: A ⇒ Option[B]) {
   def reset() { map = Map() }
   def values = map.values
 }
+object Timer {
+  private var start: Long = 0L
+  private var end: Long = 0L
+  def go = {
+    start = System.nanoTime
+  }
+  def stop(str: String) = {
+    end = System.nanoTime()
+    println(str + "\t>   " + (end - start) / 1000000000.0 + " s")
+  }
+}
