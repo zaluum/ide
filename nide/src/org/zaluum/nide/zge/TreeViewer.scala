@@ -1,7 +1,6 @@
 package org.zaluum.nide.zge
 
 import scala.collection.mutable.Buffer
-
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.FreeformLayer
@@ -93,13 +92,6 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
     selection.refresh(mapper);
   }
 
-  def itemToIType(i: Item) = {
-    i match {
-      case v: ValDefItem if (v.valSym.tpe != null) ⇒
-        controller.zproject.jProject.findType(v.valSym.tpe.fqName.str)
-      case _ ⇒ null
-    }
-  }
   val emptyLabel = new Label("Empty File. Start by dropping items from the palette...")
   emptyLabel.setForegroundColor(ColorConstants.lightGray)
   emptyLabel.setFont(Activator.getDefault.directEditFont)
@@ -128,7 +120,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
     updateContents(Map()) // FIXME
     if (deepChildrenWithoutLayers.isEmpty) showEmptyLabel()
     selectedItems foreach { _.showFeedback() }
-    selectedItems.headOption foreach { i ⇒ editor.setSelection(itemToIType(i)) }
+    editor.setSelection(selectedItems.headOption)
     /*for (s <- selectedItems; ss <- s.selectionSubject) {
       println ("selected : " + ss)
       ss match {

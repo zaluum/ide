@@ -24,13 +24,22 @@ import org.zaluum.nide.zge.Controller
 import org.zaluum.nide.zge.GuiViewer
 import org.zaluum.nide.zge.PaletteView
 import org.zaluum.nide.zge.TreeViewer
+import org.zaluum.nide.zge.Item
+import org.zaluum.nide.zge.ValDefItem
+import org.eclipse.jface.viewers.StructuredSelection
 
 class GraphicalEditor extends BaseEditor with IGotoMarker {
 
   var viewer: TreeViewer = _
   var shell: Option[Shell] = None
   def controller = viewer.controller
-
+  private var selectionListeners = List[() ⇒ Unit]()
+  def addSelectionListener(l: () ⇒ Unit) {
+    if (!selectionListeners.contains(l)) selectionListeners ::= l
+  }
+  def removeSelectionListener(l: () ⇒ Unit) {
+    selectionListeners = selectionListeners filterNot (_ == l)
+  }
   def doSave(monitor: IProgressMonitor) {
     controller.cu.commitWorkingCopy(true, monitor)
     controller.markSaved()
@@ -59,8 +68,19 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
     // the first viewer.refresh comes from onResize
     // TODO reopen
   }
-
-  def setSelection(i: IType) { selectionProvider.setSelection(SelectionProvider.adaptType(i)) }
+  var selected: Option[Item] = None
+  def selection = selected map { i ⇒ new StructuredSelection(i) } getOrElse { StructuredSelection.EMPTY }
+  def setSelection(i: Option[Item]) {
+    if (selected != i) {
+      selected = i
+      selectionListeners foreach { _() }
+      val sel = i match {
+        case Some(i) ⇒ SelectionProvider.adaptItem(i, controller)
+        case None    ⇒ StructuredSelection.EMPTY
+      }
+      selectionProvider.setSelection(sel)
+    }
+  }
   private lazy val selectionProvider = new SelectionProvider()
   def setFocus() {
     showPalette()

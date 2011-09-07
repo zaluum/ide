@@ -36,8 +36,8 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
   def checkStaticExprType(vs: ValSymbol) {
     val tpe = vs.tpe.asInstanceOf[StaticExprType]
     vs.params.get(tpe.typeSymbol) match {
-      case Some(className: String) ⇒
-        ztd.zaluumScope.getJavaType(Name(className)) match {
+      case Some(v) ⇒
+        ztd.zaluumScope.getJavaType(Name(v.encoded)) match {
           case Some(c: ClassJavaType) ⇒
             vs.classinfo = c
             tpe match {
@@ -52,15 +52,15 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
               case NewArrayExprType ⇒ checkNewArray(vs, p)
               case _                ⇒ error("Type must be a class", vs.decl)
             }
-          case _ ⇒ error("Class " + className + " not found", vs.decl)
+          case _ ⇒ error("Class " + v.encoded + " not found", vs.decl)
         }
       case None ⇒ error("No class specified", vs.decl)
     }
   }
   def checkNewArray(vs: ValSymbol, t: JavaType) {
     val dims = vs.params.get(NewArrayExprType.arrayDimSymbol) match {
-      case Some(dimsStr: String) ⇒
-        try { dimsStr.toInt } catch { case e ⇒ error("Cannot parse", vs.decl); 1 }
+      case Some(v: Value) ⇒
+        try { v.encoded.toInt } catch { case e ⇒ error("Cannot parse", vs.decl); 1 }
       case None ⇒ 1
     }
     for (i ← 1 to dims) {
@@ -96,8 +96,8 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
   def processStaticField(vs: ValSymbol, c: ClassJavaType) {
     val tpe = vs.tpe.asInstanceOf[SignatureExprType]
     vs.params.get(tpe.signatureSymbol) match {
-      case Some(fieldName: String) ⇒
-        val f = ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, fieldName, true)
+      case Some(v) ⇒
+        val f = ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, v.encoded, true)
         processField(vs, c)
       case _ ⇒ error("Static field not specified", vs.decl)
     }
@@ -155,8 +155,8 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
   def processField(vs: ValSymbol, c: ClassJavaType) {
     val tpe = vs.tpe.asInstanceOf[SignatureExprType]
     vs.params.get(tpe.signatureSymbol) match {
-      case Some(fieldName: String) ⇒
-        ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, fieldName, false) match {
+      case Some(v: Value) ⇒
+        ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, v.encoded, false) match {
           case Some(p: ProblemFieldBinding) ⇒ error("Problem field " + p + p.problemId(), vs.decl)
           case Some(f: FieldBinding) ⇒
             val out = vs.tpe.asInstanceOf[ResultExprType].outPort(vs)
@@ -172,10 +172,14 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
   }
   def invoke(vs: ValSymbol, c: ClassJavaType) {
     vs.params.get(InvokeExprType.signatureSymbol) match {
-      case Some(InvokeExprType.Sig(selector, signature)) ⇒
-        val m = ZaluumCompletionEngineScala.findBySignature(ztd, scope(vs), c, selector, signature, false)
-        processMethod(vs, m) { _ ⇒ }
-      case _ ⇒ error("Cannot parse selected method signature", vs.decl)
+      case Some(v) ⇒
+        v.encoded match {
+          case InvokeExprType.Sig(selector, signature) ⇒
+            val m = ZaluumCompletionEngineScala.findBySignature(ztd, scope(vs), c, selector, signature, false)
+            processMethod(vs, m) { _ ⇒ }
+          case _ ⇒ error("Cannot parse selected method signature", vs.decl)
+        }
+      case _ ⇒ error("No selected method specified", vs.decl)
     }
   }
   /*

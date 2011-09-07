@@ -30,7 +30,7 @@ class MainThreadMethodGenerator(bs: BoxTypeSymbol) extends MethodGenerator(bs) {
     bs.returnPort match {
       case Some(r) ⇒
         val pi = bs.thisVal.findPortInstance(r).get
-        ins += Return(toRef(pi), pi.tpe)
+        ins += Return(toRef(pi), pi.tpe.fqName)
       case None ⇒
         ins += Return
     }
@@ -124,7 +124,7 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
     for (ps ← vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
       bl.connections.connectedFrom.get(pi) match {
         case Some((o, blame)) ⇒ assign(pi, o)
-        case None             ⇒ Assign(toRef(pi), Const(0, pi.tpe))
+        case None             ⇒ Assign(toRef(pi), Const(0, pi.tpe.fqName))
       }
     }
   }
@@ -276,18 +276,9 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
       case LiteralExprType ⇒
         val o = LiteralExprType.outPort(vs)
         val c = vs.params.headOption match {
-          case Some((t, v: String)) ⇒
-            o.tpe match {
-              case primitives.Boolean ⇒ Const(v.toBoolean, primitives.Boolean)
-              case primitives.Byte    ⇒ Const(v.toByte, primitives.Byte)
-              case primitives.Short   ⇒ Const(v.toShort, primitives.Short)
-              case primitives.Int     ⇒ Const(v.toInt, primitives.Int)
-              case primitives.Long    ⇒ Const(v.dropRight(1).toLong, primitives.Long)
-              case primitives.Float   ⇒ Const(v.toFloat, primitives.Float)
-              case primitives.Double  ⇒ Const(v.toDouble, primitives.Double)
-              case str                ⇒ Const(v, str) // String
-            }
-          case _ ⇒ Const(0, primitives.Byte)
+          case Some((t, v)) ⇒
+            v.codeGen
+          case _ ⇒ new Const(0, primitives.Byte)
         }
         ins += Assign(toRef(o), c)
       case u: UnaryExprType ⇒

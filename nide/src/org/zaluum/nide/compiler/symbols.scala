@@ -49,7 +49,7 @@ class PrimitiveJavaType(
     val boxMethod: String, val binding: BaseTypeBinding, javaclass: Class[_]) extends JavaType {
   type B = BaseTypeBinding
   val owner = null
-  def fqName = name
+  val fqName = name
   def loadClass(cl: ClassLoader) = Some(javaclass)
 }
 class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int, val binding: ArrayBinding) extends JavaType {
@@ -79,6 +79,7 @@ class BeanParamSymbol(
     val setter: MethodBinding,
     initTpe: JavaType) extends ParamSymbol(owner, Name(MethodHelper.propertyName(getter))) {
   tpe = initTpe;
+  def declaringClass = getter.declaringClass.compoundName.map { _.mkString }.mkString(".")
 }
 object MethodHelper {
   def isGetter(m: MethodBinding) = {
@@ -102,10 +103,12 @@ object MethodHelper {
       m.parameters.size == 1
   }
   def propertyName(m: MethodBinding) = {
-    val str = m.selector.mkString
-    val name = if (str.startsWith("get") || str.startsWith("set"))
-      str.drop(3) else str.drop(2)
-    name(0).toLower + name.tail
+    val s = m.selector
+    if ((s(0) == 'g' || s(0) == 's') && s(1) == 'e' && s(2) == 't') {
+      s(3).toLower + s.mkString.drop(4)
+    } else {
+      s(2).toLower + s.mkString.drop(3)
+    }
   }
 
 }
@@ -379,14 +382,14 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   var init = false
   val fork = Buffer[ExecutionPath]()
   val join = Buffer[ValSymbol]()
-  var params = Map[ParamSymbol, Any]()
+  var params = Map[ParamSymbol, Value]()
   var isJoinPoint = false
   var info: AnyRef = null
   var classinfo: AnyRef = null
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
   var constructor: Option[Constructor] = None
-  var constructorParams = List[(Any, JavaType)]()
+  var constructorParams = List[Value]()
   def parentBS = owner.template.parentBS
   def fqName = name
   def semfqName = Name(fqName.str + "_sem")

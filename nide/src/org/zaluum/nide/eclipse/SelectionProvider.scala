@@ -9,19 +9,37 @@ import org.eclipse.jface.viewers.ISelectionChangedListener
 import org.eclipse.jface.viewers.ISelectionProvider
 import org.eclipse.jface.viewers.SelectionChangedEvent
 import org.eclipse.jface.viewers.StructuredSelection
+import org.zaluum.nide.zge.Item
+import org.eclipse.ui.views.properties.IPropertySource2
+import org.eclipse.core.runtime.IAdaptable
+import org.zaluum.nide.zge.ValDefItem
+import org.zaluum.nide.zge.Controller
+import org.eclipse.ui.views.properties.IPropertySource
 object SelectionProvider {
-  def adaptType(i: IType): StructuredSelection = {
-    val El = classOf[org.eclipse.jdt.core.IJavaElement]
-    val adaptable = new org.eclipse.core.runtime.IAdaptable() {
+  val Jelement = classOf[org.eclipse.jdt.core.IJavaElement]
+  val Properties = classOf[IPropertySource]
+  def adaptItem(i: Item, controller: Controller): StructuredSelection =
+    new StructuredSelection(new IAdaptable() {
+      def getAdapter(cl: Class[_]) = i match {
+        case v: ValDefItem if (v.valSym.tpe != null) ⇒
+          cl match {
+            case Jelement ⇒
+              controller.zproject.jProject.findType(v.valSym.tpe.fqName.str)
+            case Properties ⇒ v
+            case _          ⇒ null
+          }
+        case _ ⇒ null
+      }
+    })
+  def adaptType(i: IType): StructuredSelection =
+    new StructuredSelection(new IAdaptable() {
       def getAdapter(cl: Class[_]) = {
         cl match {
-          case El ⇒ i
-          case _  ⇒ null
+          case Jelement ⇒ i
+          case _        ⇒ null
         }
       }
-    }
-    new StructuredSelection(adaptable)
-  }
+    })
 }
 class SelectionProvider extends ISelectionProvider with IPostSelectionProvider {
   private var list = List[ISelectionChangedListener]()

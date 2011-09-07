@@ -26,9 +26,22 @@ import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.zaluum.nide.eclipse.integration.model.MethodUtils
 import org.eclipse.jdt.internal.core.JavaProject
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
+import org.eclipse.ui.views.properties.TextPropertyDescriptor
+import org.eclipse.ui.views.properties.IPropertyDescriptor
+import org.eclipse.ui.views.properties.IPropertySource2
+import org.zaluum.nide.eclipse.EclipseUtils
+import org.eclipse.ui.views.properties.ColorPropertyDescriptor
+import org.eclipse.swt.graphics.RGB
+import org.eclipse.ui.views.properties.PropertyDescriptor
+import org.eclipse.jface.viewers.LabelProvider
+import org.eclipse.swt.graphics.FontData
+import org.eclipse.jface.viewers.DialogCellEditor
+import org.eclipse.swt.widgets.FontDialog
+import org.eclipse.swt.widgets.Control
+import org.zaluum.nide.compiler.InvalidValueType
 
 // TREE SPECIFIC FIGURES
-trait ValDefItem extends Item {
+trait ValDefItem extends Item with IPropertySource2 {
   var valDef: ValDef = _
   def valSym = valDef.sym
   def pos = valDef.pos
@@ -41,6 +54,56 @@ trait ValDefItem extends Item {
   }
   def updateMe()
   def updateValPorts()
+  def isPropertyResettable(id: AnyRef) = true
+  def isPropertySet(id: AnyRef) = id match {
+    case p: ParamSymbol ⇒ valSym.params.contains(p)
+    case _              ⇒ false
+  }
+  def getEditableValue() = this
+  def getPropertyDescriptors() = {
+    valSym.tpe match {
+      case bs: BoxTypeSymbol ⇒
+        (for (
+          b ← bs.beanProperties;
+          val t = Values.typeFor(b);
+          if (!t.isInstanceOf[InvalidValueType])
+        ) yield t.editor(b)).toArray
+      case _ ⇒ Array[IPropertyDescriptor]()
+    }
+  }
+  def getPropertyValue(id: AnyRef): AnyRef = {
+    id match {
+      case b: BeanParamSymbol ⇒
+        valSym.params.get(b) match {
+          case Some(v) ⇒ v.toSWT
+          case None    ⇒ Values.typeFor(b).defaultSWT
+        }
+      case _ ⇒ throw new Exception
+    }
+  }
+  def controller = container.viewer.controller
+  def resetPropertyValue(id: AnyRef) {
+    id match {
+      case b: BeanParamSymbol ⇒
+        controller.exec(valDef.removeParam(b.name))
+    }
+  }
+  def setPropertyValue(id: AnyRef, swtValue: AnyRef) {
+    import EclipseUtils._
+    // must run async. If not a loop is entered within the controller refresh
+    async(container.viewer.display) {
+      if (getPropertyValue(id) == swtValue) return
+      id match {
+        case b: BeanParamSymbol ⇒
+          val encoded = Values.typeFor(b).parseSWT(swtValue)
+          if (encoded == "")
+            controller.exec(valDef.removeParam(b.name))
+          else
+            controller.exec(valDef.addOrReplaceParam(Param(b.name, encoded)))
+        case _ ⇒
+      }
+    }
+  }
 }
 
 trait ValFigure extends ValDefItem with HasPorts {
@@ -255,7 +318,8 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
               Some(m.getParameterTypes()(0)) == classParam
           } foreach { m ⇒
             try {
-              m.invoke(c, v.asInstanceOf[AnyRef])
+              if (v.valid)
+                m.invoke(c, v.parse.asInstanceOf[AnyRef])
             } catch { case e ⇒ e.printStackTrace() }
           }
       }

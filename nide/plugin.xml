@@ -534,6 +534,15 @@
             name="Palette"
             restorable="true">
       </view>
+      <view
+            allowMultiple="false"
+            category="zaluum.view"
+            class="org.zaluum.nide.zge.PropertiesView"
+            icon="icons/zaluum_icon_16.gif"
+            id="org.zaluum.nide.propertiesView"
+            name="Properties"
+            restorable="true">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.themes">

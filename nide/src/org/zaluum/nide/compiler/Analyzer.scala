@@ -87,35 +87,7 @@ object Literals {
       case e ⇒ None
     }
   }
-  def parseNarrowestLiteral(v: String, zaluumScope: ZaluumClassScope) = {
-      def parseIntOpt = try { Some(v.toInt) } catch { case e ⇒ None }
-      def parseDoubleOpt = try { Some(v.toDouble) } catch { case e ⇒ None }
-    if (v.toLowerCase == "true") Some(true, primitives.Boolean)
-    else if (v.toLowerCase == "false") Some(false, primitives.Boolean)
-    else if (v.endsWith("f") || v.endsWith("F")) {
-      try { Some((v.toFloat, primitives.Float)) } catch { case e ⇒ None }
-    } else if (v.endsWith("l") || v.endsWith("L")) {
-      try { Some((v.dropRight(1).toLong, primitives.Long)) } catch { case e ⇒ e.printStackTrace; println("long fail " + v); None }
-    } else if (v.startsWith("\"") && v.endsWith("\"")) {
 
-      Some(v.substring(1, v.length - 1), zaluumScope.getZJavaLangString)
-    } else {
-      parseIntOpt match { // char?
-        case Some(i) ⇒ Some(narrowestInt(i))
-        case None ⇒
-          parseDoubleOpt match {
-            case Some(d) ⇒ Some(d, primitives.Double)
-            case None    ⇒ Some(v, zaluumScope.getZJavaLangString)
-          }
-      }
-    }
-  }
-  def narrowestInt(i: Int): (Int, PrimitiveJavaType) = {
-    val p = if (i <= Byte.MaxValue && i >= Byte.MinValue) primitives.Byte
-    else if (i <= Short.MaxValue && i >= Short.MinValue) primitives.Short
-    else primitives.Int
-    (i, p)
-  }
 }
 trait Scope extends Symbol {
   def lookupType(name: Name): Option[JavaType]
@@ -323,11 +295,10 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
                   vsym.constructor = Some(cons)
                   vsym.constructorParams = v.constructorParams.zip(consSign) map {
                     case (value, tpe) ⇒
-                      val parsed = Literals.parse(value, tpe.name) getOrElse {
+                      val parsed = Values.typeFor(tpe.fqName).create(value)
+                      if (!parsed.valid)
                         error("Cannot parse literal \"" + value + "\" to " + tpe.name.str, tree)
-                        NoSymbol
-                      }
-                      (parsed, tpe)
+                      parsed
                   }
                 case None ⇒
                   error("Cannot find constructor for box " + v.typeName.str +
@@ -337,11 +308,10 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               for (p ← v.params.asInstanceOf[List[Param]]) {
                 bs.beanProperties.find(_.name == p.key) match {
                   case Some(bean) ⇒
-                    val toType = bean.tpe.fqName
-                    val parsed = Literals.parse(p.value, toType) getOrElse {
-                      error("Cannot parse literal \"" + p.value + "\" to " + toType.str + " in parameter " + p.key, tree)
-                      NoSymbol
-                    }
+                    val parsed = Values.typeFor(bean).create(p.value)
+                    if (!parsed.valid)
+                      error(bs.name.str + " cannot parse parameter " + bean.name.str, tree)
+
                     vsym.params += (bean -> parsed)
                   case None ⇒ error(bs.name.str + " has no parameter " + p.key.str, tree)
                 }
@@ -353,7 +323,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               for (p ← v.params.asInstanceOf[List[Param]]) {
                 b.lookupExprParam(p.key) match {
                   case Some(parSym) ⇒
-                    vsym.params += (parSym -> p.value) // FIXME always string?
+                    parSym.tpe = scope.getZJavaLangString // FIXME always string?
+                    val value = Values.typeFor(parSym.tpe.fqName).create(p.value)
+                    vsym.params += (parSym -> value)
+                    if (!value.valid) {
+                      println(value.valueTpe.tpe + " " + value.getClass())
+                      error("Cannot parse " + p.value + " in parameter " + p.key, tree)
+                    }
                   case None ⇒ error(b.fqName.str + " has no parameter " + p.key, tree)
                 }
               }

@@ -57,9 +57,16 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
   var mark: Option[Mutation] = None
   def isDirty = undoStack.elems.headOption != mark
   def markSaved() { mark = undoStack.elems.headOption }
+
   def exec(c: MapTransformer) {
     val before = nowTree
     nowTree = c(tree).asInstanceOf[BoxDef]
+    before.symbol = null
+    before.tpe = null
+    before.deepchildren foreach { t ⇒
+      t.symbol = null
+      t.tpe = null
+    }
     undoStack.push(Mutation(before, c.map, nowTree))
     redoStack.clear
     update(c.map)

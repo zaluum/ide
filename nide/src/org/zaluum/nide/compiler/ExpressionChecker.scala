@@ -111,13 +111,13 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
       case ToDoubleType ⇒ o.tpe = Double
       case CastToExprType ⇒
         vs.params.get(CastToExprType.typeSymbol) match {
-          case Some(typeName: String) ⇒
-            ztd.zaluumScope.getJavaType(Name(typeName)) match {
+          case Some(v) ⇒
+            ztd.zaluumScope.getJavaType(Name(v.encoded)) match {
               case Some(c) ⇒
                 o.tpe = c
               case None ⇒
                 o.tpe = NoSymbol
-                error("Cast type " + typeName + " not found", vs.decl)
+                error("Cast type " + v.encoded + " not found", vs.decl)
             }
           case _ ⇒
             o.tpe = NoSymbol
@@ -149,13 +149,12 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
     val l = LiteralExprType
     val o = l.outPort(vs)
     val t = vs.params.headOption match {
-      case Some((p, vuntrimmed: String)) ⇒
+      case Some((p, v)) ⇒
         p.tpe = ztd.zaluumScope.getZJavaLangString
-        val v = vuntrimmed.trim
-        Literals.parseNarrowestLiteral(v, ztd.zaluumScope) match {
-          case Some((_, tpe)) ⇒ o.tpe = tpe
-          case None           ⇒ error("Cannot parse literal " + v, vs.decl)
-        }
+        val value = Values.parseNarrowestLiteral(v.encoded, ztd.zaluumScope)
+        o.tpe = ztd.zaluumScope.getJavaType(value.valueTpe.tpe).getOrElse(NoSymbol)
+        if (!value.valid || o.tpe == NoSymbol)
+          error("Cannot parse literal " + v, vs.decl)
       case e ⇒
         o.tpe = primitives.Byte;
     }

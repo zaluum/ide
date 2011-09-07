@@ -60,8 +60,10 @@ case class Invoke(
   obj: Tree, meth: String, param: List[Tree],
   fromClass: Name, descriptor: String, interface: Boolean) extends Tree
 case class InvokeStatic(meth: String, param: List[Tree], fromClass: Name, descriptor: String) extends Tree
-case class Const(i: Any, constTpe: JavaType) extends Tree
-case class Return(t: Tree, retTpe: JavaType) extends Tree
+case class Const(i: Any, constTpe: Name) extends Tree {
+  def this(i: Any, tpe: JavaType) = this(i, tpe.fqName)
+}
+case class Return(t: Tree, retTpe: Name) extends Tree
 case object Return extends Tree
 case object True extends Tree
 case object Dup extends Tree
@@ -154,7 +156,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         vs.tpe match {
           case tbs: BoxTypeSymbol if (vs != bs.thisVal) ⇒
             val sig = vs.constructor.get.signature
-            val values = for ((v, t) ← vs.constructorParams) yield Const(v, t)
+            val values = for (v ← vs.constructorParams) yield v.codeGen
             val init = New(vs.tpe.fqName, values, sig)
             field(vs.fqName, tbs.fqName, init = Some(init)) // make private?
           case _ ⇒
@@ -166,7 +168,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         // join semaphore
         if (vs.isJoinPoint) {
           field(vs.semfqName, TreeToClass.semaphoreClassName, init = Some(
-            New(TreeToClass.semaphoreClassName, List(Const(0, primitives.Int)), "(I)V")))
+            New(TreeToClass.semaphoreClassName, List(Const(0, primitives.Int.fqName)), "(I)V")))
         }
       }
       // thread end semaphore
@@ -191,7 +193,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
                 Invoke(
                   valRef(vs),
                   beanProp.setter.selector.mkString,
-                  List(Const(v, param.tpe)),
+                  List(v.codeGen),
                   tpe.fqName,
                   "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V",
                   interface = false) // FIXME not always JavaType
@@ -211,8 +213,8 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
           Invoke(
             This,
             "setSize",
-            List(Const(b.guiSize.map(_.w).getOrElse(100), primitives.Int),
-              Const(b.guiSize.map(_.h).getOrElse(100), primitives.Int)),
+            List(Const(b.guiSize.map(_.w).getOrElse(100), primitives.Int.fqName),
+              Const(b.guiSize.map(_.h).getOrElse(100), primitives.Int.fqName)),
             Name("javax.swing.JComponent"),
             "(II)V",
             interface = false))
@@ -234,10 +236,10 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
             Invoke(
               valRef(vs),
               "setBounds",
-              List(Const(valDef.guiPos.map(_.x).getOrElse(0), primitives.Int),
-                Const(valDef.guiPos.map(_.y).getOrElse(0), primitives.Int),
-                Const(valDef.guiSize.map(_.w).getOrElse(50), primitives.Int),
-                Const(valDef.guiSize.map(_.h).getOrElse(50), primitives.Int)),
+              List(Const(valDef.guiPos.map(_.x).getOrElse(0), primitives.Int.fqName),
+                Const(valDef.guiPos.map(_.y).getOrElse(0), primitives.Int.fqName),
+                Const(valDef.guiSize.map(_.w).getOrElse(50), primitives.Int.fqName),
+                Const(valDef.guiSize.map(_.h).getOrElse(50), primitives.Int.fqName)),
               Name("java.awt.Component"),
               "(IIII)V",
               interface = false),
@@ -260,15 +262,15 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
           val jdim = jlabel.getPreferredSize
           val pos = v.guiPos.getOrElse(Point(0, 0)) + lbl.pos + Vector2(0, -jdim.height);
           List[Tree](
-            New(Name("javax.swing.JLabel"), List(Const(lbl.description, zaluumScope.getZJavaLangString)), "(Ljava/lang/String;)V"),
+            New(Name("javax.swing.JLabel"), List(Const(lbl.description, zaluumScope.getZJavaLangString.fqName)), "(Ljava/lang/String;)V"),
             AStore(1),
             Invoke(
               ALoad(1),
               "setBounds",
-              List(Const(pos.x, primitives.Int),
-                Const(pos.y, primitives.Int),
-                Const(jdim.width, primitives.Int),
-                Const(jdim.height, primitives.Int)),
+              List(Const(pos.x, primitives.Int.fqName),
+                Const(pos.y, primitives.Int.fqName),
+                Const(jdim.width, primitives.Int.fqName),
+                Const(jdim.height, primitives.Int.fqName)),
               Name("java.awt.Component"),
               "(IIII)V",
               interface = false),

@@ -117,7 +117,7 @@ object ByteCodeGen {
             emit(arr)
             emit(index)
             emit(rhs)
-            astore(tpe)
+            astore(tpe.fqName)
         }
       case While(body, cond) ⇒
         val start = new Label()
@@ -158,7 +158,7 @@ object ByteCodeGen {
             emit(i)
             tpe match {
               case p: PrimitiveJavaType ⇒
-                mv.visitIntInsn(NEWARRAY, asmType(p))
+                mv.visitIntInsn(NEWARRAY, asmType(p.fqName))
               case j: ClassJavaType ⇒
                 mv.visitTypeInsn(ANEWARRAY, j.fqName.internal)
             }
@@ -170,7 +170,7 @@ object ByteCodeGen {
       case ArrayRef(index, array, tpe) ⇒
         emit(array)
         emit(index)
-        aload(tpe)
+        aload(tpe.fqName)
       case FieldRef(id, descriptor, fromClass) ⇒
         mv.visitFieldInsn(GETFIELD, fromClass.internal, id.str, descriptor)
       case FieldStaticRef(id, descriptor, fromClass) ⇒
@@ -191,7 +191,7 @@ object ByteCodeGen {
         mv.visitVarInsn(ASTORE, i)
       case ALoad(i: Int) ⇒
         mv.visitVarInsn(ALOAD, i)
-      case Const(d: Any, constTpe: JavaType) ⇒
+      case Const(d, constTpe) ⇒
         emitConst(d, constTpe)
       case Return(t, tpe) ⇒
         emit(t)
@@ -209,82 +209,82 @@ object ByteCodeGen {
 
     }
   }
-  def doReturn(t: JavaType) {
+  def doReturn(t: Name) {
     import primitives._
     t match {
-      case Boolean ⇒ mv.visitInsn(IRETURN)
-      case Byte    ⇒ mv.visitInsn(IRETURN)
-      case Char    ⇒ mv.visitInsn(IRETURN)
-      case Short   ⇒ mv.visitInsn(IRETURN)
-      case Int     ⇒ mv.visitInsn(IRETURN)
-      case Long    ⇒ mv.visitInsn(LRETURN)
-      case Float   ⇒ mv.visitInsn(FRETURN)
-      case Double  ⇒ mv.visitInsn(DRETURN)
-      case _       ⇒ mv.visitInsn(ARETURN)
+      case Boolean.fqName ⇒ mv.visitInsn(IRETURN)
+      case Byte.fqName    ⇒ mv.visitInsn(IRETURN)
+      case Char.fqName    ⇒ mv.visitInsn(IRETURN)
+      case Short.fqName   ⇒ mv.visitInsn(IRETURN)
+      case Int.fqName     ⇒ mv.visitInsn(IRETURN)
+      case Long.fqName    ⇒ mv.visitInsn(LRETURN)
+      case Float.fqName   ⇒ mv.visitInsn(FRETURN)
+      case Double.fqName  ⇒ mv.visitInsn(DRETURN)
+      case _              ⇒ mv.visitInsn(ARETURN)
     }
   }
-  def emitConst(d: Any, constTpe: JavaType) {
+  def emitConst(d: Any, constTpe: Name) {
     import primitives._
     if (d == null || d == 0 || d == false) {
       constTpe match {
-        case Boolean ⇒ mv.visitInsn(ICONST_0)
-        case Byte    ⇒ mv.visitInsn(ICONST_0)
-        case Char    ⇒ mv.visitInsn(ICONST_0)
-        case Short   ⇒ mv.visitInsn(ICONST_0)
-        case Int     ⇒ mv.visitInsn(ICONST_0)
-        case Long    ⇒ mv.visitInsn(LCONST_0)
-        case Float   ⇒ mv.visitInsn(FCONST_0)
-        case Double  ⇒ mv.visitInsn(DCONST_0)
-        case _       ⇒ mv.visitInsn(ACONST_NULL)
+        case Boolean.fqName ⇒ mv.visitInsn(ICONST_0)
+        case Byte.fqName    ⇒ mv.visitInsn(ICONST_0)
+        case Char.fqName    ⇒ mv.visitInsn(ICONST_0)
+        case Short.fqName   ⇒ mv.visitInsn(ICONST_0)
+        case Int.fqName     ⇒ mv.visitInsn(ICONST_0)
+        case Long.fqName    ⇒ mv.visitInsn(LCONST_0)
+        case Float.fqName   ⇒ mv.visitInsn(FCONST_0)
+        case Double.fqName  ⇒ mv.visitInsn(DCONST_0)
+        case _              ⇒ mv.visitInsn(ACONST_NULL)
       }
     } else {
       constTpe match {
-        case Boolean ⇒ mv.visitInsn(if (d == true) ICONST_1 else ICONST_0)
-        case Byte    ⇒ mv.visitLdcInsn(d.asInstanceOf[Byte].toInt) // TODO make clear how to cast
-        case Char    ⇒ mv.visitLdcInsn(d.asInstanceOf[Char].toInt)
-        case Short   ⇒ mv.visitLdcInsn(d.asInstanceOf[Short].toInt)
-        case Int     ⇒ mv.visitLdcInsn(d.asInstanceOf[Int])
-        case Long    ⇒ mv.visitLdcInsn(d.asInstanceOf[Long])
-        case Float   ⇒ mv.visitLdcInsn(d.asInstanceOf[Float])
-        case Double  ⇒ mv.visitLdcInsn(d.asInstanceOf[Double])
-        case _       ⇒ mv.visitLdcInsn(d.asInstanceOf[String])
+        case Boolean.fqName ⇒ mv.visitInsn(if (d == true) ICONST_1 else ICONST_0)
+        case Byte.fqName    ⇒ mv.visitLdcInsn(d.asInstanceOf[Byte].toInt) // TODO make clear how to cast
+        case Char.fqName    ⇒ mv.visitLdcInsn(d.asInstanceOf[Char].toInt)
+        case Short.fqName   ⇒ mv.visitLdcInsn(d.asInstanceOf[Short].toInt)
+        case Int.fqName     ⇒ mv.visitLdcInsn(d.asInstanceOf[Int])
+        case Long.fqName    ⇒ mv.visitLdcInsn(d.asInstanceOf[Long])
+        case Float.fqName   ⇒ mv.visitLdcInsn(d.asInstanceOf[Float])
+        case Double.fqName  ⇒ mv.visitLdcInsn(d.asInstanceOf[Double])
+        case _              ⇒ mv.visitLdcInsn(d.asInstanceOf[String])
       }
     }
   }
-  def asmType(t: JavaType) = t match {
-    case primitives.Long    ⇒ T_LONG
-    case primitives.Double  ⇒ T_DOUBLE
-    case primitives.Float   ⇒ T_FLOAT
-    case primitives.Int     ⇒ T_INT
-    case primitives.Boolean ⇒ T_BOOLEAN
-    case primitives.Byte    ⇒ T_BYTE
-    case primitives.Char    ⇒ T_CHAR
-    case primitives.Short   ⇒ T_SHORT
+  def asmType(t: Name) = t match {
+    case primitives.Long.fqName    ⇒ T_LONG
+    case primitives.Double.fqName  ⇒ T_DOUBLE
+    case primitives.Float.fqName   ⇒ T_FLOAT
+    case primitives.Int.fqName     ⇒ T_INT
+    case primitives.Boolean.fqName ⇒ T_BOOLEAN
+    case primitives.Byte.fqName    ⇒ T_BYTE
+    case primitives.Char.fqName    ⇒ T_CHAR
+    case primitives.Short.fqName   ⇒ T_SHORT
   }
-  def aload(t: JavaType) = {
+  def aload(t: Name) = {
     t match {
-      case primitives.Long    ⇒ mv.visitInsn(LALOAD)
-      case primitives.Double  ⇒ mv.visitInsn(DALOAD)
-      case primitives.Float   ⇒ mv.visitInsn(FALOAD)
-      case primitives.Int     ⇒ mv.visitInsn(IALOAD)
-      case primitives.Boolean ⇒ mv.visitInsn(BALOAD)
-      case primitives.Byte    ⇒ mv.visitInsn(BALOAD)
-      case primitives.Char    ⇒ mv.visitInsn(CALOAD)
-      case primitives.Short   ⇒ mv.visitInsn(SALOAD)
-      case _                  ⇒ mv.visitInsn(AALOAD)
+      case primitives.Long.fqName    ⇒ mv.visitInsn(LALOAD)
+      case primitives.Double.fqName  ⇒ mv.visitInsn(DALOAD)
+      case primitives.Float.fqName   ⇒ mv.visitInsn(FALOAD)
+      case primitives.Int.fqName     ⇒ mv.visitInsn(IALOAD)
+      case primitives.Boolean.fqName ⇒ mv.visitInsn(BALOAD)
+      case primitives.Byte.fqName    ⇒ mv.visitInsn(BALOAD)
+      case primitives.Char.fqName    ⇒ mv.visitInsn(CALOAD)
+      case primitives.Short.fqName   ⇒ mv.visitInsn(SALOAD)
+      case _                         ⇒ mv.visitInsn(AALOAD)
     }
   }
-  def astore(t: JavaType) = {
+  def astore(t: Name) = {
     t match {
-      case primitives.Long    ⇒ mv.visitInsn(LASTORE)
-      case primitives.Double  ⇒ mv.visitInsn(DASTORE)
-      case primitives.Float   ⇒ mv.visitInsn(FASTORE)
-      case primitives.Int     ⇒ mv.visitInsn(IASTORE)
-      case primitives.Boolean ⇒ mv.visitInsn(BASTORE)
-      case primitives.Byte    ⇒ mv.visitInsn(BASTORE)
-      case primitives.Char    ⇒ mv.visitInsn(CASTORE)
-      case primitives.Short   ⇒ mv.visitInsn(SASTORE)
-      case _                  ⇒ mv.visitInsn(AASTORE)
+      case primitives.Long.fqName    ⇒ mv.visitInsn(LASTORE)
+      case primitives.Double.fqName  ⇒ mv.visitInsn(DASTORE)
+      case primitives.Float.fqName   ⇒ mv.visitInsn(FASTORE)
+      case primitives.Int.fqName     ⇒ mv.visitInsn(IASTORE)
+      case primitives.Boolean.fqName ⇒ mv.visitInsn(BASTORE)
+      case primitives.Byte.fqName    ⇒ mv.visitInsn(BASTORE)
+      case primitives.Char.fqName    ⇒ mv.visitInsn(CASTORE)
+      case primitives.Short.fqName   ⇒ mv.visitInsn(SASTORE)
+      case _                         ⇒ mv.visitInsn(AASTORE)
     }
   }
   def store(id: Int, t: Name) = {

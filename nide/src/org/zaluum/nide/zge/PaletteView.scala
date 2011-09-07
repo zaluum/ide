@@ -35,14 +35,10 @@ import org.eclipse.swt.dnd.DragSourceAdapter
 import org.eclipse.swt.dnd.DragSourceEvent
 import org.eclipse.swt.dnd.TextTransfer
 import org.eclipse.swt.graphics.Image
-import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Label
 import org.eclipse.swt.SWT
-import org.eclipse.ui.part.PageBook
-import org.eclipse.ui.part.ViewPart
 import org.eclipse.ui.IEditorPart
-import org.eclipse.ui.IPartListener
 import org.eclipse.ui.IWorkbenchPart
 import org.zaluum.nide.compiler.In
 import org.zaluum.nide.compiler.Name
@@ -58,41 +54,20 @@ import org.zaluum.nide.Utils
 object PaletteView {
   val ID = "org.zaluum.nide.paletteView"
 }
-class PaletteView extends ViewPart {
-  var pageBook: PageBook = _
-  var map = Map[GraphicalEditor, Page]()
-  var jmap = Map[ZaluumProject, Page]()
-  var defaultPage: Composite = _
-  lazy val selectionProvider = new SelectionProvider()
-  def createPartControl(parent: Composite) {
-    pageBook = new PageBook(parent, SWT.None)
-    defaultPage = new Composite(pageBook, SWT.NULL);
-    defaultPage.setLayout(new FillLayout());
+class PaletteView extends PageBookView {
+  var map = Map[GraphicalEditor, PalettePage]()
+  var jmap = Map[ZaluumProject, PalettePage]()
+  def createDefaultPageContents(defaultPage: Composite) {
     val msgLabel = new Label(defaultPage, SWT.LEFT | SWT.TOP | SWT.WRAP);
     msgLabel.setText("Open a Zaluum Editor to see the available items");
-    val page = getSite().getPage()
-    if (page != null)
-      activatePart(page.getActiveEditor())
-    else
-      pageBook.showPage(defaultPage)
-    page.addPartListener(partListener);
-    getViewSite.setSelectionProvider(selectionProvider);
+
   }
-  def show(p: Page) = pageBook.showPage(p.control)
+  def show(p: PalettePage) = pageBook.showPage(p.control)
   override def dispose() {
-    getSite().getPage().removePartListener(partListener);
-    if (defaultPage != null)
-      defaultPage.dispose();
     for (p ← jmap.values) p.dispose
     map = Map()
     jmap = Map()
-    if (pageBook != null)
-      pageBook.dispose()
-    super.dispose();
-  }
-  def setFocus() {
-    if (pageBook != null)
-      pageBook.setFocus();
+    super.dispose()
   }
   def activatePart(part: IWorkbenchPart) {
     part match {
@@ -102,7 +77,7 @@ class PaletteView extends ViewPart {
             map += (g -> p)
             show(p)
           case None ⇒
-            val newPage = new Page(g.zproject, this)
+            val newPage = new PalettePage(g.zproject, this)
             map += (g -> newPage)
             jmap += (g.zproject -> newPage)
             show(newPage)
@@ -124,18 +99,10 @@ class PaletteView extends ViewPart {
       case _ ⇒
     }
   }
-  object partListener extends IPartListener {
-    def partActivated(part: IWorkbenchPart) { activatePart(part) }
-    def partBroughtToTop(part: IWorkbenchPart) {}
-    def partClosed(part: IWorkbenchPart) { closePart(part) }
-    def partDeactivated(part: IWorkbenchPart) {}
-    def partOpened(part: IWorkbenchPart) {}
-  }
-
 }
 
 /* PAGE */
-object Page {
+object PalettePage {
   val portsPkg = "<ports>"
   def portToProxy(port: PortDir) = new BoxTypeProxy(Name(port.str), true) {
     override def pkgName = portsPkg
@@ -145,13 +112,13 @@ object Page {
   type ProxyMap = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]
 }
 
-class Page(val zproject: ZaluumProject, paletteView: PaletteView) extends PageDND with PageCoreListener {
+class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends PalettePageDND with PalettePageCoreListener {
   lazy val viewer = new JTreeViewer(paletteView.pageBook, SWT.H_SCROLL | SWT.V_SCROLL);
   implicit def display = viewer.getControl.getDisplay
   def control = viewer.getControl
   val imgFactory = new ImageFactory(zproject.imageFactory, viewer.getControl)
   val proxies = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]()
-  viewer.setContentProvider(new FolderProvider());
+  viewer.setContentProvider(new PaletteFolderProvider());
   {
     val a = new TreeViewerColumn(viewer, SWT.LEFT)
     a.setLabelProvider(new ColumnLabelProvider() {
@@ -168,10 +135,10 @@ class Page(val zproject: ZaluumProject, paletteView: PaletteView) extends PageDN
     case b: BoxTypeProxy ⇒ b.simpleName
   }
   def image(element: Object): Image = element match {
-    case Page.portsPkg                                   ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
-    case f: String                                       ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
-    case b: BoxTypeProxy if (b.pkgName == Page.portsPkg) ⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1 // XXX destroy
-    case b: BoxTypeProxy                                 ⇒ imgFactory.image48(b.name)._1 // XXX destroy
+    case PalettePage.portsPkg ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
+    case f: String ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
+    case b: BoxTypeProxy if (b.pkgName == PalettePage.portsPkg) ⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1 // XXX destroy
+    case b: BoxTypeProxy ⇒ imgFactory.image48(b.name)._1 // XXX destroy
   }
   viewer.setSorter(new ViewerSorter())
   viewer.setInput(proxies);
@@ -196,16 +163,16 @@ class Page(val zproject: ZaluumProject, paletteView: PaletteView) extends PageDN
       proxies(b.pkgName) += b
     else proxies += (b.pkgName -> Buffer(b))
   }
-  def load(monitor: IProgressMonitor) = Page.this.synchronized {
+  def load(monitor: IProgressMonitor) = PalettePage.this.synchronized {
     proxies.clear
     for (b ← zproject.index(monitor)) { addProxy(b) }
-    proxies += Page.ports
+    proxies += PalettePage.ports
   }
   def reload() = {
     val j = Utils.job("Update palette") { monitor ⇒
       load(monitor)
       if (!control.isDisposed)
-        Utils.inSWT { Page.this.synchronized { viewer.refresh() } }
+        Utils.inSWT { PalettePage.this.synchronized { viewer.refresh() } }
       Status.OK_STATUS
     }
     j.setPriority(Job.SHORT);
@@ -219,8 +186,8 @@ class Page(val zproject: ZaluumProject, paletteView: PaletteView) extends PageDN
   }
 
 }
-trait PageDND {
-  self: Page ⇒
+trait PalettePageDND {
+  self: PalettePage ⇒
   val ds = new DragSource(viewer.getControl, DND.DROP_MOVE);
   ds.setTransfer(Array(TextTransfer.getInstance()));
   ds.addDragListener(new DragSourceAdapter() {
@@ -245,8 +212,8 @@ trait PageDND {
   });
 
 }
-trait PageCoreListener {
-  self: Page ⇒
+trait PalettePageCoreListener {
+  self: PalettePage ⇒
   object coreListener extends IElementChangedListener {
     def elementChanged(event: ElementChangedEvent) {
       if (event.getType == ElementChangedEvent.POST_CHANGE)
@@ -267,22 +234,22 @@ trait PageCoreListener {
           case _ if (delta.getFlags & interestingFlags) != 0 ⇒ reload()
           case _ ⇒ for (d ← delta.getAffectedChildren) processDeltaSimple(d)
         }
-      case _ => 
+      case _ ⇒
     }
   }
   def dispose() {
     JavaCore.removeElementChangedListener(coreListener)
   }
 }
-class FolderProvider extends ITreeContentProvider {
+class PaletteFolderProvider extends ITreeContentProvider {
   def dispose() {}
-  var proxyMap: Page.ProxyMap = _
+  var proxyMap: PalettePage.ProxyMap = _
   def inputChanged(viewer: JViewer, o: Object, newi: Object) {
-    proxyMap = newi.asInstanceOf[Page.ProxyMap]
+    proxyMap = newi.asInstanceOf[PalettePage.ProxyMap]
   }
 
   def getElements(inputElement: AnyRef): Array[AnyRef] = {
-    inputElement.asInstanceOf[Page.ProxyMap].keys.toArray
+    inputElement.asInstanceOf[PalettePage.ProxyMap].keys.toArray
   }
 
   def getChildren(parentElement: AnyRef): Array[AnyRef] = {
