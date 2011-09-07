@@ -14,6 +14,8 @@ import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.zge.dialogs.ValDefPopup
 import draw2dConversions._
+import org.zaluum.nide.compiler.Param
+import org.zaluum.nide.compiler.Name
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   def calcMin: Dimension = {
     val bottomRights = viewer.layer.getChildren.collect { case i: IFigure ⇒ rpoint(i.getBounds.getBottomRight) }
@@ -23,13 +25,18 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   override val resizing = new Resizing {
     override def command(newPos: Point, newSize: Dimension, t: Tree) = {
       val newDim = Dimension(newPos.x + newSize.w, newPos.y + newSize.h)
+      val strPos = newPos.x + " " + newPos.y + " " + newSize.w + " " + newSize.h
       new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if b == viewer.boxDef ⇒
             b.copy(guiSize = Some(viewer.backRect.getSize.ensureMin(newDim)),
               template = transform(b.template))
           case v: ValDef if (v == t) ⇒
-            v.copy(guiPos = Some(newPos), guiSize = Some(newSize))
+            val param = Param(Name("bounds"), strPos)
+            val filtered = v.params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
+            v.copy(
+              template = transformOption(v.template),
+              params = param :: filtered)
         }
       }
     }
@@ -150,16 +157,21 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
         case item: SwingFigure ⇒
           val itemPos = snap(item.pos + delta)
           val itemBottom = itemPos + item.size.toVector
-          (item.valDef, itemPos, itemBottom)
+          val strPos = itemPos.x + " " + itemPos.y + " " + item.size.w + " " + item.size.h
+          (item.valDef, strPos, itemBottom)
       }
       val positions = positionsTuple.map { case (v, i, _) ⇒ v -> i } toMap
       val newDim = maxPoint(positionsTuple.map { case (_, _, b) ⇒ b }).ensureMin(viewer.backRect.getSize)
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if (b == viewer.boxDef) ⇒
-            b.copy (template=transform(b.template), guiSize = Some(newDim))
+            b.copy(template = transform(b.template), guiSize = Some(newDim))
           case v: ValDef if (positions.contains(v)) ⇒
-            v.copy(guiPos = Some(positions(v)))
+            val param = Param(Name("bounds"), positions(v))
+            val filtered = v.params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
+            v.copy(
+              template = transformOption(v.template),
+              params = param :: filtered)
         }
       }
       controller.exec(command)

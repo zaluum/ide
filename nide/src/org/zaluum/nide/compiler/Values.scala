@@ -14,6 +14,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.ui.views.properties.ComboBoxPropertyDescriptor
 import javax.swing.SwingConstants
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
+import java.awt.Rectangle
 trait Value {
   def encoded: String
   def codeGen: Tree
@@ -111,6 +112,30 @@ object DimensionValueType extends ClassValueType(classOf[java.awt.Dimension]) {
         new Const(parsed.h, primitives.Int)), "(II)V")
   }
 }
+object RectangleValueType extends ClassValueType(classOf[Rectangle]) {
+  def create(str: String) = new Value {
+    val encoded = str
+    val valueTpe = RectangleValueType
+    def parse: Rectangle = {
+      val splitted = encoded.split(" ")
+      if (splitted.length == 4)
+        new Rectangle(
+          Integer.decode(splitted(0)),
+          Integer.decode(splitted(1)),
+          Integer.decode(splitted(2)),
+          Integer.decode(splitted(3)))
+      else throw new Exception
+    }
+    lazy val parsed = parse
+    def codeGen =
+      New(tpe, List(
+        new Const(parsed.x, primitives.Int),
+        new Const(parsed.y, primitives.Int),
+        new Const(parsed.width, primitives.Int),
+        new Const(parsed.height, primitives.Int)), "(IIII)V")
+    override def toSWT = parsed.x + " " + parsed.y + " " + parsed.width + " " + parsed.height
+  }
+}
 object ColorValueType extends ClassValueType(classOf[java.awt.Color]) {
   def create(str: String) = new Value {
     val encoded = str
@@ -144,7 +169,7 @@ object FontValueType extends ClassValueType(classOf[java.awt.Font]) {
     def parse = java.awt.Font.decode(encoded)
     lazy val parsed = parse
     def codeGen =
-      New(tpe, List(Const(encoded, Name("java.lang.String"))), "(Ljava/lang/String;)V")
+      InvokeStatic("decode", List(Const(encoded, Name("java.lang.String"))), tpe, "(Ljava/lang/String;)Ljava/awt/Font;")
     override def toSWT = {
       if (!valid) null else {
         var flags = 0
@@ -242,6 +267,7 @@ object Values {
     FontValueType,
     IntValueType,
     LongValueType,
+    RectangleValueType,
     ShortValueType,
     StringValueType)
   def typeFor(tpe: Name): ValueType = {

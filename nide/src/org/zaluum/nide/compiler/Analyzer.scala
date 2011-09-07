@@ -323,8 +323,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               for (p ← v.params.asInstanceOf[List[Param]]) {
                 b.lookupExprParam(p.key) match {
                   case Some(parSym) ⇒
-                    parSym.tpe = scope.getZJavaLangString // FIXME always string?
-                    val value = Values.typeFor(parSym.tpe.fqName).create(p.value)
+                    // FIXME parse all symbols as strings for now (LiteralExprType mutates eg)
+                    val value = Values.typeFor(scope.getZJavaLangString.fqName).create(p.value)
                     vsym.params += (parSym -> value)
                     if (!value.valid) {
                       println(value.valueTpe.tpe + " " + value.getClass())

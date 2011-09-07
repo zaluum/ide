@@ -155,7 +155,7 @@ class LabelItem(val container: ContainerItem, gui: Boolean = false) extends Text
     val fromTree = lbl.map(_.description).getOrElse("XXX")
     if (fromTree == "") valDef.name.str else fromTree
   }
-  def basePos = if (gui) valDef.guiPos.getOrElse(Point(0, 0)) else valDef.pos
+  def basePos = if (gui) valSym.bounds.map { r ⇒ Point(r.x, r.y) }.getOrElse(Point(0, 0)) else valDef.pos
   override def pos = basePos + baseVector + (lbl.map { _.pos } getOrElse { Vector2(0, 0) })
   def myLayer = container.layer
   def updateMe() {
@@ -287,8 +287,23 @@ trait TextEditFigure extends Item {
 }
 class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends ValDefItem with ResizableFeedback {
   setOpaque(true)
-  def size = valDef.guiSize getOrElse { Dimension(Tool.gridSize * 5, Tool.gridSize * 5) }
-  override def pos = valDef.guiPos getOrElse { Point(0, 0) }
+  def boundsValue = valSym.params.find {
+    case (k, v) ⇒
+      k.name == Name("bounds") &&
+        v.valueTpe == RectangleValueType &&
+        v.valid
+  }.map {
+    case (k, v) ⇒
+      v.parse.asInstanceOf[java.awt.Rectangle]
+  }
+  def size =
+    boundsValue map { r ⇒ Dimension(r.width, r.height) } getOrElse {
+      Dimension(Tool.gridSize * 5, Tool.gridSize * 5)
+    }
+  override def pos =
+    boundsValue map { r ⇒ Point(r.x, r.y) } getOrElse {
+      Point(0, 0)
+    }
   def myLayer = container.layer
   var component: Option[JComponent] = None
 

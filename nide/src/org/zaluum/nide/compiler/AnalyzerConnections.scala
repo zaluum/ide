@@ -175,6 +175,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         case ThisRefExprType     ⇒ objectChecker.checkThisRefExprType(vs)
         case t: StaticExprType   ⇒ objectChecker.checkStaticExprType(vs)
         case t: TemplateExprType ⇒ objectChecker.checkTemplateExprType(vs)
+        case NoSymbol            ⇒ //throw new Exception("why no symbol?" + vs)
       }
       checkPortConnectionsTypes(vs)
       //checkGhostPorts(vs)

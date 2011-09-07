@@ -416,6 +416,15 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
     result ++= fork.map { t ⇒ "Fork(" + t.num + ")" }
     result.mkString(", ")
   }
+  def bounds = params.find {
+    case (k, v) ⇒
+      k.name == Name("bounds") &&
+        v.valueTpe == RectangleValueType &&
+        v.valid
+  }.map {
+    case (k, v) ⇒
+      v.parse.asInstanceOf[java.awt.Rectangle]
+  }
 }
 trait Namer {
   def usedNames: Set[String]

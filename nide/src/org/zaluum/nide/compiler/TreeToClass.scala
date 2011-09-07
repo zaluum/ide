@@ -234,16 +234,6 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
           val mainTpe = mainBox.sym
           List[Tree](
             Invoke(
-              valRef(vs),
-              "setBounds",
-              List(Const(valDef.guiPos.map(_.x).getOrElse(0), primitives.Int.fqName),
-                Const(valDef.guiPos.map(_.y).getOrElse(0), primitives.Int.fqName),
-                Const(valDef.guiSize.map(_.w).getOrElse(50), primitives.Int.fqName),
-                Const(valDef.guiSize.map(_.h).getOrElse(50), primitives.Int.fqName)),
-              Name("java.awt.Component"),
-              "(IIII)V",
-              interface = false),
-            Invoke(
               This,
               "add",
               List(valRef(vs)),
@@ -260,7 +250,8 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         case Some(lbl) ⇒
           val jlabel = new JLabel(lbl.description) // TODO better way to get size
           val jdim = jlabel.getPreferredSize
-          val pos = v.guiPos.getOrElse(Point(0, 0)) + lbl.pos + Vector2(0, -jdim.height);
+
+          val pos = v.sym.bounds.map { r ⇒ Point(r.x, r.y) }.getOrElse(Point(0, 0)) + lbl.pos + Vector2(0, -jdim.height);
           List[Tree](
             New(Name("javax.swing.JLabel"), List(Const(lbl.description, zaluumScope.getZJavaLangString.fqName)), "(Ljava/lang/String;)V"),
             AStore(1),

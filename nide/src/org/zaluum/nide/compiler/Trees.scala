@@ -226,7 +226,7 @@ object PrettyPrinter {
       print(b.parameters, deep + 1)
       print(")", deep)
     case v: ValDef ⇒
-      print("ValDef(" + List(v.name, v.pos, v.size, v.typeName, v.guiPos, v.guiSize).mkString(","), deep)
+      print("ValDef(" + List(v.name, v.pos, v.size, v.typeName).mkString(","), deep)
       print("params: " + v.params, deep + 1)
       print("constructors:" + v.constructorParams.mkString(","), deep + 1)
       print("constructorTypes:(" + v.constructorTypes.mkString(",") + ")", deep + 1)
@@ -346,15 +346,13 @@ case class Param(key: Name, value: String) extends Tree
 case class LabelDesc(description: String, pos: Vector2)
 object ValDef {
   def emptyValDef(name: Name, tpeName: Name, dst: Point) =
-    ValDef(name, tpeName, dst, None, None, None, List(), List(), List(), None, None, None)
+    ValDef(name, tpeName, dst, None, List(), List(), List(), None, None, None)
 }
 case class ValDef(
     name: Name,
     typeName: Name,
     pos: Point,
     size: Option[Dimension],
-    guiPos: Option[Point],
-    guiSize: Option[Dimension],
     params: List[Tree],
     constructorParams: List[String],
     constructorTypes: List[Name],
@@ -382,6 +380,7 @@ case class ValDef(
       template = e.transformOption(template),
       params = param :: filtered)
   }
+
   def editLabel(gui: Boolean, s: String) = transformThis { e ⇒
     val oldl = if (gui) labelGui else label
     val lDesc = s match {

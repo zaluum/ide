@@ -14,8 +14,9 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Block
 import org.zaluum.nide.compiler.TemplateExprType
+import org.zaluum.nide.eclipse.GraphicalEditor
 
-class GuiViewer(parent: Composite, controller: Controller)
+class GuiViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
     extends ItemViewer(parent, controller) {
   /*TOOLS*/
   def zproject = controller.zproject
@@ -85,6 +86,7 @@ class GuiViewer(parent: Composite, controller: Controller)
   def refresh() {
     updateContents(Map())
     selectedItems foreach { _.showFeedback() }
+    editor.setSelection(selectedItems.headOption)
   }
   def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i

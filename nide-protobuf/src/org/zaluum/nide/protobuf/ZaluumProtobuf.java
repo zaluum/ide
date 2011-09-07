@@ -1762,20 +1762,6 @@ public final class ZaluumProtobuf {
     public boolean hasClassName() { return hasClassName; }
     public java.lang.String getClassName() { return className_; }
     
-    // optional .zaluum.Point gui_pos = 9;
-    public static final int GUI_POS_FIELD_NUMBER = 9;
-    private boolean hasGuiPos;
-    private org.zaluum.nide.protobuf.ZaluumProtobuf.Point guiPos_;
-    public boolean hasGuiPos() { return hasGuiPos; }
-    public org.zaluum.nide.protobuf.ZaluumProtobuf.Point getGuiPos() { return guiPos_; }
-    
-    // optional .zaluum.Point gui_size = 10;
-    public static final int GUI_SIZE_FIELD_NUMBER = 10;
-    private boolean hasGuiSize;
-    private org.zaluum.nide.protobuf.ZaluumProtobuf.Point guiSize_;
-    public boolean hasGuiSize() { return hasGuiSize; }
-    public org.zaluum.nide.protobuf.ZaluumProtobuf.Point getGuiSize() { return guiSize_; }
-    
     // repeated string constructor_parameter = 11;
     public static final int CONSTRUCTOR_PARAMETER_FIELD_NUMBER = 11;
     private java.util.List<java.lang.String> constructorParameter_ =
@@ -1812,8 +1798,6 @@ public final class ZaluumProtobuf {
       size_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
       label_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Label.getDefaultInstance();
       labelGui_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Label.getDefaultInstance();
-      guiPos_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
-      guiSize_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
       template_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Template.getDefaultInstance();
     }
     public final boolean isInitialized() {
@@ -1832,12 +1816,6 @@ public final class ZaluumProtobuf {
       }
       if (hasLabelGui()) {
         if (!getLabelGui().isInitialized()) return false;
-      }
-      if (hasGuiPos()) {
-        if (!getGuiPos().isInitialized()) return false;
-      }
-      if (hasGuiSize()) {
-        if (!getGuiSize().isInitialized()) return false;
       }
       if (hasTemplate()) {
         if (!getTemplate().isInitialized()) return false;
@@ -1868,12 +1846,6 @@ public final class ZaluumProtobuf {
       }
       if (hasClassName()) {
         output.writeString(8, getClassName());
-      }
-      if (hasGuiPos()) {
-        output.writeMessage(9, getGuiPos());
-      }
-      if (hasGuiSize()) {
-        output.writeMessage(10, getGuiSize());
       }
       for (java.lang.String element : getConstructorParameterList()) {
         output.writeString(11, element);
@@ -1920,14 +1892,6 @@ public final class ZaluumProtobuf {
       if (hasClassName()) {
         size += com.google.protobuf.CodedOutputStream
           .computeStringSize(8, getClassName());
-      }
-      if (hasGuiPos()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(9, getGuiPos());
-      }
-      if (hasGuiSize()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(10, getGuiSize());
       }
       {
         int dataSize = 0;
@@ -2145,12 +2109,6 @@ public final class ZaluumProtobuf {
         if (other.hasClassName()) {
           setClassName(other.getClassName());
         }
-        if (other.hasGuiPos()) {
-          mergeGuiPos(other.getGuiPos());
-        }
-        if (other.hasGuiSize()) {
-          mergeGuiSize(other.getGuiSize());
-        }
         if (!other.constructorParameter_.isEmpty()) {
           if (result.constructorParameter_.isEmpty()) {
             result.constructorParameter_ = new java.util.ArrayList<java.lang.String>();
@@ -2239,24 +2197,6 @@ public final class ZaluumProtobuf {
             }
             case 66: {
               setClassName(input.readString());
-              break;
-            }
-            case 74: {
-              org.zaluum.nide.protobuf.ZaluumProtobuf.Point.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.newBuilder();
-              if (hasGuiPos()) {
-                subBuilder.mergeFrom(getGuiPos());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setGuiPos(subBuilder.buildPartial());
-              break;
-            }
-            case 82: {
-              org.zaluum.nide.protobuf.ZaluumProtobuf.Point.Builder subBuilder = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.newBuilder();
-              if (hasGuiSize()) {
-                subBuilder.mergeFrom(getGuiSize());
-              }
-              input.readMessage(subBuilder, extensionRegistry);
-              setGuiSize(subBuilder.buildPartial());
               break;
             }
             case 90: {
@@ -2519,80 +2459,6 @@ public final class ZaluumProtobuf {
       public Builder clearClassName() {
         result.hasClassName = false;
         result.className_ = getDefaultInstance().getClassName();
-        return this;
-      }
-      
-      // optional .zaluum.Point gui_pos = 9;
-      public boolean hasGuiPos() {
-        return result.hasGuiPos();
-      }
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.Point getGuiPos() {
-        return result.getGuiPos();
-      }
-      public Builder setGuiPos(org.zaluum.nide.protobuf.ZaluumProtobuf.Point value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        result.hasGuiPos = true;
-        result.guiPos_ = value;
-        return this;
-      }
-      public Builder setGuiPos(org.zaluum.nide.protobuf.ZaluumProtobuf.Point.Builder builderForValue) {
-        result.hasGuiPos = true;
-        result.guiPos_ = builderForValue.build();
-        return this;
-      }
-      public Builder mergeGuiPos(org.zaluum.nide.protobuf.ZaluumProtobuf.Point value) {
-        if (result.hasGuiPos() &&
-            result.guiPos_ != org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance()) {
-          result.guiPos_ =
-            org.zaluum.nide.protobuf.ZaluumProtobuf.Point.newBuilder(result.guiPos_).mergeFrom(value).buildPartial();
-        } else {
-          result.guiPos_ = value;
-        }
-        result.hasGuiPos = true;
-        return this;
-      }
-      public Builder clearGuiPos() {
-        result.hasGuiPos = false;
-        result.guiPos_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
-        return this;
-      }
-      
-      // optional .zaluum.Point gui_size = 10;
-      public boolean hasGuiSize() {
-        return result.hasGuiSize();
-      }
-      public org.zaluum.nide.protobuf.ZaluumProtobuf.Point getGuiSize() {
-        return result.getGuiSize();
-      }
-      public Builder setGuiSize(org.zaluum.nide.protobuf.ZaluumProtobuf.Point value) {
-        if (value == null) {
-          throw new NullPointerException();
-        }
-        result.hasGuiSize = true;
-        result.guiSize_ = value;
-        return this;
-      }
-      public Builder setGuiSize(org.zaluum.nide.protobuf.ZaluumProtobuf.Point.Builder builderForValue) {
-        result.hasGuiSize = true;
-        result.guiSize_ = builderForValue.build();
-        return this;
-      }
-      public Builder mergeGuiSize(org.zaluum.nide.protobuf.ZaluumProtobuf.Point value) {
-        if (result.hasGuiSize() &&
-            result.guiSize_ != org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance()) {
-          result.guiSize_ =
-            org.zaluum.nide.protobuf.ZaluumProtobuf.Point.newBuilder(result.guiSize_).mergeFrom(value).buildPartial();
-        } else {
-          result.guiSize_ = value;
-        }
-        result.hasGuiSize = true;
-        return this;
-      }
-      public Builder clearGuiSize() {
-        result.hasGuiSize = false;
-        result.guiSize_ = org.zaluum.nide.protobuf.ZaluumProtobuf.Point.getDefaultInstance();
         return this;
       }
       
@@ -6705,36 +6571,35 @@ public final class ZaluumProtobuf {
       "\003 \001(\t\"\205\001\n\005Block\022\"\n\010instance\030\001 \003(\0132\020.zalu" +
       "um.Instance\022&\n\nconnection\030\002 \003(\0132\022.zaluum" +
       ".Connection\022\"\n\010junction\030\003 \003(\0132\020.zaluum.J",
-      "unction\022\014\n\004info\030\004 \001(\t\"\352\002\n\010Instance\022\014\n\004na" +
+      "unction\022\014\n\004info\030\004 \001(\t\"\251\002\n\010Instance\022\014\n\004na" +
       "me\030\001 \002(\t\022\032\n\003pos\030\003 \002(\0132\r.zaluum.Point\022\033\n\004" +
       "size\030\004 \001(\0132\r.zaluum.Point\022$\n\tparameter\030\005" +
       " \003(\0132\021.zaluum.Parameter\022\034\n\005label\030\006 \001(\0132\r" +
       ".zaluum.Label\022 \n\tlabel_gui\030\007 \001(\0132\r.zaluu" +
-      "m.Label\022\022\n\nclass_name\030\010 \002(\t\022\036\n\007gui_pos\030\t" +
-      " \001(\0132\r.zaluum.Point\022\037\n\010gui_size\030\n \001(\0132\r." +
-      "zaluum.Point\022\035\n\025constructor_parameter\030\013 " +
-      "\003(\t\022\031\n\021constructor_types\030\014 \003(\t\022\"\n\010templa" +
-      "te\030\r \001(\0132\020.zaluum.Template\"8\n\005Label\022\023\n\013d",
-      "escription\030\001 \002(\t\022\032\n\003pos\030\002 \002(\0132\r.zaluum.P" +
-      "oint\"\'\n\tParameter\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030" +
-      "\002 \002(\t\":\n\007PortRef\022\020\n\010box_name\030\001 \001(\t\022\021\n\tpo" +
-      "rt_name\030\002 \002(\t\022\n\n\002in\030\003 \001(\010\"\222\001\n\004Port\022\014\n\004na" +
-      "me\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022$\n\tdirection\030\003 \002(" +
-      "\0162\021.zaluum.Direction\022#\n\014pos_internal\030\004 \002" +
-      "(\0132\r.zaluum.Point\022#\n\014pos_external\030\005 \002(\0132" +
-      "\r.zaluum.Point\"K\n\003Ref\022%\n\010junction\030\001 \001(\0132" +
-      "\023.zaluum.JunctionRef\022\035\n\004port\030\002 \001(\0132\017.zal" +
-      "uum.PortRef\"d\n\nConnection\022\033\n\006source\030\001 \002(",
-      "\0132\013.zaluum.Ref\022\033\n\006target\030\002 \002(\0132\013.zaluum." +
-      "Ref\022\034\n\005point\030\003 \003(\0132\r.zaluum.Point\"4\n\010Jun" +
-      "ction\022\014\n\004name\030\001 \002(\t\022\032\n\003pos\030\002 \002(\0132\r.zaluu" +
-      "m.Point\"\033\n\013JunctionRef\022\014\n\004name\030\001 \002(\t\"\035\n\005" +
-      "Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002(\005\"t\n\tClipboard" +
-      "\022\"\n\010instance\030\001 \003(\0132\020.zaluum.Instance\022\032\n\004" +
-      "port\030\003 \003(\0132\014.zaluum.Port\022\'\n\013connnection\030" +
-      "\004 \003(\0132\022.zaluum.Connection*\'\n\tDirection\022\006" +
-      "\n\002IN\020\000\022\007\n\003OUT\020\001\022\t\n\005SHIFT\020\002B*\n\030org.zaluum" +
-      ".nide.protobufB\016ZaluumProtobuf"
+      "m.Label\022\022\n\nclass_name\030\010 \002(\t\022\035\n\025construct" +
+      "or_parameter\030\013 \003(\t\022\031\n\021constructor_types\030" +
+      "\014 \003(\t\022\"\n\010template\030\r \001(\0132\020.zaluum.Templat" +
+      "e\"8\n\005Label\022\023\n\013description\030\001 \002(\t\022\032\n\003pos\030\002" +
+      " \002(\0132\r.zaluum.Point\"\'\n\tParameter\022\013\n\003key\030",
+      "\001 \002(\t\022\r\n\005value\030\002 \002(\t\":\n\007PortRef\022\020\n\010box_n" +
+      "ame\030\001 \001(\t\022\021\n\tport_name\030\002 \002(\t\022\n\n\002in\030\003 \001(\010" +
+      "\"\222\001\n\004Port\022\014\n\004name\030\001 \002(\t\022\014\n\004type\030\002 \002(\t\022$\n" +
+      "\tdirection\030\003 \002(\0162\021.zaluum.Direction\022#\n\014p" +
+      "os_internal\030\004 \002(\0132\r.zaluum.Point\022#\n\014pos_" +
+      "external\030\005 \002(\0132\r.zaluum.Point\"K\n\003Ref\022%\n\010" +
+      "junction\030\001 \001(\0132\023.zaluum.JunctionRef\022\035\n\004p" +
+      "ort\030\002 \001(\0132\017.zaluum.PortRef\"d\n\nConnection" +
+      "\022\033\n\006source\030\001 \002(\0132\013.zaluum.Ref\022\033\n\006target\030" +
+      "\002 \002(\0132\013.zaluum.Ref\022\034\n\005point\030\003 \003(\0132\r.zalu",
+      "um.Point\"4\n\010Junction\022\014\n\004name\030\001 \002(\t\022\032\n\003po" +
+      "s\030\002 \002(\0132\r.zaluum.Point\"\033\n\013JunctionRef\022\014\n" +
+      "\004name\030\001 \002(\t\"\035\n\005Point\022\t\n\001x\030\001 \002(\005\022\t\n\001y\030\002 \002" +
+      "(\005\"t\n\tClipboard\022\"\n\010instance\030\001 \003(\0132\020.zalu" +
+      "um.Instance\022\032\n\004port\030\003 \003(\0132\014.zaluum.Port\022" +
+      "\'\n\013connnection\030\004 \003(\0132\022.zaluum.Connection" +
+      "*\'\n\tDirection\022\006\n\002IN\020\000\022\007\n\003OUT\020\001\022\t\n\005SHIFT\020" +
+      "\002B*\n\030org.zaluum.nide.protobufB\016ZaluumPro" +
+      "tobuf"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -6770,7 +6635,7 @@ public final class ZaluumProtobuf {
           internal_static_zaluum_Instance_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_zaluum_Instance_descriptor,
-              new java.lang.String[] { "Name", "Pos", "Size", "Parameter", "Label", "LabelGui", "ClassName", "GuiPos", "GuiSize", "ConstructorParameter", "ConstructorTypes", "Template", },
+              new java.lang.String[] { "Name", "Pos", "Size", "Parameter", "Label", "LabelGui", "ClassName", "ConstructorParameter", "ConstructorTypes", "Template", },
               org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.class,
               org.zaluum.nide.protobuf.ZaluumProtobuf.Instance.Builder.class);
           internal_static_zaluum_Label_descriptor =

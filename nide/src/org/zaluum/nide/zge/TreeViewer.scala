@@ -34,7 +34,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
       focus
     }
   }
-  def onFocus { editor.showPalette() }
+  def onFocus { editor.showViews() }
   def onResize { refresh() } // FIXME this OnResize triggers when a tooltip expands the canvas
   // Viewer doesn't have any visual representation
   override def updateSize() {}

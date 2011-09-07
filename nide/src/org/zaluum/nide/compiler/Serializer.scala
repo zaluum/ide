@@ -48,9 +48,7 @@ object Serializer {
     p.label foreach { l ⇒ b.setLabel(proto(l)) }
     p.labelGui foreach { l ⇒ b.setLabelGui(proto(l)) }
     p.template foreach { t ⇒ b.setTemplate(proto(t)) }
-    b.setGuiPos(proto(p.guiPos.getOrElse { Point(0, 0) }))
-      .setGuiSize(proto(p.guiSize.getOrElse { Dimension(50, 50) }))
-      .setClassName(p.typeName.str)
+    b.setClassName(p.typeName.str)
       .addAllConstructorParameter(p.constructorParams)
       .addAllConstructorTypes(p.constructorTypes map { _.str })
       .setName(p.name.str)

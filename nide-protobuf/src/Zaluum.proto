@@ -35,8 +35,6 @@ message Instance
 	optional Label label_gui = 7;
 	
 	required string class_name = 8;
-	optional Point gui_pos = 9;
-	optional Point gui_size = 10;
 	repeated string constructor_parameter =11;
 	repeated string constructor_types = 12;	
 	

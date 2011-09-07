@@ -60,16 +60,12 @@ object Parser {
     val size = if (i.hasSize) Some(parseDim(i.getSize)) else None
     val lbl = if (i.hasLabel) Some(parse(i.getLabel)) else None
     val lblgui = if (i.hasLabelGui) Some(parse(i.getLabelGui)) else None
-    val guiPos = if (i.hasGuiPos) Some(parse(i.getGuiPos)) else None
-    val guiSize = if (i.hasGuiSize) Some(parseDim(i.getGuiSize)) else None
     val template = if (i.hasTemplate) Some(parse(i.getTemplate())) else None
     ValDef(
       Name(i.getName),
       Name(i.getClassName),
       parse(i.getPos),
       size,
-      guiPos,
-      guiSize,
       i.getParameterList.map { parse(_) }.toList,
       i.getConstructorParameterList.toList,
       i.getConstructorTypesList.map { Name(_) }.toList,

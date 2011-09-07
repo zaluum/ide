@@ -27,6 +27,7 @@ import org.zaluum.nide.zge.TreeViewer
 import org.zaluum.nide.zge.Item
 import org.zaluum.nide.zge.ValDefItem
 import org.eclipse.jface.viewers.StructuredSelection
+import org.zaluum.nide.zge.PropertiesView
 
 class GraphicalEditor extends BaseEditor with IGotoMarker {
 
@@ -83,12 +84,13 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
   }
   private lazy val selectionProvider = new SelectionProvider()
   def setFocus() {
-    showPalette()
+    showViews()
     viewer.canvas.setFocus
   }
-  def showPalette() {
+  def showViews() {
     try {
       getSite().getPage().showView(PaletteView.ID, null, IWorkbenchPage.VIEW_VISIBLE);
+      getSite().getPage().showView(PropertiesView.ID, null, IWorkbenchPage.VIEW_VISIBLE);
     } catch { case e ⇒ } // throws an exception if invoked while the workbench is loaded
   }
   def openGUI() {
@@ -96,7 +98,7 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
       val newshell = new Shell(getSite.getShell, SWT.MODELESS | SWT.CLOSE | SWT.RESIZE)
       newshell.setLayout(new FillLayout)
       newshell.setText(getTitle + " GUI");
-      val guiViewer = new GuiViewer(newshell, controller)
+      val guiViewer = new GuiViewer(newshell, controller, this)
       controller.registerViewer(guiViewer)
       newshell.layout()
       newshell.open()

@@ -28,7 +28,7 @@ week 19-25 launch week
 	- buy adwords	
 
 article ideas
-	- Use cases. Fake forum posts.
+	- Use cases.
 	- Strategy. How to start. Open source library / pay tools.
 	- Why Zaluum: Write/Draw what makes sense. Future directions. Why JVM.
 	- Robot
@@ -44,11 +44,7 @@ bugs
 	
 IDEES
 	-Com tractar arrays?
-	-Enlloc de _widget heredar directament de Jpanel
 	-lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
-	-buidar metodes boxtypesymbol, fer servir binding
-	-Javabean properties
-	-Special property loader (color, list contents...) -> menu -> code gen
 	-Propietats graph/plot
 	-lv global variable = static field
 	-Select toolkit, GTK+,etc
@@ -118,6 +114,10 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	-Special property loader (color, list contents...) -> menu -> code gen
+	- buidar metodes boxtypesymbol, fer servir binding
+	- Enlloc de _widget heredar directament de Jpanel
+	- Javabean properties
 	- each box have an unique name
 	- quan es vol moure un fil, costa de que no s'activi el de fer extensions. Temporitzador de mouse quiet o dins una zona?
 	- Swing thread synchronization / refresh rate	
