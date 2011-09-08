@@ -183,7 +183,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
 
     def cons(b: BoxDef) = {
       val bs = b.sym
-      val bsVals = bs.blocks.head.executionOrder
+      val bsVals = bs.blocks.head.valsAlphabeticOrder
         // params
         def params(vs: ValSymbol): List[Tree] = vs.tpe match {
           case tpe: BoxTypeSymbol ⇒
@@ -199,7 +199,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
                   interface = false) // FIXME not always JavaType
             } toList
           case e: ExprType ⇒
-            for (bl ← vs.blocks; vs ← bl.executionOrder; p ← params(vs)) yield p
+            for (bl ← vs.blocks; vs ← bl.valsAlphabeticOrder; p ← params(vs)) yield p
         }
       // widgets
       val widgets = if (bs.isVisual) {
@@ -212,11 +212,16 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
             false),
           Invoke(
             This,
-            "setSize",
-            List(Const(b.guiSize.map(_.w).getOrElse(100), primitives.Int.fqName),
-              Const(b.guiSize.map(_.h).getOrElse(100), primitives.Int.fqName)),
+            "setPreferredSize",
+            List(
+              New(
+                Name("java.awt.Dimension"),
+                List(
+                  Const(b.guiSize.map(_.w).getOrElse(100), primitives.Int.fqName),
+                  Const(b.guiSize.map(_.h).getOrElse(100), primitives.Int.fqName)),
+                "(II)V")),
             Name("javax.swing.JComponent"),
-            "(II)V",
+            "(Ljava/awt/Dimension;)V",
             interface = false))
         widgetCreation ++ bsVals.flatMap(createWidgets(_, bs.tdecl))
       } else List()
@@ -279,7 +284,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       vs.tpe match {
         case tpe: BoxTypeSymbol ⇒ placeWidget(vs, mainBox)
         case e: ExprType ⇒
-          for (bl ← vs.blocks; vs ← bl.executionOrder; w ← createWidgets(vs, mainBox)) yield w
+          for (bl ← vs.blocks; vs ← bl.valsAlphabeticOrder; w ← createWidgets(vs, mainBox)) yield w
       }
     }
   }
@@ -300,11 +305,11 @@ trait GeneratorHelpers {
     Select(thisRef, FieldRef(t.futureFqName, TreeToClass.futureClassName.descriptor, bs.fqName))
 
   def deepChildValSymbols(bl: BlockSymbol): List[ValSymbol] =
-    bl.executionOrder flatMap { vs ⇒
+    bl.valsAlphabeticOrder flatMap { vs ⇒
       vs :: deepChildValSymbols(vs)
     }
   def deepChildBlocks(bl: BlockSymbol): List[BlockSymbol] =
-    bl.executionOrder filter (_.tpe.isInstanceOf[ExprType]) flatMap { vs ⇒
+    bl.valsAlphabeticOrder filter (_.tpe.isInstanceOf[ExprType]) flatMap { vs ⇒
       vs.blocks flatMap { bl ⇒
         bl :: deepChildBlocks(bl)
       }

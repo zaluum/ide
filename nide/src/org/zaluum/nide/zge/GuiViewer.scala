@@ -15,6 +15,7 @@ import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Block
 import org.zaluum.nide.compiler.TemplateExprType
 import org.zaluum.nide.eclipse.GraphicalEditor
+import org.eclipse.draw2d.Graphics
 
 class GuiViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
     extends ItemViewer(parent, controller) {
@@ -46,13 +47,13 @@ class GuiViewer(parent: Composite, controller: Controller, editor: GraphicalEdit
   def remapSelection(m: PartialFunction[SelectionSubject, SelectionSubject]) {
     selection.refresh(m);
   }
-  val backRect = new RectangleFigure() /*{
-    /*override def fillShape(g:Graphics) {
-      DotPainter.dotFill(g,getBounds)
-    }*/
-  }*/
+  val backRect = new RectangleFigure() {
+    override def fillShape(g: Graphics) {
+      DotPainter.dotFill(g, getBounds, Tool.gridSize, Tool.gridSize)
+    }
+  }
   def updatePorts(changes: Map[Tree, Tree]) {}
-  backRect.setForegroundColor(ColorConstants.red)
+  backRect.setForegroundColor(ColorConstants.lightBlue)
   backRect.setBackgroundColor(ColorConstants.white)
   background.add(backRect)
   override def updateContents(changes: Map[Tree, Tree]) {

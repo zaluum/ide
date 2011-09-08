@@ -16,6 +16,11 @@ import org.zaluum.nide.zge.dialogs.ValDefPopup
 import draw2dConversions._
 import org.zaluum.nide.compiler.Param
 import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.In
+import org.zaluum.nide.compiler.Out
+import org.zaluum.nide.compiler.Shift
+import org.zaluum.nide.compiler.Expressions
+import org.zaluum.nide.compiler.Block
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   def calcMin: Dimension = {
     val bottomRights = viewer.layer.getChildren.collect { case i: IFigure ⇒ rpoint(i.getBounds.getBottomRight) }
@@ -41,7 +46,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       }
     }
   }
-  object selecting extends Selecting {
+  object selecting extends Selecting with DropState {
     var border = (false, false)
     override def buttonDown {
       border = borderDistance
@@ -60,6 +65,14 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     def borderDistance = {
       val br = viewer.backRect.getBounds.getBottomRight
       (math.abs(currentMouseLocation.x - br.x) < borderSensivity, math.abs(currentMouseLocation.y - br.y) < borderSensivity)
+    }
+    def drop(s: String) {
+      s match {
+        case In.str    ⇒
+        case Out.str   ⇒
+        case Shift.str ⇒
+        case _         ⇒ creating.enter(Name(s), current)
+      }
     }
     override def move {
       borderDistance match {
@@ -96,6 +109,36 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
         case Some(s: SwingFigure) ⇒ new ValDefPopup(viewer, s, true).open()
         case _                    ⇒
       }
+    }
+  }
+  object creating extends GuiCreating
+  class GuiCreating extends Creating {
+    val defaultSize = Dimension(15, 15)
+    protected def getSize(tpename: Name) = defaultSize
+    protected def newInstance(dst: Point) = {
+      Some(new EditTransformer() {
+        val trans: PartialFunction[Tree, Tree] = {
+          case b: Block if b.sym.isMainBSBlock ⇒
+            val name = Name(b.sym.freshName(tpeName.classNameWithoutPackage.firstLowerCase))
+            val newValDef = ValDef(name, tpeName, Point(0, 0),
+              size = None,
+              params = List(Param(Name("bounds"), dst.x + " " + dst.y + " " + defaultSize.w + " " + defaultSize.h)),
+              constructorParams = List(),
+              constructorTypes = List(),
+              label = None,
+              labelGui = None,
+              template = None)
+
+            b.copy(
+              valDefs = newValDef :: transformTrees(b.valDefs),
+              connections = transformTrees(b.connections),
+              parameters = transformTrees(b.parameters),
+              junctions = transformTrees(b.junctions))
+        }
+      })
+    }
+    protected def newInstanceTemplate(dst: Point, requiredBlocks: Int) = {
+      None
     }
   }
   trait ResizingGui extends ToolState {

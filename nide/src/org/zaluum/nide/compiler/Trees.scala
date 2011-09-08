@@ -347,6 +347,8 @@ case class LabelDesc(description: String, pos: Vector2)
 object ValDef {
   def emptyValDef(name: Name, tpeName: Name, dst: Point) =
     ValDef(name, tpeName, dst, None, List(), List(), List(), None, None, None)
+  def emptyValDef(name: Name, tpeName: Name) =
+    ValDef(name, tpeName, Point(0, 0), None, List(), List(), List(), None, None, None)
 }
 case class ValDef(
     name: Name,

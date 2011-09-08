@@ -88,7 +88,7 @@ trait ContainerItem extends Item {
                 e
             }
           }
-      	val bad = block.sym.connections.isBad(c)
+        val bad = block.sym.connections.isBad(c)
         (c -> new Edge(toVertex(c.a, true), toVertex(c.b, false), c.points, Some(c), bad).fixEnds)
     }.toMap
     new ConnectionGraphV(
@@ -120,7 +120,7 @@ trait ContainerItem extends Item {
     val remove = Buffer[ValDefItem]()
     for (bf ← boxes ++ labels) {
       changes.get(bf.valDef) match {
-        case Some(t: ValDef) ⇒
+        case Some(t: ValDef) if (t.sym.isExecutable) ⇒
           bf match {
             case o: OpenBoxFigure ⇒ o.updateOpenBox(t, changes)
             case l: LabelItem ⇒
@@ -140,7 +140,7 @@ trait ContainerItem extends Item {
     }
     boxes.filterNot(remove.contains)
     labels.filterNot(remove.contains)
-    val news = block.valDefs filterNot (remove.contains(_))
+    val news = block.valDefs filterNot (remove.contains(_)) filter { _.sym.isExecutable }
     news foreach { v ⇒
       val f = v.template match {
         case Some(t) ⇒
@@ -381,7 +381,7 @@ class IfOpenBoxFigure(container: ContainerItem, viewer: Viewer) extends OpenBoxF
   val buttons = Buffer[Button]()
   buttons += new Button(this) {
     def imageDesc =
-      if (openBox.symbol.blockNumeral==0)
+      if (openBox.symbol.blockNumeral == 0)
         imageFactory.buttonIfTrue
       else imageFactory.buttonIfFalse
   }

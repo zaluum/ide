@@ -280,8 +280,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
             case Some(bs: BoxTypeSymbol) ⇒
               val vsym = v.sym.asInstanceOf[ValSymbol]
               v.symbol.tpe = bs
-              if (!bs.hasApply) {
-                error("Class " + v.typeName.str + " is not a annotated with @Box or has no method annotated with @Apply", tree)
+              if (!bs.hasApply && !bs.isVisual) {
+                error("Class " + v.typeName.str + " must be visual (extend java.awt.Component) or be marked as @Box and have an @Apply method", tree)
               }
               // Constructor
               val consSign = v.constructorTypes map { name ⇒

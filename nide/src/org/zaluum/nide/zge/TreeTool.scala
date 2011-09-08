@@ -191,27 +191,20 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   }
   object pasting extends Pasting with SingleContainerAllower
   // CREATING
-  abstract class Creating extends ToolState {
+  abstract class TreeCreating extends Creating {
     self: SingleContainer ⇒
-    var feed: ItemFeedbackFigure = _
-    var tpeName: Name = _
-    var tpe: Option[BoxTypeProxy] = None
-    def enter(tpename: Name, initContainer: ContainerItem) {
+    override def enter(tpename: Name, initContainer: ContainerItem) {
       enterSingle(initContainer)
-      state = this
-      this.tpeName = tpename
-      tpe = controller.zproject.getBoxSymbol(tpeName);
-      val (img, desc) = zproject.imageFactory.image48(tpeName);
-      feed = new ItemFeedbackFigure(current)
-      feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
-      zproject.imageFactory.destroy(desc)
-      feed.show()
+      super.enter(tpename, initContainer)
     }
-    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
-    def abort() { exit() }
-    def drag() {}
-    private def newInstance(dst: Point) = {
-      new EditTransformer() {
+    protected def getSize(tpename: Name) = {
+      val (img, desc) = zproject.imageFactory.image48(tpeName);
+      val d = Dimension(img.getBounds().width, img.getBounds.height)
+      zproject.imageFactory.destroy(desc)
+      d
+    }
+    protected def newInstance(dst: Point) = {
+      Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒
             val name = Name(b.sym.freshName(tpeName.classNameWithoutPackage.firstLowerCase))
@@ -221,10 +214,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
               parameters = transformTrees(b.parameters),
               junctions = transformTrees(b.junctions))
         }
-      }
+      })
     }
-    private def newInstanceTemplate(dst: Point, requiredBlocks: Int) = {
-      new EditTransformer() {
+    protected def newInstanceTemplate(dst: Point, requiredBlocks: Int) = {
+      Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒
             val sym = b.sym
@@ -237,29 +230,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
               connections = transformTrees(b.connections),
               junctions = transformTrees(b.junctions))
         }
-      }
-    }
-    def buttonUp() {
-      val dst = snap(currentMouseLocation)
-      val command = tpe match {
-        case Some(b) ⇒
-          Expressions.templateExpressions.get(b.name) match {
-            case Some(e) ⇒ newInstanceTemplate(dst, e.requiredBlocks)
-            case None    ⇒ newInstance(dst)
-          }
-        case _ ⇒ newInstance(dst)
-      }
-      controller.exec(command)
-    }
-    def buttonDown() {}
-    def exit() {
-      feed.hide();
-      feed = null;
-      selecting.enter()
+      })
     }
   }
   // CREATING BOX 
-  object creating extends Creating with SingleContainerAllower
+  object creating extends TreeCreating with SingleContainerAllower
   // CREATING PORT
   class CreatingPort extends ToolState {
     self: SingleContainer ⇒

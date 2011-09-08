@@ -305,13 +305,13 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
       Point(0, 0)
     }
   def myLayer = container.layer
-  var component: Option[JComponent] = None
+  var component: Option[java.awt.Component] = None
 
   override def updateValDef(valDef: ValDef) = {
     val vs = valDef.sym
       def instance(cl: Class[_]) = {
         try {
-          Some(cl.newInstance().asInstanceOf[JComponent])
+          Some(cl.newInstance().asInstanceOf[java.awt.Component])
         } catch { case e ⇒ e.printStackTrace; None }
       }
 
@@ -382,7 +382,7 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
         g.drawText("?", rect.getCenter.x - dim.width / 2, rect.getCenter.y - dim.height / 2)
         font.dispose()
     }
-    g.setForegroundColor(ColorConstants.lightGray)
-    g.drawRectangle(rect.getCopy.expand(-1, -1))
+    // g.setForegroundColor(ColorConstants.lightGray)
+    // g.drawRectangle(rect.getCopy.expand(-1, -1))
   }
 }

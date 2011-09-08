@@ -1,6 +1,14 @@
 Agenda
 
 week 5-11 doc week -> ampliar detalls
+	- z order: endavant-endarrera gui
+	- acabar swing intenum values
+	- replicar exemple complex lv
+	- lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
+	- lv global variable = static field
+	- Select toolkit, GTK+,etc
+	-
+	- Clusters, com imitar? Hashmap? Classe interna?
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- write feature list on freemind
 	- Graphing widget properties. Color/etc( see labview)
@@ -26,7 +34,37 @@ week 19-25 launch week
 	- buy template
 	- publish beta
 	- buy adwords	
-
+Idees
+	- Com tractar arrays?
+		- Per exemple per implementar la suma de dues arrays:
+			- si s'implementa amb mètodes, un mètode per cada combinació de tipus short-int int-double, etc
+			- per defecte si l'operació es sobre 2 arrays, implementarla dins un for resultant la array més petita
+				- Quines operacions? binaries? unaries? aplicar mètode?
+				- map,flatmap?
+			- crear sempre mètodes nous
+			- ignorar arrays i anar a collections? ... mal rendiment?
+			- box for
+		- grow array? 
+	 	- new array cada vegada, conservar l'última, in-place? benchmark?
+	- fer fàcil la creació de boxes noves.  
+		- expr oberta tipus while. No es pot afegir a dins però hi ha  un boto.
+		- s'afegeixen ports, es connecten i es trien els tipus (o no)
+			- auto detect port types
+		- quan es clica el botó menu per crear una nova classe basada en la plantilla
+	 - Multi apply. Classes Box amb més d'un apply. 
+	  	 Static box: mètodes estàtics com a boxes 
+	 	- Com es representen a la paleta? cada mètode una box?
+	 	- Canviar significat de boxtypesymbol, ja no es JavaClassType
+	 	-
+	 - Label amb javabeans, boxes només visuals (decoració)
+	 - Treure llista de boxes i mètodes a mostrar a la paleta d'xmls
+	 	- per aprofitar javax.swing p.ex.
+	 	- box lliure, triar classe i mètode a invocar i camps de retorn
+	 		- paleta nomes com a plantilla de les boxes més habituals, fetes servir recentment. 
+	    - com trobar xmls? mirar META-INF etc del classpath
+	 
+	  
+	 	
 article ideas
 	- Use cases.
 	- Strategy. How to start. Open source library / pay tools.
@@ -42,19 +80,11 @@ bugs
 	-sembla que xulrunner dona algun problema d'alt consum de cpu. xulrunner 2 no?
 	- BUG Change type of a box to While or if (doesn't have template)
 	
-IDEES
-	-Com tractar arrays?
-	-lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
-	-Propietats graph/plot
-	-lv global variable = static field
-	-Select toolkit, GTK+,etc
-	-Millorar generació de codi amb reflection?
-	-Static apply classes boxes sense estat
-	-Com enrutar events swing a boxes?
-	-literal parsing -> expression parsing (field access, method invoke)
-	-Multi apply. Classes Box amb més d'un apply
-	-Clusters, com imitar? Hashmap? Classe interna?
 LATER
+	- Botons advanced, categories, etc a Zaluum properties view
+	-Com enrutar events swing a boxes?
+	-Millorar generació de codi amb reflection?
+	-literal parsing -> expression parsing (field access, method invoke)
 	-miglayout support
 	- nested guis as new window
 	- thread inner classes in jmodel
@@ -114,7 +144,8 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
-	-Special property loader (color, list contents...) -> menu -> code gen
+	- decoracions: gui only box 
+	- Special property loader (color, list contents...) -> menu -> code gen
 	- buidar metodes boxtypesymbol, fer servir binding
 	- Enlloc de _widget heredar directament de Jpanel
 	- Javabean properties

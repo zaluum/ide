@@ -14,6 +14,8 @@ import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
 import draw2dConversions._
 import org.zaluum.nide.compiler.MapTransformer
+import org.zaluum.nide.eclipse.BoxTypeProxy
+import org.zaluum.nide.compiler.Expressions
 
 /**
  * Implements basic selecting, marquee and resizing of ItemFigures
@@ -110,6 +112,49 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def drag() {}
     override def menu() {}
     def abort() { exit() }
+  }
+  // Creating
+  abstract class Creating extends ToolState {
+    var feed: ItemFeedbackFigure = _
+    var tpeName: Name = _
+    var tpe: Option[BoxTypeProxy] = None
+    def enter(tpename: Name, initContainer: ContainerItem) {
+      state = this
+      this.tpeName = tpename
+      tpe = controller.zproject.getBoxSymbol(tpeName);
+      val size = getSize(tpename)
+      feed = new ItemFeedbackFigure(current)
+      feed.setInnerBounds(new Rectangle(0, 0, size.w, size.h));
+      feed.show()
+    }
+    protected def getSize(tpeName: Name): Dimension
+    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
+    def abort() { exit() }
+    def drag() {}
+    def buttonDown() {}
+    protected def newInstanceTemplate(dst: Point, blocks: Int): Option[EditTransformer]
+    protected def newInstance(dst: Point): Option[EditTransformer]
+    def buttonUp() {
+      val dst = snap(currentMouseLocation)
+      val command = tpe match {
+        case Some(b) ⇒
+          Expressions.templateExpressions.get(b.name) match {
+            case Some(e) ⇒ newInstanceTemplate(dst, e.requiredBlocks)
+            case None    ⇒ newInstance(dst)
+          }
+        case _ ⇒ newInstance(dst)
+      }
+      command match {
+        case Some(c) ⇒ controller.exec(c)
+        case None    ⇒ exit()
+      }
+
+    }
+    def exit() {
+      feed.hide();
+      feed = null;
+      selecting.enter()
+    }
   }
   /// MARQUEE
   object marqueeing extends DeltaMove with SingleContainer {

@@ -165,6 +165,7 @@ class BoxTypeSymbol(
   var methodSelector: Name = _
   override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
   override def templateTree = tdecl.template
+  def onlyVisual = !hasApply && isVisual
   def usedNames = usedValNames ++ (ports.keySet map { _.str }) // FIXME what else?
   def usedValNames = (block :: block.deepBlocks).flatMap { _.usedValNames }.toSet
   def block = blocks.head
@@ -173,7 +174,7 @@ class BoxTypeSymbol(
   def fieldReturns = ports.values.toList filter { p ⇒ p.isField && p.dir == Out } sortBy { _.name.str }
   def returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
   def methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
-  def parentBS = this
+  def mainBS = this
 }
 
 case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bl: BlockSymbol) {
@@ -204,7 +205,7 @@ sealed trait TemplateSymbol extends Symbol {
   def currentBlock = blocks(currentBlockIndex)
   def nextBlockIndex = if (currentBlockIndex >= blocks.length - 1) 0 else currentBlockIndex + 1
   var thisVal: ValSymbol = _ // should be template
-  def parentBS: BoxTypeSymbol
+  def mainBS: BoxTypeSymbol
 }
 trait BoxType extends TemplateSymbol with JavaType {
   def templateTree: Template
@@ -222,10 +223,11 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   private val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
 
   override def tdecl: Block = decl.asInstanceOf[Block]
+  def isMainBSBlock = template.mainBS == template
   def blockNumeral = template.blocks.indexOf(this)
   def uniqueBlock = template.blocks.size == 1
   def usedValNames = (valsList ++ missingVals.values).map(_.name.str).toSet
-  def usedNames = (template.parentBS.usedValNames ++ (template.ports.values.map { _.name.str })).toSet
+  def usedNames = (template.mainBS.usedValNames ++ (template.ports.values.map { _.name.str })).toSet
   def deepBlocks: List[BlockSymbol] = {
     var res = List[BlockSymbol]()
     for (vs ← this.valsList; other ← vs.blocks) {
@@ -403,9 +405,13 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   var portSides = List[PortSide]()
   var constructor: Option[Constructor] = None
   var constructorParams = List[Value]()
-  def parentBS = owner.template.parentBS
+  def mainBS = owner.template.mainBS
   def fqName = name
   def semfqName = Name(fqName.str + "_sem")
+  def isExecutable = tpe match {
+    case bs: BoxTypeSymbol if bs.onlyVisual ⇒ false
+    case _                                  ⇒ true
+  }
   private def createOutsidePs(name: Name, dir: Boolean, helperName: Option[Name] = None) = {
     val pdir = if (dir) In else Out
     val pi = new PortInstance(name, helperName, this, pdir)

@@ -47,7 +47,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     for (c ← bl.connections.clumps) { checkClump(c) }
     // 2 - compute execution order
     import scala.collection.JavaConversions._
-    bl.executionOrder = new TopologicalOrderIterator(bl.dag).toList
+    bl.executionOrder = new TopologicalOrderIterator(bl.dag).toList.filter { _.isExecutable }
     // 3 - Propagate and check types
     checkTypes();
     // 4- Put calculated types to the clump
@@ -165,7 +165,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     }
     val exprChecker = new ExpressionChecker(this)
     val objectChecker = new OOChecker(this)
-    for (vs ← bl.executionOrder) {
+    for (vs ← bl.executionOrder) { // skip non executable
       vs.tpe match {
         case bs: BoxTypeSymbol   ⇒ assignBoxTypeSymbolTypes(vs)
         case b: BinExprType      ⇒ exprChecker.checkBinExprTypes(vs)
