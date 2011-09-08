@@ -14,7 +14,7 @@ sealed trait ExprType extends BoxType {
   def templateTree = null
   def loadClass(cl: ClassLoader) = None
   def descriptor = null
-  def parentBS = null
+  def mainBS = null
 }
 sealed trait ResultExprType extends ExprType {
   val o = new PortSymbol(this, Name("o"), Out)

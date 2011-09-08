@@ -36,8 +36,8 @@ import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Serializer
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
 import org.zaluum.nide.eclipse.ZaluumNature
-
 import model.ZaluumCompilationUnit
+import org.eclipse.jdt.core.search.IJavaSearchScope
 
 class ZaluumLanguageSupport extends LanguageSupport {
 
@@ -189,7 +189,8 @@ class ZaluumLanguageSupport extends LanguageSupport {
   def getEventHandler(): EventHandler = new ZaluumEventHandler()
 
   def filterNonSourceMembers(binaryType: BinaryType) {}
-
+  def expandSearchScope(scope: IJavaSearchScope, pattern: SearchPattern, requestor: SearchRequestor) =
+    scope
   def updateContent(cu: org.eclipse.jdt.core.ICompilationUnit, destPackageName: Array[String], currPackageName: Array[String],
                     newName: String): TextEdit = {
     val packageDecls = cu.getPackageDeclarations();
