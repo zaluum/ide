@@ -1,6 +1,7 @@
 package org.zaluum.widget;
 
 import java.lang.reflect.InvocationTargetException;
+import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JTextField;
@@ -21,7 +22,7 @@ public class TextWidget extends JTextField {
 	private AtomicReference<Double> value = new AtomicReference<Double>(0.0);
 	private Runnable r = new Runnable() {
 		public void run() {
-			setText("" + value.get());
+			setText(NumberFormat.getInstance().format((double)value.get()));
 		}
 	};
 
