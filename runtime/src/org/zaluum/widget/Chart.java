@@ -29,7 +29,6 @@ public class Chart extends Chart2D {
 	}
 
 	private Runnable runnable = new Runnable() {
-		@Override
 		public void run() {
 			final double[] copy;
 			final long savedi;

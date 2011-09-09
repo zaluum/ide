@@ -29,14 +29,14 @@
    </license>
 
    <requires>
-      <import feature="org.eclipse.jdt" version="3.6.2.r362_v20101117-0800-7z8XFW6FLFlmjJcvz03jyeFBLS_F" patch="true"/>
+      <import feature="org.eclipse.jdt" version="3.7.0.v20110520-0800-7z8gFchFMTdFYKuLqBLqRja9B15B" patch="true"/>
    </requires>
 
    <plugin
          id="org.eclipse.jdt.core"
          download-size="0"
          install-size="0"
-         version="3.6.2.zaluum1"
+         version="3.7.0.zaluum1"
          unpack="false"/>
 
 </feature>

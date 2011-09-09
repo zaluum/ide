@@ -27,7 +27,6 @@ public class ZSliderWidget extends JSlider {
 		setMinimum(min);
 		setValue(0);
 		addChangeListener(new ChangeListener() {
-			@Override
 			public void stateChanged(ChangeEvent e) {
 				out.set((double) getValue());
 			}

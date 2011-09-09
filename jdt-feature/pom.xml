@@ -20,8 +20,8 @@
         <configuration>
                <file>target/p2content.xml</file>
                <regex>false</regex>
-               <token>[3.6.2.r362_v20101117-0800-7z8XFW6FLFlmjJcvz03jyeFBLS_F,3.6.2.r362_v20101117-0800-7z8XFW6FLFlmjJcvz03jyeFBLS_F]</token>
-               <value>[3.6.2,3.7.0)</value>
+               <token>[3.7.0.v20110520-0800-7z8gFchFMTdFYKuLqBLqRja9B15B,3.7.0.v20110520-0800-7z8gFchFMTdFYKuLqBLqRja9B15B]</token>
+               <value>[3.7.0,3.8.0)</value>
            </configuration>
         <executions>
           <execution>

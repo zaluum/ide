@@ -1,6 +1,7 @@
 package org.zaluum.nide.zge
 
 import org.eclipse.draw2d.geometry.Point
+import org.eclipse.draw2d.geometry.PrecisionPoint
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.Cursors
@@ -58,7 +59,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) ex
     setSize(expansion, expansion)
     val posx = inside.x + (inside.width / 2.0) * x - (expansion / 2.0)
     val posy = inside.y + (inside.height / 2.0) * y - (expansion / 2.0)
-    setLocation(new Point(posx, posy))
+    setLocation(new PrecisionPoint(posx, posy))
   }
 }
 

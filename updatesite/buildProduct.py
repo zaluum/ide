@@ -20,7 +20,7 @@ def main():
   usage = "usage: %prog [options]"
   parser = optparse.OptionParser(usage)
   parser.add_option("-e", "--eclipse", dest="eclipseCmd",
-		  default='/home/frede/devel/eclipse3.6/eclipse',
+		  default='/home/frede/devel/eclipse3.7/eclipse',
 		  help="Point to eclipse binary")
   parser.add_option("-o", "--os", dest="os")
   parser.add_option("-w", "--ws", dest="ws")
@@ -31,7 +31,7 @@ def main():
     currentdir = os.getcwd()
     destination = currentdir + "/target/products/zaluum.product/" + osStr + "/" + wsStr + "/" + archStr + "/zaluum"
     def callDirector(iu,extraOpts):
-      c = options.eclipseCmd + """ -application org.eclipse.equinox.p2.director -nosplash -consolelog -repository http://127.0.0.1/3.6UpdatesMirror,http://download.eclipse.org/tools/gef/updates/releases/,http://127.0.0.1/heliosMirror,http://127.0.0.1/repo/,file:"""+currentdir+"""/target/repository/ -installIU """+ iu + """ -destination """+ destination + extraOpts 
+      c = options.eclipseCmd + """ -application org.eclipse.equinox.p2.director -nosplash -consolelog -repository http://127.0.0.1/3.7UpdatesMirror,http://127.0.0.1/indigoMirror,http://127.0.0.1/repo/,file:"""+currentdir+"""/target/repository/ -installIU """+ iu + """ -destination """+ destination + extraOpts 
       output,_ = call_command(c)
     logging.info('Materializing base product for ' + osStr + " " + wsStr + " " + archStr)
     callDirector("zaluum.product", " -profile DefaultProfile -profileProperties org.eclipse.update.install.features=true -roaming -p2.os %s -p2.ws %s -p2.arch %s" % (osStr,wsStr,archStr))

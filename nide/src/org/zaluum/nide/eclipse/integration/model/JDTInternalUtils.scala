@@ -8,13 +8,3 @@ object JDTInternalUtils {
   def stringToA(str: String): Array[Array[Char]] = str.split('.').map { _.toCharArray }
 }
 
-class FakeInvocationSite(val expectedType: TypeBinding) extends InvocationSite {
-  def genericTypeArguments() = null
-  def isSuperAccess() = false
-  def isTypeAccess() = false
-  def setActualReceiverType(receiverType: ReferenceBinding) {}
-  def setDepth(depth: Int) {}
-  def setFieldIndex(depth: Int) {}
-  def sourceEnd() = 0
-  def sourceStart() = 0
-}

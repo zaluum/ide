@@ -20,7 +20,6 @@ public class TextWidget extends JTextField {
 
 	private AtomicReference<Double> value = new AtomicReference<Double>(0.0);
 	private Runnable r = new Runnable() {
-		@Override
 		public void run() {
 			setText("" + value.get());
 		}

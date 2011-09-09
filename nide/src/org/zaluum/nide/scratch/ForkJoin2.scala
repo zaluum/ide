@@ -1,4 +1,4 @@
-package org.zaluum.nide.scratch
+/*package org.zaluum.nide.scratch
 import java.util.concurrent.ForkJoinPool
 import java.util.concurrent.ForkJoinTask
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph
@@ -158,7 +158,7 @@ object DAGAnalysys {
     runDag(dag)
   }
 
-}
+}*/
 /*object DAGAnalysys {
   case class Vertex(s: String) {
     var expensive: Boolean = true
@@ -443,6 +443,7 @@ object DAGAnalysys {
     emitFJ(dag, maxSet)
   }
 }*/
+/*
 object Executors2 {
   def task(body: ⇒ Unit) = new Runnable() {
     def run() {
@@ -453,13 +454,13 @@ object Executors2 {
   val exec = Executors.newCachedThreadPool();
   val helloSaidJoin = new Semaphore(0);
   val cridat = new Semaphore(0);
-  val rebre = task{
+  val rebre = task {
     cridat.acquire()
     println("pasi pasi")
     helloSaidJoin.release()
     println("ok saludat")
   }
-  def main(args:Array[String]) {
+  def main(args: Array[String]) {
     println("que hi ha algu?")
     exec.execute(rebre)
     cridat.release()
@@ -504,4 +505,4 @@ object ForkJoin2 {
     task4.join
     task5.join
   }
-}
+}*/ 

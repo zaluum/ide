@@ -27,7 +27,7 @@
       <module>../nide</module> 
       <module>../nide-feature</module> 
       <module>../runtime</module> 
-      <module>../groovy-eclipse/jdt-patch/e36/org.eclipse.jdt.core</module> 
+      <module>../groovy-eclipse/jdt-patch/e37/org.eclipse.jdt.core</module> 
       <module>../nide-protobuf</module> 
       <module>../jdt-feature</module> 
       <module>../updatesite</module> 
@@ -124,21 +124,21 @@
     </build>
     <repositories>
       <repository>
-	<id>Helios Updates</id>
-	<name>Eclipse Helios Updates p2 repository</name>
+	<id>Indigo Updates</id>
+	<name>Eclipse Indigo Updates p2 repository</name>
 	<layout>p2</layout>
-	<!--<url>http://download.eclipse.org/eclipse/updates/3.6</url>-->
-	  <url>http://127.0.0.1/3.6UpdatesMirror</url>
+	<!--<url>http://download.eclipse.org/eclipse/updates/3.7</url>-->
+	  <url>http://127.0.0.1/3.7UpdatesMirror</url>
 	  <snapshots>
 	    <enabled>false</enabled>
 	  </snapshots>
 	</repository>
 	<repository>
-	  <id>Helios</id>
-	  <name>Eclipse Helios p2 repository</name>
+	  <id>Indigo</id>
+	  <name>Eclipse Indigo p2 repository</name>
 	  <layout>p2</layout>
-	  <url>http://127.0.0.1/heliosMirror</url>
-	  <!--<url>http://download.eclipse.org/releases/helios/</url>-->
+	  <url>http://127.0.0.1/indigoMirror</url>
+	  <!--<url>http://download.eclipse.org/releases/indigo/</url>-->
 	    <snapshots>
 	      <enabled>false</enabled>
 	    </snapshots>
@@ -181,20 +181,20 @@
 	</pluginRepositories>
 	<profiles>
 	  <profile>
-	    <id>scala-2.9.0</id>
+	    <id>scala-2.9.1</id>
 	    <activation>
 	      <property>
 		<name>scala.version</name>
-		<value>2.9.0</value>
+		<value>2.9.1</value>
 	      </property>
 	    </activation>
 	    <repositories>
 	      <repository>
-		<id>scala-toolchain-2.9.0.final</id>
-		<name>Scala Toolchain 2.9.0.final p2 repository</name>
+		<id>scala-toolchain-2.9.1.final</id>
+		<name>Scala Toolchain 2.9.1.final p2 repository</name>
 		<layout>p2</layout>
-		<url>http://127.0.0.1/scalaToolsMirror</url>
-		<!--<url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-2.9.0.final</url>-->
+		<url>http://127.0.0.1/scalaToolsMirror-2.9.1</url>
+		<!--<url>http://download.scala-ide.org/scala-eclipse-toolchain-osgi-2.9.1.final</url>-->
 	      </repository>
 	    </repositories>
 	  </profile>

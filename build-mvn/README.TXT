@@ -1,8 +1,11 @@
 STEPS
 1) on targetPlatform run computep2 to generate p2 repo for dependencies
-2) link 127.0.0.1/repo to targetPlatform/repo
-3) set up nexus on 127.0.0.1:8081/nexus
-4) go to updateSite and run buildProduct.py
+2) link 127.0.0.1/repo to targetPlatform/repo.
+3) run mirror.sh from zaluum-third. Link 127.0.0.1/indigoMirror 3.7updates and scalaTools
+4) set up nexus on 127.0.0.1:8081/nexus
+5) run build.sh package
+6) go to updateSite and run buildProduct.py
+7) executables on updatesite/target/products/zaluum.product/linux/gtk/x86_64/zaluum
 
 COMMENTS
 

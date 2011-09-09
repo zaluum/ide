@@ -1,7 +1,7 @@
-instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/releases/helios,type:0,name:Eclipse Helios,enabled:true); \
-  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/releases/helios,type:1,name:Eclipse Helios,enabled:true); \
-  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/eclipse/updates/3.6,type:0,name:Eclipse Helios,enabled:true); \
-  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/eclipse/updates/3.6,type:1,name:Eclipse Helios,enabled:true); \
+instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/releases/indigo,type:0,name:Eclipse Indigo,enabled:true); \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/releases/indigo,type:1,name:Eclipse Indigo,enabled:true); \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/eclipse/updates/3.7,type:0,name:Eclipse Indigo updates,enabled:true); \
+  org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//download.eclipse.org/eclipse/updates/3.7,type:1,name:Eclipse Indigo updates,enabled:true); \
   org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//127.0.0.1/repo,type:0,name:Local Zaluum Repo,enabled:true); \
   org.eclipse.equinox.p2.touchpoint.eclipse.addRepository(location:http${#58}//127.0.0.1/repo,type:1,name:Local Zaluum Repo,enabled:true); 
   
