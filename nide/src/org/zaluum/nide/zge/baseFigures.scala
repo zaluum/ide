@@ -118,7 +118,7 @@ class RichFigure(container: IFigure) {
         c.translateFromParent(childInternalCoords)
         c.findDeepContainerAt(childInternalCoords)(partial) match {
           case Some(cc) ⇒ return Some(cc)
-          case None     ⇒
+          case None ⇒
         }
       }
     }
@@ -160,9 +160,11 @@ trait Item extends Hover {
     myLayer.add(this)
   }
   def hide() {
-    showing = false
-    if (myLayer.getChildren.contains(this)) myLayer.remove(this)
-    hideFeedback()
+    if (showing) {
+      showing = false
+      myLayer.remove(this) // this is a bottleneck. Lineal remove + layout, specially when invoked from containeritem
+      hideFeedback()
+    }
   }
   def showFeedback() {
     container.feedbackLayer.add(feed)

@@ -6,7 +6,6 @@ week 5-11 doc week
 	- clean up wire
 	- al crear modificar directament la label. Crear nom del camp a partir de label.
 	- visuals al block diagram (notes sobretot)
-	- tolerancia del lloc de connexió 
 	- crear port connectant cable
     - same label in both views. (caption?)
 	- view as icon 
@@ -17,7 +16,6 @@ week 5-11 doc week
 	- lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
 	- lv global variable = static field
 	- Select toolkit, GTK+,etc
-	-
 	- Clusters, com imitar? Hashmap? Classe interna?
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- write feature list on freemind
@@ -45,6 +43,8 @@ week 19-25 launch week
 	- publish beta
 	- buy adwords	
 Idees
+	- Scala.react programació reactiva
+	- tolerancia del lloc de connexió 
 	- Com tractar arrays?
 		- Per exemple per implementar la suma de dues arrays:
 			- si s'implementa amb mètodes, un mètode per cada combinació de tipus short-int int-double, etc

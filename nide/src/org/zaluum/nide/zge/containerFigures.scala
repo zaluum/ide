@@ -42,6 +42,7 @@ import draw2dConversions._
 import RichFigure._
 import org.zaluum.nide.compiler.LiteralExprType
 import org.zaluum.nide.compiler.Expressions
+import org.zaluum.nide.Timer
 
 trait ContainerItem extends Item {
   def viewer: Viewer
@@ -103,7 +104,7 @@ trait ContainerItem extends Item {
   def symbol = block.sym
   def templateSym = symbol.template
   def template = templateSym match {
-    case v: ValSymbol     ⇒ v.tdecl.template.get
+    case v: ValSymbol ⇒ v.tdecl.template.get
     case b: BoxTypeSymbol ⇒ b.tdecl.template
   }
   val junctions = Buffer[PointFigure]()
@@ -118,7 +119,7 @@ trait ContainerItem extends Item {
   }
   def updateBoxes(changes: Map[Tree, Tree]) {
     val remove = Buffer[ValDefItem]()
-    for (bf ← boxes ++ labels) {
+    for (bf ← boxes.view ++ labels) {
       changes.get(bf.valDef) match {
         case Some(t: ValDef) if (t.sym.isExecutable) ⇒
           bf match {
@@ -140,13 +141,13 @@ trait ContainerItem extends Item {
     }
     boxes.filterNot(remove.contains)
     labels.filterNot(remove.contains)
-    val news = block.valDefs filterNot (remove.contains(_)) filter { _.sym.isExecutable }
+    val news = block.valDefs filter (v ⇒ !remove.contains(v) && v.sym.isExecutable)
     news foreach { v ⇒
       val f = v.template match {
         case Some(t) ⇒
           val o = v.sym.tpe match {
             case IfExprType ⇒ new IfOpenBoxFigure(ContainerItem.this, viewer)
-            case _          ⇒ new OpenBoxFigure(ContainerItem.this, viewer)
+            case _ ⇒ new OpenBoxFigure(ContainerItem.this, viewer)
           }
           o.updateOpenBox(v, Map())
           o
@@ -197,8 +198,8 @@ object OpenBoxFigure {
   val backgroundBlink = ColorConstants.lightGray
 }
 class OpenBoxFigure(
-    val container: ContainerItem,
-    val viewer: Viewer) extends ValDefItem with ResizableFeedback with ContainerItem with Transparent {
+  val container: ContainerItem,
+  val viewer: Viewer) extends ValDefItem with ResizableFeedback with ContainerItem with Transparent {
   // Item
   def myLayer = container.layer
   def size = valDef.size getOrElse Dimension(50, 50)
@@ -298,8 +299,8 @@ class OpenBoxFigure(
           }
         if (intPs.pi.hasDecl) {
           intPs.pi.dir match {
-            case In    ⇒ newFig(true)
-            case Out   ⇒ newFig(false)
+            case In ⇒ newFig(true)
+            case Out ⇒ newFig(false)
             case Shift ⇒ newFig(intPs.inPort);
           }
         } else {
@@ -367,7 +368,7 @@ abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with Overl
         imageFactory.destroy(c)
         loadImage()
       case None ⇒ loadImage()
-      case _    ⇒
+      case _ ⇒
     }
     updateSize()
   }

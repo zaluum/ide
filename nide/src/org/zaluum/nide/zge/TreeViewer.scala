@@ -17,6 +17,7 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.eclipse.GraphicalEditor
 import org.zaluum.nide.Activator
 import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.eclipse.EclipseUtils
 
 class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
   extends ItemViewer(parent, controller) with ClipboardViewer {
