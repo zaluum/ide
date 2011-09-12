@@ -42,11 +42,11 @@ trait JavaType extends Symbol {
   def loadClass(cl: ClassLoader): Option[Class[_]]
 }
 class PrimitiveJavaType(
-    val name: Name,
-    override val descriptor: String,
-    override val javaSize: Int,
-    val boxedName: Name,
-    val boxMethod: String, val binding: BaseTypeBinding, javaclass: Class[_]) extends JavaType {
+  val name: Name,
+  override val descriptor: String,
+  override val javaSize: Int,
+  val boxedName: Name,
+  val boxMethod: String, val binding: BaseTypeBinding, javaclass: Class[_]) extends JavaType {
   type B = BaseTypeBinding
   val owner = null
   val fqName = name
@@ -61,7 +61,7 @@ class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int, val binding: 
   override def equals(that: Any) = {
     that match {
       case a: ArrayType ⇒ a.of == of && a.dim == dim && a.owner == owner
-      case _            ⇒ false
+      case _ ⇒ false
     }
   }
   override def hashCode = {
@@ -74,10 +74,10 @@ class ParamSymbol(val owner: JavaType, val name: Name) extends Symbol {
   override def toString = "ParamSymbol(" + name + ")"
 }
 class BeanParamSymbol(
-    owner: JavaType,
-    val getter: MethodBinding,
-    val setter: MethodBinding,
-    initTpe: JavaType) extends ParamSymbol(owner, Name(MethodHelper.propertyName(getter))) {
+  owner: JavaType,
+  val getter: MethodBinding,
+  val setter: MethodBinding,
+  initTpe: JavaType) extends ParamSymbol(owner, Name(MethodHelper.propertyName(getter))) {
   tpe = initTpe;
   def declaringClass = getter.declaringClass.compoundName.map { _.mkString }.mkString(".")
 }
@@ -131,13 +131,13 @@ trait ClassJavaType extends JavaType {
         val name = MethodHelper.propertyName(m)
         map.get(name) match {
           case Some((g, s)) ⇒ map(name) = (m, s)
-          case _            ⇒ map(name) = (m, null)
+          case _ ⇒ map(name) = (m, null)
         }
       } else if (MethodHelper.isSetter(m)) {
         val name = MethodHelper.propertyName(m)
         map.get(name) match {
           case Some((g, s)) ⇒ map(name) = (g, m)
-          case _            ⇒ map(name) = (null, m)
+          case _ ⇒ map(name) = (null, m)
         }
       }
     }
@@ -157,7 +157,7 @@ class BoxTypeSymbol(
   var isVisual: Boolean,
   val binding: ReferenceBinding,
   val scope: ZaluumClassScope) extends ClassJavaType
-    with TemplateSymbol with BoxType with Namer {
+  with TemplateSymbol with BoxType with Namer {
   tpe = this
   val owner = null
   var hasApply = false
@@ -228,6 +228,22 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   def uniqueBlock = template.blocks.size == 1
   def usedValNames = (valsList ++ missingVals.values).map(_.name.str).toSet
   def usedNames = (template.mainBS.usedValNames ++ (template.ports.values.map { _.name.str })).toSet
+
+  def rename(valDef: ValDef, newName: Name, labelDesc: Option[LabelDesc]): EditTransformer = {
+    assert(tdecl.valDefs.contains(valDef))
+      def renamedEnd(end: Option[ConnectionEnd]) = end match {
+        case Some(PortRef(ValRef(valDef.name), b, c)) ⇒ Some(PortRef(ValRef(newName), b, c))
+        case other ⇒ other
+      }
+    new EditTransformer() {
+      val trans: PartialFunction[Tree, Tree] = {
+        case v: ValDef if (v == valDef) ⇒
+          valDef.copy(name = newName, label = labelDesc, params = transformTrees(valDef.params))
+        case c @ ConnectionDef(a, b, points) if (tdecl.connections.contains(c)) ⇒
+          ConnectionDef(renamedEnd(a), renamedEnd(b), points)
+      }
+    }
+  }
   def deepBlocks: List[BlockSymbol] = {
     var res = List[BlockSymbol]()
     for (vs ← this.valsList; other ← vs.blocks) {
@@ -343,7 +359,7 @@ object PortSide {
   def find(p: PortRef, bl: BlockSymbol) = {
     p.fromRef match {
       case t: ThisRef ⇒ bl.template.thisVal.findPortSide(p, inside = true)
-      case v: ValRef  ⇒ for (vs ← bl.lookupValWithMissing(v.name); ps ← vs.findPortSide(p, inside = false)) yield ps
+      case v: ValRef ⇒ for (vs ← bl.lookupValWithMissing(v.name); ps ← vs.findPortSide(p, inside = false)) yield ps
     }
   }
   def findOrCreateMissing(p: PortRef, bl: BlockSymbol) = {
@@ -410,7 +426,7 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   def semfqName = Name(fqName.str + "_sem")
   def isExecutable = tpe match {
     case bs: BoxTypeSymbol if bs.onlyVisual ⇒ false
-    case _                                  ⇒ true
+    case _ ⇒ true
   }
   private def createOutsidePs(name: Name, dir: Boolean, helperName: Option[Name] = None) = {
     val pdir = if (dir) In else Out
@@ -445,6 +461,21 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
       v.parse.asInstanceOf[java.awt.Rectangle]
   }
 }
+object Namer {
+  def uncapitalize(str: String) = {
+    if (str == null) null
+    else if (str.length == 0) ""
+    else {
+      val chars = str.toCharArray
+      chars(0) = chars(0).toLower
+      new String(chars)
+    }
+  }
+  def toIdentifierBase(baseStr: String) = {
+    val id = uncapitalize(baseStr.dropWhile(!Character.isJavaIdentifierStart(_)).filter { Character.isJavaIdentifierPart })
+    if (id != null && id != "") Some(id) else None
+  }
+}
 trait Namer {
   def usedNames: Set[String]
   def isNameTaken(str: String): Boolean = usedNames.contains(str)
@@ -453,11 +484,8 @@ trait Namer {
     val nextValue = if (digits.isEmpty) 1 else digits.toInt + 1
     str.slice(0, str.length - digits.length) + nextValue
   }
-  def toIdentifierBase(baseStr: String) = {
-    val id = baseStr.dropWhile(!Character.isJavaIdentifierStart(_)).filter { Character.isJavaIdentifierPart }
-    if (id == "") "a" else id
-  }
-  def freshName(baseStr: String) = freshName_(toIdentifierBase(baseStr))
+
+  def freshName(baseStr: String) = freshName_(Namer.toIdentifierBase(baseStr).getOrElse("a"))
   @scala.annotation.tailrec
   private final def freshName_(str: String): String = {
     if (!isNameTaken(str)) str

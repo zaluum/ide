@@ -345,8 +345,8 @@ case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd
 case class Param(key: Name, value: String) extends Tree
 case class LabelDesc(description: String, pos: Vector2)
 object ValDef {
-  def emptyValDef(name: Name, tpeName: Name, dst: Point) =
-    ValDef(name, tpeName, dst, None, List(), List(), List(), None, None, None)
+  def emptyValDef(name: Name, tpeName: Name, dst: Point, label: String) =
+    ValDef(name, tpeName, dst, None, List(), List(), List(), Some(LabelDesc(label, Vector2(0, 0))), None, None)
   def emptyValDef(name: Name, tpeName: Name) =
     ValDef(name, tpeName, Point(0, 0), None, List(), List(), List(), None, None, None)
 }
@@ -382,18 +382,30 @@ case class ValDef(
       template = e.transformOption(template),
       params = param :: filtered)
   }
-
-  def editLabel(gui: Boolean, s: String) = transformThis { e ⇒
+  def editLabelAndRename(s: String) = {
+    val v = this
+    val bl = v.sym.owner
+    val base = Namer.toIdentifierBase(s).getOrElse(v.name.str)
+    val id: Name = if (base != v.name) Name(bl.freshName(base)) else v.name
+    val pos = v.label.map { _.pos }.getOrElse(Vector2(0, 0))
+    val lbl = if (s != "") Some(LabelDesc(s, pos)) else None
+    v.sym.owner.rename(v, id, lbl)
+  }
+  /* def editLabel(gui: Boolean, changeName: Boolean, s: String) = transformThis { e ⇒
+    val newName = Namer.toIdentifierBase(s) match {
+      case Some(b) if changeName && b != name.str ⇒ sym.owner.freshName(b)
+      case _ ⇒ name.str
+    }
     val oldl = if (gui) labelGui else label
     val lDesc = s match {
       case "" ⇒ None
       case _ ⇒ Some(LabelDesc(s, oldl map { _.pos } getOrElse { Vector2(0, 0) }))
     }
     if (gui)
-      copy(labelGui = lDesc, template = e.transformOption(template), params = e.transformTrees(params))
+      copy(name = newName, labelGui = lDesc, template = e.transformOption(template), params = e.transformTrees(params))
     else
       copy(label = lDesc, template = e.transformOption(template), params = e.transformTrees(params))
-  }
+  }*/
 }
 case class ConnectionDef(
   a: Option[ConnectionEnd],

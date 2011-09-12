@@ -34,7 +34,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   def tree = viewer.tree
   def zproject = viewer.controller.zproject
   val connectionLineDistance = 3
-  val gridSize =1
+  val gridSize = 1
   object selecting extends Selecting with DeleteState with ClipboardState with DropState with LineBlinker {
     var port: Option[PortFigure] = None
     override def doubleClickPF =
@@ -51,7 +51,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           i.selectionSubject foreach { controller.blink(_, viewer) }
         }
       (beingSelected, port) match {
-        case (Some(b: Button), _)             ⇒ actButton(b)
+        case (Some(b: Button), _) ⇒ actButton(b)
         case (Some(o: OpenPortDeclFigure), _) ⇒ selectItem(o)
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
@@ -111,7 +111,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           viewer.setCursor(Cursors.CROSS)
           portsTrack.current match {
             case Some(_) ⇒
-            case None    ⇒
+            case None ⇒
           }
       }
     }
@@ -129,8 +129,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             fig.showFeedback()
             fig match {
               case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
-              case label: LabelItem          ⇒ movingLabel.enter(initDrag, initContainer, label)
-              case _                         ⇒ moving.enter(initDrag, initContainer)
+              case label: LabelItem ⇒ movingLabel.enter(initDrag, initContainer, label)
+              case _ ⇒ moving.enter(initDrag, initContainer)
             }
           }
         case (None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
@@ -138,10 +138,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def drop(s: String) {
       s match {
-        case In.str    ⇒ creatingPort.enter(In, current)
-        case Out.str   ⇒ creatingPort.enter(Out, current)
+        case In.str ⇒ creatingPort.enter(In, current)
+        case Out.str ⇒ creatingPort.enter(Out, current)
         case Shift.str ⇒ creatingPort.enter(Shift, current)
-        case _         ⇒ creating.enter(Name(s), current)
+        case _ ⇒ creating.enter(Name(s), current)
       }
     }
     def delete() {
@@ -156,12 +156,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
 
     override def menu() {
       itemUnderMouse match {
-        case Some(p: PortDeclFigure)     ⇒ new PortDeclPopup(viewer, p.tree).open() // TODO Dispose?
+        case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).open() // TODO Dispose?
         case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).open()
-        case Some(o: OpenBoxFigure)      ⇒ new ValDefPopup(viewer, o, false).open()
-        case Some(l: LabelItem)          ⇒ new ValDefPopup(viewer, l, false).open()
-        case Some(b: ValFigure)          ⇒ new ValDefPopup(viewer, b, false).open();
-        case _                           ⇒
+        case Some(o: OpenBoxFigure) ⇒ new ValDefPopup(viewer, o, false).open()
+        case Some(l: LabelItem) ⇒ new ValDefPopup(viewer, l, false).open()
+        case Some(b: ValFigure) ⇒ new ValDefPopup(viewer, b, false).open();
+        case _ ⇒
       }
     }
   }
@@ -204,13 +204,22 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       zproject.imageFactory.destroy(desc)
       d
     }
+    var newVal: ValDef = _
+    override def next(d: DMap) {
+      viewer.findLabelFigureOf(newVal) match {
+        case Some(l) ⇒ selecting.gotoDirectEdit(l)
+        case None ⇒ exit()
+      }
+    }
     protected def newInstance(dst: Point) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒
-            val name = Name(b.sym.freshName(tpeName.classNameWithoutPackage.firstLowerCase))
+            val label = tpeName.classNameWithoutPackage.firstLowerCase
+            val name = Name(b.sym.freshName(label))
+            newVal = ValDef.emptyValDef(name, tpeName, dst, label)
             b.copy(
-              valDefs = ValDef.emptyValDef(name, tpeName, dst) :: transformTrees(b.valDefs),
+              valDefs = newVal :: transformTrees(b.valDefs),
               connections = transformTrees(b.connections),
               parameters = transformTrees(b.parameters),
               junctions = transformTrees(b.junctions))

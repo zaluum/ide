@@ -11,6 +11,7 @@ week 5-11 doc week
 	- view as icon 
 	- z order: endavant-endarrera gui
 	- acabar swing intenum values
+	- editar propietats amb boto dret?
 	- replicar exemple complex lv
 	- lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
 	- lv global variable = static field

@@ -17,8 +17,9 @@ import org.eclipse.swt.events.TraverseEvent
 import org.eclipse.swt.events.TraverseListener
 import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler.Point
+import org.zaluum.nide.compiler.SelectionSubject
 abstract class Tool(viewer: Viewer) {
-  val gridSize : Int
+  val gridSize: Int
   def viewport = viewer
   def canvas = viewer.canvas
   def controller = viewer.controller
@@ -62,11 +63,13 @@ abstract class Tool(viewer: Viewer) {
   canvas.addMouseTrackListener(listener);
   canvas.addMouseWheelListener(listener);
   canvas.addTraverseListener(listener);
-  def refresh() {
-    state.exit()
+  type DMap = Map[SelectionSubject, SelectionSubject]
+  def refresh(m: DMap) {
+    state.next(m)
     state.move() // TODO some kind of refresh?
   }
   trait ToolState {
+    def next(m: DMap) = exit()
     def exit()
     def buttonDown()
     def move()
@@ -116,7 +119,7 @@ abstract class Tool(viewer: Viewer) {
   def handleDel() {
     state match {
       case d: DeleteState ⇒ d.delete()
-      case _              ⇒
+      case _ ⇒
     }
   }
   def handleDrop(x: Int, y: Int, s: String) {
@@ -124,7 +127,7 @@ abstract class Tool(viewer: Viewer) {
     state.move()
     state match {
       case d: DropState ⇒ d.drop(s)
-      case _            ⇒
+      case _ ⇒
     }
   }
   trait ClipboardState {
@@ -134,15 +137,15 @@ abstract class Tool(viewer: Viewer) {
   }
   def handleCut() = state match {
     case c: ClipboardState ⇒ c.cut
-    case _                 ⇒
+    case _ ⇒
   }
   def handleCopy() = state match {
     case c: ClipboardState ⇒ c.copy
-    case _                 ⇒
+    case _ ⇒
   }
   def handlePaste() = state match {
     case c: ClipboardState ⇒ c.paste
-    case _                 ⇒
+    case _ ⇒
   }
   trait LineBlinker {
     private var blinkingLine: Option[LineItem] = None

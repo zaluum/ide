@@ -45,13 +45,13 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
       }
     }
   }
-  def refreshTools() { viewers foreach { _.tool.refresh() } }
   def blink(s: SelectionSubject, fromViewer: Viewer) {
     viewers filterNot { _ == fromViewer } foreach { _.blink(s) }
   }
   def tree = nowTree
   val reporter = new Reporter()
   type DMap = Map[SelectionSubject, SelectionSubject]
+  def refreshTools(m: DMap) { viewers foreach { _.tool.refresh(m) } }
   case class Mutation(before: BoxDef, d: DMap, now: BoxDef)
   var undoStack = Stack[Mutation]()
   var redoStack = Stack[Mutation]()
@@ -139,7 +139,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
     Timer.go
     updateViewers(m)
     notifyListeners
-    refreshTools
+    refreshTools(m)
     Timer.stop("updateViewers")
     println("---")
   }
@@ -165,7 +165,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
     case Some(markMut) ⇒ markMut.now
     case None ⇒ undoStack.lastOption match {
       case Some(mut) ⇒ mut.before
-      case None      ⇒ nowTree
+      case None ⇒ nowTree
     }
   }
   def fromSaveMutations = { // returns the mutations to go from saved state to nowTree

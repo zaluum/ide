@@ -43,9 +43,11 @@ import org.zaluum.nide.compiler.SignatureExprType
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.zaluum.nide.compiler.CastToExprType
+import org.zaluum.nide.compiler.LabelDesc
+import org.zaluum.nide.compiler.Vector2
 
 class PortDeclPopup(
-    val viewer: TreeViewer, portDef: PortDef) extends Popup(viewer.shell, "Port " + portDef.name.str) {
+  val viewer: TreeViewer, portDef: PortDef) extends Popup(viewer.shell, "Port " + portDef.name.str) {
   var nme: NmeSelect = _
   var tpe: TpeEdit = _
   def populate(content: Composite) {
@@ -77,7 +79,8 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
         str ⇒ viewer.controller.exec(valDef.changeType(str)); close()
       })
       def label = text("Label", (if (gui) valDef.labelGui else valDef.label).map(_.description).getOrElse("")) { str ⇒
-        viewer.controller.exec(valDef.editLabel(gui, str)); close()
+        viewer.controller.exec(valDef.editLabelAndRename(str))
+        close()
       }
       def cons = button("Constructor", valDef.constructorParams.mkString(", "), "Edit...") { new ConstructorDialog(viewer, v).open() }
       def params = button("Parameters",
@@ -105,11 +108,11 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
       }
       def methodName = v.info match {
         case m: MethodBinding ⇒ m.toString()
-        case _                ⇒ "<none>"
+        case _ ⇒ "<none>"
       }
       def fieldName = v.info match {
         case f: FieldBinding ⇒ f.toString()
-        case _               ⇒ "<none>"
+        case _ ⇒ "<none>"
       }
       def dimensions = NewArrayExprType.dimensions(valDef)
       def staticMethodMenu = button("Static method", methodName, "Select...") { findMethods(true).open }

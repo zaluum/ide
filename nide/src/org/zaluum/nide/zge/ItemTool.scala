@@ -16,6 +16,9 @@ import draw2dConversions._
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.eclipse.BoxTypeProxy
 import org.zaluum.nide.compiler.Expressions
+import org.zaluum.nide.compiler.Namer
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.Name
 
 /**
  * Implements basic selecting, marquee and resizing of ItemFigures
@@ -34,14 +37,14 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var filterDouble = false
     def doubleClickPF: PartialFunction[Item, String ⇒ MapTransformer] = {
       case e: LiteralFigure ⇒ s ⇒ e.valDef.addOrReplaceParam(Param(Name("literal"), s))
-      case l: LabelItem     ⇒ l.valDef.editLabel(false, _)
+      case l: LabelItem ⇒ l.valDef.editLabelAndRename
     }
     override def doubleClick() = itemUnderMouse match {
-      case Some(e: TextEditFigure) ⇒
-        doubleClickPF.lift(e) foreach { directEditing.enter(e, _) }
+      case Some(e: TextEditFigure) ⇒ gotoDirectEdit(e)
       case _ ⇒
     }
-
+    def gotoDirectEdit(t: TextEditFigure) =
+      doubleClickPF.lift(t) foreach { directEditing.enter(t, _) }
     def enter() { state = this }
 
     def buttonDown {
@@ -140,13 +143,13 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
         case Some(b) ⇒
           Expressions.templateExpressions.get(b.name) match {
             case Some(e) ⇒ newInstanceTemplate(dst, e.requiredBlocks)
-            case None    ⇒ newInstance(dst)
+            case None ⇒ newInstance(dst)
           }
         case _ ⇒ newInstance(dst)
       }
       command match {
         case Some(c) ⇒ controller.exec(c)
-        case None    ⇒ exit()
+        case None ⇒ exit()
       }
 
     }
@@ -194,7 +197,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   class Resizing extends DeltaMove with SingleContainer {
     var handle: HandleRectangle = _
     def itf = handle.resizeItemFigure
-    var initCoords : Point= _
+    var initCoords: Point = _
     def enter(initDrag: Point, initContainer: C, handle: HandleRectangle) {
       enterMoving(initDrag)
       enterSingle(initContainer)
@@ -205,7 +208,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def buttonUp {
       val newBounds = handle.deltaAdd(snapDelta, itf.getBounds);
       val newPos = newBounds.getLocation
-      
+
       val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(6, 6))
       // TODO snap
       itf match {
@@ -220,9 +223,9 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
           v.copy(size = Some(newSize), pos = newPos)
       }
     }
-    def snapDelta = snap(initCoords + delta) - initCoords 
+    def snapDelta = snap(initCoords + delta) - initCoords
     def move() {
-      itf.resizeDeltaFeed(snapDelta, handle) 
+      itf.resizeDeltaFeed(snapDelta, handle)
     }
     def abort() {
       itf.resizeDeltaFeed(Vector2(0, 0), handle)
