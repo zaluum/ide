@@ -41,7 +41,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       super.doubleClickPF.orElse {
         case e: PortDeclFigure ⇒ e.tree.renamePort(_, None)
       }
-
+    def editLabel(s: String, l: LabelItem) = l.valDef.editLabelAndRename(false, s)
     def buttonUp {
       unblinkLine()
       if (filterDouble) { filterDouble = false; return }
@@ -166,31 +166,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   // PASTING
-  abstract class Pasting extends ToolState {
-    self: SingleContainer ⇒
-    var feed: ItemFeedbackFigure = _
-    var clipboard: Clipboard = _
-    def enter(c: Clipboard, initContainer: ContainerItem) {
-      enterSingle(initContainer)
-      this.clipboard = c
-      state = this
-      feed = new ItemFeedbackFigure(current)
-      feed.setInnerBounds(new Rectangle(0, 0, 48, 48)); // XXX real clipboard size
-      feed.show()
-      move()
-    }
-    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
-    def abort { exit() }
-    def drag {}
-    def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, snap(currentMouseLocation)))
-    def buttonDown() {}
-    def exit() {
-      feed.hide();
-      feed = null;
-      selecting.enter()
-    }
+  object pasting extends Pasting with SingleContainerAllower {
+    val gui = false
   }
-  object pasting extends Pasting with SingleContainerAllower
   // CREATING
   abstract class TreeCreating extends Creating {
     self: SingleContainer ⇒

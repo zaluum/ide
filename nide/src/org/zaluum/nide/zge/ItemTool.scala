@@ -30,15 +30,16 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   type C = ContainerItem
   state = selecting
   // SELECTING 
-  abstract class Selecting extends ToolState {
+  abstract class Selecting extends ToolState with DeleteState with ClipboardState {
     var beingSelected: Option[Item] = None
     var initDrag: Point = _
     var initContainer: C = _
     var filterDouble = false
     def doubleClickPF: PartialFunction[Item, String ⇒ MapTransformer] = {
       case e: LiteralFigure ⇒ s ⇒ e.valDef.addOrReplaceParam(Param(Name("literal"), s))
-      case l: LabelItem ⇒ l.valDef.editLabelAndRename
+      case l: LabelItem ⇒ editLabel(_, l)
     }
+    def editLabel(s: String, l: LabelItem): MapTransformer
     override def doubleClick() = itemUnderMouse match {
       case Some(e: TextEditFigure) ⇒ gotoDirectEdit(e)
       case _ ⇒
@@ -72,6 +73,31 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
 
     def exit {}
     def abort {}
+  }
+  abstract class Pasting extends ToolState {
+    self: SingleContainer ⇒
+    var feed: ItemFeedbackFigure = _
+    var clipboard: Clipboard = _
+    def enter(c: Clipboard, initContainer: ContainerItem) {
+      enterSingle(initContainer)
+      this.clipboard = c
+      state = this
+      feed = new ItemFeedbackFigure(current)
+      feed.setInnerBounds(new Rectangle(0, 0, 48, 48)); // XXX real clipboard size
+      feed.show()
+      move()
+    }
+    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
+    def abort { exit() }
+    def drag {}
+    val gui: Boolean
+    def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, snap(currentMouseLocation), gui))
+    def buttonDown() {}
+    def exit() {
+      feed.hide();
+      feed = null;
+      selecting.enter()
+    }
   }
   //// MOVE
   // SPECIAL move

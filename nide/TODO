@@ -1,7 +1,8 @@
 Agenda
 
-week 5-11 doc week 
-	- al copiar, moure les coordenades lleugerament (tant gui com pos)
+week 5-11 doc week
+	- pintar ombra als elements d'un altre pare 
+	- al enganxar posar-ho en el contenidor on cau ( enganxar a la GUI a quin block va a parar?)
 	- clean up wire
 	- al crear modificar directament la label. Crear nom del camp a partir de label.
 	- visuals al block diagram (notes sobretot)
@@ -154,6 +155,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- al copiar, moure les coordenades lleugerament (tant gui com pos)
 	- colocar widget a les mateixes coordenades que al diagrama de blocks al crear(buscar forat?)
 	- grid més gran a GUI, desactivar-la al block diagram
 	- decoracions: gui only box 

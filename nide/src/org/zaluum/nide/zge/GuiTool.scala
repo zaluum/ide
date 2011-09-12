@@ -54,6 +54,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       border = borderDistance
       super.buttonDown
     }
+    def editLabel(s: String, l: LabelItem) = l.valDef.editLabelAndRename(true, s)
     def buttonUp {
       beingSelected match {
         case Some(s: Item) ⇒
@@ -63,6 +64,11 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       }
       viewer.refresh()
     }
+    def delete() {
+      println("delete")
+      controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.editor.viewer.graphOf))
+    }
+
     val borderSensivity = 5
     def borderDistance = {
       val br = viewer.backRect.getBounds.getBottomRight
@@ -112,6 +118,16 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
         case _ ⇒
       }
     }
+    def cut() {
+      viewer.updateClipboard
+      delete
+    }
+    def copy() = viewer.updateClipboard
+    def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
+
+  }
+  object pasting extends Pasting with SingleContainerAllower {
+    val gui = true
   }
   object creating extends GuiCreating
   class GuiCreating extends Creating {
@@ -215,14 +231,9 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
           case b: BoxDef if (b == viewer.boxDef) ⇒
             b.copy(template = transform(b.template), guiSize = Some(newDim))
           case v: ValDef if (valdefs.contains(v)) ⇒
-            val size = valdefs(v).size
-            val itemPos = valdefs(v).pos + sdelta
-            val strPos = itemPos.x + " " + itemPos.y + " " + size.w + " " + size.h
-            val param = Param(Name("bounds"), strPos)
-            val filtered = v.params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
             v.copy(
               template = transformOption(v.template),
-              params = param :: filtered)
+              params = v.updatedBounds(valdefs(v).pos + sdelta, valdefs(v).size))
         }
       }
       controller.exec(command)

@@ -382,30 +382,30 @@ case class ValDef(
       template = e.transformOption(template),
       params = param :: filtered)
   }
-  def editLabelAndRename(s: String) = {
+  def editLabelAndRename(gui: Boolean, s: String) = {
     val v = this
     val bl = v.sym.owner
     val base = Namer.toIdentifierBase(s).getOrElse(v.name.str)
     val id: Name = if (base != v.name) Name(bl.freshName(base)) else v.name
-    val pos = v.label.map { _.pos }.getOrElse(Vector2(0, 0))
-    val lbl = if (s != "") Some(LabelDesc(s, pos)) else None
-    v.sym.owner.rename(v, id, lbl)
+    val lbl = if (gui) v.labelGui else v.label
+    val pos = lbl.map { _.pos }.getOrElse(Vector2(0, 0))
+    val lblDesc = if (s != "") Some(LabelDesc(s, pos)) else None
+    v.sym.owner.rename(v, id, lblDesc, gui)
   }
-  /* def editLabel(gui: Boolean, changeName: Boolean, s: String) = transformThis { e ⇒
-    val newName = Namer.toIdentifierBase(s) match {
-      case Some(b) if changeName && b != name.str ⇒ sym.owner.freshName(b)
-      case _ ⇒ name.str
+  def bounds: Option[(Point, Dimension)] = {
+    params.asInstanceOf[List[Param]].find(_.key == Name("bounds")).flatMap { par ⇒
+      val v = RectangleValueType.create(par.value)
+      if (v.valid) {
+        val r = v.parse
+        Some(Point(r.x, r.y), Dimension(r.width, r.height))
+      } else None
     }
-    val oldl = if (gui) labelGui else label
-    val lDesc = s match {
-      case "" ⇒ None
-      case _ ⇒ Some(LabelDesc(s, oldl map { _.pos } getOrElse { Vector2(0, 0) }))
-    }
-    if (gui)
-      copy(name = newName, labelGui = lDesc, template = e.transformOption(template), params = e.transformTrees(params))
-    else
-      copy(label = lDesc, template = e.transformOption(template), params = e.transformTrees(params))
-  }*/
+  }
+  def updatedBounds(p: Point, d: Dimension) = {
+    val strPos = p.x + " " + p.y + " " + d.w + " " + d.h
+    val param = Param(Name("bounds"), strPos)
+    param :: params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
+  }
 }
 case class ConnectionDef(
   a: Option[ConnectionEnd],

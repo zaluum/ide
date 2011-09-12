@@ -79,7 +79,7 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
         str ⇒ viewer.controller.exec(valDef.changeType(str)); close()
       })
       def label = text("Label", (if (gui) valDef.labelGui else valDef.label).map(_.description).getOrElse("")) { str ⇒
-        viewer.controller.exec(valDef.editLabelAndRename(str))
+        viewer.controller.exec(valDef.editLabelAndRename(gui, str))
         close()
       }
       def cons = button("Constructor", valDef.constructorParams.mkString(", "), "Edit...") { new ConstructorDialog(viewer, v).open() }

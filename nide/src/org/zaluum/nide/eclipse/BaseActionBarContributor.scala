@@ -67,7 +67,7 @@ class BaseActionBarContributor extends EditorActionBarContributor {
     bars.setGlobalActionHandler(ActionFactory.COPY.getId, CopyAction);
     bars.setGlobalActionHandler(ActionFactory.CUT.getId, CutAction);
     bars.setGlobalActionHandler(ActionFactory.PASTE.getId, PasteAction);
-    // remember to add to setActiveEditor
+    // remember to add to setActiveEditor below
   }
 
   override def contributeToToolBar(tbm: IToolBarManager) {

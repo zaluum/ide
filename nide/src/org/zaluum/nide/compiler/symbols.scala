@@ -229,7 +229,7 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   def usedValNames = (valsList ++ missingVals.values).map(_.name.str).toSet
   def usedNames = (template.mainBS.usedValNames ++ (template.ports.values.map { _.name.str })).toSet
 
-  def rename(valDef: ValDef, newName: Name, labelDesc: Option[LabelDesc]): EditTransformer = {
+  def rename(valDef: ValDef, newName: Name, labelDesc: Option[LabelDesc], gui: Boolean): EditTransformer = {
     assert(tdecl.valDefs.contains(valDef))
       def renamedEnd(end: Option[ConnectionEnd]) = end match {
         case Some(PortRef(ValRef(valDef.name), b, c)) ⇒ Some(PortRef(ValRef(newName), b, c))
@@ -238,7 +238,9 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
     new EditTransformer() {
       val trans: PartialFunction[Tree, Tree] = {
         case v: ValDef if (v == valDef) ⇒
-          valDef.copy(name = newName, label = labelDesc, params = transformTrees(valDef.params))
+          val label = if (gui) v.label else labelDesc
+          val labelGui = if (gui) labelDesc else v.labelGui
+          valDef.copy(name = newName, label = label, labelGui = labelGui, params = transformTrees(valDef.params))
         case c @ ConnectionDef(a, b, points) if (tdecl.connections.contains(c)) ⇒
           ConnectionDef(renamedEnd(a), renamedEnd(b), points)
       }

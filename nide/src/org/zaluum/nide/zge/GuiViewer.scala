@@ -16,9 +16,33 @@ import org.zaluum.nide.compiler.Block
 import org.zaluum.nide.compiler.TemplateExprType
 import org.zaluum.nide.eclipse.GraphicalEditor
 import org.eclipse.draw2d.Graphics
+import org.eclipse.swt.events.KeyListener
+import org.eclipse.swt.events.KeyEvent
+import org.eclipse.swt.SWT
 
-class GuiViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
-  extends ItemViewer(parent, controller) {
+class GuiViewer(parent: Composite, controller: Controller, val editor: GraphicalEditor)
+  extends ItemViewer(parent, controller) with ClipboardViewer {
+  canvas.addKeyListener(new KeyListener() {
+    def keyPressed(e: KeyEvent) {
+      println(e)
+      if ((e.stateMask & SWT.CTRL) != 0) {
+        e.keyCode match {
+          case 'z' ⇒ controller.undo()
+          case 'y' ⇒ controller.redo()
+          case 'x' ⇒ viewer.tool.handleCut()
+          case 'c' ⇒ println("copy"); viewer.tool.handleCopy()
+          case 'v' ⇒ viewer.tool.handlePaste()
+          case _ ⇒
+        }
+      } else {
+        e.keyCode match {
+          case SWT.DEL ⇒ viewer.tool.handleDel()
+          case _ ⇒
+        }
+      }
+    }
+    def keyReleased(e: KeyEvent) {}
+  })
   /*TOOLS*/
   def zproject = controller.zproject
   val items = Buffer[Item]()
@@ -92,6 +116,7 @@ class GuiViewer(parent: Composite, controller: Controller, editor: GraphicalEdit
   def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i
   }.toSet
+
   shell.setSize(size.w + 30, size.h + 40)
   refresh();
 
