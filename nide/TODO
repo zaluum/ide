@@ -1,8 +1,7 @@
 Agenda
 
 week 5-11 doc week 
-	- colocar widget a les mateixes coordenades que al diagrama de blocks al crear(buscar forat?)
-		- al copiar, moure les coordenades dels dos
+	- al copiar, moure les coordenades lleugerament (tant gui com pos)
 	- clean up wire
 	- al crear modificar directament la label. Crear nom del camp a partir de label.
 	- visuals al block diagram (notes sobretot)
@@ -90,6 +89,7 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
+	- colocar widget a les mateixes coordenades que al diagrama de blocks al crear(buscar forat?)
 	- Botons advanced, categories, etc a Zaluum properties view
 	-Com enrutar events swing a boxes?
 	-Millorar generació de codi amb reflection?
@@ -153,6 +153,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- colocar widget a les mateixes coordenades que al diagrama de blocks al crear(buscar forat?)
 	- grid més gran a GUI, desactivar-la al block diagram
 	- decoracions: gui only box 
 	- Special property loader (color, list contents...) -> menu -> code gen

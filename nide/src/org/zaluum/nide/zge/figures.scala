@@ -45,6 +45,8 @@ trait ValDefItem extends Item with IPropertySource2 {
   var valDef: ValDef = _
   def valSym = valDef.sym
   def pos = valDef.pos
+  import RichFigure._
+  def viewPortPos = this.translateToViewport(pos)
   override def selectionSubject = Some(valDef)
   def updateValDef(t: ValDef) {
     valDef = t
@@ -127,16 +129,16 @@ trait ValFigure extends ValDefItem with HasPorts {
     val center = size.h / 2
     val insStartY = center - separation * (ins.size / 2)
     val outStartY = center - separation * (outs.size / 2)
-    def createPort(s: PortSide, i: Int) {
-      val p = new PortFigure(container)
-      val x = if (s.inPort) 0 else size.w
-      val sourceList = if (s.inPort) ins else outs
-      val skipCenter = if (sourceList.size == 2 && i == 1) 1 else 0 // skip 1 position 
-      val starty = if (s.inPort) insStartY else outStartY
-      val point = Point(x, +starty + ((i + skipCenter) * separation))
-      p.update(point + Vector2(getBounds.x, getBounds.y), s)
-      ports += p
-    }
+      def createPort(s: PortSide, i: Int) {
+        val p = new PortFigure(container)
+        val x = if (s.inPort) 0 else size.w
+        val sourceList = if (s.inPort) ins else outs
+        val skipCenter = if (sourceList.size == 2 && i == 1) 1 else 0 // skip 1 position 
+        val starty = if (s.inPort) insStartY else outStartY
+        val point = Point(x, +starty + ((i + skipCenter) * separation))
+        p.update(point + Vector2(getBounds.x, getBounds.y), s)
+        ports += p
+      }
     for (p ← ports) container.portsLayer.remove(p)
     ports.clear
     for ((p, i) ← ins.zipWithIndex) createPort(p, i)
@@ -285,7 +287,7 @@ trait TextEditFigure extends Item {
     }
   }
 }
-class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends ValDefItem with ResizableFeedback {
+class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val cl: ClassLoader) extends ValDefItem with ResizableFeedback {
   setOpaque(true)
   def boundsValue = valSym.params.find {
     case (k, v) ⇒
@@ -300,20 +302,24 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
     boundsValue map { r ⇒ Dimension(r.width, r.height) } getOrElse {
       Dimension(baseSpace * 5, baseSpace * 5)
     }
-  override def pos =
-    boundsValue map { r ⇒ Point(r.x, r.y) } getOrElse {
-      Point(0, 0)
-    }
+  var position = Point(0, 0)
+  override def pos = position
   def myLayer = container.layer
   var component: Option[java.awt.Component] = None
 
-  override def updateValDef(valDef: ValDef) = {
-    val vs = valDef.sym
-    def instance(cl: Class[_]) = {
-      try {
-        Some(cl.newInstance().asInstanceOf[java.awt.Component])
-      } catch { case e ⇒ e.printStackTrace; None }
+  def updateMe() {
+    position = boundsValue map { r ⇒ Point(r.x, r.y) } getOrElse {
+      import RichFigure._
+      treeViewer.findFigureOf(valDef) match {
+        case Some(i) ⇒ i.viewPortPos
+        case None ⇒ Point(0, 0)
+      }
     }
+      def instance(cl: Class[_]) = {
+        try {
+          Some(cl.newInstance().asInstanceOf[java.awt.Component])
+        } catch { case e ⇒ e.printStackTrace; None }
+      }
 
     component = valDef.tpe match {
       case bs: BoxTypeSymbol ⇒
@@ -324,7 +330,7 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
       case _ ⇒ None
     }
     component foreach { c ⇒
-      vs.params.foreach {
+      valSym.params.foreach {
         case (param: BeanParamSymbol, v) ⇒
           val classParam = param.tpe.loadClass(cl)
           c.getClass().getMethods() find { m ⇒
@@ -339,9 +345,7 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
           }
       }
     }
-    super.updateValDef(valDef)
   }
-  def updateMe() {}
   override def updateValPorts() {}
   override def selectionSubject = Some(valDef)
   var blinkOn = false

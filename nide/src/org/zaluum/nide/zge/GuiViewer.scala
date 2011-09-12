@@ -18,7 +18,7 @@ import org.zaluum.nide.eclipse.GraphicalEditor
 import org.eclipse.draw2d.Graphics
 
 class GuiViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
-    extends ItemViewer(parent, controller) {
+  extends ItemViewer(parent, controller) {
   /*TOOLS*/
   def zproject = controller.zproject
   val items = Buffer[Item]()
@@ -63,7 +63,7 @@ class GuiViewer(parent: Composite, controller: Controller, editor: GraphicalEdit
         b.valDefs foreach { v ⇒
           v.tpe match {
             case bs: BoxTypeSymbol if (bs.isVisual) ⇒
-              val f = new SwingFigure(GuiViewer.this, controller.zproject.classLoader)
+              val f = new SwingFigure(editor.viewer, GuiViewer.this, controller.zproject.classLoader)
               f.updateValDef(v)
               items += f
               f.show()
