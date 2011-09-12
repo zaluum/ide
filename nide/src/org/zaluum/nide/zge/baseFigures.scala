@@ -154,6 +154,7 @@ trait Item extends Hover {
     _hover = b
     if (b) showFeedback else hideFeedback
   }
+  def baseSpace = 6
   def show() {
     showing = true
     myLayer.add(this)

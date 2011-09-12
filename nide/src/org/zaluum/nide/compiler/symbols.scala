@@ -148,7 +148,7 @@ trait ClassJavaType extends JavaType {
     l.sortBy(_.name.str)
   }
   def loadClass(cl: ClassLoader) = try { Some(cl.loadClass(fqName.str)) }
-  catch { case e: Exception ⇒ e.printStackTrace; None }
+  catch { case e: Exception ⇒ println(e); None }
 }
 
 class SimpleClassJavaType(val owner: Symbol, val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType

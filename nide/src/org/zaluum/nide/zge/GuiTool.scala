@@ -22,12 +22,14 @@ import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Block
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
+  val gridSize = 12
   def calcMin: Dimension = {
     val bottomRights = viewer.layer.getChildren.collect { case i: IFigure ⇒ rpoint(i.getBounds.getBottomRight) }
     maxPoint(bottomRights)
   }
   def maxPoint(points: Iterable[Point]) = points.foldLeft(Dimension(0, 0))((acc, p) ⇒ Dimension(max(acc.w, p.x), max(acc.h, p.y)))
   override val resizing = new Resizing {
+
     override def command(newPos: Point, newSize: Dimension, t: Tree) = {
       val newDim = Dimension(newPos.x + newSize.w, newPos.y + newSize.h)
       val strPos = newPos.x + " " + newPos.y + " " + newSize.w + " " + newSize.h
@@ -68,18 +70,18 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
     def drop(s: String) {
       s match {
-        case In.str    ⇒
-        case Out.str   ⇒
+        case In.str ⇒
+        case Out.str ⇒
         case Shift.str ⇒
-        case _         ⇒ creating.enter(Name(s), current)
+        case _ ⇒ creating.enter(Name(s), current)
       }
     }
     override def move {
       borderDistance match {
-        case (true, true)  ⇒ viewer.setCursor(Cursors.SIZESE)
+        case (true, true) ⇒ viewer.setCursor(Cursors.SIZESE)
         case (false, true) ⇒ viewer.setCursor(Cursors.SIZES)
         case (true, false) ⇒ viewer.setCursor(Cursors.SIZEE)
-        case _             ⇒ viewer.setCursor(Cursors.ARROW)
+        case _ ⇒ viewer.setCursor(Cursors.ARROW)
       }
       super.move
     }
@@ -98,22 +100,22 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
           }
           fig match {
             case s: SwingFigure ⇒ moving.enter(initDrag, initContainer)
-            case l: LabelItem   ⇒ movingLabel.enter(initDrag, initContainer, l)
+            case l: LabelItem ⇒ movingLabel.enter(initDrag, initContainer, l)
           }
         case (None, None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
     override def menu() = {
       itemUnderMouse match {
-        case Some(l: LabelItem)   ⇒ new ValDefPopup(viewer, l, true).open()
+        case Some(l: LabelItem) ⇒ new ValDefPopup(viewer, l, true).open()
         case Some(s: SwingFigure) ⇒ new ValDefPopup(viewer, s, true).open()
-        case _                    ⇒
+        case _ ⇒
       }
     }
   }
   object creating extends GuiCreating
   class GuiCreating extends Creating {
-    val defaultSize = Dimension(15, 15)
+    val defaultSize = Dimension(10, 10)
     protected def getSize(tpename: Name) = defaultSize
     protected def newInstance(dst: Point) = {
       Some(new EditTransformer() {
@@ -195,22 +197,28 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       enterMoving(initDrag)
       state = this
     }
+    def snapDelta = {
+      val order = Ordering.fromLessThan[Point]((a, b) ⇒ a.x < b.x || a.y < b.y)
+      val topleft = viewer.selectedItems.collect { case s: SwingFigure ⇒ s.pos }.min(order)
+      snap(topleft + delta) - topleft
+    }
     def buttonUp {
-      val positionsTuple = viewer.selectedItems.collect {
-        case item: SwingFigure ⇒
-          val itemPos = snap(item.pos + delta)
-          val itemBottom = itemPos + item.size.toVector
-          val strPos = itemPos.x + " " + itemPos.y + " " + item.size.w + " " + item.size.h
-          (item.valDef, strPos, itemBottom)
-      }
-      val positions = positionsTuple.map { case (v, i, _) ⇒ v -> i } toMap
-      val newDim = maxPoint(positionsTuple.map { case (_, _, b) ⇒ b }).ensureMin(viewer.backRect.getSize)
+      val sdelta = snapDelta
+      val bottom = maxPoint(viewer.selectedItems.map { i ⇒
+        val pos = i.pos + sdelta
+        pos + i.size.toVector
+      })
+      val valdefs = viewer.selectedItems.collect { case item: SwingFigure ⇒ item.valDef -> item }.toMap
+      val newDim = bottom.ensureMin(viewer.backRect.getSize)
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if (b == viewer.boxDef) ⇒
             b.copy(template = transform(b.template), guiSize = Some(newDim))
-          case v: ValDef if (positions.contains(v)) ⇒
-            val param = Param(Name("bounds"), positions(v))
+          case v: ValDef if (valdefs.contains(v)) ⇒
+            val size = valdefs(v).size
+            val itemPos = valdefs(v).pos + sdelta
+            val strPos = itemPos.x + " " + itemPos.y + " " + size.w + " " + size.h
+            val param = Param(Name("bounds"), strPos)
             val filtered = v.params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
             v.copy(
               template = transformOption(v.template),
@@ -222,7 +230,10 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { viewer.selectedItems foreach { f ⇒ f.moveFeed(snap(f.pos + delta)) } }
+    def move() {
+      val sdelta = snapDelta
+      viewer.selectedItems foreach { f ⇒ f.moveFeed(f.pos + sdelta) }
+    }
     def abort() {
       viewer.selectedItems foreach { f ⇒ f.moveFeed(f.pos) }
       exit()

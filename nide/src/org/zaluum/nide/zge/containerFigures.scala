@@ -201,7 +201,7 @@ class OpenBoxFigure(
     val viewer: Viewer) extends ValDefItem with ResizableFeedback with ContainerItem with Transparent {
   // Item
   def myLayer = container.layer
-  def size = valDef.size getOrElse Dimension(Tool.gridSize * 16, Tool.gridSize * 16)
+  def size = valDef.size getOrElse Dimension(50, 50)
   // layers
   val inners = new LayeredPane
   val layer = new Layer
@@ -344,7 +344,7 @@ class OpenBoxFigure(
   inners.add(pointsLayer)
   inners.add(feedbackLayer)
   add(inners);
-  setBorder(new LineBorder(ColorConstants.gray, Tool.gridSize))
+  setBorder(new LineBorder(ColorConstants.gray, 6))
 }
 abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with OverlappedItem with RectFeedback {
   var size = Dimension(10, 10)

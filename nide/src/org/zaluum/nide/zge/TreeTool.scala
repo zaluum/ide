@@ -34,6 +34,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   def tree = viewer.tree
   def zproject = viewer.controller.zproject
   val connectionLineDistance = 3
+  val gridSize =1
   object selecting extends Selecting with DeleteState with ClipboardState with DropState with LineBlinker {
     var port: Option[PortFigure] = None
     override def doubleClickPF =

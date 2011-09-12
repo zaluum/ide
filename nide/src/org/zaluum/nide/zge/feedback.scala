@@ -34,7 +34,20 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) ex
       case (0, 2) ⇒ Cursors.SIZESW
       case (1, 2) ⇒ Cursors.SIZES
       case (2, 2) ⇒ Cursors.SIZESE
-      case _      ⇒ Cursors.SIZEALL
+      case _ ⇒ Cursors.SIZEALL
+    }
+  }
+  def coords(r: Rectangle) = {
+    (x, y) match {
+      case (0, 0) ⇒ r.getTopLeft()
+      case (1, 0) ⇒ r.getTop()
+      case (2, 0) ⇒ r.getTopRight()
+      case (0, 1) ⇒ r.getLeft()
+      case (1, 1) ⇒ r.getCenter()
+      case (2, 1) ⇒ r.getRight()
+      case (0, 2) ⇒ r.getBottomLeft()
+      case (1, 2) ⇒ r.getBottom()
+      case (2, 2) ⇒ r.getBottomRight()
     }
   }
   def deltaAdd(delta: Vector2, b: Rectangle) = {

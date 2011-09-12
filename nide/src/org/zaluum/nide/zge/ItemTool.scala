@@ -85,7 +85,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { fig.moveFeed(snap(fig.pos + clampDelta)) }
+    def move() { fig.moveFeed(fig.pos + clampDelta) }
     def abort() {
       fig.moveFeed(fig.pos)
       exit()
@@ -194,17 +194,19 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   class Resizing extends DeltaMove with SingleContainer {
     var handle: HandleRectangle = _
     def itf = handle.resizeItemFigure
+    var initCoords : Point= _
     def enter(initDrag: Point, initContainer: C, handle: HandleRectangle) {
       enterMoving(initDrag)
       enterSingle(initContainer)
       this.handle = handle
+      initCoords = handle.coords(itf.getBounds())
       state = this
     }
     def buttonUp {
-      val newBounds = handle.deltaAdd(delta, itf.getBounds);
+      val newBounds = handle.deltaAdd(snapDelta, itf.getBounds);
       val newPos = newBounds.getLocation
-
-      val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(24, 24))
+      
+      val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(6, 6))
       // TODO snap
       itf match {
         case vd: ValDefItem ⇒
@@ -218,7 +220,10 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
           v.copy(size = Some(newSize), pos = newPos)
       }
     }
-    def move() { itf.resizeDeltaFeed(delta, handle) }
+    def snapDelta = snap(initCoords + delta) - initCoords 
+    def move() {
+      itf.resizeDeltaFeed(snapDelta, handle) 
+    }
     def abort() {
       itf.resizeDeltaFeed(Vector2(0, 0), handle)
       exit()

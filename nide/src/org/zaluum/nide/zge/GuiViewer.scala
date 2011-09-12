@@ -49,7 +49,7 @@ class GuiViewer(parent: Composite, controller: Controller, editor: GraphicalEdit
   }
   val backRect = new RectangleFigure() {
     override def fillShape(g: Graphics) {
-      DotPainter.dotFill(g, getBounds, Tool.gridSize, Tool.gridSize)
+      DotPainter.dotFill(g, getBounds, tool.gridSize, tool.gridSize)
     }
   }
   def updatePorts(changes: Map[Tree, Tree]) {}

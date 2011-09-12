@@ -57,7 +57,7 @@ trait ValDefItem extends Item with IPropertySource2 {
   def isPropertyResettable(id: AnyRef) = true
   def isPropertySet(id: AnyRef) = id match {
     case p: ParamSymbol ⇒ valSym.params.contains(p)
-    case _              ⇒ false
+    case _ ⇒ false
   }
   def getEditableValue() = this
   def getPropertyDescriptors() = {
@@ -76,7 +76,7 @@ trait ValDefItem extends Item with IPropertySource2 {
       case b: BeanParamSymbol ⇒
         valSym.params.get(b) match {
           case Some(v) ⇒ v.toSWT
-          case None    ⇒ Values.typeFor(b).defaultSWT
+          case None ⇒ Values.typeFor(b).defaultSWT
         }
       case _ ⇒ throw new Exception
     }
@@ -112,6 +112,7 @@ trait ValFigure extends ValDefItem with HasPorts {
   var ins = List[PortSide]()
   var outs = List[PortSide]()
   var minYSize = 0
+  val separation = 6
   def updateMe() {
     val bports = sym.portSides;
     val (unsortedins, unsortedouts) = bports.partition { _.inPort } // SHIFT?
@@ -120,23 +121,22 @@ trait ValFigure extends ValDefItem with HasPorts {
     val max = math.max(ins.size, outs.size)
     val correctedMax = if (max == 2) 3 else max
     // spread 2 ports like X _ X
-    minYSize = correctedMax * Tool.gridSize
+    minYSize = correctedMax * separation
   }
   def updateValPorts() {
     val center = size.h / 2
-    val separation = Tool.gridSize
     val insStartY = center - separation * (ins.size / 2)
     val outStartY = center - separation * (outs.size / 2)
-      def createPort(s: PortSide, i: Int) {
-        val p = new PortFigure(container)
-        val x = if (s.inPort) 0 else size.w
-        val sourceList = if (s.inPort) ins else outs
-        val skipCenter = if (sourceList.size == 2 && i == 1) 1 else 0 // skip 1 position 
-        val starty = if (s.inPort) insStartY else outStartY
-        val point = Point(x, +starty + ((i + skipCenter) * separation))
-        p.update(point + Vector2(getBounds.x, getBounds.y), s)
-        ports += p
-      }
+    def createPort(s: PortSide, i: Int) {
+      val p = new PortFigure(container)
+      val x = if (s.inPort) 0 else size.w
+      val sourceList = if (s.inPort) ins else outs
+      val skipCenter = if (sourceList.size == 2 && i == 1) 1 else 0 // skip 1 position 
+      val starty = if (s.inPort) insStartY else outStartY
+      val point = Point(x, +starty + ((i + skipCenter) * separation))
+      p.update(point + Vector2(getBounds.x, getBounds.y), s)
+      ports += p
+    }
     for (p ← ports) container.portsLayer.remove(p)
     ports.clear
     for ((p, i) ← ins.zipWithIndex) createPort(p, i)
@@ -194,13 +194,13 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
             val pi = NewArrayExprType.thisPort(sym)
             pi.tpe match {
               case tpe: ArrayType ⇒ Some("new " + tpe.of.name.str.split('.').last + "[]" * tpe.dim)
-              case _              ⇒ None
+              case _ ⇒ None
             }
           case _ ⇒ None
         }
         str match {
           case Some(str) ⇒ imageFactory.invokeIcon(str, minYSize)
-          case None      ⇒ imageFactory.invokeIconError("right click me", minYSize)
+          case None ⇒ imageFactory.invokeIconError("right click me", minYSize)
         }
     }
   }
@@ -243,7 +243,7 @@ class LiteralFigure(val container: ContainerItem) extends RectangleFigure with T
 trait TextEditFigure extends Item {
   def text: String;
   def preferredSize =
-    preferredTextSize.ensureMin(Dimension(Tool.gridSize * 3, Tool.gridSize * 3)) + Vector2(Tool.gridSize, 0)
+    preferredTextSize.ensureMin(Dimension(baseSpace * 3, baseSpace * 3)) + Vector2(baseSpace, 0)
   def preferredTextSize = pg.getPreferredSize()
   val textPos = new EPoint(2, 2)
   setFont(Activator.getDefault.directEditFont) // https://bugs.eclipse.org/bugs/show_bug.cgi?id=308964
@@ -271,7 +271,7 @@ trait TextEditFigure extends Item {
       })
       val b = getClientArea.getCopy
       translateToAbsolute(b)
-      textC.setBounds(b.x + 1, b.y + 1, math.max(b.width - 1, Tool.gridSize * 8), b.height - 2)
+      textC.setBounds(b.x + 1, b.y + 1, math.max(b.width - 1, baseSpace * 8), b.height - 2)
       textC.setBackground(ColorConstants.white)
       textC.setVisible(true)
       textC.selectAll()
@@ -298,7 +298,7 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
   }
   def size =
     boundsValue map { r ⇒ Dimension(r.width, r.height) } getOrElse {
-      Dimension(Tool.gridSize * 5, Tool.gridSize * 5)
+      Dimension(baseSpace * 5, baseSpace * 5)
     }
   override def pos =
     boundsValue map { r ⇒ Point(r.x, r.y) } getOrElse {
@@ -309,11 +309,11 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
 
   override def updateValDef(valDef: ValDef) = {
     val vs = valDef.sym
-      def instance(cl: Class[_]) = {
-        try {
-          Some(cl.newInstance().asInstanceOf[java.awt.Component])
-        } catch { case e ⇒ e.printStackTrace; None }
-      }
+    def instance(cl: Class[_]) = {
+      try {
+        Some(cl.newInstance().asInstanceOf[java.awt.Component])
+      } catch { case e ⇒ e.printStackTrace; None }
+    }
 
     component = valDef.tpe match {
       case bs: BoxTypeSymbol ⇒
@@ -382,7 +382,7 @@ class SwingFigure(val container: ContainerItem, val cl: ClassLoader) extends Val
         g.drawText("?", rect.getCenter.x - dim.width / 2, rect.getCenter.y - dim.height / 2)
         font.dispose()
     }
-    // g.setForegroundColor(ColorConstants.lightGray)
-    // g.drawRectangle(rect.getCopy.expand(-1, -1))
+    //g.setForegroundColor(ColorConstants.lightGray)
+    //g.drawRectangle(rect.getCopy.expand(-1, -1))
   }
 }

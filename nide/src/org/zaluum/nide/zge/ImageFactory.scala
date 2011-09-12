@@ -81,7 +81,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
     }
   }
   private def imageForText(txt: String, ySize: Int, color: Color) = {
-    val desc = GeneratedTextIconImageDescriptor(txt, ySize + Tool.gridSize * 2, color)
+    val desc = GeneratedTextIconImageDescriptor(txt, ySize + 12, color)
     (rm.create(desc).asInstanceOf[Image], desc)
   }
   case class GeneratedImageIconImageDescriptor(desc: ImageDescriptor, minY: Int) extends DeviceResourceDescriptor {

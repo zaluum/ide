@@ -17,10 +17,8 @@ import org.eclipse.swt.events.TraverseEvent
 import org.eclipse.swt.events.TraverseListener
 import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler.Point
-object Tool {
-  val gridSize = 6
-}
 abstract class Tool(viewer: Viewer) {
+  val gridSize : Int
   def viewport = viewer
   def canvas = viewer.canvas
   def controller = viewer.controller
@@ -84,7 +82,7 @@ abstract class Tool(viewer: Viewer) {
   var absMouseLocation = Point(0, 0)
 
   def snap(p: Point): Point = {
-      def snap(a: Int) = (math.round(a / Tool.gridSize) * Tool.gridSize).asInstanceOf[Int]
+      def snap(a: Int) = (math.round(a / gridSize) * gridSize).asInstanceOf[Int]
     Point(snap(p.x), snap(p.y))
   }
   var swtMouseLocation = new org.eclipse.swt.graphics.Point(0, 0)
