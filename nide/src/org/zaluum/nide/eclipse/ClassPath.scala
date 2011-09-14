@@ -2,7 +2,6 @@ package org.zaluum.nide.eclipse
 
 import java.net.URL
 import java.net.URLClassLoader
-
 import org.eclipse.jdt.core.IJavaProject
 
 trait GlobalClassPath extends EclipseUtils with ClassPath {
@@ -11,9 +10,9 @@ trait GlobalClassPath extends EclipseUtils with ClassPath {
     val urls = jProject.getResolvedClasspath(true) flatMap { e ⇒ pathToURL(e.getPath) }
     new URLClassLoader(urls, Thread.currentThread.getContextClassLoader)
   }
-  private var _classLoader: ClassLoader = createClassLoader
+  private var _classLoader: ClassLoader =
+    ProjectClassLoader.create(Thread.currentThread().getContextClassLoader(), jProject)
   def classLoader = _classLoader
-  private[eclipse] def refreshClassLoader { _classLoader = createClassLoader }
 }
 
 trait ClassPath {

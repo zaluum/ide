@@ -15,6 +15,14 @@ import org.eclipse.ui.views.properties.ComboBoxPropertyDescriptor
 import javax.swing.SwingConstants
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import java.awt.Rectangle
+import java.awt.Toolkit
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+import java.net.URL
+import org.zaluum.nide.icons.Icons
+import java.awt.Image
+import org.zaluum.widget.ImageReader
+import org.zaluum.nide.eclipse.ZaluumProject
 trait Value {
   def encoded: String
   def codeGen: Tree
@@ -22,6 +30,9 @@ trait Value {
   def parse: Any
   def toSWT: AnyRef = encoded
   def valueTpe: ValueType
+}
+trait ZaluumParseValue {
+  def parse(zp: ZaluumProject): Any
 }
 trait ValueType {
   def tpe: Name
@@ -196,7 +207,23 @@ object FontValueType extends ClassValueType(classOf[java.awt.Font]) {
     font.name + "-" + flags + "-" + font.getHeight
   }
 }
-
+object ImageValueType extends ClassValueType(classOf[java.awt.Image]) {
+  def create(str: String) = new Value with ZaluumParseValue {
+    val encoded = str
+    def parse(zp: ZaluumProject) = try {
+      ImageIO.read(zp.classLoader.getResource(encoded))
+    } catch { case e ⇒ null }
+    override def valid = true
+    def parse = throw new UnsupportedOperationException
+    def codeGen =
+      InvokeStatic(
+        "readImageResource",
+        List(Const(encoded, Name("java.lang.String"))),
+        Name(classOf[ImageReader].getName),
+        "(Ljava/lang/String;)Ljava/awt/Image;")
+    def valueTpe = ImageValueType
+  }
+}
 class IntEnumValueType(pack: String, property: String, list: List[(Int, String)]) extends PrimitiveValueType(primitives.Int) {
   def create(str: String): Value = new PrimitiveValue(str, IntEnumValueType.this) {
     def parse = Integer.decode(encoded).intValue()
@@ -266,6 +293,7 @@ object Values {
     FloatValueType,
     FontValueType,
     IntValueType,
+    ImageValueType,
     LongValueType,
     RectangleValueType,
     ShortValueType,
@@ -277,6 +305,11 @@ object Values {
     types.find(_.matches(b)).getOrElse(new InvalidValueType(b.tpe.fqName))
   }
   def parseNarrowestLiteral(v: String, zaluumScope: ZaluumClassScope): Value = {
+      def narrowestInt(i: Int, s: String): Value = {
+        if (i <= Byte.MaxValue && i >= Byte.MinValue) ByteValueType.create(s)
+        else if (i <= Short.MaxValue && i >= Short.MinValue) ShortValueType.create(s)
+        else IntValueType.create(s)
+      }
       def parseIntOpt = try { Some(v.toInt) } catch { case e ⇒ None }
       def parseDoubleOpt = try { Some(v.toDouble) } catch { case e ⇒ None }
     if (v.toLowerCase == "true") BooleanValueType.create(v)
@@ -297,12 +330,9 @@ object Values {
           }
       }
     }
+
   }
-  def narrowestInt(i: Int, s: String): Value = {
-    if (i <= Byte.MaxValue && i >= Byte.MinValue) ByteValueType.create(s)
-    else if (i <= Short.MaxValue && i >= Short.MinValue) ShortValueType.create(s)
-    else IntValueType.create(s)
-  }
+
 }
 class FontDataPropertyDescriptor(id: AnyRef, displayName: String) extends PropertyDescriptor(id, displayName) {
   setLabelProvider(new LabelProvider() {

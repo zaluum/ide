@@ -339,8 +339,14 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
               Some(m.getParameterTypes()(0)) == classParam
           } foreach { m ⇒
             try {
-              if (v.valid)
-                m.invoke(c, v.parse.asInstanceOf[AnyRef])
+              if (v.valid) {
+                val parsed = v match {
+                  case z: ZaluumParseValue ⇒
+                    z.parse(container.viewer.controller.zproject).asInstanceOf[AnyRef]
+                  case _ ⇒ v.parse.asInstanceOf[AnyRef]
+                }
+                m.invoke(c, parsed)
+              }
             } catch { case e ⇒ e.printStackTrace() }
           }
       }

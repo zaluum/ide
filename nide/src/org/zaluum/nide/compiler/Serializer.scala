@@ -32,7 +32,7 @@ object Serializer {
     b.valDefs sortBy { _.name.str } foreach { va ⇒ p.addInstance(proto(va)) }
     b.connections foreach { c ⇒ p.addConnection(proto(c)) } // TODO sort
     b.junctions foreach { j ⇒ p.addJunction(proto(j)) }
-    b.parameters // FIXME
+    //b.parameters // FIXME unused
     p.build()
   }
   def proto(l: LabelDesc): ZaluumProtobuf.Label = {

@@ -112,7 +112,7 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
       case CastToExprType ⇒
         vs.params.get(CastToExprType.typeSymbol) match {
           case Some(v) ⇒
-            ztd.zaluumScope.getJavaType(Name(v.encoded)) match {
+            ztd.zaluumScope.lookupType(Name(v.encoded)) match {
               case Some(c) ⇒
                 o.tpe = c
               case None ⇒
@@ -151,8 +151,8 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
     assert(vs.tdecl.params.size <= 1)
     val t = vs.tdecl.params.headOption match {
       case Some(param: Param) ⇒
-        val value = Values.parseNarrowestLiteral(param.value, ztd.zaluumScope)
-        o.tpe = ztd.zaluumScope.getJavaType(value.valueTpe.tpe).getOrElse(NoSymbol)
+        val value = Values.parseNarrowestLiteral(param.value, ztd.zaluumScope) /* TODO pass project */
+        o.tpe = ztd.zaluumScope.getJavaType(value.valueTpe.tpe)
         vs.params = Map(LiteralExprType.paramSymbol -> value)
         if (!value.valid || o.tpe == NoSymbol)
           error("Cannot parse literal " + param.value, vs.decl)

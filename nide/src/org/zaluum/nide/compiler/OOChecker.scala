@@ -37,7 +37,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     val tpe = vs.tpe.asInstanceOf[StaticExprType]
     vs.params.get(tpe.typeSymbol) match {
       case Some(v) ⇒
-        ztd.zaluumScope.getJavaType(Name(v.encoded)) match {
+        ztd.zaluumScope.lookupType(Name(v.encoded)) match {
           case Some(c: ClassJavaType) ⇒
             vs.classinfo = c
             tpe match {
@@ -190,7 +190,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     vs.tdecl.template match {
       case Some(template) ⇒
         if (template.blocks.size != t.requiredBlocks)
-          error(t.name.classNameWithoutPackage + " must have " + t.requiredBlocks + " blocks", vs.decl) // FIXME tolerate
+          error(t.name.classNameWithoutPackage + " must have " + t.requiredBlocks + " blocks", vs.decl)
         else {
           for (pi ← vs.portInstances; ps ← pi.portSymbol)
             pi.tpe = ps.tpe

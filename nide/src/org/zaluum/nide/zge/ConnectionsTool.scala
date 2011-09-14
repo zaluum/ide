@@ -50,7 +50,7 @@ trait ConnectionsTool {
       g.vertexs.find(v ⇒ v.p == snap).getOrElse {
         o match {
           case Some(l: LineItem) ⇒ new Joint(snap)
-          case _                 ⇒ new EmptyVertex(snap)
+          case _ ⇒ new EmptyVertex(snap)
         }
       }
     }
@@ -74,9 +74,9 @@ trait ConnectionsTool {
       move()
     }
     def snapMouse(f: Option[Figure], p: Point): Point = f match {
-      case Some(l: LineItem)   ⇒ l.l.project(p)
+      case Some(l: LineItem) ⇒ l.l.project(p)
       case Some(p: PortFigure) ⇒ p.anchor
-      case _                   ⇒ p
+      case _ ⇒ p
     }
     def doEnter {}
     /**
@@ -154,12 +154,12 @@ trait ConnectionsTool {
       dst = portsTrack.current orElse {
         initContainer.itemAt(point(currentMouseLocation), false) match {
           case Some(l: LineItem) ⇒ Some(l)
-          case _                 ⇒ None
+          case _ ⇒ None
         }
       }
       dst match {
         case Some(l: LineItem) ⇒ blinkLine(l)
-        case _                 ⇒ unblinkLine()
+        case _ ⇒ unblinkLine()
       }
       val now = snapMouse(dst, currentMouseLocation)
       viewer.setStatusMessage(currentMouseLocation.toString + " " + absMouseLocation.toString)
@@ -223,7 +223,6 @@ trait ConnectionsTool {
       case item: Item if item.container == initContainer ⇒ item
     }
     def buttonUp {
-      //org.zaluum.nide.Timer.go
       val g = initContainer.graph
       val subjects = for (m ← movables; s ← m.selectionSubject) yield s
       val valdefs = subjects collect { case v: ValDef ⇒ v }
@@ -232,7 +231,6 @@ trait ConnectionsTool {
       val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })
       var edges = g.edges
       var vertexs = g.vertexs
-      // FIXME correctly snap line moves
       // move lines
       for ((c, lines) ← groups; e ← g.edges; if (e.srcCon == Some(c))) {
         edges = edges - e + e.move(lines, delta)

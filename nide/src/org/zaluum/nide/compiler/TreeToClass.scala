@@ -96,7 +96,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
   val bs = b.sym
   val block = bs.block
   val reporter = new Reporter // TODO fail reporter
-  def location(t: Tree) = 0 // FIXMELocation(List(0))
+  def location(t: Tree) = t.line
   object run {
     val fieldDecls = Buffer[FieldDef]()
     val fieldInits = Buffer[Tree]()
@@ -195,8 +195,8 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
                   beanProp.setter.selector.mkString,
                   List(v.codeGen),
                   tpe.fqName,
-                  "(" + param.tpe.asInstanceOf[JavaType].descriptor + ")V",
-                  interface = false) // FIXME not always JavaType
+                  "(" + param.tpe.descriptor + ")V",
+                  interface = false)
             } toList
           case e: ExprType ⇒
             for (bl ← vs.blocks; vs ← bl.valsAlphabeticOrder; p ← params(vs)) yield p

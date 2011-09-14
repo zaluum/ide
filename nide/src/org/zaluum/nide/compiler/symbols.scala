@@ -67,7 +67,7 @@ class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int, val binding: 
   override def hashCode = {
     41 * (41 * (41 + owner.hashCode) + of.hashCode) + dim
   }
-  def loadClass(cl: ClassLoader) = None // FIXME
+  def loadClass(cl: ClassLoader) = None
   override def toString = "ArrayType(" + of.toString + ", " + dim + ")"
 }
 class ParamSymbol(val owner: JavaType, val name: Name) extends Symbol {
@@ -166,7 +166,7 @@ class BoxTypeSymbol(
   override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
   override def templateTree = tdecl.template
   def onlyVisual = !hasApply && isVisual
-  def usedNames = usedValNames ++ (ports.keySet map { _.str }) // FIXME what else?
+  def usedNames = usedValNames ++ (ports.keySet map { _.str })
   def usedValNames = (block :: block.deepBlocks).flatMap { _.usedValNames }.toSet
   def block = blocks.head
   def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
@@ -339,8 +339,8 @@ class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
       params.map(p ⇒ p.name.str + " : " + p.tpe.name.str).mkString(", ")
   }
   def matchesSignature(sig: List[JavaType]) = sig == params.map { _.tpe }
-  def signature = { // FIXME might not be a JavaType it could be a BoxTypeSymbol
-    val pars = params map { p ⇒ p.tpe.asInstanceOf[JavaType].descriptor } mkString;
+  def signature = {
+    val pars = params map { p ⇒ p.tpe.descriptor } mkString;
     "(" + pars + ")V"
   }
 }
@@ -366,7 +366,7 @@ object PortSide {
   }
   def findOrCreateMissing(p: PortRef, bl: BlockSymbol) = {
       def createMissingPort(vs: ValSymbol, inside: Boolean) = {
-        val dir = if (p.in) In else Out // FIXME shift ? 
+        val dir = if (p.in) In else Out // shift ? 
         val missing = new PortInstance(p.name, None, vs, dir)
         missing.missing = true
         val side = new PortSide(missing, p.in, inside)

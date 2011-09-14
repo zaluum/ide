@@ -49,23 +49,26 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
   def name = Name("root")
   def owner = null
   def getBoxedType(p: PrimitiveJavaType): JavaType =
-    getJavaType(p.boxedName).get
-  lazy val ZComponent = getJavaType(Name(classOf[java.awt.Component].getName)).get;
-  def getZJavaLangString = getJavaType(Name("java.lang.String")).get;
+    getJavaType(p.boxedName)
+  lazy val ZComponent = getJavaType(Name(classOf[java.awt.Component].getName))
+  def getZJavaLangString = getJavaType(Name("java.lang.String"))
   def javaScope: ZaluumClassScope = this
-  def lookupType(name: Name): Option[JavaType] = getJavaType(name)
+  def lookupType(name: Name): Option[JavaType] = getJavaType(name) match {
+    case NoSymbol ⇒ None
+    case o        ⇒ Some(o)
+  }
   def getArrayType(t: JavaType, dim: Int): ArrayType = {
     val bind = createArrayType(t.binding, dim)
     val a = new ArrayType(this, t, dim, bind)
     a
   }
-  def getJavaType(name: Name): Option[JavaType] = {
+  def getJavaType(name: Name): JavaType = {
     val arr = name.asArray
     if (arr.isDefined) {
       val (leafname, dim) = arr.get
-      for (t ← getJavaType(leafname); b ← Option(t.binding)) yield {
-        getArrayType(t, dim)
-      }
+      val t = getJavaType(leafname)
+      if (t == NoSymbol) t
+      else getArrayType(t, dim)
     } else {
       val tpe =
         if (name.str.contains(".")) {
@@ -74,7 +77,7 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
         } else {
           getType(name.str.toCharArray)
         }
-      Some(getJavaType(tpe)) //FIXME
+      getJavaType(tpe)
     }
   }
   def getJavaType(tpe: TypeBinding): JavaType = {
@@ -106,8 +109,8 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
   }
   def lookupBoxType(name: Name): Option[BoxTypeSymbol] =
     getJavaType(name) match {
-      case Some(bs: BoxTypeSymbol) ⇒ Some(bs)
-      case _                       ⇒ None
+      case bs: BoxTypeSymbol ⇒ Some(bs)
+      case _                 ⇒ None
     }
 
   protected def create(r: ReferenceBinding) = createBoxType(r).getOrElse {

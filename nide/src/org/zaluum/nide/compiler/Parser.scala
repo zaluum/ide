@@ -19,7 +19,7 @@ object Parser {
       parse(proto, Some(className))
     } catch {
       case e ⇒
-        // TODO fixme better handling
+        // TODO better handling
         println("PARSING ERROR! First after file creation is expected" + e.toString)
         BoxDef.emptyBox(className.classNameWithoutPackage.str, className.packageProxy)
     }
@@ -48,7 +48,7 @@ object Parser {
     Block(junctions = t.getJunctionList map parse toList,
       valDefs = t.getInstanceList map parse toList,
       connections = t.getConnectionList map parse toList,
-      parameters = List() /*FIXME*/ )
+      parameters = List() /*FIXME unused yet*/ )
   }
   def parse(r: ZaluumProtobuf.Junction): Junction = {
     Junction(Name(r.getName), parse(r.getPos))

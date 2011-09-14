@@ -1,4 +1,4 @@
-#Mon Sep 12 13:05:49 CEST 2011
+#Wed Sep 14 13:41:48 CEST 2011
 Xcheck-null=false
 Xcheckinit=false
 Xdisable-assertions=false
@@ -31,12 +31,12 @@ Ywarn-dead-code=false
 buildmanager=refined
 deprecation=true
 eclipse.preferences.version=1
-formatter.alignParameters=false
-formatter.alignSingleLineCaseStatements=false
+formatter.alignParameters=true
+formatter.alignSingleLineCaseStatements=true
 formatter.alignSingleLineCaseStatements.maxArrowIndent=40
 formatter.compactControlReadability=false
 formatter.compactStringConcatenation=false
-formatter.doubleIndentClassDeclaration=false
+formatter.doubleIndentClassDeclaration=true
 formatter.formatXml=true
 formatter.indentLocalDefs=true
 formatter.indentPackageBlocks=true

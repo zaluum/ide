@@ -310,7 +310,7 @@ object ByteCodeGen {
       case primitives.Byte.name    ⇒ mv.visitVarInsn(ILOAD, id)
       case primitives.Char.name    ⇒ mv.visitVarInsn(ILOAD, id)
       case primitives.Short.name   ⇒ mv.visitVarInsn(ILOAD, id)
-      case _                       ⇒ mv.visitVarInsn(ALOAD, id) // FIXME array
+      case _                       ⇒ mv.visitVarInsn(ALOAD, id)
     }
   }
   def emitBinaryExpr(e: BinaryExpr) = {

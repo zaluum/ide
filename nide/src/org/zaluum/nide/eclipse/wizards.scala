@@ -48,7 +48,7 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate
 import org.eclipse.ui.PlatformUI
 import org.zaluum.nide.compiler.BoxDef
 import org.zaluum.nide.compiler.Serializer
-import org.zaluum.nide.eclipse.integration.ReflectionUtils
+import org.zaluum.nide.eclipse.integration.{ ReflectionUtils ⇒ RU }
 import org.zaluum.nide.Activator
 
 class ZaluumProjectWizard extends NewElementWizard with IExecutableExtension {
@@ -128,7 +128,7 @@ abstract class OpenWizardAction extends AbstractOpenWizardAction with IWorkbench
   def selectionChanged(action: IAction, selection: ISelection): Unit = {
     selection match {
       case i: IStructuredSelection ⇒ setSelection(i)
-      case _                       ⇒ setSelection(StructuredSelection.EMPTY)
+      case _ ⇒ setSelection(StructuredSelection.EMPTY)
     }
   }
 }
@@ -213,7 +213,7 @@ class ZNewClassWizardPage extends NewClassWizardPage {
   }
 
   override protected def createTypeMembers(tpe: IType,
-                                           imports: NewTypeWizardPage.ImportsManager, monitor: IProgressMonitor) {
+    imports: NewTypeWizardPage.ImportsManager, monitor: IProgressMonitor) {
     super.createTypeMembers(tpe, imports, monitor);
     if (isCreateMain()) {
       // replace main method with a more groovy version
@@ -330,7 +330,7 @@ class ZNewClassWizardPage extends NewClassWizardPage {
   }
 
   def getOtherModifierButtonsFieldGroup(): SelectionButtonDialogFieldGroup = {
-    ReflectionUtils.getPrivateField(
+    RU.getPrivateField(
       classOf[NewTypeWizardPage], "fOtherMdfButtons", this).asInstanceOf[SelectionButtonDialogFieldGroup];
   }
 
