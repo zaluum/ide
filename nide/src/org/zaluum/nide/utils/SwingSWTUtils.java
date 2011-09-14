@@ -1,4 +1,4 @@
-package org.zaluum.nide.zge;
+package org.zaluum.nide.utils;
 
 /* 
  * JFreeChart : a free chart library for the Java(tm) platform
@@ -71,7 +71,7 @@ import org.eclipse.swt.graphics.RGB;
  * Utility class gathering some useful and general method. Mainly convert forth
  * and back graphical stuff between awt and swt.
  */
-public class SWTUtils {
+public class SwingSWTUtils {
 
 	/** A dummy JPanel used to provide font metrics. */
 	protected static final JPanel DUMMY_PANEL = new JPanel();

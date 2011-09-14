@@ -1,4 +1,4 @@
-package org.zaluum.nide
+package org.zaluum.nide.utils
 import org.eclipse.jface.viewers.CellEditor
 import org.eclipse.swt.widgets.{ Text, Display }
 import org.eclipse.jface.resource.ImageRegistry

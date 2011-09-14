@@ -46,7 +46,7 @@ abstract class BaseEditor extends EditorPart {
           }*/
         case IResourceDelta.REMOVED ⇒
           //if (hasMovedToFlag(delta)) {
-          EclipseUtils.async(display) {
+          org.zaluum.nide.utils.SWTScala.async(display) {
             closeEditor(false)
           }
         /*} else {

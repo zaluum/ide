@@ -9,7 +9,7 @@
  *     Andrew Eisenberg - initial API and implementation
  *******************************************************************************/
 
-package org.zaluum.nide.eclipse.integration;
+package org.zaluum.nide.utils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

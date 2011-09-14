@@ -24,7 +24,7 @@ import org.zaluum.annotation.Box
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
 import org.zaluum.nide.eclipse.integration.model.ZaluumParser
 
-import model.JDTInternalUtils.stringToA
+import org.zaluum.nide.utils.JDTInternalUtils.stringToA
 
 trait ParserParams {
   def compilerOptions: CompilerOptions
@@ -102,7 +102,7 @@ class MultiplexingIndexingParser(r: ISourceElementRequestor,
   def notifierAccessor = notifier
   def problemReporterAccessor = problemReporter
   override def withCUD(cud: ZaluumCompilationUnitDeclaration) = {
-    import org.zaluum.nide.eclipse.integration.model.JDTInternalUtils._
+    import org.zaluum.nide.utils.JDTInternalUtils._
     requestor.acceptPackage(cud.currentPackage)
     requestor.acceptTypeReference(stringToA(cud.fqName), 0, 1)
     requestor.acceptAnnotationTypeReference(stringToA(classOf[Box].getName), 2, 3)

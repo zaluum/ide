@@ -37,8 +37,6 @@ import org.zaluum.nide.compiler.Parser
 import org.zaluum.nide.compiler.Reporter
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.TreeToClass
-import JDTInternalUtils.aToString
-import JDTInternalUtils.stringToA
 import ZaluumCompilationUnitDeclaration.NON_EXISTENT_POSITION
 import ZaluumCompilationUnitDeclaration.nameToPrimitiveTypeId
 import ZaluumCompilationUnitDeclaration.toMainName
@@ -54,7 +52,7 @@ import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.impl.StringConstant
 import org.eclipse.jdt.internal.compiler.ast.StringLiteral
 import ZaluumCompilationUnitDeclaration._
-import JDTInternalUtils._
+import org.zaluum.nide.utils.JDTInternalUtils._
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Block
 class ZaluumCompilationUnitDeclaration(

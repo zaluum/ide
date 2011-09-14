@@ -17,10 +17,10 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.eclipse.GraphicalEditor
 import org.zaluum.nide.Activator
 import org.zaluum.nide.compiler.ValDef
-import org.zaluum.nide.eclipse.EclipseUtils
+import org.zaluum.nide.utils.EclipseUtils
 
 class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
-  extends ItemViewer(parent, controller) with ClipboardViewer {
+    extends ItemViewer(parent, controller) with ClipboardViewer {
   /*MODEL*/
   def tree = controller.tree
   def boxDef = tree
@@ -112,9 +112,9 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   }
   def deepChildrenWithoutLayers = this.deepChildren.filter {
     _ match {
-      case _: FreeformLayer ⇒ false
+      case _: FreeformLayer               ⇒ false
       case _: ScalableFreeformLayeredPane ⇒ false
-      case _ ⇒ true
+      case _                              ⇒ true
     }
   }
   def findFigureOf(v: ValDef) = {

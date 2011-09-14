@@ -32,10 +32,10 @@ import org.zaluum.nide.compiler.ParamSymbol
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.ValSymbol
-import org.zaluum.nide.zge.SWTScala.addKeyReleasedReaction
-import org.zaluum.nide.zge.SWTScala.newLabel
-import org.zaluum.nide.zge.SWTScala.newMenuItem
-import org.zaluum.nide.zge.SWTScala.newPopupMenu
+import org.zaluum.nide.utils.SWTScala.addKeyReleasedReaction
+import org.zaluum.nide.utils.SWTScala.newLabel
+import org.zaluum.nide.utils.SWTScala.newMenuItem
+import org.zaluum.nide.utils.SWTScala.newPopupMenu
 import org.zaluum.nide.zge.Viewer
 
 import net.miginfocom.swt.MigLayout

@@ -33,12 +33,13 @@ import org.zaluum.nide.compiler.PortSymbol
 import org.zaluum.nide.compiler.PrimitiveJavaType
 import org.zaluum.nide.compiler.{ Scope ⇒ ZScope }
 import org.zaluum.nide.compiler.primitives
-import JDTInternalUtils.aToString
-import JDTInternalUtils.stringToA
+import org.zaluum.nide.utils.JDTInternalUtils.aToString
+import org.zaluum.nide.utils.JDTInternalUtils.stringToA
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.eclipse.jdt.internal.compiler.impl.StringConstant
 import org.zaluum.nide.compiler.PortDir
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding
+import org.zaluum.nide.utils.MethodBindingUtils
 
 class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassScope(parent, typeDecl) with ZScope {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
@@ -220,6 +221,6 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
   private def numericNames(m: MethodBinding) =
     (1 to m.parameters.length) map { i ⇒ "p" + i } toList
   private def helperNames(m: MethodBinding) =
-    MethodUtils.findMethodParameterNamesEnv(m, environment.nameEnvironment).map(_.toList)
+    MethodBindingUtils.findMethodParameterNamesEnv(m, environment.nameEnvironment).map(_.toList)
 
 }

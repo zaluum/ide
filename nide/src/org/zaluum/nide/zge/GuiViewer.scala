@@ -21,22 +21,25 @@ import org.eclipse.swt.events.KeyEvent
 import org.eclipse.swt.SWT
 
 class GuiViewer(parent: Composite, controller: Controller, val editor: GraphicalEditor)
-  extends ItemViewer(parent, controller) with ClipboardViewer {
+    extends ItemViewer(parent, controller) with ClipboardViewer {
   canvas.addKeyListener(new KeyListener() {
     def keyPressed(e: KeyEvent) {
-      println(e)
       if ((e.stateMask & SWT.CTRL) != 0) {
         e.keyCode match {
           case 'z' ⇒ controller.undo()
           case 'y' ⇒ controller.redo()
           case 'x' ⇒ viewer.tool.handleCut()
-          case 'c' ⇒ println("copy"); viewer.tool.handleCopy()
+          case 'c' ⇒ viewer.tool.handleCopy()
           case 'v' ⇒ viewer.tool.handlePaste()
-          case _ ⇒
+          case _   ⇒
         }
       } else {
         e.keyCode match {
           case SWT.DEL ⇒ viewer.tool.handleDel()
+          case SWT.F5 ⇒
+            println("refresh")
+            controller.zproject.refreshClassLoader
+            viewer.refresh()
           case _ ⇒
         }
       }

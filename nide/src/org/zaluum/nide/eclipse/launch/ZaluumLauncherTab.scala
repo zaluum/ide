@@ -32,11 +32,8 @@ import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Text
 import org.eclipse.ui.PlatformUI
 import org.zaluum.annotation.Box
-import org.zaluum.nide.eclipse.SearchUtils.patternAnnotation
-import org.zaluum.nide.eclipse.SearchUtils.search
-import org.zaluum.nide.eclipse.SearchUtils.sourcesScope
-import org.zaluum.nide.zge.SWTScala.addModifyReaction
-import org.zaluum.nide.zge.SWTScala.addReaction
+import org.zaluum.nide.utils.JDTUtils._
+import org.zaluum.nide.utils.SWTScala._
 import org.zaluum.nide.Activator
 object ZaluumLauncherTab {
   val ATTR_MAIN_BOX = Activator.PLUGIN_ID + ".MAIN_BOX"

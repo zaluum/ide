@@ -89,7 +89,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
           case e: IllegalArgumentException ⇒ errorDag("Loop connection found. Cannot connect a box to itself.")
         }
       }
-    import org.zaluum.nide.RichCast._
+    import org.zaluum.nide.utils.RichCast._
       def isInside(p: PortInstance) = p.valSymbol == template.thisVal
     for (in ← ins) {
       if (!isInside(out) && !isInside(in))

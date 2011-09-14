@@ -18,9 +18,7 @@ import org.eclipse.jface.viewers.IStructuredSelection
 import org.eclipse.jface.window.Window
 import org.eclipse.ui.IEditorPart
 import org.zaluum.annotation.Box
-import org.zaluum.nide.eclipse.SearchUtils.patternAnnotation
-import org.zaluum.nide.eclipse.SearchUtils.search
-import org.zaluum.nide.eclipse.SearchUtils.sourcesScope
+import org.zaluum.nide.utils.JDTUtils._
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
 import org.zaluum.nide.eclipse.GraphicalEditor
 

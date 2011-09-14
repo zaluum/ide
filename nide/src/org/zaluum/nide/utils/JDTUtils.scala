@@ -1,4 +1,4 @@
-package org.zaluum.nide.eclipse
+package org.zaluum.nide.utils
 
 import scala.collection.mutable.Buffer
 
@@ -48,8 +48,6 @@ object JDTUtils {
   def isPrivate(t: IMember) = Flags.isPrivate(t.getFlags)
   def isProtected(t: IMember) = Flags.isProtected(t.getFlags)
   def isPackageDefault(t: IMember) = Flags.isPackageDefault(t.getFlags)
-}
-object AnnotationUtils {
   def annotationToPoint(a: IAnnotation) = {
     val ox = findIntegerValueOfAnnotation(a, "x")
     val oy = findIntegerValueOfAnnotation(a, "y")
@@ -82,9 +80,6 @@ object AnnotationUtils {
       }
     }
   }
-}
-object SearchUtils {
-
   def search(pattern: SearchPattern, searchScope: IJavaSearchScope, monitor: IProgressMonitor = null): List[IType] = {
     val search = new SearchEngine()
     val participants = Array(SearchEngine.getDefaultSearchParticipant())

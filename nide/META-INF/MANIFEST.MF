@@ -41,9 +41,5 @@ Bundle-Activator: org.zaluum.nide.Activator
 Bundle-ActivationPolicy: lazy
 Eclipse-RegisterBuddy: org.eclipse.jdt.core
 Export-Package: org.zaluum.nide.icons
-Import-Package: com.google.common.collect,
- org.apache.commons.collections,
- org.apache.commons.io,
- org.apache.commons.lang,
- org.apache.tools.ant.taskdefs,
+Import-Package: org.apache.tools.ant.taskdefs,
  org.apache.tools.ant.util

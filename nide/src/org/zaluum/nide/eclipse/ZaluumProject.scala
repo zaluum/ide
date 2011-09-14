@@ -10,9 +10,7 @@ import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.zge.ImageFactory
 
-import SearchUtils.patternAnnotation
-import SearchUtils.projectScope
-import SearchUtils.search
+import org.zaluum.nide.utils.JDTUtils._
 
 case class BoxTypeProxy(name: Name, template: Boolean) {
   def split = name.str.splitAt(name.str.lastIndexOf("."))
@@ -26,13 +24,12 @@ object ZaluumProjectManager {
     m.getOrElseUpdate(jProject, new ZaluumProject(jProject))
   }
 }
-class ZaluumProject private[eclipse] (val jProject: IJavaProject) extends GlobalClassPath {
+class ZaluumProject private[eclipse] (val jProject: IJavaProject) {
   lazy val imageFactory = new ImageFactory(this)
   def getBoxSymbol(name: Name): Option[BoxTypeProxy] = {
     Option(jProject.findType(name.str)) flatMap { typeToProxy(_) }
   }
   def index(monitor: IProgressMonitor = null): Seq[BoxTypeProxy] = {
-    import SearchUtils._
     val l = search(patternAnnotation(classOf[Box].getName), projectScope(jProject), monitor)
     l flatMap (typeToProxy(_))
   }
@@ -42,5 +39,14 @@ class ZaluumProject private[eclipse] (val jProject: IJavaProject) extends Global
       BoxTypeProxy(
         name,
         Expressions.isTemplateExpression(name)))
+  }
+  private var _classLoader: ClassLoader = _
+
+  def classLoader: ClassLoader = this.synchronized {
+    if (_classLoader == null) refreshClassLoader
+    _classLoader
+  }
+  def refreshClassLoader: Unit = this.synchronized {
+    _classLoader = ProjectClassLoader.create(null, jProject)
   }
 }

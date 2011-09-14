@@ -1,4 +1,4 @@
-package org.zaluum.nide.eclipse;
+package org.zaluum.nide.utils;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;

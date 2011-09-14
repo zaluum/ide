@@ -19,7 +19,7 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.ValSymbol
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
-import org.zaluum.nide.eclipse.integration.model.MethodUtils
+import org.zaluum.nide.utils.MethodBindingUtils
 import org.zaluum.nide.zge.Viewer
 import org.zaluum.nide.compiler.SignatureExprType
 import org.zaluum.nide.compiler.StaticExprType
@@ -79,7 +79,7 @@ abstract class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends Fil
       val jproject = viewer.zproject.jProject.asInstanceOf[JavaProject]
       val nameLookup = jproject.newNameLookup(Array[org.eclipse.jdt.core.ICompilationUnit]())
       val paramNames = findMethods(engine, scope, r) map { m ⇒
-        val names = MethodUtils.findMethodParamNames(m, jproject)
+        val names = org.zaluum.nide.utils.MethodBindingUtils.findMethodParamNames(m, jproject)
         val params = names.toList.flatMap(a ⇒ a)
         MethodWithNames(m, params)
       }
@@ -148,7 +148,7 @@ case class MethodWithNames(m: MethodBinding, paramNames: List[String]) {
   }
   def selector = m.selector.mkString
   def declaringClass = new String(m.declaringClass.readableName())
-  def methodSignature = MethodUtils.toMethodSig(m)
-  def fullText = MethodUtils.toMethodStr(m, paramNames) + " - " + declaringClass
+  def methodSignature = org.zaluum.nide.utils.MethodBindingUtils.toMethodSig(m)
+  def fullText = org.zaluum.nide.utils.MethodBindingUtils.toMethodStr(m, paramNames) + " - " + declaringClass
   def text = selector + " " + params + " : " + returnStr + " - " + declaringClass
 }

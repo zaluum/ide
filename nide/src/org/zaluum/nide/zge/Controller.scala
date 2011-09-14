@@ -13,7 +13,7 @@ import org.eclipse.jdt.core.IJavaProject
 import org.eclipse.jdt.core.JavaCore
 import org.eclipse.swt.widgets.Display
 import org.eclipse.text.edits.ReplaceEdit
-import org.zaluum.nide.Utils.inSWT
+import org.zaluum.nide.utils.Utils.inSWT
 import org.zaluum.nide.compiler.BoxDef
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.Reporter
@@ -24,7 +24,7 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.eclipse.integration.model.ZaluumASTParser
 import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
 import org.zaluum.nide.eclipse.ZaluumProject
-import org.zaluum.nide.Timer
+import org.zaluum.nide.utils.Timer
 
 class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit val display: Display) {
   private var nowTree: BoxDef = _
@@ -165,7 +165,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
     case Some(markMut) ⇒ markMut.now
     case None ⇒ undoStack.lastOption match {
       case Some(mut) ⇒ mut.before
-      case None ⇒ nowTree
+      case None      ⇒ nowTree
     }
   }
   def fromSaveMutations = { // returns the mutations to go from saved state to nowTree

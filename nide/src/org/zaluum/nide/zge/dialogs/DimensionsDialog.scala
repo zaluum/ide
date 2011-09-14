@@ -12,7 +12,7 @@ import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.ValSymbol
-import org.zaluum.nide.zge.SWTScala._
+import org.zaluum.nide.utils.SWTScala._
 import org.zaluum.nide.zge.Viewer
 import net.miginfocom.swt.MigLayout
 import org.zaluum.nide.compiler.NewArrayExprType

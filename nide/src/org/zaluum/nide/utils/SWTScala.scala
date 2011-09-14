@@ -1,4 +1,4 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.utils
 
 import org.eclipse.swt.custom.CCombo
 import org.eclipse.swt.events.DisposeEvent
@@ -20,10 +20,21 @@ import org.eclipse.swt.widgets.MenuItem
 import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.widgets.Text
 import org.eclipse.swt.SWT
+import org.eclipse.swt.widgets.Display
 object SWTScala {
-  def addTextReaction(b:Text)(r: => Unit) {
+  def async(display: Display)(body: ⇒ Unit) {
+    display.asyncExec(new Runnable() {
+      def run {
+        body
+      }
+    })
+  }
+  def async(body: ⇒ Unit) {
+    async(Display.getCurrent)(body _)
+  }
+  def addTextReaction(b: Text)(r: ⇒ Unit) {
     b.addSelectionListener(new SelectionAdapter() {
-      override def widgetDefaultSelected(e:SelectionEvent) {r}
+      override def widgetDefaultSelected(e: SelectionEvent) { r }
     })
   }
   def addReaction(b: { def addSelectionListener(l: SelectionListener) })(r: ⇒ Unit) {

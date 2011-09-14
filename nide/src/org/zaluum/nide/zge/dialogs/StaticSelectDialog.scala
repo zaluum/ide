@@ -20,7 +20,7 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.ValSymbol
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
-import org.zaluum.nide.eclipse.integration.model.MethodUtils
+import org.zaluum.nide.utils.MethodBindingUtils
 import org.zaluum.nide.zge.Viewer
 import org.zaluum.nide.compiler.StaticExprType
 import org.eclipse.jdt.core.search.SearchEngine
@@ -39,7 +39,7 @@ class StaticSelectDialog(viewer: Viewer, val vs: ValSymbol) {
     val tr = vs.tdecl.addOrReplaceParam(param)
     viewer.controller.exec(tr)
   }
-  
+
   def open() {
     // TODO share with portpopup
     val scope = SearchEngine.createJavaSearchScope(Array[IJavaElement](viewer.zproject.jProject))

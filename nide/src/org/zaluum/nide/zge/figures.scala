@@ -23,13 +23,13 @@ import java.awt.image.BufferedImage
 import org.eclipse.draw2d.FigureUtilities
 import org.zaluum.nide.Activator
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
-import org.zaluum.nide.eclipse.integration.model.MethodUtils
+import org.zaluum.nide.utils.MethodBindingUtils
 import org.eclipse.jdt.internal.core.JavaProject
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.eclipse.ui.views.properties.TextPropertyDescriptor
 import org.eclipse.ui.views.properties.IPropertyDescriptor
 import org.eclipse.ui.views.properties.IPropertySource2
-import org.zaluum.nide.eclipse.EclipseUtils
+import org.zaluum.nide.utils.SwingSWTUtils._
 import org.eclipse.ui.views.properties.ColorPropertyDescriptor
 import org.eclipse.swt.graphics.RGB
 import org.eclipse.ui.views.properties.PropertyDescriptor
@@ -39,6 +39,8 @@ import org.eclipse.jface.viewers.DialogCellEditor
 import org.eclipse.swt.widgets.FontDialog
 import org.eclipse.swt.widgets.Control
 import org.zaluum.nide.compiler.InvalidValueType
+import org.zaluum.nide.utils.SWTScala
+import org.zaluum.nide.utils.SwingSWTUtils
 
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item with IPropertySource2 {
@@ -59,7 +61,7 @@ trait ValDefItem extends Item with IPropertySource2 {
   def isPropertyResettable(id: AnyRef) = true
   def isPropertySet(id: AnyRef) = id match {
     case p: ParamSymbol ⇒ valSym.params.contains(p)
-    case _ ⇒ false
+    case _              ⇒ false
   }
   def getEditableValue() = this
   def getPropertyDescriptors() = {
@@ -78,7 +80,7 @@ trait ValDefItem extends Item with IPropertySource2 {
       case b: BeanParamSymbol ⇒
         valSym.params.get(b) match {
           case Some(v) ⇒ v.toSWT
-          case None ⇒ Values.typeFor(b).defaultSWT
+          case None    ⇒ Values.typeFor(b).defaultSWT
         }
       case _ ⇒ throw new Exception
     }
@@ -91,7 +93,7 @@ trait ValDefItem extends Item with IPropertySource2 {
     }
   }
   def setPropertyValue(id: AnyRef, swtValue: AnyRef) {
-    import EclipseUtils._
+    import SWTScala._
     // must run async. If not a loop is entered within the controller refresh
     async(container.viewer.display) {
       if (getPropertyValue(id) == swtValue) return
@@ -196,13 +198,13 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
             val pi = NewArrayExprType.thisPort(sym)
             pi.tpe match {
               case tpe: ArrayType ⇒ Some("new " + tpe.of.name.str.split('.').last + "[]" * tpe.dim)
-              case _ ⇒ None
+              case _              ⇒ None
             }
           case _ ⇒ None
         }
         str match {
           case Some(str) ⇒ imageFactory.invokeIcon(str, minYSize)
-          case None ⇒ imageFactory.invokeIconError("right click me", minYSize)
+          case None      ⇒ imageFactory.invokeIconError("right click me", minYSize)
         }
     }
   }
@@ -312,7 +314,7 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
       import RichFigure._
       treeViewer.findFigureOf(valDef) match {
         case Some(i) ⇒ i.viewPortPos
-        case None ⇒ Point(0, 0)
+        case None    ⇒ Point(0, 0)
       }
     }
       def instance(cl: Class[_]) = {
@@ -373,7 +375,7 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
         c.setBounds(0, 0, rect.width, rect.height);
         c.doLayout
         c.paint(ag)
-        val imageData = SWTUtils.convertAWTImageToSWT(aimage)
+        val imageData = SwingSWTUtils.convertAWTImageToSWT(aimage)
         val image = new org.eclipse.swt.graphics.Image(Display.getCurrent(), imageData)
         g.drawImage(image, rect.x, rect.y)
         image.dispose()

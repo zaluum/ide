@@ -2,7 +2,6 @@ package org.zaluum.nide.scratch
 
 //import org.zaluum.nide.compiler.SimpleScannedBoxClassPath
 //import org.zaluum.nide.compiler.SimpleBoxClassPath
-import org.zaluum.nide.zge.SWTScala
 import org.zaluum.nide.zge.Viewer
 import org.zaluum.nide.zge.Controller
 import org.eclipse.swt.widgets.Widget
@@ -19,7 +18,7 @@ import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.widgets.Display
 import org.eclipse.swt.layout.FillLayout
-import SWTScala._
+import org.zaluum.nide.utils.SWTScala._
 /*
 object FastSWT {
 

@@ -1,4 +1,4 @@
-package org.zaluum.nide.eclipse
+package org.zaluum.nide.utils
 
 import java.io.IOException
 import java.net.URL
@@ -41,16 +41,6 @@ object EclipseUtils {
     }
     ps.busyCursorWhile(run)
     a
-  }
-  def async(display: Display)(body: ⇒ Unit) {
-    display.asyncExec(new Runnable() {
-      def run {
-        body
-      }
-    })
-  }
-  def async(body: ⇒ Unit) {
-    async(Display.getCurrent)(body _)
   }
 }
 trait EclipseUtils {

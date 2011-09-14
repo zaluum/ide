@@ -27,7 +27,7 @@ import org.eclipse.jdt.internal.core.JavaProject
 import org.eclipse.jdt.internal.core.OpenableElementInfo
 import org.eclipse.jdt.internal.core.PackageFragment
 import org.zaluum.nide.eclipse.integration.MultiplexingSourceElementRequestorParser
-import org.zaluum.nide.eclipse.integration.ReflectionUtils
+import org.zaluum.nide.utils.ReflectionUtils
 
 class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: WorkingCopyOwner) extends CompilationUnit(parent, name, owner) {
 

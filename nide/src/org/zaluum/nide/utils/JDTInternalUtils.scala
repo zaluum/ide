@@ -1,4 +1,4 @@
-package org.zaluum.nide.eclipse.integration.model
+package org.zaluum.nide.utils
 import org.eclipse.jdt.internal.compiler.lookup.InvocationSite
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding

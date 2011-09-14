@@ -22,7 +22,7 @@ trait Blinker extends Item {
   def startBlink() {
     blink(true);
     blinking = true
-    import org.zaluum.nide.Utils._
+    import org.zaluum.nide.utils.Utils._
     val display = container.viewer.display
       def scheduleNext(): Unit =
         if (blinking) {

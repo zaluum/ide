@@ -9,7 +9,7 @@ import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.Figure
 import org.eclipse.draw2d.IFigure
 import org.eclipse.draw2d.Viewport
-import org.zaluum.nide.Utils.asRunnable
+import org.zaluum.nide.utils.Utils.asRunnable
 import org.zaluum.nide.compiler.Dimension
 import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
 import org.zaluum.nide.compiler.SelectionSubject
@@ -118,7 +118,7 @@ class RichFigure(container: IFigure) {
         c.translateFromParent(childInternalCoords)
         c.findDeepContainerAt(childInternalCoords)(partial) match {
           case Some(cc) ⇒ return Some(cc)
-          case None ⇒
+          case None     ⇒
         }
       }
     }
@@ -179,7 +179,7 @@ trait Item extends Hover {
   def blink(on: Boolean)
   def blink() {
     blink(true);
-    import org.zaluum.nide.Utils._
+    import org.zaluum.nide.utils.Utils._
     val display = container.viewer.display
     display.timerExec(100, blink(false))
     display.timerExec(200, blink(true))

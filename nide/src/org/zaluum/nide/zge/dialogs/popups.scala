@@ -30,9 +30,7 @@ import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.zaluum.nide.compiler.primitives
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
-import org.zaluum.nide.zge.SWTScala.addReaction
-import org.zaluum.nide.zge.SWTScala.addTextReaction
-import org.zaluum.nide.zge.SWTScala.newButton
+import org.zaluum.nide.utils.SWTScala._
 import org.zaluum.nide.zge.ItemViewer
 import org.zaluum.nide.zge.LabelItem
 import org.zaluum.nide.zge.Popup
@@ -47,7 +45,7 @@ import org.zaluum.nide.compiler.LabelDesc
 import org.zaluum.nide.compiler.Vector2
 
 class PortDeclPopup(
-  val viewer: TreeViewer, portDef: PortDef) extends Popup(viewer.shell, "Port " + portDef.name.str) {
+    val viewer: TreeViewer, portDef: PortDef) extends Popup(viewer.shell, "Port " + portDef.name.str) {
   var nme: NmeSelect = _
   var tpe: TpeEdit = _
   def populate(content: Composite) {
@@ -108,11 +106,11 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
       }
       def methodName = v.info match {
         case m: MethodBinding ⇒ m.toString()
-        case _ ⇒ "<none>"
+        case _                ⇒ "<none>"
       }
       def fieldName = v.info match {
         case f: FieldBinding ⇒ f.toString()
-        case _ ⇒ "<none>"
+        case _               ⇒ "<none>"
       }
       def dimensions = NewArrayExprType.dimensions(valDef)
       def staticMethodMenu = button("Static method", methodName, "Select...") { findMethods(true).open }

@@ -1,4 +1,4 @@
-package org.zaluum.nide.eclipse.integration.model
+package org.zaluum.nide.utils
 import org.eclipse.jdt.core.IJavaProject
 import org.eclipse.jdt.core.JavaModelException
 import org.eclipse.jdt.internal.compiler.ast.ASTNode
@@ -12,7 +12,7 @@ import org.eclipse.jdt.internal.core.SourceMethod
 import org.eclipse.jdt.internal.core.SourceMethodElementInfo
 import org.eclipse.jdt.internal.core.SourceTypeElementInfo
 
-object MethodUtils {
+object MethodBindingUtils {
   def toMethodSig(m: MethodBinding) = m.selector.mkString + m.signature().mkString
   def toMethodStr(m: MethodBinding, paramNames: List[String]) = {
     val output = new StringBuffer(10);

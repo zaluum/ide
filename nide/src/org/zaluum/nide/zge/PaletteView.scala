@@ -49,7 +49,7 @@ import org.zaluum.nide.eclipse.BoxTypeProxy
 import org.zaluum.nide.eclipse.GraphicalEditor
 import org.zaluum.nide.eclipse.SelectionProvider
 import org.zaluum.nide.eclipse.ZaluumProject
-import org.zaluum.nide.Utils
+import org.zaluum.nide.utils.Utils
 
 object PaletteView {
   val ID = "org.zaluum.nide.paletteView"

@@ -20,7 +20,7 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.ValSymbol
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
-import org.zaluum.nide.eclipse.integration.model.MethodUtils
+import org.zaluum.nide.utils.MethodBindingUtils
 import org.zaluum.nide.zge.Viewer
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.zaluum.nide.compiler.FieldExprType

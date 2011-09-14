@@ -1,20 +1,8 @@
-package org.zaluum.nide.eclipse;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
+package org.zaluum.nide.utils;
 
 import java.beans.BeanInfo;
-import java.beans.IndexedPropertyDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
@@ -25,11 +13,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
@@ -38,13 +26,13 @@ import java.util.WeakHashMap;
  * @author scheglov_ke
  * @coverage core.util
  */
-public class ReflectionUtils {
+public class ReflectionUtilsWB {
 	// //////////////////////////////////////////////////////////////////////////
 	//
 	// Constructor
 	//
 	// //////////////////////////////////////////////////////////////////////////
-	private ReflectionUtils() {
+	private ReflectionUtilsWB() {
 	}
 
 	// //////////////////////////////////////////////////////////////////////////
@@ -69,39 +57,24 @@ public class ReflectionUtils {
 	 * @return the {@link Class} with given name - primitive or {@link Object}
 	 *         (including arrays).
 	 */
-	public static Class<?> getClassByName(ClassLoader classLoader,
-			String className) throws Exception {
-		// check for primitive type
-		if ("boolean".equals(className)) {
-			return boolean.class;
-		} else if ("byte".equals(className)) {
-			return byte.class;
-		} else if ("char".equals(className)) {
-			return char.class;
-		} else if ("short".equals(className)) {
-			return short.class;
-		} else if ("int".equals(className)) {
-			return int.class;
-		} else if ("long".equals(className)) {
-			return long.class;
-		} else if ("float".equals(className)) {
-			return float.class;
-		} else if ("double".equals(className)) {
-			return double.class;
-		}
-		// check for array
-		if (className.endsWith("[]")) {
-			int dimensions = StringUtils.countMatches(className, "[]");
-			String componentClassName = StringUtils.substringBefore(className,
-					"[]");
-			Class<?> componentClass = getClassByName(classLoader,
-					componentClassName);
-			return Array.newInstance(componentClass, new int[dimensions])
-					.getClass();
-		}
-		// OK, load this class as object
-		return classLoader.loadClass(className);
-	}
+	/*
+	 * public static Class<?> getClassByName(ClassLoader classLoader, String
+	 * className) throws Exception { // check for primitive type if
+	 * ("boolean".equals(className)) { return boolean.class; } else if
+	 * ("byte".equals(className)) { return byte.class; } else if
+	 * ("char".equals(className)) { return char.class; } else if
+	 * ("short".equals(className)) { return short.class; } else if
+	 * ("int".equals(className)) { return int.class; } else if
+	 * ("long".equals(className)) { return long.class; } else if
+	 * ("float".equals(className)) { return float.class; } else if
+	 * ("double".equals(className)) { return double.class; } // check for array
+	 * if (className.endsWith("[]")) { int dimensions =
+	 * StringUtils.countMatches(className, "[]"); String componentClassName =
+	 * StringUtils.substringBefore(className, "[]"); Class<?> componentClass =
+	 * getClassByName(classLoader, componentClassName); return
+	 * Array.newInstance(componentClass, new int[dimensions]) .getClass(); } //
+	 * OK, load this class as object return classLoader.loadClass(className); }
+	 */
 
 	/**
 	 * @return the {@link Object} default value for class with given
@@ -145,13 +118,13 @@ public class ReflectionUtils {
 		}
 		// collections
 		if (isSuccessorOf(clazz, "java.util.List")) {
-			return Lists.newArrayList();
+			return new ArrayList<Object>();
 		}
 		if (isSuccessorOf(clazz, "java.util.Set")) {
-			return Sets.newHashSet();
+			return new HashSet<Object>();
 		}
 		if (isSuccessorOf(clazz, "java.util.Map")) {
-			return Maps.newHashMap();
+			return new HashMap<Object, Object>();
 		}
 		// Object
 		return null;
@@ -211,8 +184,7 @@ public class ReflectionUtils {
 		UNKNOWN, FALSE, TRUE
 	}
 
-	private static final Map<String, WeakHashMap<Class<?>, IsSuccessorResult>> m_isSuccessorOfCache = Maps
-			.newHashMap();
+	private static final Map<String, WeakHashMap<Class<?>, IsSuccessorResult>> m_isSuccessorOfCache = new HashMap<String, WeakHashMap<Class<?>, IsSuccessorResult>>();
 
 	private static void isSuccessorOf_addCache(Class<?> clazz,
 			String requiredClass, IsSuccessorResult result) {
@@ -276,26 +248,16 @@ public class ReflectionUtils {
 	 * @return <code>true</code> if candidate can be used as target
 	 *         {@link Class}.
 	 */
-	public static boolean isSuccessorOf(Object candidate, String requiredClass) {
-		if (candidate == null) {
-			return false;
-		}
-		Class<?> candidateClass = candidate.getClass();
-		if (!requiredClass.contains(".")) {
-			Field fieldTYPE = getFieldByName(candidateClass, "TYPE");
-			if (fieldTYPE != null) {
-				Class<?> primitiveType = (Class<?>) getFieldObject(
-						candidateClass, "TYPE");
-				if (ObjectUtils.equals(primitiveType.getName(), requiredClass)) {
-					return true;
-				}
-			}
-			return false;
-		} else {
-			return isSuccessorOf(candidateClass, requiredClass);
-		}
-	}
-
+	/*
+	 * public static boolean isSuccessorOf(Object candidate, String
+	 * requiredClass) { if (candidate == null) { return false; } Class<?>
+	 * candidateClass = candidate.getClass(); if (!requiredClass.contains("."))
+	 * { Field fieldTYPE = getFieldByName(candidateClass, "TYPE"); if (fieldTYPE
+	 * != null) { Class<?> primitiveType = (Class<?>) getFieldObject(
+	 * candidateClass, "TYPE"); if (ObjectUtils.equals(primitiveType.getName(),
+	 * requiredClass)) { return true; } } return false; } else { return
+	 * isSuccessorOf(candidateClass, requiredClass); } }
+	 */
 	/**
 	 * @return the result of {@link Class#isMemberClass()} and ignore
 	 *         {@link NoClassDefFoundError}.
@@ -386,28 +348,17 @@ public class ReflectionUtils {
 	 * @return the string presentation {@link Constructor} that uses short class
 	 *         names.
 	 */
-	public static String getShortConstructorString(Constructor<?> constructor) {
-		if (constructor == null) {
-			return "<null-constructor>";
-		}
-		StringBuilder buffer = new StringBuilder();
-		buffer.append(getShortName(constructor.getDeclaringClass()));
-		buffer.append('(');
-		// append parameters
-		{
-			Class<?>[] parameters = constructor.getParameterTypes();
-			for (int i = 0; i < parameters.length; i++) {
-				Class<?> parameterType = parameters[i];
-				if (i != 0) {
-					buffer.append(',');
-				}
-				buffer.append(getShortName(parameterType));
-			}
-		}
-		// close
-		buffer.append(')');
-		return buffer.toString();
-	}
+	/*
+	 * public static String getShortConstructorString(Constructor<?>
+	 * constructor) { if (constructor == null) { return "<null-constructor>"; }
+	 * StringBuilder buffer = new StringBuilder();
+	 * buffer.append(getShortName(constructor.getDeclaringClass()));
+	 * buffer.append('('); // append parameters { Class<?>[] parameters =
+	 * constructor.getParameterTypes(); for (int i = 0; i < parameters.length;
+	 * i++) { Class<?> parameterType = parameters[i]; if (i != 0) {
+	 * buffer.append(','); } buffer.append(getShortName(parameterType)); } } //
+	 * close buffer.append(')'); return buffer.toString(); }
+	 */
 
 	// //////////////////////////////////////////////////////////////////////////
 	//
@@ -518,30 +469,23 @@ public class ReflectionUtils {
 	 * 
 	 * @return the short name of given {@link Class}.
 	 */
-	public static String getShortName(Class<?> clazz) {
-		String className = getFullyQualifiedName(clazz, false);
-		// member Class
-		if (clazz.isMemberClass()) {
-			Class<?> topClass = getTopLevelClass(clazz);
-			String topName = topClass.getName();
-			String topPackage = StringUtils.substringBeforeLast(topName, ".")
-					+ ".";
-			return className.substring(topPackage.length());
-		}
-		// normal top level Class, may be array
-		if (className.indexOf('.') != -1) {
-			return StringUtils.substringAfterLast(className, ".");
-		}
-		// primitive or default package
-		return className;
-	}
+	/*
+	 * public static String getShortName(Class<?> clazz) { String className =
+	 * getFullyQualifiedName(clazz, false); // member Class if
+	 * (clazz.isMemberClass()) { Class<?> topClass = getTopLevelClass(clazz);
+	 * String topName = topClass.getName(); String topPackage =
+	 * StringUtils.substringBeforeLast(topName, ".") + "."; return
+	 * className.substring(topPackage.length()); } // normal top level Class,
+	 * may be array if (className.indexOf('.') != -1) { return
+	 * StringUtils.substringAfterLast(className, "."); } // primitive or default
+	 * package return className; }
+	 */
 
-	private static Class<?> getTopLevelClass(Class<?> clazz) {
-		while (clazz.isMemberClass()) {
-			clazz = clazz.getEnclosingClass();
-		}
-		return clazz;
-	}
+	/*
+	 * private static Class<?> getTopLevelClass(Class<?> clazz) { while
+	 * (clazz.isMemberClass()) { clazz = clazz.getEnclosingClass(); } return
+	 * clazz; }
+	 */
 
 	// //////////////////////////////////////////////////////////////////////////
 	//
@@ -634,7 +578,7 @@ public class ReflectionUtils {
 	 * @return all declared {@link Method}'s, including protected and private.
 	 */
 	public static Map<String, Method> getMethods(Class<?> clazz) {
-		Map<String, Method> methods = Maps.newHashMap();
+		Map<String, Method> methods = new HashMap<String, Method>();
 		// process classes
 		for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
 			for (Method method : c.getDeclaredMethods()) {
@@ -1080,16 +1024,14 @@ public class ReflectionUtils {
 	 * @return <code>true</code> if two given {@link Constructor}-s represent
 	 *         same constructor.
 	 */
-	public static boolean equals(Constructor<?> constructor_1,
-			Constructor<?> constructor_2) {
-		if (constructor_1 == constructor_2) {
-			return true;
-		}
-		return constructor_1.getDeclaringClass() == constructor_2
-				.getDeclaringClass()
-				&& ObjectUtils.equals(getConstructorSignature(constructor_1),
-						getConstructorSignature(constructor_2));
-	}
+	/*
+	 * public static boolean equals(Constructor<?> constructor_1, Constructor<?>
+	 * constructor_2) { if (constructor_1 == constructor_2) { return true; }
+	 * return constructor_1.getDeclaringClass() == constructor_2
+	 * .getDeclaringClass() &&
+	 * ObjectUtils.equals(getConstructorSignature(constructor_1),
+	 * getConstructorSignature(constructor_2)); }
+	 */
 
 	/**
 	 * @return the {@link Constructor} with minimal number of parameters.
@@ -1116,7 +1058,7 @@ public class ReflectionUtils {
 	 * @return all declared {@link Field}'s, including protected and private.
 	 */
 	public static List<Field> getFields(Class<?> clazz) {
-		List<Field> fields = Lists.newArrayList();
+		List<Field> fields = new ArrayList<Field>();
 		while (clazz != null) {
 			// add all declared field
 			for (Field field : clazz.getDeclaredFields()) {
@@ -1341,124 +1283,84 @@ public class ReflectionUtils {
 		}
 	}
 
-	private static ClassMap<List<PropertyDescriptor>> m_propertyDescriptorsCache = ClassMap
-			.create();
-
+	/*
+	 * private static ClassMap<List<PropertyDescriptor>>
+	 * m_propertyDescriptorsCache = ClassMap .create();
+	 */
 	/**
 	 * @return the {@link PropertyDescriptor}'s for given {@link Class}.
 	 */
-	public static List<PropertyDescriptor> getPropertyDescriptors(
-			BeanInfo beanInfo, Class<?> componentClass) throws Exception {
-		// check cache
-		{
-			List<PropertyDescriptor> descriptors = m_propertyDescriptorsCache
-					.get(componentClass);
-			if (descriptors != null) {
-				return descriptors;
-			}
-		}
-		// prepare descriptions
-		List<PropertyDescriptor> descriptors = Lists.newArrayList();
-		// if there is BeanInfo, try to use it
-		if (beanInfo != null) {
-			Collections.addAll(descriptors, beanInfo.getPropertyDescriptors());
-			// remove indexed properties
-			for (Iterator<PropertyDescriptor> I = descriptors.iterator(); I
-					.hasNext();) {
-				PropertyDescriptor descriptor = I.next();
-				if (descriptor instanceof IndexedPropertyDescriptor) {
-					I.remove();
-				}
-			}
-		}
-		// prepare getters/setters
-		Map<String, Method> propertyToGetter = Maps.newTreeMap();
-		Map<String, Method> propertyToSetter = Maps.newTreeMap();
-		// append existing getters/setters
-		for (PropertyDescriptor propertyDescriptor : descriptors) {
-			Method readMethod = propertyDescriptor.getReadMethod();
-			Method writeMethod = propertyDescriptor.getWriteMethod();
-			if (readMethod != null) {
-				String propertyName = getQualifiedPropertyName(readMethod);
-				propertyToGetter.put(propertyName, readMethod);
-				propertyDescriptor.setName(propertyName);
-			}
-			if (writeMethod != null) {
-				String propertyName = getQualifiedPropertyName(writeMethod);
-				propertyToSetter.put(propertyName, writeMethod);
-				propertyDescriptor.setName(propertyName);
-			}
-		}
-		// append missing methods (most probably protected)
-		Set<String> newPropertyNames = Sets.newTreeSet();
-		appendPropertyComponents(componentClass, newPropertyNames,
-				propertyToGetter, propertyToSetter);
-		// create PropertyDescriptor's for new getters/setters
-		for (String propertyName : newPropertyNames) {
-			addPropertyDescriptor(descriptors, propertyName, propertyToGetter,
-					propertyToSetter);
-		}
-		useSimplePropertyNamesWherePossible(descriptors);
-		makeMethodsAccessible(descriptors);
-		// OK, final result
-		m_propertyDescriptorsCache.put(componentClass, descriptors);
-		return descriptors;
-	}
+	/*
+	 * public static List<PropertyDescriptor> getPropertyDescriptors( BeanInfo
+	 * beanInfo, Class<?> componentClass) throws Exception { // check cache {
+	 * List<PropertyDescriptor> descriptors = m_propertyDescriptorsCache
+	 * .get(componentClass); if (descriptors != null) { return descriptors; } }
+	 * // prepare descriptions List<PropertyDescriptor> descriptors =
+	 * Lists.newArrayList(); // if there is BeanInfo, try to use it if (beanInfo
+	 * != null) { Collections.addAll(descriptors,
+	 * beanInfo.getPropertyDescriptors()); // remove indexed properties for
+	 * (Iterator<PropertyDescriptor> I = descriptors.iterator(); I .hasNext();)
+	 * { PropertyDescriptor descriptor = I.next(); if (descriptor instanceof
+	 * IndexedPropertyDescriptor) { I.remove(); } } } // prepare getters/setters
+	 * Map<String, Method> propertyToGetter = Maps.newTreeMap(); Map<String,
+	 * Method> propertyToSetter = Maps.newTreeMap(); // append existing
+	 * getters/setters for (PropertyDescriptor propertyDescriptor : descriptors)
+	 * { Method readMethod = propertyDescriptor.getReadMethod(); Method
+	 * writeMethod = propertyDescriptor.getWriteMethod(); if (readMethod !=
+	 * null) { String propertyName = getQualifiedPropertyName(readMethod);
+	 * propertyToGetter.put(propertyName, readMethod);
+	 * propertyDescriptor.setName(propertyName); } if (writeMethod != null) {
+	 * String propertyName = getQualifiedPropertyName(writeMethod);
+	 * propertyToSetter.put(propertyName, writeMethod);
+	 * propertyDescriptor.setName(propertyName); } } // append missing methods
+	 * (most probably protected) Set<String> newPropertyNames =
+	 * Sets.newTreeSet(); appendPropertyComponents(componentClass,
+	 * newPropertyNames, propertyToGetter, propertyToSetter); // create
+	 * PropertyDescriptor's for new getters/setters for (String propertyName :
+	 * newPropertyNames) { addPropertyDescriptor(descriptors, propertyName,
+	 * propertyToGetter, propertyToSetter); }
+	 * useSimplePropertyNamesWherePossible(descriptors);
+	 * makeMethodsAccessible(descriptors); // OK, final result
+	 * m_propertyDescriptorsCache.put(componentClass, descriptors); return
+	 * descriptors; }
+	 */
 
-	private static void useSimplePropertyNamesWherePossible(
-			List<PropertyDescriptor> descriptors) {
-		// prepare map: simple name -> qualified names
-		Multimap<String, String> simplePropertyNames = HashMultimap.create();
-		for (PropertyDescriptor propertyDescriptor : descriptors) {
-			String qualifiedPropertyName = propertyDescriptor.getName();
-			String simplePropertyName = getSimplePropertyName(qualifiedPropertyName);
-			simplePropertyNames.put(simplePropertyName, qualifiedPropertyName);
-		}
-		// if simple name is unique, use it
-		for (PropertyDescriptor propertyDescriptor : descriptors) {
-			String qualifiedPropertyName = propertyDescriptor.getName();
-			String simplePropertyName = getSimplePropertyName(qualifiedPropertyName);
-			if (simplePropertyNames.get(simplePropertyName).size() == 1) {
-				propertyDescriptor.setName(simplePropertyName);
-			}
-		}
-	}
+	/*
+	 * private static void useSimplePropertyNamesWherePossible(
+	 * List<PropertyDescriptor> descriptors) { // prepare map: simple name ->
+	 * qualified names Multimap<String, String> simplePropertyNames =
+	 * HashMultimap.create(); for (PropertyDescriptor propertyDescriptor :
+	 * descriptors) { String qualifiedPropertyName =
+	 * propertyDescriptor.getName(); String simplePropertyName =
+	 * getSimplePropertyName(qualifiedPropertyName);
+	 * simplePropertyNames.put(simplePropertyName, qualifiedPropertyName); } //
+	 * if simple name is unique, use it for (PropertyDescriptor
+	 * propertyDescriptor : descriptors) { String qualifiedPropertyName =
+	 * propertyDescriptor.getName(); String simplePropertyName =
+	 * getSimplePropertyName(qualifiedPropertyName); if
+	 * (simplePropertyNames.get(simplePropertyName).size() == 1) {
+	 * propertyDescriptor.setName(simplePropertyName); } } }
+	 */
+	/*
+	 * private static void makeMethodsAccessible( List<PropertyDescriptor>
+	 * descriptors) { for (PropertyDescriptor propertyDescriptor : descriptors)
+	 * { Method getMethod = propertyDescriptor.getReadMethod(); Method setMethod
+	 * = propertyDescriptor.getWriteMethod(); if (getMethod != null) {
+	 * getMethod.setAccessible(true); } if (setMethod != null) {
+	 * setMethod.setAccessible(true); } } }
+	 */
 
-	private static void makeMethodsAccessible(
-			List<PropertyDescriptor> descriptors) {
-		for (PropertyDescriptor propertyDescriptor : descriptors) {
-			Method getMethod = propertyDescriptor.getReadMethod();
-			Method setMethod = propertyDescriptor.getWriteMethod();
-			if (getMethod != null) {
-				getMethod.setAccessible(true);
-			}
-			if (setMethod != null) {
-				setMethod.setAccessible(true);
-			}
-		}
-	}
-
-	private static void addPropertyDescriptor(
-			List<PropertyDescriptor> descriptors, String qualifiedPropertyName,
-			Map<String, Method> propertyToGetter,
-			Map<String, Method> propertyToSetter) throws Exception {
-		if (qualifiedPropertyName.startsWith("(")) {
-			return;
-		}
-		// prepare methods
-		Method getMethod = propertyToGetter.get(qualifiedPropertyName);
-		Method setMethod = propertyToSetter.get(qualifiedPropertyName);
-		/*
-		 * if (!isValidForJavaIBM(getMethod) || !isValidForJavaIBM(setMethod)) {
-		 * return; }
-		 */
-		if (getMethod != null && getMethod.getReturnType() == Void.TYPE) {
-			return;
-		}
-		// add property
-		descriptors.add(new PropertyDescriptor(qualifiedPropertyName,
-				getMethod, setMethod));
-	}
+	/*
+	 * private static void addPropertyDescriptor( List<PropertyDescriptor>
+	 * descriptors, String qualifiedPropertyName, Map<String, Method>
+	 * propertyToGetter, Map<String, Method> propertyToSetter) throws Exception
+	 * { if (qualifiedPropertyName.startsWith("(")) { return; } // prepare
+	 * methods Method getMethod = propertyToGetter.get(qualifiedPropertyName);
+	 * Method setMethod = propertyToSetter.get(qualifiedPropertyName); if
+	 * (getMethod != null && getMethod.getReturnType() == Void.TYPE) { return; }
+	 * // add property descriptors.add(new
+	 * PropertyDescriptor(qualifiedPropertyName, getMethod, setMethod)); }
+	 */
 
 	/**
 	 * IMB Java does not allow to create {@link PropertyDescriptor} for
@@ -1474,91 +1376,55 @@ public class ReflectionUtils {
 	 * Appends components for {@link PropertyDescriptor}'s of given
 	 * {@link Class}, its super class and implemented interfaces.
 	 */
-	private static void appendPropertyComponents(Class<?> currentClass,
-			Set<String> newPropertyNames, Map<String, Method> propertyToGetter,
-			Map<String, Method> propertyToSetter) {
-		for (Method method : currentClass.getDeclaredMethods()) {
-			int methodModifiers = method.getModifiers();
-			boolean isPublic = Modifier.isPublic(methodModifiers);
-			boolean isProtected = Modifier.isProtected(methodModifiers);
-			boolean isStatic = Modifier.isStatic(methodModifiers);
-			if (method.isBridge()) {
-				continue;
-			}
-			if (!isStatic && (isPublic || isProtected)) {
-				method.setAccessible(true);
-				String methodName = method.getName();
-				if (methodName.startsWith("set")
-						&& method.getParameterTypes().length == 1) {
-					String propertyName = getQualifiedPropertyName(method);
-					if (!propertyToSetter.containsKey(propertyName)) {
-						newPropertyNames.add(propertyName);
-						propertyToSetter.put(propertyName, method);
-					}
-				}
-				if (method.getParameterTypes().length == 0) {
-					if (methodName.startsWith("get")) {
-						String propertyName = getQualifiedPropertyName(method);
-						if (!propertyToGetter.containsKey(propertyName)) {
-							newPropertyNames.add(propertyName);
-							propertyToGetter.put(propertyName, method);
-						}
-					}
-					if (methodName.startsWith("is")) {
-						String propertyName = getQualifiedPropertyName(method);
-						if (!propertyToGetter.containsKey(propertyName)) {
-							newPropertyNames.add(propertyName);
-							propertyToGetter.put(propertyName, method);
-						}
-					}
-				}
-			}
-		}
-		// process interfaces
-		for (Class<?> interfaceClass : currentClass.getInterfaces()) {
-			appendPropertyComponents(interfaceClass, newPropertyNames,
-					propertyToGetter, propertyToSetter);
-		}
-		// process super Class
-		if (currentClass.getSuperclass() != null) {
-			appendPropertyComponents(currentClass.getSuperclass(),
-					newPropertyNames, propertyToGetter, propertyToSetter);
-		}
-	}
-
-	private static String getQualifiedPropertyName(Method method) {
-		// strip Method name to property name
-		String propertyName;
-		{
-			propertyName = method.getName();
-			if (propertyName.startsWith("is")) {
-				propertyName = propertyName.substring(2);
-			} else if (propertyName.startsWith("get")) {
-				propertyName = propertyName.substring(3);
-			} else if (propertyName.startsWith("set")) {
-				propertyName = propertyName.substring(3);
-			}
-			propertyName = Introspector.decapitalize(propertyName);
-		}
-		// include also type
-		String types;
-		{
-			Class<?>[] parameterTypes = method.getParameterTypes();
-			if (parameterTypes.length == 0) {
-				types = "("
-						+ getFullyQualifiedName(method.getReturnType(), false)
-						+ ")";
-			} else {
-				StringBuilder buffer = new StringBuilder();
-				appendParameterTypes(buffer, parameterTypes);
-				types = buffer.toString();
-			}
-		}
-		// return qualified property name
-		return propertyName + types;
-	}
-
-	private static String getSimplePropertyName(String qualifiedPropertyName) {
-		return StringUtils.substringBefore(qualifiedPropertyName, "(");
-	}
+	/*
+	 * private static void appendPropertyComponents(Class<?> currentClass,
+	 * Set<String> newPropertyNames, Map<String, Method> propertyToGetter,
+	 * Map<String, Method> propertyToSetter) { for (Method method :
+	 * currentClass.getDeclaredMethods()) { int methodModifiers =
+	 * method.getModifiers(); boolean isPublic =
+	 * Modifier.isPublic(methodModifiers); boolean isProtected =
+	 * Modifier.isProtected(methodModifiers); boolean isStatic =
+	 * Modifier.isStatic(methodModifiers); if (method.isBridge()) { continue; }
+	 * if (!isStatic && (isPublic || isProtected)) { method.setAccessible(true);
+	 * String methodName = method.getName(); if (methodName.startsWith("set") &&
+	 * method.getParameterTypes().length == 1) { String propertyName =
+	 * getQualifiedPropertyName(method); if
+	 * (!propertyToSetter.containsKey(propertyName)) {
+	 * newPropertyNames.add(propertyName); propertyToSetter.put(propertyName,
+	 * method); } } if (method.getParameterTypes().length == 0) { if
+	 * (methodName.startsWith("get")) { String propertyName =
+	 * getQualifiedPropertyName(method); if
+	 * (!propertyToGetter.containsKey(propertyName)) {
+	 * newPropertyNames.add(propertyName); propertyToGetter.put(propertyName,
+	 * method); } } if (methodName.startsWith("is")) { String propertyName =
+	 * getQualifiedPropertyName(method); if
+	 * (!propertyToGetter.containsKey(propertyName)) {
+	 * newPropertyNames.add(propertyName); propertyToGetter.put(propertyName,
+	 * method); } } } } } // process interfaces for (Class<?> interfaceClass :
+	 * currentClass.getInterfaces()) { appendPropertyComponents(interfaceClass,
+	 * newPropertyNames, propertyToGetter, propertyToSetter); } // process super
+	 * Class if (currentClass.getSuperclass() != null) {
+	 * appendPropertyComponents(currentClass.getSuperclass(), newPropertyNames,
+	 * propertyToGetter, propertyToSetter); } }
+	 */
+	/*
+	 * private static String getQualifiedPropertyName(Method method) { // strip
+	 * Method name to property name String propertyName; { propertyName =
+	 * method.getName(); if (propertyName.startsWith("is")) { propertyName =
+	 * propertyName.substring(2); } else if (propertyName.startsWith("get")) {
+	 * propertyName = propertyName.substring(3); } else if
+	 * (propertyName.startsWith("set")) { propertyName =
+	 * propertyName.substring(3); } propertyName =
+	 * Introspector.decapitalize(propertyName); } // include also type String
+	 * types; { Class<?>[] parameterTypes = method.getParameterTypes(); if
+	 * (parameterTypes.length == 0) { types = "(" +
+	 * getFullyQualifiedName(method.getReturnType(), false) + ")"; } else {
+	 * StringBuilder buffer = new StringBuilder(); appendParameterTypes(buffer,
+	 * parameterTypes); types = buffer.toString(); } } // return qualified
+	 * property name return propertyName + types; }
+	 */
+	/*
+	 * private static String getSimplePropertyName(String qualifiedPropertyName)
+	 * { return StringUtils.substringBefore(qualifiedPropertyName, "("); }
+	 */
 }

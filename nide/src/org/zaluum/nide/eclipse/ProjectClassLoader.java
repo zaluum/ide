@@ -1,8 +1,5 @@
 package org.zaluum.nide.eclipse;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -13,9 +10,13 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.IRuntimeClasspathEntry;
 import org.eclipse.jdt.launching.JavaRuntime;
+import org.zaluum.nide.utils.ReflectivePDE;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
@@ -105,7 +106,9 @@ public class ProjectClassLoader extends URLClassLoader {
 		visitedProjects.add(javaProject);
 		// do add classpath entries
 		if (fullClassPath) {
-			CollectionUtils.addAll(entries, getClasspath(javaProject));
+			for (String s : getClasspath(javaProject)) {
+				entries.add(s);
+			}
 		} else {
 			IPath outputLocation = javaProject.getOutputLocation();
 			addAbsoluteLocation(entries, outputLocation);
@@ -348,6 +351,40 @@ public class ProjectClassLoader extends URLClassLoader {
 	// //////////////////////////////////////////////////////////////////////////
 	private static CodeSource m_fakeCodeSource;
 
+	protected static String substringBeforeLast(String str, String separator) {
+		if (str == null || "".equals(str) || separator == null
+				|| "".equals(str)) {
+			return str;
+		}
+		int pos = str.lastIndexOf(separator);
+		if (pos == -1) {
+			return str;
+		}
+		return str.substring(0, pos);
+	}
+
+	public static long copy(InputStream input, OutputStream output)
+			throws IOException {
+		byte[] buffer = new byte[1024 * 4];
+		long count = 0;
+		int n = 0;
+		while (-1 != (n = input.read(buffer))) {
+			output.write(buffer, 0, n);
+			count += n;
+		}
+		return count;
+	}
+
+	public static byte[] readAndClose(InputStream input) throws IOException {
+		try {
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			copy(input, output);
+			return output.toByteArray();
+		} finally {
+			input.close();
+		}
+	}
+
 	@Override
 	protected Class<?> findClass(String className)
 			throws ClassNotFoundException {
@@ -359,17 +396,11 @@ public class ProjectClassLoader extends URLClassLoader {
 			try {
 
 				// read class bytes
-				byte[] bytes;
-				try {
-					bytes = IOUtils.toByteArray(input);
-				} finally {
-					input.close();
-				}
+				byte[] bytes = readAndClose(input);
 
 				// define package
 				{
-					String pkgName = StringUtils.substringBeforeLast(className,
-							".");
+					String pkgName = substringBeforeLast(className, ".");
 					if (getPackage(pkgName) == null) {
 						definePackage(pkgName, null, null, null, null, null,
 								null, null);

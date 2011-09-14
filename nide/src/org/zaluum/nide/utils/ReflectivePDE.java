@@ -1,4 +1,4 @@
-package org.zaluum.nide.eclipse;
+package org.zaluum.nide.utils;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.Platform;
@@ -63,7 +63,7 @@ public class ReflectivePDE {
 	 */
 	public static BundleDescription getPluginModelBundleDescription(
 			Object pluginModel) throws Exception {
-		return (BundleDescription) ReflectionUtils.invokeMethod(pluginModel,
+		return (BundleDescription) ReflectionUtilsWB.invokeMethod(pluginModel,
 				"getBundleDescription()");
 	}
 
@@ -75,7 +75,7 @@ public class ReflectivePDE {
 	private static Object invokeStatic(String className, String signature,
 			Object... args) throws Exception {
 		Class<?> clazz = loadClass(className);
-		return ReflectionUtils.invokeMethod(clazz, signature, args);
+		return ReflectionUtilsWB.invokeMethod(clazz, signature, args);
 	}
 
 	private static Class<?> loadClass(String name) throws Exception {

@@ -1,4 +1,4 @@
-package org.zaluum.nide.eclipse;
+package org.zaluum.nide.utils;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -56,7 +56,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def invokeIconError(str: String, miny: Int) = imageForText(str, miny, ColorConstants.red)
   def image(d: ImageDescriptor) = rm.createImage(d)
   private def resourceToDescriptor(resource: String) =
-    zp.getResource(resource) map { ImageDescriptor.createFromURL }
+    Option(zp.classLoader.getResource(resource)) map { ImageDescriptor.createFromURL }
 
   private def resourceToImage(resource: String): Option[(Image, ImageDescriptor)] =
     resourceToDescriptor(resource) flatMap { desc ⇒
