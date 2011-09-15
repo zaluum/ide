@@ -1,10 +1,8 @@
 Agenda
 
 week 5-11 doc week
-	- pintar ombra als elements d'un altre pare 
 	- al enganxar posar-ho en el contenidor on cau ( enganxar a la GUI a quin block va a parar?)
 	- clean up wire
-	- al crear modificar directament la label. Crear nom del camp a partir de label.
 	- visuals al block diagram (notes sobretot)
 	- crear port connectant cable
     - same label in both views. (caption?)
@@ -43,6 +41,7 @@ week 19-25 launch week
 	- publish beta
 	- buy adwords	
 Idees
+	- pintar ombra als elements d'un altre pare 
 	- Scala.react programació reactiva
 	- tolerancia del lloc de connexió 
 	- Com tractar arrays?
@@ -155,6 +154,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- al crear modificar directament la label. Crear nom del camp a partir de label.
 	- al copiar, moure les coordenades lleugerament (tant gui com pos)
 	- colocar widget a les mateixes coordenades que al diagrama de blocks al crear(buscar forat?)
 	- grid més gran a GUI, desactivar-la al block diagram

@@ -224,6 +224,23 @@ object ImageValueType extends ClassValueType(classOf[java.awt.Image]) {
     def valueTpe = ImageValueType
   }
 }
+object IconValueType extends ClassValueType(classOf[javax.swing.Icon]) {
+  def create(str: String) = new Value with ZaluumParseValue {
+    val encoded = str
+    def parse(zp: ZaluumProject) = try {
+      new javax.swing.ImageIcon(zp.classLoader.getResource(encoded))
+    } catch { case e ⇒ null }
+    override def valid = true
+    def parse = throw new UnsupportedOperationException
+    def codeGen =
+      InvokeStatic(
+        "readIconResource",
+        List(Const(encoded, Name("java.lang.String"))),
+        Name(classOf[ImageReader].getName),
+        "(Ljava/lang/String;)Ljavax/swing/Icon;")
+    def valueTpe = IconValueType
+  }
+}
 class IntEnumValueType(pack: String, property: String, list: List[(Int, String)]) extends PrimitiveValueType(primitives.Int) {
   def create(str: String): Value = new PrimitiveValue(str, IntEnumValueType.this) {
     def parse = Integer.decode(encoded).intValue()
@@ -292,6 +309,7 @@ object Values {
     DoubleValueType,
     FloatValueType,
     FontValueType,
+    IconValueType,
     IntValueType,
     ImageValueType,
     LongValueType,

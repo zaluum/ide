@@ -366,33 +366,37 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
     repaint()
   }
   override def paintFigure(g: Graphics) {
-    val rect = getClientArea()
-    g.setXORMode(blinkOn)
-    component match {
-      case Some(c) ⇒
-        val aimage = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB)
-        val ag = aimage.createGraphics
-        c.setBounds(0, 0, rect.width, rect.height);
-        c.doLayout
-        c.paint(ag)
-        val imageData = SwingSWTUtils.convertAWTImageToSWT(aimage)
-        val image = new org.eclipse.swt.graphics.Image(Display.getCurrent(), imageData)
-        g.drawImage(image, rect.x, rect.y)
-        image.dispose()
-        ag.dispose();
-      case None ⇒
-        g.setForegroundColor(ColorConstants.lightGray)
-        g.fillRectangle(rect)
-        g.setForegroundColor(ColorConstants.gray)
-        val data = g.getFont.getFontData
-        for (d ← data) {
-          d.setHeight(rect.height / 2)
-        }
-        val font = new Font(Display.getCurrent, data)
-        g.setFont(font)
-        val dim = FigureUtilities.getStringExtents("?", font)
-        g.drawText("?", rect.getCenter.x - dim.width / 2, rect.getCenter.y - dim.height / 2)
-        font.dispose()
+    try {
+      val rect = getClientArea()
+      g.setXORMode(blinkOn)
+      component match {
+        case Some(c) ⇒
+          val aimage = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_RGB)
+          val ag = aimage.createGraphics
+          c.setBounds(0, 0, rect.width, rect.height);
+          c.doLayout
+          c.paint(ag)
+          val imageData = SwingSWTUtils.convertAWTImageToSWT(aimage)
+          val image = new org.eclipse.swt.graphics.Image(Display.getCurrent(), imageData)
+          g.drawImage(image, rect.x, rect.y)
+          image.dispose()
+          ag.dispose();
+        case None ⇒
+          g.setForegroundColor(ColorConstants.lightGray)
+          g.fillRectangle(rect)
+          g.setForegroundColor(ColorConstants.gray)
+          val data = g.getFont.getFontData
+          for (d ← data) {
+            d.setHeight(rect.height / 2)
+          }
+          val font = new Font(Display.getCurrent, data)
+          g.setFont(font)
+          val dim = FigureUtilities.getStringExtents("?", font)
+          g.drawText("?", rect.getCenter.x - dim.width / 2, rect.getCenter.y - dim.height / 2)
+          font.dispose()
+      }
+    } catch {
+      case e ⇒ e.printStackTrace
     }
     //g.setForegroundColor(ColorConstants.lightGray)
     //g.drawRectangle(rect.getCopy.expand(-1, -1))

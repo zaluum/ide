@@ -22,6 +22,7 @@ import org.eclipse.swt.SWT
 
 class GuiViewer(parent: Composite, controller: Controller, val editor: GraphicalEditor)
     extends ItemViewer(parent, controller) with ClipboardViewer {
+  // TODO integrate eclipse commands
   canvas.addKeyListener(new KeyListener() {
     def keyPressed(e: KeyEvent) {
       if ((e.stateMask & SWT.CTRL) != 0) {
@@ -37,7 +38,6 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
         e.keyCode match {
           case SWT.DEL ⇒ viewer.tool.handleDel()
           case SWT.F5 ⇒
-            println("refresh")
             controller.zproject.refreshClassLoader
             viewer.refresh()
           case _ ⇒
