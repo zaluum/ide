@@ -72,11 +72,13 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     val result = NewArrayExprType.thisPort(vs)
     result.tpe = ztd.zaluumScope.getArrayType(t, dims)
   }
+  def paramStr(vs: ValSymbol, param: ParamSymbol) =
+    vs.params.get(param).map(_.encoded)
   def checkNew(vs: ValSymbol, c: ClassJavaType) {
     if (!c.binding.canBeInstantiated()) {
       error("Class " + c.name.str + " cannot be instantiated", vs.decl);
     }
-    vs.params.get(NewExprType.signatureSymbol) match {
+    paramStr(vs, NewExprType.signatureSymbol) match {
       case Some(NewExprType.Sig(name, signature)) ⇒
         val cons = ZaluumCompletionEngineScala.findConstructor(ztd, scope(vs), c.binding, signature)
         processMethod(vs, cons) { m ⇒
@@ -86,7 +88,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     }
   }
   def invokeStatic(vs: ValSymbol, c: ClassJavaType) {
-    vs.params.get(InvokeStaticExprType.signatureSymbol) match {
+    paramStr(vs, InvokeStaticExprType.signatureSymbol) match {
       case Some(InvokeStaticExprType.Sig(selector, signature)) ⇒
         val m = ZaluumCompletionEngineScala.findBySignature(ztd, scope(vs), c, selector, signature, true)
         processMethod(vs, m) { _ ⇒ }

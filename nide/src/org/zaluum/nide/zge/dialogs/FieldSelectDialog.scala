@@ -1,49 +1,38 @@
 package org.zaluum.nide.zge.dialogs
 
+import java.lang.Object
 import java.util.Comparator
+
 import scala.collection.JavaConversions
+
 import org.eclipse.core.runtime.Status
-import org.eclipse.jdt.internal.compiler.ast.ASTNode
-import org.eclipse.jdt.internal.compiler.lookup.Binding
-import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
-import org.eclipse.jdt.internal.core.JavaProject
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jface.dialogs.DialogSettings
 import org.eclipse.jface.dialogs.IDialogSettings
 import org.eclipse.jface.viewers.LabelProvider
 import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.compiler.BoxTypeSymbol
-import org.zaluum.nide.compiler.ClassJavaType
-import org.zaluum.nide.compiler.EditTransformer
-import org.zaluum.nide.compiler.InvokeExprType
-import org.zaluum.nide.compiler.Param
-import org.zaluum.nide.compiler.Tree
-import org.zaluum.nide.compiler.ValDef
+import org.eclipse.swt.widgets.Shell
+import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.ValSymbol
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
-import org.zaluum.nide.utils.MethodBindingUtils
-import org.zaluum.nide.zge.Viewer
-import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
-import org.zaluum.nide.compiler.FieldExprType
-import org.zaluum.nide.compiler.StaticExprType
-import org.zaluum.nide.compiler.SignatureExprType
-import org.zaluum.nide.compiler.StaticFieldExprType
-import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
-import org.zaluum.nide.compiler.ThisExprType
 
-class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItemsSelectionDialog2(viewer.shell, false) {
+class FieldSelectDialog(
+    shell: Shell,
+    tpe: ⇒ JavaType,
+    static: Boolean,
+    val vs: ValSymbol,
+    currentFieldName: Option[String]) extends FilteredItemsSelectionDialog2(shell, false) {
   override def isResizable = true
   override protected def okPressed() {
-    execCommand()
+    getSelectedItems().getFirstElement() match {
+      case m: FieldBinding ⇒ result = Some(m.name.mkString)
+      case _               ⇒
+    }
     super.okPressed()
   }
-  def execCommand() {
-    getSelectedItems().getFirstElement() match {
-      case m: FieldBinding ⇒
-        val sig = vs.tpe.asInstanceOf[SignatureExprType].signatureName
-        val tr = vs.tdecl.addOrReplaceParam(Param(sig, m.name.mkString))
-        viewer.controller.exec(tr)
-    }
-  }
+  var result: Option[String] = None
+  def openRet() = { open(); result }
   object FieldLabelProvider extends LabelProvider {
     override def getText(element: Object) = {
       element match {
@@ -61,27 +50,17 @@ class FieldSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItems
     }
   }
 
-  val id = "org.zaluum.nide.methodSelectDialog"
+  val id = "org.zaluum.nide.fieldSelectDialog"
   val settings = new DialogSettings(id);
-  val static = vs.tpe.isInstanceOf[StaticExprType]
-  val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].scope // FIXME 
+  val scope = vs.mainBS.scope
 
-  val binding = vs.tpe match {
-    case t: ThisExprType ⇒ t.thisPort(vs).tpe.binding
-    case s: StaticExprType ⇒
-      vs.classinfo match {
-        case cl: ClassJavaType ⇒ cl.binding
-        case _                 ⇒ null
-      }
-  }
-  val items: Array[FieldBinding] = binding match {
+  val items: Array[FieldBinding] = tpe.binding match {
     case r: ReferenceBinding ⇒
       val engine = ZaluumCompletionEngineScala.engineForVs(vs)
       val fields = ZaluumCompletionEngineScala.allFields(engine, scope, r, static)
       fields.sortBy(_.name.mkString).toArray
     case _ ⇒ Array()
   }
-  val currentFieldName = vs.params.values.headOption // FIXME
   val currentField = currentFieldName flatMap { mstr ⇒
     items.find { _.name.mkString == mstr }
   }

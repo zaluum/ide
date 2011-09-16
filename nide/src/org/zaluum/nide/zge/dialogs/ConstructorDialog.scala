@@ -1,7 +1,6 @@
 package org.zaluum.nide.zge.dialogs
 
 import scala.collection.JavaConversions.asScalaBuffer
-
 import org.eclipse.jface.dialogs.Dialog
 import org.eclipse.jface.viewers.ArrayContentProvider
 import org.eclipse.jface.viewers.CellEditor
@@ -37,10 +36,10 @@ import org.zaluum.nide.utils.SWTScala.newLabel
 import org.zaluum.nide.utils.SWTScala.newMenuItem
 import org.zaluum.nide.utils.SWTScala.newPopupMenu
 import org.zaluum.nide.zge.Viewer
-
 import net.miginfocom.swt.MigLayout
+import org.zaluum.nide.compiler.Name
 
-class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
+abstract class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
   var combo: ComboViewer = _
   def comboValue = {
     val sel = combo.getSelection.asInstanceOf[IStructuredSelection]
@@ -50,10 +49,13 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
   var tableContents = List[TableEntry]()
   case class TableEntry(var sym: Option[ParamSymbol], var value: String)
   def v = vs.tdecl
+  def action(typeNames: List[Name], values: List[String])
   override protected def okPressed() {
     val typeNames = for (c ← comboValue.toList; p ← c.params) yield p.tpe.name
     val params = tableContents.map(_.value)
-    if (typeNames != v.constructorTypes || params != v.constructorParams) {
+    super.okPressed()
+    action(typeNames, params)
+    /*if (typeNames != v.constructorTypes || params != v.constructorParams) {
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case v: ValDef if vs.decl == v ⇒
@@ -67,7 +69,7 @@ class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.she
       viewer.controller.exec(tr)
     } else {
       super.okPressed()
-    }
+    }*/
   }
   def createTable(parent: Composite) = {
     val table = new Table(parent, SWT.MULTI | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL |

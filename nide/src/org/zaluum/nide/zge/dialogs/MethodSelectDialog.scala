@@ -1,50 +1,43 @@
 package org.zaluum.nide.zge.dialogs
 
+import java.lang.Object
+import java.lang.StringBuffer
 import java.util.Comparator
+
 import scala.collection.JavaConversions
+
 import org.eclipse.core.runtime.Status
 import org.eclipse.jdt.internal.compiler.ast.ASTNode
 import org.eclipse.jdt.internal.compiler.lookup.Binding
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.core.JavaProject
 import org.eclipse.jface.dialogs.DialogSettings
 import org.eclipse.jface.dialogs.IDialogSettings
 import org.eclipse.jface.viewers.LabelProvider
 import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.compiler.BoxTypeSymbol
-import org.zaluum.nide.compiler.ClassJavaType
-import org.zaluum.nide.compiler.EditTransformer
-import org.zaluum.nide.compiler.Param
-import org.zaluum.nide.compiler.Tree
-import org.zaluum.nide.compiler.ValDef
-import org.zaluum.nide.compiler.ValSymbol
+import org.eclipse.swt.widgets.Shell
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
-import org.zaluum.nide.utils.MethodBindingUtils
-import org.zaluum.nide.zge.Viewer
-import org.zaluum.nide.compiler.SignatureExprType
-import org.zaluum.nide.compiler.StaticExprType
-import org.zaluum.nide.compiler.InvokeStaticExprType
-import org.zaluum.nide.compiler.InvokeExprType
-import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
-import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
-import org.eclipse.jdt.internal.compiler.lookup.Scope
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
 
-abstract class MethodSelectDialog(viewer: Viewer) extends FilteredItemsSelectionDialog2(viewer.shell, false) {
+abstract class MethodSelectDialog(
+    jproject: JavaProject,
+    shell: Shell,
+    binding: TypeBinding,
+    scope: ZaluumClassScope,
+    currentMethodSig: Option[String]) extends FilteredItemsSelectionDialog2(shell, false) {
   override def isResizable = true
   override protected def okPressed() {
     getSelectedItems().getFirstElement() match {
-      case m: MethodWithNames ⇒ action(m)
+      case m: MethodWithNames ⇒ result = Some(m.methodSignature)
       case _                  ⇒
     }
     super.okPressed()
   }
-  def action(m: MethodWithNames)
-  def static: Boolean
-  def binding: TypeBinding
-  def scope: ZaluumClassScope
-  def currentMethodSig: Option[String]
+  var result: Option[String] = None
+  def openRet(): Option[String] = { open(); result }
 
   object MethodLabelProvider extends LabelProvider {
     override def getText(element: Object) = {
@@ -65,13 +58,11 @@ abstract class MethodSelectDialog(viewer: Viewer) extends FilteredItemsSelection
 
   val id = "org.zaluum.nide.methodSelectDialog"
   val settings = new DialogSettings(id);
-  def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding): List[MethodBinding]
+  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding): List[MethodBinding]
   val items: Array[MethodWithNames] = binding match {
     case r: ReferenceBinding ⇒
       val engine = ZaluumCompletionEngineScala.engineFor(scope)
-      val jproject = viewer.zproject.jProject.asInstanceOf[JavaProject]
-      val nameLookup = jproject.newNameLookup(Array[org.eclipse.jdt.core.ICompilationUnit]())
-      val paramNames = findMethods(engine, scope, r) map { m ⇒
+      val paramNames = findMethods(engine, r) map { m ⇒
         val names = org.zaluum.nide.utils.MethodBindingUtils.findMethodParamNames(m, jproject)
         val params = names.toList.flatMap(a ⇒ a)
         MethodWithNames(m, params)

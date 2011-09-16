@@ -1,5 +1,9 @@
 package org.zaluum.nide.compiler
 
+import org.zaluum.nide.zge.ParamProperty
+import org.zaluum.nide.zge.BeanProperty
+import org.zaluum.nide.zge.Property
+import org.zaluum.nide.zge.Controller
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import org.jgrapht.graph.DefaultEdge
@@ -152,12 +156,15 @@ trait ClassJavaType extends JavaType {
 }
 
 class SimpleClassJavaType(val owner: Symbol, val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType
+trait PropertySourceType {
+  def properties(controller: Controller, valDef: ValDef): List[ParamProperty]
+}
 class BoxTypeSymbol(
   val image: Option[String],
   var isVisual: Boolean,
   val binding: ReferenceBinding,
   val scope: ZaluumClassScope) extends ClassJavaType
-    with TemplateSymbol with BoxType with Namer {
+    with TemplateSymbol with BoxType with Namer with PropertySourceType {
   tpe = this
   val owner = null
   var initMethod: Option[MethodBinding] = None
@@ -176,6 +183,13 @@ class BoxTypeSymbol(
   def returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
   def methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
   def mainBS = this
+  def properties(controller: Controller, valDef: ValDef): List[ParamProperty] = {
+    for (
+      b ← beanProperties;
+      val t = Values.typeFor(b);
+      if (!t.isInstanceOf[InvalidValueType])
+    ) yield new BeanProperty(controller, valDef, b)
+  }
 }
 
 case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bl: BlockSymbol) {

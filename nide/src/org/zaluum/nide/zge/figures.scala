@@ -43,7 +43,7 @@ import org.zaluum.nide.utils.SWTScala
 import org.zaluum.nide.utils.SwingSWTUtils
 
 // TREE SPECIFIC FIGURES
-trait ValDefItem extends Item with IPropertySource2 {
+trait ValDefItem extends Item with PropertySource {
   var valDef: ValDef = _
   def valSym = valDef.sym
   def pos = valDef.pos
@@ -55,59 +55,27 @@ trait ValDefItem extends Item with IPropertySource2 {
     updateMe()
     updateSize()
     updateValPorts()
+    properties = calcProperties()
   }
   def updateMe()
   def updateValPorts()
-  def isPropertyResettable(id: AnyRef) = true
-  def isPropertySet(id: AnyRef) = id match {
-    case p: ParamSymbol ⇒ valSym.params.contains(p)
-    case _              ⇒ false
-  }
-  def getEditableValue() = this
-  def getPropertyDescriptors() = {
-    valSym.tpe match {
-      case bs: BoxTypeSymbol ⇒
-        (for (
-          b ← bs.beanProperties;
-          val t = Values.typeFor(b);
-          if (!t.isInstanceOf[InvalidValueType])
-        ) yield t.editor(b)).toArray
-      case _ ⇒ Array[IPropertyDescriptor]()
-    }
-  }
-  def getPropertyValue(id: AnyRef): AnyRef = {
-    id match {
-      case b: BeanParamSymbol ⇒
-        valSym.params.get(b) match {
-          case Some(v) ⇒ v.toSWT
-          case None    ⇒ Values.typeFor(b).defaultSWT
-        }
-      case _ ⇒ throw new Exception
-    }
-  }
   def controller = container.viewer.controller
-  def resetPropertyValue(id: AnyRef) {
-    id match {
-      case b: BeanParamSymbol ⇒
-        controller.exec(valDef.removeParam(b.name))
+  def calcProperties(): List[Property] = {
+    val tpe = new ValDefTypeProperty(valDef, controller)
+    val nme = new NameProperty(valDef, controller)
+    val lbl = new LabelProperty(valDef, controller, false)
+    val lblGui = new LabelProperty(valDef, controller, true)
+    val cons = new ConstructorProperty(valDef, controller)
+    val props: List[ParamProperty] = valSym.tpe match {
+      case p: PropertySourceType ⇒ p.properties(controller, valDef)
+      case _                     ⇒ List()
     }
+    val missing = valDef.params filter {
+      case p: Param ⇒ !props.exists { _.key == p.key }
+    } map { case p: Param ⇒ new MissingParamProperty(controller, p, valDef) }
+    nme :: tpe :: lbl :: lblGui :: cons :: missing ::: props
   }
-  def setPropertyValue(id: AnyRef, swtValue: AnyRef) {
-    import SWTScala._
-    // must run async. If not a loop is entered within the controller refresh
-    async(container.viewer.display) {
-      if (getPropertyValue(id) == swtValue) return
-      id match {
-        case b: BeanParamSymbol ⇒
-          val encoded = Values.typeFor(b).parseSWT(swtValue)
-          if (encoded == "")
-            controller.exec(valDef.removeParam(b.name))
-          else
-            controller.exec(valDef.addOrReplaceParam(Param(b.name, encoded)))
-        case _ ⇒
-      }
-    }
-  }
+  def display = container.viewer.display
 }
 
 trait ValFigure extends ValDefItem with HasPorts {

@@ -384,6 +384,12 @@ case class ValDef(
       template = e.transformOption(template),
       params = param :: filtered)
   }
+  def editConstructor(types: List[Name], params: List[String]) = transformThis { e ⇒
+    copy(constructorParams = params, constructorTypes = types, template = e.transformOption(template))
+  }
+  def editType(clazz: Name) = transformThis { e ⇒
+    copy(typeName = clazz, template = e.transformOption(template))
+  }
   def editLabelAndRename(gui: Boolean, s: String) = {
     val v = this
     val bl = v.sym.owner

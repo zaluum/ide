@@ -41,7 +41,7 @@ trait ValueType {
   def create(str: String): Value
   def defaultSWT: AnyRef = ""
   def parseSWT(a: AnyRef): String
-  def editor(b: BeanParamSymbol): PropertyDescriptor = new TextPropertyDescriptor(b, b.name.str)
+  def editor(id: AnyRef, str: String): PropertyDescriptor = new TextPropertyDescriptor(id, str)
 }
 abstract class PrimitiveValueType(val ptpe: PrimitiveJavaType) extends ValueType {
   def tpe = ptpe.fqName
@@ -171,9 +171,10 @@ object ColorValueType extends ClassValueType(classOf[java.awt.Color]) {
     case _        ⇒ null
   }
   override def defaultSWT = null
-  override def editor(b: BeanParamSymbol) =
-    new ColorPropertyDescriptor(b, b.name.str)
+  override def editor(id: AnyRef, str: String) =
+    new ColorPropertyDescriptor(id, str)
 }
+
 object FontValueType extends ClassValueType(classOf[java.awt.Font]) {
   def create(str: String) = new Value {
     val encoded = str
@@ -197,7 +198,7 @@ object FontValueType extends ClassValueType(classOf[java.awt.Font]) {
     case _              ⇒ ""
   }
   override def defaultSWT = null
-  override def editor(b: BeanParamSymbol) = new FontDataPropertyDescriptor(b, b.name.str)
+  override def editor(id: AnyRef, str: String) = new FontDataPropertyDescriptor(id, str)
   def fontToSwingStr(font: FontData) = {
     val flags = if ((font.getStyle & SWT.BOLD) != 0) {
       if ((font.getStyle & SWT.ITALIC) != 0) "bolditalic" else "bold"
@@ -255,8 +256,8 @@ class IntEnumValueType(pack: String, property: String, list: List[(Int, String)]
     b.declaringClass.startsWith(pack) && property == b.name.str && b.tpe == primitives.Int
   }
   override def defaultSWT = 0.asInstanceOf[AnyRef]
-  override def editor(b: BeanParamSymbol) =
-    new ComboBoxPropertyDescriptor(b, b.name.str, ("" :: list.map { _._2 }).toArray)
+  override def editor(id: AnyRef, str: String) =
+    new ComboBoxPropertyDescriptor(id, str, ("" :: list.map { _._2 }).toArray)
 }
 class InvalidValueType(val tpe: Name) extends ValueType {
   def create(str: String): Value = new Value {
