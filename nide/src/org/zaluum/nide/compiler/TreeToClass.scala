@@ -5,6 +5,7 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
 import javax.swing.JLabel
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import scala.collection.mutable.Buffer
+import org.zaluum.nide.utils.JDTUtils
 
 trait BinaryExpr extends Tree {
   def a: Tree
@@ -226,7 +227,10 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         widgetCreation ++ bsVals.flatMap(createWidgets(_, bs.tdecl))
       } else List()
       val par = bsVals.flatMap(params)
-      ConstructorMethod(fieldInits.toList ++ par ++ widgets :+ Return, superName)
+      val initMethod = bs.initMethod.toList map { im ⇒
+        InvokeStatic(im.selector.mkString, List(This), Name(JDTUtils.aToString(im.declaringClass.compoundName)), im.signature.mkString)
+      }
+      ConstructorMethod(fieldInits.toList ++ par ++ widgets ++ initMethod :+ Return, superName)
     }
     def superName = if (bs.isVisual)
       Name("javax.swing.JPanel")

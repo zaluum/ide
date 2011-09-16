@@ -23,6 +23,14 @@ import org.eclipse.jdt.core.IMethod
 import org.eclipse.jdt.core.IType
 import org.zaluum.nide.compiler.Point
 object JDTUtils {
+  implicit def aToString(aa: Array[Array[Char]]): String = aa.map { new String(_) }.mkString(".")
+  implicit def stringToA(str: String): Array[Array[Char]] = str.split('.').map { _.toCharArray }
+  def splitHash(str: String): Option[(String, String)] = {
+    val split = str.split('#')
+    if (split.size == 2)
+      Some((split(0), split(1)))
+    else None
+  }
   def allMethodsOf(t: IType) = {
     val hier = t.newSupertypeHierarchy(new NullProgressMonitor)
     val supers = for (st ← hier.getAllSuperclasses(t).toList.view; m ← st.getMethods) yield m

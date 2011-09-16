@@ -12,6 +12,7 @@ message BoxClass
 	optional string super = 6;
 	optional string package = 7;
 	required Template template = 8;
+	optional string init_method = 9;
 }
 message Template {
 	repeated Port port = 1;

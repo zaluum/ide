@@ -33,13 +33,14 @@ import org.zaluum.nide.compiler.PortSymbol
 import org.zaluum.nide.compiler.PrimitiveJavaType
 import org.zaluum.nide.compiler.{ Scope ⇒ ZScope }
 import org.zaluum.nide.compiler.primitives
-import org.zaluum.nide.utils.JDTInternalUtils.aToString
-import org.zaluum.nide.utils.JDTInternalUtils.stringToA
+import org.zaluum.nide.utils.JDTUtils.aToString
+import org.zaluum.nide.utils.JDTUtils.stringToA
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.eclipse.jdt.internal.compiler.impl.StringConstant
 import org.zaluum.nide.compiler.PortDir
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding
 import org.zaluum.nide.utils.MethodBindingUtils
+import org.zaluum.nide.utils.JDTUtils
 
 class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassScope(parent, typeDecl) with ZScope {
   override protected def buildClassScope(parent: Scope, typeDecl: TypeDeclaration) = {
@@ -79,6 +80,21 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
           getType(name.str.toCharArray)
         }
       getJavaType(tpe)
+    }
+  }
+  def getStaticMethod(nameHashAndSignature: String): Option[MethodBinding] = {
+    MethodBindingUtils.staticMethod(nameHashAndSignature) match {
+      case Some((cl, selector, params, ret)) ⇒
+        val compound = JDTUtils.stringToA(cl)
+        val t = getType(compound, compound.length);
+
+        val paramsBind: List[TypeBinding] = params.map { s ⇒ getJavaType(Name(s)).binding }
+        if (paramsBind.contains(null))
+          None
+        else {
+          Some(getMethod(t, selector.toCharArray(), paramsBind.toArray, new FakeInvocationSite(null)))
+        }
+      case _ ⇒ None
     }
   }
   def getJavaType(tpe: TypeBinding): JavaType = {

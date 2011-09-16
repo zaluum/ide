@@ -43,23 +43,92 @@ import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.zaluum.nide.compiler.CastToExprType
 import org.zaluum.nide.compiler.LabelDesc
 import org.zaluum.nide.compiler.Vector2
-
-class PortDeclPopup(
-    val viewer: TreeViewer, portDef: PortDef) extends Popup(viewer.shell, "Port " + portDef.name.str) {
-  var nme: NmeSelect = _
-  var tpe: TpeEdit = _
-  def populate(content: Composite) {
-    nme = new NmeSelect(content, portDef.name.str)
-    tpe = new TpeEdit(content, "Type", getShell, viewer, portDef.typeName.str, { str ⇒ work })
-    initialFocus = tpe.tpe
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.zaluum.nide.compiler.ClassJavaType
+import org.zaluum.nide.compiler.ValSymbol
+import org.zaluum.nide.zge.Viewer
+import org.zaluum.nide.compiler.BoxDef
+import org.zaluum.nide.utils.MethodBindingUtils
+import org.zaluum.nide.compiler.EditTransformer
+import org.zaluum.nide.compiler.Tree
+// TODO this needs a good refactor. Move all to properties view?
+class BoxDefPopup(val viewer: TreeViewer, boxDef: BoxDef) extends Popup(viewer.shell, "Box") {
+  val bs = boxDef.sym
+  var clazz: String = ""
+  var methSig: String = ""
+  var methbutton: OpenButtonSelect = null
+  var tpe: TpeEdit = null
+  def exec {
+    val res = clazz + "#" + methSig
+    viewer.controller.exec(new EditTransformer() {
+      val trans: PartialFunction[Tree, Tree] = {
+        case b: BoxDef ⇒
+          val initMethod = if (methSig == "") Some(clazz) else Some(res)
+          b.copy(initMethod = initMethod, template = transform(b.template))
+      }
+    })
   }
-  def work() {
-    val command = portDef.renamePort(nme.value, Some(Name(tpe.value)))
-    viewer.controller.exec(command)
-    close()
+
+  def populate(content: Composite) {
+
+    val (cl, meth) = boxDef.initMethod match {
+      case Some(s) ⇒ MethodBindingUtils.staticMethodSplit(s).getOrElse((s, ""))
+      case None    ⇒ ("", "")
+    }
+      def button(str: String, info: String, btn: String)(body: ⇒ Unit) =
+        new OpenButtonSelect(content, str, info, btn, body);
+      def findMethods(static: Boolean) = new MethodSelectDialog(viewer) {
+        def action(m: MethodWithNames) { methSig = m.methodSignature; exec }
+        def static: Boolean = true
+        def binding: TypeBinding = scope.lookupType(Name(clazz)).map { _.binding.asInstanceOf[TypeBinding] }.getOrElse(null)
+        def scope: ZaluumClassScope = bs.scope
+        def currentMethodSig: Option[String] = if (meth != "") Some(meth) else None
+        def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) =
+          ZaluumCompletionEngineScala.allMethods(engine, scope, r, true)
+      }
+    tpe = new TpeEdit(content,
+      "Init method class",
+      getShell,
+      viewer,
+      cl,
+      { str ⇒ clazz = str })
+
+    methbutton = button("Init method", meth, "Select...") {
+      findMethods(true).open
+    }
   }
 }
-
+class PortDeclPopup(
+    val viewer: TreeViewer, portDef: PortDef) extends Popup(viewer.shell, "Port " + portDef.name.str) {
+  def populate(content: Composite) {
+    val nme = new NmeSelect(content, portDef.name.str)
+    var tpe: TpeEdit = null
+    tpe = new TpeEdit(content, "Type", getShell, viewer, portDef.typeName.str, { str ⇒
+      val command = portDef.renamePort(nme.value, Some(Name(tpe.value)))
+      viewer.controller.exec(command)
+      close()
+    })
+    initialFocus = tpe.tpe
+  }
+}
+abstract class ValSymbolMethodSelectDialog(v: ValSymbol, viewer: Viewer) extends MethodSelectDialog(viewer) {
+  def action(m: MethodWithNames) {
+    val tpe = v.tpe.asInstanceOf[SignatureExprType]
+    val tr = v.tdecl.addOrReplaceParam(Param(tpe.signatureName, m.methodSignature))
+    viewer.controller.exec(tr)
+  }
+  def static = v.isInstanceOf[StaticExprType]
+  def binding: TypeBinding = v.tpe match {
+    case InvokeExprType ⇒ InvokeExprType.thisPort(v).tpe.binding
+    case s: StaticExprType ⇒
+      v.classinfo match {
+        case cl: ClassJavaType ⇒ cl.binding
+        case _                 ⇒ null
+      }
+  }
+  def scope = v.owner.template.asInstanceOf[BoxTypeSymbol].scope;
+  def currentMethodSig = v.params.values.headOption.map { _.encoded } // TODO do not rely on headoption
+}
 class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends Popup(viewer.shell,
   "Box " + fig.valDef.name.str) {
   def valDef = fig.valDef
@@ -69,7 +138,7 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
         new OpenButtonSelect(content, str, info, btn, body);
       def text(str: String, initial: String)(body: String ⇒ Unit) =
         new TextSelect(content, str, initial, body)
-      def findMethods(static: Boolean) = new MethodSelectDialog(viewer, v) {
+      def findMethods(static: Boolean) = new ValSymbolMethodSelectDialog(v, viewer) {
         def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) =
           ZaluumCompletionEngineScala.allMethods(engine, scope, r, static)
       }
@@ -118,7 +187,7 @@ class ValDefPopup(val viewer: ItemViewer, fig: ValDefItem, gui: Boolean) extends
       def fieldMenu = button("Field", fieldName, "Select...") { new FieldSelectDialog(viewer, v).open }
       def dimensionsMenu = button("Dimensions", dimensions, "Change...") { new DimensionsDialog(viewer, v).open }
       def constructorSelectMenu = button("Constructor", methodName, "Select...") {
-        new MethodSelectDialog(viewer, v) {
+        new ValSymbolMethodSelectDialog(v, viewer) {
           def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) =
             ZaluumCompletionEngineScala.allConstructors(engine, scope, r)
         }.open

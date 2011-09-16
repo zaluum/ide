@@ -23,9 +23,8 @@ import org.eclipse.jdt.internal.core.util.CommentRecorderParser
 import org.zaluum.annotation.Box
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitDeclaration
 import org.zaluum.nide.eclipse.integration.model.ZaluumParser
-
-import org.zaluum.nide.utils.JDTInternalUtils.stringToA
-
+import org.zaluum.nide.utils.JDTUtils.stringToA
+import org.zaluum.nide.utils.JDTUtils
 trait ParserParams {
   def compilerOptions: CompilerOptions
   def problemReporterAccessor: ProblemReporter
@@ -102,7 +101,7 @@ class MultiplexingIndexingParser(r: ISourceElementRequestor,
   def notifierAccessor = notifier
   def problemReporterAccessor = problemReporter
   override def withCUD(cud: ZaluumCompilationUnitDeclaration) = {
-    import org.zaluum.nide.utils.JDTInternalUtils._
+    import JDTUtils._
     requestor.acceptPackage(cud.currentPackage)
     requestor.acceptTypeReference(stringToA(cud.fqName), 0, 1)
     requestor.acceptAnnotationTypeReference(stringToA(classOf[Box].getName), 2, 3)

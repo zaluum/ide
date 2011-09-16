@@ -28,21 +28,24 @@ import org.zaluum.nide.compiler.InvokeExprType
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.Scope
 
-abstract class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends FilteredItemsSelectionDialog2(viewer.shell, false) {
+abstract class MethodSelectDialog(viewer: Viewer) extends FilteredItemsSelectionDialog2(viewer.shell, false) {
   override def isResizable = true
   override protected def okPressed() {
-    execCommand()
+    getSelectedItems().getFirstElement() match {
+      case m: MethodWithNames ⇒ action(m)
+      case _                  ⇒
+    }
     super.okPressed()
   }
-  def execCommand() {
-    getSelectedItems().getFirstElement() match {
-      case m: MethodWithNames ⇒
-        val tpe = vs.tpe.asInstanceOf[SignatureExprType]
-        val tr = vs.tdecl.addOrReplaceParam(Param(tpe.signatureName, m.methodSignature))
-        viewer.controller.exec(tr)
-    }
-  }
+  def action(m: MethodWithNames)
+  def static: Boolean
+  def binding: TypeBinding
+  def scope: ZaluumClassScope
+  def currentMethodSig: Option[String]
+
   object MethodLabelProvider extends LabelProvider {
     override def getText(element: Object) = {
       element match {
@@ -62,20 +65,10 @@ abstract class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends Fil
 
   val id = "org.zaluum.nide.methodSelectDialog"
   val settings = new DialogSettings(id);
-  val static = vs.tpe.isInstanceOf[StaticExprType]
-  val binding = vs.tpe match {
-    case InvokeExprType ⇒ InvokeExprType.thisPort(vs).tpe.binding
-    case s: StaticExprType ⇒
-      vs.classinfo match {
-        case cl: ClassJavaType ⇒ cl.binding
-        case _                 ⇒ null
-      }
-  }
   def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding): List[MethodBinding]
   val items: Array[MethodWithNames] = binding match {
     case r: ReferenceBinding ⇒
-      val engine = ZaluumCompletionEngineScala.engineForVs(vs)
-      val scope = vs.owner.template.asInstanceOf[BoxTypeSymbol].scope; // FIXME?
+      val engine = ZaluumCompletionEngineScala.engineFor(scope)
       val jproject = viewer.zproject.jProject.asInstanceOf[JavaProject]
       val nameLookup = jproject.newNameLookup(Array[org.eclipse.jdt.core.ICompilationUnit]())
       val paramNames = findMethods(engine, scope, r) map { m ⇒
@@ -86,7 +79,6 @@ abstract class MethodSelectDialog(viewer: Viewer, val vs: ValSymbol) extends Fil
       paramNames.sortBy(_.selector).toArray
     case _ ⇒ Array()
   }
-  val currentMethodSig = vs.params.values.headOption
   val currentMethod = currentMethodSig flatMap { mstr ⇒
     items.find { _.methodSignature == mstr }
   }

@@ -8,6 +8,9 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumTypeDeclaration
 import javax.swing.JPanel
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
+import org.zaluum.nide.utils.JDTUtils
+import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 
 class Reporter {
   case class Error(msg: String, mark: Option[Int])
@@ -120,6 +123,10 @@ object primitives {
       case _     ⇒ false
     }
   }
+  def fromChar(c: Char) = {
+    allTypes.find(_.descriptor == c.toString).get
+  }
+
   def toOperationType(t: PrimitiveJavaType): PrimitiveJavaType = {
     t match {
       case Byte   ⇒ Int
@@ -247,11 +254,23 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
     }
     private def catchAbort[T](b: ⇒ Option[T]): Option[T] =
       try { b } catch { case e: AbortCompilation ⇒ None }
+
     override def traverse(tree: Tree) {
       super.traverse(tree)
       tree match {
         case b: BoxDef ⇒
           val bs = b.sym
+          b.initMethod foreach { im ⇒
+            scope.getStaticMethod(im) match {
+              case Some(p: ProblemMethodBinding) ⇒ error("cannot find init method " + im, tree)
+              case Some(p: MethodBinding) ⇒
+                // FIXME check parameter compatibility. ControlMixerHelper doesn't see controlmixer if controlmixer has errors
+                if (p.parameters.length == 1 && p.parameters(0).erasure().isCompatibleWith(bs.binding))
+                  bs.initMethod = Some(p)
+                else error("bad init parameter", tree);
+              case _ ⇒ error("cannot find init method " + im, tree)
+            }
+          }
           val outfields = bs.ports.values.toList // minor aplabetically is return and method name
             .filter { _.dir == Out }
             .sortBy { _.name.str }
@@ -327,7 +346,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
                     val value = Values.typeFor(scope.getZJavaLangString.fqName).create(p.value)
                     vsym.params += (parSym -> value)
                     if (!value.valid) {
-                      println(value.valueTpe.tpe + " " + value.getClass())
                       error("Cannot parse " + p.value + " in parameter " + p.key, tree)
                     }
                   case None ⇒ error(b.fqName.str + " has no parameter " + p.key, tree)
@@ -372,3 +390,4 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
 
   }
 }
+

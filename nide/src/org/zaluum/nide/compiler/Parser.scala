@@ -36,6 +36,7 @@ object Parser {
       pkg = if (b.hasPackage) Name(b.getPackage) else Name(""),
       guiSize = if (b.hasGuiSize) Some(parseDim(b.getGuiSize)) else None,
       image = if (b.hasImageName) Some(b.getImageName) else None,
+      initMethod = if (b.hasInitMethod()) Some(b.getInitMethod()) else None,
       template = parse(b.getTemplate))
   }
   def parse(t: ZaluumProtobuf.Template): Template = {

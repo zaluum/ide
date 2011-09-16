@@ -29,6 +29,7 @@ import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.NoSymbol
 import org.zaluum.nide.zge.dialogs.ValDefPopup
+import org.zaluum.nide.zge.dialogs.BoxDefPopup
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -51,7 +52,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           i.selectionSubject foreach { controller.blink(_, viewer) }
         }
       (beingSelected, port) match {
-        case (Some(b: Button), _) ⇒ actButton(b)
+        case (Some(b: Button), _)             ⇒ actButton(b)
         case (Some(o: OpenPortDeclFigure), _) ⇒ selectItem(o)
         case (_, Some(port)) ⇒ // connect
           portsTrack.hideTip()
@@ -111,7 +112,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           viewer.setCursor(Cursors.CROSS)
           portsTrack.current match {
             case Some(_) ⇒
-            case None ⇒
+            case None    ⇒
           }
       }
     }
@@ -129,8 +130,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             fig.showFeedback()
             fig match {
               case oPort: OpenPortDeclFigure ⇒ movingOpenPort.enter(initDrag, initContainer, oPort)
-              case label: LabelItem ⇒ movingLabel.enter(initDrag, initContainer, label)
-              case _ ⇒ moving.enter(initDrag, initContainer)
+              case label: LabelItem          ⇒ movingLabel.enter(initDrag, initContainer, label)
+              case _                         ⇒ moving.enter(initDrag, initContainer)
             }
           }
         case (None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
@@ -138,10 +139,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def drop(s: String) {
       s match {
-        case In.str ⇒ creatingPort.enter(In, current)
-        case Out.str ⇒ creatingPort.enter(Out, current)
+        case In.str    ⇒ creatingPort.enter(In, current)
+        case Out.str   ⇒ creatingPort.enter(Out, current)
         case Shift.str ⇒ creatingPort.enter(Shift, current)
-        case _ ⇒ creating.enter(Name(s), current)
+        case _         ⇒ creating.enter(Name(s), current)
       }
     }
     def delete() {
@@ -156,12 +157,13 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
 
     override def menu() {
       itemUnderMouse match {
-        case Some(p: PortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).open() // TODO Dispose?
+        case Some(p: PortDeclFigure)     ⇒ new PortDeclPopup(viewer, p.tree).open() // TODO Dispose?
         case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).open()
-        case Some(o: OpenBoxFigure) ⇒ new ValDefPopup(viewer, o, false).open()
-        case Some(l: LabelItem) ⇒ new ValDefPopup(viewer, l, false).open()
-        case Some(b: ValFigure) ⇒ new ValDefPopup(viewer, b, false).open();
-        case _ ⇒
+        case Some(o: OpenBoxFigure)      ⇒ new ValDefPopup(viewer, o, false).open()
+        case Some(l: LabelItem)          ⇒ new ValDefPopup(viewer, l, false).open()
+        case Some(b: ValFigure)          ⇒ new ValDefPopup(viewer, b, false).open();
+        case None                        ⇒ new BoxDefPopup(viewer, tree).open()
+        case _                           ⇒
       }
     }
   }
@@ -186,7 +188,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     override def next(d: DMap) {
       viewer.findLabelFigureOf(newVal) match {
         case Some(l) ⇒ selecting.gotoDirectEdit(l)
-        case None ⇒ exit()
+        case None    ⇒ exit()
       }
     }
     protected def newInstance(dst: Point) = {

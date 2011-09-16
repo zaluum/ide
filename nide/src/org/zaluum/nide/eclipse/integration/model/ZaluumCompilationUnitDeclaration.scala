@@ -52,9 +52,10 @@ import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.impl.StringConstant
 import org.eclipse.jdt.internal.compiler.ast.StringLiteral
 import ZaluumCompilationUnitDeclaration._
-import org.zaluum.nide.utils.JDTInternalUtils._
+import org.zaluum.nide.utils.JDTUtils._
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Block
+import org.eclipse.jdt.internal.compiler.ClassFile
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
   compilationResult: CompilationResult,
@@ -139,6 +140,7 @@ class ZaluumCompilationUnitDeclaration(
     constructor.bits |= ASTNode.IsDefaultConstructor
     constructor.modifiers = ClassFileConstants.AccPublic
     constructor.selector = b.name.str.toCharArray
+
     // TODO sorted methods accsortedmethods?
     val meth = new MethodDeclaration(compilationResult)
     b.template.ports find { _.dir == Out } match {
@@ -260,6 +262,10 @@ class ZaluumCompilationUnitDeclaration(
       try {
         generate(ztd)
       } catch { case e ⇒ e.printStackTrace }
+    } else {
+      ClassFile.createProblemType(
+        ztd,
+        this.scope.referenceCompilationUnit().compilationResult);
     }
   }
 

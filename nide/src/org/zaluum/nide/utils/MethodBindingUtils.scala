@@ -11,9 +11,64 @@ import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding
 import org.eclipse.jdt.internal.core.SourceMethod
 import org.eclipse.jdt.internal.core.SourceMethodElementInfo
 import org.eclipse.jdt.internal.core.SourceTypeElementInfo
+import org.objectweb.asm.util.ASMifiable
+import org.objectweb.asm.signature.SignatureReader
+import org.objectweb.asm.signature.SignatureVisitor
+import scala.collection.mutable.Buffer
+import org.zaluum.nide.compiler.primitives
 
 object MethodBindingUtils {
+  val StaticRegexp = """(.*)#(.*)(\(.*)""".r
+  def staticMethodSplit(str: String): Option[(String, String)] = {
+    val spl = str.split("#")
+    if (spl.size == 2) Some((spl(0), spl(1)))
+    else None
+  }
+  def staticMethod(str: String): Option[(String, String, List[String], String)] = {
+    str match {
+      case StaticRegexp(cl, selector, params) ⇒
+        try {
+          val (tparams, ret) = signatureToTypes(params)
+          Some((cl, selector, tparams, ret))
+        } catch { case e ⇒ None }
+      case _ ⇒ None
+    }
+  }
   def toMethodSig(m: MethodBinding) = m.selector.mkString + m.signature().mkString
+  def signatureToTypes(str: String): (List[String], String) = {
+    var ret = ""
+    val params = Buffer[String]()
+    var dim = 0
+    var param = false
+      def add(str: String) {
+        val name = str + ("[]" * dim)
+        if (param) params += name else ret = name
+      }
+    val s = new SignatureReader(str).accept(new SignatureVisitor() {
+      def visitFormalTypeParameter(name: String) {}
+      def visitClassBound(): SignatureVisitor = null
+      def visitInterfaceBound(): SignatureVisitor = null
+      def visitSuperclass(): SignatureVisitor = null
+      def visitInterface(): SignatureVisitor = null
+      def visitParameterType(): SignatureVisitor = { dim = 0; param = true; this }
+      def visitReturnType(): SignatureVisitor = { param = false; dim = 0; this }
+      def visitExceptionType(): SignatureVisitor = null
+      def visitBaseType(descriptor: Char) {
+        add(if (descriptor == 'V') "void" else primitives.fromChar(descriptor).name.str)
+      }
+      def visitTypeVariable(name: String) {}
+      def visitArrayType(): SignatureVisitor = { dim = dim + 1; this }
+      def visitClassType(name: String) {
+        add(name.replace('/', '.'))
+      }
+      def visitInnerClassType(name: String) {}
+      def visitTypeArgument() {}
+      def visitTypeArgument(wildcard: Char) = null
+      def visitEnd() {}
+    });
+    (params.toList, ret)
+  }
+
   def toMethodStr(m: MethodBinding, paramNames: List[String]) = {
     val output = new StringBuffer(10);
     if ((m.modifiers & ExtraCompilerModifiers.AccUnresolved) != 0) {

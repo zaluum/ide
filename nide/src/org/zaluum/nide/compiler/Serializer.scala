@@ -18,6 +18,7 @@ object Serializer {
     p.setTemplate(proto(b.template))
     p.setGuiSize(proto(b.guiSize.getOrElse(Dimension(100, 100))))
     p.setVisual(false) // TODO
+    b.initMethod foreach { p.setInitMethod }
     p.build
   }
   def proto(t: Template): ZaluumProtobuf.Template = {
