@@ -19,6 +19,13 @@ object Serializer {
     p.setGuiSize(proto(b.guiSize.getOrElse(Dimension(100, 100))))
     p.setVisual(false) // TODO
     b.initMethod foreach { p.setInitMethod }
+    b.constructor foreach { t ⇒ p.addConstructorParam(proto(t)) }
+    p.build
+  }
+  def proto(v: VarDecl): ZaluumProtobuf.VarDecl = {
+    val p = ZaluumProtobuf.VarDecl.newBuilder
+    p.setName(v.name.str)
+    p.setType(v.tpeName.str)
     p.build
   }
   def proto(t: Template): ZaluumProtobuf.Template = {

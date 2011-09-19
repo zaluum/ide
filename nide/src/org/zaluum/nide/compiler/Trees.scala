@@ -278,6 +278,7 @@ object BoxDef {
       guiSize = Some(Dimension(250, 250)),
       image = None,
       initMethod = None,
+      constructor = List(),
       template = template)
   }
 }
@@ -286,6 +287,7 @@ case class BoxDef(name: Name, // simple name
                   guiSize: Option[Dimension],
                   image: Option[String],
                   initMethod: Option[String],
+                  constructor: List[VarDecl],
                   template: Template) extends Tree {
   def sym = symbol.asInstanceOf[BoxTypeSymbol]
   def transformThis(body: EditTransformer ⇒ BoxDef) = new EditTransformer() {
@@ -296,7 +298,11 @@ case class BoxDef(name: Name, // simple name
   def editInitMethod(m: Option[String]) = transformThis { e ⇒
     copy(initMethod = m, template = e.transform(template))
   }
+  def editConstructor(l: List[VarDecl]) = transformThis { e ⇒
+    copy(constructor = l, template = e.transform(template))
+  }
 }
+case class VarDecl(name: Name, tpeName: Name) extends Tree
 object Template {
   def emptyTemplate(blocks: Int) = {
     Template(List.fill(blocks) { Block.empty }, List(), None)

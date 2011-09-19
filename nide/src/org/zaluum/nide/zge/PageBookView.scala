@@ -9,7 +9,7 @@ import org.eclipse.ui.IPartListener
 import org.eclipse.ui.IWorkbenchPart
 import org.zaluum.nide.eclipse.SelectionProvider
 import org.zaluum.nide.eclipse.GraphicalEditor
-
+/* why ? */
 abstract class PageBookView extends ViewPart {
   var pageBook: PageBook = _
   var defaultPage: Composite = _

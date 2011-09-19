@@ -98,7 +98,8 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def updateProperties() {
     properties = List(
       new InitMethodProperty(controller.tree, controller),
-      new InitMethodClassProperty(controller.tree, controller))
+      new InitMethodClassProperty(controller.tree, controller),
+      new ConstructorDeclProperty(controller.tree, controller))
   }
   val emptyLabel = new Label("Empty File. Start by dropping items from the palette...")
   emptyLabel.setForegroundColor(ColorConstants.lightGray)

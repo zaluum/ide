@@ -41,7 +41,10 @@ import org.zaluum.nide.zge.dialogs.TextDialogCellEditor
 import org.eclipse.jface.viewers.DialogCellEditor
 import org.eclipse.jface.viewers.CellEditor
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
-import org.zaluum.nide.zge.dialogs.ConstructorDialog
+import org.zaluum.nide.zge.dialogs.ConstructorSelectDialog
+import org.eclipse.jface.dialogs.MessageDialog
+import org.eclipse.jface.viewers.ICellEditorValidator
+import org.zaluum.nide.compiler.VarDecl
 
 trait Property {
   def descriptor: IPropertyDescriptor
@@ -107,6 +110,42 @@ class InitMethodClassProperty(b: BoxDef, c: Controller) extends InitProperty(b, 
   }
   def get: AnyRef = className.orElse(b.initMethod).getOrElse("")
 }
+object ConstructorDeclProperty {
+  lazy val Regexp = """\s*(\S*)\s*(\S*)\s*""".r
+}
+class ConstructorDeclProperty(boxDef: BoxDef, val c: Controller) extends Property {
+  val descriptor = new TextPropertyDescriptor(this, "*Constructor parameters")
+  descriptor.setValidator(new ICellEditorValidator() {
+    def isValid(value: AnyRef) = {
+      parse(value.toString) match {
+        case Left(msg) ⇒ msg
+        case _         ⇒ null
+      }
+    }
+  })
+  def parse(value: String): Either[String, List[VarDecl]] = {
+    val params = value.toString.split(",").map(_.trim)
+    Right(
+      for (p ← params.toList) yield {
+        p match {
+          case ConstructorDeclProperty.Regexp(tpe, name) ⇒
+            VarDecl(Name(name), Name(tpe))
+          case _ ⇒
+            return Left("Cannot parse parameter " + p + ". Format is \"Type Name, Type Name, ...\"");
+        }
+      })
+  }
+  def set(value: AnyRef) {
+    parse(value.toString) match {
+      case Left(_)  ⇒
+      case Right(l) ⇒ c.exec(boxDef.editConstructor(l))
+    }
+  }
+  def get: AnyRef = boxDef.constructor.map { c ⇒ c.tpeName.str + " " + c.name.str }.mkString(", ")
+  def isSet: Boolean = !boxDef.constructor.isEmpty
+  def reset() { set("") }
+}
+
 class ValDefTypeProperty(valDef: ValDef, controller: Controller) extends NoResetProperty {
   def descriptor: IPropertyDescriptor = new PropertyDescriptor(this, "*Type")
   def set(value: AnyRef) { controller.exec(valDef.editType(Name(value.toString))) }
@@ -128,7 +167,8 @@ class LabelProperty(valDef: ValDef, controller: Controller, gui: Boolean) extend
   def isSet: Boolean = lbl.isDefined
   def reset() = set("")
 }
-class ConstructorProperty(valDef: ValDef, controller: Controller) extends Property {
+
+class ConstructorSelectProperty(valDef: ValDef, controller: Controller) extends Property {
   def descriptor = new DialogPropertyDescriptor(this, "*Constructor") {
     override lazy val labelProvider = new LabelProvider() {
       override def getText(element: AnyRef) = {
@@ -139,7 +179,7 @@ class ConstructorProperty(valDef: ValDef, controller: Controller) extends Proper
       }
     }
     def openDialog(cell: Control): Option[String] = {
-      val c = new ConstructorDialog(cell.getShell, valDef.sym)
+      val c = new ConstructorSelectDialog(cell.getShell, valDef.sym)
       c.open()
       c.result foreach { comm ⇒
         SWTScala.async(cell.getDisplay) { controller.exec(comm) }

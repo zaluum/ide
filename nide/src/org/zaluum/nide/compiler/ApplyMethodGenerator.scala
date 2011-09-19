@@ -11,17 +11,17 @@ class MainThreadMethodGenerator(bs: BoxTypeSymbol) extends MethodGenerator(bs) {
   def apply(): Method = {
     val ins = Buffer[Tree]()
     // create arg locals
-    bs.argsInOrder map { ps ⇒ createLocal(bs.thisVal.findPortInstance(ps).get) }
+    bs.argsInOrder map { ps ⇒ locals.createLocal(bs.thisVal.findPortInstance(ps).get) }
     // create val locals
     for (pi ← bs.thisVal.portInstances; if (pi.internalStorage == StorageLocal))
-      createLocal(pi)
+      locals.createLocal(pi)
     //create thread locals
     createThreadLocals(block.mainPath)
     // assign args to fields if needed
     for (arg ← bs.argsInOrder) {
       val pi = bs.thisVal.findPortInstance(arg).get
       if (pi.internalStorage != StorageLocal)
-        ins += Assign(toRef(pi), LocalRef(localsMap(pi), pi.tpe.fqName))
+        ins += Assign(toRef(pi), LocalRef(locals(pi), pi.tpe.fqName))
     }
     // run block
     ins ++= runBlock(block)
@@ -35,7 +35,7 @@ class MainThreadMethodGenerator(bs: BoxTypeSymbol) extends MethodGenerator(bs) {
         ins += Return
     }
     val annotation = bs.argsInOrder.map { _.name }
-    Method(bs.methodSelector, bs.methodSignature, ins.toList, localsDecl, Some(annotation))
+    Method(bs.methodSelector, bs.methodSignature, ins.toList, locals.localsDecl, Some(annotation))
   }
 }
 class RunnableMethodGenerator(bs: BoxTypeSymbol, startPath: ExecutionPath) extends MethodGenerator(bs) {
@@ -44,34 +44,40 @@ class RunnableMethodGenerator(bs: BoxTypeSymbol, startPath: ExecutionPath) exten
     createThreadLocals(startPath);
     ins ++= runExecutionPath(startPath)
     ins += Return
-    Method(Name("run"), "()V", ins.toList, localsDecl, None)
+    Method(Name("run"), "()V", ins.toList, locals.localsDecl, None)
   }
   override def thisRef = {
     Select(This, FieldRef(Name(TreeToClass.enclosingClassFieldName), bs.tpe.fqName.descriptor, startPath.fqName(bs)))
   }
 }
-abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
-  var localsMap = Map[PortInstance, Int]()
+class MethodLocals {
+  type HasType = { def tpe: JavaType; def fqName: Name }
+  var localMap = Map[HasType, Int]()
   var locals = 1; // 0 for "this"
-  def localsDecl = {
-    localsMap map {
-      case (pi, i) ⇒
-        (pi.fqName.str, pi.tpe.asInstanceOf[JavaType].descriptor, i)
-    } toList;
-  }
-  def createLocal(pi: PortInstance) {
-    if (!localsMap.contains(pi)) {
-      localsMap += (pi -> locals)
-      locals = locals + pi.tpe.javaSize
+  def apply(t: HasType) = localMap(t)
+  def createLocal(ref: HasType) {
+    if (!localMap.contains(ref)) {
+      localMap += (ref -> locals)
+      locals = locals + ref.tpe.javaSize
     }
   }
+  def localsDecl = {
+    localMap.map {
+      case (p, i) ⇒
+        (p.fqName.str, p.tpe.asInstanceOf[JavaType].descriptor, i)
+    } toList;
+  }
+}
+abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
+  val locals = new MethodLocals
+
   def createThreadLocals(startPath: ExecutionPath) {
     for (
       ep ← (startPath :: deepChildMainPaths(startPath));
       vs ← ep.instructions;
       pi ← vs.portInstances;
       if (pi.internalStorage == StorageLocal)
-    ) createLocal(pi)
+    ) locals.createLocal(pi)
   }
   def execConnection(c: (PortInstance, Set[PortInstance])) = {
     val (out, ins) = c
@@ -82,7 +88,7 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
   }
   def toRef(pi: PortInstance): Ref = pi.internalStorage match {
     case StorageLocal ⇒
-      LocalRef(localsMap(pi), pi.tpe.fqName)
+      LocalRef(locals(pi), pi.tpe.fqName)
     case StorageValField ⇒
       Select(
         valRef(pi.valSymbol),

@@ -13,6 +13,11 @@ message BoxClass
 	optional string package = 7;
 	required Template template = 8;
 	optional string init_method = 9;
+	repeated VarDecl constructor_param = 10;
+}
+message VarDecl {
+	required string name = 1;
+	optional string type = 2;
 }
 message Template {
 	repeated Port port = 1;

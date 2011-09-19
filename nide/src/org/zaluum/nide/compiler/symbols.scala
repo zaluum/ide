@@ -76,6 +76,7 @@ class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int, val binding: 
 }
 class ParamSymbol(val owner: JavaType, val name: Name) extends Symbol {
   override def toString = "ParamSymbol(" + name + ")"
+  def fqName = name
 }
 class BeanParamSymbol(
     owner: JavaType,

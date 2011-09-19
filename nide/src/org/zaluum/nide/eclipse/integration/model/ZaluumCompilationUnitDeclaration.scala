@@ -136,11 +136,24 @@ class ZaluumCompilationUnitDeclaration(
     start(t) + 1
   }
   def createMethodAndConstructorDeclarations(b: BoxDef): Array[AbstractMethodDeclaration] = {
-    val constructor = new ConstructorDeclaration(compilationResult)
-    constructor.bits |= ASTNode.IsDefaultConstructor
-    constructor.modifiers = ClassFileConstants.AccPublic
-    constructor.selector = b.name.str.toCharArray
-
+    val constructor = if (b.constructor.isEmpty) {
+      val default = new ConstructorDeclaration(compilationResult)
+      default.bits |= ASTNode.IsDefaultConstructor
+      default.modifiers = ClassFileConstants.AccPublic
+      default.selector = b.name.str.toCharArray
+      default
+    } else {
+      val cons = new ConstructorDeclaration(compilationResult)
+      cons.modifiers = ClassFileConstants.AccPublic
+      cons.selector = b.name.str.toCharArray
+      cons.arguments = b.constructor map { p ⇒
+        val ref = createTypeReference(p.tpeName, b)
+        val a = new Argument(p.name.str.toCharArray(), compressPos(start(b), end(b)), ref, 0)
+        a.declarationSourceStart = start(b)
+        a
+      } toArray;
+      cons
+    }
     // TODO sorted methods accsortedmethods?
     val meth = new MethodDeclaration(compilationResult)
     b.template.ports find { _.dir == Out } match {
@@ -201,6 +214,13 @@ class ZaluumCompilationUnitDeclaration(
       val cl = classOf[org.zaluum.annotation.Out].getName
       val annotation = new MarkerAnnotation(createTypeReference(Name(cl), p), start(p))
       f.annotations = Array(annotation)
+      res += f
+    }
+    //constructor fields
+    for (p ← b.constructor) {
+      val f = new FieldDeclaration(p.name.str.toCharArray, start(b), end(b))
+      f.modifiers = Opcodes.ACC_PUBLIC
+      f.`type` = createTypeReference(p.tpeName, b)
       res += f
     }
     res.toArray

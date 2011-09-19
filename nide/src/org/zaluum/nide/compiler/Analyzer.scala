@@ -260,6 +260,20 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
       tree match {
         case b: BoxDef ⇒
           val bs = b.sym
+          if (!b.constructor.isEmpty) {
+            bs.constructors = List(
+              new Constructor(bs,
+                b.constructor map { varDecl ⇒
+                  val p = new ParamSymbol(bs, varDecl.name)
+                  p.tpe = scope.lookupType(varDecl.tpeName).getOrElse {
+                    error("Cannot find constructor parameter type " + varDecl.tpeName.str + " for parameter " + varDecl.name.str, b)
+                    NoSymbol
+                  }
+                  varDecl.symbol = p
+                  varDecl.tpe = p.tpe
+                  p
+                }))
+          }
           b.initMethod foreach { im ⇒
             scope.getStaticMethod(im) match {
               case Some(p: ProblemMethodBinding) ⇒ error("cannot find init method " + im, tree)

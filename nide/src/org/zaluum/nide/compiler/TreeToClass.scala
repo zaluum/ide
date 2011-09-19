@@ -18,7 +18,7 @@ case class RunnableClass(fqName: Name, simpleName: Name, run: Method) extends Tr
 case class BoxClass(name: Name, contents: List[Tree], superName: Name, inners: List[RunnableClass]) extends Tree
 case class FieldDef(name: Name, typeName: Name, annotation: Option[Name], priv: Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
-case class ConstructorMethod(boxCreation: List[Tree], superName: Name) extends Tree
+case class ConstructorMethod(boxCreation: List[Tree], signature: String, superName: Name, locals: List[(String, String, Int)]) extends Tree
 case class Method(name: Name, signature: String, stats: List[Tree], locals: List[(String, String, Int)], applyAnnotation: Option[List[Name]]) extends Tree
 case class Assign(lhs: Ref, rhs: Tree) extends Tree
 case class While(body: List[Tree], cond: Tree) extends Tree
@@ -150,6 +150,12 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         val outName = Name(classOf[org.zaluum.annotation.Out].getName)
         field(ps.name, ps.tpe.fqName, None, annotation = Some(outName))
       }
+      // constructor params 
+      bs.constructors.headOption foreach { c ⇒
+        c.params foreach { p ⇒
+          field(p.name, p.tpe.fqName, None, None)
+        }
+      }
       // internals 
       // valsymbols
       deepChildValSymbols(block) foreach { vs ⇒
@@ -185,6 +191,16 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
     def cons(b: BoxDef) = {
       val bs = b.sym
       val bsVals = bs.blocks.head.valsAlphabeticOrder
+      val locals = new MethodLocals
+      var signature = "("
+      val initCons = for (c ← bs.constructors; p ← c.params) yield {
+        locals.createLocal(p)
+        signature = signature + p.tpe.descriptor
+        Assign(
+          Select(This, FieldRef(p.name, p.tpe.fqName.descriptor, bs.fqName)),
+          LocalRef(locals(p), p.tpe.fqName))
+      }
+      signature = signature + ")V"
         // params
         def params(vs: ValSymbol): List[Tree] = vs.tpe match {
           case tpe: BoxTypeSymbol ⇒
@@ -230,7 +246,9 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       val initMethod = bs.initMethod.toList map { im ⇒
         InvokeStatic(im.selector.mkString, List(This), Name(JDTUtils.aToString(im.declaringClass.compoundName)), im.signature.mkString)
       }
-      ConstructorMethod(fieldInits.toList ++ par ++ widgets ++ initMethod :+ Return, superName)
+      ConstructorMethod(
+        fieldInits.toList ++ initCons ++ par ++ widgets ++ initMethod :+ Return,
+        signature, superName, locals.localsDecl)
     }
     def superName = if (bs.isVisual)
       Name("javax.swing.JPanel")

@@ -88,8 +88,8 @@ object ByteCodeGen {
           f.visitAnnotation(name.descriptor, true).visitEnd()
         }
         f.visitEnd
-      case ConstructorMethod(c, superName) ⇒
-        emitMethod("<init>", "()V", tree, List(), Some(superName), None)
+      case ConstructorMethod(c, signature, superName, locals) ⇒
+        emitMethod("<init>", signature, tree, locals, Some(superName), None)
       case Method(name, signature, stats, locals, paramsNames) ⇒
         emitMethod(name.str, signature, tree, locals, None, paramsNames)
       case New(typeName, param, signature) ⇒

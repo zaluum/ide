@@ -65,7 +65,7 @@ trait ValDefItem extends Item with PropertySource {
     val nme = new NameProperty(valDef, controller)
     val lbl = new LabelProperty(valDef, controller, false)
     val lblGui = new LabelProperty(valDef, controller, true)
-    val cons = new ConstructorProperty(valDef, controller)
+    val cons = new ConstructorSelectProperty(valDef, controller)
     val props: List[ParamProperty] = valSym.tpe match {
       case p: PropertySourceType ⇒ p.properties(controller, valDef)
       case _                     ⇒ List()

@@ -19,13 +19,11 @@ public class ZSliderWidget extends JSlider {
 	private static final long serialVersionUID = 1L;
 	private AtomicReference<Double> out = new AtomicReference<Double>();
 
-	public ZSliderWidget() {
-	}
-
 	public ZSliderWidget(int min, int max) {
 		setMaximum(max);
 		setMinimum(min);
 		setValue(0);
+		out.set((double) 0);
 		addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				out.set((double) getValue());

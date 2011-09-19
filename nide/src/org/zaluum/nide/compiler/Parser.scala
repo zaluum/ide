@@ -37,7 +37,11 @@ object Parser {
       guiSize = if (b.hasGuiSize) Some(parseDim(b.getGuiSize)) else None,
       image = if (b.hasImageName) Some(b.getImageName) else None,
       initMethod = if (b.hasInitMethod()) Some(b.getInitMethod()) else None,
+      constructor = b.getConstructorParamList() map { parse } toList,
       template = parse(b.getTemplate))
+  }
+  def parse(p: ZaluumProtobuf.VarDecl): VarDecl = {
+    VarDecl(Name(p.getName), Name(if (p.hasType) p.getType() else ""))
   }
   def parse(t: ZaluumProtobuf.Template): Template = {
     Template(
