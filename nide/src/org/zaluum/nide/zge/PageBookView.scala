@@ -9,7 +9,9 @@ import org.eclipse.ui.IPartListener
 import org.eclipse.ui.IWorkbenchPart
 import org.zaluum.nide.eclipse.SelectionProvider
 import org.zaluum.nide.eclipse.GraphicalEditor
-/* why ? */
+import org.eclipse.jface.util.IPropertyChangeListener
+import org.eclipse.jdt.launching.PropertyChangeEvent
+/* Original PageRec not accessible */
 abstract class PageBookView extends ViewPart {
   var pageBook: PageBook = _
   var defaultPage: Composite = _

@@ -111,7 +111,7 @@ class InitMethodClassProperty(b: BoxDef, c: Controller) extends InitProperty(b, 
   def get: AnyRef = className.orElse(b.initMethod).getOrElse("")
 }
 object ConstructorDeclProperty {
-  lazy val Regexp = """\s*(\S*)\s*(\S*)\s*""".r
+  lazy val Regexp = """\s*(\S+)\s*(\S+)\s*""".r
 }
 class ConstructorDeclProperty(boxDef: BoxDef, val c: Controller) extends Property {
   val descriptor = new TextPropertyDescriptor(this, "*Constructor parameters")
@@ -141,6 +141,8 @@ class ConstructorDeclProperty(boxDef: BoxDef, val c: Controller) extends Propert
       case Right(l) ⇒ c.exec(boxDef.editConstructor(l))
     }
   }
+  // FIXME BUG updated twice because set value might not be equal to this (white space)
+  // Use Value system?
   def get: AnyRef = boxDef.constructor.map { c ⇒ c.tpeName.str + " " + c.name.str }.mkString(", ")
   def isSet: Boolean = !boxDef.constructor.isEmpty
   def reset() { set("") }
@@ -347,6 +349,8 @@ trait PropertySource extends IPropertySource2 {
   def getPropertyValue(id: AnyRef): AnyRef = id.asInstanceOf[Property].get
   def resetPropertyValue(id: AnyRef) = id.asInstanceOf[Property].reset()
   def setPropertyValue(id: AnyRef, swtValue: AnyRef) = SWTScala.async(display) {
-    id.asInstanceOf[Property].set(swtValue)
+    val prop = id.asInstanceOf[Property]
+    if (prop.get != swtValue)
+      prop.set(swtValue)
   }
 }

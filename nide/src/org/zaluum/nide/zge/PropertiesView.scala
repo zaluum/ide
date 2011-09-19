@@ -16,6 +16,8 @@ import org.eclipse.ui.views.properties.PropertySheetPage
 import org.eclipse.ui.part.PageSite
 import org.eclipse.ui.views.properties.IPropertySourceProvider
 import org.eclipse.ui.views.properties.IPropertySource
+import org.zaluum.nide.utils.ReflectionUtilsWB
+import org.eclipse.jface.action.IStatusLineManager
 object PropertiesView {
   val ID = "org.zaluum.nide.propertiesView"
 }
@@ -40,7 +42,14 @@ class PropertiesView extends PageBookView {
           case None ⇒
             val newPage = new PropertySheetPage()
             newPage.init(new PageSite(getViewSite))
+            val status = getViewSite.getActionBars.getStatusLineManager()
             newPage.createControl(pageBook);
+            // hack to show status line
+            // private fields
+            val viewer = ReflectionUtilsWB.getFieldObject(newPage, "viewer")
+            ReflectionUtilsWB.setField(viewer, "statusLineManager", status)
+            // doesn't work categories not created 
+            // newPage.setActionBars(getViewSite().getActionBars())
             g.addSelectionListener(() ⇒ {
               newPage.selectionChanged(g, g.selection)
             })
