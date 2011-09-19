@@ -12,7 +12,6 @@ import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
-import org.zaluum.nide.zge.dialogs.ValDefPopup
 import draw2dConversions._
 import org.zaluum.nide.compiler.Param
 import org.zaluum.nide.compiler.Name
@@ -76,18 +75,18 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
     def drop(s: String) {
       s match {
-        case In.str ⇒
-        case Out.str ⇒
+        case In.str    ⇒
+        case Out.str   ⇒
         case Shift.str ⇒
-        case _ ⇒ creating.enter(Name(s), current)
+        case _         ⇒ creating.enter(Name(s), current)
       }
     }
     override def move {
       borderDistance match {
-        case (true, true) ⇒ viewer.setCursor(Cursors.SIZESE)
+        case (true, true)  ⇒ viewer.setCursor(Cursors.SIZESE)
         case (false, true) ⇒ viewer.setCursor(Cursors.SIZES)
         case (true, false) ⇒ viewer.setCursor(Cursors.SIZEE)
-        case _ ⇒ viewer.setCursor(Cursors.ARROW)
+        case _             ⇒ viewer.setCursor(Cursors.ARROW)
       }
       super.move
     }
@@ -106,18 +105,12 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
           }
           fig match {
             case s: SwingFigure ⇒ moving.enter(initDrag, initContainer)
-            case l: LabelItem ⇒ movingLabel.enter(initDrag, initContainer, l)
+            case l: LabelItem   ⇒ movingLabel.enter(initDrag, initContainer, l)
           }
         case (None, None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
-    override def menu() = {
-      itemUnderMouse match {
-        case Some(l: LabelItem) ⇒ new ValDefPopup(viewer, l, true).open()
-        case Some(s: SwingFigure) ⇒ new ValDefPopup(viewer, s, true).open()
-        case _ ⇒
-      }
-    }
+    override def menu() {}
     def cut() {
       viewer.updateClipboard
       delete

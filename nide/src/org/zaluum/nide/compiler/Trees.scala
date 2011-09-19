@@ -288,6 +288,14 @@ case class BoxDef(name: Name, // simple name
                   initMethod: Option[String],
                   template: Template) extends Tree {
   def sym = symbol.asInstanceOf[BoxTypeSymbol]
+  def transformThis(body: EditTransformer ⇒ BoxDef) = new EditTransformer() {
+    val trans: PartialFunction[Tree, Tree] = {
+      case b: BoxDef if b == BoxDef.this ⇒ body(this)
+    }
+  }
+  def editInitMethod(m: Option[String]) = transformThis { e ⇒
+    copy(initMethod = m, template = e.transform(template))
+  }
 }
 object Template {
   def emptyTemplate(blocks: Int) = {

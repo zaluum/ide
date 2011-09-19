@@ -23,13 +23,10 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.eclipse.BoxTypeProxy
-import org.zaluum.nide.zge.dialogs.PortDeclPopup
 import draw2dConversions.point
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.NoSymbol
-import org.zaluum.nide.zge.dialogs.ValDefPopup
-import org.zaluum.nide.zge.dialogs.BoxDefPopup
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -155,17 +152,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def copy() = viewer.updateClipboard
     def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
 
-    override def menu() {
-      itemUnderMouse match {
-        case Some(p: PortDeclFigure)     ⇒ new PortDeclPopup(viewer, p.tree).open() // TODO Dispose?
-        case Some(p: OpenPortDeclFigure) ⇒ new PortDeclPopup(viewer, p.tree).open()
-        case Some(o: OpenBoxFigure)      ⇒ new ValDefPopup(viewer, o, false).open()
-        case Some(l: LabelItem)          ⇒ new ValDefPopup(viewer, l, false).open()
-        case Some(b: ValFigure)          ⇒ new ValDefPopup(viewer, b, false).open();
-        case None                        ⇒ new BoxDefPopup(viewer, tree).open()
-        case _                           ⇒
-      }
-    }
+    override def menu() {}
   }
   // PASTING
   object pasting extends Pasting with SingleContainerAllower {

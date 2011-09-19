@@ -1,34 +1,44 @@
 package org.zaluum.nide.zge
-import org.eclipse.ui.views.properties.IPropertyDescriptor
-import org.zaluum.nide.compiler.ValDef
-import org.zaluum.nide.compiler.BeanParamSymbol
-import org.zaluum.nide.compiler.Values
-import org.zaluum.nide.compiler.Param
-import org.eclipse.ui.views.properties.IPropertySource2
-import org.eclipse.swt.widgets.Display
-import org.zaluum.nide.utils.SWTScala
-import org.eclipse.ui.views.properties.PropertyDescriptor
-import org.zaluum.nide.compiler.Name
-import org.eclipse.ui.views.properties.TextPropertyDescriptor
-import org.zaluum.nide.compiler.ParamSymbol
-import org.zaluum.nide.compiler.ClassJavaType
-import org.zaluum.nide.compiler.JavaType
-import org.eclipse.jface.viewers.LabelProvider
-import org.eclipse.jface.viewers.DialogCellEditor
-import org.eclipse.swt.widgets.Composite
-import org.eclipse.swt.widgets.FontDialog
-import org.eclipse.swt.widgets.Control
-import org.zaluum.nide.zge.dialogs.OpenSearch
+import java.lang.Object
+
+import org.eclipse.jdt.core.search.IJavaSearchConstants
+import org.eclipse.jdt.core.search.SearchEngine
+import org.eclipse.jdt.core.IJavaElement
 import org.eclipse.jdt.core.IJavaProject
-import org.zaluum.nide.zge.dialogs.TextDialogCellEditor
-import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
-import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
-import org.zaluum.nide.zge.dialogs.MethodSelectDialog
-import org.eclipse.jdt.internal.core.JavaProject
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
+import org.eclipse.jdt.core.IType
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
+import org.eclipse.jdt.internal.core.JavaProject
+import org.eclipse.jdt.internal.ui.dialogs.OpenTypeSelectionDialog
+import org.eclipse.jface.viewers.CheckboxCellEditor
+import org.eclipse.jface.viewers.LabelProvider
+import org.eclipse.jface.window.Window
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets.Control
+import org.eclipse.swt.widgets.Display
+import org.eclipse.swt.widgets.Shell
+import org.eclipse.ui.dialogs.FilteredItemsSelectionDialog
+import org.eclipse.ui.views.properties.IPropertyDescriptor
+import org.eclipse.ui.views.properties.IPropertySource2
+import org.eclipse.ui.views.properties.PropertyDescriptor
+import org.eclipse.ui.views.properties.TextPropertyDescriptor
+import org.eclipse.ui.PlatformUI
+import org.zaluum.nide.compiler.BeanParamSymbol
+import org.zaluum.nide.compiler.BoxDef
+import org.zaluum.nide.compiler.JavaType
+import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.compiler.NoSymbol
+import org.zaluum.nide.compiler.Param
+import org.zaluum.nide.compiler.ParamSymbol
+import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.compiler.Values
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
+import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
+import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
+import org.zaluum.nide.utils.MethodBindingUtils
+import org.zaluum.nide.utils.SWTScala
 import org.zaluum.nide.zge.dialogs.FieldSelectDialog
+import org.zaluum.nide.zge.dialogs.MethodSelectDialog
+import org.zaluum.nide.zge.dialogs.TextDialogCellEditor
 
 trait Property {
   def descriptor: IPropertyDescriptor
@@ -37,6 +47,48 @@ trait Property {
   def isSet: Boolean
   def canBeReset = true
   def reset()
+}
+trait ControllerProperty extends Property {
+  def c: Controller
+  def displayName: String
+}
+trait ParamProperty extends ControllerProperty {
+  def p: ParamSymbol
+  def v: ValDef
+  def key: Name = p.name
+  def displayName = p.name.str
+  def currentVal: Option[String] = v.sym.params.get(p).map { _.encoded }
+}
+abstract class InitProperty(b: BoxDef, val c: Controller) extends Property {
+  def scope = b.sym.scope
+  def className = split.map { _._1 }
+  def methodName = split.map { _._2 }
+  def split = b.initMethod.flatMap { s ⇒ MethodBindingUtils.staticMethodSplit(s) }
+  def tpe = className.map { c ⇒ scope.getJavaType(Name(c)) }.getOrElse(NoSymbol)
+  def set(cl: String, m: String) = {
+    val comm = if (cl == "" && m == "") b.editInitMethod(None)
+    else b.editInitMethod(Some(cl + "#" + m))
+    c.exec(comm)
+  }
+  def isSet: Boolean = b.initMethod.isDefined
+  def reset() { set("", "") }
+}
+class InitMethodProperty(b: BoxDef, c: Controller) extends InitProperty(b, c) with MethodProperty {
+  val displayName = "*Init method"
+  val static = true
+  def currentVal = methodName
+  def set(value: AnyRef) {
+    set(className.getOrElse(""), value.toString)
+  }
+  def get: AnyRef = methodName.getOrElse("")
+}
+class InitMethodClassProperty(b: BoxDef, c: Controller) extends InitProperty(b, c) with TypeProperty {
+  val displayName = "*Init method class"
+  def currentVal = className.orElse(b.initMethod)
+  def set(value: AnyRef) {
+    set(value.toString, methodName.getOrElse(""))
+  }
+  def get: AnyRef = className.orElse(b.initMethod).getOrElse("")
 }
 class ValDefTypeProperty(valDef: ValDef, controller: Controller) extends Property {
   def descriptor: IPropertyDescriptor = new PropertyDescriptor(this, "*Type")
@@ -66,7 +118,7 @@ class LabelProperty(valDef: ValDef, controller: Controller, gui: Boolean) extend
   def reset() = set("")
 }
 class ConstructorProperty(valDef: ValDef, controller: Controller) extends Property {
-  def descriptor: IPropertyDescriptor = new PropertyDescriptor(this, "*Constructor")
+  def descriptor = new PropertyDescriptor(this, "*Constructor")
   def set(value: AnyRef) {}
   def get: AnyRef = (valDef.constructorTypes, valDef.constructorParams)
   def isSet: Boolean =
@@ -81,15 +133,12 @@ class MissingParamProperty(controller: Controller, p: Param, v: ValDef) extends 
   def isSet = true
   def reset = controller.exec(v.removeParam(p.key))
 }
-trait ParamProperty extends Property {
-  def key: Name
-}
-class TextParamProperty(controller: Controller, p: ParamSymbol, v: ValDef)
+
+class TextParamProperty(val c: Controller, val p: ParamSymbol, val v: ValDef)
     extends ParamProperty {
-  def key = p.name
   def descriptor: PropertyDescriptor = new TextPropertyDescriptor(this, p.name.str)
   def set(value: AnyRef) = {
-    controller.exec(
+    c.exec(
       if (value == "") v.removeParam(key)
       else v.addOrReplaceParam(Param(key, value.toString)))
   }
@@ -104,15 +153,14 @@ class ConstructorParamProperty(
     tpe: ParamSymbol) extends TextParamProperty(c, p, v) {
   override def descriptor = new PropertyDescriptor(this, p.name.str)
 }
-class MethodParamProperty(
-    c: Controller,
-    p: ParamSymbol,
-    v: ValDef,
-    tpe: ⇒ JavaType,
-    static: Boolean) extends TextParamProperty(c, p, v) {
-  def scope = v.sym.mainBS.scope
-  def currentVal = v.sym.params.get(p).map { _.encoded }
-  override def descriptor = new TextDialogPropertyDescriptor(this, p.name.str) {
+trait MethodProperty extends Property {
+  def c: Controller
+  def tpe: JavaType
+  def scope: ZaluumClassScope
+  def static: Boolean
+  def currentVal: Option[String]
+  def displayName: String
+  override def descriptor = new TextDialogPropertyDescriptor(this, displayName) {
     def openDialog(cell: Control) = {
       val m = new MethodSelectDialog(
         c.zproject.jProject.asInstanceOf[JavaProject],
@@ -127,50 +175,74 @@ class MethodParamProperty(
     }
   }
 }
+class MethodParamProperty(
+    c: Controller,
+    p: ParamSymbol,
+    v: ValDef,
+    tpe: ⇒ JavaType,
+    val static: Boolean) extends TextParamProperty(c, p, v) with MethodProperty {
+  def scope = v.sym.mainBS.scope
+  def tpe = tpe
+}
 class FieldParamProperty(
     c: Controller,
     p: ParamSymbol,
     v: ValDef,
     tpe: ⇒ JavaType,
     static: Boolean) extends TextParamProperty(c, p, v) {
-  def currentVal = v.sym.params.get(p).map { _.encoded }
   override def descriptor = new TextDialogPropertyDescriptor(this, p.name.str) {
     def openDialog(cell: Control) = new FieldSelectDialog(
       cell.getShell, tpe, static, v.sym, currentVal).openRet()
   }
 }
-class TypeParamProperty(
-    c: Controller,
-    p: ParamSymbol,
-    v: ValDef) extends TextParamProperty(c, p, v) {
-  override def descriptor = new TextDialogPropertyDescriptor(this, p.name.str) {
+
+trait TypeProperty extends ControllerProperty {
+  def currentVal: Option[String]
+  override def descriptor = new TextDialogPropertyDescriptor(this, displayName) {
     def openDialog(cell: Control) =
-      OpenSearch.openSearch(c.zproject.jProject, cell.getShell)
+      OpenSearch.openSearch(c.zproject.jProject, cell.getShell, currentVal)
   }
 }
+class TypeParamProperty(
+  c: Controller,
+  p: ParamSymbol,
+  v: ValDef) extends TextParamProperty(c, p, v) with TypeProperty
+  
+object OpenSearch {
+  def openSearch(project: IJavaProject, shell: Shell, initial: Option[String]) = {
+    val scope = SearchEngine.createJavaSearchScope(Array[IJavaElement](project))
+    val o = new OpenTypeSelectionDialog(shell, false, PlatformUI.getWorkbench().getProgressService(), scope, IJavaSearchConstants.TYPE)
+    initial foreach { s ⇒
+      o.setInitialPattern(s, FilteredItemsSelectionDialog.FULL_SELECTION)
+    }
+    if (o.open() == Window.OK) {
+      val result = if (o.getResult == null) None else o.getResult.headOption
+      result.map { _.asInstanceOf[IType].getFullyQualifiedName() }
+    } else None
 
+  }
+}
 class BeanProperty(
-    controller: Controller,
-    v: ValDef,
-    val b: BeanParamSymbol) extends ParamProperty {
-  lazy val tpe = Values.typeFor(b)
-  def key = b.name
-  def descriptor: IPropertyDescriptor = tpe.editor(this, b.name.str)
+    val c: Controller,
+    val v: ValDef,
+    val p: BeanParamSymbol) extends ParamProperty {
+  lazy val tpe = Values.typeFor(p)
+  def descriptor: IPropertyDescriptor = tpe.editor(this, p.name.str)
   def set(value: AnyRef) {
     if (get == value) return
     val encoded = tpe.parseSWT(value)
-    controller.exec(
+    c.exec(
       if (encoded == "")
-        v.removeParam(b.name)
+        v.removeParam(p.name)
       else
-        v.addOrReplaceParam(Param(b.name, encoded)))
+        v.addOrReplaceParam(Param(p.name, encoded)))
   }
-  def get: AnyRef = v.sym.params.get(b) match {
+  def get: AnyRef = v.sym.params.get(p) match {
     case Some(v) ⇒ v.toSWT
     case None    ⇒ tpe.defaultSWT
   }
-  def isSet: Boolean = v.sym.params.contains(b)
-  def reset() { controller.exec(v.removeParam(b.name)) }
+  def isSet: Boolean = v.sym.params.contains(p)
+  def reset() { c.exec(v.removeParam(p.name)) }
 }
 abstract class TextDialogPropertyDescriptor(id: AnyRef, displayName: String) extends PropertyDescriptor(id, displayName) {
   setLabelProvider(new LabelProvider() {
@@ -185,60 +257,22 @@ abstract class TextDialogPropertyDescriptor(id: AnyRef, displayName: String) ext
     }
   }
 }
-/*
-class BoxDefPopup(val viewer: TreeViewer, boxDef: BoxDef) extends Popup(viewer.shell, "Box") {
-  val bs = boxDef.sym
-  var clazz: String = ""
-  var methSig: String = ""
-  var methbutton: OpenButtonSelect = null
-  var tpe: TpeEdit = null
-  def exec {
-    val res = clazz + "#" + methSig
-    viewer.controller.exec(new EditTransformer() {
-      val trans: PartialFunction[Tree, Tree] = {
-        case b: BoxDef ⇒
-          val initMethod = if (methSig == "") Some(clazz) else Some(res)
-          b.copy(initMethod = initMethod, template = transform(b.template))
-      }
-    })
-  }
-
-  def populate(content: Composite) {
-    val (cl, meth) = boxDef.initMethod match {
-      case Some(s) ⇒ MethodBindingUtils.staticMethodSplit(s).getOrElse((s, ""))
-      case None    ⇒ ("", "")
-    }
-      def button(str: String, info: String, btn: String)(body: ⇒ Unit) =
-        new OpenButtonSelect(content, str, info, btn, body);
-    /*def findMethods(static: Boolean) = new MethodSelectDialog(viewer) {
-        def action(m: MethodWithNames) { methSig = m.methodSignature; exec }
-        def static: Boolean = true
-        def binding: TypeBinding = scope.lookupType(Name(clazz)).map { _.binding.asInstanceOf[TypeBinding] }.getOrElse(null)
-        def scope: ZaluumClassScope = bs.scope
-        def currentMethodSig: Option[String] = if (meth != "") Some(meth) else None
-        def findMethods(engine: ZaluumCompletionEngine, scope: ZaluumClassScope, r: ReferenceBinding) =
-          ZaluumCompletionEngineScala.allMethods(engine, scope, r, true)
-      }*/
-    tpe = new TpeEdit(content,
-      "Init method class",
-      getShell,
-      viewer,
-      cl,
-      { str ⇒ clazz = str })
-
-    /*methbutton = button("Init method", meth, "Select...") {
-      findMethods(true).open
-    }*/
+class CheckboxPropertyDescriptor(id: Object, name: String) extends PropertyDescriptor(id, name) {
+  import org.eclipse.jface.viewers.CheckboxCellEditor;
+  override def createPropertyEditor(parent: Composite) = {
+    val editor = new CheckboxCellEditor(parent);
+    if (getValidator() != null)
+      editor.setValidator(getValidator());
+    editor;
   }
 }
- * */
 trait PropertySource extends IPropertySource2 {
   def display: Display
   var properties = List[Property]()
   def isPropertyResettable(id: AnyRef) = id.asInstanceOf[Property].canBeReset
   def isPropertySet(id: AnyRef) = id.asInstanceOf[Property].isSet
   def getEditableValue() = this
-  def getPropertyDescriptors() = properties.map { _.descriptor }.toArray
+  def getPropertyDescriptors() = { properties.map { _.descriptor }.toArray }
   def getPropertyValue(id: AnyRef): AnyRef = id.asInstanceOf[Property].get
   def resetPropertyValue(id: AnyRef) = id.asInstanceOf[Property].reset()
   def setPropertyValue(id: AnyRef, swtValue: AnyRef) = SWTScala.async(display) {

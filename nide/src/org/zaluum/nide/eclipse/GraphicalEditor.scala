@@ -73,12 +73,15 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
   def selection = selected map { i ⇒ new StructuredSelection(i) } getOrElse { StructuredSelection.EMPTY }
   def setSelection(i: Option[Item]) {
     if (selected != i) {
-      selected = i
-      selectionListeners foreach { _() }
       val sel = i match {
-        case Some(i) ⇒ SelectionProvider.adaptItem(i, controller)
-        case None ⇒ StructuredSelection.EMPTY
+        case Some(i) ⇒
+          selected = Some(i)
+          SelectionProvider.adaptItem(i, controller)
+        case None ⇒
+          selected = Some(viewer)
+          new StructuredSelection(viewer)
       }
+      selectionListeners foreach { _() }
       selectionProvider.setSelection(sel)
     }
   }
@@ -136,7 +139,7 @@ class OpenGUIHandler extends AbstractHandler {
   override def execute(event: ExecutionEvent) = {
     Option(HandlerUtil.getActiveEditor(event)) match {
       case Some(g: GraphicalEditor) ⇒ g.openGUI()
-      case _ ⇒
+      case _                        ⇒
     }
     null
   }

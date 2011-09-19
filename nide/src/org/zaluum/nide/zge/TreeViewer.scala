@@ -65,6 +65,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
       }
     }
     ports.foreach { _.show }
+    updateProperties()
   }
   override def dispose() {
     super.dispose()
@@ -92,8 +93,13 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
       }
     };
     selection.refresh(mapper);
-  }
 
+  }
+  def updateProperties() {
+    properties = List(
+      new InitMethodProperty(controller.tree, controller),
+      new InitMethodClassProperty(controller.tree, controller))
+  }
   val emptyLabel = new Label("Empty File. Start by dropping items from the palette...")
   emptyLabel.setForegroundColor(ColorConstants.lightGray)
   emptyLabel.setFont(Activator.getDefault.directEditFont)

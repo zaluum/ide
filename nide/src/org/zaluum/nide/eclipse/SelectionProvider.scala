@@ -15,22 +15,24 @@ import org.eclipse.core.runtime.IAdaptable
 import org.zaluum.nide.zge.ValDefItem
 import org.zaluum.nide.zge.Controller
 import org.eclipse.ui.views.properties.IPropertySource
+import org.zaluum.nide.zge.TreeViewer
+import org.zaluum.nide.zge.ItemViewer
 object SelectionProvider {
   val Jelement = classOf[org.eclipse.jdt.core.IJavaElement]
   val Properties = classOf[IPropertySource]
-  def adaptItem(i: Item, controller: Controller): StructuredSelection =
+  def adaptItem(i: Item, controller: Controller): StructuredSelection = {
     new StructuredSelection(new IAdaptable() {
       def getAdapter(cl: Class[_]) = i match {
         case v: ValDefItem if (v.valSym.tpe != null) ⇒
           cl match {
             case Jelement ⇒
               controller.zproject.jProject.findType(v.valSym.tpe.fqName.str)
-            case Properties ⇒ v
-            case _          ⇒ null
+            case _ ⇒ null
           }
         case _ ⇒ null
       }
     })
+  }
   def adaptType(i: IType): StructuredSelection =
     new StructuredSelection(new IAdaptable() {
       def getAdapter(cl: Class[_]) = {

@@ -14,8 +14,10 @@ import org.eclipse.swt.dnd.TextTransfer
 import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler.SelectionSubject
+import org.zaluum.nide.compiler.Tree
 
-abstract class ItemViewer(parent: Composite, controller: Controller) extends Viewer(parent, controller) with ContainerItem {
+abstract class ItemViewer(parent: Composite, controller: Controller)
+    extends Viewer(parent, controller) with ContainerItem with PropertySource {
   /*SWT*/
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
@@ -25,7 +27,6 @@ abstract class ItemViewer(parent: Composite, controller: Controller) extends Vie
     override def paintFigure(g:Graphics) { DotPainter.dotFill(g,getBounds) }
   }*/
   val layer = new FreeformLayer
-
   val innerLayers = new ScalableFreeformLayeredPane()
   val marquee = new RectangleFigure;
   {
