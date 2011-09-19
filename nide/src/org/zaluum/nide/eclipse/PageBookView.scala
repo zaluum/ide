@@ -1,4 +1,4 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.eclipse
 
 import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.widgets.Composite
@@ -7,8 +7,6 @@ import org.eclipse.ui.part.PageBook
 import org.eclipse.ui.part.ViewPart
 import org.eclipse.ui.IPartListener
 import org.eclipse.ui.IWorkbenchPart
-import org.zaluum.nide.eclipse.SelectionProvider
-import org.zaluum.nide.eclipse.GraphicalEditor
 import org.eclipse.jface.util.IPropertyChangeListener
 import org.eclipse.jdt.launching.PropertyChangeEvent
 /* Original PageRec not accessible */

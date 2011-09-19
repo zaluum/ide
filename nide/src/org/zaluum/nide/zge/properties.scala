@@ -37,7 +37,7 @@ import org.zaluum.nide.utils.MethodBindingUtils
 import org.zaluum.nide.utils.SWTScala
 import org.zaluum.nide.zge.dialogs.FieldSelectDialog
 import org.zaluum.nide.zge.dialogs.MethodSelectDialog
-import org.zaluum.nide.zge.dialogs.TextDialogCellEditor
+import org.zaluum.nide.eclipse.TextDialogCellEditor
 import org.eclipse.jface.viewers.DialogCellEditor
 import org.eclipse.jface.viewers.CellEditor
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding

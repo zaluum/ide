@@ -22,12 +22,10 @@ import org.eclipse.ui.IWorkbenchPage
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnit
 import org.zaluum.nide.zge.Controller
 import org.zaluum.nide.zge.GuiViewer
-import org.zaluum.nide.zge.PaletteView
 import org.zaluum.nide.zge.TreeViewer
 import org.zaluum.nide.zge.Item
 import org.zaluum.nide.zge.ValDefItem
 import org.eclipse.jface.viewers.StructuredSelection
-import org.zaluum.nide.zge.PropertiesView
 
 class GraphicalEditor extends BaseEditor with IGotoMarker {
 

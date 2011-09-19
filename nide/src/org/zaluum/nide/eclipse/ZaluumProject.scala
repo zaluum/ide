@@ -8,7 +8,6 @@ import org.eclipse.jdt.core.IType
 import org.zaluum.annotation.Box
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.zge.ImageFactory
 
 import org.zaluum.nide.utils.JDTUtils._
 

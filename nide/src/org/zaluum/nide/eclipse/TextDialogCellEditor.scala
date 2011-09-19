@@ -1,4 +1,4 @@
-package org.zaluum.nide.zge.dialogs
+package org.zaluum.nide.eclipse
 
 import org.eclipse.core.runtime.Assert
 import org.eclipse.swt.SWT

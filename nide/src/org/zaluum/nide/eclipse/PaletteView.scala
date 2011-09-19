@@ -1,4 +1,4 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.eclipse
 
 import scala.collection.mutable.Buffer
 
@@ -45,10 +45,6 @@ import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Out
 import org.zaluum.nide.compiler.PortDir
 import org.zaluum.nide.compiler.Shift
-import org.zaluum.nide.eclipse.BoxTypeProxy
-import org.zaluum.nide.eclipse.GraphicalEditor
-import org.zaluum.nide.eclipse.SelectionProvider
-import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.utils.Utils
 
 object PaletteView {

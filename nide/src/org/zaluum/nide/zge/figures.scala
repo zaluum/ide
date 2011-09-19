@@ -41,6 +41,7 @@ import org.eclipse.swt.widgets.Control
 import org.zaluum.nide.compiler.InvalidValueType
 import org.zaluum.nide.utils.SWTScala
 import org.zaluum.nide.utils.SwingSWTUtils
+import org.zaluum.nide.eclipse.ImageFactory
 
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item with PropertySource {

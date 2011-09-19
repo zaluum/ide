@@ -1,4 +1,4 @@
-package org.zaluum.nide.zge
+package org.zaluum.nide.eclipse
 
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.jface.resource.DeviceResourceDescriptor
@@ -21,7 +21,6 @@ import org.zaluum.nide.compiler.Out
 import org.zaluum.nide.compiler.PortDir
 import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.JavaType
-import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.icons.Icons
 import org.zaluum.nide.Activator
 

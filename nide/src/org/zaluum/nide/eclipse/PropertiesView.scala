@@ -1,5 +1,5 @@
-package org.zaluum.nide.zge
-import org.zaluum.nide.eclipse.GraphicalEditor
+package org.zaluum.nide.eclipse
+
 import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Label
 import org.eclipse.ui.IWorkbenchPart
@@ -18,6 +18,7 @@ import org.eclipse.ui.views.properties.IPropertySourceProvider
 import org.eclipse.ui.views.properties.IPropertySource
 import org.zaluum.nide.utils.ReflectionUtilsWB
 import org.eclipse.jface.action.IStatusLineManager
+
 object PropertiesView {
   val ID = "org.zaluum.nide.propertiesView"
 }
