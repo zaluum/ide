@@ -38,8 +38,10 @@ import org.zaluum.nide.utils.SWTScala.newPopupMenu
 import org.zaluum.nide.zge.Viewer
 import net.miginfocom.swt.MigLayout
 import org.zaluum.nide.compiler.Name
+import org.eclipse.swt.widgets.Shell
+import org.zaluum.nide.zge.Controller
 
-abstract class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(viewer.shell) {
+class ConstructorDialog(shell: Shell, vs: ValSymbol) extends Dialog(shell) {
   var combo: ComboViewer = _
   def comboValue = {
     val sel = combo.getSelection.asInstanceOf[IStructuredSelection]
@@ -49,14 +51,12 @@ abstract class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(v
   var tableContents = List[TableEntry]()
   case class TableEntry(var sym: Option[ParamSymbol], var value: String)
   def v = vs.tdecl
-  def action(typeNames: List[Name], values: List[String])
+  var result: Option[EditTransformer] = None
   override protected def okPressed() {
     val typeNames = for (c ← comboValue.toList; p ← c.params) yield p.tpe.name
     val params = tableContents.map(_.value)
-    super.okPressed()
-    action(typeNames, params)
-    /*if (typeNames != v.constructorTypes || params != v.constructorParams) {
-      val tr = new EditTransformer() {
+    if (typeNames != v.constructorTypes || params != v.constructorParams) {
+      result = Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case v: ValDef if vs.decl == v ⇒
             v.copy(
@@ -64,12 +64,9 @@ abstract class ConstructorDialog(viewer: Viewer, vs: ValSymbol) extends Dialog(v
               constructorTypes = typeNames,
               template = transformOption(v.template))
         }
-      }
-      super.okPressed()
-      viewer.controller.exec(tr)
-    } else {
-      super.okPressed()
-    }*/
+      })
+    }
+    super.okPressed()
   }
   def createTable(parent: Composite) = {
     val table = new Table(parent, SWT.MULTI | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL |

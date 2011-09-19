@@ -116,7 +116,7 @@ object NewExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.New])
   val thiz = new PortSymbol(this, Name("object"), Out)
   ports += (thiz.name -> thiz)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
-  def signatureProp(c: Controller, v: ValDef) = new ConstructorParamProperty(c, signatureSymbol, v, typeSymbol)
+  def signatureProp(c: Controller, v: ValDef) = new ConstructorParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe)
 }
 object InvokeExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Invoke]) with SignatureExprType {
   def signatureProp(c: Controller, v: ValDef) =

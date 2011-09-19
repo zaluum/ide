@@ -1,6 +1,5 @@
 package org.zaluum.nide.zge
 import java.lang.Object
-
 import org.eclipse.jdt.core.search.IJavaSearchConstants
 import org.eclipse.jdt.core.search.SearchEngine
 import org.eclipse.jdt.core.IJavaElement
@@ -39,6 +38,10 @@ import org.zaluum.nide.utils.SWTScala
 import org.zaluum.nide.zge.dialogs.FieldSelectDialog
 import org.zaluum.nide.zge.dialogs.MethodSelectDialog
 import org.zaluum.nide.zge.dialogs.TextDialogCellEditor
+import org.eclipse.jface.viewers.DialogCellEditor
+import org.eclipse.jface.viewers.CellEditor
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.zaluum.nide.zge.dialogs.ConstructorDialog
 
 trait Property {
   def descriptor: IPropertyDescriptor
@@ -58,6 +61,19 @@ trait ParamProperty extends ControllerProperty {
   def key: Name = p.name
   def displayName = p.name.str
   def currentVal: Option[String] = v.sym.params.get(p).map { _.encoded }
+  def set(value: AnyRef) = {
+    c.exec(
+      if (value == "") v.removeParam(key)
+      else v.addOrReplaceParam(Param(key, value.toString)))
+  }
+  def get: AnyRef = v.params.asInstanceOf[List[Param]].find(_.key == key).map { _.value } getOrElse ("")
+  def isSet = v.params.asInstanceOf[List[Param]].exists(_.key == key)
+  def reset() { c.exec(v.removeParam(p.name)) }
+
+}
+trait NoResetProperty extends Property {
+  override def canBeReset = false
+  def reset() {}
 }
 abstract class InitProperty(b: BoxDef, val c: Controller) extends Property {
   def scope = b.sym.scope
@@ -75,12 +91,13 @@ abstract class InitProperty(b: BoxDef, val c: Controller) extends Property {
 }
 class InitMethodProperty(b: BoxDef, c: Controller) extends InitProperty(b, c) with MethodProperty {
   val displayName = "*Init method"
-  val static = true
   def currentVal = methodName
   def set(value: AnyRef) {
     set(className.getOrElse(""), value.toString)
   }
   def get: AnyRef = methodName.getOrElse("")
+  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
+    ZaluumCompletionEngineScala.allMethods(engine, scope, r, true)
 }
 class InitMethodClassProperty(b: BoxDef, c: Controller) extends InitProperty(b, c) with TypeProperty {
   val displayName = "*Init method class"
@@ -90,39 +107,49 @@ class InitMethodClassProperty(b: BoxDef, c: Controller) extends InitProperty(b, 
   }
   def get: AnyRef = className.orElse(b.initMethod).getOrElse("")
 }
-class ValDefTypeProperty(valDef: ValDef, controller: Controller) extends Property {
+class ValDefTypeProperty(valDef: ValDef, controller: Controller) extends NoResetProperty {
   def descriptor: IPropertyDescriptor = new PropertyDescriptor(this, "*Type")
   def set(value: AnyRef) { controller.exec(valDef.editType(Name(value.toString))) }
   def get: AnyRef = valDef.typeName.str
   def isSet: Boolean = true
-  override def canBeReset = false
-  def reset() {}
 }
-class NameProperty(valDef: ValDef, controller: Controller) extends Property {
+class NameProperty(valDef: ValDef, controller: Controller) extends NoResetProperty {
   def descriptor = new PropertyDescriptor(this, "*Name")
   def set(value: AnyRef) {}
   def get = valDef.name.str
-  override def canBeReset = false
   def isSet = true
-  def reset() {}
 }
 class LabelProperty(valDef: ValDef, controller: Controller, gui: Boolean) extends Property {
   def lbl = if (gui) valDef.labelGui else valDef.label
   def txt = if (gui) "*Label GUI" else "*Label"
   def descriptor: IPropertyDescriptor = new TextPropertyDescriptor(this, txt)
-  def set(value: AnyRef) {
-    controller.exec(valDef.editLabelAndRename(gui, value.toString))
-  }
+  def set(value: AnyRef) = controller.exec(valDef.editLabelAndRename(gui, value.toString))
   def get: AnyRef = lbl.map { _.description }.getOrElse("")
   def isSet: Boolean = lbl.isDefined
   def reset() = set("")
 }
 class ConstructorProperty(valDef: ValDef, controller: Controller) extends Property {
-  def descriptor = new PropertyDescriptor(this, "*Constructor")
-  def set(value: AnyRef) {}
+  def descriptor = new DialogPropertyDescriptor(this, "*Constructor") {
+    override lazy val labelProvider = new LabelProvider() {
+      override def getText(element: AnyRef) = {
+        element match {
+          case (tpes: List[_], params: List[_]) ⇒ params.mkString(", ")
+          case _                                ⇒ ""
+        }
+      }
+    }
+    def openDialog(cell: Control): Option[String] = {
+      val c = new ConstructorDialog(cell.getShell, valDef.sym)
+      c.open()
+      c.result foreach { comm ⇒
+        SWTScala.async(cell.getDisplay) { controller.exec(comm) }
+      }
+      None
+    }
+  }
+  def set(value: AnyRef) {} // done in dialog
   def get: AnyRef = (valDef.constructorTypes, valDef.constructorParams)
-  def isSet: Boolean =
-    valDef.constructorParams.isEmpty && valDef.constructorTypes.isEmpty
+  def isSet: Boolean = valDef.constructorParams.isEmpty && valDef.constructorTypes.isEmpty
   def reset() = controller.exec(
     valDef.editConstructor(List(), List()))
 }
@@ -137,29 +164,23 @@ class MissingParamProperty(controller: Controller, p: Param, v: ValDef) extends 
 class TextParamProperty(val c: Controller, val p: ParamSymbol, val v: ValDef)
     extends ParamProperty {
   def descriptor: PropertyDescriptor = new TextPropertyDescriptor(this, p.name.str)
-  def set(value: AnyRef) = {
-    c.exec(
-      if (value == "") v.removeParam(key)
-      else v.addOrReplaceParam(Param(key, value.toString)))
-  }
-  def get = v.params.asInstanceOf[List[Param]].find(_.key == key).map { _.value } getOrElse ("")
-  def isSet = v.params.asInstanceOf[List[Param]].exists(_.key == key)
-  def reset = set("")
 }
 class ConstructorParamProperty(
     c: Controller,
     p: ParamSymbol,
     v: ValDef,
-    tpe: ParamSymbol) extends TextParamProperty(c, p, v) {
-  override def descriptor = new PropertyDescriptor(this, p.name.str)
+    tpe: ⇒ JavaType) extends TextParamProperty(c, p, v) with MethodProperty {
+  def scope = v.sym.mainBS.scope
+  def tpe = tpe
+  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
+    ZaluumCompletionEngineScala.allConstructors(engine, scope, r)
+
 }
-trait MethodProperty extends Property {
-  def c: Controller
+trait MethodProperty extends ControllerProperty {
   def tpe: JavaType
   def scope: ZaluumClassScope
-  def static: Boolean
   def currentVal: Option[String]
-  def displayName: String
+  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding): List[MethodBinding]
   override def descriptor = new TextDialogPropertyDescriptor(this, displayName) {
     def openDialog(cell: Control) = {
       val m = new MethodSelectDialog(
@@ -169,12 +190,13 @@ trait MethodProperty extends Property {
         scope,
         currentVal) {
         def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
-          ZaluumCompletionEngineScala.allMethods(engine, scope, r, static)
+          MethodProperty.this.findMethods(engine, r)
       }
       m.openRet()
     }
   }
 }
+
 class MethodParamProperty(
     c: Controller,
     p: ParamSymbol,
@@ -183,7 +205,10 @@ class MethodParamProperty(
     val static: Boolean) extends TextParamProperty(c, p, v) with MethodProperty {
   def scope = v.sym.mainBS.scope
   def tpe = tpe
+  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
+    ZaluumCompletionEngineScala.allMethods(engine, scope, r, static)
 }
+
 class FieldParamProperty(
     c: Controller,
     p: ParamSymbol,
@@ -207,7 +232,7 @@ class TypeParamProperty(
   c: Controller,
   p: ParamSymbol,
   v: ValDef) extends TextParamProperty(c, p, v) with TypeProperty
-  
+
 object OpenSearch {
   def openSearch(project: IJavaProject, shell: Shell, initial: Option[String]) = {
     val scope = SearchEngine.createJavaSearchScope(Array[IJavaElement](project))
@@ -228,31 +253,37 @@ class BeanProperty(
     val p: BeanParamSymbol) extends ParamProperty {
   lazy val tpe = Values.typeFor(p)
   def descriptor: IPropertyDescriptor = tpe.editor(this, p.name.str)
-  def set(value: AnyRef) {
+  override def set(value: AnyRef) {
     if (get == value) return
     val encoded = tpe.parseSWT(value)
-    c.exec(
-      if (encoded == "")
-        v.removeParam(p.name)
-      else
-        v.addOrReplaceParam(Param(p.name, encoded)))
+    super.set(encoded)
   }
-  def get: AnyRef = v.sym.params.get(p) match {
+  override def get: AnyRef = v.sym.params.get(p) match {
     case Some(v) ⇒ v.toSWT
     case None    ⇒ tpe.defaultSWT
   }
-  def isSet: Boolean = v.sym.params.contains(p)
-  def reset() { c.exec(v.removeParam(p.name)) }
 }
-abstract class TextDialogPropertyDescriptor(id: AnyRef, displayName: String) extends PropertyDescriptor(id, displayName) {
-  setLabelProvider(new LabelProvider() {
+abstract class DialogPropertyDescriptor(id: AnyRef, displayName: String)
+    extends PropertyDescriptor(id, displayName) {
+  lazy val labelProvider = new LabelProvider() {
     override def getText(element: AnyRef) = element.toString()
-  })
+  }
+  setLabelProvider(labelProvider)
   def openDialog(cell: Control): Option[String]
+  override protected def createPropertyEditor(parent: Composite): CellEditor = {
+    new DialogCellEditor(parent) {
+      override protected def openDialogBox(cell: Control) = openDialog(cell)
+      override protected def updateContents(value: AnyRef) {
+        if (getDefaultLabel != null) {
+          getDefaultLabel.setText(labelProvider.getText(value))
+        }
+      }
+    }
+  }
+}
+abstract class TextDialogPropertyDescriptor(id: AnyRef, displayName: String) extends DialogPropertyDescriptor(id, displayName) {
   override protected def createPropertyEditor(parent: Composite) = {
-      def validator = getValidator
     new TextDialogCellEditor(parent) {
-      setValidator(validator)
       override protected def openDialogBox(cell: Control) = openDialog(cell)
     }
   }
