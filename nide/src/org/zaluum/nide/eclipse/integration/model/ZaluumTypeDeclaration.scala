@@ -29,7 +29,6 @@ class ZaluumTypeDeclaration(compilationResult: CompilationResult, val b: BoxDef)
         createProblem(str, mark.getOrElse(-1))
       }
     }
-
     a = new Analyzer(reporter, b, this.binding, zaluumScope)
     a.runNamer()
     try {

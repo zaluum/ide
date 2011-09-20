@@ -199,6 +199,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
       tree match {
         case b: BoxDef ⇒
           val sym = new BoxTypeSymbol(b.image, true, binding, scope)
+          sym.source = Some(b.name.str + ".zaluum")
           sym.hasApply = true
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
           sym.constructors = List(new Constructor(sym, List()))

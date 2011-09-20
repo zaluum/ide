@@ -172,6 +172,7 @@ class BoxTypeSymbol(
   var hasApply = false
   var constructors = List[Constructor]()
   var methodSelector: Name = _
+  var source: Option[String] = None
   override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
   override def templateTree = tdecl.template
   def onlyVisual = !hasApply && isVisual

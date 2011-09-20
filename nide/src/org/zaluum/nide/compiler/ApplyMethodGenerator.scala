@@ -8,6 +8,9 @@ import scala.collection.mutable.Buffer
 
 class MainThreadMethodGenerator(bs: BoxTypeSymbol) extends MethodGenerator(bs) {
   val block = bs.block
+  def withLine[T <: Tree](t: T, line: Int): T = {
+    t.line = line; t
+  }
   def apply(): Method = {
     val ins = Buffer[Tree]()
     // create arg locals
@@ -137,6 +140,8 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
 
   def runOne(vs: ValSymbol, execPath: ExecutionPath): List[Tree] = {
     val ins = Buffer[Tree]()
+    // line
+    ins += Lbl(vs.tdecl.line)
     // joins
     vs.join.toList foreach { toJoin ⇒
       ins += acquireSem(toJoin)

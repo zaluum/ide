@@ -15,7 +15,7 @@ trait UnaryExpr extends Tree {
   def a: Tree
 }
 case class RunnableClass(fqName: Name, simpleName: Name, run: Method) extends Tree
-case class BoxClass(name: Name, contents: List[Tree], superName: Name, inners: List[RunnableClass]) extends Tree
+case class BoxClass(name: Name, source: String, contents: List[Tree], superName: Name, inners: List[RunnableClass]) extends Tree
 case class FieldDef(name: Name, typeName: Name, annotation: Option[Name], priv: Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree], signature: String, superName: Name, locals: List[(String, String, Int)]) extends Tree
@@ -64,6 +64,7 @@ case class InvokeStatic(meth: String, param: List[Tree], fromClass: Name, descri
 case class Const(i: Any, constTpe: Name) extends Tree {
   def this(i: Any, tpe: JavaType) = this(i, tpe.fqName)
 }
+case class Lbl(l: Int) extends Tree
 case class Return(t: Tree, retTpe: Name) extends Tree
 case object Return extends Tree
 case object True extends Tree
@@ -98,13 +99,18 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
   val block = bs.block
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = t.line
+  def withLine[T <: Tree](t: T, line: Int): T = {
+    t.line = line; t
+  }
   object run {
     val fieldDecls = Buffer[FieldDef]()
     val fieldInits = Buffer[Tree]()
     def field(name: Name, tpe: Name, init: Option[Tree] = None, annotation: Option[Name] = None) {
       fieldDecls += FieldDef(name, tpe, annotation, false)
       init foreach { t ⇒
-        fieldInits += Assign(Select(thisRef, FieldRef(name, tpe.descriptor, bs.fqName)), t)
+        val a = Assign(Select(thisRef, FieldRef(name, tpe.descriptor, bs.fqName)), t)
+        a.line = t.line
+        fieldInits += a
       }
     }
     def apply() = {
@@ -122,9 +128,9 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       val baseMethods = List(cons(b), new MainThreadMethodGenerator(bs)())
       BoxClass(
         bs.tpe.fqName,
+        bs.source.get,
         baseMethods ++ fieldDecls,
         superName, enclosed)
-
     }
 
     /*
@@ -207,13 +213,15 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
             vs.params map {
               case (param, v) ⇒
                 val beanProp = tpe.beanProperties.find(_.name == param.name).get
-                Invoke(
-                  valRef(vs),
-                  beanProp.setter.selector.mkString,
-                  List(v.codeGen),
-                  tpe.fqName,
-                  "(" + param.tpe.descriptor + ")V",
-                  interface = false)
+                withLine(
+                  Invoke(
+                    valRef(vs),
+                    beanProp.setter.selector.mkString,
+                    List(v.codeGen),
+                    tpe.fqName,
+                    "(" + param.tpe.descriptor + ")V",
+                    interface = false),
+                  vs.tdecl.line)
             } toList
           case e: ExprType ⇒
             for (bl ← vs.blocks; vs ← bl.valsAlphabeticOrder; p ← params(vs)) yield p
@@ -247,7 +255,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         InvokeStatic(im.selector.mkString, List(This), Name(JDTUtils.aToString(im.declaringClass.compoundName)), im.signature.mkString)
       }
       ConstructorMethod(
-        fieldInits.toList ++ initCons ++ par ++ widgets ++ initMethod :+ Return,
+        Lbl(b.line) :: fieldInits.toList ++ initCons ++ par ++ widgets ++ initMethod :+ Return,
         signature, superName, locals.localsDecl)
     }
     def superName = if (bs.isVisual)

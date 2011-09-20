@@ -14,6 +14,7 @@ object ByteCodeGen {
     for (inn ← bc.inners) {
       cw.visitInnerClass(inn.fqName.internal, bc.name.internal, inn.simpleName.str, 0)
     }
+    cw.visitSource(bc.source, "")
     cw.visitAnnotation(Name(classOf[Box].getName).descriptor, true).visitEnd
     bc.contents foreach { emit(_) }
     cw.visitEnd()
@@ -23,6 +24,7 @@ object ByteCodeGen {
     thisName = inn.fqName
     cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
     cw.visit(V1_5, ACC_SUPER, inn.fqName.internal, null, "java/lang/Object", Array("java/lang/Runnable"));
+    cw.visitSource(bc.source, "")
     cw.visitInnerClass(inn.fqName.internal, bc.name.internal, inn.simpleName.str, 0);
     {
       val fv = cw.visitField(ACC_PUBLIC, TreeToClass.enclosingClassFieldName, bc.name.descriptor, null, null);
@@ -32,6 +34,7 @@ object ByteCodeGen {
       val mv = cw.visitMethod(0, "<init>", "(" + bc.name.descriptor + ")V", null, null);
       mv.visitCode();
       val l0 = new Label();
+      mv.visitLineNumber(1, l0);
       mv.visitLabel(l0);
       mv.visitVarInsn(ALOAD, 0);
       mv.visitVarInsn(ALOAD, 1);
@@ -79,8 +82,15 @@ object ByteCodeGen {
     mv.visitMaxs(-1, -1);
     mv.visitEnd();
   }
+  def label(l: Int) {
+    val lbl = new Label()
+    mv.visitLabel(lbl)
+    mv.visitLineNumber(l, lbl)
+  }
   def emit(tree: Tree): Unit = {
+    if (tree.line != 0) label(tree.line)
     tree match {
+      case Lbl(l) ⇒ label(l)
       case FieldDef(name, tpe, annotation, priv) ⇒
         // FIXME not really private field always public
         val f = cw.visitField(if (priv) ACC_PUBLIC else ACC_PUBLIC, name.str, tpe.descriptor, null, null)

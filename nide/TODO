@@ -1,6 +1,8 @@
 Agenda
 
 week 5-11 doc week
+	- eliminar boxtypesymbol. Qualsevol JavaType com a box
+		- nova paleta .xml
 	- al enganxar posar-ho en el contenidor on cau ( enganxar a la GUI a quin block va a parar?)
 	- clean up wire
 	- visuals al block diagram (notes sobretot)
@@ -154,6 +156,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- emetre labels amb linies de codi per excepcions
 	- al crear modificar directament la label. Crear nom del camp a partir de label.
 	- al copiar, moure les coordenades lleugerament (tant gui com pos)
 	- colocar widget a les mateixes coordenades que al diagrama de blocks al crear(buscar forat?)
