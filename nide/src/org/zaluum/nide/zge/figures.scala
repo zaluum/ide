@@ -206,7 +206,7 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
 }
 class LiteralFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure with RectFeedback {
   def size = preferredSize
-  def param = valDef.params.headOption.asInstanceOf[Option[Param]]
+  def param = valDef.params.headOption
   def text = param.map { _.value }.getOrElse { "0" }
   override val textPos = new EPoint(2, 2)
   override def updateMe {

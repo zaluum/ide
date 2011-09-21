@@ -10,7 +10,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
   def location(tree: Tree) = analyzer.globLocation(tree)
   def reporter = analyzer.reporter
   def ztd = analyzer.ztd
-  val bl = b.sym
+  val bl: BlockSymbol = b.sym
   val template = bl.template
   var usedInputs = Set[PortInstance]()
   def run() = {

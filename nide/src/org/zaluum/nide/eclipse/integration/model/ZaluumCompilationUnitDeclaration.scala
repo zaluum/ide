@@ -192,8 +192,7 @@ class ZaluumCompilationUnitDeclaration(
           if (v.typeName == BoxExprType.fqName) {
             val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v)) // keep synched with symbols.ValSymbol.fqName 
             f.modifiers = Opcodes.ACC_PUBLIC
-            val params = v.params.asInstanceOf[List[Param]]
-            params.find(_.key == BoxExprType.typeSymbol.fqName).map { p ⇒ Name(p.value) } match {
+            v.params.find(_.key == BoxExprType.typeSymbol.fqName).map { p ⇒ Name(p.value) } match {
               case Some(name) ⇒ f.`type` = createTypeReference(name, v)
               case None       ⇒
             }

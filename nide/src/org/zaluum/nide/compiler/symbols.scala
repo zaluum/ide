@@ -16,11 +16,10 @@ import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 trait Symbol {
-  def owner: Symbol
   def name: Name
   var decl: Tree = null
   def tdecl: Tree = decl
-  override def toString = "Symbol(" + (if (name != null) name.str else "NoSymbol") + ")"
+  override def toString = "Symbol(" + (if (name != null) name.str else "null name") + ")"
 }
 trait TypedSymbol[T <: Type] extends Symbol {
   private var _tpe: Option[T] = None
@@ -36,7 +35,6 @@ trait JavaType extends Type {
   def javaSize = 1
   type B >: Null <: TypeBinding
   def binding: B
-  val owner: Symbol
   def name: Name
   def descriptor: String
   override def toString = "JavaType(" + name + ")"
@@ -49,11 +47,10 @@ class PrimitiveJavaType(
     val boxedName: Name,
     val boxMethod: String, val binding: BaseTypeBinding, javaclass: Class[_]) extends JavaType {
   type B = BaseTypeBinding
-  val owner = null
   val fqName = name
   def loadClass(cl: ClassLoader) = Some(javaclass)
 }
-class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int, val binding: ArrayBinding) extends JavaType {
+class ArrayType(val of: JavaType, val dim: Int, val binding: ArrayBinding) extends JavaType {
   type B = ArrayBinding
   assert(!of.isInstanceOf[ArrayType])
   def descriptor = "[" * dim + of.descriptor
@@ -61,25 +58,24 @@ class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int, val binding: 
   def fqName = name
   override def equals(that: Any) = {
     that match {
-      case a: ArrayType ⇒ a.of == of && a.dim == dim && a.owner == owner
+      case a: ArrayType ⇒ a.of == of && a.dim == dim
       case _            ⇒ false
     }
   }
   override def hashCode = {
-    41 * (41 * (41 + owner.hashCode) + of.hashCode) + dim
+    41 * (41 + of.hashCode) + dim
   }
   def loadClass(cl: ClassLoader) = None
   override def toString = "ArrayType(" + of.toString + ", " + dim + ")"
 }
-class ParamSymbol(val owner: JavaType, val name: Name) extends TypedSymbol[JavaType] {
+class ParamSymbol(val name: Name) extends TypedSymbol[JavaType] {
   override def toString = "ParamSymbol(" + name + ")"
   def fqName = name
 }
 class BeanParamSymbol(
-    owner: JavaType,
     val getter: MethodBinding,
     val setter: MethodBinding,
-    initTpe: Option[JavaType]) extends ParamSymbol(owner, Name(MethodHelper.propertyName(getter))) {
+    initTpe: Option[JavaType]) extends ParamSymbol(Name(MethodHelper.propertyName(getter))) {
   tpe = initTpe;
   def declaringClass = getter.declaringClass.compoundName.map { _.mkString }.mkString(".")
 }
@@ -145,7 +141,7 @@ trait ClassJavaType extends JavaType with PropertySourceType {
     }
     var l = List[BeanParamSymbol]()
     for ((name, (g, s)) ← map; if (g != null && s != null)) {
-      l ::= new BeanParamSymbol(this, g, s, scope.getJavaType(g.returnType))
+      l ::= new BeanParamSymbol(g, s, scope.getJavaType(g.returnType))
     }
     l.sortBy(_.name.str)
   }
@@ -160,7 +156,7 @@ trait ClassJavaType extends JavaType with PropertySourceType {
   }
 }
 
-class SimpleClassJavaType(val owner: Symbol, val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType
+class SimpleClassJavaType(val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType
 trait PropertySourceType {
   def properties(controller: Controller, valDef: ValDef): List[ParamProperty]
 }
@@ -171,7 +167,6 @@ class BoxSymbol(
   val binding: ReferenceBinding,
   val scope: ZaluumClassScope) extends ClassJavaType
     with TemplateSymbol with Namer {
-  val owner = null
   var initMethod: Option[MethodBinding] = None
   var hasApply = false
   var constructors = List[ConstructorDecl]()
@@ -230,7 +225,6 @@ trait TemplateSymbol extends PortsSymbol {
 class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   def name = fqName
   def fqName = Name(template.thisVal.fqName.str + "_block" + blockNumeral)
-  def owner = template
   var vals = Map[Name, ValSymbol]()
   var executionOrder = List[ValSymbol]()
   val dag = new DirectedAcyclicGraph[ValSymbol, DefaultEdge](classOf[DefaultEdge])
@@ -344,20 +338,19 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
 }
 
 class PortSymbol(
-  val owner: PortsSymbol,
+  val portsSymbol: PortsSymbol,
   val name: Name,
   val helperName: Option[Name],
   val extPos: Point,
   val dir: PortDir,
   var isField: Boolean = false)
     extends TypedSymbol[JavaType] {
-  def box = owner
-  def this(owner: PortsSymbol, name: Name, dir: PortDir) =
-    this(owner, name, None, Point(0, 0), dir)
+  def this(portsSymbol: PortsSymbol, name: Name, dir: PortDir) =
+    this(portsSymbol, name, None, Point(0, 0), dir)
   override def toString = "PortSymbol(" + name + ")"
 }
 //class ResultPortSymbol(owner: TemplateSymbol, name: Name, val helpName: Name, val extPos: Point) extends PortSymbol(owner,name,helpName,extPos,Out)
-class ConstructorDecl(owner: BoxSymbol, val params: List[ParamSymbol]) {
+class ConstructorDecl(val params: List[ParamSymbol]) {
   override def toString = {
     if (params.isEmpty) "<default>()" else
       params.map(p ⇒ p.name.str + " : " + p.tpeHumanStr).mkString(", ")
@@ -373,7 +366,6 @@ class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: 
   var missing = false
   def isField = portSymbol.map(_.isField).getOrElse(false)
   var internalStorage: StorageType = StorageLocal
-  def owner = valSymbol
   def hasDecl = portSymbol.map { _.decl != null } getOrElse { false }
   def declOption = portSymbol.flatMap { p ⇒ Option(p.decl.asInstanceOf[PortDef]) }
   def fqName = Name(valSymbol.fqName.str + "_" + name.str)

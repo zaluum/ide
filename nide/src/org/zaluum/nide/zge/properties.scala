@@ -67,8 +67,8 @@ trait ParamProperty extends ControllerProperty {
       if (value == "") v.removeParam(key)
       else v.addOrReplaceParam(Param(key, value.toString)))
   }
-  def get: AnyRef = v.params.asInstanceOf[List[Param]].find(_.key == key).map { _.value } getOrElse ("")
-  def isSet = v.params.asInstanceOf[List[Param]].exists(_.key == key)
+  def get: AnyRef = v.params.find(_.key == key).map { _.value } getOrElse ("")
+  def isSet = v.params.exists(_.key == key)
   def reset() { c.exec(v.removeParam(p.name)) }
 
 }

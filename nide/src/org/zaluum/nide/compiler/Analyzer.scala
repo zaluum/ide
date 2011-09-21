@@ -192,7 +192,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
 
-    private def bind(symbol: Symbol, tree: Tree, dupl: Boolean)(block: ⇒ Unit) {
+    private def bind[S >: Null <: Symbol](symbol: S, tree: SymbolTree[S], dupl: Boolean)(block: ⇒ Unit) {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
       tree.symbol = symbol
       symbol.decl = tree
@@ -205,7 +205,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
           sym.source = Some(b.name.str + ".zaluum")
           sym.hasApply = true
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
-          sym.constructors = List(new ConstructorDecl(sym, List()))
+          sym.constructors = List(new ConstructorDecl(List()))
           if (b.template.blocks.size != 1) error("Fatal: BoxDef must have 1 block defined. Manual edit needed.", b)
         // FIXME reported errors do not show in the editor (valdef)
         case t: Template ⇒
@@ -265,9 +265,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
           val bs = b.sym
           if (!b.constructor.isEmpty) {
             bs.constructors = List(
-              new ConstructorDecl(bs,
+              new ConstructorDecl(
                 b.constructor map { varDecl ⇒
-                  val p = new ParamSymbol(bs, varDecl.name)
+                  val p = new ParamSymbol(varDecl.name)
                   p.tpe = scope.lookupType(varDecl.tpeName).orElse {
                     error("Cannot find constructor parameter type " + varDecl.tpeName.str + " for parameter " + varDecl.name.str, b)
                     None
@@ -313,7 +313,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
             case Some(b) ⇒
               v.sym.tpe = Some(b)
               val vsym = v.sym
-              for (p ← v.params.asInstanceOf[List[Param]]) {
+              for (p ← v.params) {
                 b.lookupExprParam(p.key) match {
                   case Some(parSym) ⇒
                     // TODO parses all symbols as strings for now (LiteralExprType mutates eg)
@@ -335,9 +335,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               error("Box class " + v.typeName + " not found", tree);
           }
         // constructor match
-        case ThisRef() ⇒ // 
+        case t: ThisRef ⇒ // 
           val block = currentOwner.asInstanceOf[BlockSymbol]
-          tree.symbol = block.owner
+          t.symbol = block.template
         case _ ⇒
       }
     }

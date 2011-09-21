@@ -39,7 +39,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
               template = transform(b.template))
           case v: ValDef if (v == t) ⇒
             val param = Param(Name("bounds"), strPos)
-            val filtered = v.params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
+            val filtered = v.params.filterNot(_.key == param.key)
             v.copy(
               template = transformOption(v.template),
               params = param :: filtered)

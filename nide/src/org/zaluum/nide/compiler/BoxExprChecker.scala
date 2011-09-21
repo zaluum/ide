@@ -121,7 +121,7 @@ trait BoxExprChecker extends CheckerPart {
           " with signature (" + v.constructorTypes.map { _.str }.mkString(", ") + ")", tree)
     }*/
     // params
-    for (p ← v.params.asInstanceOf[List[Param]]; if !BoxExprType.exprParams.contains(p.key)) {
+    for (p ← v.params; if !BoxExprType.exprParams.contains(p.key)) {
       c.beanProperties.find(_.name == p.key) match {
         case Some(bean) ⇒
           val parsed = Values.typeFor(bean).create(p.value)

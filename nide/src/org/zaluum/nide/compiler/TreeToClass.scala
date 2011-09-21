@@ -95,7 +95,7 @@ object TreeToClass {
 }
 
 class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) extends ReporterAdapter with GeneratorHelpers {
-  val bs = b.sym
+  val bs: BoxSymbol = b.sym
   val block = bs.block
   val reporter = new Reporter // TODO fail reporter
   def location(t: Tree) = t.line

@@ -70,7 +70,7 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
   }
   def getArrayType(t: JavaType, dim: Int): ArrayType = {
     val bind = createArrayType(t.binding, dim)
-    val a = new ArrayType(this, t, dim, bind)
+    val a = new ArrayType(t, dim, bind)
     a
   }
   def getStaticMethod(nameHashAndSignature: String): Option[MethodBinding] = {
@@ -117,10 +117,10 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
         })
       case a: ArrayBinding ⇒
         getJavaType(a.leafComponentType) map { leaf ⇒
-          new ArrayType(this, leaf, a.dimensions, a)
+          new ArrayType(leaf, a.dimensions, a)
         }
     }
   }
-  protected def create(r: ReferenceBinding) = new SimpleClassJavaType(this, r, this)
+  protected def create(r: ReferenceBinding) = new SimpleClassJavaType(r, this)
 
 }

@@ -6,10 +6,8 @@ import java.io.StringWriter
 
 trait SelectionSubject
 abstract class Tree extends Product with SelectionSubject {
-  var symbol: Symbol = null
   var line: Int = 0
-  def cleanSymbols() {
-    symbol = null
+  def clean() {
     line = 0
   }
   def hasSymbol = false
@@ -51,10 +49,6 @@ abstract class Tree extends Product with SelectionSubject {
       }
     productIterator.toList flatMap subtrees
   }
-  private[zaluum] def copyAttrs(tree: Tree): this.type = {
-    symbol = tree.symbol
-    this
-  }
 
   override def hashCode(): Int = super.hashCode()
 
@@ -81,16 +75,15 @@ abstract class Tree extends Product with SelectionSubject {
       })
   }
 }
+abstract class SymbolTree[S >: Null <: Symbol] extends Tree {
+  var symbol: S = null
+  def sym = symbol
+  override def clean() {
+    super.clean
+    symbol = null
+  }
+}
 
-/*
-    case EmptyTree ⇒
-    case BoxDef(name, defs, vals, ports, connections) ⇒
-    case PortDef(name, typeName, in, inPos, extPos) ⇒
-    case ValDef(name, typeName,pos,guiSize) ⇒
-    case ConnectionDef(a, b) ⇒
-    case PortRef(name, from) =>
-    case BoxRef(name) =>
-   */
 // Transformer
 abstract class EditTransformer extends CopyTransformer with MapTransformer
 
@@ -101,10 +94,6 @@ trait MapTransformer extends Transformer {
     map += (tree -> transformed)
     transformed
   }
-}
-trait CopySymbolTransformer extends Transformer {
-  abstract override def transform[A <: Tree](tree: A): A =
-    super.transform(tree).copyAttrs(tree)
 }
 trait CopyTransformer extends Transformer {
   val defaultTransform: PartialFunction[Tree, Tree] = {
@@ -130,9 +119,7 @@ trait CopyTransformer extends Transformer {
       }
     case p: Param ⇒ p.copy()
     case c @ ConnectionDef(a, b, wp) ⇒
-      atOwner(c.symbol) {
-        ConnectionDef(transformOption(a), transformOption(b), wp)
-      }
+      ConnectionDef(transformOption(a), transformOption(b), wp)
     case PortRef(from, name, in) ⇒
       PortRef(transform(from), name, in)
     case ValRef(name)   ⇒ ValRef(name)
@@ -161,23 +148,23 @@ abstract class Traverser(initSymbol: Symbol) extends OwnerHelper[Unit] {
   def traverse(tree: Tree): Unit = {
     tree match {
       case b: BoxDef ⇒
-        atOwner(tree.symbol) {
+        atOwner(b.symbol) {
           traverse(b.template)
         }
       case t: Template ⇒
-        atOwner(tree.symbol) {
+        atOwner(t.symbol) {
           traverseTrees(t.ports)
           traverseTrees(t.blocks)
         }
       case b: Block ⇒
-        atOwner(tree.symbol) {
+        atOwner(b.symbol) {
           traverseTrees(b.valDefs)
           traverseTrees(b.junctions)
           traverseTrees(b.connections)
           traverseTrees(b.parameters)
         }
       case v: ValDef ⇒
-        atOwner(tree.symbol) {
+        atOwner(v.symbol) {
           traverseTrees(v.params)
           traverseOption(v.template)
         }
@@ -208,7 +195,10 @@ object PrettyPrinter {
   def print(trees: List[Tree], deep: Int) {
     trees.foreach { print(_, deep) }
   }
-  def sym(tree: Tree) = " sym= " + tree.symbol
+  def sym(tree: Tree) = tree match {
+    case s: SymbolTree[_] ⇒ " sym= " + s.symbol
+    case _                ⇒ "_"
+  }
   def print(tree: Tree, deep: Int): Unit = tree match {
     case b: BoxDef ⇒
       print("BoxDef(" + b.pkg + " " + b.name + ", " + b.image, deep)
@@ -269,6 +259,7 @@ abstract class OwnerHelper[A] {
 
 /* Definition */
 object BoxDef {
+
   def emptyBox(name: String, pkg: String) = {
     val block = Block(junctions = List(),
       connections = List(),
@@ -290,8 +281,7 @@ case class BoxDef(name: Name, // simple name
                   image: Option[String],
                   initMethod: Option[String],
                   constructor: List[VarDecl],
-                  template: Template) extends Tree {
-  def sym = symbol.asInstanceOf[BoxSymbol]
+                  template: Template) extends SymbolTree[BoxSymbol] {
   def transformThis(body: EditTransformer ⇒ BoxDef) = new EditTransformer() {
     val trans: PartialFunction[Tree, Tree] = {
       case b: BoxDef if b == BoxDef.this ⇒ body(this)
@@ -304,25 +294,24 @@ case class BoxDef(name: Name, // simple name
     copy(constructor = l, template = e.transform(template))
   }
 }
-case class VarDecl(name: Name, tpeName: Name) extends Tree
+case class VarDecl(name: Name, tpeName: Name) extends SymbolTree[ParamSymbol]
 object Template {
   def emptyTemplate(blocks: Int) = {
     Template(List.fill(blocks) { Block.empty }, List(), None)
   }
 }
-case class Template(blocks: List[Block], ports: List[PortDef], currentBlock: Option[String]) extends Tree {
-  def sym: TemplateSymbol = symbol.asInstanceOf[TemplateSymbol]
-}
+case class Template(
+  blocks: List[Block],
+  ports: List[PortDef],
+  currentBlock: Option[String]) extends SymbolTree[TemplateSymbol]
 object Block {
   def empty = Block(List(), List(), List(), List())
 }
 case class Block(
-    junctions: List[Junction],
-    connections: List[ConnectionDef],
-    parameters: List[Param],
-    valDefs: List[ValDef]) extends Tree {
-  def sym = symbol.asInstanceOf[BlockSymbol]
-}
+  junctions: List[Junction],
+  connections: List[ConnectionDef],
+  parameters: List[Param],
+  valDefs: List[ValDef]) extends SymbolTree[BlockSymbol]
 object PortDir {
   def fromStr(str: String) = str match {
     case In.str    ⇒ In
@@ -334,11 +323,16 @@ sealed abstract class PortDir(val str: String, val desc: String)
 case object In extends PortDir("<in>", "Port In")
 case object Out extends PortDir("<out>", "Port Out")
 case object Shift extends PortDir("<shift>", "Port Shift")
-case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPos: Point) extends Tree with Positionable {
+case class PortDef(
+    name: Name,
+    typeName: Name,
+    dir: PortDir,
+    inPos: Point,
+    extPos: Point) extends SymbolTree[PortSymbol] with Positionable {
   def pos = inPos
-  def sym = symbol.asInstanceOf[PortSymbol]
+
   def renamePort(str: String, tpe: Option[Name]): MapTransformer = {
-    val newName = if (str == name.str) name else Name(sym.box.asInstanceOf[BoxSymbol].freshName(str))
+    val newName = if (str == name.str) name else Name(sym.portsSymbol.asInstanceOf[BoxSymbol].freshName(str))
     new EditTransformer() {
       val trans: PartialFunction[Tree, Tree] = {
         case p: PortDef if (p == PortDef.this) ⇒
@@ -354,15 +348,14 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
     }
   }
 }
-case class ValRef(name: Name) extends Tree
-case class ThisRef() extends Tree
+case class ValRef(name: Name) extends SymbolTree[ValSymbol]
+case class ThisRef() extends SymbolTree[TemplateSymbol]
 trait ConnectionEnd extends Tree
-case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd { // in as flow or as PortDir?
-  def sym: PortSide = symbol.asInstanceOf[PortSide]
-}
-case class Param(key: Name, value: String) extends Tree {
-  def sym = symbol.asInstanceOf[ParamSymbol]
-}
+case class PortRef(
+  fromRef: Tree,
+  name: Name,
+  in: Boolean) extends SymbolTree[PortSide] with ConnectionEnd // in as flow or as PortDir?
+case class Param(key: Name, value: String) extends SymbolTree[ParamSymbol]
 case class LabelDesc(description: String, pos: Vector2)
 object ValDef {
   def emptyValDefBoxExpr(name: Name, dst: Point, label: String, className: String) = {
@@ -379,13 +372,12 @@ case class ValDef(
     typeName: Name,
     pos: Point,
     size: Option[Dimension],
-    params: List[Tree],
+    params: List[Param],
     constructorParams: List[String],
     constructorTypes: List[Name],
     label: Option[LabelDesc],
     labelGui: Option[LabelDesc],
-    template: Option[Template]) extends Tree with Positionable {
-  def sym = symbol.asInstanceOf[ValSymbol]
+    template: Option[Template]) extends SymbolTree[ValSymbol] with Positionable {
   def transformThis(body: EditTransformer ⇒ ValDef) = new EditTransformer() {
     val trans: PartialFunction[Tree, Tree] = {
       case v: ValDef if v == ValDef.this ⇒ body(this)
@@ -397,11 +389,11 @@ case class ValDef(
       params = e.transformTrees(params))
   }
   def removeParam(key: Name) = transformThis { e ⇒
-    val filtered = params.asInstanceOf[List[Param]].filterNot(_.key == key)
+    val filtered = params.filterNot(_.key == key)
     copy(template = e.transformOption(template), params = filtered)
   }
   def addOrReplaceParam(param: Param) = transformThis { e ⇒
-    val filtered = params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
+    val filtered = params.filterNot(_.key == param.key)
     copy(
       template = e.transformOption(template),
       params = param :: filtered)
@@ -423,7 +415,7 @@ case class ValDef(
     v.sym.owner.rename(v, id, lblDesc, gui)
   }
   def bounds: Option[(Point, Dimension)] = {
-    params.asInstanceOf[List[Param]].find(_.key == Name("bounds")).flatMap { par ⇒
+    params.find(_.key == Name("bounds")).flatMap { par ⇒
       val v = RectangleValueType.create(par.value)
       if (v.valid) {
         val r = v.parse
@@ -434,13 +426,13 @@ case class ValDef(
   def updatedBounds(p: Point, d: Dimension) = {
     val strPos = p.x + " " + p.y + " " + d.w + " " + d.h
     val param = Param(Name("bounds"), strPos)
-    param :: params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
+    param :: params.filterNot(_.key == param.key)
   }
 }
 trait TypedTree extends Tree {
   var tpe: Option[JavaType] = None
-  override def cleanSymbols() {
-    super.cleanSymbols()
+  override def clean() {
+    super.clean()
     tpe = None
   }
 }

@@ -11,6 +11,7 @@ import org.zaluum.nide.compiler.Template
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.ValSymbol
+import org.zaluum.nide.compiler.SymbolTree
 
 object Delete {
   def deleteSelection(selected: Set[Item], g: (Block ⇒ Option[ConnectionGraph])) = {
@@ -22,16 +23,21 @@ object Delete {
     new EditTransformer() {
       def isRemoved(c: ConnectionDef): Boolean = {
           def connectsRemovedVal(o: Option[ConnectionEnd]) = o match {
-            case Some(p: PortRef) ⇒ p.fromRef.symbol match {
-              case v: ValSymbol ⇒ valDefs.contains(v.decl.asInstanceOf[ValDef])
-              case _            ⇒ false
-            }
+            case Some(p: PortRef) ⇒
+              p.fromRef match {
+                case s: SymbolTree[_] ⇒
+                  s.sym match {
+                    case v: ValSymbol ⇒ valDefs.contains(v.decl.asInstanceOf[ValDef])
+                    case _            ⇒ false
+                  }
+                case _ ⇒ false
+              }
             case _ ⇒ false
           }
           def connectsRemovedPortDef(o: Option[ConnectionEnd]) = o match {
             case Some(p: PortRef) ⇒ p.sym.pi.portSymbol match {
               case Some(p) ⇒ selection.contains(p.decl)
-              case _             ⇒ false
+              case _       ⇒ false
             }
             case _ ⇒ false
           }
