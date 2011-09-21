@@ -15,7 +15,6 @@ import org.zaluum.nide.compiler.PortSymbol
 import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.Vector2
 import draw2dConversions._
-import org.zaluum.nide.compiler.NoSymbol
 
 class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
   var size = Dimension(5, 5)
@@ -24,20 +23,21 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
   private var ipos = MPoint(0, 0)
   var in = false
   var ps: PortSide = _
-  def isBad = ps!=null && ps.tpe == NoSymbol
+  def isBad = ps != null && ps.tpe.isEmpty
   def update(ipos: MPoint, ps: PortSide) {
     this.ps = ps
     this.ipos = ipos
     this.in = in
-    if (ps.pi.tpe == NoSymbol) {
-      setBackgroundColor(ColorConstants.white)
-      setLineWidthFloat(1.5F)
-      size = Dimension(7, 7)
-    } else {
-      setBackgroundColor(Colorizer.color(ps.pi.tpe))
-      setLineWidthFloat(1)
-      size = Dimension(5, 5)
-      updateHoverColor()
+    ps.pi.tpe match {
+      case Some(t) ⇒
+        setBackgroundColor(Colorizer.color(ps.pi.tpe))
+        setLineWidthFloat(1)
+        size = Dimension(5, 5)
+        updateHoverColor()
+      case None ⇒
+        setBackgroundColor(ColorConstants.white)
+        setLineWidthFloat(1.5F)
+        size = Dimension(7, 7)
     }
     setBounds(new Rectangle(pos.x, pos.y, size.w, size.h))
   }

@@ -50,7 +50,7 @@ trait ConnectionsTool {
       g.vertexs.find(v ⇒ v.p == snap).getOrElse {
         o match {
           case Some(l: LineItem) ⇒ new Joint(snap)
-          case _ ⇒ new EmptyVertex(snap)
+          case _                 ⇒ new EmptyVertex(snap)
         }
       }
     }
@@ -74,9 +74,9 @@ trait ConnectionsTool {
       move()
     }
     def snapMouse(f: Option[Figure], p: Point): Point = f match {
-      case Some(l: LineItem) ⇒ l.l.project(p)
+      case Some(l: LineItem)   ⇒ l.l.project(p)
       case Some(p: PortFigure) ⇒ p.anchor
-      case _ ⇒ p
+      case _                   ⇒ p
     }
     def doEnter {}
     /**
@@ -154,12 +154,12 @@ trait ConnectionsTool {
       dst = portsTrack.current orElse {
         initContainer.itemAt(point(currentMouseLocation), false) match {
           case Some(l: LineItem) ⇒ Some(l)
-          case _ ⇒ None
+          case _                 ⇒ None
         }
       }
       dst match {
         case Some(l: LineItem) ⇒ blinkLine(l)
-        case _ ⇒ unblinkLine()
+        case _                 ⇒ unblinkLine()
       }
       val now = snapMouse(dst, currentMouseLocation)
       viewer.setStatusMessage(currentMouseLocation.toString + " " + absMouseLocation.toString)
@@ -244,10 +244,11 @@ trait ConnectionsTool {
       // collect moved ends
       val movedEnds = vertexs.collect { case p: PortVertex ⇒ p }.filter { p ⇒
         val pi = p.ps.pi
-        if (p.ps.fromInside)
+        /* FIXME ?? if (p.ps.fromInside)
           portdefs.contains(pi.valSymbol.tpe.decl)
-        else
-          valdefs.contains(pi.valSymbol.decl)
+        else*/
+        p.ps.fromInside && valdefs.contains(pi.valSymbol.decl)
+
       }
       // update edge vertexs
       for (v ← movedJunctions.view ++ movedEnds) {

@@ -16,7 +16,7 @@ trait BoxExprChecker extends CheckerPart {
   def checkBoxExpr(vs: ValSymbol, c: ClassJavaType) {
     scope = scope(vs)
     var hasApply = false
-    lazy val ZComponent = scope.getJavaType(Name(classOf[java.awt.Component].getName))
+    lazy val ZComponent = scope.lookupType(Name(classOf[java.awt.Component].getName)).get
     type WithGetAnnotations = { def getAnnotations(): Array[AnnotationBinding] }
       def createPortInstances(ports: Iterable[PortSymbol], vsym: ValSymbol, inside: Boolean, outside: Boolean) = {
         vsym.portInstances :::= (for (p ← ports; if p.isInstanceOf[PortSymbol]) yield {

@@ -100,7 +100,7 @@ class AnalyzerParallelism(bl: BlockSymbol, a: Analyzer) {
     }
     for (vs ← dag.vertexSet()) {
       vs.tpe match {
-        case t: TemplateExprType ⇒
+        case Some(t: TemplateExprType) ⇒
           for (bl ← vs.blocks) {
             new AnalyzerParallelism(bl, a).run()
           }

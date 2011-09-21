@@ -111,70 +111,71 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     for (pi ← vs.portInstances) {
       val tpeName = pi.declOption.map { _.typeName.str }.getOrElse("")
       val blame = pi.declOption.getOrElse(vs.decl)
-      if (pi.tpe == NoSymbol)
+      if (pi.tpe.isEmpty)
         error("Invalid port type " + tpeName, blame)
       for ((from, blame) ← bl.connections.connectedFrom.get(pi)) {
         if (from.missing || pi.missing) {
           errorConnection("Connection to missing port ", blame)
-        } else if (from.tpe == NoSymbol || pi.tpe == NoSymbol) {
+        } else if (from.tpe == None || pi.tpe == None) {
           bl.connections.markAsBad(blame)
           /*ignore reported as port type not found*/ } else if (!checkAssignmentPossible(from.tpe, pi.tpe)) {
-          errorConnection("Connection with incompatible types: " + from.tpe.name.str + " to " + pi.tpe.name.str, blame)
+          errorConnection("Connection with incompatible types: " + from.tpeHumanStr + " to " + pi.tpeHumanStr, blame)
         }
       }
     }
   }
-  def checkAssignmentPossible(from: JavaType, to: JavaType): Boolean = {
-    if (to == NoSymbol) return false
+  def checkAssignmentPossible(from: Option[JavaType], to: Option[JavaType]): Boolean = {
+    if (to.isEmpty) return false
     from match {
-      case NoSymbol ⇒ false
-      case f: PrimitiveJavaType ⇒
+      case None ⇒ false
+      case Some(f: PrimitiveJavaType) ⇒
         to match {
-          case t: PrimitiveJavaType if t == f ⇒ true
-          case t: PrimitiveJavaType ⇒
+          case Some(t: PrimitiveJavaType) if t == f ⇒ true
+          case Some(t: PrimitiveJavaType) ⇒
             t == f || primitives.widening(f, t)
-          case t: ClassJavaType ⇒
-            ztd.zaluumScope.getBoxedType(f).binding.isCompatibleWith(t.binding)
+          case Some(t: ClassJavaType) ⇒
+            ztd.zaluumScope.getBoxedType(f).get.binding.isCompatibleWith(t.binding)
           case _ ⇒ false
         }
-      case f: ClassJavaType ⇒
+      case Some(f: ClassJavaType) ⇒
         to match {
-          case t: PrimitiveJavaType ⇒
+          case Some(t: PrimitiveJavaType) ⇒
             primitives.getUnboxedType(f) match {
               case Some(fp) ⇒ fp == t || primitives.widening(fp, t)
               case None     ⇒ false
             }
-          case t: JavaType ⇒
-            f.binding.isCompatibleWith(to.binding);
+          case Some(t: JavaType) ⇒
+            f.binding.isCompatibleWith(t.binding);
+          case _ ⇒ false
         }
-      case f: JavaType ⇒
-        f.binding.isCompatibleWith(to.binding); //array
+      case Some(f: JavaType) ⇒
+        f.binding.isCompatibleWith(to.get.binding); //array
       case _ ⇒ false
     }
   }
   def checkTypes() {
     if (main) {
-      template.thisVal.portInstances foreach { api ⇒
-        val pi = api.asInstanceOf[PortInstance]
+      template.thisVal.portInstances foreach { pi ⇒
         pi.missing = false
         pi.portSymbol match {
           case Some(ps) ⇒ pi.tpe = ps.tpe
-          case None     ⇒ error("Cannot find port " + api.name.str, b)
+          case None     ⇒ error("Cannot find port " + pi.name.str, b)
         }
       }
     }
     val exprChecker = new ExpressionChecker(this)
     val objectChecker = new OOChecker(this)
     for (vs ← bl.executionOrder) { // skip non executable
-      vs.tpe match {
-        case b: BinExprType      ⇒ exprChecker.checkBinExprTypes(vs)
-        case LiteralExprType     ⇒ exprChecker.checkLiteralExprType(vs)
-        case e: UnaryExprType    ⇒ exprChecker.checkUnaryExprType(vs)
-        case t: ThisExprType     ⇒ objectChecker.checkThisExprType(vs)
-        case ThisRefExprType     ⇒ objectChecker.checkThisRefExprType(vs)
-        case t: StaticExprType   ⇒ objectChecker.checkStaticExprType(vs)
-        case t: TemplateExprType ⇒ objectChecker.checkTemplateExprType(vs)
-        case NoSymbol            ⇒ //throw new Exception("why no symbol?" + vs)
+      vs.tpe foreach {
+        _ match {
+          case b: BinExprType      ⇒ exprChecker.checkBinExprTypes(vs)
+          case LiteralExprType     ⇒ exprChecker.checkLiteralExprType(vs)
+          case e: UnaryExprType    ⇒ exprChecker.checkUnaryExprType(vs)
+          case t: ThisExprType     ⇒ objectChecker.checkThisExprType(vs)
+          case ThisRefExprType     ⇒ objectChecker.checkThisRefExprType(vs)
+          case t: StaticExprType   ⇒ objectChecker.checkStaticExprType(vs)
+          case t: TemplateExprType ⇒ objectChecker.checkTemplateExprType(vs)
+        }
       }
       checkPortConnectionsTypes(vs)
       //checkGhostPorts(vs)
@@ -202,10 +203,12 @@ trait CheckerPart extends ReporterAdapter {
     }
   }
   def connectedFrom(p: PortInstance) = bl.connections.connectedFrom.get(p)
-  def fromTpe(p: PortInstance) = connectedFrom(p).map { _._1.tpe }.getOrElse(NoSymbol)
+  def fromTpe(p: PortInstance) = connectedFrom(p).flatMap { _._1.tpe }
   def blame(p: PortInstance) = connectedFrom(p) map { _._2 }
-  def unboxIfNeeded(t: JavaType) = t match {
-    case p: ClassJavaType ⇒ primitives.getUnboxedType(p).getOrElse(t)
-    case _                ⇒ t
+  def unboxIfNeeded(o: Option[JavaType]) = o flatMap {
+    _ match {
+      case p: ClassJavaType ⇒ primitives.getUnboxedType(p)
+      case _                ⇒ o
+    }
   }
 }

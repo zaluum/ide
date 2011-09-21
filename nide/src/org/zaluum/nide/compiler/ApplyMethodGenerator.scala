@@ -24,7 +24,7 @@ class MainThreadMethodGenerator(bs: BoxSymbol) extends MethodGenerator(bs) {
     for (arg ← bs.argsInOrder) {
       val pi = bs.thisVal.findPortInstance(arg).get
       if (pi.internalStorage != StorageLocal)
-        ins += Assign(toRef(pi), LocalRef(locals(pi), pi.tpe.fqName))
+        ins += Assign(toRef(pi), LocalRef(locals(pi), pi.tpe.get.fqName))
     }
     // run block
     ins ++= runBlock(block)
@@ -33,7 +33,7 @@ class MainThreadMethodGenerator(bs: BoxSymbol) extends MethodGenerator(bs) {
     bs.returnPort match {
       case Some(r) ⇒
         val pi = bs.thisVal.findPortInstance(r).get
-        ins += Return(toRef(pi), pi.tpe.fqName)
+        ins += Return(toRef(pi), pi.tpe.get.fqName)
       case None ⇒
         ins += Return
     }
@@ -54,20 +54,20 @@ class RunnableMethodGenerator(bs: BoxSymbol, startPath: ExecutionPath) extends M
   }
 }
 class MethodLocals {
-  type HasType = { def tpe: JavaType; def fqName: Name }
+  type HasType = { def tpe: Option[JavaType]; def fqName: Name }
   var localMap = Map[HasType, Int]()
   var locals = 1; // 0 for "this"
   def apply(t: HasType) = localMap(t)
   def createLocal(ref: HasType) {
     if (!localMap.contains(ref)) {
       localMap += (ref -> locals)
-      locals = locals + ref.tpe.javaSize
+      locals = locals + ref.tpe.get.javaSize
     }
   }
   def localsDecl = {
     localMap.map {
       case (p, i) ⇒
-        (p.fqName.str, p.tpe.asInstanceOf[JavaType].descriptor, i)
+        (p.fqName.str, p.tpe.get.descriptor, i)
     } toList;
   }
 }
@@ -87,18 +87,18 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
     ins.toList map { in ⇒ assign(in, out) }
   }
   def assign(to: PortInstance, from: PortInstance): Assign = {
-    Assign(toRef(to), cast(from.tpe, to.tpe, toRef(from)))
+    Assign(toRef(to), cast(from.tpe.get, to.tpe.get, toRef(from)))
   }
   def toRef(pi: PortInstance): Ref = pi.internalStorage match {
     case StorageLocal ⇒
-      LocalRef(locals(pi), pi.tpe.fqName)
+      LocalRef(locals(pi), pi.tpe.get.fqName)
     case StorageValField ⇒
       Select(
         valRef(pi.valSymbol),
-        FieldRef(pi.name, pi.tpe.fqName.descriptor, pi.valSymbol.javaType.fqName))
+        FieldRef(pi.name, pi.tpe.get.fqName.descriptor, pi.valSymbol.javaType.fqName))
     case StorageJoinField ⇒
       Select(thisRef,
-        FieldRef(pi.joinfqName, pi.tpe.fqName.descriptor, bs.fqName))
+        FieldRef(pi.joinfqName, pi.tpe.get.fqName.descriptor, bs.fqName))
   }
   def runExecutionPath(execPath: ExecutionPath) = {
     val ins = Buffer[Tree]()
@@ -133,7 +133,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
     for (ps ← vs.portSides; if (ps.flowIn); val pi = ps.pi) yield {
       bl.connections.connectedFrom.get(pi) match {
         case Some((o, blame)) ⇒ assign(pi, o)
-        case None             ⇒ Assign(toRef(pi), Const(0, pi.tpe.fqName))
+        case None             ⇒ Assign(toRef(pi), Const(0, pi.tpe.get.fqName))
       }
     }
   }
@@ -155,183 +155,185 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
           Assign(toRef(out), invoke)
         } else invoke
 
-    vs.tpe match {
-      case BoxExprType ⇒
-        val cl = vs.classinfo.asInstanceOf[ClassJavaType]
-        val selector = vs.info.asInstanceOf[String]
-        val argsInOrder = vs.ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
-        val returnPort = vs.ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
-        val returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
-        val methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
+    vs.tpe.foreach {
+      _ match {
+        case BoxExprType ⇒
+          val cl = vs.classinfo.asInstanceOf[ClassJavaType]
+          val selector = vs.info.asInstanceOf[String]
+          val argsInOrder = vs.ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
+          val returnPort = vs.ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
+          val returnDescriptor = returnPort map { _.tpe.get.fqName.descriptor } getOrElse ("V")
+          val methodSignature = "(" + argsInOrder.map { _.tpe.get.fqName.descriptor }.mkString + ")" + returnDescriptor
 
-        val tpe = cl.fqName
-        val args = argsInOrder map { ps ⇒ toRef(vs.findPortInstance(ps).get) }
-        val invoke = Invoke(
-          valRef(vs),
-          selector,
-          args,
-          tpe,
-          methodSignature,
-          interface = false)
-        val res = returnPort map { p ⇒
-          val pi = vs.findPortInstance(p).get
-          Assign(toRef(pi), invoke)
-        } getOrElse (invoke)
-        ins += res
-      case WhileExprType ⇒
-        ins += While(
-          runBlock(vs.blocks.head),
-          toRef(WhileExprType.endPort(vs)))
-      case IfExprType ⇒
-        ins +=
-          If(
-            toRef(IfExprType.condPort(vs)),
-            runBlock(vs.blocks(0)),
-            runBlock(vs.blocks(1)))
-      case ArrayExprType ⇒
-        val index = ArrayExprType.indexPort(vs)
-        val thisPort = ArrayExprType.thisPort(vs)
-        val thisOutPort = ArrayExprType.thisOutPort(vs)
-        val aPort = ArrayExprType.aPort(vs)
-        val oPort = ArrayExprType.outPort(vs)
-          def arrayRef = ArrayRef(index = toRef(index), arrRef = toRef(thisPort), arrTpe = aPort.tpe)
-          def load = Assign(toRef(oPort), arrayRef)
-          def store = Assign(arrayRef, toRef(aPort))
-          def thisOut = Assign(toRef(thisOutPort), toRef(thisPort))
-        execPath.blockSymbol.connections.connectedFrom.get(aPort) match {
-          case Some(_) ⇒ // do store
-            ins += store
-            ins += Assign(toRef(oPort), toRef(aPort))
-          case None ⇒
-            ins += load
-        }
-        ins += thisOut
-      case InvokeExprType ⇒
-        val m = vs.info.asInstanceOf[MethodBinding]
-        val obj = InvokeExprType.thisPort(vs)
-        val thisOut = InvokeExprType.thisOutPort(vs) // XXX optimize and use only 1 var
-        val params = vs.portSides filter { ps ⇒ ps.inPort && ps.pi != obj } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
-        val invoke = Invoke(
-          toRef(obj),
-          m.selector.mkString,
-          params,
-          Name(m.declaringClass.constantPoolName().mkString),
-          m.signature().mkString,
-          m.declaringClass.isInterface)
-        ins += invokeHelper(vs, m, invoke)
-        ins += Assign(toRef(thisOut), toRef(obj))
-      case NewExprType ⇒
-        val m = vs.info.asInstanceOf[MethodBinding]
-        val thiz = NewExprType.thisPort(vs)
-        val params = vs.portSides filter { ps ⇒ ps.inPort } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
-        ins +=
-          Assign(toRef(thiz),
-            New(Name(m.declaringClass.constantPoolName.mkString),
-              params,
-              m.signature().mkString))
-      case NewArrayExprType ⇒
-        val thiz = NewArrayExprType.thisPort(vs)
-        val ab = thiz.tpe.asInstanceOf[ArrayType]
-        val dimPorts = vs.portInstances.filter { pi ⇒ pi.dir == In && pi.name.str.startsWith("d") }.sortBy { _.name.str.drop(1).toInt } // XXX ugly
-        ins +=
-          Assign(
-            toRef(thiz),
-            NewArray(dimPorts.map { toRef(_) }, ab.of))
-      case InvokeStaticExprType ⇒
-        val m = vs.info.asInstanceOf[MethodBinding]
-        // TODO share with invoke
-        val params = vs.portSides filter { ps ⇒ ps.inPort } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
-        val invoke =
-          InvokeStatic(
-            meth = m.selector.mkString,
-            param = params,
-            fromClass = Name(m.declaringClass.constantPoolName.mkString),
-            descriptor = m.signature.mkString)
-        ins += invokeHelper(vs, m, invoke)
-      case ThisRefExprType ⇒
-        val port = ThisRefExprType.thisPort(vs)
-        ins += Assign(toRef(port), thisRef)
-      case FieldExprType ⇒
-        val f = vs.info.asInstanceOf[FieldBinding]
-        val a = FieldExprType.aPort(vs)
-        val o = FieldExprType.outPort(vs)
-        val obj = FieldExprType.thisPort(vs)
-        val thisOut = FieldExprType.thisOutPort(vs)
-          def fieldRef = Select(
+          val tpe = cl.fqName
+          val args = argsInOrder map { ps ⇒ toRef(vs.findPortInstance(ps).get) }
+          val invoke = Invoke(
+            valRef(vs),
+            selector,
+            args,
+            tpe,
+            methodSignature,
+            interface = false)
+          val res = returnPort map { p ⇒
+            val pi = vs.findPortInstance(p).get
+            Assign(toRef(pi), invoke)
+          } getOrElse (invoke)
+          ins += res
+        case WhileExprType ⇒
+          ins += While(
+            runBlock(vs.blocks.head),
+            toRef(WhileExprType.endPort(vs)))
+        case IfExprType ⇒
+          ins +=
+            If(
+              toRef(IfExprType.condPort(vs)),
+              runBlock(vs.blocks(0)),
+              runBlock(vs.blocks(1)))
+        case ArrayExprType ⇒
+          val index = ArrayExprType.indexPort(vs)
+          val thisPort = ArrayExprType.thisPort(vs)
+          val thisOutPort = ArrayExprType.thisOutPort(vs)
+          val aPort = ArrayExprType.aPort(vs)
+          val oPort = ArrayExprType.outPort(vs)
+            def arrayRef = ArrayRef(index = toRef(index), arrRef = toRef(thisPort), arrTpe = aPort.tpe.get)
+            def load = Assign(toRef(oPort), arrayRef)
+            def store = Assign(arrayRef, toRef(aPort))
+            def thisOut = Assign(toRef(thisOutPort), toRef(thisPort))
+          execPath.blockSymbol.connections.connectedFrom.get(aPort) match {
+            case Some(_) ⇒ // do store
+              ins += store
+              ins += Assign(toRef(oPort), toRef(aPort))
+            case None ⇒
+              ins += load
+          }
+          ins += thisOut
+        case InvokeExprType ⇒
+          val m = vs.info.asInstanceOf[MethodBinding]
+          val obj = InvokeExprType.thisPort(vs)
+          val thisOut = InvokeExprType.thisOutPort(vs) // XXX optimize and use only 1 var
+          val params = vs.portSides filter { ps ⇒ ps.inPort && ps.pi != obj } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
+          val invoke = Invoke(
             toRef(obj),
-            FieldRef(
+            m.selector.mkString,
+            params,
+            Name(m.declaringClass.constantPoolName().mkString),
+            m.signature().mkString,
+            m.declaringClass.isInterface)
+          ins += invokeHelper(vs, m, invoke)
+          ins += Assign(toRef(thisOut), toRef(obj))
+        case NewExprType ⇒
+          val m = vs.info.asInstanceOf[MethodBinding]
+          val thiz = NewExprType.thisPort(vs)
+          val params = vs.portSides filter { ps ⇒ ps.inPort } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
+          ins +=
+            Assign(toRef(thiz),
+              New(Name(m.declaringClass.constantPoolName.mkString),
+                params,
+                m.signature().mkString))
+        case NewArrayExprType ⇒
+          val thiz = NewArrayExprType.thisPort(vs)
+          val ab = thiz.tpe.asInstanceOf[ArrayType]
+          val dimPorts = vs.portInstances.filter { pi ⇒ pi.dir == In && pi.name.str.startsWith("d") }.sortBy { _.name.str.drop(1).toInt } // XXX ugly
+          ins +=
+            Assign(
+              toRef(thiz),
+              NewArray(dimPorts.map { toRef(_) }, ab.of))
+        case InvokeStaticExprType ⇒
+          val m = vs.info.asInstanceOf[MethodBinding]
+          // TODO share with invoke
+          val params = vs.portSides filter { ps ⇒ ps.inPort } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
+          val invoke =
+            InvokeStatic(
+              meth = m.selector.mkString,
+              param = params,
+              fromClass = Name(m.declaringClass.constantPoolName.mkString),
+              descriptor = m.signature.mkString)
+          ins += invokeHelper(vs, m, invoke)
+        case ThisRefExprType ⇒
+          val port = ThisRefExprType.thisPort(vs)
+          ins += Assign(toRef(port), thisRef)
+        case FieldExprType ⇒
+          val f = vs.info.asInstanceOf[FieldBinding]
+          val a = FieldExprType.aPort(vs)
+          val o = FieldExprType.outPort(vs)
+          val obj = FieldExprType.thisPort(vs)
+          val thisOut = FieldExprType.thisOutPort(vs)
+            def fieldRef = Select(
+              toRef(obj),
+              FieldRef(
+                Name(f.name.mkString),
+                f.`type`.signature.mkString,
+                Name(f.declaringClass.constantPoolName.mkString)))
+            def store = Assign(fieldRef, toRef(a))
+            def load = Assign(toRef(o), fieldRef)
+            def storeThisOut = Assign(toRef(thisOut), toRef(obj))
+          execPath.blockSymbol.connections.connectedFrom.get(a) match {
+            case Some(_) ⇒ // do store
+              ins += store
+              ins += Assign(toRef(o), toRef(a))
+            case None ⇒
+              ins += load
+          }
+          ins += storeThisOut
+        case StaticFieldExprType ⇒ // share with field
+          val f = vs.info.asInstanceOf[FieldBinding]
+          val a = StaticFieldExprType.aPort(vs)
+          val o = StaticFieldExprType.outPort(vs)
+            def fieldRef = FieldStaticRef(
               Name(f.name.mkString),
               f.`type`.signature.mkString,
-              Name(f.declaringClass.constantPoolName.mkString)))
-          def store = Assign(fieldRef, toRef(a))
-          def load = Assign(toRef(o), fieldRef)
-          def storeThisOut = Assign(toRef(thisOut), toRef(obj))
-        execPath.blockSymbol.connections.connectedFrom.get(a) match {
-          case Some(_) ⇒ // do store
-            ins += store
-            ins += Assign(toRef(o), toRef(a))
-          case None ⇒
-            ins += load
-        }
-        ins += storeThisOut
-      case StaticFieldExprType ⇒ // share with field
-        val f = vs.info.asInstanceOf[FieldBinding]
-        val a = StaticFieldExprType.aPort(vs)
-        val o = StaticFieldExprType.outPort(vs)
-          def fieldRef = FieldStaticRef(
-            Name(f.name.mkString),
-            f.`type`.signature.mkString,
-            Name(f.declaringClass.constantPoolName.mkString))
-          def store = Assign(fieldRef, toRef(a))
-          def load = Assign(toRef(o), fieldRef)
-        execPath.blockSymbol.connections.connectedFrom.get(a) match {
-          case Some(_) ⇒
-            ins += store
-            ins += Assign(toRef(o), toRef(a))
-          case None ⇒
-            ins += load
-        }
-      case LiteralExprType ⇒
-        val o = LiteralExprType.outPort(vs)
-        val c = vs.params.headOption match {
-          case Some((t, v)) ⇒
-            v.codeGen
-          case _ ⇒ new Const(0, primitives.Byte)
-        }
-        ins += Assign(toRef(o), c)
-      case u: UnaryExprType ⇒
-        val (a, o) = u.unaryPortInstancesOf(vs)
-        ins += (u match {
-          case c: CastExprType ⇒ Assign(toRef(o), cast(a.tpe, o.tpe, toRef(a)))
-          case NotExprType     ⇒ Assign(toRef(o), Not(toRef(a), a.tpe.asInstanceOf[PrimitiveJavaType]))
-          case MinusExprType   ⇒ Assign(toRef(o), Minus(toRef(a), a.tpe.asInstanceOf[PrimitiveJavaType]))
-        })
-      case s: BinExprType ⇒
-        val (a, b, o) = s.binaryPortInstancesOf(vs)
-        val aTree = toRef(a)
-        val bTree = toRef(b)
-        val etpe = a.tpe.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
-        val eTree = s match {
-          case ShiftLeftExprType   ⇒ ShiftLeft(aTree, bTree, etpe)
-          case ShiftRightExprType  ⇒ ShiftRight(aTree, bTree, etpe)
-          case UShiftRightExprType ⇒ UShiftRight(aTree, bTree, etpe)
-          case AndExprType         ⇒ And(aTree, bTree, etpe)
-          case OrExprType          ⇒ Or(aTree, bTree, etpe)
-          case XorExprType         ⇒ Xor(aTree, bTree, etpe)
-          case AddExprType         ⇒ Add(aTree, bTree, etpe)
-          case SubExprType         ⇒ Sub(aTree, bTree, etpe)
-          case MulExprType         ⇒ Mul(aTree, bTree, etpe)
-          case DivExprType         ⇒ Div(aTree, bTree, etpe)
-          case RemExprType         ⇒ Rem(aTree, bTree, etpe)
-          case LtExprType          ⇒ Lt(aTree, bTree, etpe)
-          case LeExprType          ⇒ Le(aTree, bTree, etpe)
-          case GtExprType          ⇒ Gt(aTree, bTree, etpe)
-          case GeExprType          ⇒ Ge(aTree, bTree, etpe)
-          case EqExprType          ⇒ Eq(aTree, bTree, etpe)
-          case NeExprType          ⇒ Ne(aTree, bTree, etpe)
-        }
-        ins += Assign(toRef(o), eTree)
-      case o ⇒ throw new RuntimeException("Not implemented " + o)
+              Name(f.declaringClass.constantPoolName.mkString))
+            def store = Assign(fieldRef, toRef(a))
+            def load = Assign(toRef(o), fieldRef)
+          execPath.blockSymbol.connections.connectedFrom.get(a) match {
+            case Some(_) ⇒
+              ins += store
+              ins += Assign(toRef(o), toRef(a))
+            case None ⇒
+              ins += load
+          }
+        case LiteralExprType ⇒
+          val o = LiteralExprType.outPort(vs)
+          val c = vs.params.headOption match {
+            case Some((t, v)) ⇒
+              v.codeGen
+            case _ ⇒ new Const(0, primitives.Byte)
+          }
+          ins += Assign(toRef(o), c)
+        case u: UnaryExprType ⇒
+          val (a, o) = u.unaryPortInstancesOf(vs)
+          ins += (u match {
+            case c: CastExprType ⇒ Assign(toRef(o), cast(a.tpe.get, o.tpe.get, toRef(a)))
+            case NotExprType     ⇒ Assign(toRef(o), Not(toRef(a), a.tpe.get.asInstanceOf[PrimitiveJavaType]))
+            case MinusExprType   ⇒ Assign(toRef(o), Minus(toRef(a), a.tpe.get.asInstanceOf[PrimitiveJavaType]))
+          })
+        case s: BinExprType ⇒
+          val (a, b, o) = s.binaryPortInstancesOf(vs)
+          val aTree = toRef(a)
+          val bTree = toRef(b)
+          val etpe = a.tpe.get.asInstanceOf[PrimitiveJavaType] // is it safe to pick a?
+          val eTree = s match {
+            case ShiftLeftExprType   ⇒ ShiftLeft(aTree, bTree, etpe)
+            case ShiftRightExprType  ⇒ ShiftRight(aTree, bTree, etpe)
+            case UShiftRightExprType ⇒ UShiftRight(aTree, bTree, etpe)
+            case AndExprType         ⇒ And(aTree, bTree, etpe)
+            case OrExprType          ⇒ Or(aTree, bTree, etpe)
+            case XorExprType         ⇒ Xor(aTree, bTree, etpe)
+            case AddExprType         ⇒ Add(aTree, bTree, etpe)
+            case SubExprType         ⇒ Sub(aTree, bTree, etpe)
+            case MulExprType         ⇒ Mul(aTree, bTree, etpe)
+            case DivExprType         ⇒ Div(aTree, bTree, etpe)
+            case RemExprType         ⇒ Rem(aTree, bTree, etpe)
+            case LtExprType          ⇒ Lt(aTree, bTree, etpe)
+            case LeExprType          ⇒ Le(aTree, bTree, etpe)
+            case GtExprType          ⇒ Gt(aTree, bTree, etpe)
+            case GeExprType          ⇒ Ge(aTree, bTree, etpe)
+            case EqExprType          ⇒ Eq(aTree, bTree, etpe)
+            case NeExprType          ⇒ Ne(aTree, bTree, etpe)
+          }
+          ins += Assign(toRef(o), eTree)
+        case o ⇒ throw new RuntimeException("Not implemented " + o)
+      }
     }
     // release sem
     if (vs.isJoinPoint)

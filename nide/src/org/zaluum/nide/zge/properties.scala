@@ -25,7 +25,6 @@ import org.zaluum.nide.compiler.BeanParamSymbol
 import org.zaluum.nide.compiler.BoxDef
 import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.compiler.NoSymbol
 import org.zaluum.nide.compiler.Param
 import org.zaluum.nide.compiler.ParamSymbol
 import org.zaluum.nide.compiler.ValDef
@@ -82,7 +81,7 @@ abstract class InitProperty(b: BoxDef, val c: Controller) extends Property {
   def className = split.map { _._1 }
   def methodName = split.map { _._2 }
   def split = b.initMethod.flatMap { s ⇒ MethodBindingUtils.staticMethodSplit(s) }
-  def tpe = className.map { c ⇒ scope.getJavaType(Name(c)) }.getOrElse(NoSymbol)
+  def tpe = className.flatMap { c ⇒ scope.lookupType(Name(c)) }
   def set(cl: String, m: String) = {
     val comm = if (cl == "" && m == "") b.editInitMethod(None)
     else b.editInitMethod(Some(cl + "#" + m))
@@ -215,7 +214,7 @@ class ConstructorParamProperty(
     c: Controller,
     p: ParamSymbol,
     v: ValDef,
-    tpe: ⇒ JavaType) extends TextParamProperty(c, p, v) with MethodProperty {
+    tpe: ⇒ Option[JavaType]) extends TextParamProperty(c, p, v) with MethodProperty {
   def scope = v.sym.mainBS.scope
   def tpe = tpe
   def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
@@ -223,7 +222,11 @@ class ConstructorParamProperty(
 
 }
 trait MethodProperty extends ControllerProperty {
-  def tpe: JavaType
+  def tpe: Option[JavaType]
+  def binding = tpe match {
+    case Some(t) ⇒ t.binding
+    case None    ⇒ null
+  }
   def scope: ZaluumClassScope
   def currentVal: Option[String]
   def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding): List[MethodBinding]
@@ -232,7 +235,7 @@ trait MethodProperty extends ControllerProperty {
       val m = new MethodSelectDialog(
         c.zproject.jProject.asInstanceOf[JavaProject],
         cell.getShell(),
-        tpe.binding,
+        binding,
         scope,
         currentVal) {
         def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
@@ -247,7 +250,7 @@ class MethodParamProperty(
     c: Controller,
     p: ParamSymbol,
     v: ValDef,
-    javatpe: ⇒ JavaType,
+    javatpe: ⇒ Option[JavaType],
     val static: Boolean) extends TextParamProperty(c, p, v) with MethodProperty {
   def scope = v.sym.mainBS.scope
   def tpe = javatpe
@@ -259,7 +262,7 @@ class FieldParamProperty(
     c: Controller,
     p: ParamSymbol,
     v: ValDef,
-    tpe: ⇒ JavaType,
+    tpe: ⇒ Option[JavaType],
     static: Boolean) extends TextParamProperty(c, p, v) {
   override def descriptor = new TextDialogPropertyDescriptor(this, p.name.str) {
     def openDialog(cell: Control) = new FieldSelectDialog(

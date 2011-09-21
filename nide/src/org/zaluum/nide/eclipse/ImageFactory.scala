@@ -45,12 +45,12 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
   def destroyAll() = rm.dispose();
   def image48(name: Name): (Image, DeviceResourceDescriptor) = iconFor(None, name, 48);
-  def icon(tpe: Type, minY: Int): (Image, DeviceResourceDescriptor) = {
+  def icon(tpe: Option[Type], minY: Int): (Image, DeviceResourceDescriptor) = {
     tpe match {
       //case b: BoxTypeSymbol ⇒ iconFor(b.image, b.fqName, minY)
-      case c: ClassJavaType ⇒ iconFor(None, c.fqName, minY)
-      case t: ExprType      ⇒ iconFor(None, t.fqName, minY)
-      case _                ⇒ imageForText("<missing>", minY, ColorConstants.red)
+      case Some(c: ClassJavaType) ⇒ iconFor(None, c.fqName, minY)
+      case Some(t: ExprType)      ⇒ iconFor(None, t.fqName, minY)
+      case _                      ⇒ imageForText("<missing>", minY, ColorConstants.red)
     }
   }
   def invokeIcon(str: String, miny: Int) = imageForText(str, miny, ColorConstants.blue)

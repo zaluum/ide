@@ -25,8 +25,8 @@ object SelectionProvider {
       def getAdapter(cl: Class[_]) = i match {
         case v: ValDefItem if (v.valSym.tpe != null) ⇒
           cl match {
-            case Jelement ⇒
-              controller.zproject.jProject.findType(v.valSym.tpe.fqName.str)
+            case Jelement if (v.valSym.tpe.isDefined) ⇒
+              controller.zproject.jProject.findType(v.valSym.tpe.get.fqName.str)
             case _ ⇒ null
           }
         case _ ⇒ null

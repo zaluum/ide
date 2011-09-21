@@ -19,7 +19,7 @@ import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 
 class FieldSelectDialog(
     shell: Shell,
-    tpe: ⇒ JavaType,
+    tpe: ⇒ Option[JavaType],
     static: Boolean,
     val vs: ValSymbol,
     currentFieldName: Option[String]) extends FilteredItemsSelectionDialog2(shell, false) {
@@ -54,8 +54,8 @@ class FieldSelectDialog(
   val settings = new DialogSettings(id);
   val scope = vs.mainBS.scope
 
-  val items: Array[FieldBinding] = tpe.binding match {
-    case r: ReferenceBinding ⇒
+  val items: Array[FieldBinding] = tpe.map { _.binding } match {
+    case Some(r: ReferenceBinding) ⇒
       val engine = ZaluumCompletionEngineScala.engineForVs(vs)
       val fields = ZaluumCompletionEngineScala.allFields(engine, scope, r, static)
       fields.sortBy(_.name.mkString).toArray

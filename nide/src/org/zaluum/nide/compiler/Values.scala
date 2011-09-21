@@ -51,7 +51,10 @@ abstract class PrimitiveValueType(val ptpe: PrimitiveJavaType) extends ValueType
 }
 abstract class ClassValueType(clazz: Class[_]) extends ValueType {
   val tpe = Name(clazz.getName())
-  def matches(b: BeanParamSymbol) = b.tpe.fqName == tpe
+  def matches(b: BeanParamSymbol) = b.tpe match {
+    case Some(t) ⇒ t.fqName == tpe
+    case None    ⇒ false
+  }
   def matchesTpe(otpe: Name) = tpe == otpe
   def parseSWT(a: AnyRef) = a.toString
 }
@@ -269,7 +272,7 @@ class InvalidValueType(val tpe: Name) extends ValueType {
   }
   def parseSWT(a: AnyRef) = a.toString
   def matchesTpe(name: Name) = tpe == name
-  def matches(b: BeanParamSymbol) = matchesTpe(b.tpe.fqName)
+  def matches(b: BeanParamSymbol) = matchesTpe(b.tpe.map(_.fqName).getOrElse(null))
 }
 object Values {
   val AbstractButton = classOf[javax.swing.AbstractButton].getName
@@ -321,7 +324,7 @@ object Values {
     types.find(_.matchesTpe(tpe)).getOrElse(new InvalidValueType(tpe))
   }
   def typeFor(b: BeanParamSymbol): ValueType = {
-    types.find(_.matches(b)).getOrElse(new InvalidValueType(b.tpe.fqName))
+    types.find(_.matches(b)).getOrElse(new InvalidValueType(b.tpe.map { _.fqName }.getOrElse(Name("NotFound"))))
   }
   def parseNarrowestLiteral(v: String, zaluumScope: ZaluumClassScope): Value = {
       def narrowestInt(i: Int, s: String): Value = {

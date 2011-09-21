@@ -25,7 +25,6 @@ import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.eclipse.BoxTypeProxy
 import draw2dConversions.point
 import org.zaluum.nide.compiler.MapTransformer
-import org.zaluum.nide.compiler.NoSymbol
 import org.zaluum.nide.compiler.BoxExprType
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
@@ -315,7 +314,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         val abs = pf.anchor.getCopy
         val name = pf.ps.helperName.getOrElse(pf.ps.name).str
         val pi = pf.ps.pi
-        val text = name + " : " + pi.tpe.name.str + " " + pi.internalStorage.getClass().getSimpleName()
+        val text = name + " : " + pi.tpe.map { _.name.str }.getOrElse("<Error>")
         tooltip.setText(text)
         viewer.feedbackLayer.add(tooltip)
       } catch {

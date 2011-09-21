@@ -438,10 +438,10 @@ case class ValDef(
   }
 }
 trait TypedTree extends Tree {
-  var tpe: JavaType = NoSymbol
+  var tpe: Option[JavaType] = None
   override def cleanSymbols() {
     super.cleanSymbols()
-    tpe = NoSymbol
+    tpe = None
   }
 }
 case class ConnectionDef(

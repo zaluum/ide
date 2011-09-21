@@ -23,7 +23,6 @@ import org.zaluum.nide.compiler.SimpleClassJavaType
 import org.zaluum.nide.compiler.In
 import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.compiler.NoSymbol
 import org.zaluum.nide.compiler.Out
 import org.zaluum.nide.compiler.ParamSymbol
 import org.zaluum.nide.compiler.Point
@@ -48,26 +47,16 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
   private val cacheJava = Map[TypeBinding, ClassJavaType]()
   def name = Name("root")
   def owner = null
-  def getBoxedType(p: PrimitiveJavaType): JavaType =
-    getJavaType(p.boxedName)
-  def getZJavaLangString = getJavaType(Name("java.lang.String"))
+  def getBoxedType(p: PrimitiveJavaType): Option[JavaType] = lookupType(p.boxedName)
+  def getZJavaLangString = lookupType(Name("java.lang.String")).get
   def javaScope: ZaluumClassScope = this
-  def lookupType(name: Name): Option[JavaType] = getJavaType(name) match {
-    case NoSymbol ⇒ None
-    case o        ⇒ Some(o)
-  }
-  def getArrayType(t: JavaType, dim: Int): ArrayType = {
-    val bind = createArrayType(t.binding, dim)
-    val a = new ArrayType(this, t, dim, bind)
-    a
-  }
-  def getJavaType(name: Name): JavaType = {
+  def lookupType(name: Name): Option[JavaType] = {
     val arr = name.asArray
     if (arr.isDefined) {
       val (leafname, dim) = arr.get
-      val t = getJavaType(leafname)
-      if (t == NoSymbol) t
-      else getArrayType(t, dim)
+      lookupType(leafname) map { t ⇒
+        getArrayType(t, dim)
+      }
     } else {
       val tpe =
         if (name.str.contains(".")) {
@@ -79,13 +68,24 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
       getJavaType(tpe)
     }
   }
+  def getArrayType(t: JavaType, dim: Int): ArrayType = {
+    val bind = createArrayType(t.binding, dim)
+    val a = new ArrayType(this, t, dim, bind)
+    a
+  }
   def getStaticMethod(nameHashAndSignature: String): Option[MethodBinding] = {
     MethodBindingUtils.staticMethod(nameHashAndSignature) match {
       case Some((cl, selector, params, ret)) ⇒
         val compound = JDTUtils.stringToA(cl)
         val t = getType(compound, compound.length);
 
-        val paramsBind: List[TypeBinding] = params.map { s ⇒ getJavaType(Name(s)).binding }
+        val paramsBind: List[TypeBinding] = for (s ← params) yield {
+          val to = lookupType(Name(s))
+          to match {
+            case Some(t) ⇒ t.binding
+            case _       ⇒ null
+          }
+        }
         if (paramsBind.contains(null))
           None
         else {
@@ -94,18 +94,18 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
       case _ ⇒ None
     }
   }
-  def getJavaType(tpe: TypeBinding): JavaType = {
+  def getJavaType(tpe: TypeBinding): Option[JavaType] = {
     tpe match {
-      case m: MissingTypeBinding         ⇒ NoSymbol
-      case p: ProblemReferenceBinding    ⇒ NoSymbol
-      case u: UnresolvedReferenceBinding ⇒ NoSymbol
+      case m: MissingTypeBinding         ⇒ None
+      case p: ProblemReferenceBinding    ⇒ None
+      case u: UnresolvedReferenceBinding ⇒ None
       case r: ReferenceBinding ⇒
         val tpe = environment.convertToRawType(r, false).asInstanceOf[ReferenceBinding]
         if (tpe != null) {
-          cacheJava.getOrElseUpdate(tpe, create(tpe))
-        } else NoSymbol
+          Some(cacheJava.getOrElseUpdate(tpe, create(tpe)))
+        } else None
       case b: BaseTypeBinding ⇒
-        b.simpleName.mkString match {
+        Some(b.simpleName.mkString match {
           case "byte"    ⇒ primitives.Byte
           case "short"   ⇒ primitives.Short
           case "int"     ⇒ primitives.Int
@@ -114,11 +114,11 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
           case "double"  ⇒ primitives.Double
           case "boolean" ⇒ primitives.Boolean
           case "char"    ⇒ primitives.Char
-        }
+        })
       case a: ArrayBinding ⇒
-        val leaf = getJavaType(a.leafComponentType)
-        val t = new ArrayType(this, leaf, a.dimensions, a)
-        t
+        getJavaType(a.leafComponentType) map { leaf ⇒
+          new ArrayType(this, leaf, a.dimensions, a)
+        }
     }
   }
   protected def create(r: ReferenceBinding) = new SimpleClassJavaType(this, r, this)

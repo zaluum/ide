@@ -18,7 +18,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
         val out = vs.portInstances find { _.name == Name("return") } getOrElse { vs.createOutsideOut(Name("return")).pi }
         out.missing = false
         out.tpe = ztd.zaluumScope.getJavaType(m.returnType)
-        if (out.tpe == NoSymbol) error("Return type " + m.returnType.readableName().mkString + " cannot be resolved", vs.decl)
+        if (out.tpe.isEmpty) error("Return type " + m.returnType.readableName().mkString + " cannot be resolved", vs.decl)
       }
       for ((p, i) ← m.parameters.zipWithIndex) {
         val name = Name("p" + i)
@@ -35,7 +35,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
      *  statics
      */
   def checkStaticExprType(vs: ValSymbol) {
-    val tpe = vs.tpe.asInstanceOf[StaticExprType]
+    val tpe = vs.tpe.get.asInstanceOf[StaticExprType]
     vs.params.get(tpe.typeSymbol) match {
       case Some(v) ⇒
         ztd.zaluumScope.lookupType(Name(v.encoded)) match {
@@ -99,7 +99,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     }
   }
   def processStaticField(vs: ValSymbol, c: ClassJavaType) {
-    val tpe = vs.tpe.asInstanceOf[SignatureExprType]
+    val tpe = vs.tpe.get.asInstanceOf[SignatureExprType]
     vs.params.get(tpe.signatureSymbol) match {
       case Some(v) ⇒
         val f = ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, v.encoded, true)
@@ -114,21 +114,21 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
      * this
      */
   def checkThisExprType(vs: ValSymbol) {
-    val tpe = vs.tpe.asInstanceOf[ThisExprType]
+    val tpe = vs.tpe.get.asInstanceOf[ThisExprType]
     val thiz = tpe.thisPort(vs)
     val thizOut = tpe.thisOutPort(vs)
     InvokeExprType.signatureSymbol.tpe = ztd.zaluumScope.getZJavaLangString // XXX ugly
     connectedFrom(thiz) match {
       case Some((from, blame)) ⇒
         from.tpe match {
-          case a: ArrayType ⇒
+          case Some(a: ArrayType) ⇒
             thiz.tpe = a
             thizOut.tpe = a
             tpe match {
               case ArrayExprType ⇒ array(vs, a)
               case _             ⇒ error("Type must be a class", vs.decl)
             }
-          case c: ClassJavaType ⇒
+          case Some(c: ClassJavaType) ⇒
             thiz.tpe = c
             thizOut.tpe = c
             tpe match {
@@ -158,17 +158,17 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     thisPort
   }
   def processField(vs: ValSymbol, c: ClassJavaType) {
-    val tpe = vs.tpe.asInstanceOf[SignatureExprType]
+    val tpe = vs.tpe.get.asInstanceOf[SignatureExprType]
     vs.params.get(tpe.signatureSymbol) match {
       case Some(v: Value) ⇒
         ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, v.encoded, false) match {
           case Some(p: ProblemFieldBinding) ⇒ error("Problem field " + p + p.problemId(), vs.decl)
           case Some(f: FieldBinding) ⇒
-            val out = vs.tpe.asInstanceOf[ResultExprType].outPort(vs)
-            val a = vs.tpe.asInstanceOf[OneParameter].aPort(vs)
+            val out = vs.tpe.get.asInstanceOf[ResultExprType].outPort(vs)
+            val a = vs.tpe.get.asInstanceOf[OneParameter].aPort(vs)
             a.tpe = ztd.zaluumScope.getJavaType(f.`type`)
             out.tpe = a.tpe
-            if (out.tpe == NoSymbol) error("Field type not found " + f.`type`.readableName.mkString, vs.decl)
+            if (out.tpe.isEmpty) error("Field type not found " + f.`type`.readableName.mkString, vs.decl)
             vs.info = f
           case None ⇒ error("Field not found", vs.decl)
         }
@@ -191,7 +191,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
    * expressions with templates
    */
   def checkTemplateExprType(vs: ValSymbol) = {
-    val t = vs.tpe.asInstanceOf[TemplateExprType]
+    val t = vs.tpe.get.asInstanceOf[TemplateExprType]
     vs.tdecl.template match {
       case Some(template) ⇒
         if (template.blocks.size != t.requiredBlocks)

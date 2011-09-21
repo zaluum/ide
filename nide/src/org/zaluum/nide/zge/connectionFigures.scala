@@ -127,7 +127,7 @@ class LineItem(val container: ContainerItem) extends Item with Blinker with Rect
 }
 
 class PointFigure extends Ellipse {
-  def update(p: Point, tpe: JavaType) = {
+  def update(p: Point, tpe: Option[JavaType]) = {
     setSize(5, 5)
     setFill(true)
     setLocation(point(p + Vector2(-2, -2)))

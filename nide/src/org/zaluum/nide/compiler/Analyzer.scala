@@ -155,23 +155,27 @@ object primitives {
     val l = List(Int, Long, Float, Double)
     l(math.max(l.indexOf(a), l.indexOf(b)))
   }
-  def isNumeric(tpe: JavaType): Boolean = {
+  def isNumeric(tpe: JavaType): Boolean = tpe match {
+    case p: PrimitiveJavaType if (p != primitives.Boolean) ⇒ true
+    case _ ⇒ false
+  }
+  def isNumeric(tpe: Option[JavaType]): Boolean = tpe match {
+    case Some(p) ⇒ isNumeric(p)
+    case _       ⇒ false
+  }
+  def isObject(tpe: Option[JavaType]): Boolean = {
     tpe match {
-      case p: PrimitiveJavaType if (p != primitives.Boolean) ⇒ true
-      case _ ⇒ false
+      case Some(c: ClassJavaType) ⇒ true
+      case Some(a: ArrayType)     ⇒ true
+      case _                      ⇒ false
     }
   }
-  def isObject(tpe: JavaType): Boolean = {
-    tpe match {
-      case c: ClassJavaType ⇒ true
-      case a: ArrayType     ⇒ true
-      case _                ⇒ false
-    }
-  }
-  def isIntNumeric(tpe: JavaType): Boolean = tpe == primitives.Int ||
-    tpe == primitives.Short ||
-    tpe == primitives.Byte ||
-    tpe == primitives.Char
+  def isIntNumeric(p: JavaType): Boolean =
+    p == primitives.Int ||
+      p == primitives.Short ||
+      p == primitives.Byte ||
+      p == primitives.Char
+
   def find(desc: String) = allTypes.find(_.descriptor == desc)
   def find(name: Name) = allTypes.find(_.name == name)
 }
@@ -264,9 +268,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               new ConstructorDecl(bs,
                 b.constructor map { varDecl ⇒
                   val p = new ParamSymbol(bs, varDecl.name)
-                  p.tpe = scope.lookupType(varDecl.tpeName).getOrElse {
+                  p.tpe = scope.lookupType(varDecl.tpeName).orElse {
                     error("Cannot find constructor parameter type " + varDecl.tpeName.str + " for parameter " + varDecl.name.str, b)
-                    NoSymbol
+                    None
                   }
                   varDecl.symbol = p
                   p
@@ -300,14 +304,14 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               v.thisVal = v
           }
         case p: PortDef ⇒
-          p.sym.tpe = catchAbort(scope.lookupType(p.typeName)) getOrElse {
+          p.sym.tpe = catchAbort(scope.lookupType(p.typeName)) orElse {
             error("Port type \"" + p.typeName + "\" not found in port " + p.sym.name.str,
-              tree); NoSymbol
+              tree); None
           }
         case v: ValDef ⇒
           catchAbort(Expressions.find(v.typeName)) match {
             case Some(b) ⇒
-              v.sym.tpe = b
+              v.sym.tpe = Some(b)
               val vsym = v.sym
               for (p ← v.params.asInstanceOf[List[Param]]) {
                 b.lookupExprParam(p.key) match {
@@ -327,7 +331,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               createPortInstances(vsym.ports.values, vsym, createInside, true)
               createPortInstances(b.ports.values, vsym, createInside, true)
             case a ⇒
-              v.sym.tpe = NoSymbol
+              v.sym.tpe = None
               error("Box class " + v.typeName + " not found", tree);
           }
         // constructor match

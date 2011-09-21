@@ -23,17 +23,18 @@ trait Symbol {
   override def toString = "Symbol(" + (if (name != null) name.str else "NoSymbol") + ")"
 }
 trait TypedSymbol[T <: Type] extends Symbol {
-  private var _tpe: T = NoSymbol.asInstanceOf[T]
+  private var _tpe: Option[T] = None
   def tpe = _tpe
-  def tpe_=(t: T) { _tpe = t }
-
+  def tpe_=(t: Option[T]) { _tpe = t }
+  def tpe_=(t: T) { _tpe = Some(t) }
+  def tpeHumanStr = tpe.map(_.name.str).getOrElse("<No Type>")
 }
 trait Type extends Symbol
 
 trait JavaType extends Type {
   def fqName: Name
   def javaSize = 1
-  type B <: TypeBinding
+  type B >: Null <: TypeBinding
   def binding: B
   val owner: Symbol
   def name: Name
@@ -78,7 +79,7 @@ class BeanParamSymbol(
     owner: JavaType,
     val getter: MethodBinding,
     val setter: MethodBinding,
-    initTpe: JavaType) extends ParamSymbol(owner, Name(MethodHelper.propertyName(getter))) {
+    initTpe: Option[JavaType]) extends ParamSymbol(owner, Name(MethodHelper.propertyName(getter))) {
   tpe = initTpe;
   def declaringClass = getter.declaringClass.compoundName.map { _.mkString }.mkString(".")
 }
@@ -185,8 +186,8 @@ class BoxSymbol(
   def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
   def returnPort = ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
   def fieldReturns = ports.values.toList filter { p ⇒ p.isField && p.dir == Out } sortBy { _.name.str }
-  def returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
-  def methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
+  def returnDescriptor = returnPort flatMap { _.tpe } map { _.fqName.descriptor } getOrElse ("V")
+  def methodSignature = "(" + argsInOrder.flatMap { _.tpe }.map { _.fqName.descriptor }.mkString + ")" + returnDescriptor
   def mainBS = this
 
 }
@@ -287,7 +288,7 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
     def clumpOf(c: ConnectionDef) = clumps find { _.connections.contains(c) }
     def clumpOf(p: PortSide) = clumps find { _.ports.contains(p) }
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
-    def isBad(b: ConnectionDef) = badConnections.contains(b) || b.tpe == NoSymbol
+    def isBad(b: ConnectionDef) = badConnections.contains(b) || b.tpe == None
     def markAsBad(b: ConnectionDef) { badConnections += b }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
       val pk = PortSide.findOrCreateMissing(a, BlockSymbol.this)
@@ -359,11 +360,11 @@ class PortSymbol(
 class ConstructorDecl(owner: BoxSymbol, val params: List[ParamSymbol]) {
   override def toString = {
     if (params.isEmpty) "<default>()" else
-      params.map(p ⇒ p.name.str + " : " + p.tpe.name.str).mkString(", ")
+      params.map(p ⇒ p.name.str + " : " + p.tpeHumanStr).mkString(", ")
   }
   def matchesSignature(sig: List[JavaType]) = sig == params.map { _.tpe }
   def signature = {
-    val pars = params map { p ⇒ p.tpe.descriptor } mkString;
+    val pars = params map { _.tpe.map(_.descriptor).getOrElse("<missing>") } mkString;
     "(" + pars + ")V"
   }
 }
@@ -444,7 +445,7 @@ class ValSymbol(val owner: BlockSymbol, val name: Name)
   var params = Map[ParamSymbol, Value]()
   var isJoinPoint = false
   var info: AnyRef = null
-  var classinfo: JavaType = NoSymbol
+  var classinfo: JavaType = null
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
   //var constructor: Option[Constructor] = None

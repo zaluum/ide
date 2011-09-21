@@ -10,7 +10,7 @@ import org.zaluum.nide.zge.FieldParamProperty
 sealed trait BinOp
 // FIXME not a java type
 sealed trait ExprType extends Type with PortsSymbol with PropertySourceType {
-  val owner = NoSymbol
+  val owner = null
   type B = ReferenceBinding
   val binding = null
   def matchingClass: Class[_]
@@ -27,14 +27,14 @@ sealed trait ExprType extends Type with PortsSymbol with PropertySourceType {
   def descriptor = null
   def mainBS = null
 }
-case object NoSymbol extends JavaType with ExprType {
+/*case object NoSymbol extends JavaType with ExprType {
   def matchingClass = null
   override def descriptor = null
   override lazy val name = Name("NoSymbol")
   override lazy val fqName = name
   override val binding = null
   override def loadClass(cl: ClassLoader) = None
-}
+}*/
 sealed trait ResultExprType extends ExprType {
   val o = new PortSymbol(this, Name("o"), Out)
   ports += (o.name -> o)
@@ -112,7 +112,7 @@ object BoxExprType extends StaticExprType(classOf[org.zaluum.expr.BoxExpr]) with
   val fieldsSymbol = new ParamSymbol(null, Name("-Fields"))
   addParam(fieldsSymbol)
   def signatureProp(c: Controller, v: ValDef) =
-    new MethodParamProperty(c, signatureSymbol, v, v.sym.classinfo, false)
+    new MethodParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), false)
   override def properties(controller: Controller, valDef: ValDef) = {
     val l = valDef.sym.classinfo match {
       case c: PropertySourceType ⇒ c.properties(controller, valDef)
@@ -142,7 +142,7 @@ object InvokeExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Invo
 }
 object InvokeStaticExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.InvokeStatic]) with SignatureExprType {
   def signatureProp(c: Controller, v: ValDef) =
-    new MethodParamProperty(c, signatureSymbol, v, v.sym.classinfo.asInstanceOf[JavaType], true)
+    new MethodParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), true)
 }
 object FieldExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Field]) with ResultExprType with OneParameter with SignatureExprType {
   def signatureProp(c: Controller, v: ValDef) =
@@ -150,7 +150,7 @@ object FieldExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Field
 }
 object StaticFieldExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.StaticField]) with ResultExprType with OneParameter with SignatureExprType {
   def signatureProp(c: Controller, v: ValDef) =
-    new FieldParamProperty(c, signatureSymbol, v, v.sym.classinfo.asInstanceOf[JavaType], true)
+    new FieldParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), true)
 }
 object ArrayExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Array]) with ResultExprType with OneParameter {
   val index = new PortSymbol(this, Name("index"), In)

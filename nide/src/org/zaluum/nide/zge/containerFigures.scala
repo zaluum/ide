@@ -146,16 +146,16 @@ trait ContainerItem extends Item {
       val f = v.template match {
         case Some(t) ⇒
           val o = v.sym.tpe match {
-            case IfExprType ⇒ new IfOpenBoxFigure(ContainerItem.this, viewer)
-            case _          ⇒ new OpenBoxFigure(ContainerItem.this, viewer)
+            case Some(IfExprType) ⇒ new IfOpenBoxFigure(ContainerItem.this, viewer)
+            case _                ⇒ new OpenBoxFigure(ContainerItem.this, viewer)
           }
           o.updateOpenBox(v, Map())
           o
         case None ⇒
-          val valf = v.sym.tpe.fqName match {
-            case LiteralExprType.fqName ⇒
+          val valf = v.sym.tpe.map(_.fqName) match {
+            case Some(LiteralExprType.fqName) ⇒
               new LiteralFigure(ContainerItem.this)
-            case name if (Expressions.thisFigureExpressions.contains(name)) ⇒
+            case Some(name) if (Expressions.thisFigureExpressions.contains(name)) ⇒
               new ThisOpValFigure(ContainerItem.this)
             case _ ⇒
               new ImageValFigure(ContainerItem.this)
