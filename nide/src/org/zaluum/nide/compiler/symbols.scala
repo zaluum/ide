@@ -20,21 +20,17 @@ trait Symbol {
   def name: Name
   var decl: Tree = null
   def tdecl: Tree = decl
-  private var _tpe: JavaType = NoSymbol
-  def tpe = _tpe
-  def tpe_=(t: JavaType) { _tpe = t }
   override def toString = "Symbol(" + (if (name != null) name.str else "NoSymbol") + ")"
 }
-case object NoSymbol extends Symbol with JavaType {
-  type B = ReferenceBinding
-  val owner = NoSymbol
-  def descriptor = null
-  val name = Name("NoSymbol")
-  def fqName = name
-  val binding = null
-  def loadClass(cl: ClassLoader) = None
+trait TypedSymbol[T <: Type] extends Symbol {
+  private var _tpe: T = NoSymbol.asInstanceOf[T]
+  def tpe = _tpe
+  def tpe_=(t: T) { _tpe = t }
+
 }
-trait JavaType extends Symbol {
+trait Type extends Symbol
+
+trait JavaType extends Type {
   def fqName: Name
   def javaSize = 1
   type B <: TypeBinding
@@ -74,7 +70,7 @@ class ArrayType(val owner: Symbol, val of: JavaType, val dim: Int, val binding: 
   def loadClass(cl: ClassLoader) = None
   override def toString = "ArrayType(" + of.toString + ", " + dim + ")"
 }
-class ParamSymbol(val owner: JavaType, val name: Name) extends Symbol {
+class ParamSymbol(val owner: JavaType, val name: Name) extends TypedSymbol[JavaType] {
   override def toString = "ParamSymbol(" + name + ")"
   def fqName = name
 }
@@ -174,7 +170,6 @@ class BoxSymbol(
   val binding: ReferenceBinding,
   val scope: ZaluumClassScope) extends ClassJavaType
     with TemplateSymbol with Namer {
-  tpe = this
   val owner = null
   var initMethod: Option[MethodBinding] = None
   var hasApply = false
@@ -347,7 +342,14 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   }
 }
 
-class PortSymbol(val owner: PortsSymbol, val name: Name, val helperName: Option[Name], val extPos: Point, val dir: PortDir, var isField: Boolean = false) extends Symbol {
+class PortSymbol(
+  val owner: PortsSymbol,
+  val name: Name,
+  val helperName: Option[Name],
+  val extPos: Point,
+  val dir: PortDir,
+  var isField: Boolean = false)
+    extends TypedSymbol[JavaType] {
   def box = owner
   def this(owner: PortsSymbol, name: Name, dir: PortDir) =
     this(owner, name, None, Point(0, 0), dir)
@@ -366,7 +368,7 @@ class ConstructorDecl(owner: BoxSymbol, val params: List[ParamSymbol]) {
   }
 }
 
-class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) extends Symbol {
+class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) extends TypedSymbol[JavaType] {
   var missing = false
   def isField = portSymbol.map(_.isField).getOrElse(false)
   var internalStorage: StorageType = StorageLocal
@@ -408,8 +410,8 @@ object PortSide {
   }
 }
 class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolean) extends Symbol {
-  override def tpe = pi.tpe
-  override def tpe_=(t: JavaType) { pi.tpe = t }
+  def tpe = pi.tpe
+  def tpe_=(t: JavaType) { pi.tpe = t }
   def owner = pi
   def flowIn = if (fromInside) !inPort else inPort
   def name = pi.name
@@ -428,7 +430,8 @@ case class ExecutionPath(num: Int, blockSymbol: BlockSymbol) {
   var forkedBy: Option[ValSymbol] = None
   override def toString = "Thread " + num + " -> " + instructions.map(_.toInstructionsSeq).mkString(", ")
 }
-class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
+class ValSymbol(val owner: BlockSymbol, val name: Name)
+    extends TemplateSymbol with TypedSymbol[ExprType] {
   override def tdecl = decl.asInstanceOf[ValDef]
   def templateTree = tdecl.template.get
   // var refactor
@@ -441,7 +444,7 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   var params = Map[ParamSymbol, Value]()
   var isJoinPoint = false
   var info: AnyRef = null
-  var classinfo: JavaType = null
+  var classinfo: JavaType = NoSymbol
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
   //var constructor: Option[Constructor] = None
@@ -449,10 +452,7 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   def mainBS = owner.template.mainBS
   def fqName = name
   def semfqName = Name(fqName.str + "_sem")
-  def javaType = tpe match {
-    case e: ExprType ⇒ classinfo
-    case _           ⇒ tpe
-  }
+  def javaType = classinfo
   private def createOutsidePs(name: Name, dir: Boolean, helperName: Option[Name] = None) = {
     val pdir = if (dir) In else Out
     val pi = new PortInstance(name, helperName, this, pdir)

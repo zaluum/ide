@@ -62,11 +62,9 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
   def exec(c: MapTransformer) {
     val before = nowTree
     nowTree = c(tree).asInstanceOf[BoxDef]
-    before.symbol = null
-    before.tpe = null
+    before.cleanSymbols()
     before.deepchildren foreach { t ⇒
-      t.symbol = null
-      t.tpe = null
+      t.cleanSymbols()
     }
     undoStack.push(Mutation(before, c.map, nowTree))
     redoStack.clear

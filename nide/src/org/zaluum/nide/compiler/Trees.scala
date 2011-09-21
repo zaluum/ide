@@ -6,9 +6,12 @@ import java.io.StringWriter
 
 trait SelectionSubject
 abstract class Tree extends Product with SelectionSubject {
-  var tpe: JavaType = null
   var symbol: Symbol = null
   var line: Int = 0
+  def cleanSymbols() {
+    symbol = null
+    line = 0
+  }
   def hasSymbol = false
   def isDef = false
   def isEmpty = false
@@ -49,7 +52,6 @@ abstract class Tree extends Product with SelectionSubject {
     productIterator.toList flatMap subtrees
   }
   private[zaluum] def copyAttrs(tree: Tree): this.type = {
-    tpe = tree.tpe
     symbol = tree.symbol
     this
   }
@@ -206,7 +208,7 @@ object PrettyPrinter {
   def print(trees: List[Tree], deep: Int) {
     trees.foreach { print(_, deep) }
   }
-  def sym(tree: Tree) = " sym= " + tree.symbol + " tpe= " + tree.tpe
+  def sym(tree: Tree) = " sym= " + tree.symbol
   def print(tree: Tree, deep: Int): Unit = tree match {
     case b: BoxDef ⇒
       print("BoxDef(" + b.pkg + " " + b.name + ", " + b.image, deep)
@@ -358,7 +360,9 @@ trait ConnectionEnd extends Tree
 case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd { // in as flow or as PortDir?
   def sym: PortSide = symbol.asInstanceOf[PortSide]
 }
-case class Param(key: Name, value: String) extends Tree
+case class Param(key: Name, value: String) extends Tree {
+  def sym = symbol.asInstanceOf[ParamSymbol]
+}
 case class LabelDesc(description: String, pos: Vector2)
 object ValDef {
   def emptyValDefBoxExpr(name: Name, dst: Point, label: String, className: String) = {
@@ -433,13 +437,20 @@ case class ValDef(
     param :: params.asInstanceOf[List[Param]].filterNot(_.key == param.key)
   }
 }
+trait TypedTree extends Tree {
+  var tpe: JavaType = NoSymbol
+  override def cleanSymbols() {
+    super.cleanSymbols()
+    tpe = NoSymbol
+  }
+}
 case class ConnectionDef(
     a: Option[ConnectionEnd],
     b: Option[ConnectionEnd],
-    points: List[Point]) extends Tree {
+    points: List[Point]) extends TypedTree {
   def headPoint = points.headOption.getOrElse(Point(0, 0))
   def lastPoint = points.lastOption.getOrElse(Point(0, 0))
 
 }
-case class Junction(name: Name, p: Point) extends Tree
+case class Junction(name: Name, p: Point) extends TypedTree
 case class JunctionRef(name: Name) extends ConnectionEnd

@@ -23,6 +23,7 @@ import org.zaluum.nide.icons.Icons
 import org.zaluum.nide.Activator
 import org.zaluum.nide.compiler.ClassJavaType
 import org.zaluum.nide.compiler.ExprType
+import org.zaluum.nide.compiler.Type
 
 class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def this(zp: ZaluumProject) = this(zp, new LocalResourceManager(JFaceResources.getResources))
@@ -44,7 +45,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
   def destroyAll() = rm.dispose();
   def image48(name: Name): (Image, DeviceResourceDescriptor) = iconFor(None, name, 48);
-  def icon(tpe: JavaType, minY: Int): (Image, DeviceResourceDescriptor) = {
+  def icon(tpe: Type, minY: Int): (Image, DeviceResourceDescriptor) = {
     tpe match {
       //case b: BoxTypeSymbol ⇒ iconFor(b.image, b.fqName, minY)
       case c: ClassJavaType ⇒ iconFor(None, c.fqName, minY)

@@ -127,7 +127,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       populateFields(bs)
       val baseMethods = List(cons(b), new MainThreadMethodGenerator(bs)())
       BoxClass(
-        bs.tpe.fqName,
+        bs.fqName,
         bs.source.get,
         baseMethods ++ fieldDecls,
         superName, enclosed)
@@ -190,7 +190,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       for (t ← secondThreads) {
         field(t.futureFqName, TreeToClass.futureClassName, init = None)
         field(t.name, t.fqName(bs), init = Some(
-          New(t.fqName(bs), List(This), "(" + bs.tpe.fqName.descriptor + ")V")))
+          New(t.fqName(bs), List(This), "(" + bs.fqName.descriptor + ")V")))
       }
     }
 

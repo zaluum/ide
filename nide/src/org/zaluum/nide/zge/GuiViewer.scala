@@ -88,7 +88,7 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
     items.clear()
       def updateBlock(b: Block) {
         b.valDefs foreach { v ⇒
-          v.tpe match {
+          v.sym.tpe match {
             case BoxExprType if (v.sym.isVisual) ⇒
               val f = new SwingFigure(editor.viewer, GuiViewer.this, controller.zproject.classLoader)
               f.updateValDef(v)

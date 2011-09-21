@@ -50,7 +50,7 @@ class RunnableMethodGenerator(bs: BoxSymbol, startPath: ExecutionPath) extends M
     Method(Name("run"), "()V", ins.toList, locals.localsDecl, None)
   }
   override def thisRef = {
-    Select(This, FieldRef(Name(TreeToClass.enclosingClassFieldName), bs.tpe.fqName.descriptor, startPath.fqName(bs)))
+    Select(This, FieldRef(Name(TreeToClass.enclosingClassFieldName), bs.fqName.descriptor, startPath.fqName(bs)))
   }
 }
 class MethodLocals {
@@ -331,6 +331,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
           case NeExprType          ⇒ Ne(aTree, bTree, etpe)
         }
         ins += Assign(toRef(o), eTree)
+      case o ⇒ throw new RuntimeException("Not implemented " + o)
     }
     // release sem
     if (vs.isJoinPoint)

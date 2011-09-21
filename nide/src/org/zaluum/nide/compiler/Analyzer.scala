@@ -202,7 +202,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
           sym.hasApply = true
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
           sym.constructors = List(new ConstructorDecl(sym, List()))
-          tree.tpe = sym
           if (b.template.blocks.size != 1) error("Fatal: BoxDef must have 1 block defined. Manual edit needed.", b)
         // FIXME reported errors do not show in the editor (valdef)
         case t: Template ⇒
@@ -270,7 +269,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
                     NoSymbol
                   }
                   varDecl.symbol = p
-                  varDecl.tpe = p.tpe
                   p
                 }))
           }
@@ -297,20 +295,19 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               assert(bs.thisVal == null)
               bs.thisVal = new ValSymbol(bl.sym, Name("this")) // feels wrong
               bs.thisVal.decl = bl.sym.template.decl
-              bs.thisVal.tpe = bs
+            //bs.thisVal.tpe = bs
             case v: ValSymbol ⇒
               v.thisVal = v
           }
         case p: PortDef ⇒
-          tree.symbol.tpe = catchAbort(scope.lookupType(p.typeName)) getOrElse {
+          p.sym.tpe = catchAbort(scope.lookupType(p.typeName)) getOrElse {
             error("Port type \"" + p.typeName + "\" not found in port " + p.sym.name.str,
               tree); NoSymbol
           }
-          tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
           catchAbort(Expressions.find(v.typeName)) match {
             case Some(b) ⇒
-              v.symbol.tpe = b
+              v.sym.tpe = b
               val vsym = v.sym
               for (p ← v.params.asInstanceOf[List[Param]]) {
                 b.lookupExprParam(p.key) match {
@@ -330,15 +327,13 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               createPortInstances(vsym.ports.values, vsym, createInside, true)
               createPortInstances(b.ports.values, vsym, createInside, true)
             case a ⇒
-              v.symbol.tpe = NoSymbol
+              v.sym.tpe = NoSymbol
               error("Box class " + v.typeName + " not found", tree);
           }
-          // constructor match
-          tree.tpe = tree.symbol.tpe
+        // constructor match
         case ThisRef() ⇒ // 
           val block = currentOwner.asInstanceOf[BlockSymbol]
           tree.symbol = block.owner
-          tree.tpe = tree.symbol.tpe
         case _ ⇒
       }
     }

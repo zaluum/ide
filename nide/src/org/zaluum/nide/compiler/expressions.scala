@@ -9,8 +9,8 @@ import org.zaluum.nide.zge.MethodParamProperty
 import org.zaluum.nide.zge.FieldParamProperty
 sealed trait BinOp
 // FIXME not a java type
-sealed trait ExprType extends JavaType with PortsSymbol with PropertySourceType {
-  val owner = null
+sealed trait ExprType extends Type with PortsSymbol with PropertySourceType {
+  val owner = NoSymbol
   type B = ReferenceBinding
   val binding = null
   def matchingClass: Class[_]
@@ -26,6 +26,14 @@ sealed trait ExprType extends JavaType with PortsSymbol with PropertySourceType 
   def loadClass(cl: ClassLoader) = None
   def descriptor = null
   def mainBS = null
+}
+case object NoSymbol extends JavaType with ExprType {
+  def matchingClass = null
+  override def descriptor = null
+  override lazy val name = Name("NoSymbol")
+  override lazy val fqName = name
+  override val binding = null
+  override def loadClass(cl: ClassLoader) = None
 }
 sealed trait ResultExprType extends ExprType {
   val o = new PortSymbol(this, Name("o"), Out)

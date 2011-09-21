@@ -212,7 +212,7 @@ class LiteralFigure(val container: ContainerItem) extends RectangleFigure with T
   override def updateMe {
     super.updateMe()
     updateText()
-    setForegroundColor(Colorizer.color(param.map(_.tpe).getOrElse(null)))
+    setForegroundColor(Colorizer.color(param.map(_.sym.tpe).getOrElse(null)))
   }
   def blink(c: Boolean) {
     this.setXOR(c)
@@ -297,7 +297,7 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
         } catch { case e ⇒ e.printStackTrace; None }
       }
 
-    component = valDef.tpe match {
+    component = valDef.sym.tpe match {
       case BoxExprType ⇒
         val cjt = valDef.sym.classinfo.asInstanceOf[ClassJavaType]
         for (

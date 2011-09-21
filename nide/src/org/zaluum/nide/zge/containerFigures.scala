@@ -152,7 +152,7 @@ trait ContainerItem extends Item {
           o.updateOpenBox(v, Map())
           o
         case None ⇒
-          val valf = v.tpe.fqName match {
+          val valf = v.sym.tpe.fqName match {
             case LiteralExprType.fqName ⇒
               new LiteralFigure(ContainerItem.this)
             case name if (Expressions.thisFigureExpressions.contains(name)) ⇒

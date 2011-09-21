@@ -7,7 +7,7 @@ import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Symbol
 import org.zaluum.nide.compiler.JavaType
 object Colorizer {
-  def color(t: Symbol): Color = t match {
+  def color(t: JavaType): Color = t match {
     case a: ArrayType ⇒ ColorConstants.green
     case t: JavaType ⇒ t.name match {
       case Name("byte")    ⇒ ColorConstants.cyan
