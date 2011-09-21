@@ -17,9 +17,10 @@ import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 trait Symbol {
   def name: Name
-  var decl: Tree = null
-  def tdecl: Tree = decl
   override def toString = "Symbol(" + (if (name != null) name.str else "null name") + ")"
+}
+trait DeclSymbol[T <: Tree] extends Symbol {
+  var decl: T = _
 }
 trait TypedSymbol[T <: Type] extends Symbol {
   private var _tpe: Option[T] = None
@@ -28,54 +29,16 @@ trait TypedSymbol[T <: Type] extends Symbol {
   def tpe_=(t: T) { _tpe = Some(t) }
   def tpeHumanStr = tpe.map(_.name.str).getOrElse("<No Type>")
 }
-trait Type extends Symbol
 
-trait JavaType extends Type {
-  def fqName: Name
-  def javaSize = 1
-  type B >: Null <: TypeBinding
-  def binding: B
-  def name: Name
-  def descriptor: String
-  override def toString = "JavaType(" + name + ")"
-  def loadClass(cl: ClassLoader): Option[Class[_]]
-}
-class PrimitiveJavaType(
-    val name: Name,
-    override val descriptor: String,
-    override val javaSize: Int,
-    val boxedName: Name,
-    val boxMethod: String, val binding: BaseTypeBinding, javaclass: Class[_]) extends JavaType {
-  type B = BaseTypeBinding
-  val fqName = name
-  def loadClass(cl: ClassLoader) = Some(javaclass)
-}
-class ArrayType(val of: JavaType, val dim: Int, val binding: ArrayBinding) extends JavaType {
-  type B = ArrayBinding
-  assert(!of.isInstanceOf[ArrayType])
-  def descriptor = "[" * dim + of.descriptor
-  def name = Name(of.name.str + "[]" * dim)
-  def fqName = name
-  override def equals(that: Any) = {
-    that match {
-      case a: ArrayType ⇒ a.of == of && a.dim == dim
-      case _            ⇒ false
-    }
-  }
-  override def hashCode = {
-    41 * (41 + of.hashCode) + dim
-  }
-  def loadClass(cl: ClassLoader) = None
-  override def toString = "ArrayType(" + of.toString + ", " + dim + ")"
-}
 class ParamSymbol(val name: Name) extends TypedSymbol[JavaType] {
   override def toString = "ParamSymbol(" + name + ")"
   def fqName = name
 }
 class BeanParamSymbol(
-    val getter: MethodBinding,
-    val setter: MethodBinding,
-    initTpe: Option[JavaType]) extends ParamSymbol(Name(MethodHelper.propertyName(getter))) {
+  val getter: MethodBinding,
+  val setter: MethodBinding,
+  initTpe: Option[JavaType])
+    extends ParamSymbol(Name(MethodHelper.propertyName(getter))) {
   tpe = initTpe;
   def declaringClass = getter.declaringClass.compoundName.map { _.mkString }.mkString(".")
 }
@@ -110,84 +73,16 @@ object MethodHelper {
   }
 
 }
-trait ClassJavaType extends JavaType with PropertySourceType {
-  type B = ReferenceBinding
-  val binding: B
-  val scope: ZaluumClassScope
-  def descriptor = "L" + fqName.internal + ";"
-  lazy val name = Name(binding.compoundName.last.mkString)
-  lazy val pkg = Name(binding.fPackage.compoundName.map(_.mkString).mkString("."))
-  lazy val fqName: Name = if (pkg.str != "") Name(pkg.str + "." + name.str) else name
-  lazy val engine = ZaluumCompletionEngineScala.engineFor(scope)
-  def allMethods = ZaluumCompletionEngineScala.allMethods(engine, scope, binding, static = false)
-  def allFields = ZaluumCompletionEngineScala.allFields(engine, scope, binding, static = false)
-  def allConstructors = ZaluumCompletionEngineScala.allConstructors(engine, scope, binding)
-  lazy val beanProperties = {
-    val map = scala.collection.mutable.HashMap[String, (MethodBinding, MethodBinding)]()
-    for (m ← allMethods) {
-      if (MethodHelper.isGetter(m)) {
-        val name = MethodHelper.propertyName(m)
-        map.get(name) match {
-          case Some((g, s)) ⇒ map(name) = (m, s)
-          case _            ⇒ map(name) = (m, null)
-        }
-      } else if (MethodHelper.isSetter(m)) {
-        val name = MethodHelper.propertyName(m)
-        map.get(name) match {
-          case Some((g, s)) ⇒ map(name) = (g, m)
-          case _            ⇒ map(name) = (null, m)
-        }
-      }
-    }
-    var l = List[BeanParamSymbol]()
-    for ((name, (g, s)) ← map; if (g != null && s != null)) {
-      l ::= new BeanParamSymbol(g, s, scope.getJavaType(g.returnType))
-    }
-    l.sortBy(_.name.str)
-  }
-  def loadClass(cl: ClassLoader) = try { Some(cl.loadClass(fqName.str)) }
-  catch { case e: Exception ⇒ println(e); None }
-  def properties(controller: Controller, valDef: ValDef): List[ParamProperty] = {
-    for (
-      b ← beanProperties;
-      val t = Values.typeFor(b);
-      if (!t.isInstanceOf[InvalidValueType])
-    ) yield new BeanProperty(controller, valDef, b)
-  }
-}
 
-class SimpleClassJavaType(val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType
 trait PropertySourceType {
   def properties(controller: Controller, valDef: ValDef): List[ParamProperty]
 }
-// only for compilation
-class BoxSymbol(
-  val image: Option[String],
-  var isVisual: Boolean,
-  val binding: ReferenceBinding,
-  val scope: ZaluumClassScope) extends ClassJavaType
-    with TemplateSymbol with Namer {
-  var initMethod: Option[MethodBinding] = None
-  var hasApply = false
-  var constructors = List[ConstructorDecl]()
-  var methodSelector: Name = _
-  var source: Option[String] = None
-  override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
-  override def templateTree = tdecl.template
-  def onlyVisual = !hasApply && isVisual
-  def usedNames = usedValNames ++ (ports.keySet map { _.str })
-  def usedValNames = (block :: block.deepBlocks).flatMap { _.usedValNames }.toSet
-  def block = blocks.head
-  def argsInOrder = ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
-  def returnPort = ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
-  def fieldReturns = ports.values.toList filter { p ⇒ p.isField && p.dir == Out } sortBy { _.name.str }
-  def returnDescriptor = returnPort flatMap { _.tpe } map { _.fqName.descriptor } getOrElse ("V")
-  def methodSignature = "(" + argsInOrder.flatMap { _.tpe }.map { _.fqName.descriptor }.mkString + ")" + returnDescriptor
-  def mainBS = this
 
-}
-
-case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bl: BlockSymbol) {
+case class Clump(
+    var junctions: Set[Junction],
+    var ports: Set[PortSide],
+    var connections: Set[ConnectionDef],
+    bl: BlockSymbol) {
   def findConnectionFor(pi: PortInstance) = {
     connections.find { con ⇒
         def isEnd(tree: Option[ConnectionEnd]) = {
@@ -201,10 +96,12 @@ case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var con
     }
   }
 }
+
 trait PortsSymbol extends Symbol {
   var ports = Map[Name, PortSymbol]()
   def lookupPort(name: Name) = ports.get(name)
 }
+
 trait TemplateSymbol extends PortsSymbol {
   var blocks = List[BlockSymbol]() // same order as tree
   def templateTree: Template
@@ -219,10 +116,10 @@ trait TemplateSymbol extends PortsSymbol {
   var thisVal: ValSymbol = _ // should be template
   def mainBS: BoxSymbol
 }
-/*trait BoxType extends TemplateSymbol with JavaType {
-  def templateTree: Template
-}*/
-class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
+
+class BlockSymbol(
+    val template: TemplateSymbol) extends DeclSymbol[Block] with Namer {
+
   def name = fqName
   def fqName = Name(template.thisVal.fqName.str + "_block" + blockNumeral)
   var vals = Map[Name, ValSymbol]()
@@ -233,7 +130,6 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   def mainPath = execPaths(0)
   private val missingVals = scala.collection.mutable.Map[Name, ValSymbol]()
 
-  override def tdecl: Block = decl.asInstanceOf[Block]
   def isMainBSBlock = template.mainBS == template
   def blockNumeral = template.blocks.indexOf(this)
   def uniqueBlock = template.blocks.size == 1
@@ -241,7 +137,7 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   def usedNames = (template.mainBS.usedValNames ++ (template.ports.values.map { _.name.str })).toSet
 
   def rename(valDef: ValDef, newName: Name, labelDesc: Option[LabelDesc], gui: Boolean): EditTransformer = {
-    assert(tdecl.valDefs.contains(valDef))
+    assert(decl.valDefs.contains(valDef))
       def renamedEnd(end: Option[ConnectionEnd]) = end match {
         case Some(PortRef(ValRef(valDef.name), b, c)) ⇒ Some(PortRef(ValRef(newName), b, c))
         case other                                    ⇒ other
@@ -252,7 +148,7 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
           val label = if (gui) v.label else labelDesc
           val labelGui = if (gui) labelDesc else v.labelGui
           valDef.copy(name = newName, label = label, labelGui = labelGui, params = transformTrees(valDef.params))
-        case c @ ConnectionDef(a, b, points) if (tdecl.connections.contains(c)) ⇒
+        case c @ ConnectionDef(a, b, points) if (decl.connections.contains(c)) ⇒
           ConnectionDef(renamedEnd(a), renamedEnd(b), points)
       }
     }
@@ -344,12 +240,12 @@ class PortSymbol(
   val extPos: Point,
   val dir: PortDir,
   var isField: Boolean = false)
-    extends TypedSymbol[JavaType] {
+    extends TypedSymbol[JavaType] with DeclSymbol[PortDef] {
   def this(portsSymbol: PortsSymbol, name: Name, dir: PortDir) =
     this(portsSymbol, name, None, Point(0, 0), dir)
   override def toString = "PortSymbol(" + name + ")"
 }
-//class ResultPortSymbol(owner: TemplateSymbol, name: Name, val helpName: Name, val extPos: Point) extends PortSymbol(owner,name,helpName,extPos,Out)
+
 class ConstructorDecl(val params: List[ParamSymbol]) {
   override def toString = {
     if (params.isEmpty) "<default>()" else
@@ -402,7 +298,10 @@ object PortSide {
     }
   }
 }
-class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolean) extends Symbol {
+class PortSide(
+    val pi: PortInstance,
+    val inPort: Boolean,
+    val fromInside: Boolean) extends Symbol {
   def tpe = pi.tpe
   def tpe_=(t: JavaType) { pi.tpe = t }
   def owner = pi
@@ -424,9 +323,8 @@ case class ExecutionPath(num: Int, blockSymbol: BlockSymbol) {
   override def toString = "Thread " + num + " -> " + instructions.map(_.toInstructionsSeq).mkString(", ")
 }
 class ValSymbol(val owner: BlockSymbol, val name: Name)
-    extends TemplateSymbol with TypedSymbol[ExprType] {
-  override def tdecl = decl.asInstanceOf[ValDef]
-  def templateTree = tdecl.template.get
+    extends TemplateSymbol with TypedSymbol[ExprType] with DeclSymbol[ValDef] {
+  def templateTree = decl.template.get
   // var refactor
   var execPath: ExecutionPath = null
   var init = false

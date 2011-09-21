@@ -147,8 +147,8 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
   def checkLiteralExprType(vs: ValSymbol) {
     val l = LiteralExprType
     val o = l.outPort(vs)
-    assert(vs.tdecl.params.size <= 1)
-    val t = vs.tdecl.params.headOption match {
+    assert(vs.decl.params.size <= 1)
+    val t = vs.decl.params.headOption match {
       case Some(param: Param) ⇒
         val value = Values.parseNarrowestLiteral(param.value, ztd.zaluumScope) /* TODO pass project */
         o.tpe = ztd.zaluumScope.lookupType(value.valueTpe.tpe)

@@ -104,8 +104,8 @@ trait ContainerItem extends Item {
   def symbol = block.sym
   def templateSym = symbol.template
   def template = templateSym match {
-    case v: ValSymbol ⇒ v.tdecl.template.get
-    case b: BoxSymbol ⇒ b.tdecl.template
+    case v: ValSymbol ⇒ v.decl.template.get
+    case b: BoxSymbol ⇒ b.decl.template
   }
   val junctions = Buffer[PointFigure]()
   val connections = Buffer[ConnectionFigure]()
@@ -217,7 +217,7 @@ class OpenBoxFigure(
   val portDecls = Buffer[OpenPortBaseFigure]()
   val portSymbols = Buffer[PortSymbolFigure]()
   override def useLocalCoordinates = true
-  def block = valDef.sym.currentBlock.tdecl
+  def block = valDef.sym.currentBlock.decl
   def updateOpenBox(v: ValDef, changes: Map[Tree, Tree]) {
     updateValDef(v)
     updateContents(changes)

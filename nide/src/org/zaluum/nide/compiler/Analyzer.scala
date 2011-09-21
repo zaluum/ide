@@ -192,7 +192,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
     def reporter = Analyzer.this.reporter
     def location(tree: Tree) = globLocation(tree)
 
-    private def bind[S >: Null <: Symbol](symbol: S, tree: SymbolTree[S], dupl: Boolean)(block: ⇒ Unit) {
+    private def bind[S >: Null <: DeclSymbol[T], T <: SymbolTree[S]](symbol: S, tree: T, dupl: Boolean)(block: ⇒ Unit) {
       if (dupl) error("Duplicate symbol " + symbol.name, tree)
       tree.symbol = symbol
       symbol.decl = tree
@@ -298,7 +298,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
             case bs: BoxSymbol ⇒
               assert(bs.thisVal == null)
               bs.thisVal = new ValSymbol(bl.sym, Name("this")) // feels wrong
-              bs.thisVal.decl = bl.sym.template.decl
+            //bs.thisVal.decl = bl.sym.template.decl
             //bs.thisVal.tpe = bs
             case v: ValSymbol ⇒
               v.thisVal = v

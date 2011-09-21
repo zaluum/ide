@@ -19,7 +19,6 @@ import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.eclipse.jdt.internal.compiler.lookup.UnresolvedReferenceBinding
 import org.zaluum.nide.compiler.ArrayType
 import org.zaluum.nide.compiler.ClassJavaType
-import org.zaluum.nide.compiler.SimpleClassJavaType
 import org.zaluum.nide.compiler.In
 import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.Name
@@ -121,6 +120,6 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
         }
     }
   }
-  protected def create(r: ReferenceBinding) = new SimpleClassJavaType(r, this)
+  protected def create(r: ReferenceBinding) = new ClassJavaType(r, this)
 
 }

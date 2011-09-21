@@ -224,7 +224,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
                       clazz.fqName,
                       "(" + param.tpe.get.descriptor + ")V",
                       interface = false),
-                    vs.tdecl.line)
+                    vs.decl.line)
                 }
             } toList
           case e: ExprType ⇒
@@ -252,7 +252,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
             Name("javax.swing.JComponent"),
             "(Ljava/awt/Dimension;)V",
             interface = false))
-        widgetCreation ++ bsVals.flatMap(createWidgets(_, bs.tdecl))
+        widgetCreation ++ bsVals.flatMap(createWidgets(_, bs.decl))
       } else List()
       val par = bsVals.flatMap(params)
       val initMethod = bs.initMethod.toList map { im ⇒
@@ -269,7 +269,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
     def placeWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe.get match {
         case BoxExprType if vs.isVisual ⇒
-          val valDef = vs.tdecl
+          val valDef = vs.decl
           val mainTpe = mainBox.sym
           List[Tree](
             Invoke(

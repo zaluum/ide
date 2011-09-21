@@ -141,7 +141,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
   def runOne(vs: ValSymbol, execPath: ExecutionPath): List[Tree] = {
     val ins = Buffer[Tree]()
     // line
-    ins += Lbl(vs.tdecl.line)
+    ins += Lbl(vs.decl.line)
     // joins
     vs.join.toList foreach { toJoin ⇒
       ins += acquireSem(toJoin)

@@ -110,7 +110,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
   def checkPortConnectionsTypes(vs: ValSymbol) {
     for (pi ← vs.portInstances) {
       val tpeName = pi.declOption.map { _.typeName.str }.getOrElse("")
-      val blame = pi.declOption.getOrElse(vs.decl)
+      val blame: Tree = pi.declOption.getOrElse(vs.decl)
       if (pi.tpe.isEmpty)
         error("Invalid port type " + tpeName, blame)
       for ((from, blame) ← bl.connections.connectedFrom.get(pi)) {

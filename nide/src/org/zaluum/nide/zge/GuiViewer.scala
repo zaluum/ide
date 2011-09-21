@@ -101,7 +101,7 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
                 lbl.show()
               }
             case Some(s: TemplateExprType) ⇒
-              v.sym.blocks foreach { b ⇒ updateBlock(b.tdecl) }
+              v.sym.blocks foreach { b ⇒ updateBlock(b.decl) }
             case _ ⇒
           }
         }

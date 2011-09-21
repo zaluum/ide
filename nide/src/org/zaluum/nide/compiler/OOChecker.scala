@@ -192,7 +192,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
    */
   def checkTemplateExprType(vs: ValSymbol) = {
     val t = vs.tpe.get.asInstanceOf[TemplateExprType]
-    vs.tdecl.template match {
+    vs.decl.template match {
       case Some(template) ⇒
         if (template.blocks.size != t.requiredBlocks)
           error(t.name.classNameWithoutPackage + " must have " + t.requiredBlocks + " blocks", vs.decl)

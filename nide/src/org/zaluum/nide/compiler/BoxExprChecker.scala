@@ -94,7 +94,7 @@ trait BoxExprChecker extends CheckerPart {
       bs.constructors = new Constructor(bs, params.toList) :: bs.constructors
     }*/
     vs.isVisual = visual
-    val v = vs.tdecl
+    val v = vs.decl
     if (!hasApply && !visual) {
       vs.isExecutable = false
       error("Class " + v.typeName.str + " must be visual (extend java.awt.Component) or be marked as @Box and have an @Apply method", v)
