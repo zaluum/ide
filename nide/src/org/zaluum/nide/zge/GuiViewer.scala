@@ -6,7 +6,6 @@ import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.RectangleFigure
 import org.eclipse.swt.widgets.Composite
 import org.zaluum.nide.compiler.BoxDef
-import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.Dimension
 import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.SelectionSubject
@@ -19,6 +18,7 @@ import org.eclipse.draw2d.Graphics
 import org.eclipse.swt.events.KeyListener
 import org.eclipse.swt.events.KeyEvent
 import org.eclipse.swt.SWT
+import org.zaluum.nide.compiler.BoxExprType
 
 class GuiViewer(parent: Composite, controller: Controller, val editor: GraphicalEditor)
     extends ItemViewer(parent, controller) with ClipboardViewer {
@@ -89,7 +89,7 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
       def updateBlock(b: Block) {
         b.valDefs foreach { v ⇒
           v.tpe match {
-            case bs: BoxTypeSymbol if (bs.isVisual) ⇒
+            case BoxExprType if (v.sym.isVisual) ⇒
               val f = new SwingFigure(editor.viewer, GuiViewer.this, controller.zproject.classLoader)
               f.updateValDef(v)
               items += f

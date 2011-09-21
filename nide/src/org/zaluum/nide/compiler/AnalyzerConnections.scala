@@ -167,7 +167,6 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     val objectChecker = new OOChecker(this)
     for (vs ← bl.executionOrder) { // skip non executable
       vs.tpe match {
-        case bs: BoxTypeSymbol   ⇒ assignBoxTypeSymbolTypes(vs)
         case b: BinExprType      ⇒ exprChecker.checkBinExprTypes(vs)
         case LiteralExprType     ⇒ exprChecker.checkLiteralExprType(vs)
         case e: UnaryExprType    ⇒ exprChecker.checkUnaryExprType(vs)
@@ -198,8 +197,8 @@ trait CheckerPart extends ReporterAdapter {
   def reporter = c.reporter
   def scope(vs: ValSymbol): ZaluumClassScope = {
     vs.owner.template match {
-      case b: BoxTypeSymbol ⇒ b.scope
-      case own: ValSymbol   ⇒ scope(own)
+      case b: BoxSymbol   ⇒ b.scope
+      case own: ValSymbol ⇒ scope(own)
     }
   }
   def connectedFrom(p: PortInstance) = bl.connections.connectedFrom.get(p)

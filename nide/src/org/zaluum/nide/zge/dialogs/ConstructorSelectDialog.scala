@@ -1,5 +1,5 @@
 package org.zaluum.nide.zge.dialogs
-
+/* FIXME
 import scala.collection.JavaConversions.asScalaBuffer
 import org.eclipse.jface.dialogs.Dialog
 import org.eclipse.jface.viewers.ArrayContentProvider
@@ -24,7 +24,6 @@ import org.eclipse.swt.widgets.TableItem
 import org.eclipse.swt.SWT
 import org.eclipse.ui.ISharedImages
 import org.eclipse.ui.PlatformUI
-import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.Constructor
 import org.zaluum.nide.compiler.EditTransformer
 import org.zaluum.nide.compiler.ParamSymbol
@@ -180,4 +179,4 @@ class ConstructorSelectDialog(shell: Shell, vs: ValSymbol) extends Dialog(shell)
     table
   }
   override def isResizable = true
-}
+}*/ 

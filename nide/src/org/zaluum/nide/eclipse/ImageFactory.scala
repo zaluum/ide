@@ -13,8 +13,6 @@ import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.graphics.TextLayout
 import org.eclipse.swt.widgets.Control
 import org.eclipse.swt.SWT
-import org.zaluum.nide.compiler.BoxType
-import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.In
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Out
@@ -23,6 +21,8 @@ import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.icons.Icons
 import org.zaluum.nide.Activator
+import org.zaluum.nide.compiler.ClassJavaType
+import org.zaluum.nide.compiler.ExprType
 
 class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def this(zp: ZaluumProject) = this(zp, new LocalResourceManager(JFaceResources.getResources))
@@ -46,8 +46,9 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def image48(name: Name): (Image, DeviceResourceDescriptor) = iconFor(None, name, 48);
   def icon(tpe: JavaType, minY: Int): (Image, DeviceResourceDescriptor) = {
     tpe match {
-      case b: BoxTypeSymbol ⇒ iconFor(b.image, b.fqName, minY)
-      case b: BoxType       ⇒ iconFor(None, b.fqName, minY)
+      //case b: BoxTypeSymbol ⇒ iconFor(b.image, b.fqName, minY)
+      case c: ClassJavaType ⇒ iconFor(None, c.fqName, minY)
+      case t: ExprType      ⇒ iconFor(None, t.fqName, minY)
       case _                ⇒ imageForText("<missing>", minY, ColorConstants.red)
     }
   }

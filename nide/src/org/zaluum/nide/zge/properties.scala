@@ -41,7 +41,6 @@ import org.zaluum.nide.eclipse.TextDialogCellEditor
 import org.eclipse.jface.viewers.DialogCellEditor
 import org.eclipse.jface.viewers.CellEditor
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
-import org.zaluum.nide.zge.dialogs.ConstructorSelectDialog
 import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.viewers.ICellEditorValidator
 import org.zaluum.nide.compiler.VarDecl
@@ -170,7 +169,7 @@ class LabelProperty(valDef: ValDef, controller: Controller, gui: Boolean) extend
   def reset() = set("")
 }
 
-class ConstructorSelectProperty(valDef: ValDef, controller: Controller) extends Property {
+/* FIXME class ConstructorSelectProperty(valDef: ValDef, controller: Controller) extends Property {
   def descriptor = new DialogPropertyDescriptor(this, "*Constructor") {
     override lazy val labelProvider = new LabelProvider() {
       override def getText(element: AnyRef) = {
@@ -194,13 +193,18 @@ class ConstructorSelectProperty(valDef: ValDef, controller: Controller) extends 
   def isSet: Boolean = valDef.constructorParams.isEmpty && valDef.constructorTypes.isEmpty
   def reset() = controller.exec(
     valDef.editConstructor(List(), List()))
-}
+}*/
 class MissingParamProperty(controller: Controller, p: Param, v: ValDef) extends Property {
-  def descriptor = new PropertyDescriptor(this, "<" + p.key.str + ">")
-  def set(value: AnyRef) {}
+  def descriptor = new TextPropertyDescriptor(this, "<" + p.key.str + ">")
+  def set(value: AnyRef) {
+    if (value == "")
+      controller.exec(v.removeParam(p.key))
+    else
+      controller.exec(v.addOrReplaceParam(Param(p.key, value.toString)))
+  }
   def get: AnyRef = p.value
   def isSet = true
-  def reset = controller.exec(v.removeParam(p.key))
+  def reset = set("")
 }
 
 class TextParamProperty(val c: Controller, val p: ParamSymbol, val v: ValDef)
@@ -243,10 +247,10 @@ class MethodParamProperty(
     c: Controller,
     p: ParamSymbol,
     v: ValDef,
-    tpe: ⇒ JavaType,
+    javatpe: ⇒ JavaType,
     val static: Boolean) extends TextParamProperty(c, p, v) with MethodProperty {
   def scope = v.sym.mainBS.scope
-  def tpe = tpe
+  def tpe = javatpe
   def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
     ZaluumCompletionEngineScala.allMethods(engine, scope, r, static)
 }

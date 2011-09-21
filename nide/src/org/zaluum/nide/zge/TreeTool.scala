@@ -25,8 +25,8 @@ import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.eclipse.BoxTypeProxy
 import draw2dConversions.point
 import org.zaluum.nide.compiler.MapTransformer
-import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.NoSymbol
+import org.zaluum.nide.compiler.BoxExprType
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -174,17 +174,22 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     var newVal: ValDef = _
     override def next(d: DMap) {
       viewer.findLabelFigureOf(newVal) match {
-        case Some(l) ⇒ selecting.gotoDirectEdit(l)
+        case Some(l) ⇒ exit(); selecting.gotoDirectEdit(l)
         case None    ⇒ exit()
       }
     }
+    def isExpression = Expressions.find(tpeName).isDefined
     protected def newInstance(dst: Point) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒
             val label = tpeName.classNameWithoutPackage.firstLowerCase
             val name = Name(b.sym.freshName(label))
-            newVal = ValDef.emptyValDef(name, tpeName, dst, label)
+            if (isExpression) {
+              newVal = ValDef.emptyValDef(name, tpeName, dst, label)
+            } else {
+              newVal = ValDef.emptyValDefBoxExpr(name, dst, label, tpeName.str)
+            }
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
               connections = transformTrees(b.connections),

@@ -117,7 +117,7 @@ object MethodHelper {
   }
 
 }
-trait ClassJavaType extends JavaType {
+trait ClassJavaType extends JavaType with PropertySourceType {
   type B = ReferenceBinding
   val binding: B
   val scope: ZaluumClassScope
@@ -154,23 +154,31 @@ trait ClassJavaType extends JavaType {
   }
   def loadClass(cl: ClassLoader) = try { Some(cl.loadClass(fqName.str)) }
   catch { case e: Exception ⇒ println(e); None }
+  def properties(controller: Controller, valDef: ValDef): List[ParamProperty] = {
+    for (
+      b ← beanProperties;
+      val t = Values.typeFor(b);
+      if (!t.isInstanceOf[InvalidValueType])
+    ) yield new BeanProperty(controller, valDef, b)
+  }
 }
 
 class SimpleClassJavaType(val owner: Symbol, val binding: ReferenceBinding, val scope: ZaluumClassScope) extends ClassJavaType
 trait PropertySourceType {
   def properties(controller: Controller, valDef: ValDef): List[ParamProperty]
 }
-class BoxTypeSymbol(
+// only for compilation
+class BoxSymbol(
   val image: Option[String],
   var isVisual: Boolean,
   val binding: ReferenceBinding,
   val scope: ZaluumClassScope) extends ClassJavaType
-    with TemplateSymbol with BoxType with Namer with PropertySourceType {
+    with TemplateSymbol with Namer {
   tpe = this
   val owner = null
   var initMethod: Option[MethodBinding] = None
   var hasApply = false
-  var constructors = List[Constructor]()
+  var constructors = List[ConstructorDecl]()
   var methodSelector: Name = _
   var source: Option[String] = None
   override def tdecl: BoxDef = decl.asInstanceOf[BoxDef]
@@ -185,13 +193,7 @@ class BoxTypeSymbol(
   def returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
   def methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
   def mainBS = this
-  def properties(controller: Controller, valDef: ValDef): List[ParamProperty] = {
-    for (
-      b ← beanProperties;
-      val t = Values.typeFor(b);
-      if (!t.isInstanceOf[InvalidValueType])
-    ) yield new BeanProperty(controller, valDef, b)
-  }
+
 }
 
 case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var connections: Set[ConnectionDef], bl: BlockSymbol) {
@@ -208,10 +210,12 @@ case class Clump(var junctions: Set[Junction], var ports: Set[PortSide], var con
     }
   }
 }
-sealed trait TemplateSymbol extends Symbol {
+trait PortsSymbol extends Symbol {
   var ports = Map[Name, PortSymbol]()
-  var blocks = List[BlockSymbol]() // same order as tree
   def lookupPort(name: Name) = ports.get(name)
+}
+trait TemplateSymbol extends PortsSymbol {
+  var blocks = List[BlockSymbol]() // same order as tree
   def templateTree: Template
   def currentBlockIndex = {
     val parsed = templateTree.currentBlock.map { c ⇒
@@ -222,11 +226,11 @@ sealed trait TemplateSymbol extends Symbol {
   def currentBlock = blocks(currentBlockIndex)
   def nextBlockIndex = if (currentBlockIndex >= blocks.length - 1) 0 else currentBlockIndex + 1
   var thisVal: ValSymbol = _ // should be template
-  def mainBS: BoxTypeSymbol
+  def mainBS: BoxSymbol
 }
-trait BoxType extends TemplateSymbol with JavaType {
+/*trait BoxType extends TemplateSymbol with JavaType {
   def templateTree: Template
-}
+}*/
 class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   def name = fqName
   def fqName = Name(template.thisVal.fqName.str + "_block" + blockNumeral)
@@ -343,14 +347,14 @@ class BlockSymbol(val template: TemplateSymbol) extends Symbol with Namer {
   }
 }
 
-class PortSymbol(val owner: TemplateSymbol, val name: Name, val helperName: Option[Name], val extPos: Point, val dir: PortDir, var isField: Boolean = false) extends Symbol {
+class PortSymbol(val owner: PortsSymbol, val name: Name, val helperName: Option[Name], val extPos: Point, val dir: PortDir, var isField: Boolean = false) extends Symbol {
   def box = owner
-  def this(owner: TemplateSymbol, name: Name, dir: PortDir) =
+  def this(owner: PortsSymbol, name: Name, dir: PortDir) =
     this(owner, name, None, Point(0, 0), dir)
   override def toString = "PortSymbol(" + name + ")"
 }
 //class ResultPortSymbol(owner: TemplateSymbol, name: Name, val helpName: Name, val extPos: Point) extends PortSymbol(owner,name,helpName,extPos,Out)
-class Constructor(owner: BoxTypeSymbol, val params: List[ParamSymbol]) {
+class ConstructorDecl(owner: BoxSymbol, val params: List[ParamSymbol]) {
   override def toString = {
     if (params.isEmpty) "<default>()" else
       params.map(p ⇒ p.name.str + " : " + p.tpe.name.str).mkString(", ")
@@ -418,7 +422,7 @@ class PortSide(val pi: PortInstance, val inPort: Boolean, val fromInside: Boolea
 }
 case class ExecutionPath(num: Int, blockSymbol: BlockSymbol) {
   def name = Name(blockSymbol.fqName.str + "_thread" + num)
-  def fqName(bs: BoxTypeSymbol) = Name(bs.fqName.str + "#" + name.str)
+  def fqName(bs: BoxSymbol) = Name(bs.fqName.str + "#" + name.str)
   def futureFqName = Name("future_" + name.str)
   var instructions = List[ValSymbol]()
   var forkedBy: Option[ValSymbol] = None
@@ -430,22 +434,24 @@ class ValSymbol(val owner: BlockSymbol, val name: Name) extends TemplateSymbol {
   // var refactor
   var execPath: ExecutionPath = null
   var init = false
+  var isExecutable = true
+  var isVisual = false
   val fork = Buffer[ExecutionPath]()
   val join = Buffer[ValSymbol]()
   var params = Map[ParamSymbol, Value]()
   var isJoinPoint = false
   var info: AnyRef = null
-  var classinfo: AnyRef = null
+  var classinfo: JavaType = null
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
-  var constructor: Option[Constructor] = None
+  //var constructor: Option[Constructor] = None
   var constructorParams = List[Value]()
   def mainBS = owner.template.mainBS
   def fqName = name
   def semfqName = Name(fqName.str + "_sem")
-  def isExecutable = tpe match {
-    case bs: BoxTypeSymbol if bs.onlyVisual ⇒ false
-    case _                                  ⇒ true
+  def javaType = tpe match {
+    case e: ExprType ⇒ classinfo
+    case _           ⇒ tpe
   }
   private def createOutsidePs(name: Name, dir: Boolean, helperName: Option[Name] = None) = {
     val pdir = if (dir) In else Out

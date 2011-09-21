@@ -94,7 +94,6 @@ object Literals {
 }
 trait Scope extends Symbol {
   def lookupType(name: Name): Option[JavaType]
-  def lookupBoxType(name: Name): Option[BoxType]
   def javaScope: ZaluumClassScope
 }
 object primitives {
@@ -198,11 +197,11 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
     override def traverse(tree: Tree) {
       tree match {
         case b: BoxDef ⇒
-          val sym = new BoxTypeSymbol(b.image, true, binding, scope)
+          val sym = new BoxSymbol(b.image, true, binding, scope)
           sym.source = Some(b.name.str + ".zaluum")
           sym.hasApply = true
           bind(sym, b, /*global.lookupBoxType(b.name).isDefined*/ false) {}
-          sym.constructors = List(new Constructor(sym, List()))
+          sym.constructors = List(new ConstructorDecl(sym, List()))
           tree.tpe = sym
           if (b.template.blocks.size != 1) error("Fatal: BoxDef must have 1 block defined. Manual edit needed.", b)
         // FIXME reported errors do not show in the editor (valdef)
@@ -263,7 +262,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
           val bs = b.sym
           if (!b.constructor.isEmpty) {
             bs.constructors = List(
-              new Constructor(bs,
+              new ConstructorDecl(bs,
                 b.constructor map { varDecl ⇒
                   val p = new ParamSymbol(bs, varDecl.name)
                   p.tpe = scope.lookupType(varDecl.tpeName).getOrElse {
@@ -279,7 +278,6 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
             scope.getStaticMethod(im) match {
               case Some(p: ProblemMethodBinding) ⇒ error("cannot find init method " + im, tree)
               case Some(p: MethodBinding) ⇒
-                // FIXME check parameter compatibility. ControlMixerHelper doesn't see controlmixer if controlmixer has errors
                 if (p.parameters.length == 1 && p.parameters(0).erasure().isCompatibleWith(bs.binding))
                   bs.initMethod = Some(p)
                 else error("bad init parameter", tree);
@@ -295,7 +293,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
           bs.methodSelector = bs.returnPort.map { _.name }.getOrElse(Name(TreeToClass.defaultMethodName))
         case bl: Block ⇒
           bl.sym.template match {
-            case bs: BoxTypeSymbol ⇒
+            case bs: BoxSymbol ⇒
               assert(bs.thisVal == null)
               bs.thisVal = new ValSymbol(bl.sym, Name("this")) // feels wrong
               bs.thisVal.decl = bl.sym.template.decl
@@ -310,48 +308,8 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
           }
           tree.tpe = tree.symbol.tpe
         case v: ValDef ⇒
-          catchAbort(Expressions.find(v.typeName) orElse scope.lookupBoxType(v.typeName)) match {
-            case Some(bs: BoxTypeSymbol) ⇒
-              val vsym = v.sym.asInstanceOf[ValSymbol]
-              v.symbol.tpe = bs
-              if (!bs.hasApply && !bs.isVisual) {
-                error("Class " + v.typeName.str + " must be visual (extend java.awt.Component) or be marked as @Box and have an @Apply method", tree)
-              }
-              // Constructor
-              val consSign = v.constructorTypes map { name ⇒
-                scope.lookupType(name) getOrElse {
-                  error("Constructor type " + name + " not found", tree)
-                  NoSymbol
-                }
-              }
-              bs.constructors.find { _.matchesSignature(consSign) } match {
-                case Some(cons) ⇒
-                  vsym.constructor = Some(cons)
-                  vsym.constructorParams = v.constructorParams.zip(consSign) map {
-                    case (value, tpe) ⇒
-                      val parsed = Values.typeFor(tpe.fqName).create(value)
-                      if (!parsed.valid)
-                        error("Cannot parse literal \"" + value + "\" to " + tpe.name.str, tree)
-                      parsed
-                  }
-                case None ⇒
-                  error("Cannot find constructor for box " + v.typeName.str +
-                    " with signature (" + v.constructorTypes.map { _.str }.mkString(", ") + ")", tree)
-              }
-              // params
-              for (p ← v.params.asInstanceOf[List[Param]]) {
-                bs.beanProperties.find(_.name == p.key) match {
-                  case Some(bean) ⇒
-                    val parsed = Values.typeFor(bean).create(p.value)
-                    if (!parsed.valid)
-                      error(bs.name.str + " cannot parse parameter " + bean.name.str, tree)
-
-                    vsym.params += (bean -> parsed)
-                  case None ⇒ error(bs.name.str + " has no parameter " + p.key.str, tree)
-                }
-              }
-              createPortInstances(bs.ports.values, vsym, false, true)
-            case Some(b: ExprType) ⇒
+          catchAbort(Expressions.find(v.typeName)) match {
+            case Some(b) ⇒
               v.symbol.tpe = b
               val vsym = v.sym
               for (p ← v.params.asInstanceOf[List[Param]]) {
@@ -363,7 +321,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
                     if (!value.valid) {
                       error("Cannot parse " + p.value + " in parameter " + p.key, tree)
                     }
-                  case None ⇒ error(b.fqName.str + " has no parameter " + p.key, tree)
+                  case None ⇒
+                    if (b != BoxExprType) // can be beanparameter
+                      error(b.fqName.str + " has no parameter " + p.key, tree)
                 }
               }
               val createInside = b.isInstanceOf[TemplateExprType]

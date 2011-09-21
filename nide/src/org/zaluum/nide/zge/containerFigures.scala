@@ -20,7 +20,6 @@ import org.eclipse.draw2d.Triangle
 import org.eclipse.jface.resource.ImageDescriptor
 import org.zaluum.expr.Literal
 import org.zaluum.nide.compiler.Block
-import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.zaluum.nide.compiler.ConnectionDef
 import org.zaluum.nide.compiler.ConnectionEnd
 import org.zaluum.nide.compiler.Dimension
@@ -43,6 +42,7 @@ import RichFigure._
 import org.zaluum.nide.compiler.LiteralExprType
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.utils.Timer
+import org.zaluum.nide.compiler.BoxSymbol
 
 trait ContainerItem extends Item {
   def viewer: Viewer
@@ -104,8 +104,8 @@ trait ContainerItem extends Item {
   def symbol = block.sym
   def templateSym = symbol.template
   def template = templateSym match {
-    case v: ValSymbol     ⇒ v.tdecl.template.get
-    case b: BoxTypeSymbol ⇒ b.tdecl.template
+    case v: ValSymbol ⇒ v.tdecl.template.get
+    case b: BoxSymbol ⇒ b.tdecl.template
   }
   val junctions = Buffer[PointFigure]()
   val connections = Buffer[ConnectionFigure]()

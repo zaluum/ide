@@ -9,7 +9,6 @@ import org.eclipse.jface.viewers.{ Viewer ⇒ JViewer }
 import org.eclipse.jface.viewers.{ TreeViewer ⇒ JTreeViewer }
 import org.eclipse.jface.viewers.ITreeContentProvider
 import org.eclipse.jface.viewers.ArrayContentProvider
-import org.zaluum.nide.compiler.BoxTypeSymbol
 import org.eclipse.jface.viewers.ListViewer
 import org.eclipse.ui.views.properties.PropertySheetViewer
 import org.eclipse.ui.views.properties.PropertySheetPage

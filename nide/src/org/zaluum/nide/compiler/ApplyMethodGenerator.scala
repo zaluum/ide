@@ -6,7 +6,7 @@ import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
 import java.util.concurrent.CyclicBarrier
 import scala.collection.mutable.Buffer
 
-class MainThreadMethodGenerator(bs: BoxTypeSymbol) extends MethodGenerator(bs) {
+class MainThreadMethodGenerator(bs: BoxSymbol) extends MethodGenerator(bs) {
   val block = bs.block
   def withLine[T <: Tree](t: T, line: Int): T = {
     t.line = line; t
@@ -41,7 +41,7 @@ class MainThreadMethodGenerator(bs: BoxTypeSymbol) extends MethodGenerator(bs) {
     Method(bs.methodSelector, bs.methodSignature, ins.toList, locals.localsDecl, Some(annotation))
   }
 }
-class RunnableMethodGenerator(bs: BoxTypeSymbol, startPath: ExecutionPath) extends MethodGenerator(bs) {
+class RunnableMethodGenerator(bs: BoxSymbol, startPath: ExecutionPath) extends MethodGenerator(bs) {
   def apply(): Method = {
     val ins = Buffer[Tree]()
     createThreadLocals(startPath);
@@ -71,7 +71,7 @@ class MethodLocals {
     } toList;
   }
 }
-abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
+abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
   val locals = new MethodLocals
 
   def createThreadLocals(startPath: ExecutionPath) {
@@ -95,7 +95,7 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
     case StorageValField ⇒
       Select(
         valRef(pi.valSymbol),
-        FieldRef(pi.name, pi.tpe.fqName.descriptor, pi.valSymbol.tpe.fqName))
+        FieldRef(pi.name, pi.tpe.fqName.descriptor, pi.valSymbol.javaType.fqName))
     case StorageJoinField ⇒
       Select(thisRef,
         FieldRef(pi.joinfqName, pi.tpe.fqName.descriptor, bs.fqName))
@@ -156,17 +156,24 @@ abstract class MethodGenerator(val bs: BoxTypeSymbol) extends GeneratorHelpers {
         } else invoke
 
     vs.tpe match {
-      case vbs: BoxTypeSymbol ⇒
-        val tpe = vbs.fqName
-        val args = vbs.argsInOrder map { ps ⇒ toRef(vs.findPortInstance(ps).get) }
+      case BoxExprType ⇒
+        val cl = vs.classinfo.asInstanceOf[ClassJavaType]
+        val selector = vs.info.asInstanceOf[String]
+        val argsInOrder = vs.ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
+        val returnPort = vs.ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
+        val returnDescriptor = returnPort map { _.tpe.fqName.descriptor } getOrElse ("V")
+        val methodSignature = "(" + argsInOrder.map { _.tpe.fqName.descriptor }.mkString + ")" + returnDescriptor
+
+        val tpe = cl.fqName
+        val args = argsInOrder map { ps ⇒ toRef(vs.findPortInstance(ps).get) }
         val invoke = Invoke(
           valRef(vs),
-          vbs.methodSelector.str,
+          selector,
           args,
           tpe,
-          vbs.methodSignature,
+          methodSignature,
           interface = false)
-        val res = vbs.returnPort map { p ⇒
+        val res = returnPort map { p ⇒
           val pi = vs.findPortInstance(p).get
           Assign(toRef(pi), invoke)
         } getOrElse (invoke)

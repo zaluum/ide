@@ -79,7 +79,7 @@ class ZaluumCompilationUnit(parent: PackageFragment, name: String, owner: Workin
     if (underlyingResource != null) {
       ReflectionUtils.setPrivateField(classOf[CompilationUnitElementInfo], "timestamp", unitInfo, underlyingResource.getModificationStamp())
     }
-    val source: CompilationUnit = this // FIXME cloneCachingContents
+    val source: CompilationUnit = this // ??? cloneCachingContents
     var compilationUnitDeclaration: ZaluumCompilationUnitDeclaration = null
     if (computeProblems) {
       if (problems == null) {

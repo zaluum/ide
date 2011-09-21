@@ -4,8 +4,9 @@ import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.ProblemFieldBinding
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.zaluum.nide.utils.MethodBindingUtils
 
-class OOChecker(val c: CheckConnections) extends CheckerPart {
+class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker {
   /*
      * helpers for methods and fields
      */
@@ -38,13 +39,14 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
     vs.params.get(tpe.typeSymbol) match {
       case Some(v) ⇒
         ztd.zaluumScope.lookupType(Name(v.encoded)) match {
-          case Some(c: ClassJavaType) ⇒
-            vs.classinfo = c
+          case Some(cl: ClassJavaType) ⇒
+            vs.classinfo = cl
             tpe match {
-              case NewArrayExprType     ⇒ checkNewArray(vs, c)
-              case NewExprType          ⇒ checkNew(vs, c)
-              case InvokeStaticExprType ⇒ invokeStatic(vs, c)
-              case StaticFieldExprType  ⇒ processStaticField(vs, c)
+              case BoxExprType          ⇒ checkBoxExpr(vs, cl); c.assignBoxTypeSymbolTypes(vs)
+              case NewArrayExprType     ⇒ checkNewArray(vs, cl)
+              case NewExprType          ⇒ checkNew(vs, cl)
+              case InvokeStaticExprType ⇒ invokeStatic(vs, cl)
+              case StaticFieldExprType  ⇒ processStaticField(vs, cl)
             }
           case Some(p: PrimitiveJavaType) ⇒
             vs.classinfo = p
@@ -57,6 +59,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart {
       case None ⇒ error("No class specified", vs.decl)
     }
   }
+
   def checkNewArray(vs: ValSymbol, t: JavaType) {
     val dims = vs.params.get(NewArrayExprType.arrayDimSymbol) match {
       case Some(v: Value) ⇒

@@ -42,7 +42,7 @@ object ZaluumCompletionEngineScala {
     engineFor(ztd.zaluumScope)
 
   def engineForVs(vs: ValSymbol): ZaluumCompletionEngine =
-    engineFor(vs.owner.template.asInstanceOf[BoxTypeSymbol].scope.ztd)
+    engineFor(vs.mainBS.scope.ztd)
 
   private def rewrapToList[A](ov: ObjectVector): List[A] = {
     var l = List[A]()

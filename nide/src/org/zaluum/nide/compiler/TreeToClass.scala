@@ -149,7 +149,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
      *  
      *  * Cyclic barrier if needed
      */
-    def populateFields(bs: BoxTypeSymbol) {
+    def populateFields(bs: BoxSymbol) {
       // externals  (interface)
       bs.fieldReturns foreach { ps ⇒
         assert(ps.dir == Out && ps.isField)
@@ -167,11 +167,13 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       deepChildValSymbols(block) foreach { vs ⇒
         // box instance
         vs.tpe match {
-          case tbs: BoxTypeSymbol if (vs != bs.thisVal) ⇒
-            val sig = vs.constructor.get.signature
-            val values = for (v ← vs.constructorParams) yield v.codeGen
-            val init = New(vs.tpe.fqName, values, sig)
-            field(vs.fqName, tbs.fqName, init = Some(init)) // make private?
+          case BoxExprType ⇒
+            val sig = "()V" /* FIXME vs.constructor.get.signature*/
+            //val values = for (v ← vs.constructorParams) yield v.codeGen
+            val values = List()
+            val init = New(vs.javaType.fqName, values, sig)
+            val cl = vs.classinfo.asInstanceOf[ClassJavaType]
+            field(vs.fqName, cl.fqName, init = Some(init)) // make private?
           case _ ⇒
         }
         // join points holder 
@@ -209,19 +211,21 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
       signature = signature + ")V"
         // params
         def params(vs: ValSymbol): List[Tree] = vs.tpe match {
-          case tpe: BoxTypeSymbol ⇒
-            vs.params map {
+          case BoxExprType ⇒
+            vs.params flatMap {
               case (param, v) ⇒
-                val beanProp = tpe.beanProperties.find(_.name == param.name).get
-                withLine(
-                  Invoke(
-                    valRef(vs),
-                    beanProp.setter.selector.mkString,
-                    List(v.codeGen),
-                    tpe.fqName,
-                    "(" + param.tpe.descriptor + ")V",
-                    interface = false),
-                  vs.tdecl.line)
+                val clazz = vs.classinfo.asInstanceOf[ClassJavaType]
+                clazz.beanProperties.find(_.name == param.name) map { beanProp ⇒
+                  withLine(
+                    Invoke(
+                      valRef(vs),
+                      beanProp.setter.selector.mkString,
+                      List(v.codeGen),
+                      clazz.fqName,
+                      "(" + param.tpe.descriptor + ")V",
+                      interface = false),
+                    vs.tdecl.line)
+                }
             } toList
           case e: ExprType ⇒
             for (bl ← vs.blocks; vs ← bl.valsAlphabeticOrder; p ← params(vs)) yield p
@@ -264,7 +268,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
 
     def placeWidget(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
-        case tpe: BoxTypeSymbol if tpe.isVisual ⇒
+        case BoxExprType if vs.isVisual ⇒
           val valDef = vs.tdecl
           val mainTpe = mainBox.sym
           List[Tree](
@@ -312,7 +316,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
     }
     def createWidgets(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe match {
-        case tpe: BoxTypeSymbol ⇒ placeWidget(vs, mainBox)
+        case BoxExprType ⇒ placeWidget(vs, mainBox)
         case e: ExprType ⇒
           for (bl ← vs.blocks; vs ← bl.valsAlphabeticOrder; w ← createWidgets(vs, mainBox)) yield w
       }
@@ -320,13 +324,13 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
   }
 }
 trait GeneratorHelpers {
-  def bs: BoxTypeSymbol
+  def bs: BoxSymbol
   def thisRef: Ref = This
   def threadRef(startPath: ExecutionPath) =
     Select(thisRef, FieldRef(startPath.name, startPath.fqName(bs).descriptor, bs.fqName))
   def valRef(vs: ValSymbol): Ref = {
     if (vs == bs.thisVal) thisRef
-    else Select(thisRef, FieldRef(vs.fqName, vs.tpe.fqName.descriptor, bs.fqName))
+    else Select(thisRef, FieldRef(vs.fqName, vs.javaType.fqName.descriptor, bs.fqName))
   }
   def semaphoreRef(vs: ValSymbol) =
     Select(thisRef, FieldRef(vs.semfqName, TreeToClass.semaphoreClassName.descriptor, bs.fqName))
@@ -347,7 +351,6 @@ trait GeneratorHelpers {
   def deepChildMainPaths(exec: ExecutionPath): List[ExecutionPath] = {
     exec.instructions flatMap { vs ⇒
       vs.tpe match {
-        case bs: BoxTypeSymbol ⇒ List()
         case et: ExprType ⇒
           val mainPaths = vs.blocks.map { _.mainPath }
           mainPaths ::: (mainPaths flatMap { th ⇒ deepChildMainPaths(th) })
@@ -356,21 +359,21 @@ trait GeneratorHelpers {
   }
   def deepChildValSymbolsThread0(vs: ValSymbol): List[ValSymbol] = {
     vs.tpe match {
-      case bs: BoxTypeSymbol if (bs.thisVal == vs) ⇒
+      case bs: BoxSymbol if (bs.thisVal == vs) ⇒
         bs.blocks flatMap (bl ⇒
           bl.execPaths(0).instructions flatMap { vs ⇒
             deepChildValSymbolsThread0(vs)
           })
-      case bs: BoxTypeSymbol ⇒ List()
+      //case bs: BoxTypeSymbol ⇒ List()
       case et: ExprType ⇒
         vs.blocks flatMap (vs ⇒ deepChildValSymbols(vs))
     }
   }
   def deepChildValSymbols(vs: ValSymbol): List[ValSymbol] = {
     vs.tpe match {
-      case bs: BoxTypeSymbol if (bs.thisVal == vs) ⇒
+      case bs: BoxSymbol if (bs.thisVal == vs) ⇒
         bs.blocks flatMap (bl ⇒ deepChildValSymbols(bl))
-      case bs: BoxTypeSymbol ⇒ List()
+      //case bs: BoxTypeSymbol ⇒ List()
       case et: ExprType ⇒
         vs.blocks flatMap (vs ⇒ deepChildValSymbols(vs))
     }

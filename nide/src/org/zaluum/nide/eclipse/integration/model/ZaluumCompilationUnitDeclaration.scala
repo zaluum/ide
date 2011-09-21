@@ -1,7 +1,6 @@
 package org.zaluum.nide.eclipse.integration.model
 
 import scala.collection.mutable.Buffer
-
 import org.eclipse.jdt.core.compiler.CharOperation
 import org.eclipse.jdt.internal.compiler.ast.ASTNode
 import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration
@@ -46,11 +45,13 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.TreeToClass
 import org.zaluum.nide.utils.JDTUtils.aToString
 import org.zaluum.nide.utils.JDTUtils.stringToA
-
 import ZaluumCompilationUnitDeclaration.compressPos
 import ZaluumCompilationUnitDeclaration.nameToPrimitiveTypeId
 import ZaluumCompilationUnitDeclaration.toMainName
 import ZaluumCompilationUnitDeclaration.toPos
+import org.zaluum.expr.BoxExpr
+import org.zaluum.nide.compiler.BoxExprType
+import org.zaluum.nide.compiler.Param
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
   compilationResult: CompilationResult,
@@ -188,10 +189,14 @@ class ZaluumCompilationUnitDeclaration(
       //vals 
       def defineValsInBlock(block: Block) {
         for (v ← block.valDefs) {
-          if (!Expressions.find(v.typeName).isDefined) {
+          if (v.typeName == BoxExprType.fqName) {
             val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v)) // keep synched with symbols.ValSymbol.fqName 
             f.modifiers = Opcodes.ACC_PUBLIC
-            f.`type` = createTypeReference(v.typeName, v)
+            val params = v.params.asInstanceOf[List[Param]]
+            params.find(_.key == BoxExprType.typeSymbol.fqName).map { p ⇒ Name(p.value) } match {
+              case Some(name) ⇒ f.`type` = createTypeReference(name, v)
+              case None       ⇒
+            }
             res += f
           } else {
             for (t ← v.template; b ← t.blocks) {

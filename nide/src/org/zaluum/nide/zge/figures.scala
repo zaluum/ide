@@ -66,7 +66,7 @@ trait ValDefItem extends Item with PropertySource {
     val nme = new NameProperty(valDef, controller)
     val lbl = new LabelProperty(valDef, controller, false)
     val lblGui = new LabelProperty(valDef, controller, true)
-    val cons = new ConstructorSelectProperty(valDef, controller)
+    // FIXME val cons = new ConstructorSelectProperty(valDef, controller)
     val props: List[ParamProperty] = valSym.tpe match {
       case p: PropertySourceType ⇒ p.properties(controller, valDef)
       case _                     ⇒ List()
@@ -74,7 +74,7 @@ trait ValDefItem extends Item with PropertySource {
     val missing = valDef.params filter {
       case p: Param ⇒ !props.exists { _.key == p.key }
     } map { case p: Param ⇒ new MissingParamProperty(controller, p, valDef) }
-    nme :: tpe :: lbl :: lblGui :: cons :: missing ::: props
+    nme :: tpe :: lbl :: lblGui :: /*FIXME cons :: */ missing ::: props
   }
   def display = container.viewer.display
 }
@@ -181,7 +181,12 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
 class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def imageFactory = container.viewer.zproject.imageFactory
-  def img = imageFactory.icon(valDef.tpe, minYSize)
+  def img = imageFactory.icon(tpe, minYSize)
+
+  def tpe = valDef.sym.tpe match {
+    case BoxExprType ⇒ valDef.sym.classinfo
+    case o           ⇒ o
+  }
   override def updateMe() {
     super.updateMe()
     disposeImage()
@@ -258,7 +263,7 @@ trait TextEditFigure extends Item {
     }
   }
 }
-class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val cl: ClassLoader) extends ValDefItem with ResizableFeedback {
+class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val cloader: ClassLoader) extends ValDefItem with ResizableFeedback {
   setOpaque(true)
   def boundsValue = valSym.params.find {
     case (k, v) ⇒
@@ -293,9 +298,10 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
       }
 
     component = valDef.tpe match {
-      case bs: BoxTypeSymbol ⇒
+      case BoxExprType ⇒
+        val cjt = valDef.sym.classinfo.asInstanceOf[ClassJavaType]
         for (
-          cl ← bs.loadClass(cl);
+          cl ← cjt.loadClass(cloader);
           i ← instance(cl)
         ) yield i
       case _ ⇒ None
@@ -303,7 +309,7 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
     component foreach { c ⇒
       valSym.params.foreach {
         case (param: BeanParamSymbol, v) ⇒
-          val classParam = param.tpe.loadClass(cl)
+          val classParam = param.tpe.loadClass(cloader)
           c.getClass().getMethods() find { m ⇒
             m.getName == param.setter.selector.mkString &&
               m.getParameterTypes.size == 1 &&
@@ -320,6 +326,7 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
               }
             } catch { case e ⇒ e.printStackTrace() }
           }
+        case _ ⇒
       }
     }
   }

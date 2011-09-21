@@ -289,7 +289,7 @@ case class BoxDef(name: Name, // simple name
                   initMethod: Option[String],
                   constructor: List[VarDecl],
                   template: Template) extends Tree {
-  def sym = symbol.asInstanceOf[BoxTypeSymbol]
+  def sym = symbol.asInstanceOf[BoxSymbol]
   def transformThis(body: EditTransformer ⇒ BoxDef) = new EditTransformer() {
     val trans: PartialFunction[Tree, Tree] = {
       case b: BoxDef if b == BoxDef.this ⇒ body(this)
@@ -336,7 +336,7 @@ case class PortDef(name: Name, typeName: Name, dir: PortDir, inPos: Point, extPo
   def pos = inPos
   def sym = symbol.asInstanceOf[PortSymbol]
   def renamePort(str: String, tpe: Option[Name]): MapTransformer = {
-    val newName = if (str == name.str) name else Name(sym.box.asInstanceOf[BoxTypeSymbol].freshName(str))
+    val newName = if (str == name.str) name else Name(sym.box.asInstanceOf[BoxSymbol].freshName(str))
     new EditTransformer() {
       val trans: PartialFunction[Tree, Tree] = {
         case p: PortDef if (p == PortDef.this) ⇒
@@ -361,6 +361,10 @@ case class PortRef(fromRef: Tree, name: Name, in: Boolean) extends ConnectionEnd
 case class Param(key: Name, value: String) extends Tree
 case class LabelDesc(description: String, pos: Vector2)
 object ValDef {
+  def emptyValDefBoxExpr(name: Name, dst: Point, label: String, className: String) = {
+    val p = Param(BoxExprType.typeSymbol.fqName, className)
+    ValDef(name, BoxExprType.fqName, dst, None, List(p), List(), List(), Some(LabelDesc(label, Vector2(0, 0))), None, None)
+  }
   def emptyValDef(name: Name, tpeName: Name, dst: Point, label: String) =
     ValDef(name, tpeName, dst, None, List(), List(), List(), Some(LabelDesc(label, Vector2(0, 0))), None, None)
   def emptyValDef(name: Name, tpeName: Name) =
