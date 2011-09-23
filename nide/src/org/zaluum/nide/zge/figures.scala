@@ -72,7 +72,9 @@ trait ValDefItem extends Item with PropertySource {
       case _                           ⇒ List()
     }
     val missing = valDef.params filter {
-      case p: Param ⇒ !props.exists { _.key == p.key }
+      case p: Param ⇒ !props.exists { _.key == p.key } &&
+        p.key != BoxExprType.constructorParamsDecl.fqName &&
+        p.key != BoxExprType.constructorTypesDecl.fqName
     } map { case p: Param ⇒ new MissingParamProperty(controller, p, valDef) }
     nme :: tpe :: lbl :: lblGui :: cons :: missing ::: props
   }
