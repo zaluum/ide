@@ -62,11 +62,7 @@ abstract class MethodSelectDialog(
   val items: Array[MethodWithNames] = binding match {
     case r: ReferenceBinding ⇒
       val engine = ZaluumCompletionEngineScala.engineFor(scope)
-      val paramNames = findMethods(engine, r) map { m ⇒
-        val names = org.zaluum.nide.utils.MethodBindingUtils.findMethodParamNames(m, jproject)
-        val params = names.toList.flatMap(a ⇒ a)
-        MethodWithNames(m, params)
-      }
+      val paramNames = findMethods(engine, r) map { m ⇒ new MethodWithNames(m, jproject) }
       paramNames.sortBy(_.selector).toArray
     case _ ⇒ Array()
   }
@@ -108,12 +104,24 @@ abstract class MethodSelectDialog(
 }
 
 case class MethodWithNames(m: MethodBinding, paramNames: List[String]) {
+  def this(m: MethodBinding, javaProject: JavaProject) {
+    this(m, {
+      val names = org.zaluum.nide.utils.MethodBindingUtils.findMethodParamNames(m, javaProject)
+      names.toList.flatMap(a ⇒ a)
+    })
+  }
   def flags = {
     val s = new StringBuffer()
     ASTNode.printModifiers(m.modifiers, s);
     s.toString
   }
   def returnStr = if (m.returnType != null) m.returnType.debugName() else "<no type>"
+  def paramsList: List[(String, TypeBinding)] = {
+    if (m.parameters != null && m.parameters != Binding.NO_PARAMETERS) {
+      val padded = paramNames.padTo(m.parameters.length, "?")
+      padded.zip(m.parameters)
+    } else List()
+  }
   def params = {
     if (m.parameters != null) {
       "(" +

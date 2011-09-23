@@ -66,7 +66,7 @@ trait ValDefItem extends Item with PropertySource {
     val nme = new NameProperty(valDef, controller)
     val lbl = new LabelProperty(valDef, controller, false)
     val lblGui = new LabelProperty(valDef, controller, true)
-    // FIXME val cons = new ConstructorSelectProperty(valDef, controller)
+    val cons = new ConstructorSelectProperty(valDef, controller)
     val props: List[ParamProperty] = valSym.tpe match {
       case Some(p: PropertySourceType) ⇒ p.properties(controller, valDef)
       case _                           ⇒ List()
@@ -74,7 +74,7 @@ trait ValDefItem extends Item with PropertySource {
     val missing = valDef.params filter {
       case p: Param ⇒ !props.exists { _.key == p.key }
     } map { case p: Param ⇒ new MissingParamProperty(controller, p, valDef) }
-    nme :: tpe :: lbl :: lblGui :: /*FIXME cons :: */ missing ::: props
+    nme :: tpe :: lbl :: lblGui :: cons :: missing ::: props
   }
   def display = container.viewer.display
 }
@@ -207,7 +207,7 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
 class LiteralFigure(val container: ContainerItem) extends RectangleFigure with TextEditFigure with ValFigure with RectFeedback {
   def size = preferredSize
   def param = valDef.params.headOption
-  def text = param.map { _.value }.getOrElse { "0" }
+  def text = param.map { _.valueStr }.getOrElse { "0" }
   override val textPos = new EPoint(2, 2)
   override def updateMe {
     super.updateMe()
@@ -265,17 +265,8 @@ trait TextEditFigure extends Item {
 }
 class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val cloader: ClassLoader) extends ValDefItem with ResizableFeedback {
   setOpaque(true)
-  def boundsValue = valSym.params.find {
-    case (k, v) ⇒
-      k.name == Name("bounds") &&
-        v.valueTpe == RectangleValueType &&
-        v.valid
-  }.map {
-    case (k, v) ⇒
-      v.parse.asInstanceOf[java.awt.Rectangle]
-  }
   def size =
-    boundsValue map { r ⇒ Dimension(r.width, r.height) } getOrElse {
+    valSym.bounds map { r ⇒ Dimension(r.width, r.height) } getOrElse {
       Dimension(baseSpace * 5, baseSpace * 5)
     }
   var position = Point(0, 0)
@@ -284,13 +275,14 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
   var component: Option[java.awt.Component] = None
 
   def updateMe() {
-    position = boundsValue map { r ⇒ Point(r.x, r.y) } getOrElse {
+    position = valSym.bounds map { r ⇒ Point(r.x, r.y) } getOrElse {
       import RichFigure._
       treeViewer.findFigureOf(valDef) match {
         case Some(i) ⇒ i.viewPortPos
         case None    ⇒ Point(0, 0)
       }
     }
+      // FIXME constructors
       def instance(cl: Class[_]) = {
         try {
           Some(cl.newInstance().asInstanceOf[java.awt.Component])
@@ -307,8 +299,8 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
       case _ ⇒ None
     }
     component foreach { c ⇒
-      valSym.params.foreach {
-        case (param: BeanParamSymbol, v) ⇒
+      valSym.allValues.foreach {
+        case (param: BeanParamDecl, v) ⇒
           val classParam = param.tpe.flatMap(_.loadClass(cloader))
           c.getClass().getMethods() find { m ⇒
             m.getName == param.setter.selector.mkString &&

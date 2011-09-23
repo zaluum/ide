@@ -137,6 +137,8 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
       }
     }
   }
+  def params(vs: ValSymbol, except: PortInstance) =
+    vs.portSides filter { ps ⇒ ps.inPort && ps.pi != except } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
 
   def runOne(vs: ValSymbol, execPath: ExecutionPath): List[Tree] = {
     val ins = Buffer[Tree]()
@@ -211,11 +213,10 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
           val m = vs.info.asInstanceOf[MethodBinding]
           val obj = InvokeExprType.thisPort(vs)
           val thisOut = InvokeExprType.thisOutPort(vs) // XXX optimize and use only 1 var
-          val params = vs.portSides filter { ps ⇒ ps.inPort && ps.pi != obj } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
           val invoke = Invoke(
             toRef(obj),
             m.selector.mkString,
-            params,
+            params(vs, obj),
             Name(m.declaringClass.constantPoolName().mkString),
             m.signature().mkString,
             m.declaringClass.isInterface)
@@ -224,11 +225,10 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
         case NewExprType ⇒
           val m = vs.info.asInstanceOf[MethodBinding]
           val thiz = NewExprType.thisPort(vs)
-          val params = vs.portSides filter { ps ⇒ ps.inPort } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
           ins +=
             Assign(toRef(thiz),
               New(Name(m.declaringClass.constantPoolName.mkString),
-                params,
+                params(vs, null),
                 m.signature().mkString))
         case NewArrayExprType ⇒
           val thiz = NewArrayExprType.thisPort(vs)
@@ -241,11 +241,10 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
         case InvokeStaticExprType ⇒
           val m = vs.info.asInstanceOf[MethodBinding]
           // TODO share with invoke
-          val params = vs.portSides filter { ps ⇒ ps.inPort } sortBy { _.pi.name.str } map { ps ⇒ toRef(ps.pi) }
           val invoke =
             InvokeStatic(
               meth = m.selector.mkString,
-              param = params,
+              param = params(vs, null),
               fromClass = Name(m.declaringClass.constantPoolName.mkString),
               descriptor = m.signature.mkString)
           ins += invokeHelper(vs, m, invoke)
@@ -294,8 +293,8 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
           }
         case LiteralExprType ⇒
           val o = LiteralExprType.outPort(vs)
-          val c = vs.params.headOption match {
-            case Some((t, v)) ⇒
+          val c = vs.getValue(LiteralExprType.paramDecl) match {
+            case Some(v) ⇒
               v.codeGen
             case _ ⇒ new Const(0, primitives.Byte)
           }

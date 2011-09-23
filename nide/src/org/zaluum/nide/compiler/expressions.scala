@@ -12,8 +12,8 @@ sealed trait ExprType extends Type with PortsSymbol with PropertySourceType {
   def matchingClass: Class[_]
   lazy val name = Name(matchingClass.getSimpleName)
   lazy val fqName = Name(matchingClass.getName)
-  var exprParams = Map[Name, ParamSymbol]()
-  def addParam(p: ParamSymbol) { exprParams += (p.name -> p) }
+  var exprParams = Map[Name, ParamDecl]()
+  def addParam(p: ParamDecl) { exprParams += (p.name -> p) }
   var props = List[(Controller, ValDef) ⇒ ParamProperty]()
   def properties(controller: Controller, valDef: ValDef) =
     props.map { _(controller, valDef) }
@@ -67,7 +67,7 @@ object WhileExprType extends TemplateExprType {
 }
 trait SignatureExprType extends ExprType {
   val Sig = """(.+)(\(.*)""".r
-  val signatureSymbol = new ParamSymbol(Name("-Method"))
+  val signatureSymbol = new ParamDecl(Name("-Method"))
   addParam(signatureSymbol)
   def signatureProp(c: Controller, v: ValDef): ParamProperty
   props ::= ((c: Controller, v: ValDef) ⇒ signatureProp(c, v))
@@ -87,14 +87,19 @@ object ThisRefExprType extends ExprType {
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
 }
 trait TypeParamExprType extends ExprType {
-  val typeSymbol = new ParamSymbol(Name("-Class"))
+  val typeSymbol = new ParamDecl(Name("-Class"))
   addParam(typeSymbol)
   props ::= ((c: Controller, v: ValDef) ⇒ new TypeParamProperty(c, typeSymbol, v))
 }
 sealed abstract class StaticExprType(val matchingClass: Class[_]) extends TypeParamExprType
 object BoxExprType extends StaticExprType(classOf[org.zaluum.expr.BoxExpr]) with SignatureExprType {
-  val fieldsSymbol = new ParamSymbol(Name("-Fields"))
+  val fieldsSymbol = new ParamDecl(Name("-Fields"))
+  val constructorParamsDecl = new ParamDecl(Name("-Constructor values"))
+  val constructorTypesDecl = new ParamDecl(Name("-Constructor types"))
   addParam(fieldsSymbol)
+  addParam(constructorParamsDecl)
+  addParam(constructorTypesDecl)
+
   def signatureProp(c: Controller, v: ValDef) =
     new MethodParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), false)
   override def properties(controller: Controller, valDef: ValDef) = {
@@ -109,8 +114,8 @@ object NewArrayExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.
   val thiz = new PortSymbol(this, Name("array"), Out)
   ports += (thiz.name -> thiz)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
-  def dimensions(v: ValDef) = v.params.find(_.key == NewArrayExprType.arrayDimSymbol.name).map(_.value).getOrElse("1")
-  val arrayDimSymbol = new ParamSymbol(Name("-ArrayDim"))
+  def dimensions(v: ValDef) = v.params.find(_.key == NewArrayExprType.arrayDimSymbol.name).map(_.valueStr).getOrElse("1")
+  val arrayDimSymbol = new ParamDecl(Name("-ArrayDim"))
   addParam(arrayDimSymbol)
   props ::= ((c: Controller, v: ValDef) ⇒ new TextParamProperty(c, arrayDimSymbol, v))
 }
@@ -143,9 +148,9 @@ object ArrayExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Array
 }
 object LiteralExprType extends ResultExprType {
   def matchingClass = classOf[org.zaluum.expr.Literal]
-  val paramSymbol = new ParamSymbol(Name("literal"))
-  addParam(paramSymbol)
-  props ::= ((c: Controller, v: ValDef) ⇒ new TextParamProperty(c, paramSymbol, v))
+  val paramDecl = new ParamDecl(Name("literal"))
+  addParam(paramDecl)
+  props ::= ((c: Controller, v: ValDef) ⇒ new TextParamProperty(c, paramDecl, v))
 }
 
 object ToByteType extends CastExprType(classOf[org.zaluum.expr.cast.ToByte])

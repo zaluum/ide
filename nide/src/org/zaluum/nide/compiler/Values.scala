@@ -23,6 +23,8 @@ import org.zaluum.nide.icons.Icons
 import java.awt.Image
 import org.zaluum.widget.ImageReader
 import org.zaluum.nide.eclipse.ZaluumProject
+import org.zaluum.nide.zge.FontDataPropertyDescriptor
+
 trait Value {
   def encoded: String
   def codeGen: Tree
@@ -36,7 +38,7 @@ trait ZaluumParseValue {
 }
 trait ValueType {
   def tpe: Name
-  def matches(b: BeanParamSymbol): Boolean
+  def matches(b: BeanParamDecl): Boolean
   def matchesTpe(tpe: Name): Boolean
   def create(str: String): Value
   def defaultSWT: AnyRef = ""
@@ -45,13 +47,13 @@ trait ValueType {
 }
 abstract class PrimitiveValueType(val ptpe: PrimitiveJavaType) extends ValueType {
   def tpe = ptpe.fqName
-  def matches(b: BeanParamSymbol) = b.tpe == ptpe
+  def matches(b: BeanParamDecl) = b.tpe == ptpe
   def matchesTpe(tpe: Name) = tpe == ptpe.fqName
   def parseSWT(a: AnyRef) = a.toString
 }
 abstract class ClassValueType(clazz: Class[_]) extends ValueType {
   val tpe = Name(clazz.getName())
-  def matches(b: BeanParamSymbol) = b.tpe match {
+  def matches(b: BeanParamDecl) = b.tpe match {
     case Some(t) ⇒ t.fqName == tpe
     case None    ⇒ false
   }
@@ -255,7 +257,7 @@ class IntEnumValueType(pack: String, property: String, list: List[(Int, String)]
       list.lift(i - 1).map { _._1.toString }.getOrElse("0")
     }
   }
-  override def matches(b: BeanParamSymbol) = {
+  override def matches(b: BeanParamDecl) = {
     b.declaringClass.startsWith(pack) && property == b.name.str && b.tpe == primitives.Int
   }
   override def defaultSWT = 0.asInstanceOf[AnyRef]
@@ -272,7 +274,7 @@ class InvalidValueType(val tpe: Name) extends ValueType {
   }
   def parseSWT(a: AnyRef) = a.toString
   def matchesTpe(name: Name) = tpe == name
-  def matches(b: BeanParamSymbol) = matchesTpe(b.tpe.map(_.fqName).getOrElse(null))
+  def matches(b: BeanParamDecl) = matchesTpe(b.tpe.map(_.fqName).getOrElse(null))
 }
 object Values {
   val AbstractButton = classOf[javax.swing.AbstractButton].getName
@@ -323,7 +325,7 @@ object Values {
   def typeFor(tpe: Name): ValueType = {
     types.find(_.matchesTpe(tpe)).getOrElse(new InvalidValueType(tpe))
   }
-  def typeFor(b: BeanParamSymbol): ValueType = {
+  def typeFor(b: BeanParamDecl): ValueType = {
     types.find(_.matches(b)).getOrElse(new InvalidValueType(b.tpe.map { _.fqName }.getOrElse(Name("NotFound"))))
   }
   def parseNarrowestLiteral(v: String, zaluumScope: ZaluumClassScope): Value = {
@@ -350,34 +352,6 @@ object Values {
             case Some(d) ⇒ DoubleValueType.create(v)
             case None    ⇒ StringValueType.create(v)
           }
-      }
-    }
-
-  }
-
-}
-class FontDataPropertyDescriptor(id: AnyRef, displayName: String) extends PropertyDescriptor(id, displayName) {
-  setLabelProvider(new LabelProvider() {
-    override def getText(element: AnyRef) = element match {
-      case f: FontData ⇒ FontValueType.fontToSwingStr(f)
-      case _           ⇒ ""
-    }
-  })
-  override protected def createPropertyEditor(parent: Composite) = {
-      def validator = getValidator
-    new DialogCellEditor(parent) {
-      setValidator(validator)
-      override protected def openDialogBox(cell: Control) = {
-        val dialog = new FontDialog(cell.getShell)
-        val v = getValue
-        v match {
-          case fd: FontData ⇒ dialog.setFontList(Array(fd))
-          case _            ⇒
-        }
-        dialog.open() match {
-          case fd: FontData ⇒ fd
-          case _            ⇒ v
-        }
       }
     }
   }

@@ -72,15 +72,14 @@ object Parser {
       parse(i.getPos),
       size,
       i.getParameterList.map { parse(_) }.toList,
-      i.getConstructorParameterList.toList,
-      i.getConstructorTypesList.map { Name(_) }.toList,
       lbl,
       lblgui,
       template)
 
   }
   def parse(p: ZaluumProtobuf.Parameter): Param = {
-    Param(Name(p.getKey), p.getValue)
+    import scala.collection.JavaConverters._
+    Param(Name(p.getKey), p.getValueList().asScala.toList)
   }
   def parse(c: ZaluumProtobuf.Connection): ConnectionDef = {
     ConnectionDef(

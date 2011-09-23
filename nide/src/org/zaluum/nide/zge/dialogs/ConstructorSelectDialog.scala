@@ -1,5 +1,5 @@
 package org.zaluum.nide.zge.dialogs
-/* FIXME
+
 import scala.collection.JavaConversions.asScalaBuffer
 import org.eclipse.jface.dialogs.Dialog
 import org.eclipse.jface.viewers.ArrayContentProvider
@@ -24,9 +24,8 @@ import org.eclipse.swt.widgets.TableItem
 import org.eclipse.swt.SWT
 import org.eclipse.ui.ISharedImages
 import org.eclipse.ui.PlatformUI
-import org.zaluum.nide.compiler.Constructor
 import org.zaluum.nide.compiler.EditTransformer
-import org.zaluum.nide.compiler.ParamSymbol
+import org.zaluum.nide.compiler.ParamDecl
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.ValSymbol
@@ -39,31 +38,33 @@ import net.miginfocom.swt.MigLayout
 import org.zaluum.nide.compiler.Name
 import org.eclipse.swt.widgets.Shell
 import org.zaluum.nide.zge.Controller
+import org.zaluum.nide.compiler.ClassJavaType
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.eclipse.jdt.internal.core.JavaProject
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.zaluum.nide.compiler.BoxExprType
+import org.zaluum.nide.compiler.Param
 
-class ConstructorSelectDialog(shell: Shell, vs: ValSymbol) extends Dialog(shell) {
+class ConstructorSelectDialog(jproject: JavaProject, shell: Shell, vs: ValSymbol) extends Dialog(shell) {
   var combo: ComboViewer = _
   def comboValue = {
     val sel = combo.getSelection.asInstanceOf[IStructuredSelection]
     if (sel.isEmpty) None
-    else Some(sel.getFirstElement.asInstanceOf[Constructor])
+    else Some(sel.getFirstElement.asInstanceOf[MethodBinding])
   }
   var tableContents = List[TableEntry]()
-  case class TableEntry(var sym: Option[ParamSymbol], var value: String)
-  def v = vs.tdecl
+  case class TableEntry(var sym: Option[(String, TypeBinding)], var value: String)
+  def v = vs.decl
+  val initSignature = vs.getStr(BoxExprType.constructorTypesDecl).getOrElse("")
+  val initParams = vs.getList(BoxExprType.constructorParamsDecl).getOrElse(List())
   var result: Option[EditTransformer] = None
   override protected def okPressed() {
-    val typeNames = for (c ← comboValue.toList; p ← c.params) yield p.tpe.name
+    val signature = comboValue.map(_.signature().mkString).getOrElse("")
     val params = tableContents.map(_.value)
-    if (typeNames != v.constructorTypes || params != v.constructorParams) {
-      result = Some(new EditTransformer() {
-        val trans: PartialFunction[Tree, Tree] = {
-          case v: ValDef if vs.decl == v ⇒
-            v.copy(
-              constructorParams = params,
-              constructorTypes = typeNames,
-              template = transformOption(v.template))
-        }
-      })
+    if (signature != initSignature || params != initParams) {
+      result = Some(v.addOrReplaceParams(List(
+        Param(BoxExprType.constructorParamsDecl.fqName, params),
+        Param(BoxExprType.constructorTypesDecl.fqName, signature))))
     }
     super.okPressed()
   }
@@ -96,8 +97,8 @@ class ConstructorSelectDialog(shell: Shell, vs: ValSymbol) extends Dialog(shell)
     newLabel(c, "Select the constructor to be used")
     combo = new ComboViewer(c)
     combo.setContentProvider(ArrayContentProvider.getInstance)
-    val tpe = vs.tpe.asInstanceOf[BoxTypeSymbol]
-    combo.setInput(tpe.constructors.toArray)
+    val tpe = vs.classinfo.asInstanceOf[ClassJavaType]
+    combo.setInput(tpe.allConstructors.toArray)
     combo.getControl.setLayoutData("span,wrap")
     val constructor = vs match {
       case vs: ValSymbol ⇒ vs.constructor
@@ -107,7 +108,7 @@ class ConstructorSelectDialog(shell: Shell, vs: ValSymbol) extends Dialog(shell)
       combo.setSelection(new StructuredSelection(cons));
     }
     // TABLE
-    tableContents = createTableValue(constructor, vs.tdecl.constructorParams)
+    tableContents = createTableValue(constructor, vs.getList(BoxExprType.constructorParamsDecl).getOrElse(List()))
     val table = createTable(c)
     table.setLayoutData("span,  height 200")
     val tableViewer = new TableViewer(table)
@@ -134,8 +135,8 @@ class ConstructorSelectDialog(shell: Shell, vs: ValSymbol) extends Dialog(shell)
       def getColumnText(element: AnyRef, columnIndex: Int) = {
         val te = element.asInstanceOf[TableEntry]
         columnIndex match {
-          case 0 ⇒ te.sym map { _.name.str } getOrElse { "?" }
-          case 1 ⇒ te.sym map { _.tpe.name.str } getOrElse { "?" }
+          case 0 ⇒ te.sym map { _._1 } getOrElse { "?" }
+          case 1 ⇒ te.sym map { _._2.readableName.mkString } getOrElse { "?" }
           case 2 ⇒ te.value
           case _ ⇒ null
         }
@@ -171,12 +172,19 @@ class ConstructorSelectDialog(shell: Shell, vs: ValSymbol) extends Dialog(shell)
     c
   }
 
-  def createTableValue(c: Option[Constructor], values: List[String]) = {
-    val withSymbol = for (cons ← c.toList; p ← cons.params) yield { TableEntry(Some(p), "") }
+  def createTableValue(c: Option[MethodBinding], values: List[String]) = {
+    val withSymbol = c match {
+      case Some(m) ⇒
+        val mnames = new MethodWithNames(m, jproject)
+        for (tuple ← mnames.paramsList) yield {
+          TableEntry(Some(tuple), "")
+        }
+      case None ⇒ List()
+    }
     val others = for (i ← withSymbol.length until values.length) yield new TableEntry(None, "")
     val table = withSymbol ++ others
     for ((v, t) ← values.zip(table)) t.value = v
     table
   }
   override def isResizable = true
-}*/ 
+}

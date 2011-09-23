@@ -110,10 +110,10 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
       case ToFloatType  ⇒ o.tpe = Float
       case ToDoubleType ⇒ o.tpe = Double
       case CastToExprType ⇒
-        vs.params.get(CastToExprType.typeSymbol) match {
-          case Some(v) ⇒
-            o.tpe = ztd.zaluumScope.lookupType(Name(v.encoded)) orElse {
-              error("Cast type " + v.encoded + " not found", vs.decl)
+        vs.getStr(CastToExprType.typeSymbol) match {
+          case Some(str) ⇒
+            o.tpe = ztd.zaluumScope.lookupType(Name(str)) orElse {
+              error("Cast type " + str + " not found", vs.decl)
               None
             }
           case _ ⇒
@@ -148,13 +148,13 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
     val l = LiteralExprType
     val o = l.outPort(vs)
     assert(vs.decl.params.size <= 1)
-    val t = vs.decl.params.headOption match {
-      case Some(param: Param) ⇒
-        val value = Values.parseNarrowestLiteral(param.value, ztd.zaluumScope) /* TODO pass project */
+    val t = vs.getStr(LiteralExprType.paramDecl) match {
+      case Some(str: String) ⇒
+        val value = Values.parseNarrowestLiteral(str, ztd.zaluumScope) /* TODO pass project */
         o.tpe = ztd.zaluumScope.lookupType(value.valueTpe.tpe)
-        vs.params = Map(LiteralExprType.paramSymbol -> value)
+        vs.setValue(LiteralExprType.paramDecl, value)
         if (!value.valid || o.tpe.isEmpty)
-          error("Cannot parse literal " + param.value, vs.decl)
+          error("Cannot parse literal " + str, vs.decl)
       case e ⇒
         o.tpe = primitives.Byte;
     }

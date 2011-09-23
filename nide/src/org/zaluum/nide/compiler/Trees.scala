@@ -220,8 +220,6 @@ object PrettyPrinter {
     case v: ValDef ⇒
       print("ValDef(" + List(v.name, v.pos, v.size, v.typeName).mkString(","), deep)
       print("params: " + v.params, deep + 1)
-      print("constructors:" + v.constructorParams.mkString(","), deep + 1)
-      print("constructorTypes:(" + v.constructorTypes.mkString(",") + ")", deep + 1)
       print(v.template.toList, deep + 1)
       print(")" + sym(v), deep)
     case p: Param ⇒
@@ -294,7 +292,7 @@ case class BoxDef(name: Name, // simple name
     copy(constructor = l, template = e.transform(template))
   }
 }
-case class VarDecl(name: Name, tpeName: Name) extends SymbolTree[ParamSymbol]
+case class VarDecl(name: Name, tpeName: Name) extends SymbolTree[ParamDecl]
 object Template {
   def emptyTemplate(blocks: Int) = {
     Template(List.fill(blocks) { Block.empty }, List(), None)
@@ -355,17 +353,23 @@ case class PortRef(
   fromRef: Tree,
   name: Name,
   in: Boolean) extends SymbolTree[PortSide] with ConnectionEnd // in as flow or as PortDir?
-case class Param(key: Name, value: String) extends SymbolTree[ParamSymbol]
+object Param {
+  def apply(key: Name, value: String): Param = Param(key, List(value))
+}
+case class Param(key: Name, values: List[String]) extends SymbolTree[ParamDecl] {
+  def valueStr = values.mkString
+}
+
 case class LabelDesc(description: String, pos: Vector2)
 object ValDef {
   def emptyValDefBoxExpr(name: Name, dst: Point, label: String, className: String) = {
     val p = Param(BoxExprType.typeSymbol.fqName, className)
-    ValDef(name, BoxExprType.fqName, dst, None, List(p), List(), List(), Some(LabelDesc(label, Vector2(0, 0))), None, None)
+    ValDef(name, BoxExprType.fqName, dst, None, List(p), Some(LabelDesc(label, Vector2(0, 0))), None, None)
   }
   def emptyValDef(name: Name, tpeName: Name, dst: Point, label: String) =
-    ValDef(name, tpeName, dst, None, List(), List(), List(), Some(LabelDesc(label, Vector2(0, 0))), None, None)
+    ValDef(name, tpeName, dst, None, List(), Some(LabelDesc(label, Vector2(0, 0))), None, None)
   def emptyValDef(name: Name, tpeName: Name) =
-    ValDef(name, tpeName, Point(0, 0), None, List(), List(), List(), None, None, None)
+    ValDef(name, tpeName, Point(0, 0), None, List(), None, None, None)
 }
 case class ValDef(
     name: Name,
@@ -373,8 +377,6 @@ case class ValDef(
     pos: Point,
     size: Option[Dimension],
     params: List[Param],
-    constructorParams: List[String],
-    constructorTypes: List[Name],
     label: Option[LabelDesc],
     labelGui: Option[LabelDesc],
     template: Option[Template]) extends SymbolTree[ValSymbol] with Positionable {
@@ -388,19 +390,18 @@ case class ValDef(
       template = e.transformOption(template),
       params = e.transformTrees(params))
   }
-  def removeParam(key: Name) = transformThis { e ⇒
-    val filtered = params.filterNot(_.key == key)
+  def removeParams(keys: Name*) = transformThis { e ⇒
+    val filtered = params.filterNot(p ⇒ keys.contains(p.key))
     copy(template = e.transformOption(template), params = filtered)
   }
-  def addOrReplaceParam(param: Param) = transformThis { e ⇒
-    val filtered = params.filterNot(_.key == param.key)
+  def addOrReplaceParams(changeParams: List[Param]) = transformThis { e ⇒
+    val filtered = params.filterNot(p ⇒ changeParams.exists(_.key == p.key))
+    println(filtered)
     copy(
       template = e.transformOption(template),
-      params = param :: filtered)
+      params = changeParams ::: filtered)
   }
-  def editConstructor(types: List[Name], params: List[String]) = transformThis { e ⇒
-    copy(constructorParams = params, constructorTypes = types, template = e.transformOption(template))
-  }
+  def addOrReplaceParam(param: Param) = addOrReplaceParams(List(param))
   def editType(clazz: Name) = transformThis { e ⇒
     copy(typeName = clazz, template = e.transformOption(template))
   }
@@ -416,7 +417,7 @@ case class ValDef(
   }
   def bounds: Option[(Point, Dimension)] = {
     params.find(_.key == Name("bounds")).flatMap { par ⇒
-      val v = RectangleValueType.create(par.value)
+      val v = RectangleValueType.create(par.values.mkString)
       if (v.valid) {
         val r = v.parse
         Some(Point(r.x, r.y), Dimension(r.width, r.height))

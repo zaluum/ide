@@ -134,8 +134,6 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
             val newValDef = ValDef(name, tpeName, Point(0, 0),
               size = None,
               params = List(Param(Name("bounds"), dst.x + " " + dst.y + " " + defaultSize.w + " " + defaultSize.h)),
-              constructorParams = List(),
-              constructorTypes = List(),
               label = None,
               labelGui = None,
               template = None)

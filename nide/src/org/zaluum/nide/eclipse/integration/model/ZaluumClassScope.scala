@@ -23,7 +23,7 @@ import org.zaluum.nide.compiler.In
 import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Out
-import org.zaluum.nide.compiler.ParamSymbol
+import org.zaluum.nide.compiler.ParamDecl
 import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.PortSymbol
 import org.zaluum.nide.compiler.PrimitiveJavaType

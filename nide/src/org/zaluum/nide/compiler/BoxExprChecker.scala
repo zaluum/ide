@@ -84,15 +84,6 @@ trait BoxExprChecker extends CheckerPart {
       .foreach { case (m, a) ⇒ doApply(m, a.get) }
     for (f ← allFields; if f.isPublic && !f.isStatic) processField(f)
 
-    /*private def doConstructor(bs: BoxTypeSymbol, m: MethodBinding) {
-      val names = numericNames(m)
-      val params = for ((p, i) ← m.parameters zipWithIndex) yield {
-        val ps = new ParamSymbol(bs, Name(names(i))) // helper name
-        ps.tpe = scope.getJavaType(p)
-        ps
-      }
-      bs.constructors = new Constructor(bs, params.toList) :: bs.constructors
-    }*/
     vs.isVisual = visual
     val v = vs.decl
     if (!hasApply && !visual) {
@@ -100,34 +91,34 @@ trait BoxExprChecker extends CheckerPart {
       error("Class " + v.typeName.str + " must be visual (extend java.awt.Component) or be marked as @Box and have an @Apply method", v)
     }
     // Constructor
-    /*val consSign = v.constructorTypes map { name ⇒
-      scope(vs).lookupType(name) getOrElse {
-        error("Constructor type " + name + " not found", v)
-        NoSymbol
-      }
-    }
-    c.constructors.find { _.matchesSignature(consSign) } match {
+    val consSignature = vs.getStr(BoxExprType.constructorTypesDecl).getOrElse("()V")
+    c.allConstructors.find { _.signature().mkString == consSignature } match {
       case Some(cons) ⇒
-        vsym.constructor = Some(cons)
-        vsym.constructorParams = v.constructorParams.zip(consSign) map {
-          case (value, tpe) ⇒
-            val parsed = Values.typeFor(tpe.fqName).create(value)
+        vs.constructor = Some(cons)
+        val params = vs.getList(BoxExprType.constructorParamsDecl).getOrElse(List())
+        if (params.size != cons.parameters.size)
+          error("Number of constructor parameters doesn't match", vs.decl)
+        vs.constructorParams = params.zip(cons.parameters) map {
+          case (value, binding) ⇒
+            val otpe = scope.getJavaType(binding)
+            val tpe = otpe.map { _.fqName }.getOrElse(Name("..."))
+            val parsed = Values.typeFor(tpe).create(value)
             if (!parsed.valid)
-              error("Cannot parse literal \"" + value + "\" to " + tpe.name.str, tree)
+              error("Cannot parse literal \"" + value + "\" to " + tpe.str, vs.decl)
             parsed
         }
       case None ⇒
         error("Cannot find constructor for box " + v.typeName.str +
-          " with signature (" + v.constructorTypes.map { _.str }.mkString(", ") + ")", tree)
-    }*/
+          " with signature " + consSignature, v)
+    }
     // params
     for (p ← v.params; if !BoxExprType.exprParams.contains(p.key)) {
       c.beanProperties.find(_.name == p.key) match {
         case Some(bean) ⇒
-          val parsed = Values.typeFor(bean).create(p.value)
+          val parsed = Values.typeFor(bean).create(p.values.mkString)
           if (!parsed.valid)
             error(c.name.str + " cannot parse parameter " + bean.name.str, v)
-          vs.params += (bean -> parsed)
+          vs.setValue(bean, parsed)
         case None ⇒ error(c.name.str + " has no parameter " + p.key.str, v)
       }
     }

@@ -204,7 +204,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             val sym = b.sym
             val name = Name(sym.freshName(tpe.get.name.classNameWithoutPackage.firstLowerCase))
             val template = Template.emptyTemplate(requiredBlocks)
-            val newVal = ValDef(name, tpe.get.name, dst, Some(Dimension(200, 200)), List(), List(), List(), None, None, Some(template))
+            val newVal = ValDef(name, tpe.get.name, dst, Some(Dimension(200, 200)), List(), None, None, Some(template))
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
               parameters = transformTrees(b.parameters),

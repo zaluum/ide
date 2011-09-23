@@ -86,9 +86,9 @@ class ClassJavaType(
         }
       }
     }
-    var l = List[BeanParamSymbol]()
+    var l = List[BeanParamDecl]()
     for ((name, (g, s)) ← map; if (g != null && s != null)) {
-      l ::= new BeanParamSymbol(g, s, scope.getJavaType(g.returnType))
+      l ::= new BeanParamDecl(g, s, scope.getJavaType(g.returnType))
     }
     l.sortBy(_.name.str)
   }

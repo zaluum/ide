@@ -30,15 +30,15 @@ trait TypedSymbol[T <: Type] extends Symbol {
   def tpeHumanStr = tpe.map(_.name.str).getOrElse("<No Type>")
 }
 
-class ParamSymbol(val name: Name) extends TypedSymbol[JavaType] {
+class ParamDecl(val name: Name) extends TypedSymbol[JavaType] {
   override def toString = "ParamSymbol(" + name + ")"
   def fqName = name
 }
-class BeanParamSymbol(
+class BeanParamDecl(
   val getter: MethodBinding,
   val setter: MethodBinding,
   initTpe: Option[JavaType])
-    extends ParamSymbol(Name(MethodHelper.propertyName(getter))) {
+    extends ParamDecl(Name(MethodHelper.propertyName(getter))) {
   tpe = initTpe;
   def declaringClass = getter.declaringClass.compoundName.map { _.mkString }.mkString(".")
 }
@@ -246,7 +246,7 @@ class PortSymbol(
   override def toString = "PortSymbol(" + name + ")"
 }
 
-class ConstructorDecl(val params: List[ParamSymbol]) {
+class ConstructorDecl(val params: List[ParamDecl]) {
   override def toString = {
     if (params.isEmpty) "<default>()" else
       params.map(p ⇒ p.name.str + " : " + p.tpeHumanStr).mkString(", ")
@@ -332,14 +332,22 @@ class ValSymbol(val owner: BlockSymbol, val name: Name)
   var isVisual = false
   val fork = Buffer[ExecutionPath]()
   val join = Buffer[ValSymbol]()
-  var params = Map[ParamSymbol, Value]()
+  private var values = Map[ParamDecl, Value]()
   var isJoinPoint = false
   var info: AnyRef = null
+  //  FIXME to option
   var classinfo: JavaType = null
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
-  //var constructor: Option[Constructor] = None
   var constructorParams = List[Value]()
+  def allValues = values
+  def setValue(p: ParamDecl, v: Value) { values += (p -> v) }
+  def getValue(p: ParamDecl) = values.get(p)
+  def getStr(p: ParamDecl): Option[String] = getStr(p.fqName)
+  def getStr(n: Name): Option[String] = decl.params.find(_.key == n).map(_.valueStr)
+  def getList(p: ParamDecl): Option[List[String]] = getList(p.fqName)
+  def getList(n: Name): Option[List[String]] = decl.params.find(_.key == n).map(_.values)
+  var constructor: Option[MethodBinding] = None
   def mainBS = owner.template.mainBS
   def fqName = name
   def semfqName = Name(fqName.str + "_sem")
@@ -367,14 +375,11 @@ class ValSymbol(val owner: BlockSymbol, val name: Name)
     result ++= fork.map { t ⇒ "Fork(" + t.num + ")" }
     result.mkString(", ")
   }
-  def bounds = params.find {
-    case (k, v) ⇒
-      k.name == Name("bounds") &&
-        v.valueTpe == RectangleValueType &&
-        v.valid
-  }.map {
-    case (k, v) ⇒
-      v.parse.asInstanceOf[java.awt.Rectangle]
+  def bounds = getStr(Name("bounds")).flatMap { str ⇒
+    val v = RectangleValueType.create(str)
+    if (v.valid)
+      Some(v.parse.asInstanceOf[java.awt.Rectangle])
+    else None
   }
 }
 object Namer {

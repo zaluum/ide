@@ -192,9 +192,9 @@ class ZaluumCompilationUnitDeclaration(
           if (v.typeName == BoxExprType.fqName) {
             val f = new FieldDeclaration(v.name.str.toCharArray, start(v), end(v)) // keep synched with symbols.ValSymbol.fqName 
             f.modifiers = Opcodes.ACC_PUBLIC
-            v.params.find(_.key == BoxExprType.typeSymbol.fqName).map { p ⇒ Name(p.value) } match {
+            v.params.find(_.key == BoxExprType.typeSymbol.fqName).map { p ⇒ Name(p.valueStr) } match {
               case Some(name) ⇒ f.`type` = createTypeReference(name, v)
-              case None       ⇒
+              case None       ⇒ f.`type` = createTypeReference(Name("java.lang.Object"), v)
             }
             res += f
           } else {
@@ -237,7 +237,9 @@ class ZaluumCompilationUnitDeclaration(
           } else
             new ArrayTypeReference(leaf.str.toCharArray, dim, pos);
         case None ⇒
-          if (nameToPrimitiveTypeId.contains(name.str)) {
+          if (name.str == "") {
+            TypeReference.baseTypeReference(TypeIds.T_void, 0)
+          } else if (nameToPrimitiveTypeId.contains(name.str)) {
             TypeReference.baseTypeReference(nameToPrimitiveTypeId(name.str), 0)
           } else if (!name.str.contains('.')) {
             new SingleTypeReference(name.str.toCharArray, pos)

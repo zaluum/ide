@@ -39,11 +39,7 @@ message Instance
 	repeated Parameter parameter = 5;
 	optional Label label = 6;
 	optional Label label_gui = 7;
-	
 	required string class_name = 8;
-	repeated string constructor_parameter =11;
-	repeated string constructor_types = 12;	
-	
 	optional Template template = 13;
 	
 }
@@ -53,7 +49,7 @@ message Label {
 }
 message Parameter {
 	required string key =1;
-	required string value =2;
+	repeated string value =2;
 }
 message PortRef{
 	optional string box_name =1;

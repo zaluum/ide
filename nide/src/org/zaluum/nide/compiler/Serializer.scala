@@ -57,8 +57,6 @@ object Serializer {
     p.labelGui foreach { l ⇒ b.setLabelGui(proto(l)) }
     p.template foreach { t ⇒ b.setTemplate(proto(t)) }
     b.setClassName(p.typeName.str)
-      .addAllConstructorParameter(p.constructorParams)
-      .addAllConstructorTypes(p.constructorTypes map { _.str })
       .setName(p.name.str)
       .setPos(proto(p.pos))
       .setSize(proto(p.size.getOrElse(Dimension(50, 50))))
@@ -70,7 +68,7 @@ object Serializer {
   def proto(p: Param): ZaluumProtobuf.Parameter = {
     ZaluumProtobuf.Parameter.newBuilder
       .setKey(p.key.str)
-      .setValue(p.value).build
+      .addAllValue(p.values).build
   }
   def proto(c: ConnectionDef): ZaluumProtobuf.Connection = {
     val b = ZaluumProtobuf.Connection.newBuilder

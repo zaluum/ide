@@ -168,9 +168,8 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         // box instance
         vs.tpe.get match {
           case BoxExprType ⇒
-            val sig = "()V" /* FIXME vs.constructor.get.signature*/
-            //val values = for (v ← vs.constructorParams) yield v.codeGen
-            val values = List()
+            val sig = vs.constructor.map(_.signature().mkString).getOrElse("()V");
+            val values = for (v ← vs.constructorParams) yield v.codeGen
             val init = New(vs.javaType.fqName, values, sig)
             val cl = vs.classinfo.asInstanceOf[ClassJavaType]
             field(vs.fqName, cl.fqName, init = Some(init)) // make private?
@@ -212,8 +211,8 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         // params
         def params(vs: ValSymbol): List[Tree] = vs.tpe.get match {
           case BoxExprType ⇒
-            vs.params flatMap {
-              case (param, v) ⇒
+            vs.allValues flatMap {
+              case (param: BeanParamDecl, v) ⇒
                 val clazz = vs.classinfo.asInstanceOf[ClassJavaType]
                 clazz.beanProperties.find(_.name == param.name) map { beanProp ⇒
                   withLine(
@@ -226,6 +225,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
                       interface = false),
                     vs.decl.line)
                 }
+              case _ ⇒ List()
             } toList
           case e: ExprType ⇒
             for (bl ← vs.blocks; vs ← bl.valsAlphabeticOrder; p ← params(vs)) yield p

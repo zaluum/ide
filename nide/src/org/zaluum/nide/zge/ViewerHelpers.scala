@@ -13,6 +13,12 @@ import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.SWT
 import org.eclipse.swt.widgets.Control
 import net.miginfocom.swt.MigLayout
+import org.eclipse.jface.viewers.DialogCellEditor
+import org.eclipse.swt.widgets.FontDialog
+import org.eclipse.swt.graphics.FontData
+import org.eclipse.ui.views.properties.PropertyDescriptor
+import org.eclipse.jface.viewers.LabelProvider
+import org.zaluum.nide.compiler.FontValueType
 
 class SelectionManager[A] {
   protected var selected = Set[A]()
@@ -111,6 +117,33 @@ object DotPainter {
     graphics.fillRectangle(b);
     for (i ← 0 to b.width by dx; j ← 0 to b.height by dy) {
       graphics.drawPoint(i, j);
+    }
+  }
+}
+
+class FontDataPropertyDescriptor(id: AnyRef, displayName: String) extends PropertyDescriptor(id, displayName) {
+  setLabelProvider(new LabelProvider() {
+    override def getText(element: AnyRef) = element match {
+      case f: FontData ⇒ FontValueType.fontToSwingStr(f)
+      case _           ⇒ ""
+    }
+  })
+  override protected def createPropertyEditor(parent: Composite) = {
+      def validator = getValidator
+    new DialogCellEditor(parent) {
+      setValidator(validator)
+      override protected def openDialogBox(cell: Control) = {
+        val dialog = new FontDialog(cell.getShell)
+        val v = getValue
+        v match {
+          case fd: FontData ⇒ dialog.setFontList(Array(fd))
+          case _            ⇒
+        }
+        dialog.open() match {
+          case fd: FontData ⇒ fd
+          case _            ⇒ v
+        }
+      }
     }
   }
 }

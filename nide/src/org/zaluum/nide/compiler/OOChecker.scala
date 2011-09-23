@@ -36,9 +36,9 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
      */
   def checkStaticExprType(vs: ValSymbol) {
     val tpe = vs.tpe.get.asInstanceOf[StaticExprType]
-    vs.params.get(tpe.typeSymbol) match {
-      case Some(v) ⇒
-        ztd.zaluumScope.lookupType(Name(v.encoded)) match {
+    vs.getStr(tpe.typeSymbol) match {
+      case Some(str) ⇒
+        ztd.zaluumScope.lookupType(Name(str)) match {
           case Some(cl: ClassJavaType) ⇒
             vs.classinfo = cl
             tpe match {
@@ -54,16 +54,16 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
               case NewArrayExprType ⇒ checkNewArray(vs, p)
               case _                ⇒ error("Type must be a class", vs.decl)
             }
-          case _ ⇒ error("Class " + v.encoded + " not found", vs.decl)
+          case _ ⇒ error("Class " + str + " not found", vs.decl)
         }
       case None ⇒ error("No class specified", vs.decl)
     }
   }
 
   def checkNewArray(vs: ValSymbol, t: JavaType) {
-    val dims = vs.params.get(NewArrayExprType.arrayDimSymbol) match {
-      case Some(v: Value) ⇒
-        try { v.encoded.toInt } catch { case e ⇒ error("Cannot parse", vs.decl); 1 }
+    val dims = vs.getStr(NewArrayExprType.arrayDimSymbol) match {
+      case Some(s) ⇒
+        try { s.toInt } catch { case e ⇒ error("Cannot parse", vs.decl); 1 }
       case None ⇒ 1
     }
     for (i ← 1 to dims) {
@@ -75,13 +75,11 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     val result = NewArrayExprType.thisPort(vs)
     result.tpe = ztd.zaluumScope.getArrayType(t, dims)
   }
-  def paramStr(vs: ValSymbol, param: ParamSymbol) =
-    vs.params.get(param).map(_.encoded)
   def checkNew(vs: ValSymbol, c: ClassJavaType) {
     if (!c.binding.canBeInstantiated()) {
       error("Class " + c.name.str + " cannot be instantiated", vs.decl);
     }
-    paramStr(vs, NewExprType.signatureSymbol) match {
+    vs.getStr(NewExprType.signatureSymbol) match {
       case Some(NewExprType.Sig(name, signature)) ⇒
         val cons = ZaluumCompletionEngineScala.findConstructor(ztd, scope(vs), c.binding, signature)
         processMethod(vs, cons) { m ⇒
@@ -91,7 +89,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     }
   }
   def invokeStatic(vs: ValSymbol, c: ClassJavaType) {
-    paramStr(vs, InvokeStaticExprType.signatureSymbol) match {
+    vs.getStr(InvokeStaticExprType.signatureSymbol) match {
       case Some(InvokeStaticExprType.Sig(selector, signature)) ⇒
         val m = ZaluumCompletionEngineScala.findBySignature(ztd, scope(vs), c, selector, signature, true)
         processMethod(vs, m) { _ ⇒ }
@@ -100,9 +98,9 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
   }
   def processStaticField(vs: ValSymbol, c: ClassJavaType) {
     val tpe = vs.tpe.get.asInstanceOf[SignatureExprType]
-    vs.params.get(tpe.signatureSymbol) match {
-      case Some(v) ⇒
-        val f = ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, v.encoded, true)
+    vs.getStr(tpe.signatureSymbol) match {
+      case Some(str) ⇒
+        val f = ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, str, true)
         processField(vs, c)
       case _ ⇒ error("Static field not specified", vs.decl)
     }
@@ -159,9 +157,9 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
   }
   def processField(vs: ValSymbol, c: ClassJavaType) {
     val tpe = vs.tpe.get.asInstanceOf[SignatureExprType]
-    vs.params.get(tpe.signatureSymbol) match {
-      case Some(v: Value) ⇒
-        ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, v.encoded, false) match {
+    vs.getStr(tpe.signatureSymbol) match {
+      case Some(str) ⇒
+        ZaluumCompletionEngineScala.findField(ztd, scope(vs), c.binding, str, false) match {
           case Some(p: ProblemFieldBinding) ⇒ error("Problem field " + p + p.problemId(), vs.decl)
           case Some(f: FieldBinding) ⇒
             val out = vs.tpe.get.asInstanceOf[ResultExprType].outPort(vs)
@@ -176,15 +174,12 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     }
   }
   def invoke(vs: ValSymbol, c: ClassJavaType) {
-    vs.params.get(InvokeExprType.signatureSymbol) match {
-      case Some(v) ⇒
-        v.encoded match {
-          case InvokeExprType.Sig(selector, signature) ⇒
-            val m = ZaluumCompletionEngineScala.findBySignature(ztd, scope(vs), c, selector, signature, false)
-            processMethod(vs, m) { _ ⇒ }
-          case _ ⇒ error("Cannot parse selected method signature", vs.decl)
-        }
-      case _ ⇒ error("No selected method specified", vs.decl)
+    vs.getStr(InvokeExprType.signatureSymbol) match {
+      case Some(InvokeExprType.Sig(selector, signature)) ⇒
+        val m = ZaluumCompletionEngineScala.findBySignature(ztd, scope(vs), c, selector, signature, false)
+        processMethod(vs, m) { _ ⇒ }
+      case Some(_) ⇒ error("Cannot parse selected method signature", vs.decl)
+      case _       ⇒ error("No selected method specified", vs.decl)
     }
   }
   /*

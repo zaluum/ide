@@ -21,12 +21,12 @@ import org.eclipse.ui.views.properties.IPropertySource2
 import org.eclipse.ui.views.properties.PropertyDescriptor
 import org.eclipse.ui.views.properties.TextPropertyDescriptor
 import org.eclipse.ui.PlatformUI
-import org.zaluum.nide.compiler.BeanParamSymbol
+import org.zaluum.nide.compiler.BeanParamDecl
 import org.zaluum.nide.compiler.BoxDef
 import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Param
-import org.zaluum.nide.compiler.ParamSymbol
+import org.zaluum.nide.compiler.ParamDecl
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Values
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
@@ -43,6 +43,8 @@ import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.viewers.ICellEditorValidator
 import org.zaluum.nide.compiler.VarDecl
+import org.zaluum.nide.zge.dialogs.ConstructorSelectDialog
+import org.zaluum.nide.compiler.BoxExprType
 
 trait Property {
   def descriptor: IPropertyDescriptor
@@ -57,19 +59,19 @@ trait ControllerProperty extends Property {
   def displayName: String
 }
 trait ParamProperty extends ControllerProperty {
-  def p: ParamSymbol
+  def p: ParamDecl
   def v: ValDef
   def key: Name = p.name
   def displayName = p.name.str
-  def currentVal: Option[String] = v.sym.params.get(p).map { _.encoded }
+  def currentVal: Option[String] = v.sym.getStr(p)
   def set(value: AnyRef) = {
     c.exec(
-      if (value == "") v.removeParam(key)
+      if (value == "") v.removeParams(key)
       else v.addOrReplaceParam(Param(key, value.toString)))
   }
-  def get: AnyRef = v.params.find(_.key == key).map { _.value } getOrElse ("")
+  def get: AnyRef = v.params.find(_.key == key).map { _.valueStr } getOrElse ("")
   def isSet = v.params.exists(_.key == key)
-  def reset() { c.exec(v.removeParam(p.name)) }
+  def reset() { c.exec(v.removeParams(p.name)) }
 
 }
 trait NoResetProperty extends Property {
@@ -168,18 +170,19 @@ class LabelProperty(valDef: ValDef, controller: Controller, gui: Boolean) extend
   def reset() = set("")
 }
 
-/* FIXME class ConstructorSelectProperty(valDef: ValDef, controller: Controller) extends Property {
+class ConstructorSelectProperty(valDef: ValDef, controller: Controller) extends Property {
   def descriptor = new DialogPropertyDescriptor(this, "*Constructor") {
     override lazy val labelProvider = new LabelProvider() {
       override def getText(element: AnyRef) = {
         element match {
-          case (tpes: List[_], params: List[_]) ⇒ params.mkString(", ")
-          case _                                ⇒ ""
+          case (sig: String, params: List[_]) ⇒ params.mkString(", ")
+          case _                              ⇒ ""
         }
       }
     }
     def openDialog(cell: Control): Option[String] = {
-      val c = new ConstructorSelectDialog(cell.getShell, valDef.sym)
+      val c = new ConstructorSelectDialog(controller.zproject.jProject.asInstanceOf[JavaProject],
+        cell.getShell, valDef.sym)
       c.open()
       c.result foreach { comm ⇒
         SWTScala.async(cell.getDisplay) { controller.exec(comm) }
@@ -188,31 +191,33 @@ class LabelProperty(valDef: ValDef, controller: Controller, gui: Boolean) extend
     }
   }
   def set(value: AnyRef) {} // done in dialog
-  def get: AnyRef = (valDef.constructorTypes, valDef.constructorParams)
-  def isSet: Boolean = valDef.constructorParams.isEmpty && valDef.constructorTypes.isEmpty
+  val sig = valDef.sym.getStr(BoxExprType.constructorTypesDecl)
+  val params = valDef.sym.getList(BoxExprType.constructorParamsDecl)
+  def get = (sig.getOrElse(""), params.getOrElse(List()))
+  def isSet: Boolean = sig.isDefined && params.isDefined
   def reset() = controller.exec(
-    valDef.editConstructor(List(), List()))
-}*/
+    valDef.removeParams(BoxExprType.constructorParamsDecl.fqName, BoxExprType.constructorTypesDecl.fqName))
+}
 class MissingParamProperty(controller: Controller, p: Param, v: ValDef) extends Property {
   def descriptor = new TextPropertyDescriptor(this, "<" + p.key.str + ">")
   def set(value: AnyRef) {
     if (value == "")
-      controller.exec(v.removeParam(p.key))
+      controller.exec(v.removeParams(p.key))
     else
       controller.exec(v.addOrReplaceParam(Param(p.key, value.toString)))
   }
-  def get: AnyRef = p.value
+  def get: AnyRef = p.valueStr
   def isSet = true
   def reset = set("")
 }
 
-class TextParamProperty(val c: Controller, val p: ParamSymbol, val v: ValDef)
+class TextParamProperty(val c: Controller, val p: ParamDecl, val v: ValDef)
     extends ParamProperty {
   def descriptor: PropertyDescriptor = new TextPropertyDescriptor(this, p.name.str)
 }
 class ConstructorParamProperty(
     c: Controller,
-    p: ParamSymbol,
+    p: ParamDecl,
     v: ValDef,
     tpe: ⇒ Option[JavaType]) extends TextParamProperty(c, p, v) with MethodProperty {
   def scope = v.sym.mainBS.scope
@@ -248,7 +253,7 @@ trait MethodProperty extends ControllerProperty {
 
 class MethodParamProperty(
     c: Controller,
-    p: ParamSymbol,
+    p: ParamDecl,
     v: ValDef,
     javatpe: ⇒ Option[JavaType],
     val static: Boolean) extends TextParamProperty(c, p, v) with MethodProperty {
@@ -260,7 +265,7 @@ class MethodParamProperty(
 
 class FieldParamProperty(
     c: Controller,
-    p: ParamSymbol,
+    p: ParamDecl,
     v: ValDef,
     tpe: ⇒ Option[JavaType],
     static: Boolean) extends TextParamProperty(c, p, v) {
@@ -279,7 +284,7 @@ trait TypeProperty extends ControllerProperty {
 }
 class TypeParamProperty(
   c: Controller,
-  p: ParamSymbol,
+  p: ParamDecl,
   v: ValDef) extends TextParamProperty(c, p, v) with TypeProperty
 
 object OpenSearch {
@@ -299,7 +304,7 @@ object OpenSearch {
 class BeanProperty(
     val c: Controller,
     val v: ValDef,
-    val p: BeanParamSymbol) extends ParamProperty {
+    val p: BeanParamDecl) extends ParamProperty {
   lazy val tpe = Values.typeFor(p)
   def descriptor: IPropertyDescriptor = tpe.editor(this, p.name.str)
   override def set(value: AnyRef) {
@@ -307,7 +312,7 @@ class BeanProperty(
     val encoded = tpe.parseSWT(value)
     super.set(encoded)
   }
-  override def get: AnyRef = v.sym.params.get(p) match {
+  override def get: AnyRef = v.sym.getValue(p) match {
     case Some(v) ⇒ v.toSWT
     case None    ⇒ tpe.defaultSWT
   }
