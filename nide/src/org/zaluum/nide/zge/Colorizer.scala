@@ -23,6 +23,6 @@ object Colorizer {
       }
       case a ⇒ ColorConstants.gray
     }
-    case None ⇒ ColorConstants.gray
+    case _ ⇒ ColorConstants.gray
   }
 }

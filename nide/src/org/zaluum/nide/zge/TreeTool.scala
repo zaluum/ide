@@ -151,7 +151,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def copy() = viewer.updateClipboard
     def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
 
-    override def menu() {}
+    override def menu() {
+      beingSelected match {
+        case Some(v: ValDefItem) ⇒ v.openConfigurer(zproject.classLoader)
+        case _                   ⇒
+      }
+    }
   }
   // PASTING
   object pasting extends Pasting with SingleContainerAllower {

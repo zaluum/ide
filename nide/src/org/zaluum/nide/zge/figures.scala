@@ -42,6 +42,9 @@ import org.zaluum.nide.compiler.InvalidValueType
 import org.zaluum.nide.utils.SWTScala
 import org.zaluum.nide.utils.SwingSWTUtils
 import org.zaluum.nide.eclipse.ImageFactory
+import org.zaluum.nide.compiler.BoxExprType
+import org.zaluum.nide.utils.ReflectionUtilsWB
+import org.zaluum.basic.BoxConfigurer
 
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item with PropertySource {
@@ -60,6 +63,21 @@ trait ValDefItem extends Item with PropertySource {
   }
   def updateMe()
   def updateValPorts()
+  import scala.util.control.Exception._
+  def openConfigurer(cloader: ClassLoader) {
+    if (valSym == null) { throw new RuntimeException("BUG: null") }
+    valSym.configurer.foreach { c ⇒
+      c.loadClass(cloader) match {
+        case Some(cl) ⇒ try {
+          val conf = cl.newInstance()
+          // Shell and BoxConfigurer are specially loaded in projectclassloader
+          val configurer = conf.asInstanceOf[BoxConfigurer]
+          configurer.configure(container.viewer.shell, null)
+        } catch { case e ⇒ e.printStackTrace }
+        case _ ⇒ println("no load")
+      }
+    }
+  }
   def controller = container.viewer.controller
   def calcProperties(): List[Property] = {
     val tpe = new ValDefTypeProperty(valDef, controller)

@@ -6,4 +6,6 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface Box {}
+public @interface Box {
+	Class<?> configurer() default Void.class;
+}

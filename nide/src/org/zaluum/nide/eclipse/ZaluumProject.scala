@@ -1,15 +1,15 @@
 package org.zaluum.nide.eclipse
 
 import scala.collection.mutable.WeakHashMap
-
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.jdt.core.IJavaProject
 import org.eclipse.jdt.core.IType
 import org.zaluum.annotation.Box
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Name
-
 import org.zaluum.nide.utils.JDTUtils._
+import org.eclipse.swt.widgets.Shell
+import org.zaluum.basic.BoxConfigurer
 
 case class BoxTypeProxy(name: Name, template: Boolean) {
   def split = name.str.splitAt(name.str.lastIndexOf("."))
@@ -22,6 +22,9 @@ object ZaluumProjectManager {
   def getZaluumProject(jProject: IJavaProject) = {
     m.getOrElseUpdate(jProject, new ZaluumProject(jProject))
   }
+  val exceptions = new java.util.HashSet[String]()
+  exceptions.add(classOf[Shell].getName)
+  exceptions.add(classOf[BoxConfigurer].getName)
 }
 class ZaluumProject private[eclipse] (val jProject: IJavaProject) {
   lazy val imageFactory = new ImageFactory(this)
@@ -45,7 +48,14 @@ class ZaluumProject private[eclipse] (val jProject: IJavaProject) {
     if (_classLoader == null) refreshClassLoader
     _classLoader
   }
+
   def refreshClassLoader: Unit = this.synchronized {
-    _classLoader = ProjectClassLoader.create(null, jProject)
+    // Do not load swt.Shell from ProjectClassLoader.
+    // Do not load BoxConfigurer from ProjectClassLoader. 
+    // BoxConfigurer must pass the current Shell to the loaded class
+    _classLoader = ProjectClassLoader.create(
+      Thread.currentThread().getContextClassLoader(),
+      jProject,
+      ZaluumProjectManager.exceptions)
   }
 }

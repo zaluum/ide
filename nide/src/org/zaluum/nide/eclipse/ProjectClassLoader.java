@@ -47,9 +47,11 @@ public class ProjectClassLoader extends URLClassLoader {
 	 * @return the {@link ProjectClassLoader} for given {@link IJavaProject}.
 	 */
 	public static ProjectClassLoader create(ClassLoader parentClassLoader,
-			IJavaProject javaProject) throws Exception {
+			IJavaProject javaProject, Set<String> loadExceptions)
+			throws Exception {
 		URL[] urls = getClasspathUrls(javaProject);
-		return new ProjectClassLoader(urls, parentClassLoader, javaProject);
+		return new ProjectClassLoader(urls, parentClassLoader, javaProject,
+				loadExceptions);
 	}
 
 	/**
@@ -82,7 +84,8 @@ public class ProjectClassLoader extends URLClassLoader {
 	 */
 	public static ProjectClassLoader create(ClassLoader parentClassLoader,
 			URL[] urls, IJavaProject javaProject) throws Exception {
-		return new ProjectClassLoader(urls, parentClassLoader, javaProject);
+		return new ProjectClassLoader(urls, parentClassLoader, javaProject,
+				new HashSet<String>());
 	}
 
 	private static void addRuntimeClassPathEntries(List<String> entries,
@@ -315,6 +318,7 @@ public class ProjectClassLoader extends URLClassLoader {
 	//
 	// //////////////////////////////////////////////////////////////////////////
 	private final IJavaProject m_javaProject;
+	private final Set<String> m_loadExceptions;
 
 	// //////////////////////////////////////////////////////////////////////////
 	//
@@ -322,9 +326,10 @@ public class ProjectClassLoader extends URLClassLoader {
 	//
 	// //////////////////////////////////////////////////////////////////////////
 	public ProjectClassLoader(URL[] urls, ClassLoader parent,
-			IJavaProject javaProject) {
+			IJavaProject javaProject, Set<String> loadExceptions) {
 		super(urls, parent);
 		m_javaProject = javaProject;
+		m_loadExceptions = loadExceptions;
 		cleanUpJIDE();
 	}
 
@@ -388,6 +393,8 @@ public class ProjectClassLoader extends URLClassLoader {
 	@Override
 	protected Class<?> findClass(String className)
 			throws ClassNotFoundException {
+		if (m_loadExceptions.contains(className))
+			throw new ClassNotFoundException(className);
 		String classResourceName = className.replace('.', '/') + ".class";
 		InputStream input = getResourceAsStream(classResourceName);
 		if (input == null) {

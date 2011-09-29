@@ -337,6 +337,7 @@ class ValSymbol(val owner: BlockSymbol, val name: Name)
   var info: AnyRef = null
   //  FIXME to option
   var classinfo: JavaType = null
+  var configurer: Option[ClassJavaType] = None
   var portInstances = List[PortInstance]()
   var portSides = List[PortSide]()
   var constructorParams = List[Value]()

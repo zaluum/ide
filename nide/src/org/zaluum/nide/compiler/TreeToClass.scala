@@ -1,6 +1,5 @@
 package org.zaluum.nide.compiler
 
-import org.zaluum.basic.RunnableBox
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
 import javax.swing.JLabel
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope

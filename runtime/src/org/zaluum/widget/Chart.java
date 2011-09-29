@@ -10,7 +10,7 @@ import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
 import org.zaluum.basic.Zaluum;
 
-@Box
+@Box(configurer=ChartConfigurer.class)
 public class Chart extends Chart2D {
 	private static final long serialVersionUID = 1L;
 	private ITrace2D trace;

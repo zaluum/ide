@@ -74,7 +74,25 @@ trait BoxExprChecker extends CheckerPart {
           case r                ⇒ createPort(Name(m.selector.mkString), r, Out)
         }
       }
+
     val r = c.binding
+    // configurer
+    val boxAnnotation = getAnnotation(r, classOf[org.zaluum.annotation.Box])
+    boxAnnotation foreach { a ⇒
+      a.getElementValuePairs().find(
+        _.getName().mkString == "configurer").map(_.getValue()) match {
+          case Some(t: TypeBinding) ⇒ scope.getJavaType(t) match {
+            case Some(c: ClassJavaType) ⇒
+              scope.lookupType(Name(classOf[org.zaluum.basic.BoxConfigurer].getName)) foreach { conf ⇒
+                if (c.binding.isCompatibleWith(conf.binding))
+                  vs.configurer = Some(c)
+              }
+            case _ ⇒
+          }
+          case _ ⇒
+        }
+    }
+    // find apply
     val engine = ZaluumCompletionEngineScala.engineFor(scope)
     val allMethods = ZaluumCompletionEngineScala.allMethods(engine, scope, r, static = false)
     val allFields = ZaluumCompletionEngineScala.allFields(engine, scope, r, static = false)

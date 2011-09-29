@@ -57,14 +57,16 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
         getArrayType(t, dim)
       }
     } else {
-      val tpe =
-        if (name.str.contains(".")) {
-          val compoundName = stringToA(name.str)
-          getType(compoundName, compoundName.length)
-        } else {
-          getType(name.str.toCharArray)
-        }
-      getJavaType(tpe)
+      try {
+        val tpe =
+          if (name.str.contains(".")) {
+            val compoundName = stringToA(name.str)
+            getType(compoundName, compoundName.length)
+          } else {
+            getType(name.str.toCharArray)
+          }
+        getJavaType(tpe)
+      } catch { case e ⇒ e.printStackTrace(); None }
     }
   }
   def getArrayType(t: JavaType, dim: Int): ArrayType = {
