@@ -1,8 +1,13 @@
 Agenda
 
 week 5-11 doc week
-	- configurador blocs complexos. Plot per exemple.
+	- llibreria plot collonuda
+	- instanciació Swing amb parametres constructors
+	- zaluum file with version number
+	- propietats: canviar nom box, 
+	- bug doble update propietats 
 	- nova paleta .xml
+	- configurador Plot (pensar Plot, chart,etc)
 	- al enganxar posar-ho en el contenidor on cau ( enganxar a la GUI a quin block va a parar?)
 	- clean up wire
 	- visuals al block diagram (notes sobretot)
@@ -156,6 +161,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- configurador blocs complexos. Plot per exemple.
 	- eliminar boxtypesymbol. Qualsevol JavaType com a box
 	- emetre labels amb linies de codi per excepcions
 	- al crear modificar directament la label. Crear nom del camp a partir de label.

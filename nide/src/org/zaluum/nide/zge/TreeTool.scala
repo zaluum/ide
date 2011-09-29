@@ -34,8 +34,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   val gridSize = 1
   object selecting extends Selecting with DeleteState with ClipboardState with DropState with LineBlinker {
     var port: Option[PortFigure] = None
-    override def doubleClickPF =
-      super.doubleClickPF.orElse {
+    override def directEditPF =
+      super.directEditPF.orElse {
         case e: PortDeclFigure ⇒ e.tree.renamePort(_, None)
       }
     def editLabel(s: String, l: LabelItem) = l.valDef.editLabelAndRename(false, s)
@@ -151,16 +151,6 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def copy() = viewer.updateClipboard
     def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
 
-    override def menu() {
-      beingSelected match {
-        case Some(v: ValDefItem) ⇒
-          v.openConfigurer(zproject.classLoader) match {
-            case Some(params) ⇒ controller.exec(v.valDef.replaceParams(params))
-            case None         ⇒
-          }
-        case _ ⇒
-      }
-    }
   }
   // PASTING
   object pasting extends Pasting with SingleContainerAllower {
@@ -194,7 +184,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             val label = tpeName.classNameWithoutPackage.firstLowerCase
             val name = Name(b.sym.freshName(label))
             if (isExpression) {
-              newVal = ValDef.emptyValDef(name, tpeName, dst, label)
+              newVal = ValDef.emptyValDef(name, tpeName, dst)
             } else {
               newVal = ValDef.emptyValDefBoxExpr(name, dst, label, tpeName.str)
             }

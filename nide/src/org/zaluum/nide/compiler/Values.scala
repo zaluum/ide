@@ -129,18 +129,18 @@ object DimensionValueType extends ClassValueType(classOf[java.awt.Dimension]) {
   }
 }
 object RectangleValueType extends ClassValueType(classOf[Rectangle]) {
+  lazy val Regexpr = """(\d+)\s*(\d+)\s*(\d+)\s*(\d+)""".r
   def create(str: String) = new Value {
     val encoded = str
     val valueTpe = RectangleValueType
-    def parse: Rectangle = {
-      val splitted = encoded.split(" ")
-      if (splitted.length == 4)
+    def parse: Rectangle = encoded match {
+      case Regexpr(i1, i2, i3, i4) ⇒
         new Rectangle(
-          Integer.decode(splitted(0)),
-          Integer.decode(splitted(1)),
-          Integer.decode(splitted(2)),
-          Integer.decode(splitted(3)))
-      else throw new Exception
+          Integer.decode(i1),
+          Integer.decode(i2),
+          Integer.decode(i3),
+          Integer.decode(i4))
+      case _ ⇒ throw new Exception
     }
     lazy val parsed = parse
     def codeGen =
@@ -149,7 +149,9 @@ object RectangleValueType extends ClassValueType(classOf[Rectangle]) {
         new Const(parsed.y, primitives.Int),
         new Const(parsed.width, primitives.Int),
         new Const(parsed.height, primitives.Int)), "(IIII)V")
-    override def toSWT = parsed.x + " " + parsed.y + " " + parsed.width + " " + parsed.height
+    override def toSWT = if (valid) {
+      parsed.x + " " + parsed.y + " " + parsed.width + " " + parsed.height
+    } else ""
   }
 }
 object ColorValueType extends ClassValueType(classOf[java.awt.Color]) {

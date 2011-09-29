@@ -35,17 +35,24 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var initDrag: Point = _
     var initContainer: C = _
     var filterDouble = false
-    def doubleClickPF: PartialFunction[Item, String ⇒ MapTransformer] = {
+    def directEditPF: PartialFunction[Item, String ⇒ MapTransformer] = {
       case e: LiteralFigure ⇒ s ⇒ e.valDef.addOrReplaceParam(Param(Name("literal"), s))
-      case l: LabelItem ⇒ editLabel(_, l)
+      case l: LabelItem     ⇒ editLabel(_, l)
+    }
+    def gotoConfigurer(v: ValDefItem) {
+      v.openConfigurer(viewer.zproject.classLoader) match {
+        case Some(params) ⇒ controller.exec(v.valDef.replaceParams(params))
+        case None         ⇒
+      }
     }
     def editLabel(s: String, l: LabelItem): MapTransformer
     override def doubleClick() = itemUnderMouse match {
       case Some(e: TextEditFigure) ⇒ gotoDirectEdit(e)
-      case _ ⇒
+      case Some(v: ValDefItem)     ⇒ gotoConfigurer(v)
+      case _                       ⇒
     }
     def gotoDirectEdit(t: TextEditFigure) =
-      doubleClickPF.lift(t) foreach { directEditing.enter(t, _) }
+      directEditPF.lift(t) foreach { directEditing.enter(t, _) }
     def enter() { state = this }
 
     def buttonDown {
@@ -169,13 +176,13 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
         case Some(b) ⇒
           Expressions.templateExpressions.get(b.name) match {
             case Some(e) ⇒ newInstanceTemplate(dst, e.requiredBlocks)
-            case None ⇒ newInstance(dst)
+            case None    ⇒ newInstance(dst)
           }
         case _ ⇒ newInstance(dst)
       }
       command match {
         case Some(c) ⇒ controller.exec(c)
-        case None ⇒ exit()
+        case None    ⇒ exit()
       }
 
     }

@@ -366,6 +366,9 @@ object ValDef {
     val p = Param(BoxExprType.typeSymbol.fqName, className)
     ValDef(name, BoxExprType.fqName, dst, None, List(p), Some(LabelDesc(label, Vector2(0, 0))), None, None)
   }
+  def emptyValDef(name: Name, tpeName: Name, dst: Point) =
+    ValDef(name, tpeName, dst, None, List(), None, None, None)
+
   def emptyValDef(name: Name, tpeName: Name, dst: Point, label: String) =
     ValDef(name, tpeName, dst, None, List(), Some(LabelDesc(label, Vector2(0, 0))), None, None)
   def emptyValDef(name: Name, tpeName: Name) =
