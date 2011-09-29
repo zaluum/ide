@@ -64,19 +64,30 @@ trait ValDefItem extends Item with PropertySource {
   def updateMe()
   def updateValPorts()
   import scala.util.control.Exception._
-  def openConfigurer(cloader: ClassLoader) {
+  def openConfigurer(cloader: ClassLoader): Option[List[Param]] = {
     if (valSym == null) { throw new RuntimeException("BUG: null") }
-    valSym.configurer.foreach { c ⇒
-      c.loadClass(cloader) match {
-        case Some(cl) ⇒ try {
+      def open(cl: Class[_]): Option[List[Param]] = {
+        try {
+          import scala.collection.JavaConverters._
+          import scala.collection.JavaConversions._
           val conf = cl.newInstance()
           // Shell and BoxConfigurer are specially loaded in projectclassloader
           val configurer = conf.asInstanceOf[BoxConfigurer]
-          configurer.configure(container.viewer.shell, null)
-        } catch { case e ⇒ e.printStackTrace }
-        case _ ⇒ println("no load")
+          val pars = new java.util.HashMap[String, java.util.List[String]]()
+          valDef.params.foreach { p ⇒
+            pars.put(p.key.str, p.values.asJava)
+          }
+          //open
+          val newpars = configurer.configure(container.viewer.shell, pars)
+          if (newpars == null || newpars == pars) None
+          else {
+            Some(newpars.view.map {
+              case (k, l) ⇒ Param(Name(k), l.toList)
+            }.toList)
+          }
+        } catch { case e: Exception ⇒ e.printStackTrace; None }
       }
-    }
+    for (c ← valSym.configurer; cl ← c.loadClass(cloader); res ← open(cl)) yield res
   }
   def controller = container.viewer.controller
   def calcProperties(): List[Property] = {

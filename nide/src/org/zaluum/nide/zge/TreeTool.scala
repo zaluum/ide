@@ -153,8 +153,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
 
     override def menu() {
       beingSelected match {
-        case Some(v: ValDefItem) ⇒ v.openConfigurer(zproject.classLoader)
-        case _                   ⇒
+        case Some(v: ValDefItem) ⇒
+          v.openConfigurer(zproject.classLoader) match {
+            case Some(params) ⇒ controller.exec(v.valDef.replaceParams(params))
+            case None         ⇒
+          }
+        case _ ⇒
       }
     }
   }

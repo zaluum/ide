@@ -390,13 +390,15 @@ case class ValDef(
       template = e.transformOption(template),
       params = e.transformTrees(params))
   }
+  def replaceParams(newparams: List[Param]) = transformThis { e ⇒
+    copy(template = e.transformOption(template), params = newparams)
+  }
   def removeParams(keys: Name*) = transformThis { e ⇒
     val filtered = params.filterNot(p ⇒ keys.contains(p.key))
     copy(template = e.transformOption(template), params = filtered)
   }
   def addOrReplaceParams(changeParams: List[Param]) = transformThis { e ⇒
     val filtered = params.filterNot(p ⇒ changeParams.exists(_.key == p.key))
-    println(filtered)
     copy(
       template = e.transformOption(template),
       params = changeParams ::: filtered)
