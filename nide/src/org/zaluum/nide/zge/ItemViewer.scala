@@ -15,6 +15,8 @@ import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.eclipse.PaletteEntry
+import org.zaluum.nide.eclipse.PaletteTransfer
 
 abstract class ItemViewer(parent: Composite, controller: Controller)
     extends Viewer(parent, controller) with ContainerItem with PropertySource {
@@ -32,13 +34,17 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
   {
     canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC)
     val dt = new DropTarget(viewer.canvas, DND.DROP_MOVE);
-    dt.setTransfer(Array(TextTransfer.getInstance()));
+    dt.setTransfer(Array(PaletteTransfer));
     dt.addDropListener(new DropTargetAdapter() {
       override def dragEnter(event: DropTargetEvent) {
         canvas.setFocus
       }
       override def drop(event: DropTargetEvent) {
-        tool.handleDrop(event.x, event.y, event.data.asInstanceOf[String])
+        event.data match {
+          case p: PaletteEntry ⇒
+            tool.handleDrop(event.x, event.y, p)
+          case _ ⇒
+        }
       }
     })
     background.setOpaque(true);

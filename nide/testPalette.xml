@@ -1,0 +1,7 @@
+<palette>
+<!-- 
+hola
+-->
+      <entry class="java.lang.Math" selector="abs" static="true" parameters="int"/>
+      <entry class="java.lang.Math2" selector="abs2"/>
+    </palette>

@@ -14,11 +14,11 @@ import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
 import draw2dConversions._
 import org.zaluum.nide.compiler.MapTransformer
-import org.zaluum.nide.eclipse.BoxTypeProxy
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Namer
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Name
+import org.zaluum.nide.eclipse.PaletteEntry
 
 /**
  * Implements basic selecting, marquee and resizing of ItemFigures
@@ -152,19 +152,21 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   // Creating
   abstract class Creating extends ToolState {
     var feed: ItemFeedbackFigure = _
-    var tpeName: Name = _
-    var tpe: Option[BoxTypeProxy] = None
-    def enter(tpename: Name, initContainer: ContainerItem) {
+    var entry: PaletteEntry = null
+    def enter(entry: PaletteEntry, initContainer: ContainerItem) {
       state = this
-      this.tpeName = tpename
-      tpe = controller.zproject.getBoxSymbol(tpeName);
-      val size = getSize(tpename)
+      this.entry = entry
+      val size = getSize(entry)
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, size.w, size.h));
       feed.show()
     }
-    protected def getSize(tpeName: Name): Dimension
-    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
+    protected def getSize(entry: PaletteEntry): Dimension
+    def move() {
+
+      if (feed == null) throw new Exception
+      feed.setInnerLocation(point(snap(currentMouseLocation)))
+    }
     def abort() { exit() }
     def drag() {}
     def buttonDown() {}
@@ -172,14 +174,11 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     protected def newInstance(dst: Point): Option[EditTransformer]
     def buttonUp() {
       val dst = snap(currentMouseLocation)
-      val command = tpe match {
-        case Some(b) ⇒
-          Expressions.templateExpressions.get(b.name) match {
-            case Some(e) ⇒ newInstanceTemplate(dst, e.requiredBlocks)
-            case None    ⇒ newInstance(dst)
-          }
-        case _ ⇒ newInstance(dst)
-      }
+      val command =
+        Expressions.templateExpressions.get(entry.className) match {
+          case Some(e) ⇒ newInstanceTemplate(dst, e.requiredBlocks)
+          case None    ⇒ newInstance(dst)
+        }
       command match {
         case Some(c) ⇒ controller.exec(c)
         case None    ⇒ exit()

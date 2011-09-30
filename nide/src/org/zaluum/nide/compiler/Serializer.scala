@@ -30,14 +30,14 @@ object Serializer {
   }
   def proto(t: Template): ZaluumProtobuf.Template = {
     val p = ZaluumProtobuf.Template.newBuilder
-    t.ports sortBy { _.name.str } foreach { port ⇒ p.addPort(proto(port)) }
+    t.ports foreach { port ⇒ p.addPort(proto(port)) }
     t.blocks foreach { b ⇒ p.addBlock(proto(b)) }
     t.currentBlock foreach { c ⇒ p.setCurrentBlock(c) }
     p.build
   }
   def proto(b: Block): ZaluumProtobuf.Block = {
     val p = ZaluumProtobuf.Block.newBuilder()
-    b.valDefs sortBy { _.name.str } foreach { va ⇒ p.addInstance(proto(va)) }
+    b.valDefs foreach { va ⇒ p.addInstance(proto(va)) }
     b.connections foreach { c ⇒ p.addConnection(proto(c)) } // TODO sort
     b.junctions foreach { j ⇒ p.addJunction(proto(j)) }
     //b.parameters // FIXME unused
@@ -52,7 +52,7 @@ object Serializer {
   def proto(p: ValDef): ZaluumProtobuf.Instance = {
     import scala.collection.JavaConversions._
     val b = ZaluumProtobuf.Instance.newBuilder
-    p.params collect { case p: Param ⇒ p } sortBy { _.key.str } foreach { p ⇒ b.addParameter(proto(p)) }
+    p.params collect { case p: Param ⇒ p } foreach { p ⇒ b.addParameter(proto(p)) }
     p.label foreach { l ⇒ b.setLabel(proto(l)) }
     p.labelGui foreach { l ⇒ b.setLabelGui(proto(l)) }
     p.template foreach { t ⇒ b.setTemplate(proto(t)) }

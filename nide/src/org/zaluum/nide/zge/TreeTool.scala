@@ -22,10 +22,10 @@ import org.zaluum.nide.compiler.Template
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
-import org.zaluum.nide.eclipse.BoxTypeProxy
 import draw2dConversions.point
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.BoxExprType
+import org.zaluum.nide.eclipse.PaletteEntry
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -133,12 +133,16 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case (None, _) ⇒ marqueeing.enter(initDrag, initContainer) // marquee
       }
     }
-    def drop(s: String) {
-      s match {
-        case In.str    ⇒ creatingPort.enter(In, current)
-        case Out.str   ⇒ creatingPort.enter(Out, current)
-        case Shift.str ⇒ creatingPort.enter(Shift, current)
-        case _         ⇒ creating.enter(Name(s), current)
+    def drop(a: AnyRef) {
+      a match {
+        case e: PaletteEntry ⇒
+          e.className.str match {
+            case In.str    ⇒ creatingPort.enter(In, current)
+            case Out.str   ⇒ creatingPort.enter(Out, current)
+            case Shift.str ⇒ creatingPort.enter(Shift, current)
+            case _         ⇒ creating.enter(e, current)
+          }
+        case _ ⇒
       }
     }
     def delete() {
@@ -159,12 +163,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   // CREATING
   abstract class TreeCreating extends Creating {
     self: SingleContainer ⇒
-    override def enter(tpename: Name, initContainer: ContainerItem) {
+    override def enter(entry: PaletteEntry, initContainer: ContainerItem) {
       enterSingle(initContainer)
-      super.enter(tpename, initContainer)
+      super.enter(entry, initContainer)
     }
-    protected def getSize(tpename: Name) = {
-      val (img, desc) = zproject.imageFactory.image48(tpeName);
+    protected def getSize(entry: PaletteEntry) = {
+      val (img, desc) = zproject.imageFactory.image48(entry.className);
       val d = Dimension(img.getBounds().width, img.getBounds.height)
       zproject.imageFactory.destroy(desc)
       d
@@ -176,17 +180,17 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case None    ⇒ exit()
       }
     }
-    def isExpression = Expressions.find(tpeName).isDefined
+    def isExpression = Expressions.find(entry.className).isDefined
     protected def newInstance(dst: Point) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒
-            val label = tpeName.classNameWithoutPackage.firstLowerCase
+            val label = entry.className.classNameWithoutPackage.firstLowerCase
             val name = Name(b.sym.freshName(label))
             if (isExpression) {
-              newVal = ValDef.emptyValDef(name, tpeName, dst)
+              newVal = ValDef.emptyValDef(name, entry.className, dst)
             } else {
-              newVal = ValDef.emptyValDefBoxExpr(name, dst, label, tpeName.str)
+              newVal = ValDef.emptyValDefBoxExpr(name, dst, label, entry.className.str)
             }
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
@@ -201,9 +205,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒
             val sym = b.sym
-            val name = Name(sym.freshName(tpe.get.name.classNameWithoutPackage.firstLowerCase))
+            val name = Name(sym.freshName(entry.className.classNameWithoutPackage.firstLowerCase))
             val template = Template.emptyTemplate(requiredBlocks)
-            val newVal = ValDef(name, tpe.get.name, dst, Some(Dimension(200, 200)), List(), None, None, Some(template))
+            val newVal = ValDef(name, entry.className, dst, Some(Dimension(200, 200)), List(), None, None, Some(template))
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
               parameters = transformTrees(b.parameters),

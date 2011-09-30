@@ -126,7 +126,7 @@ trait BoxExprChecker extends CheckerPart {
             parsed
         }
       case None ⇒
-        error("Cannot find constructor for box " + v.typeName.str +
+        error("Cannot find constructor for box " + v.name.str +
           " with signature " + consSignature, v)
     }
     // params

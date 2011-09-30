@@ -99,13 +99,13 @@ class PaletteView extends PageBookView {
 
 /* PAGE */
 object PalettePage {
-  val portsPkg = "<ports>"
+  /*val portsPkg = "<ports>"
   def portToProxy(port: PortDir) = new BoxTypeProxy(Name(port.str), true) {
     override def pkgName = portsPkg
     override def simpleName = port.str
   }
-  val ports = (portsPkg -> Buffer(portToProxy(In), portToProxy(Out), portToProxy(Shift)))
-  type ProxyMap = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]
+  val ports = (portsPkg -> Buffer(portToProxy(In), portToProxy(Out), portToProxy(Shift)))*/
+  //type ProxyMap = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]
 }
 
 class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends PalettePageDND with PalettePageCoreListener {
@@ -113,7 +113,7 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
   implicit def display = viewer.getControl.getDisplay
   def control = viewer.getControl
   val imgFactory = new ImageFactory(zproject.imageFactory, viewer.getControl)
-  val proxies = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]()
+  var palette: Palette = null
   viewer.setContentProvider(new PaletteFolderProvider());
   {
     val a = new TreeViewerColumn(viewer, SWT.LEFT)
@@ -128,23 +128,23 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
   }
   def text(element: Object): String = element match {
     case s: String       ⇒ s
-    case b: BoxTypeProxy ⇒ b.simpleName
+    case b: PaletteEntry ⇒ b.simpleName
   }
   def image(element: Object): Image = element match {
-    case PalettePage.portsPkg ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
-    case f: String ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
-    case b: BoxTypeProxy if (b.pkgName == PalettePage.portsPkg) ⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1 // XXX destroy
-    case b: BoxTypeProxy ⇒ imgFactory.image48(b.name)._1 // XXX destroy
+    //case PalettePage.portsPkg ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
+    case f: String       ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
+    // case b: BoxTypeProxy if (b.pkgName == PalettePage.portsPkg) ⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1 // XXX destroy
+    case b: PaletteEntry ⇒ imgFactory.image48(b.className)._1 // XXX destroy // TODO static images
   }
   viewer.setSorter(new ViewerSorter())
-  viewer.setInput(proxies);
+  viewer.setInput(palette);
   viewer.addPostSelectionChangedListener(new ISelectionChangedListener {
     def selectionChanged(event: SelectionChangedEvent) {
       val s = event.getSelection.asInstanceOf[IStructuredSelection]
       s.getFirstElement match {
-        case b: BoxTypeProxy ⇒
+        case b: PaletteEntry ⇒
           try {
-            val t = zproject.jProject.findType(b.name.str);
+            val t = zproject.jProject.findType(b.className.str);
             paletteView.selectionProvider.setSelection(SelectionProvider.adaptType(t))
           } catch { case e ⇒ }
         case _ ⇒ paletteView.selectionProvider.setSelection(StructuredSelection.EMPTY)
@@ -154,21 +154,19 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
   reload()
 
   // Methods 
-  private def addProxy(b: BoxTypeProxy) {
-    if (proxies.contains(b.pkgName))
-      proxies(b.pkgName) += b
-    else proxies += (b.pkgName -> Buffer(b))
-  }
   def load(monitor: IProgressMonitor) = PalettePage.this.synchronized {
-    proxies.clear
-    for (b ← zproject.index(monitor)) { addProxy(b) }
-    proxies += PalettePage.ports
+    palette = new Palette(zproject.jProject, monitor)
   }
   def reload() = {
     val j = Utils.job("Update palette") { monitor ⇒
       load(monitor)
       if (!control.isDisposed)
-        Utils.inSWT { PalettePage.this.synchronized { viewer.refresh() } }
+        Utils.inSWT {
+          PalettePage.this.synchronized {
+            viewer.setInput(palette)
+            viewer.refresh()
+          }
+        }
       Status.OK_STATUS
     }
     j.setPriority(Job.SHORT);
@@ -185,12 +183,12 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
 trait PalettePageDND {
   self: PalettePage ⇒
   val ds = new DragSource(viewer.getControl, DND.DROP_MOVE);
-  ds.setTransfer(Array(TextTransfer.getInstance()));
+  ds.setTransfer(Array(PaletteTransfer));
   ds.addDragListener(new DragSourceAdapter() {
     def element = viewer.getSelection.asInstanceOf[IStructuredSelection].getFirstElement
     override def dragStart(event: DragSourceEvent) {
       element match {
-        case b: BoxTypeProxy ⇒
+        case b: PaletteEntry ⇒
         case p: PortDir      ⇒
         case _ ⇒
           event.doit = false
@@ -198,9 +196,7 @@ trait PalettePageDND {
     }
     override def dragSetData(event: DragSourceEvent) {
       element match {
-        case b: BoxTypeProxy ⇒
-          event.data = b.name.str
-        case p: PortDir ⇒ event.data = p.str
+        case e: PaletteEntry ⇒ event.data = e
         case _ ⇒
           event.doit = false
       }
@@ -239,35 +235,37 @@ trait PalettePageCoreListener {
 }
 class PaletteFolderProvider extends ITreeContentProvider {
   def dispose() {}
-  var proxyMap: PalettePage.ProxyMap = _
+  var palette: Palette = _
   def inputChanged(viewer: JViewer, o: Object, newi: Object) {
-    proxyMap = newi.asInstanceOf[PalettePage.ProxyMap]
+    palette = newi.asInstanceOf[Palette]
   }
 
-  def getElements(inputElement: AnyRef): Array[AnyRef] = {
-    inputElement.asInstanceOf[PalettePage.ProxyMap].keys.toArray
-  }
+  def getElements(inputElement: AnyRef): Array[AnyRef] =
+    inputElement match {
+      case p: Palette ⇒ p.packages.asInstanceOf[Array[AnyRef]]
+      case _          ⇒ Array()
+    }
 
   def getChildren(parentElement: AnyRef): Array[AnyRef] = {
     parentElement match {
-      case m: Map[_, _] ⇒ getElements(m)
-      case fld: String  ⇒ proxyMap(fld).toArray
-      case _            ⇒ Array()
+      case p: Palette  ⇒ p.packages.asInstanceOf[Array[AnyRef]]
+      case pkg: String ⇒ palette.packageChildren(pkg).asInstanceOf[Array[AnyRef]]
+      case _           ⇒ Array()
     }
   }
 
   def getParent(element: AnyRef): AnyRef = {
     element match {
-      case b: BoxTypeProxy ⇒ b.pkgName
+      case b: PaletteEntry ⇒ b.pkgName
       case _               ⇒ null
     }
   }
 
   def hasChildren(element: AnyRef): Boolean = {
     element match {
-      case m: Map[_, _] ⇒ true
-      case key: String  ⇒ true
-      case _            ⇒ false
+      case p: Palette  ⇒ true
+      case pkg: String ⇒ true
+      case _           ⇒ false
     }
   };
 }

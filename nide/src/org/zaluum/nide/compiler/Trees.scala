@@ -204,26 +204,26 @@ object PrettyPrinter {
       print("BoxDef(" + b.pkg + " " + b.name + ", " + b.image, deep)
       print(b.guiSize.toString, deep + 1)
       print(b.template, deep + 1)
-      print(")" + sym(b), deep)
+      print(")" + b.line + sym(b), deep)
     case t: Template ⇒
       print("Template( ", deep)
       print(t.blocks, deep + 1)
       print(t.ports, deep + 1)
-      print(")", deep)
+      print(")" + t.line, deep)
     case b: Block ⇒
       print("Block( ", deep)
       print(b.valDefs, deep + 1)
       print(b.connections, deep + 1)
       print(b.junctions, deep + 1)
       print(b.parameters, deep + 1)
-      print(")", deep)
+      print(")" + b.line, deep)
     case v: ValDef ⇒
       print("ValDef(" + List(v.name, v.pos, v.size, v.typeName).mkString(","), deep)
-      print("params: " + v.params, deep + 1)
+      print(v.params, deep + 1)
       print(v.template.toList, deep + 1)
-      print(")" + sym(v), deep)
+      print(")" + v.line, deep)
     case p: Param ⇒
-      print(p.toString + sym(p), deep)
+      print(p.toString + p.line, deep)
     case c @ ConnectionDef(a, b, wp) ⇒
       print("ConnectionDef(", deep)
       a foreach { print(_, deep + 1) }
@@ -231,15 +231,15 @@ object PrettyPrinter {
       for (p ← wp) {
         print(p.toString, deep + 1)
       }
-      print(")" + sym(c), deep)
+      print(")" + c.line, deep)
     case p @ PortDef(_, _, _, _, _) ⇒
-      print(p.toString + sym(p), deep)
+      print(p.toString + p.line, deep)
     case p @ PortRef(tree, a, b) ⇒
       print("PortRef(", deep)
       print(tree, deep + 1)
       print(a + ", " + b, deep + 1)
-      print(")" + sym(p), deep)
-    case _ ⇒ print(tree.toString + sym(tree), deep)
+      print(")" + p.line, deep)
+    case _ ⇒ print(tree.toString + tree.line, deep)
   }
 }
 abstract class OwnerHelper[A] {

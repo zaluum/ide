@@ -38,6 +38,9 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     val tpe = vs.tpe.get.asInstanceOf[StaticExprType]
     vs.getStr(tpe.typeSymbol) match {
       case Some(str) ⇒
+        // XXX possible bug when a name.java and a name.zaluum are created
+        if (ztd == null) throw new Exception
+        if (ztd.zaluumScope == null) throw new Exception
         ztd.zaluumScope.lookupType(Name(str)) match {
           case Some(cl: ClassJavaType) ⇒
             vs.classinfo = cl

@@ -18,6 +18,7 @@ import org.eclipse.swt.events.TraverseListener
 import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.SelectionSubject
+import org.zaluum.nide.eclipse.PaletteEntry
 abstract class Tool(viewer: Viewer) {
   val gridSize: Int
   def viewport = viewer
@@ -114,20 +115,20 @@ abstract class Tool(viewer: Viewer) {
     def delete()
   }
   trait DropState {
-    def drop(s: String)
+    def drop(s: AnyRef)
   }
   def handleDel() {
     state match {
       case d: DeleteState ⇒ d.delete()
-      case _ ⇒
+      case _              ⇒
     }
   }
-  def handleDrop(x: Int, y: Int, s: String) {
+  def handleDrop(x: Int, y: Int, s: AnyRef) {
     updateMouseWithDisplayCoordinates(x, y)
     state.move()
     state match {
       case d: DropState ⇒ d.drop(s)
-      case _ ⇒
+      case _            ⇒
     }
   }
   trait ClipboardState {
@@ -137,15 +138,15 @@ abstract class Tool(viewer: Viewer) {
   }
   def handleCut() = state match {
     case c: ClipboardState ⇒ c.cut
-    case _ ⇒
+    case _                 ⇒
   }
   def handleCopy() = state match {
     case c: ClipboardState ⇒ c.copy
-    case _ ⇒
+    case _                 ⇒
   }
   def handlePaste() = state match {
     case c: ClipboardState ⇒ c.paste
-    case _ ⇒
+    case _                 ⇒
   }
   trait LineBlinker {
     private var blinkingLine: Option[LineItem] = None

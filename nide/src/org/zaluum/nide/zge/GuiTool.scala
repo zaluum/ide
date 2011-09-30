@@ -20,6 +20,7 @@ import org.zaluum.nide.compiler.Out
 import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Block
+import org.zaluum.nide.eclipse.PaletteEntry
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   val gridSize = 12
   def calcMin: Dimension = {
@@ -73,12 +74,16 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       val br = viewer.backRect.getBounds.getBottomRight
       (math.abs(currentMouseLocation.x - br.x) < borderSensivity, math.abs(currentMouseLocation.y - br.y) < borderSensivity)
     }
-    def drop(s: String) {
-      s match {
-        case In.str    ⇒
-        case Out.str   ⇒
-        case Shift.str ⇒
-        case _         ⇒ creating.enter(Name(s), current)
+    def drop(a: AnyRef) {
+      a match {
+        case e: PaletteEntry ⇒
+          e.className.str match {
+            case In.str    ⇒
+            case Out.str   ⇒
+            case Shift.str ⇒
+            case _         ⇒ creating.enter(e, current)
+          }
+        case _ ⇒
       }
     }
     override def move {
@@ -125,13 +130,13 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   object creating extends GuiCreating
   class GuiCreating extends Creating {
     val defaultSize = Dimension(10, 10)
-    protected def getSize(tpename: Name) = defaultSize
+    protected def getSize(entry: PaletteEntry) = defaultSize
     protected def newInstance(dst: Point) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b.sym.isMainBSBlock ⇒
-            val name = Name(b.sym.freshName(tpeName.classNameWithoutPackage.firstLowerCase))
-            val newValDef = ValDef(name, tpeName, Point(0, 0),
+            val name = Name(b.sym.freshName(entry.className.classNameWithoutPackage.firstLowerCase))
+            val newValDef = ValDef(name, entry.className, Point(0, 0),
               size = None,
               params = List(Param(Name("bounds"), dst.x + " " + dst.y + " " + defaultSize.w + " " + defaultSize.h)),
               label = None,
