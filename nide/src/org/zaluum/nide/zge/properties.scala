@@ -219,12 +219,11 @@ class ConstructorParamProperty(
     c: Controller,
     p: ParamDecl,
     v: ValDef,
-    tpe: ⇒ Option[JavaType]) extends TextParamProperty(c, p, v) with MethodProperty {
+    ttpe: ⇒ Option[JavaType]) extends TextParamProperty(c, p, v) with MethodProperty {
   def scope = v.sym.mainBS.scope
-  def tpe = tpe
+  def tpe = ttpe
   def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
     ZaluumCompletionEngineScala.allConstructors(engine, scope, r)
-
 }
 trait MethodProperty extends ControllerProperty {
   def tpe: Option[JavaType]

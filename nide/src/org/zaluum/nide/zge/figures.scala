@@ -95,17 +95,21 @@ trait ValDefItem extends Item with PropertySource {
     val nme = new NameProperty(valDef, controller)
     val lbl = new LabelProperty(valDef, controller, false)
     val lblGui = new LabelProperty(valDef, controller, true)
-    val cons = new ConstructorSelectProperty(valDef, controller)
     val props: List[ParamProperty] = valSym.tpe match {
       case Some(p: PropertySourceType) ⇒ p.properties(controller, valDef)
       case _                           ⇒ List()
     }
     val missing = valDef.params filter {
-      case p: Param ⇒ !props.exists { _.key == p.key } &&
-        p.key != BoxExprType.constructorParamsDecl.fqName &&
-        p.key != BoxExprType.constructorTypesDecl.fqName
+      case p: Param ⇒
+        (valDef.sym.tpe == BoxExprType &&
+          p.key == BoxExprType.constructorParamsDecl.fqName &&
+          p.key == BoxExprType.constructorTypesDecl.fqName) ||
+          !props.exists { _.key == p.key }
+
     } map { case p: Param ⇒ new MissingParamProperty(controller, p, valDef) }
-    nme :: tpe :: lbl :: lblGui :: cons :: missing ::: props
+    val consl = if (valDef.sym.tpe == BoxExprType) List(new ConstructorSelectProperty(valDef, controller))
+    else List()
+    consl ::: nme :: tpe :: lbl :: lblGui :: missing ::: props
   }
   def display = container.viewer.display
 }

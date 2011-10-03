@@ -79,6 +79,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     result.tpe = ztd.zaluumScope.getArrayType(t, dims)
   }
   def checkNew(vs: ValSymbol, c: ClassJavaType) {
+    NewExprType.thisPort(vs).tpe = c
     if (!c.binding.canBeInstantiated()) {
       error("Class " + c.name.str + " cannot be instantiated", vs.decl);
     }

@@ -67,7 +67,8 @@ object WhileExprType extends TemplateExprType {
 }
 trait SignatureExprType extends ExprType {
   val Sig = """(.+)(\(.*)""".r
-  val signatureSymbol = new ParamDecl(Name("-Method"))
+  val signatureSymbol = new ParamDecl(Name(signatureName))
+  def signatureName = "-Method"
   addParam(signatureSymbol)
   def signatureProp(c: Controller, v: ValDef): ParamProperty
   props ::= ((c: Controller, v: ValDef) ⇒ signatureProp(c, v))
@@ -96,6 +97,7 @@ object BoxExprType extends StaticExprType(classOf[org.zaluum.expr.BoxExpr]) with
   val fieldsSymbol = new ParamDecl(Name("-Fields"))
   val constructorParamsDecl = new ParamDecl(Name("-Constructor values"))
   val constructorTypesDecl = new ParamDecl(Name("-Constructor types"))
+
   addParam(fieldsSymbol)
   addParam(constructorParamsDecl)
   addParam(constructorTypesDecl)
@@ -120,10 +122,12 @@ object NewArrayExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.
   props ::= ((c: Controller, v: ValDef) ⇒ new TextParamProperty(c, arrayDimSymbol, v))
 }
 object NewExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.New]) with SignatureExprType {
+  override def signatureName = "-Constructor"
   val thiz = new PortSymbol(this, Name("object"), Out)
   ports += (thiz.name -> thiz)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
-  def signatureProp(c: Controller, v: ValDef) = new ConstructorParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe)
+  def signatureProp(c: Controller, v: ValDef) =
+    new ConstructorParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe)
 }
 object InvokeExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Invoke]) with SignatureExprType {
   def signatureProp(c: Controller, v: ValDef) =
@@ -134,10 +138,12 @@ object InvokeStaticExprType extends StaticExprType(classOf[org.zaluum.expr.`obje
     new MethodParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), true)
 }
 object FieldExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Field]) with ResultExprType with OneParameter with SignatureExprType {
+  override def signatureName = "-Field"
   def signatureProp(c: Controller, v: ValDef) =
     new FieldParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe, false)
 }
 object StaticFieldExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.StaticField]) with ResultExprType with OneParameter with SignatureExprType {
+  override def signatureName = "-Field"
   def signatureProp(c: Controller, v: ValDef) =
     new FieldParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), true)
 }

@@ -17,6 +17,8 @@ import java.io.ObjectInputStream
 import java.io.ByteArrayInputStream
 import org.eclipse.jdt.core.Flags
 import org.zaluum.annotation.Apply
+import java.util.ArrayList
+import java.net.URL
 
 case class PaletteEntry(
     className: Name,
@@ -59,22 +61,35 @@ class Palette(project: IJavaProject, monitor: IProgressMonitor) {
     case Some(l) ⇒ l.toArray
     case None    ⇒ Array()
   }
-
+  def add(e: PaletteEntry) = {
+    val pkg = e.pkgName
+    map.get(pkg) match {
+      case Some(l) ⇒ map += (pkg -> (e :: l))
+      case None    ⇒ map += (pkg -> List(e))
+    }
+  }
   var map: Map[String, List[PaletteEntry]] = Map();
   //init
   {
+    val urls = ProjectClassLoader.getClasspathUrls(project)
+    for (url ← urls) {
+      println("processing url" + url)
+      try {
+        val url2 = new URL(url.toExternalForm + "META-INF/palette.xml")
+        val stream = url2.openStream()
+        println(url2)
+        try
+          Palette.load(stream) foreach add
+        finally
+          stream.close
+      } catch { case e: Exception ⇒ }
+    }
     val list =
       search(
         patternAnnotation(classOf[Box].getName),
         projectScope(project),
         monitor)
-        .flatMap(Palette.load(_)).foreach { e ⇒
-          val pkg = e.pkgName
-          map.get(pkg) match {
-            case Some(l) ⇒ map += (pkg -> (e :: l))
-            case None    ⇒ map += (pkg -> List(e))
-          }
-        }
+        .flatMap(Palette.load(_)).foreach { add }
   }
 }
 

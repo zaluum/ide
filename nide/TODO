@@ -1,56 +1,48 @@
 Agenda
 
-week 5-11 doc week
-	- llibreria plot collonuda
+	necessari
+	- llibreria plot
 	- instanciació Swing amb parametres constructors
 	- zaluum file with version number
-	- propietats: canviar nom box, 
-	- bug doble update propietats 
 	- nova paleta .xml
+	- propietats: canviar nom box, 
 	- configurador Plot (pensar Plot, chart,etc)
-	- al enganxar posar-ho en el contenidor on cau ( enganxar a la GUI a quin block va a parar?)
-	- clean up wire
-	- visuals al block diagram (notes sobretot)
-	- crear port connectant cable
-    - same label in both views. (caption?)
-	- view as icon 
-	- z order: endavant-endarrera gui
 	- acabar swing intenum values
-	- editar propietats amb boto dret?
-	- replicar exemple complex lv
-	- lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
-	- lv global variable = static field
-	- Select toolkit, GTK+,etc
-	- Clusters, com imitar? Hashmap? Classe interna?
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
-	- write feature list on freemind
-	- Graphing widget properties. Color/etc( see labview)
 	- drivers
 		- template
 		- serial
 		- tcp/ip 
 	- basic math
-	- sound output clicks?
-	- tutorials/docs/etc
-	- examples/screencast
-	- build scripts
-week 12-18 bug hunting
 	- test cases bug fixing
 		- cast
 		- box unbox
 		- generics
 		- protected/private
-	- compilation with errors in java ProblemBinding, etc
-week 19-25 launch week
 	- beta nag screen/ watermark
 	- buy hosting
-	- buy template
-	- publish beta
-	- buy adwords	
-Idees
+	
+
+	millora
+	- visuals al block diagram (notes sobretot)
+	- z order: endavant-endarrera gui
+	- clean up wire
+	- bug doble update propietats 
+	- crear port connectant cable
+    - same label in both views. (caption?)
+	- view as icon 
+	- replicar exemple complex lv
+	- Select toolkit, GTK+,etc
+	- al enganxar posar-ho en el contenidor on cau ( enganxar a la GUI a quin block va a parar?)
 	- pintar ombra als elements d'un altre pare 
-	- Scala.react programació reactiva
-	- tolerancia del lloc de connexió 
+	- Label amb javabeans, boxes només visuals (decoració)
+	
+	pensar
+	- Clusters, com imitar? Hashmap? Classe interna?
+	- lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
+	- lv global variable = static field
+	- tutorials/docs/etc
+	- examples/screencast
 	- Com tractar arrays?
 		- Per exemple per implementar la suma de dues arrays:
 			- si s'implementa amb mètodes, un mètode per cada combinació de tipus short-int int-double, etc
@@ -62,6 +54,10 @@ Idees
 			- box for
 		- grow array? 
 	 	- new array cada vegada, conservar l'última, in-place? benchmark?
+	
+Idees
+	- Scala.react programació reactiva
+	- tolerancia del lloc de connexió 
 	- fer fàcil la creació de boxes noves.  
 		- expr oberta tipus while. No es pot afegir a dins però hi ha  un boto.
 		- s'afegeixen ports, es connecten i es trien els tipus (o no)
@@ -71,23 +67,7 @@ Idees
 	  	 Static box: mètodes estàtics com a boxes 
 	 	- Com es representen a la paleta? cada mètode una box?
 	 	- Canviar significat de boxtypesymbol, ja no es JavaClassType
-	 	-
-	 - Label amb javabeans, boxes només visuals (decoració)
-	 - Treure llista de boxes i mètodes a mostrar a la paleta d'xmls
-	 	- per aprofitar javax.swing p.ex.
-	 	- box lliure, triar classe i mètode a invocar i camps de retorn
-	 		- paleta nomes com a plantilla de les boxes més habituals, fetes servir recentment. 
-	    - com trobar xmls? mirar META-INF etc del classpath
 	 
-	  
-	 	
-article ideas
-	- Use cases.
-	- Strategy. How to start. Open source library / pay tools.
-	- Why Zaluum: Write/Draw what makes sense. Future directions. Why JVM.
-	- Robot
-	- Scala
-
 bugs
 	- al connectar o desconnectar cables de vegades fa coses rares
 	- BUG null at org.zaluum.nide.zge.RichFigure.translateFromViewport(baseFigures.scala:63)
