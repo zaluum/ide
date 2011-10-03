@@ -116,8 +116,9 @@ class OpenPortFixedFigure(openBox: OpenBoxFigure) extends OpenPortBaseFigure(ope
 }
 
 abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) extends RectangleFigure
-    with TextEditFigure with Item with HasPorts with RectFeedback {
+    with TextEditFigure with Item with HasPorts with RectFeedback with PropertySource {
   setLineWidthFloat(2)
+  def display = container.viewer.display
   def myLayer = container.layer
   def pos: MPoint
   def dir: PortDir
@@ -126,6 +127,12 @@ abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) 
   def imageFactory = container.viewer.zproject.imageFactory
   ports += port
   def update() {
+    properties = ps.pi.declOption match {
+      case Some(p) ⇒ List(
+        new PortTypeProperty(p, container.viewer.controller),
+        new PortNameProperty(p, container.viewer.controller))
+      case None ⇒ List()
+    }
     updateText() // XXX super.update; updateText doesn't show text. Why?
     setForegroundColor(Colorizer.color(ps.pi.tpe))
     updateSize()

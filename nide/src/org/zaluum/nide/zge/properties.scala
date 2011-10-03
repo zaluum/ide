@@ -46,6 +46,7 @@ import org.zaluum.nide.compiler.VarDecl
 import org.zaluum.nide.zge.dialogs.ConstructorSelectDialog
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.compiler.Signatures
+import org.zaluum.nide.compiler.PortDef
 
 trait Property {
   def descriptor: IPropertyDescriptor
@@ -74,6 +75,22 @@ trait ParamProperty extends ControllerProperty {
   def isSet = v.params.exists(_.key == key)
   def reset() { c.exec(v.removeParams(p.name)) }
 
+}
+class PortNameProperty(p: PortDef, val c: Controller) extends ControllerProperty with NoResetProperty {
+  def descriptor = new TextPropertyDescriptor(this, displayName)
+  def displayName = "Name"
+  def currentVal = Some(get)
+  def set(value: AnyRef) = if (value != p.name.str) c.exec(p.renamePort(value.toString, None))
+  def get = p.name.str
+  def isSet: Boolean = true
+}
+class PortTypeProperty(p: PortDef, val c: Controller) extends TypeProperty with NoResetProperty {
+  def displayName = "Type"
+  def currentVal = Some(get)
+  def set(value: AnyRef) =
+    if (value != p.typeName.str) c.exec(p.changeType(value.toString()))
+  def get = p.typeName.str
+  def isSet: Boolean = true
 }
 trait NoResetProperty extends Property {
   override def canBeReset = false

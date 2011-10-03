@@ -328,7 +328,13 @@ case class PortDef(
     inPos: Point,
     extPos: Point) extends SymbolTree[PortSymbol] with Positionable {
   def pos = inPos
-
+  def changeType(tpe: String): MapTransformer = {
+    new EditTransformer() {
+      val trans: PartialFunction[Tree, Tree] = {
+        case p: PortDef if (p == PortDef.this) ⇒ p.copy(typeName = Name(tpe))
+      }
+    }
+  }
   def renamePort(str: String, tpe: Option[Name]): MapTransformer = {
     val newName = if (str == name.str) name else Name(sym.portsSymbol.asInstanceOf[BoxSymbol].freshName(str))
     new EditTransformer() {
