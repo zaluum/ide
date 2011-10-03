@@ -19,11 +19,14 @@ import org.eclipse.jdt.core.Flags
 import org.zaluum.annotation.Apply
 import java.util.ArrayList
 import java.net.URL
+import org.zaluum.nide.compiler.PortDir
+import org.zaluum.nide.compiler.In
+import org.zaluum.nide.compiler.Out
+import org.zaluum.nide.compiler.Shift
 
 case class PaletteEntry(
     className: Name,
-    selector: Option[String],
-    parameterTypes: List[String],
+    methodUID: Option[String],
     static: Boolean,
     imagePath: Option[String],
     name: Option[String] = None,
@@ -72,6 +75,7 @@ class Palette(project: IJavaProject, monitor: IProgressMonitor) {
   //init
   {
     val urls = ProjectClassLoader.getClasspathUrls(project)
+    // add xml
     for (url ← urls) {
       println("processing url" + url)
       try {
@@ -84,23 +88,36 @@ class Palette(project: IJavaProject, monitor: IProgressMonitor) {
           stream.close
       } catch { case e: Exception ⇒ }
     }
-    val list =
-      search(
-        patternAnnotation(classOf[Box].getName),
-        projectScope(project),
-        monitor)
-        .flatMap(Palette.load(_)).foreach { add }
+    // @Annotation
+    search(
+      patternAnnotation(classOf[Box].getName),
+      projectScope(project),
+      monitor)
+      .flatMap(Palette.load(_)).foreach { add }
+    // add ports
+    Palette.portsEntries foreach add
   }
 }
 
 object Palette {
+  val portsPkg = "<ports>"
+  private def portToProxy(port: PortDir) = PaletteEntry(
+    Name(portsPkg + "." + port.str),
+    None, false, None, None, false)
+  val InEntry = portToProxy(In)
+  val OutEntry = portToProxy(Out)
+  val ShiftEntry = portToProxy(Shift)
+  val portsEntries = List(InEntry, OutEntry, ShiftEntry)
+
   def load(t: IType): Array[PaletteEntry] = {
     val classname = Name(t.getFullyQualifiedName)
-    val methodEntries = for (m ← t.getMethods(); if (m.getAnnotations.exists(_.getElementName() == classOf[Apply].getName))) yield {
+    val methodEntries = for (
+      m ← t.getMethods();
+      if (m.getAnnotations.exists(_.getElementName() == classOf[Apply].getName))
+    ) yield {
       PaletteEntry(
         classname,
-        Some(m.getElementName),
-        m.getParameterTypes.toList,
+        Some(m.getElementName + m.getSignature),
         Flags.isStatic(m.getFlags),
         None,
         None,
@@ -110,7 +127,6 @@ object Palette {
       Array(PaletteEntry(
         classname,
         None,
-        List(),
         false,
         None,
         None,
@@ -144,13 +160,12 @@ object Palette {
     val className = textOption((entry \ "@class").text).map(Name(_))
     if (className.isEmpty) None
     else {
-      val selector = textOption((entry \ "@selector").text.trim)
-      val parameters = (entry \ "@parameters").text.split(",").map { _.trim }.filterNot(_ == "").toList
+      val muid = textOption((entry \ "@signature").text.trim)
       val name = textOption((entry \ "@name").text)
-      val static = (entry \ "@name").text.trim.toLowerCase() == "true"
+      val static = (entry \ "@static").text.trim.toLowerCase() == "true"
       val imagePath = textOption((entry \ "@image").text)
       val template = (entry \ "@template").text.trim.toLowerCase() == "true"
-      Some(PaletteEntry(className.get, selector, parameters, static, imagePath, name, template))
+      Some(PaletteEntry(className.get, muid, static, imagePath, name, template))
     }
   }
   /*  def main(args: Array[String]) {

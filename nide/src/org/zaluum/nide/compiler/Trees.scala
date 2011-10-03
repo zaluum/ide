@@ -362,6 +362,11 @@ case class Param(key: Name, values: List[String]) extends SymbolTree[ParamDecl] 
 
 case class LabelDesc(description: String, pos: Vector2)
 object ValDef {
+  def emptyValStaticInvokeExpr(name: Name, dst: Point, label: String, className: String, methodUID: String) = {
+    val typeP = Param(InvokeStaticExprType.typeSymbol.fqName, className)
+    val methodP = Param(InvokeStaticExprType.signatureSymbol.fqName, methodUID)
+    ValDef(name, InvokeStaticExprType.fqName, dst, None, List(typeP, methodP), Some(LabelDesc(label, Vector2(0, 0))), None, None)
+  }
   def emptyValDefBoxExpr(name: Name, dst: Point, label: String, className: String) = {
     val p = Param(BoxExprType.typeSymbol.fqName, className)
     ValDef(name, BoxExprType.fqName, dst, None, List(p), Some(LabelDesc(label, Vector2(0, 0))), None, None)

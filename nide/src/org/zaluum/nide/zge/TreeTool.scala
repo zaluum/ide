@@ -26,6 +26,7 @@ import draw2dConversions.point
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.eclipse.PaletteEntry
+import org.zaluum.nide.eclipse.Palette
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   def tree = viewer.tree
@@ -136,11 +137,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def drop(a: AnyRef) {
       a match {
         case e: PaletteEntry ⇒
-          e.className.str match {
-            case In.str    ⇒ creatingPort.enter(In, current)
-            case Out.str   ⇒ creatingPort.enter(Out, current)
-            case Shift.str ⇒ creatingPort.enter(Shift, current)
-            case _         ⇒ creating.enter(e, current)
+          e match {
+            case Palette.InEntry    ⇒ creatingPort.enter(In, current)
+            case Palette.OutEntry   ⇒ creatingPort.enter(Out, current)
+            case Palette.ShiftEntry ⇒ creatingPort.enter(Shift, current)
+            case _                  ⇒ creating.enter(e, current)
           }
         case _ ⇒
       }
@@ -189,9 +190,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             val name = Name(b.sym.freshName(label))
             if (isExpression) {
               newVal = ValDef.emptyValDef(name, entry.className, dst)
-            } else {
+            } else if (entry.static)
+              newVal = ValDef.emptyValStaticInvokeExpr(name, dst, label, entry.className.str, entry.methodUID.getOrElse(""))
+            else
               newVal = ValDef.emptyValDefBoxExpr(name, dst, label, entry.className.str)
-            }
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
               connections = transformTrees(b.connections),

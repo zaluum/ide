@@ -2,6 +2,6 @@
 <!-- 
 hola
 -->
-      <entry class="java.lang.Math" selector="abs" static="true" parameters="int"/>
-      <entry class="java.lang.Math2" selector="abs2"/>
-    </palette>
+      <entry name="abs" class="java.lang.Math" signature="abs(I)I" static="true"/>
+      <entry name="sin" class="java.lang.Math" signature="sin(D)D" static="true"/>
+</palette>

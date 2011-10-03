@@ -163,7 +163,6 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
     protected def getSize(entry: PaletteEntry): Dimension
     def move() {
-
       if (feed == null) throw new Exception
       feed.setInnerLocation(point(snap(currentMouseLocation)))
     }

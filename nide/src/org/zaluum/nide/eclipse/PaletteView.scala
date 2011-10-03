@@ -99,13 +99,6 @@ class PaletteView extends PageBookView {
 
 /* PAGE */
 object PalettePage {
-  /*val portsPkg = "<ports>"
-  def portToProxy(port: PortDir) = new BoxTypeProxy(Name(port.str), true) {
-    override def pkgName = portsPkg
-    override def simpleName = port.str
-  }
-  val ports = (portsPkg -> Buffer(portToProxy(In), portToProxy(Out), portToProxy(Shift)))*/
-  //type ProxyMap = scala.collection.mutable.Map[String, Buffer[BoxTypeProxy]]
 }
 
 class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends PalettePageDND with PalettePageCoreListener {
@@ -128,7 +121,7 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
   }
   def text(element: Object): String = element match {
     case s: String       ⇒ s
-    case b: PaletteEntry ⇒ b.simpleName
+    case b: PaletteEntry ⇒ b.name.getOrElse(b.simpleName)
   }
   def image(element: Object): Image = element match {
     //case PalettePage.portsPkg ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
