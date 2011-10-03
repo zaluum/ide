@@ -14,8 +14,7 @@ import com.google.protobuf.ExtensionRegistry
 object Parser {
   def readTree(i: InputStream, className: Name): BoxDef = {
     val a = try {
-      val registry = ExtensionRegistry.newInstance();
-      val proto = ZaluumProtobuf.BoxClass.parseFrom(i, registry)
+      val proto = ZaluumProtobuf.BoxClass.parseFrom(i)
       parse(proto, Some(className))
     } catch {
       case e ⇒
@@ -40,7 +39,7 @@ object Parser {
       constructor = b.getConstructorParamList() map { parse } toList,
       template = parse(b.getTemplate))
   }
-  def parse(p: ZaluumProtobuf.VarDecl): VarDecl = {
+  def parse(p: ZaluumProtobuf.ParamDecl): VarDecl = {
     VarDecl(Name(p.getName), Name(if (p.hasType) p.getType() else ""))
   }
   def parse(t: ZaluumProtobuf.Template): Template = {
@@ -68,7 +67,7 @@ object Parser {
     val template = if (i.hasTemplate) Some(parse(i.getTemplate())) else None
     ValDef(
       Name(i.getName),
-      Name(i.getClassName),
+      Name(i.getType),
       parse(i.getPos),
       size,
       i.getParameterList.map { parse(_) }.toList,

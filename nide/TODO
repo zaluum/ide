@@ -1,11 +1,11 @@
 Agenda
 
 	necessari
-	- llibreria plot
-	- instanciació Swing amb parametres constructors
-	- zaluum file with version number
+	- human readable signature label provider
 	- nova paleta .xml
 	- propietats: canviar nom box, 
+	- llibreria plot
+	- instanciació Swing amb parametres constructors
 	- configurador Plot (pensar Plot, chart,etc)
 	- acabar swing intenum values
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
@@ -141,6 +141,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- zaluum file with version number
 	- configurador blocs complexos. Plot per exemple.
 	- eliminar boxtypesymbol. Qualsevol JavaType com a box
 	- emetre labels amb linies de codi per excepcions

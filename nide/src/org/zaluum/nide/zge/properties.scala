@@ -172,7 +172,7 @@ class LabelProperty(valDef: ValDef, controller: Controller, gui: Boolean) extend
 }
 
 class ConstructorSelectProperty(valDef: ValDef, controller: Controller) extends Property {
-  def descriptor = new DialogPropertyDescriptor(this, "-Constructor") {
+  def descriptor = new DialogPropertyDescriptor(this, "#Constructor") {
     override lazy val labelProvider = new LabelProvider() {
       override def getText(element: AnyRef) = {
         element match {

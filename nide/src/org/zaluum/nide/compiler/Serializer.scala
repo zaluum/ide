@@ -7,11 +7,13 @@ import scala.collection.JavaConversions.seqAsJavaList
 import org.zaluum.nide.protobuf.ZaluumProtobuf
 import org.zaluum.nide.zge.Clipboard
 object Serializer {
+  val version = "ZALUUM-1.0"
   def writeToIsoString(d: ZaluumProtobuf.BoxClass): String =
     new String(d.toByteArray, Charset.forName("ISO-8859-1"))
 
   def proto(b: BoxDef): ZaluumProtobuf.BoxClass = {
     val p = ZaluumProtobuf.BoxClass.newBuilder
+    p.setVersion(version)
     p.setClassName(b.name.str)
     p.setPackage(b.pkg.str)
     b.image foreach { p.setImageName(_) }
@@ -22,8 +24,8 @@ object Serializer {
     b.constructor foreach { t ⇒ p.addConstructorParam(proto(t)) }
     p.build
   }
-  def proto(v: VarDecl): ZaluumProtobuf.VarDecl = {
-    val p = ZaluumProtobuf.VarDecl.newBuilder
+  def proto(v: VarDecl): ZaluumProtobuf.ParamDecl = {
+    val p = ZaluumProtobuf.ParamDecl.newBuilder
     p.setName(v.name.str)
     p.setType(v.tpeName.str)
     p.build
@@ -56,7 +58,7 @@ object Serializer {
     p.label foreach { l ⇒ b.setLabel(proto(l)) }
     p.labelGui foreach { l ⇒ b.setLabelGui(proto(l)) }
     p.template foreach { t ⇒ b.setTemplate(proto(t)) }
-    b.setClassName(p.typeName.str)
+    b.setType(p.typeName.str)
       .setName(p.name.str)
       .setPos(proto(p.pos))
       .setSize(proto(p.size.getOrElse(Dimension(50, 50))))

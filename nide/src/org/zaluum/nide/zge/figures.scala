@@ -101,13 +101,15 @@ trait ValDefItem extends Item with PropertySource {
     }
     val missing = valDef.params filter {
       case p: Param ⇒
-        (valDef.sym.tpe == BoxExprType &&
-          p.key == BoxExprType.constructorParamsDecl.fqName &&
-          p.key == BoxExprType.constructorTypesDecl.fqName) ||
+        if (valDef.sym.tpe == Some(BoxExprType) &&
+          p.key == BoxExprType.constructorParamsDecl.fqName ||
+          p.key == BoxExprType.constructorTypesDecl.fqName)
+          false
+        else
           !props.exists { _.key == p.key }
 
     } map { case p: Param ⇒ new MissingParamProperty(controller, p, valDef) }
-    val consl = if (valDef.sym.tpe == BoxExprType) List(new ConstructorSelectProperty(valDef, controller))
+    val consl = if (valDef.sym.tpe == Some(BoxExprType)) List(new ConstructorSelectProperty(valDef, controller))
     else List()
     consl ::: nme :: tpe :: lbl :: lblGui :: missing ::: props
   }

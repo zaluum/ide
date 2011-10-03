@@ -7,15 +7,16 @@ message BoxClass
 {
 	optional string class_name = 1;
 	optional string image_name = 2;
-	required Point gui_size = 3; 
-	required bool visual = 4; 
+	optional Point gui_size = 3; 
+    optional bool visual = 4; 
 	optional string super = 6;
 	optional string package = 7;
 	required Template template = 8;
 	optional string init_method = 9;
-	repeated VarDecl constructor_param = 10;
+	repeated ParamDecl constructor_param = 10;
+	required string version=11;
 }
-message VarDecl {
+message ParamDecl {
 	required string name = 1;
 	optional string type = 2;
 }
@@ -39,7 +40,7 @@ message Instance
 	repeated Parameter parameter = 5;
 	optional Label label = 6;
 	optional Label label_gui = 7;
-	required string class_name = 8;
+	required string type = 8;
 	optional Template template = 13;
 	
 }
