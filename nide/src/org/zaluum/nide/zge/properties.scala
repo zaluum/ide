@@ -45,6 +45,7 @@ import org.eclipse.jface.viewers.ICellEditorValidator
 import org.zaluum.nide.compiler.VarDecl
 import org.zaluum.nide.zge.dialogs.ConstructorSelectDialog
 import org.zaluum.nide.compiler.BoxExprType
+import org.zaluum.nide.compiler.Signatures
 
 trait Property {
   def descriptor: IPropertyDescriptor
@@ -81,8 +82,8 @@ trait NoResetProperty extends Property {
 abstract class InitProperty(b: BoxDef, val c: Controller) extends Property {
   def scope = b.sym.scope
   def className = split.map { _._1 }
-  def methodName = split.map { _._2 }
-  def split = b.initMethod.flatMap { s ⇒ MethodBindingUtils.staticMethodSplit(s) }
+  def methodUID = split.map { _._2 }
+  def split = b.initMethod.map { Signatures.staticMethodUIDSplit }
   def tpe = className.flatMap { c ⇒ scope.lookupType(Name(c)) }
   def set(cl: String, m: String) = {
     val comm = if (cl == "" && m == "") b.editInitMethod(None)
@@ -94,11 +95,11 @@ abstract class InitProperty(b: BoxDef, val c: Controller) extends Property {
 }
 class InitMethodProperty(b: BoxDef, c: Controller) extends InitProperty(b, c) with MethodProperty {
   val displayName = "*Init method"
-  def currentVal = methodName
+  def currentVal = methodUID
   def set(value: AnyRef) {
     set(className.getOrElse(""), value.toString)
   }
-  def get: AnyRef = methodName.getOrElse("")
+  def get: AnyRef = methodUID.getOrElse("")
   def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
     ZaluumCompletionEngineScala.allMethods(engine, scope, r, true)
 }
@@ -106,7 +107,7 @@ class InitMethodClassProperty(b: BoxDef, c: Controller) extends InitProperty(b, 
   val displayName = "*Init method class"
   def currentVal = className.orElse(b.initMethod)
   def set(value: AnyRef) {
-    set(value.toString, methodName.getOrElse(""))
+    set(value.toString, methodUID.getOrElse(""))
   }
   def get: AnyRef = className.orElse(b.initMethod).getOrElse("")
 }
@@ -114,7 +115,7 @@ object ConstructorDeclProperty {
   lazy val Regexp = """\s*(\S+)\s*(\S+)\s*""".r
 }
 class ConstructorDeclProperty(boxDef: BoxDef, val c: Controller) extends Property {
-  val descriptor = new TextPropertyDescriptor(this, "*Constructor parameters")
+  val descriptor = new TextPropertyDescriptor(this, "*Constructor declaration")
   descriptor.setValidator(new ICellEditorValidator() {
     def isValid(value: AnyRef) = {
       parse(value.toString) match {
@@ -171,7 +172,7 @@ class LabelProperty(valDef: ValDef, controller: Controller, gui: Boolean) extend
 }
 
 class ConstructorSelectProperty(valDef: ValDef, controller: Controller) extends Property {
-  def descriptor = new DialogPropertyDescriptor(this, "*Constructor") {
+  def descriptor = new DialogPropertyDescriptor(this, "-Constructor") {
     override lazy val labelProvider = new LabelProvider() {
       override def getText(element: AnyRef) = {
         element match {

@@ -66,7 +66,6 @@ object WhileExprType extends TemplateExprType {
   def endPort(v: ValSymbol) = v.findPortInstance(end).get
 }
 trait SignatureExprType extends ExprType {
-  val Sig = """(.+)(\(.*)""".r
   val signatureSymbol = new ParamDecl(Name(signatureName))
   def signatureName = "-Method"
   addParam(signatureSymbol)
@@ -93,6 +92,7 @@ trait TypeParamExprType extends ExprType {
   props ::= ((c: Controller, v: ValDef) ⇒ new TypeParamProperty(c, typeSymbol, v))
 }
 sealed abstract class StaticExprType(val matchingClass: Class[_]) extends TypeParamExprType
+
 object BoxExprType extends StaticExprType(classOf[org.zaluum.expr.BoxExpr]) with SignatureExprType {
   val fieldsSymbol = new ParamDecl(Name("-Fields"))
   val constructorParamsDecl = new ParamDecl(Name("-Constructor values"))

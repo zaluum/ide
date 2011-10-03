@@ -45,19 +45,30 @@ import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.compiler.Param
 
-class ConstructorSelectDialog(jproject: JavaProject, shell: Shell, vs: ValSymbol) extends Dialog(shell) {
+class ConstructorSelectDialog(
+    jproject: JavaProject,
+    shell: Shell,
+    vs: ValSymbol) extends Dialog(shell) {
+
+  case class TableEntry(var sym: Option[(String, TypeBinding)], var value: String)
+  class Loader(loader: ⇒ Iterable[AnyRef]) extends IStructuredContentProvider {
+    def dispose() {}
+    def getElements(inputElement: AnyRef): Array[AnyRef] = loader.toArray
+    def inputChanged(viewer: org.eclipse.jface.viewers.Viewer, oldInput: Any, newInput: Any) {}
+  }
+
   var combo: ComboViewer = _
+  var tableContents = List[TableEntry]()
+  val initSignature = vs.getStr(BoxExprType.constructorTypesDecl).getOrElse("")
+  val initParams = vs.getList(BoxExprType.constructorParamsDecl).getOrElse(List())
+  var result: Option[EditTransformer] = None
+
   def comboValue = {
     val sel = combo.getSelection.asInstanceOf[IStructuredSelection]
     if (sel.isEmpty) None
     else Some(sel.getFirstElement.asInstanceOf[MethodBinding])
   }
-  var tableContents = List[TableEntry]()
-  case class TableEntry(var sym: Option[(String, TypeBinding)], var value: String)
   def v = vs.decl
-  val initSignature = vs.getStr(BoxExprType.constructorTypesDecl).getOrElse("")
-  val initParams = vs.getList(BoxExprType.constructorParamsDecl).getOrElse(List())
-  var result: Option[EditTransformer] = None
   override protected def okPressed() {
     val signature = comboValue.map(_.signature().mkString).getOrElse("")
     val params = tableContents.map(_.value)
@@ -83,11 +94,6 @@ class ConstructorSelectDialog(jproject: JavaProject, shell: Shell, vs: ValSymbol
     newColumn("Value", 150)
     newColumn("Name", 150)
     table
-  }
-  class Loader(loader: ⇒ Iterable[AnyRef]) extends IStructuredContentProvider {
-    def dispose() {}
-    def getElements(inputElement: AnyRef): Array[AnyRef] = loader.toArray
-    def inputChanged(viewer: org.eclipse.jface.viewers.Viewer, oldInput: Any, newInput: Any) {}
   }
   override def createDialogArea(parent: Composite): Control = {
     val sup = super.createDialogArea(parent).asInstanceOf[Composite];

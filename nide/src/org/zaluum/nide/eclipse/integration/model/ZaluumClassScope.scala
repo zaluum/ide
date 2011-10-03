@@ -74,27 +74,6 @@ class ZaluumClassScope(parent: Scope, typeDecl: TypeDeclaration) extends ClassSc
     val a = new ArrayType(t, dim, bind)
     a
   }
-  def getStaticMethod(nameHashAndSignature: String): Option[MethodBinding] = {
-    MethodBindingUtils.staticMethod(nameHashAndSignature) match {
-      case Some((cl, selector, params, ret)) ⇒
-        val compound = JDTUtils.stringToA(cl)
-        val t = getType(compound, compound.length);
-
-        val paramsBind: List[TypeBinding] = for (s ← params) yield {
-          val to = lookupType(Name(s))
-          to match {
-            case Some(t) ⇒ t.binding
-            case _       ⇒ null
-          }
-        }
-        if (paramsBind.contains(null))
-          None
-        else {
-          Some(getMethod(t, selector.toCharArray(), paramsBind.toArray, new FakeInvocationSite(null)))
-        }
-      case _ ⇒ None
-    }
-  }
   def getJavaType(tpe: TypeBinding): Option[JavaType] = {
     tpe match {
       case m: MissingTypeBinding         ⇒ None

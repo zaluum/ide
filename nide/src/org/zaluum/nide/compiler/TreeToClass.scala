@@ -14,7 +14,7 @@ trait UnaryExpr extends Tree {
   def a: Tree
 }
 case class RunnableClass(fqName: Name, simpleName: Name, run: Method) extends Tree
-case class BoxClass(name: Name, source: String, contents: List[Tree], superName: Name, inners: List[RunnableClass]) extends Tree
+case class BoxClass(name: Name, source: String, contents: List[Tree], superName: Name, inners: List[RunnableClass], withSerializationField: Boolean) extends Tree
 case class FieldDef(name: Name, typeName: Name, annotation: Option[Name], priv: Boolean) extends Tree
 case class New(typeName: Name, param: List[Tree], signature: String) extends Tree
 case class ConstructorMethod(boxCreation: List[Tree], signature: String, superName: Name, locals: List[(String, String, Int)]) extends Tree
@@ -129,7 +129,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         bs.fqName,
         bs.source.get,
         baseMethods ++ fieldDecls,
-        superName, enclosed)
+        superName, enclosed, bs.isVisual)
     }
 
     /*

@@ -3,9 +3,7 @@ package org.zaluum.nide.zge.dialogs
 import java.lang.Object
 import java.lang.StringBuffer
 import java.util.Comparator
-
 import scala.collection.JavaConversions
-
 import org.eclipse.core.runtime.Status
 import org.eclipse.jdt.internal.compiler.ast.ASTNode
 import org.eclipse.jdt.internal.compiler.lookup.Binding
@@ -21,23 +19,28 @@ import org.eclipse.swt.widgets.Shell
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
+import org.zaluum.nide.compiler.Signatures
 
 abstract class MethodSelectDialog(
     jproject: JavaProject,
     shell: Shell,
     binding: TypeBinding,
     scope: ZaluumClassScope,
-    currentMethodSig: Option[String]) extends FilteredItemsSelectionDialog2(shell, false) {
-  override def isResizable = true
-  override protected def okPressed() {
-    getSelectedItems().getFirstElement() match {
-      case m: MethodWithNames ⇒ result = Some(m.methodSignature)
-      case _                  ⇒
+    currentMethodUID: Option[String]) extends FilteredItemsSelectionDialog2(shell, false) {
+
+  class MethodItemsFilter extends ItemsFilter {
+    if (this.getPattern() == null || this.getPattern == "") patternMatcher.setPattern("**")
+
+    def isConsistentItem(item: AnyRef) = item.isInstanceOf[MethodWithNames]
+    def matchItem(item: Object) = item match {
+      case m: MethodWithNames ⇒ matches(m.text)
+      case _                  ⇒ false
     }
-    super.okPressed()
   }
+
+  val id = "org.zaluum.nide.methodSelectDialog"
+  val settings = new DialogSettings(id);
   var result: Option[String] = None
-  def openRet(): Option[String] = { open(); result }
 
   object MethodLabelProvider extends LabelProvider {
     override def getText(element: Object) = {
@@ -56,9 +59,6 @@ abstract class MethodSelectDialog(
     }
   }
 
-  val id = "org.zaluum.nide.methodSelectDialog"
-  val settings = new DialogSettings(id);
-  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding): List[MethodBinding]
   val items: Array[MethodWithNames] = binding match {
     case r: ReferenceBinding ⇒
       val engine = ZaluumCompletionEngineScala.engineFor(scope)
@@ -66,29 +66,30 @@ abstract class MethodSelectDialog(
       paramNames.sortBy(_.selector).toArray
     case _ ⇒ Array()
   }
-  val currentMethod = currentMethodSig flatMap { mstr ⇒
-    items.find { _.methodSignature == mstr }
+  val currentMethod = currentMethodUID flatMap { muid ⇒
+    items.find { _.methodUID == muid }
   }
   setTitle("Select method");
   setMessage("Choose method to invoke" +
     (if (currentMethod.isEmpty)
-      " - current method signature: " + currentMethodSig.getOrElse("<missing>")
+      " - current method signature: " + currentMethodUID.getOrElse("<missing>")
     else ""))
   setInitialPattern("**");
   setListLabelProvider(MethodLabelProvider);
   setDetailsLabelProvider(MethodDetailsLabelProvider);
   setInitialElementSelections(JavaConversions.seqAsJavaList(currentMethod.toList))
-  class MethodItemsFilter extends ItemsFilter {
-    if (this.getPattern() == null || this.getPattern == "") patternMatcher.setPattern("**")
-
-    def isConsistentItem(item: AnyRef) = item.isInstanceOf[MethodWithNames]
-    def matchItem(item: Object) = item match {
-      case m: MethodWithNames ⇒ matches(m.text)
-      case _                  ⇒ false
-    }
-  }
-
   lazy val valuesToFill: java.lang.Iterable[_] = JavaConversions.asJavaIterable(items.toIterable)
+
+  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding): List[MethodBinding]
+  override def isResizable = true
+  override protected def okPressed() {
+    getSelectedItems().getFirstElement() match {
+      case m: MethodWithNames ⇒ result = Some(m.methodUID)
+      case _                  ⇒
+    }
+    super.okPressed()
+  }
+  def openRet(): Option[String] = { open(); result }
 
   protected def getDialogSettings(): IDialogSettings = settings
   protected def getItemsComparator() = new Comparator[MethodWithNames]() {
@@ -139,7 +140,7 @@ case class MethodWithNames(m: MethodBinding, paramNames: List[String]) {
   }
   def selector = m.selector.mkString
   def declaringClass = new String(m.declaringClass.readableName())
-  def methodSignature = org.zaluum.nide.utils.MethodBindingUtils.toMethodSig(m)
+  def methodUID = Signatures.methodUID(m)
   def fullText = org.zaluum.nide.utils.MethodBindingUtils.toMethodStr(m, paramNames) + " - " + declaringClass
   def text = selector + " " + params + " : " + returnStr + " - " + declaringClass
 }

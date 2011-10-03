@@ -194,7 +194,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
                 }))
           }
           b.initMethod foreach { im ⇒
-            scope.getStaticMethod(im) match {
+            Signatures.findStaticMethodUID(im, scope) match {
               case Some(p: ProblemMethodBinding) ⇒ error("cannot find init method " + im, tree)
               case Some(p: MethodBinding) ⇒
                 if (p.parameters.length == 1 && p.parameters(0).erasure().isCompatibleWith(bs.binding))

@@ -52,6 +52,7 @@ import ZaluumCompilationUnitDeclaration.toPos
 import org.zaluum.expr.BoxExpr
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.compiler.Param
+import org.eclipse.jdt.internal.compiler.ast.LongLiteral
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
   compilationResult: CompilationResult,
@@ -222,6 +223,11 @@ class ZaluumCompilationUnitDeclaration(
       f.`type` = createTypeReference(p.tpeName, b)
       res += f
     }
+    // serialization UID
+    val f = new FieldDeclaration("serialVersionUID".toCharArray, start(b), end(b))
+    f.modifiers = Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_STATIC
+    f.`type` = createTypeReference(Name("long"), b)
+    res += f
     res.toArray
   }
   def createTypeReference(name: Name, t: Tree): TypeReference = {

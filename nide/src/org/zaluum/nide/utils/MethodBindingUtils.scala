@@ -18,55 +18,19 @@ import scala.collection.mutable.Buffer
 import org.zaluum.nide.compiler.primitives
 
 object MethodBindingUtils {
-  val StaticRegexp = """(.*)#(.*)(\(.*)""".r
-  def staticMethodSplit(str: String): Option[(String, String)] = {
-    val spl = str.split("#")
-    if (spl.size == 2) Some((spl(0), spl(1)))
-    else None
-  }
-  def staticMethod(str: String): Option[(String, String, List[String], String)] = {
-    str match {
-      case StaticRegexp(cl, selector, params) ⇒
-        try {
-          val (tparams, ret) = signatureToTypes(params)
-          Some((cl, selector, tparams, ret))
-        } catch { case e ⇒ None }
-      case _ ⇒ None
-    }
-  }
-  def toMethodSig(m: MethodBinding) = m.selector.mkString + m.signature().mkString
-  def signatureToTypes(str: String): (List[String], String) = {
-    var ret = ""
-    val params = Buffer[String]()
-    var dim = 0
-    var param = false
-      def add(str: String) {
-        val name = str + ("[]" * dim)
-        if (param) params += name else ret = name
+  def findMethodParamNames(m: MethodBinding, javaProject: IJavaProject) = {
+    val e = m.declaringClass.erasure()
+    val tpeName = e.qualifiedPackageName.mkString + "." + e.qualifiedSourceName().mkString
+    try {
+      val tpe = javaProject.findType(tpeName)
+      tpe.getMethods() find { im ⇒
+        (if (m.isConstructor())
+          im.isConstructor()
+        else im.getElementName == m.selector.mkString) && im.getSignature == m.signature.mkString
+      } map { meth ⇒
+        meth.getParameterNames()
       }
-    val s = new SignatureReader(str).accept(new SignatureVisitor() {
-      def visitFormalTypeParameter(name: String) {}
-      def visitClassBound(): SignatureVisitor = null
-      def visitInterfaceBound(): SignatureVisitor = null
-      def visitSuperclass(): SignatureVisitor = null
-      def visitInterface(): SignatureVisitor = null
-      def visitParameterType(): SignatureVisitor = { dim = 0; param = true; this }
-      def visitReturnType(): SignatureVisitor = { param = false; dim = 0; this }
-      def visitExceptionType(): SignatureVisitor = null
-      def visitBaseType(descriptor: Char) {
-        add(if (descriptor == 'V') "void" else primitives.fromChar(descriptor).name.str)
-      }
-      def visitTypeVariable(name: String) {}
-      def visitArrayType(): SignatureVisitor = { dim = dim + 1; this }
-      def visitClassType(name: String) {
-        add(name.replace('/', '.'))
-      }
-      def visitInnerClassType(name: String) {}
-      def visitTypeArgument() {}
-      def visitTypeArgument(wildcard: Char) = null
-      def visitEnd() {}
-    });
-    (params.toList, ret)
+    } catch { case j: JavaModelException ⇒ None }
   }
 
   def toMethodStr(m: MethodBinding, paramNames: List[String]) = {
@@ -116,7 +80,8 @@ object MethodBindingUtils {
           val arguments = methodDecl.arguments;
           if (arguments != null) {
             val names = for (a ← arguments) yield { a.name.mkString }
-            return Some(names)
+            if (names.size == m.parameters.size)
+              return Some(names)
           }
         }
       }
@@ -126,7 +91,7 @@ object MethodBindingUtils {
 
   private def findMethodParameterNamesBinaryEnv(m: MethodBinding,
                                                 rb: ReferenceBinding, nameEnvironment: INameEnvironment): Option[Array[String]] = {
-    nameEnvironment.findType(rb.compoundName) match {
+    val tentative = nameEnvironment.findType(rb.compoundName) match {
       case null ⇒ None
       case answer if answer.isSourceType && answer.getSourceTypes()(0) != null ⇒
         val sourceType = answer.getSourceTypes()(0);
@@ -141,7 +106,7 @@ object MethodBindingUtils {
             val names = foundMethods(0).asInstanceOf[SourceMethod]
               .getElementInfo.asInstanceOf[SourceMethodElementInfo]
               .getArgumentNames().map { _.mkString }
-            Some(names)
+            if (names.size == m.parameters.size) Some(names) else None
           } catch { case e: JavaModelException ⇒ None }
         } else None
       case answer if answer.isBinaryType ⇒
@@ -150,21 +115,12 @@ object MethodBindingUtils {
             candidate.getMethodDescriptor.mkString == m.signature.mkString
         } map { foundM ⇒ foundM.getArgumentNames map { _.mkString } }
     }
+    tentative match {
+      case Some(res) ⇒ if (res.size == m.parameters.size) tentative else None
+      case _         ⇒ tentative
+    }
   }
-  def findMethodParamNames(m: MethodBinding, javaProject: IJavaProject) = {
-    val e = m.declaringClass.erasure()
-    val tpeName = e.qualifiedPackageName.mkString + "." + e.qualifiedSourceName().mkString
-    try {
-      val tpe = javaProject.findType(tpeName)
-      tpe.getMethods() find { im ⇒
-        (if (m.isConstructor())
-          im.isConstructor()
-        else im.getElementName == m.selector.mkString) && im.getSignature == m.signature.mkString
-      } map { meth ⇒
-        meth.getParameterNames()
-      }
-    } catch { case j: JavaModelException ⇒ None }
-  }
+
   private def findMethodParams(m: MethodBinding, binFunc: ReferenceBinding ⇒ Option[Array[String]]): Option[Array[String]] = {
     val erasure = m.declaringClass.erasure();
     erasure match {

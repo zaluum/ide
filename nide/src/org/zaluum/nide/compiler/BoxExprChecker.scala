@@ -53,10 +53,10 @@ trait BoxExprChecker extends CheckerPart {
         port.tpe = scope.getJavaType(tpe)
         vs.ports += (port.name -> port)
       }
-      def doApply(m: MethodBinding, annotation: AnnotationBinding) {
+      def doApply(m: MethodBinding) {
         hasApply = true
         vs.info = m.selector.mkString
-        val argumentNames = BoxExprChecker.annotatedParameters(m, annotation)
+        val argumentNames = getApplyAnnotation(m).flatMap(BoxExprChecker.annotatedParameters(m, _))
         val helpers = BoxExprChecker.helperNames(m, scope)
         val nums = BoxExprChecker.numericNames(m)
         for ((p, i) ← m.parameters zipWithIndex) {
@@ -94,12 +94,17 @@ trait BoxExprChecker extends CheckerPart {
     }
     // find apply
     val engine = ZaluumCompletionEngineScala.engineFor(scope)
-    val allMethods = ZaluumCompletionEngineScala.allMethods(engine, scope, r, static = false)
+    val m = vs.getStr(BoxExprType.signatureSymbol) match {
+      // look specified method
+      case Some(muid) ⇒ Signatures.findMethod(c, scope, muid, false)
+      // fall back to @apply
+      case None ⇒
+        ZaluumCompletionEngineScala.allMethods(engine, scope, r, static = false)
+          .find { m ⇒ getApplyAnnotation(m).isDefined }
+    }
+    m foreach { doApply }
+    // output fields
     val allFields = ZaluumCompletionEngineScala.allFields(engine, scope, r, static = false)
-    allMethods
-      .map { m ⇒ (m, getApplyAnnotation(m)) }
-      .find { case (m, a) ⇒ a.isDefined }
-      .foreach { case (m, a) ⇒ doApply(m, a.get) }
     for (f ← allFields; if f.isPublic && !f.isStatic) processField(f)
 
     vs.isVisual = visual
