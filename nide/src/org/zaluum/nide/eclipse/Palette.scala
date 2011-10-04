@@ -84,7 +84,7 @@ object Palette {
   val portsPkg = "<ports>"
   private def portToProxy(port: PortDir) = PaletteEntry(
     Name(portsPkg + "." + port.str),
-    None, false, None, None, false)
+    None, None, false, None, None, false)
   val InEntry = portToProxy(In)
   val OutEntry = portToProxy(Out)
   val ShiftEntry = portToProxy(Shift)
@@ -99,6 +99,7 @@ object Palette {
       PaletteEntry(
         classname,
         Some(m.getElementName + m.getSignature),
+        None,
         Flags.isStatic(m.getFlags),
         None,
         None,
@@ -107,6 +108,7 @@ object Palette {
     if (methodEntries.isEmpty)
       Array(PaletteEntry(
         classname,
+        None,
         None,
         false,
         None,
@@ -122,10 +124,8 @@ object Palette {
         val node = xml.XML.load(file)
         var entries = Buffer[PaletteEntry]()
         for (entry ← node.child) {
-          entry match {
-            case <entry/> ⇒ processEntry(entry).foreach { entries += _ }
-            case _        ⇒
-          }
+          if (entry.label == "entry")
+            processEntry(entry).foreach { entries += _ }
         }
         entries.toList
       } catch {
@@ -151,7 +151,10 @@ object Palette {
       val static = (entry \ "@static").text.trim.toLowerCase() == "true"
       val imagePath = textOption((entry \ "@image").text)
       val template = (entry \ "@template").text.trim.toLowerCase() == "true"
-      Some(PaletteEntry(className.get, muid, static, imagePath, name, template))
+      val fieldsSeq = (entry \ "field").map { _.text.trim }
+      val fields = if (fieldsSeq.isEmpty) None else Some(fieldsSeq.toList)
+      val p = PaletteEntry(className.get, muid, fields, static, imagePath, name, template)
+      Some(p)
     }
   }
   /*  def main(args: Array[String]) {
@@ -167,6 +170,7 @@ object Palette {
 case class PaletteEntry(
     className: Name,
     methodUID: Option[String],
+    fields: Option[List[String]],
     static: Boolean,
     imagePath: Option[String],
     name: Option[String] = None,

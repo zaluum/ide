@@ -363,7 +363,7 @@ object Param {
   def apply(key: Name, value: String): Param = Param(key, List(value))
 }
 case class Param(key: Name, values: List[String]) extends SymbolTree[ParamDecl] {
-  def valueStr = values.mkString
+  def valueStr = values.mkString(", ")
 }
 
 case class LabelDesc(description: String, pos: Vector2)
@@ -373,15 +373,19 @@ object ValDef {
     val methodP = Param(InvokeStaticExprType.signatureSymbol.fqName, methodUID)
     ValDef(name, InvokeStaticExprType.fqName, dst, None, List(typeP, methodP), Some(LabelDesc(label, Vector2(0, 0))), None, None)
   }
-  def emptyValDefBoxExpr(name: Name, dst: Point, label: String, className: String) = {
+  def emptyValDefBoxExpr(name: Name, dst: Point, label: String, className: String, method: Option[String] = None, fields: Option[List[String]] = None) = {
     val p = Param(BoxExprType.typeSymbol.fqName, className)
-    ValDef(name, BoxExprType.fqName, dst, None, List(p), Some(LabelDesc(label, Vector2(0, 0))), None, None)
+    val m = method.map(Param(BoxExprType.signatureSymbol.fqName, _))
+    val f = fields.map(Param(BoxExprType.fieldsSymbol.fqName, _))
+    val params = List(p) ++ m ++ f
+    ValDef(name, BoxExprType.fqName, dst, None, params, Some(LabelDesc(label, Vector2(0, 0))), None, None)
   }
   def emptyValDef(name: Name, tpeName: Name, dst: Point) =
     ValDef(name, tpeName, dst, None, List(), None, None, None)
 
   def emptyValDef(name: Name, tpeName: Name, dst: Point, label: String) =
     ValDef(name, tpeName, dst, None, List(), Some(LabelDesc(label, Vector2(0, 0))), None, None)
+
   def emptyValDef(name: Name, tpeName: Name) =
     ValDef(name, tpeName, Point(0, 0), None, List(), None, None, None)
 }

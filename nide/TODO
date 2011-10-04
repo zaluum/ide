@@ -1,9 +1,10 @@
 Agenda
 
 	necessari
+	- xml imatges 
 	- human readable signature label provider
-	- nova paleta .xml
-	- propietats: canviar nom box, 
+	- propietats: canviar nom box
+	- llibreria VISA 
 	- llibreria plot
 	- instanciació Swing amb parametres constructors
 	- configurador Plot (pensar Plot, chart,etc)

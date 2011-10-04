@@ -9,12 +9,16 @@ import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding
 import org.zaluum.nide.utils.JDTUtils.aToString
 import org.zaluum.nide.utils.JDTUtils.stringToA
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
+import scala.collection.mutable.Buffer
 
 trait BoxExprChecker extends CheckerPart {
   self: OOChecker ⇒
   var scope: ZaluumClassScope = _
   def checkBoxExpr(vs: ValSymbol, c: ClassJavaType) {
     scope = scope(vs)
+    val v = vs.decl
+    val r = c.binding
+    val engine = ZaluumCompletionEngineScala.engineFor(scope)
     var hasApply = false
     lazy val ZComponent = scope.lookupType(Name(classOf[java.awt.Component].getName)).get
     type WithGetAnnotations = { def getAnnotations(): Array[AnnotationBinding] }
@@ -43,73 +47,92 @@ trait BoxExprChecker extends CheckerPart {
         getAnnotation(o, classOf[org.zaluum.annotation.Apply])
       def canBeApply(m: MethodBinding) =
         !m.isStatic && !m.isAbstract && m.isPublic
-      def processField(f: FieldBinding) {
-        val fname = f.name.mkString
-        if (getAnnotation(f, classOf[org.zaluum.annotation.Out]).isDefined)
-          createPort(Name(fname), f.`type`, Out, field = true)
-      }
       def createPort(name: Name, tpe: TypeBinding, dir: PortDir, field: Boolean = false, helperName: Option[Name] = None) {
         val port = new PortSymbol(vs, name, helperName, Point(0, 0), dir, field)
         port.tpe = scope.getJavaType(tpe)
         vs.ports += (port.name -> port)
       }
-      def doApply(m: MethodBinding) {
-        hasApply = true
-        vs.info = m.selector.mkString
-        val argumentNames = getApplyAnnotation(m).flatMap(BoxExprChecker.annotatedParameters(m, _))
-        val helpers = BoxExprChecker.helperNames(m, scope)
-        val nums = BoxExprChecker.numericNames(m)
-        for ((p, i) ← m.parameters zipWithIndex) {
-          val (name, hName) = argumentNames match {
-            case Some(l) ⇒ (l(i), None)
-            case None ⇒ helpers match {
-              case Some(h) ⇒ (nums(i), Some(h(i)))
-              case None    ⇒ (nums(i), None)
-            }
-          }
-          createPort(Name(name), p, In, helperName = hName.map { Name(_) })
+      def doMethods() {
+        // find apply
+        val m = vs.getStr(BoxExprType.signatureSymbol) match {
+          // look specified method
+          case Some(muid) ⇒ Signatures.findMethod(c, scope, muid, false)
+          // fall back to @apply
+          case None ⇒
+            ZaluumCompletionEngineScala.allMethods(engine, scope, r, static = false)
+              .find { m ⇒ getApplyAnnotation(m).isDefined }
         }
-        m.returnType match {
-          case TypeBinding.VOID ⇒ //skip return 
-          case r                ⇒ createPort(Name(m.selector.mkString), r, Out)
+        m foreach { m ⇒
+          hasApply = true
+          vs.info = m.selector.mkString
+          val argumentNames = getApplyAnnotation(m).flatMap(BoxExprChecker.annotatedParameters(m, _))
+          val helpers = BoxExprChecker.helperNames(m, scope)
+          val nums = BoxExprChecker.numericNames(m)
+          for ((p, i) ← m.parameters zipWithIndex) {
+            val (name, hName) = argumentNames match {
+              case Some(l) ⇒ (l(i), None)
+              case None ⇒ helpers match {
+                case Some(h) ⇒ (nums(i), Some(h(i)))
+                case None    ⇒ (nums(i), None)
+              }
+            }
+            createPort(Name(name), p, In, helperName = hName.map { Name(_) })
+          }
+          m.returnType match {
+            case TypeBinding.VOID ⇒ //skip return 
+            case r                ⇒ createPort(Name(m.selector.mkString), r, Out)
+          }
         }
       }
-
-    val r = c.binding
-    // configurer
-    val boxAnnotation = getAnnotation(r, classOf[org.zaluum.annotation.Box])
-    boxAnnotation foreach { a ⇒
-      a.getElementValuePairs().find(
-        _.getName().mkString == "configurer").map(_.getValue()) match {
-          case Some(t: TypeBinding) ⇒ scope.getJavaType(t) match {
-            case Some(c: ClassJavaType) ⇒
-              scope.lookupType(Name(classOf[org.zaluum.basic.BoxConfigurer].getName)) foreach { conf ⇒
-                if (c.binding.isCompatibleWith(conf.binding))
-                  vs.configurer = Some(c)
+      def doFields() {
+        // FIELDS
+        val allFields = ZaluumCompletionEngineScala.allFields(engine, scope, r, static = false)
+        val outs = Buffer[FieldBinding]()
+        vs.getList(BoxExprType.fieldsSymbol) match {
+          case Some(fieldNames) ⇒
+            for (str ← fieldNames) {
+              allFields.find(_.name.mkString == str) match {
+                case Some(f) ⇒ outs += f
+                case None    ⇒ error("Cannot find output field " + str, v)
               }
-            case _ ⇒
-          }
-          case _ ⇒
+            }
+            outs ++= allFields.filter(f ⇒ fieldNames.contains(f.name.mkString))
+          case None ⇒
         }
-    }
-    // find apply
-    val engine = ZaluumCompletionEngineScala.engineFor(scope)
-    val m = vs.getStr(BoxExprType.signatureSymbol) match {
-      // look specified method
-      case Some(muid) ⇒ Signatures.findMethod(c, scope, muid, false)
-      // fall back to @apply
-      case None ⇒
-        ZaluumCompletionEngineScala.allMethods(engine, scope, r, static = false)
-          .find { m ⇒ getApplyAnnotation(m).isDefined }
-    }
-    m foreach { doApply }
-    // output fields
-    val allFields = ZaluumCompletionEngineScala.allFields(engine, scope, r, static = false)
-    for (f ← allFields; if f.isPublic && !f.isStatic) processField(f)
-
+        for (
+          f ← allFields;
+          if (getAnnotation(f, classOf[org.zaluum.annotation.Out]).isDefined) &&
+            !outs.contains(f)
+        ) outs += f
+        for (f ← outs) {
+          if (f.isPublic && !f.isStatic)
+            createPort(Name(f.name.mkString), f.`type`, Out, field = true)
+          else error("Output field " + f.name.mkString + " must be visible and non static", v)
+        }
+      }
+      def doConfigurer() {
+        // configurer
+        val boxAnnotation = getAnnotation(r, classOf[org.zaluum.annotation.Box])
+        boxAnnotation foreach { a ⇒
+          a.getElementValuePairs().find(
+            _.getName().mkString == "configurer").map(_.getValue()) match {
+              case Some(t: TypeBinding) ⇒ scope.getJavaType(t) match {
+                case Some(c: ClassJavaType) ⇒
+                  scope.lookupType(Name(classOf[org.zaluum.basic.BoxConfigurer].getName)) foreach { conf ⇒
+                    if (c.binding.isCompatibleWith(conf.binding))
+                      vs.configurer = Some(c)
+                  }
+                case _ ⇒
+              }
+              case _ ⇒
+            }
+        }
+      }
+    doMethods()
+    doFields()
+    doConfigurer()
     vs.isVisual = visual
-    val v = vs.decl
-    if (!hasApply && !visual) {
+    if (!hasApply && !vs.isVisual) {
       vs.isExecutable = false
       error("Class " + v.typeName.str + " must be visual (extend java.awt.Component) or be marked as @Box and have an @Apply method", v)
     }

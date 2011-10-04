@@ -7,6 +7,7 @@ import org.zaluum.nide.zge.TextParamProperty
 import org.zaluum.nide.zge.ConstructorParamProperty
 import org.zaluum.nide.zge.MethodParamProperty
 import org.zaluum.nide.zge.FieldParamProperty
+import org.zaluum.nide.zge.TextListParamProperty
 
 sealed trait ExprType extends Type with PortsSymbol with PropertySourceType {
   def matchingClass: Class[_]
@@ -97,11 +98,10 @@ object BoxExprType extends StaticExprType(classOf[org.zaluum.expr.BoxExpr]) with
   val fieldsSymbol = new ParamDecl(Name("#Fields"))
   val constructorParamsDecl = new ParamDecl(Name("#Constructor values"))
   val constructorTypesDecl = new ParamDecl(Name("#Constructor types"))
-
   addParam(fieldsSymbol)
   addParam(constructorParamsDecl)
   addParam(constructorTypesDecl)
-
+  props ::= ((c: Controller, v: ValDef) ⇒ new TextListParamProperty(c, fieldsSymbol, v))
   def signatureProp(c: Controller, v: ValDef) =
     new MethodParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), false)
   override def properties(controller: Controller, valDef: ValDef) = {

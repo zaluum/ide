@@ -193,7 +193,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             } else if (entry.static)
               newVal = ValDef.emptyValStaticInvokeExpr(name, dst, label, entry.className.str, entry.methodUID.getOrElse(""))
             else
-              newVal = ValDef.emptyValDefBoxExpr(name, dst, label, entry.className.str)
+              newVal = ValDef.emptyValDefBoxExpr(
+                name, dst, label, entry.className.str,
+                method = entry.methodUID, fields = entry.fields)
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
               connections = transformTrees(b.connections),

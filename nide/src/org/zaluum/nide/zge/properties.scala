@@ -233,6 +233,16 @@ class TextParamProperty(val c: Controller, val p: ParamDecl, val v: ValDef)
     extends ParamProperty {
   def descriptor: PropertyDescriptor = new TextPropertyDescriptor(this, p.name.str)
 }
+
+class TextListParamProperty(c: Controller, p: ParamDecl, v: ValDef)
+    extends TextParamProperty(c, p, v) {
+  override def set(value: AnyRef) = {
+    val l = value.toString.split(",").map(_.trim).filter(_ != "").toList
+    c.exec(
+      if (l.isEmpty) v.removeParams(key)
+      else v.addOrReplaceParam(Param(key, l)))
+  }
+}
 class ConstructorParamProperty(
     c: Controller,
     p: ParamDecl,
