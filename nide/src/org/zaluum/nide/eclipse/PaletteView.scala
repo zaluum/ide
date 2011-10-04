@@ -1,9 +1,8 @@
 package org.zaluum.nide.eclipse
 
-import scala.collection.mutable.Buffer
+import java.lang.Object
 
 import org.eclipse.core.runtime.jobs.Job
-import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.core.runtime.Status
 import org.eclipse.jdt.core.IJavaElementDelta.F_ADDED_TO_CLASSPATH
 import org.eclipse.jdt.core.IJavaElementDelta.F_ARCHIVE_CONTENT_CHANGED
@@ -25,26 +24,21 @@ import org.eclipse.jface.viewers.IStructuredSelection
 import org.eclipse.jface.viewers.ITreeContentProvider
 import org.eclipse.jface.viewers.SelectionChangedEvent
 import org.eclipse.jface.viewers.StructuredSelection
-import org.eclipse.jface.viewers.{ TreeViewer ⇒ JTreeViewer }
+import org.eclipse.jface.viewers.{TreeViewer => JTreeViewer}
 import org.eclipse.jface.viewers.TreeViewerColumn
-import org.eclipse.jface.viewers.{ Viewer ⇒ JViewer }
+import org.eclipse.jface.viewers.{Viewer => JViewer}
 import org.eclipse.jface.viewers.ViewerSorter
 import org.eclipse.swt.dnd.DND
 import org.eclipse.swt.dnd.DragSource
 import org.eclipse.swt.dnd.DragSourceAdapter
 import org.eclipse.swt.dnd.DragSourceEvent
-import org.eclipse.swt.dnd.TextTransfer
 import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Label
 import org.eclipse.swt.SWT
 import org.eclipse.ui.IEditorPart
 import org.eclipse.ui.IWorkbenchPart
-import org.zaluum.nide.compiler.In
-import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.compiler.Out
 import org.zaluum.nide.compiler.PortDir
-import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.utils.Utils
 
 object PaletteView {
@@ -98,15 +92,12 @@ class PaletteView extends PageBookView {
 }
 
 /* PAGE */
-object PalettePage {
-}
-
 class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends PalettePageDND with PalettePageCoreListener {
   lazy val viewer = new JTreeViewer(paletteView.pageBook, SWT.H_SCROLL | SWT.V_SCROLL);
   implicit def display = viewer.getControl.getDisplay
   def control = viewer.getControl
   val imgFactory = new ImageFactory(zproject.imageFactory, viewer.getControl)
-  var palette: Palette = null
+  val palette: Palette = new Palette(zproject.jProject)
   viewer.setContentProvider(new PaletteFolderProvider());
   {
     val a = new TreeViewerColumn(viewer, SWT.LEFT)
@@ -147,16 +138,14 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
   reload()
 
   // Methods 
-  def load(monitor: IProgressMonitor) = PalettePage.this.synchronized {
-    palette = new Palette(zproject.jProject, monitor)
-  }
   def reload() = {
     val j = Utils.job("Update palette") { monitor ⇒
-      load(monitor)
+      PalettePage.this.synchronized {
+        palette.reload(monitor)
+      }
       if (!control.isDisposed)
         Utils.inSWT {
           PalettePage.this.synchronized {
-            viewer.setInput(palette)
             viewer.refresh()
           }
         }
@@ -202,24 +191,33 @@ trait PalettePageCoreListener {
   object coreListener extends IElementChangedListener {
     def elementChanged(event: ElementChangedEvent) {
       if (event.getType == ElementChangedEvent.POST_CHANGE)
-        processDeltaSimple(event.getDelta)
+        if (processDeltaSimple(event.getDelta))
+          reload()
     }
   }
   JavaCore.addElementChangedListener(coreListener)
-  def processDeltaSimple(delta: IJavaElementDelta) {
+  def processDeltaSimple(delta: IJavaElementDelta): Boolean = {
     val interestingFlags = F_ADDED_TO_CLASSPATH | F_CLASSPATH_CHANGED |
       F_ARCHIVE_CONTENT_CHANGED | F_RESOLVED_CLASSPATH_CHANGED |
       F_SUPER_TYPES | F_REORDER
     delta.getKind match {
-      case IJavaElementDelta.ADDED   ⇒ reload()
-      case IJavaElementDelta.REMOVED ⇒ reload()
+      case IJavaElementDelta.ADDED   ⇒ true
+      case IJavaElementDelta.REMOVED ⇒ true
       case IJavaElementDelta.CHANGED ⇒
         delta.getElement match {
-          case cu: ICompilationUnit if (delta.getFlags & F_PRIMARY_WORKING_COPY) == 0 ⇒ reload()
-          case _ if (delta.getFlags & interestingFlags) != 0 ⇒ reload()
-          case _ ⇒ for (d ← delta.getAffectedChildren) processDeltaSimple(d)
+          case cu: ICompilationUnit if (delta.getFlags & F_PRIMARY_WORKING_COPY) == 0 ⇒ true
+          case _ if (delta.getFlags & interestingFlags) != 0                          ⇒ true
+          case e ⇒
+            val res = delta.getResourceDeltas()
+            val affectedMETA = if (res != null) {
+              res.exists { ird ⇒
+                ird.getResource().getName == "META-INF"
+              }
+            } else false
+            affectedMETA ||
+              delta.getAffectedChildren.exists(processDeltaSimple(_))
         }
-      case _ ⇒
+      case _ ⇒ false
     }
   }
   def dispose() {

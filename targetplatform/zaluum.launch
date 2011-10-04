@@ -12,7 +12,7 @@
 <stringAttribute key="configLocation" value="${workspace_loc}/.metadata/.plugins/org.eclipse.pde.core/zaluum"/>
 <booleanAttribute key="default" value="false"/>
 <booleanAttribute key="includeOptional" value="false"/>
-<stringAttribute key="location" value="${workspace_loc}/../runtime-zaluum"/>
+<stringAttribute key="location" value="${workspace_loc}/../runtime-workspace"/>
 <mapAttribute key="org.eclipse.debug.core.environmentVariables">
 <mapEntry key="UBUNTU_MENUPROXY" value="0"/>
 </mapAttribute>
