@@ -16,8 +16,39 @@ import org.objectweb.asm.signature.SignatureReader
 import org.objectweb.asm.signature.SignatureVisitor
 import scala.collection.mutable.Buffer
 import org.zaluum.nide.compiler.primitives
+import org.eclipse.jdt.internal.compiler.lookup.TypeBinding
+import org.eclipse.jdt.internal.compiler.lookup.ArrayBinding
+import org.eclipse.jdt.internal.compiler.lookup.BaseTypeBinding
+import java.lang.reflect.Constructor
 
 object MethodBindingUtils {
+  def typeToClass(t: TypeBinding, cl: ClassLoader): Option[Class[_]] = {
+    if (t.isValidBinding) {
+      try {
+        t.erasure match {
+          case a: ArrayBinding ⇒
+            Some(Class.forName(a.constantPoolName.mkString.replace("/", "."), false, cl))
+          case b: BaseTypeBinding ⇒
+            primitives.fromChar(b.constantPoolName()(0)).loadClass(cl)
+          case o: ReferenceBinding ⇒
+            val name = o.compoundName.map(_.mkString).mkString(".")
+            Some(Class.forName(name, false, cl))
+        }
+      } catch { case e: ClassNotFoundException ⇒ e.printStackTrace; None }
+    } else None
+  }
+  def getConstructor(cons: MethodBinding, cl: ClassLoader): Option[Constructor[_]] = {
+    val paramClasses = cons.parameters.map(typeToClass(_, cl))
+    if (paramClasses.forall(_.isDefined)) {
+      typeToClass(cons.declaringClass, cl) flatMap { clazz ⇒
+        val arr = paramClasses.map(_.get).toArray
+        try {
+          Some(clazz.getConstructor(arr: _*))
+        } catch { case e: NoSuchMethodException ⇒ None }
+      }
+    } else None
+  }
+
   def findMethodParamNames(m: MethodBinding, javaProject: IJavaProject) = {
     val e = m.declaringClass.erasure()
     val tpeName = e.qualifiedPackageName.mkString + "." + e.qualifiedSourceName().mkString

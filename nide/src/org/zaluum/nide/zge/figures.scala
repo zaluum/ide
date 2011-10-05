@@ -319,11 +319,21 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
         case None    ⇒ Point(0, 0)
       }
     }
-      // FIXME constructors
-      def instance(cl: Class[_]) = {
-        try {
-          Some(cl.newInstance().asInstanceOf[java.awt.Component])
-        } catch { case e ⇒ e.printStackTrace; None }
+      def instance(cl: Class[_]) = try {
+        valSym.constructor match {
+          case Some(cons) ⇒
+            MethodBindingUtils.getConstructor(cons, cloader) map { constructor ⇒
+              val pars = valSym.constructorParams.flatMap { p ⇒
+                if (p.valid) Some(p.parse.asInstanceOf[AnyRef])
+                else None
+              }
+              constructor.newInstance(pars.toArray: _*).asInstanceOf[java.awt.Component]
+            }
+          case None ⇒
+            Some(cl.newInstance().asInstanceOf[java.awt.Component])
+        }
+      } catch {
+        case e: Exception ⇒ None
       }
 
     component = valDef.sym.tpe match {
