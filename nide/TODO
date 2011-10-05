@@ -6,7 +6,6 @@ Agenda
 	- propietats: canviar nom box
 	- llibreria VISA 
 	- llibreria plot
-	- instanciació Swing amb parametres constructors
 	- configurador Plot (pensar Plot, chart,etc)
 	- acabar swing intenum values
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)

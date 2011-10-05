@@ -1,0 +1,20 @@
+visa-ni -> gcc -E visa.h > ../visapre.h
+
+remove # and all headers before visa
+remove lines referring to ViVAList (var args not supported)
+remove ((__attr__))
+add #defines of constants
+
+swig -Wall -java -outdir ../src/org/zaluum/visa/swig -o swig-c/visa_wrap.c -package org.zaluum.visa.swig visa.i
+
+Linux
+gcc -c visa_wrap.c -I/usr/lib/jvm/java-6-sun/include -I/usr/lib/jvm/java-6-sun/include/linux/ -I..
+
+Windows MinGW
+visa-ni -> gcc -E visa.h > ../visapre.h
+$ /c/Documents\ and\ Settings/upc/Mis\ documentos/swigwin-2.0.4/swig -Wall -jav
+a -outdir ../src/org/zaluum/visa/swig -o swig-c/visa_wrap.c -package org.zaluum
+.visa.swig visa.i
+$ gcc -c visa_wrap.c -I/c/Archivos\ de\ programa/IVI\ Foundation/VISA/WinNT/include -I/c/Archivos\ de\ programa/Java/jdk1.6.0_12/include -I/c/Archivos\ de\ programa/Java/jdk1.6.0_12/include/win32
+$ gcc -shared visa_wrap.o /c/Archivos\ de\ programa/IVI\ Foundation/VISA/WinNT/lib/msc/visa32.lib -mno-cygwin -Wl,--add-stdcall-alias -o jvisa32.dll
+
