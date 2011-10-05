@@ -1,0 +1,2 @@
+ MINGW
+ java -jar /w/Baixades/jnaerator-0.9.7.jar -library visa32 visapre.h
