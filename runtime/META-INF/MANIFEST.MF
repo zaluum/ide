@@ -18,5 +18,11 @@ Require-Bundle: jchart2d;bundle-version="1.0.0",
  org.apache.commons.math;bundle-version="2.2.0",
  org.eclipse.swt,
  org.eclipse.jface,
- org.eclipse.equinox.common;bundle-version="3.6.0"
+ org.eclipse.equinox.common;bundle-version="3.6.0",
+ org.eclipse.core.databinding,
+ org.eclipse.core.databinding.beans,
+ org.eclipse.core.databinding.observable,
+ org.eclipse.core.databinding.property,
+ org.eclipse.jface.databinding,
+ com.ibm.icu
 
