@@ -249,7 +249,8 @@ class LiteralFigure(val container: ContainerItem) extends RectangleFigure with T
   override def updateMe {
     super.updateMe()
     updateText()
-    setForegroundColor(Colorizer.color(param.map(_.sym.tpe).getOrElse(null)))
+    val tpe = LiteralExprType.outPort(valDef.sym).tpe
+    setForegroundColor(Colorizer.color(tpe))
   }
   def blink(c: Boolean) {
     this.setXOR(c)

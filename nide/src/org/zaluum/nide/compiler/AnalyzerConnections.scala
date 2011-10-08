@@ -115,7 +115,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         error("Invalid port type " + tpeName, blame)
       for ((from, blame) ← bl.connections.connectedFrom.get(pi)) {
         if (from.missing || pi.missing) {
-          errorConnection("Connection to missing port ", blame)
+          errorConnection("Connection to missing port " + from.name.str, blame)
         } else if (from.tpe == None || pi.tpe == None) {
           bl.connections.markAsBad(blame)
           /*ignore reported as port type not found*/ } else if (!checkAssignmentPossible(from.tpe, pi.tpe)) {

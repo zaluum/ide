@@ -84,7 +84,7 @@ class AnalyzerParallelism(bl: BlockSymbol, a: Analyzer) {
       if (pi.internalStorage != StorageValField) {
         val isField = pi.portSymbol.map(_.isField).getOrElse(false)
         if (isField) {
-          pi.internalStorage == StorageValField
+          pi.internalStorage = StorageValField
         } else {
           val connectedToPaths =
             bl.connections.outgoingConnections(pi).map { _.valSymbol.execPath }

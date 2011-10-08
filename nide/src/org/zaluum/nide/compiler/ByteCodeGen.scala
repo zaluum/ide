@@ -17,7 +17,7 @@ object ByteCodeGen {
     cw.visitSource(bc.source, "")
     cw.visitAnnotation(Name(classOf[Box].getName).descriptor, true).visitEnd
     if (bc.withSerializationField) {
-      cw.visitField(ACC_PRIVATE + ACC_STATIC + ACC_FINAL, "serialVersionUID", bc.name.descriptor, "J", 1L)
+      cw.visitField(ACC_PRIVATE + ACC_STATIC + ACC_FINAL, "serialVersionUID", "J", null, 1L)
     }
     bc.contents foreach { emit(_) }
     cw.visitEnd()

@@ -1,6 +1,7 @@
 Agenda
 
 	necessari
+	- despres de crear una box, quan s'edita l'etiqueta, fer que es pugui connectar els ports cancelant l'edició
 	- xml imatges 
 	- human readable signature label provider
 	- propietats: canviar nom box

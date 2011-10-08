@@ -258,7 +258,9 @@ class ConstructorDecl(val params: List[ParamDecl]) {
   }
 }
 
-class PortInstance(val name: Name, val helperName: Option[Name], val valSymbol: ValSymbol, val dir: PortDir, val portSymbol: Option[PortSymbol] = None) extends TypedSymbol[JavaType] {
+class PortInstance(val name: Name, val helperName: Option[Name],
+                   val valSymbol: ValSymbol, val dir: PortDir,
+                   var portSymbol: Option[PortSymbol] = None) extends TypedSymbol[JavaType] {
   var missing = false
   def isField = portSymbol.map(_.isField).getOrElse(false)
   var internalStorage: StorageType = StorageLocal
@@ -353,16 +355,18 @@ class ValSymbol(val owner: BlockSymbol, val name: Name)
   def fqName = name
   def semfqName = Name(fqName.str + "_sem")
   def javaType = classinfo
-  private def createOutsidePs(name: Name, dir: Boolean, helperName: Option[Name] = None) = {
+  private def createOutsidePs(name: Name, dir: Boolean,
+                              helperName: Option[Name] = None,
+                              port: Option[PortSymbol] = None) = {
     val pdir = if (dir) In else Out
-    val pi = new PortInstance(name, helperName, this, pdir)
+    val pi = new PortInstance(name, helperName, this, pdir, port)
     val ps = new PortSide(pi, dir, false)
     portInstances ::= pi
     portSides ::= ps
     ps
   }
-  def createOutsideIn(name: Name, helperName: Option[Name] = None) = createOutsidePs(name, true, helperName)
-  def createOutsideOut(name: Name, helperName: Option[Name] = None) = createOutsidePs(name, false, helperName)
+  def createOutsideIn(name: Name, helperName: Option[Name] = None, port: Option[PortSymbol] = None) = createOutsidePs(name, true, helperName, port)
+  def createOutsideOut(name: Name, helperName: Option[Name] = None, port: Option[PortSymbol] = None) = createOutsidePs(name, false, helperName, port)
   def findPortInstance(p: PortSymbol): Option[PortInstance] = {
     portInstances.find(_.portSymbol == Some(p))
   }

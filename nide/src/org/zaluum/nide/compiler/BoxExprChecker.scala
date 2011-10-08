@@ -22,22 +22,6 @@ trait BoxExprChecker extends CheckerPart {
     var hasApply = false
     lazy val ZComponent = scope.lookupType(Name(classOf[java.awt.Component].getName)).get
     type WithGetAnnotations = { def getAnnotations(): Array[AnnotationBinding] }
-      def createPortInstances(ports: Iterable[PortSymbol], vsym: ValSymbol, inside: Boolean, outside: Boolean) = {
-        vsym.portInstances :::= (for (p ← ports; if p.isInstanceOf[PortSymbol]) yield {
-          val pi = new PortInstance(p.name, p.helperName, vsym, p.dir, Some(p))
-          pi
-        }).toList;
-        vsym.portSides :::= (for (pi ← vsym.portInstances; ps ← pi.portSymbol) yield {
-            def define(fromInside: Boolean) = ps.dir match {
-              case In    ⇒ List(new PortSide(pi, true, fromInside))
-              case Out   ⇒ List(new PortSide(pi, false, fromInside))
-              case Shift ⇒ List(new PortSide(pi, true, fromInside), new PortSide(pi, false, fromInside))
-            }
-          val i = if (inside) define(true) else List()
-          val o = if (outside) define(false) else List()
-          i ::: o
-        }).flatMap(a ⇒ a);
-      }
       def visual = c.binding.isCompatibleWith(ZComponent.binding)
       def getAnnotation(o: WithGetAnnotations, c: Class[_]): Option[AnnotationBinding] =
         o.getAnnotations.find { a ⇒
@@ -47,10 +31,19 @@ trait BoxExprChecker extends CheckerPart {
         getAnnotation(o, classOf[org.zaluum.annotation.Apply])
       def canBeApply(m: MethodBinding) =
         !m.isStatic && !m.isAbstract && m.isPublic
-      def createPort(name: Name, tpe: TypeBinding, dir: PortDir, field: Boolean = false, helperName: Option[Name] = None) {
-        val port = new PortSymbol(vs, name, helperName, Point(0, 0), dir, field)
-        port.tpe = scope.getJavaType(tpe)
-        vs.ports += (port.name -> port)
+      def createPort(name: Name, tpe: TypeBinding, dir: PortDir, field: Boolean, helperName: Option[Name] = None) {
+        val port = new PortSymbol(vs, name, None, Point(0, 0), dir, field)
+        vs.ports += (name -> port);
+        val ps = vs.portSides.find(p ⇒ p.name == name && p.pi.dir == dir) getOrElse {
+          if (dir == In)
+            vs.createOutsideIn(name, None, Some(port))
+          else
+            vs.createOutsideOut(name, None, Some(port))
+        }
+        ps.pi.portSymbol = Some(port)
+        ps.pi.tpe = scope.getJavaType(tpe)
+        port.tpe = ps.pi.tpe
+        ps.pi.missing = false
       }
       def doMethods() {
         // find apply
@@ -76,11 +69,11 @@ trait BoxExprChecker extends CheckerPart {
                 case None    ⇒ (nums(i), None)
               }
             }
-            createPort(Name(name), p, In, helperName = hName.map { Name(_) })
+            createPort(Name(name), p, In, false, helperName = hName.map { Name(_) })
           }
           m.returnType match {
             case TypeBinding.VOID ⇒ //skip return 
-            case r                ⇒ createPort(Name(m.selector.mkString), r, Out)
+            case r                ⇒ createPort(Name(m.selector.mkString), r, Out, false)
           }
         }
       }
@@ -106,7 +99,7 @@ trait BoxExprChecker extends CheckerPart {
         ) outs += f
         for (f ← outs) {
           if (f.isPublic && !f.isStatic)
-            createPort(Name(f.name.mkString), f.`type`, Out, field = true)
+            createPort(Name(f.name.mkString), f.`type`, Out, true)
           else error("Output field " + f.name.mkString + " must be visible and non static", v)
         }
       }
@@ -168,7 +161,7 @@ trait BoxExprChecker extends CheckerPart {
         case None ⇒ error(c.name.str + " has no parameter " + p.key.str, v)
       }
     }
-    createPortInstances(vs.ports.values, vs, false, true)
+    //createPortInstances(vs.ports.values, vs, false, true)
   }
 }
 object BoxExprChecker {

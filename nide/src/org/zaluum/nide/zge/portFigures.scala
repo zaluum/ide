@@ -15,6 +15,7 @@ import org.zaluum.nide.compiler.PortSymbol
 import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.Vector2
 import draw2dConversions._
+import org.zaluum.nide.compiler.PortInstance
 
 class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
   var size = Dimension(5, 5)
@@ -64,8 +65,21 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
   //setAlpha(50)
   setOutline(true)
 }
+trait PortFigureProperties extends Item with PropertySource {
+  def display = container.viewer.display
+  def updateProperties(pi: PortInstance) {
+    properties = pi.declOption match {
+      case Some(p) ⇒ List(
+        new PortTypeProperty(p, container.viewer.controller),
+        new PortNameProperty(p, container.viewer.controller))
+      case None ⇒ List()
+    }
+  }
+}
 
-abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure) extends RectangleFigure with OverlappedItem with HasPorts with RectFeedback {
+abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure)
+    extends RectangleFigure with OverlappedItem
+    with HasPorts with RectFeedback with PortFigureProperties {
   def dir: PortDir
   def myLayer = container.portsLayer
   val size = Dimension(openBox.getInsets.left, openBox.getInsets.left)
@@ -81,6 +95,7 @@ abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure) extends RectangleF
     setXOR(b)
   }
   protected def update(intPs: PortSide, extPs: PortSide, left: Boolean) {
+    updateProperties(intPs.pi)
     this.left = left
     setBackgroundColor(Colorizer.color(intPs.pi.tpe))
     setForegroundColor(if (dir == Shift) ColorConstants.yellow else ColorConstants.white)
@@ -116,9 +131,8 @@ class OpenPortFixedFigure(openBox: OpenBoxFigure) extends OpenPortBaseFigure(ope
 }
 
 abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) extends RectangleFigure
-    with TextEditFigure with Item with HasPorts with RectFeedback with PropertySource {
+    with TextEditFigure with Item with HasPorts with RectFeedback with PortFigureProperties {
   setLineWidthFloat(2)
-  def display = container.viewer.display
   def myLayer = container.layer
   def pos: MPoint
   def dir: PortDir
@@ -127,12 +141,7 @@ abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) 
   def imageFactory = container.viewer.zproject.imageFactory
   ports += port
   def update() {
-    properties = ps.pi.declOption match {
-      case Some(p) ⇒ List(
-        new PortTypeProperty(p, container.viewer.controller),
-        new PortNameProperty(p, container.viewer.controller))
-      case None ⇒ List()
-    }
+    updateProperties(ps.pi)
     updateText() // XXX super.update; updateText doesn't show text. Why?
     setForegroundColor(Colorizer.color(ps.pi.tpe))
     updateSize()
