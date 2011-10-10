@@ -3,7 +3,10 @@ package org.zaluum.widget.plot;
 import info.monitorenter.gui.chart.Chart2D;
 import info.monitorenter.gui.chart.Chart2D.ToolTipType;
 import info.monitorenter.gui.chart.IAxis;
+import info.monitorenter.gui.chart.IAxis.AxisTitle;
+import info.monitorenter.gui.chart.IAxisLabelFormatter;
 import info.monitorenter.gui.chart.axis.AAxis;
+import info.monitorenter.gui.chart.axis.AxisLinear;
 import info.monitorenter.gui.chart.axis.AxisLog10;
 import info.monitorenter.gui.chart.labelformatters.LabelFormatterNumber;
 import info.monitorenter.gui.chart.rangepolicies.RangePolicyFixedViewport;
@@ -24,7 +27,6 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.awt.SWT_AWT;
-import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -47,13 +49,10 @@ public class PlotComposite extends Composite {
 			return element == null ? "" : ((IAxis) element).getAxisTitle().getTitle();//$NON-NLS-1$
 		}
 	}
-
-	private Text formatText;
 	private Text scaleName;
 	private Text scaleMin;
 	private Text scaleMax;
 	public Chart2D chart;
-	private ComboViewer comboViewer;
 	private ComboViewer scalesComboViewer;
 	private Button scaleShowChk;
 	private Button scaleLogChk;
@@ -63,6 +62,7 @@ public class PlotComposite extends Composite {
 	private Button scaleGridMajor;
 	private PlotCompositePlotTab plotComposite;
 	private Button btnLegend;
+	private Text scaleFormat;
 
 	public void createAWTChart2d(Composite parent) {
 		Frame frame = SWT_AWT.new_Frame(parent);
@@ -76,6 +76,9 @@ public class PlotComposite extends Composite {
 		};
 		frame.add(panel);
 		chart = new Chart2D();
+		for (IAxis a: chart.getAxes()) {
+			a.setFormatter(new LabelFormatterDecimal());
+		}
 		panel.add(chart);
 		panel.validate();
 		parent.layout();
@@ -110,6 +113,7 @@ public class PlotComposite extends Composite {
 		TabFolder tabFolder = new TabFolder(this, SWT.NONE);
 		GridData gd_tabFolder = new GridData(SWT.FILL, SWT.CENTER, true, false,
 				1, 1);
+		gd_tabFolder.heightHint = 373;
 		gd_tabFolder.widthHint = 503;
 		tabFolder.setLayoutData(gd_tabFolder);
 
@@ -121,7 +125,7 @@ public class PlotComposite extends Composite {
 		grpBehaviour.setText("Behaviour");
 		grpBehaviour.setLayout(new GridLayout(2, false));
 		new Label(grpBehaviour, SWT.NONE);
-		
+
 		btnLegend = new Button(grpBehaviour, SWT.CHECK);
 		btnLegend.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -144,7 +148,6 @@ public class PlotComposite extends Composite {
 		tooltipCombo.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				System.out.println("ok");
 				switch (tooltipCombo.getSelectionIndex()) {
 				case -1:
 				case 0:
@@ -168,66 +171,6 @@ public class PlotComposite extends Composite {
 				false, 1, 1));
 		tooltipCombo.select(1);
 
-		TabItem tbtmFormat = new TabItem(tabFolder, SWT.NONE);
-		tbtmFormat.setText("Format");
-
-		Composite formatComposite = new Composite(tabFolder, SWT.NONE);
-		tbtmFormat.setControl(formatComposite);
-		formatComposite.setLayout(new GridLayout(2, false));
-
-		comboViewer = new ComboViewer(formatComposite, SWT.NONE);
-		comboViewer.setContentProvider(ArrayContentProvider.getInstance());
-		comboViewer.setLabelProvider(new AxisTitleLabelProvider());
-		comboViewer
-				.addPostSelectionChangedListener(new ISelectionChangedListener() {
-					@Override
-					public void selectionChanged(SelectionChangedEvent event) {
-						updateFormat();
-					}
-				});
-
-		Combo combo = comboViewer.getCombo();
-		combo.select(0);
-		combo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2,
-				1));
-
-		Label lblFormatString = new Label(formatComposite, SWT.NONE);
-		lblFormatString.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER,
-				false, false, 1, 1));
-		lblFormatString.setText("Format String");
-
-		formatText = new Text(formatComposite, SWT.BORDER);
-		formatText.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				IAxis a = (IAxis) ((IStructuredSelection) comboViewer
-						.getSelection()).getFirstElement();
-				if (a != null) {
-					LabelFormatterNumber number = new LabelFormatterNumber();
-					try {
-						number.setNumberFormat(new DecimalFormat(formatText
-								.getText()));
-						a.setFormatter(number);
-					} catch (Exception ex) {
-					}
-				}
-			}
-		});
-		GridData gd_formatText = new GridData(SWT.FILL, SWT.CENTER, true,
-				false, 1, 1);
-		gd_formatText.widthHint = 149;
-		formatText.setLayoutData(gd_formatText);
-
-		StyledText formatCheat = new StyledText(formatComposite, SWT.BORDER);
-		formatCheat.setEnabled(false);
-		formatCheat.setWrapIndent(1);
-		formatCheat
-				.setText("Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n\n");
-		formatCheat.setEditable(false);
-		GridData gd_formatCheat = new GridData(SWT.FILL, SWT.TOP, true, true,
-				2, 1);
-		gd_formatCheat.widthHint = 312;
-		formatCheat.setLayoutData(gd_formatCheat);
-
 		TabItem tbtmScales = new TabItem(tabFolder, SWT.NONE);
 		tbtmScales.setText("Scales");
 
@@ -243,7 +186,7 @@ public class PlotComposite extends Composite {
 				.addPostSelectionChangedListener(new ISelectionChangedListener() {
 					@Override
 					public void selectionChanged(SelectionChangedEvent event) {
-						updateScales();
+						refreshScales();
 					}
 				});
 		Combo scalesCombo = scalesComboViewer.getCombo();
@@ -265,7 +208,6 @@ public class PlotComposite extends Composite {
 				AAxis axis = getAxis(scalesComboViewer);
 				axis.getAxisTitle().setTitle(scaleName.getText());
 				scalesComboViewer.refresh();
-				comboViewer.refresh();
 			}
 		});
 		scaleName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false,
@@ -288,7 +230,12 @@ public class PlotComposite extends Composite {
 		scaleShowChk.setText("Show scale");
 
 		scaleLogChk = new Button(scalesCheckComposite, SWT.CHECK);
-		scaleLogChk.setEnabled(false);
+		scaleLogChk.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				syncLog();
+			}
+		});
 		scaleLogChk.setText("Log");
 
 		scaleInvertedChk = new Button(scalesCheckComposite, SWT.CHECK);
@@ -306,7 +253,7 @@ public class PlotComposite extends Composite {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				syncAuto();
-				updateScales();
+				refreshScales();
 			}
 
 		});
@@ -362,13 +309,59 @@ public class PlotComposite extends Composite {
 		scaleGridMajor = new Button(grpGrid, SWT.RADIO);
 		scaleGridMajor.addSelectionListener(gridListener);
 		scaleGridMajor.setText("Major ticks");
+		
+		Group grpFormat = new Group(scalesComposite, SWT.NONE);
+		grpFormat.setLayout(new GridLayout(2, false));
+		grpFormat.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		grpFormat.setText("Format");
+		new Label(grpFormat, SWT.NONE);
+		
+		scaleFormat = new Text(grpFormat, SWT.BORDER);
+		scaleFormat.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				syncFormat();
+			}
+		});
+		scaleFormat.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
 		TabItem tbtmPlot = new TabItem(tabFolder, SWT.NONE);
 		tbtmPlot.setText("Plot");
 
-		plotComposite = new PlotCompositePlotTab(tabFolder, SWT.NONE,chart);
+		plotComposite = new PlotCompositePlotTab(tabFolder, SWT.NONE, chart);
 		tbtmPlot.setControl(plotComposite);
+	}
 
+	protected void syncFormat() {
+		AAxis a = getAxis(scalesComboViewer);
+		if (a.getFormatter() instanceof LabelFormatterNumber) {
+			LabelFormatterNumber n = (LabelFormatterNumber) a.getFormatter();
+			n.setNumberFormat(new DecimalFormat(scaleFormat.getText()));
+		}		
+	}
+
+	protected void syncLog() {
+		AAxis a = getAxis(scalesComboViewer);
+		AAxis newAxis;
+		String oldTitle = a.getAxisTitle().getTitle();
+		if (scaleLogChk.getSelection())
+			newAxis = new AxisLog10();
+		else
+			newAxis = new AxisLinear();
+		int ibottom = chart.getAxesXBottom().indexOf(a);
+		if (ibottom != -1) {
+			chart.setAxisXBottom(newAxis, ibottom);
+		}else {
+			int ileft = chart.getAxesYLeft().indexOf(a);
+			if (ileft!=-1)
+				chart.setAxisYLeft(newAxis, ileft);
+		}
+		if (oldTitle!=null)
+			newAxis.setAxisTitle(new AxisTitle(oldTitle));
+		newAxis.setPaintGrid(a.isPaintGrid());
+		newAxis.setVisible(a.isVisible());
+		newAxis.setPaintGrid(a.isPaintGrid());
+		refresh(newAxis);
 	}
 
 	protected void syncGrid() {
@@ -391,21 +384,17 @@ public class PlotComposite extends Composite {
 			return or;
 		}
 	}
-
-	public void refresh() {
+	private void refresh(IAxis iAxis) {
 		plotComposite.refresh();
-		comboViewer.setInput(chart.getAxes().toArray());
 		scalesComboViewer.setInput(chart.getAxes().toArray());
-		StructuredSelection sel = new StructuredSelection(chart.getAxes()
-				.get(0));
-		if (comboViewer.getCombo().getSelectionIndex() == -1)
-			comboViewer.setSelection(sel);
+		StructuredSelection sel = new StructuredSelection(iAxis);
 		if (scalesComboViewer.getCombo().getSelectionIndex() == -1)
 			scalesComboViewer.setSelection(sel);
 		btnLegend.setSelection(chart.isPaintLabels());
-		updateFormat();
-		updateScales();
-
+		refreshScales();
+	}
+	public void refresh() {
+		refresh(chart.getAxes().get(0));
 	}
 
 	protected AAxis getAxis(ComboViewer viewer) {
@@ -424,7 +413,7 @@ public class PlotComposite extends Composite {
 		chart.setRequestedRepaint(true);
 	}
 
-	protected void updateScales() {
+	protected void refreshScales() {
 		AAxis axis = getAxis(scalesComboViewer);
 		Range range = axis.getRangePolicy().getRange();
 		scaleLogChk.setSelection(axis instanceof AxisLog10);
@@ -441,17 +430,11 @@ public class PlotComposite extends Composite {
 		scaleShowChk.setSelection(axis.isVisible());
 		scaleGridMajor.setSelection(axis.isPaintGrid());
 		scaleGridNone.setSelection(!axis.isPaintGrid());
-
-	}
-
-	private void updateFormat() {
-		AAxis a = (AAxis) ((IStructuredSelection) comboViewer.getSelection())
-				.getFirstElement();
-		formatText.setText(a == null ? "" : a.getFormatter().toString());
-	}
-
-	@Override
-	protected void checkSubclass() {
+		IAxisLabelFormatter formatter = axis.getFormatter();
+		if (formatter instanceof LabelFormatterDecimal) {
+			LabelFormatterDecimal d = (LabelFormatterDecimal)axis.getFormatter();
+			scaleFormat.setText(d.toPattern());
+		}
 	}
 
 }
