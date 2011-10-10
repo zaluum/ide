@@ -9,11 +9,12 @@ import info.monitorenter.gui.chart.axis.AxisLog10;
 import info.monitorenter.gui.chart.traces.painters.TracePainterFill;
 import info.monitorenter.gui.chart.traces.painters.TracePainterVerticalBar;
 
+import java.awt.BasicStroke;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class PlotConfiguration {
-
+	// FIXME escape strings
 	public static String javaScriptConfigure(Chart2D c) {
 		StringWriter stringWriter = new StringWriter();
 		PrintWriter p = new PrintWriter(stringWriter);
@@ -22,7 +23,7 @@ public class PlotConfiguration {
 		p.format("c.setUseAntialiasing(%b);\n", c.isUseAntialiasing());
 		doAxis(true, p,c);
 		doAxis(false,p,c);
-		p.format("var t = new Packages.info.monitorenter.gui.chart.traces.Trace2DLtd(100,\"%s\");\n", t.getName());
+		p.format("var t = new Packages.info.monitorenter.gui.chart.traces.Trace2DLtd(100,\"%s\");\n", StringEscapeUtils.escapeJavaScript(t.getName()));
 		p.format("t.setColor(new java.awt.Color(%d));\n", t.getColor().getRGB());
 		if (t.getTracePainters().size()==1) {
 			ITracePainter<?> painter = t.getTracePainters().iterator().next();
@@ -31,6 +32,20 @@ public class PlotConfiguration {
 			else 
 				p.format("t.setTracePainter(new Packages.%s());\n", painter.getClass().getName());
 			
+		}
+		
+		if (t.getStroke()!=null && t.getStroke() instanceof BasicStroke) {
+			BasicStroke b = (BasicStroke) t.getStroke();
+			float[] arr = b.getDashArray();
+			if (arr!=null) {
+				p.format("var dash = java.lang.reflect.Array.newInstance(java.lang.Float.TYPE,%d);\n", arr.length);
+				for (int i=0; i<arr.length;i++)
+					p.format("dash[%d]=%s;\n", i,""+arr[i]);
+			}else{
+				p.format("var dash=null;\n");
+			}
+			p.format("t.setStroke(new java.awt.BasicStroke(%s, %d, %d, %s, dash, %s));\n",
+					""+b.getLineWidth(),b.getEndCap(),b.getLineJoin(),""+b.getMiterLimit(),""+b.getDashPhase());
 		}
 		p.format("c.addTrace(t, xaxis,yaxis);\n");
 		return stringWriter.toString();
@@ -58,17 +73,16 @@ public class PlotConfiguration {
 			p.format("c.setAxisYLeft(yaxis, 0);\n");
 		if (axis.getFormatter() instanceof LabelFormatterDecimal) {
 			String pattern = ((LabelFormatterDecimal)axis.getFormatter()).toPattern();
-			p.format("var format = new java.text.DecimalFormat(\"%s\");\n", pattern);
+			p.format("var format = new java.text.DecimalFormat(\"%s\");\n", StringEscapeUtils.escapeJavaScript(pattern));
 			p.format("%s.setFormatter(new Packages.org.zaluum.widget.plot.LabelFormatterDecimal(format));\n", name);
 		}
 		p.format("policy.setRange(new Packages.info.monitorenter.util.Range(%s,%s));\n", 
 				""+rangePolicy.getRange().getMin(), 
 				""+rangePolicy.getRange().getMax());
 		p.format("%s.setRangePolicy(policy);",name);
-		p.format("%s.setTitle(\"%s\");\n", name, axis.getAxisTitle().getTitle());
+		p.format("%s.setTitle(\"%s\");\n", name, StringEscapeUtils.escapeJavaScript(axis.getAxisTitle().getTitle()));
 		p.format("%s.setPaintScale(%b);\n", name, axis.isPaintScale());
 		p.format("%s.setPaintGrid(%b);\n", name, axis.isPaintGrid());
 		p.format("%s.setVisible(%b);\n", name, axis.isVisible());
-		p.format("%s.setTitle(\"%s\");\n", name, axis.getAxisTitle().getTitle());
 	}
 }
