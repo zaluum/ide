@@ -37,7 +37,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var filterDouble = false
     def directEditPF: PartialFunction[Item, String ⇒ MapTransformer] = {
       case e: LiteralFigure ⇒ s ⇒ e.valDef.addOrReplaceParam(Param(Name("literal"), s))
-      case l: LabelItem     ⇒ editLabel(_, l)
+      case l: LabelItem     ⇒ editLabel(_, l, false)
     }
     def gotoConfigurer(v: ValDefItem) {
       v.openConfigurer(viewer.zproject.classLoader) match {
@@ -45,12 +45,14 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
         case None         ⇒
       }
     }
-    def editLabel(s: String, l: LabelItem): MapTransformer
+    def editLabel(s: String, l: LabelItem, first: Boolean): MapTransformer
     override def doubleClick() = itemUnderMouse match {
       case Some(e: TextEditFigure) ⇒ gotoDirectEdit(e)
       case Some(v: ValDefItem)     ⇒ gotoConfigurer(v)
       case _                       ⇒
     }
+    def gotoInitialLabelEdit(l: LabelItem) =
+      directEditing.enter(l, editLabel(_, l, true))
     def gotoDirectEdit(t: TextEditFigure) =
       directEditPF.lift(t) foreach { directEditing.enter(t, _) }
     def enter() { state = this }

@@ -54,7 +54,9 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       border = borderDistance
       super.buttonDown
     }
-    def editLabel(s: String, l: LabelItem) = l.valDef.editLabelAndRename(true, s)
+    def editLabel(s: String, l: LabelItem, initial: Boolean) =
+      if (initial) l.valDef.createLabelAndRename(true, s) else
+        l.valDef.editLabel(true, s)
     def buttonUp {
       beingSelected match {
         case Some(s: Item) ⇒

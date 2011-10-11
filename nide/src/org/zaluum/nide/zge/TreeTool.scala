@@ -39,7 +39,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       super.directEditPF.orElse {
         case e: PortDeclFigure ⇒ e.tree.renamePort(_, None)
       }
-    def editLabel(s: String, l: LabelItem) = l.valDef.editLabelAndRename(false, s)
+    def editLabel(s: String, l: LabelItem, initial: Boolean) = if (initial)
+      l.valDef.createLabelAndRename(false, s)
+    else
+      l.valDef.editLabel(false, s)
     def buttonUp {
       unblinkLine()
       if (filterDouble) { filterDouble = false; return }
@@ -177,7 +180,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     var newVal: ValDef = _
     override def next(d: DMap) {
       viewer.findLabelFigureOf(newVal) match {
-        case Some(l) ⇒ exit(); selecting.gotoDirectEdit(l)
+        case Some(l) ⇒ exit(); selecting.gotoInitialLabelEdit(l)
         case None    ⇒ exit()
       }
     }

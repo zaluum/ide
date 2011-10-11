@@ -425,15 +425,26 @@ case class ValDef(
   def editType(clazz: Name) = transformThis { e ⇒
     copy(typeName = clazz, template = e.transformOption(template))
   }
-  def editLabelAndRename(gui: Boolean, s: String) = {
+  private def createLabel(gui: Boolean, s: String) = {
+    val lbl = if (gui) labelGui else label
+    val pos = lbl.map { _.pos }.getOrElse(Vector2(0, 0))
+    if (s != "") Some(LabelDesc(s, pos)) else None
+  }
+  def createLabelAndRename(gui: Boolean, s: String) = {
     val v = this
     val bl = v.sym.owner
     val base = Namer.toIdentifierBase(s).getOrElse(v.name.str)
     val id: Name = if (base != v.name) Name(bl.freshName(base)) else v.name
-    val lbl = if (gui) v.labelGui else v.label
-    val pos = lbl.map { _.pos }.getOrElse(Vector2(0, 0))
-    val lblDesc = if (s != "") Some(LabelDesc(s, pos)) else None
-    v.sym.owner.rename(v, id, lblDesc, gui)
+    v.sym.owner.rename(v, id, createLabel(gui, s), gui)
+  }
+  def editLabel(gui: Boolean, s: String) = {
+    val lbl = createLabel(gui, s)
+    transformThis { e ⇒
+      copy(
+        template = e.transformOption(template),
+        label = if (gui) this.label else lbl,
+        labelGui = if (gui) lbl else this.labelGui)
+    }
   }
   def bounds: Option[(Point, Dimension)] = {
     params.find(_.key == Name("bounds")).flatMap { par ⇒

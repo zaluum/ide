@@ -182,7 +182,7 @@ class LabelProperty(valDef: ValDef, controller: Controller, gui: Boolean) extend
   def lbl = if (gui) valDef.labelGui else valDef.label
   def txt = if (gui) "*Label GUI" else "*Label"
   def descriptor: IPropertyDescriptor = new TextPropertyDescriptor(this, txt)
-  def set(value: AnyRef) = controller.exec(valDef.editLabelAndRename(gui, value.toString))
+  def set(value: AnyRef) = controller.exec(valDef.editLabel(gui, value.toString))
   def get: AnyRef = lbl.map { _.description }.getOrElse("")
   def isSet: Boolean = lbl.isDefined
   def reset() = set("")
