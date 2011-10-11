@@ -42,7 +42,7 @@ class ArrayType(
   type B = ArrayBinding
   assert(!of.isInstanceOf[ArrayType])
   def descriptor = "[" * dim + of.descriptor
-  def name = Name(of.name.str + "[]" * dim)
+  def name = Name(of.fqName.str + "[]" * dim)
   def fqName = name
   override def equals(that: Any) = {
     that match {

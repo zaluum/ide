@@ -281,6 +281,20 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
         case _ ⇒ List()
       }
     }
+    def runWidgetScript(vs: ValSymbol): List[Tree] = {
+      vs.tpe.get match {
+        case BoxExprType if vs.isVisual ⇒
+          vs.getStr(BoxExprType.scriptDecl).toList flatMap { s ⇒
+            List[Tree](
+              InvokeStatic("run", List(
+                Const(s, Name("java.lang.String")),
+                valRef(vs)),
+                Name("org.zaluum.basic.RunScript"),
+                "(Ljava/lang/String;Ljava/lang/Object;)V"))
+          }
+        case _ ⇒ List()
+      }
+    }
     def createLabel(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       val v = vs.decl.asInstanceOf[ValDef]
       val mainTpe = mainBox.sym
@@ -315,7 +329,7 @@ class TreeToClass(b: BoxDef, global: Scope, zaluumScope: ZaluumClassScope) exten
     }
     def createWidgets(vs: ValSymbol, mainBox: BoxDef): List[Tree] = {
       vs.tpe.get match {
-        case BoxExprType ⇒ placeWidget(vs, mainBox)
+        case BoxExprType ⇒ placeWidget(vs, mainBox) ++ runWidgetScript(vs)
         case e: ExprType ⇒
           for (bl ← vs.blocks; vs ← bl.valsAlphabeticOrder; w ← createWidgets(vs, mainBox)) yield w
       }
