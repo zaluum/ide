@@ -395,6 +395,8 @@ public class ProjectClassLoader extends URLClassLoader {
 			throws ClassNotFoundException {
 		if (m_loadExceptions.contains(className))
 			throw new ClassNotFoundException(className);
+		if (className.startsWith("com.zeroturnaround"))
+			return super.findClass(className);
 		String classResourceName = className.replace('.', '/') + ".class";
 		InputStream input = getResourceAsStream(classResourceName);
 		if (input == null) {
@@ -420,6 +422,11 @@ public class ProjectClassLoader extends URLClassLoader {
 			} catch (Throwable e) {
 				throw new ClassNotFoundException("Error loading class "
 						+ className, e);
+			} finally {
+				try {
+					input.close();
+				} catch (IOException e) {
+				}
 			}
 		}
 	}

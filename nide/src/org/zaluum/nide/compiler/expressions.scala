@@ -98,9 +98,11 @@ object BoxExprType extends StaticExprType(classOf[org.zaluum.expr.BoxExpr]) with
   val fieldsSymbol = new ParamDecl(Name("#Fields"))
   val constructorParamsDecl = new ParamDecl(Name("#Constructor values"))
   val constructorTypesDecl = new ParamDecl(Name("#Constructor types"))
+  val scriptDecl = new ParamDecl(Name("#Script"))
   addParam(fieldsSymbol)
   addParam(constructorParamsDecl)
   addParam(constructorTypesDecl)
+  addParam(scriptDecl)
   props ::= ((c: Controller, v: ValDef) ⇒ new TextListParamProperty(c, fieldsSymbol, v))
   def signatureProp(c: Controller, v: ValDef) =
     new MethodParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), false)

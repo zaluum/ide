@@ -13,8 +13,8 @@ public class PlotMain {
 			System.setProperty("sun.awt.noerasebackground", "true");
 		} catch (NoSuchMethodError error) {
 		}
-		PlotDialog plotDialog = new PlotDialog(shell);
-		plotDialog.open();
+		//PlotDialog plotDialog = new PlotDialog(shell);
+		//plotDialog.open();
 		shell.setSize(600, 700);
 		shell.addDisposeListener(new DisposeListener() {
 			

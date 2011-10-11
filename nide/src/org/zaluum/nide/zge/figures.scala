@@ -45,6 +45,9 @@ import org.zaluum.nide.eclipse.ImageFactory
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.utils.ReflectionUtilsWB
 import org.zaluum.basic.BoxConfigurer
+import javax.script.ScriptEngineManager
+import java.security.AccessController
+import java.security.PrivilegedAction
 
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item with PropertySource {
@@ -79,7 +82,7 @@ trait ValDefItem extends Item with PropertySource {
           }
           //open
           val newpars = configurer.configure(container.viewer.shell, pars)
-          if (newpars == null || newpars == pars) None
+          if (newpars == null) None
           else {
             Some(newpars.view.map {
               case (k, l) ⇒ Param(Name(k), l.toList)
@@ -367,6 +370,19 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
             } catch { case e ⇒ e.printStackTrace() }
           }
         case _ ⇒
+      }
+    }
+    component foreach { c ⇒
+      valSym.getStr(BoxExprType.scriptDecl) foreach { script ⇒
+        val oldLoader = Thread.currentThread().getContextClassLoader()
+        try {
+          Thread.currentThread().setContextClassLoader(cloader)
+          val manager = new ScriptEngineManager();
+          val engine = manager.getEngineByName("JavaScript");
+          engine.put("c", c)
+          engine.eval(script)
+        } catch { case ex: Exception ⇒ ex.printStackTrace() }
+        finally { Thread.currentThread().setContextClassLoader(oldLoader) }
       }
     }
   }

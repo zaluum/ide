@@ -20,7 +20,7 @@ public class PlotConfiguration {
 		PrintWriter p = new PrintWriter(stringWriter);
 		ITrace2D t = c.getTraces().first();
 		p.format("c.setPaintLabels(%b);\n", c.isPaintLabels());
-		p.format("c.setUseAntialiasing(%b);\n", c.isUseAntialiasing());
+		p.format("c.setUseAntialiasing(true);\n");
 		doAxis(true, p,c);
 		doAxis(false,p,c);
 		p.format("var t = new Packages.info.monitorenter.gui.chart.traces.Trace2DLtd(100,\"%s\");\n", StringEscapeUtils.escapeJavaScript(t.getName()));
