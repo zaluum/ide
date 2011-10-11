@@ -1,7 +1,9 @@
 package org.zaluum.widget;
 
 import info.monitorenter.gui.chart.Chart2D;
-import info.monitorenter.gui.chart.ITrace2D;
+import info.monitorenter.gui.chart.traces.Trace2DLtd;
+
+import java.awt.Color;
 
 import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
@@ -17,6 +19,9 @@ public class Chart extends Chart2D {
 	public Chart() {
 		super();
 		buffer = new CircularBuffer(maxlen);
+		Trace2DLtd trace = new Trace2DLtd(maxlen);
+		trace.setColor(Color.BLUE);
+		addTrace(trace);
 	}
 
 	private Runnable runnable = new Runnable() {

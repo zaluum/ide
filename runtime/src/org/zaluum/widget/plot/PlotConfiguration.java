@@ -14,10 +14,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class PlotConfiguration {
-	// FIXME escape strings
 	public static String javaScriptConfigure(Chart2D c) {
 		StringWriter stringWriter = new StringWriter();
 		PrintWriter p = new PrintWriter(stringWriter);
+		p.format("c.removeAllTraces();\n");
 		ITrace2D t = c.getTraces().first();
 		p.format("c.setPaintLabels(%b);\n", c.isPaintLabels());
 		p.format("c.setUseAntialiasing(true);\n");
