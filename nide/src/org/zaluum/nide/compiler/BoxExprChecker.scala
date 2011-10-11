@@ -127,7 +127,7 @@ trait BoxExprChecker extends CheckerPart {
     vs.isVisual = visual
     if (!hasApply && !vs.isVisual) {
       vs.isExecutable = false
-      error("Class " + v.typeName.str + " must be visual (extend java.awt.Component) or be marked as @Box and have an @Apply method", v)
+      error("Cannot find method to invoke. Mark with @Apply or modify #Method property", v)
     }
     // Constructor
     val consSignature = vs.getStr(BoxExprType.constructorTypesDecl).getOrElse("()V")

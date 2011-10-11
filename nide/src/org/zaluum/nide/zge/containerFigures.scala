@@ -121,7 +121,7 @@ trait ContainerItem extends Item {
     val remove = Buffer[ValDefItem]()
     for (bf ← boxes.view ++ labels) {
       changes.get(bf.valDef) match {
-        case Some(t: ValDef) if (t.sym.isExecutable) ⇒
+        case Some(t: ValDef) ⇒
           bf match {
             case o: OpenBoxFigure ⇒ o.updateOpenBox(t, changes)
             case l: LabelItem ⇒
@@ -141,7 +141,7 @@ trait ContainerItem extends Item {
     }
     boxes.filterNot(remove.contains)
     labels.filterNot(remove.contains)
-    val news = block.valDefs filter (v ⇒ !remove.contains(v) && v.sym.isExecutable)
+    val news = block.valDefs filter (v ⇒ !remove.contains(v))
     news foreach { v ⇒
       val f = v.template match {
         case Some(t) ⇒
