@@ -8,6 +8,7 @@ import org.zaluum.nide.zge.ConstructorParamProperty
 import org.zaluum.nide.zge.MethodParamProperty
 import org.zaluum.nide.zge.FieldParamProperty
 import org.zaluum.nide.zge.TextListParamProperty
+import org.zaluum.nide.zge.MultiLineTextParamProperty
 
 sealed trait ExprType extends Type with PortsSymbol with PropertySourceType {
   def matchingClass: Class[_]
@@ -95,15 +96,17 @@ trait TypeParamExprType extends ExprType {
 sealed abstract class StaticExprType(val matchingClass: Class[_]) extends TypeParamExprType
 
 object BoxExprType extends StaticExprType(classOf[org.zaluum.`object`.BoxInstance]) with SignatureExprType {
-  val fieldsSymbol = new ParamDecl(Name("#Fields"))
+  val fieldsDecl = new ParamDecl(Name("#Fields"))
   val constructorParamsDecl = new ParamDecl(Name("#Constructor values"))
   val constructorTypesDecl = new ParamDecl(Name("#Constructor types"))
   val scriptDecl = new ParamDecl(Name("#Script"))
-  addParam(fieldsSymbol)
+  addParam(fieldsDecl)
   addParam(constructorParamsDecl)
   addParam(constructorTypesDecl)
   addParam(scriptDecl)
-  props ::= ((c: Controller, v: ValDef) ⇒ new TextListParamProperty(c, fieldsSymbol, v))
+  props ::= ((c: Controller, v: ValDef) ⇒ new TextListParamProperty(c, fieldsDecl, v))
+  props ::= ((c: Controller, v: ValDef) ⇒ new MultiLineTextParamProperty(c, scriptDecl, v))
+
   def signatureProp(c: Controller, v: ValDef) =
     new MethodParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), false)
   override def properties(controller: Controller, valDef: ValDef) = {

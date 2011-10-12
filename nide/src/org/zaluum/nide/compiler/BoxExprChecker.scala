@@ -81,7 +81,7 @@ trait BoxExprChecker extends CheckerPart {
         // FIELDS
         val allFields = ZaluumCompletionEngineScala.allFields(engine, scope, r, static = false)
         val outs = Buffer[FieldBinding]()
-        vs.getList(BoxExprType.fieldsSymbol) match {
+        vs.getList(BoxExprType.fieldsDecl) match {
           case Some(fieldNames) ⇒
             for (str ← fieldNames) {
               allFields.find(_.name.mkString == str) match {

@@ -118,7 +118,8 @@ abstract class TextDialogCellEditor(parent: Composite, style: Int) extends TextC
         // Re-add the listener once the dialog closes
         button.addFocusListener(buttonFocusListener);
         newValue match {
-          case Some(n) ⇒
+          case null ⇒
+          case n ⇒
             val newValidState = isCorrect(n);
             if (newValidState) {
               markDirty();
@@ -129,7 +130,6 @@ abstract class TextDialogCellEditor(parent: Composite, style: Int) extends TextC
                 Array(n.toString())));
             }
             fireApplyEditorValue();
-          case None ⇒
         }
       }
     });
@@ -144,6 +144,6 @@ abstract class TextDialogCellEditor(parent: Composite, style: Int) extends TextC
 			deactivate();
 		}*/
   }
-  protected def openDialogBox(cellEditorWindow: Control): Option[String]
+  protected def openDialogBox(cellEditorWindow: Control): String
 
 }

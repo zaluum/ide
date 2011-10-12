@@ -376,7 +376,7 @@ object ValDef {
   def emptyValDefBoxExpr(name: Name, dst: Point, label: String, className: String, method: Option[String] = None, fields: Option[List[String]] = None) = {
     val p = Param(BoxExprType.typeSymbol.fqName, className)
     val m = method.map(Param(BoxExprType.signatureSymbol.fqName, _))
-    val f = fields.map(Param(BoxExprType.fieldsSymbol.fqName, _))
+    val f = fields.map(Param(BoxExprType.fieldsDecl.fqName, _))
     val params = List(p) ++ m ++ f
     ValDef(name, BoxExprType.fqName, dst, None, params, Some(LabelDesc(label, Vector2(0, 0))), None, None)
   }

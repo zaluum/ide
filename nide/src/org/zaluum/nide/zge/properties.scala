@@ -49,6 +49,10 @@ import org.zaluum.nide.compiler.Signatures
 import org.zaluum.nide.compiler.PortDef
 import org.eclipse.ui.views.properties.ComboBoxPropertyDescriptor
 import org.zaluum.nide.compiler.Expressions
+import org.eclipse.jface.dialogs.Dialog
+import org.eclipse.swt.widgets.Text
+import org.eclipse.swt.SWT
+import org.eclipse.swt.layout.GridData
 
 trait Property {
   def descriptor: IPropertyDescriptor
@@ -207,14 +211,14 @@ class ConstructorSelectProperty(valDef: ValDef, controller: Controller) extends 
         }
       }
     }
-    def openDialog(cell: Control): Option[String] = {
+    def openDialog(cell: Control, ignore: AnyRef): String = {
       val c = new ConstructorSelectDialog(controller.zproject.jProject.asInstanceOf[JavaProject],
         cell.getShell, valDef.sym)
       c.open()
       c.result foreach { comm ⇒
         SWTScala.async(cell.getDisplay) { controller.exec(comm) }
       }
-      None
+      null
     }
   }
   def set(value: AnyRef) {} // done in dialog
@@ -242,7 +246,9 @@ class TextParamProperty(val c: Controller, val p: ParamDecl, val v: ValDef)
     extends ParamProperty {
   def descriptor: PropertyDescriptor = new TextPropertyDescriptor(this, p.name.str)
 }
-
+class MultiLineTextParamProperty(val c: Controller, val p: ParamDecl, val v: ValDef) extends ParamProperty {
+  def descriptor = new MultilineTextDescriptor(this, p.name.str)
+}
 class TextListParamProperty(c: Controller, p: ParamDecl, v: ValDef)
     extends TextParamProperty(c, p, v) {
   override def set(value: AnyRef) = {
@@ -252,7 +258,37 @@ class TextListParamProperty(c: Controller, p: ParamDecl, v: ValDef)
       else v.addOrReplaceParam(Param(key, l)))
   }
 }
-
+class MultilineTextDescriptor(id: AnyRef, displayName: String) extends DialogPropertyDescriptor(id, displayName) {
+  override lazy val labelProvider = new LabelProvider() {
+    override def getText(element: AnyRef) =
+      if (element != null)
+        element.toString().lines.toStream.headOption.map(_.take(30) + "...").getOrElse("")
+      else ""
+  }
+  def openDialog(cell: Control, value: AnyRef): String = {
+    var res: String = null
+    val d = new Dialog(cell.getShell) {
+      var t: Text = null
+      override def isResizable = true
+      override def createDialogArea(parent: Composite) = {
+        val c = super.createDialogArea(parent).asInstanceOf[Composite]
+        t = new Text(c, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL)
+        t.setText(value.toString)
+        val d = new GridData(SWT.FILL, SWT.FILL, true, true)
+        d.widthHint = 250
+        d.heightHint = 250
+        t.setLayoutData(d)
+        c
+      }
+      override def okPressed() {
+        res = t.getText();
+        super.okPressed()
+      }
+    }
+    d.open()
+    res
+  }
+}
 class ConstructorParamProperty(
     c: Controller,
     p: ParamDecl,
@@ -273,7 +309,7 @@ trait MethodProperty extends ControllerProperty {
   def currentVal: Option[String]
   def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding): List[MethodBinding]
   override def descriptor = new TextDialogPropertyDescriptor(this, displayName) {
-    def openDialog(cell: Control) = {
+    def openDialog(cell: Control, a: AnyRef) = {
       val m = new MethodSelectDialog(
         c.zproject.jProject.asInstanceOf[JavaProject],
         cell.getShell(),
@@ -283,7 +319,7 @@ trait MethodProperty extends ControllerProperty {
         def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
           MethodProperty.this.findMethods(engine, r)
       }
-      m.openRet()
+      m.openRet().getOrElse(null)
     }
   }
 }
@@ -307,16 +343,16 @@ class FieldParamProperty(
     tpe: ⇒ Option[JavaType],
     static: Boolean) extends TextParamProperty(c, p, v) {
   override def descriptor = new TextDialogPropertyDescriptor(this, p.name.str) {
-    def openDialog(cell: Control) = new FieldSelectDialog(
-      cell.getShell, tpe, static, v.sym, currentVal).openRet()
+    def openDialog(cell: Control, a: AnyRef) = new FieldSelectDialog(
+      cell.getShell, tpe, static, v.sym, currentVal).openRet().getOrElse(null)
   }
 }
 
 trait TypeProperty extends ControllerProperty {
   def currentVal: Option[String]
   override def descriptor = new TextDialogPropertyDescriptor(this, displayName) {
-    def openDialog(cell: Control) =
-      OpenSearch.openSearch(c.zproject.jProject, cell.getShell, currentVal)
+    def openDialog(cell: Control, a: AnyRef) =
+      OpenSearch.openSearch(c.zproject.jProject, cell.getShell, currentVal).getOrElse(null)
   }
 }
 class TypeParamProperty(
@@ -360,10 +396,10 @@ abstract class DialogPropertyDescriptor(id: AnyRef, displayName: String)
     override def getText(element: AnyRef) = element.toString()
   }
   setLabelProvider(labelProvider)
-  def openDialog(cell: Control): Option[String]
+  def openDialog(cell: Control, value: AnyRef): String
   override protected def createPropertyEditor(parent: Composite): CellEditor = {
     new DialogCellEditor(parent) {
-      override protected def openDialogBox(cell: Control) = openDialog(cell)
+      override protected def openDialogBox(cell: Control) = openDialog(cell, doGetValue)
       override protected def updateContents(value: AnyRef) {
         if (getDefaultLabel != null) {
           getDefaultLabel.setText(labelProvider.getText(value))
@@ -375,7 +411,7 @@ abstract class DialogPropertyDescriptor(id: AnyRef, displayName: String)
 abstract class TextDialogPropertyDescriptor(id: AnyRef, displayName: String) extends DialogPropertyDescriptor(id, displayName) {
   override protected def createPropertyEditor(parent: Composite) = {
     new TextDialogCellEditor(parent) {
-      override protected def openDialogBox(cell: Control) = openDialog(cell)
+      override protected def openDialogBox(cell: Control) = openDialog(cell, doGetValue)
     }
   }
 }

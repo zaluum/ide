@@ -381,8 +381,12 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
           val engine = manager.getEngineByName("JavaScript");
           engine.put("c", c)
           engine.eval(script)
-        } catch { case ex: Exception ⇒ ex.printStackTrace() }
-        finally { Thread.currentThread().setContextClassLoader(oldLoader) }
+        } catch {
+          case ex: Exception                    ⇒ ex.printStackTrace()
+          case err: ExceptionInInitializerError ⇒ err.printStackTrace() // jrebel
+          case err: NoClassDefFoundError        ⇒ err.printStackTrace() // jrebel
+
+        } finally { Thread.currentThread().setContextClassLoader(oldLoader) }
       }
     }
   }

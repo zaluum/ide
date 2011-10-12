@@ -1,16 +1,12 @@
 Agenda
 
 	necessari
-	- null literal - null type?, this literal
 	- plot multi
 	- for - construccio arrays
 	- data log
 	- despres de crear una box, quan s'edita l'etiqueta, fer que es pugui connectar els ports cancelant l'edició
-	- el nom de la box no ha de canviar 
 	- xml imatges 
 	- human readable signature label provider
-	- propietats: canviar nom box
-	- propietats: editor text llarg per script
 	- llibreria VISA 
 	- acabar swing intenum values
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
