@@ -135,7 +135,9 @@ class BlockSymbol(
   def uniqueBlock = template.blocks.size == 1
   def usedValNames = (valsList ++ missingVals.values).map(_.name.str).toSet
   def usedNames = (template.mainBS.usedValNames ++ (template.ports.values.map { _.name.str })).toSet
-
+  def rename(valDef: ValDef, newName: Name): EditTransformer = {
+    rename(valDef, newName, valDef.label, false)
+  }
   def rename(valDef: ValDef, newName: Name, labelDesc: Option[LabelDesc], gui: Boolean): EditTransformer = {
     assert(decl.valDefs.contains(valDef))
       def renamedEnd(end: Option[ConnectionEnd]) = end match {

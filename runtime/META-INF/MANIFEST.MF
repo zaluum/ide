@@ -5,13 +5,10 @@ Bundle-SymbolicName: org.zaluum.runtime
 Bundle-Version: 1.0.0.qualifier
 Export-Package: org.zaluum.annotation,
  org.zaluum.basic,
- org.zaluum.expr,
- org.zaluum.expr.arithmetic,
- org.zaluum.expr.bool,
- org.zaluum.expr.cast,
- org.zaluum.expr.compare,
- org.zaluum.expr.object,
+ org.zaluum.control,
  org.zaluum.launch,
+ org.zaluum.object,
+ org.zaluum.op,
  org.zaluum.widget
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: jchart2d;bundle-version="1.0.0",

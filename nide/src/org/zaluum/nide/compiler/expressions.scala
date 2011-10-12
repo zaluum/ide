@@ -53,14 +53,14 @@ sealed abstract class TemplateExprType extends ExprType {
   val requiredBlocks: Int
 }
 object IfExprType extends TemplateExprType {
-  def matchingClass = classOf[org.zaluum.expr.If]
+  def matchingClass = classOf[org.zaluum.control.If]
   val requiredBlocks = 2
   val cond = new PortSymbol(this, Name("cond"), In)
   ports += (cond.name -> cond)
   def condPort(v: ValSymbol) = v.findPortInstance(cond).get
 }
 object WhileExprType extends TemplateExprType {
-  def matchingClass = classOf[org.zaluum.expr.While]
+  def matchingClass = classOf[org.zaluum.control.While]
   val requiredBlocks = 1
   val end = new PortSymbol(this, Name("cond"), Out)
   ports += (end.name -> end)
@@ -82,7 +82,7 @@ sealed abstract class ThisExprType(val matchingClass: Class[_]) extends ExprType
   def thisOutPort(vs: ValSymbol) = vs.findPortInstance(thizOut).get
 }
 object ThisRefExprType extends ExprType {
-  val matchingClass = classOf[org.zaluum.expr.`object`.This]
+  val matchingClass = classOf[org.zaluum.`object`.This]
   val thiz = new PortSymbol(this, Name("this"), Out)
   ports += (thiz.name -> thiz)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
@@ -94,7 +94,7 @@ trait TypeParamExprType extends ExprType {
 }
 sealed abstract class StaticExprType(val matchingClass: Class[_]) extends TypeParamExprType
 
-object BoxExprType extends StaticExprType(classOf[org.zaluum.expr.BoxExpr]) with SignatureExprType {
+object BoxExprType extends StaticExprType(classOf[org.zaluum.`object`.BoxInstance]) with SignatureExprType {
   val fieldsSymbol = new ParamDecl(Name("#Fields"))
   val constructorParamsDecl = new ParamDecl(Name("#Constructor values"))
   val constructorTypesDecl = new ParamDecl(Name("#Constructor types"))
@@ -114,7 +114,7 @@ object BoxExprType extends StaticExprType(classOf[org.zaluum.expr.BoxExpr]) with
     l ::: super.properties(controller, valDef)
   }
 }
-object NewArrayExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.NewArray]) {
+object NewArrayExprType extends StaticExprType(classOf[org.zaluum.`object`.NewArray]) {
   val thiz = new PortSymbol(this, Name("array"), Out)
   ports += (thiz.name -> thiz)
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
@@ -123,7 +123,7 @@ object NewArrayExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.
   addParam(arrayDimSymbol)
   props ::= ((c: Controller, v: ValDef) ⇒ new TextParamProperty(c, arrayDimSymbol, v))
 }
-object NewExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.New]) with SignatureExprType {
+object NewExprType extends StaticExprType(classOf[org.zaluum.`object`.New]) with SignatureExprType {
   override def signatureName = "#Constructor"
   val thiz = new PortSymbol(this, Name("object"), Out)
   ports += (thiz.name -> thiz)
@@ -131,69 +131,62 @@ object NewExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.New])
   def signatureProp(c: Controller, v: ValDef) =
     new ConstructorParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe)
 }
-object InvokeExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Invoke]) with SignatureExprType {
+object InvokeExprType extends ThisExprType(classOf[org.zaluum.`object`.Invoke]) with SignatureExprType {
   def signatureProp(c: Controller, v: ValDef) =
     new MethodParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe, false)
 }
-object InvokeStaticExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.InvokeStatic]) with SignatureExprType {
+object InvokeStaticExprType extends StaticExprType(classOf[org.zaluum.`object`.InvokeStatic]) with SignatureExprType {
   def signatureProp(c: Controller, v: ValDef) =
     new MethodParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), true)
 }
-object FieldExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Field]) with ResultExprType with OneParameter with SignatureExprType {
+object FieldExprType extends ThisExprType(classOf[org.zaluum.`object`.Field]) with ResultExprType with OneParameter with SignatureExprType {
   override def signatureName = "#Field"
   def signatureProp(c: Controller, v: ValDef) =
     new FieldParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe, false)
 }
-object StaticFieldExprType extends StaticExprType(classOf[org.zaluum.expr.`object`.StaticField]) with ResultExprType with OneParameter with SignatureExprType {
+object StaticFieldExprType extends StaticExprType(classOf[org.zaluum.`object`.FieldStatic]) with ResultExprType with OneParameter with SignatureExprType {
   override def signatureName = "#Field"
   def signatureProp(c: Controller, v: ValDef) =
     new FieldParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), true)
 }
-object ArrayExprType extends ThisExprType(classOf[org.zaluum.expr.`object`.Array]) with ResultExprType with OneParameter {
+object ArrayExprType extends ThisExprType(classOf[org.zaluum.`object`.Array]) with ResultExprType with OneParameter {
   val index = new PortSymbol(this, Name("index"), In)
   ports += (index.name -> index)
   def indexPort(vs: ValSymbol) = vs.findPortInstance(index).get
 }
 object LiteralExprType extends ResultExprType {
-  def matchingClass = classOf[org.zaluum.expr.Literal]
+  def matchingClass = classOf[org.zaluum.op.Literal]
   val paramDecl = new ParamDecl(Name("literal"))
   addParam(paramDecl)
   props ::= ((c: Controller, v: ValDef) ⇒ new TextParamProperty(c, paramDecl, v))
 }
 
-object ToByteType extends CastExprType(classOf[org.zaluum.expr.cast.ToByte])
-object ToShortType extends CastExprType(classOf[org.zaluum.expr.cast.ToShort])
-object ToCharType extends CastExprType(classOf[org.zaluum.expr.cast.ToChar])
-object ToIntType extends CastExprType(classOf[org.zaluum.expr.cast.ToInt])
-object ToLongType extends CastExprType(classOf[org.zaluum.expr.cast.ToLong])
-object ToFloatType extends CastExprType(classOf[org.zaluum.expr.cast.ToFloat])
-object ToDoubleType extends CastExprType(classOf[org.zaluum.expr.cast.ToDouble])
-object CastToExprType extends CastExprType(classOf[org.zaluum.expr.cast.Cast]) with TypeParamExprType
+object CastToExprType extends CastExprType(classOf[org.zaluum.op.Cast]) with TypeParamExprType
 
-object ShiftLeftExprType extends ShiftExprType(classOf[org.zaluum.expr.arithmetic.ShiftLeft])
-object UShiftRightExprType extends ShiftExprType(classOf[org.zaluum.expr.arithmetic.UShiftRight])
-object ShiftRightExprType extends ShiftExprType(classOf[org.zaluum.expr.arithmetic.ShiftRight])
+object ShiftLeftExprType extends ShiftExprType(classOf[org.zaluum.op.ShiftLeft])
+object UShiftRightExprType extends ShiftExprType(classOf[org.zaluum.op.UShiftRight])
+object ShiftRightExprType extends ShiftExprType(classOf[org.zaluum.op.ShiftRight])
 
-object LtExprType extends CmpExprType(classOf[org.zaluum.expr.compare.Lt])
-object LeExprType extends CmpExprType(classOf[org.zaluum.expr.compare.Le])
-object GtExprType extends CmpExprType(classOf[org.zaluum.expr.compare.Gt])
-object GeExprType extends CmpExprType(classOf[org.zaluum.expr.compare.Ge])
+object LtExprType extends CmpExprType(classOf[org.zaluum.op.Lt])
+object LeExprType extends CmpExprType(classOf[org.zaluum.op.Le])
+object GtExprType extends CmpExprType(classOf[org.zaluum.op.Gt])
+object GeExprType extends CmpExprType(classOf[org.zaluum.op.Ge])
 
-object EqExprType extends EqualityExprType(classOf[org.zaluum.expr.compare.Eq])
-object NeExprType extends EqualityExprType(classOf[org.zaluum.expr.compare.Ne])
+object EqExprType extends EqualityExprType(classOf[org.zaluum.op.Eq])
+object NeExprType extends EqualityExprType(classOf[org.zaluum.op.Ne])
 
-object MinusExprType extends UnaryExprType(classOf[org.zaluum.expr.arithmetic.Minus])
-object NotExprType extends UnaryExprType(classOf[org.zaluum.expr.bool.Not])
+object MinusExprType extends UnaryExprType(classOf[org.zaluum.op.Minus])
+object NotExprType extends UnaryExprType(classOf[org.zaluum.op.Not])
 
-object AndExprType extends BitBinExprType(classOf[org.zaluum.expr.bool.And])
-object OrExprType extends BitBinExprType(classOf[org.zaluum.expr.bool.Or])
-object XorExprType extends BitBinExprType(classOf[org.zaluum.expr.bool.Xor])
+object AndExprType extends BitBinExprType(classOf[org.zaluum.op.And])
+object OrExprType extends BitBinExprType(classOf[org.zaluum.op.Or])
+object XorExprType extends BitBinExprType(classOf[org.zaluum.op.Xor])
 
-object AddExprType extends MathExprType(classOf[org.zaluum.expr.arithmetic.Add])
-object SubExprType extends MathExprType(classOf[org.zaluum.expr.arithmetic.Sub])
-object MulExprType extends MathExprType(classOf[org.zaluum.expr.arithmetic.Mul])
-object DivExprType extends MathExprType(classOf[org.zaluum.expr.arithmetic.Div])
-object RemExprType extends MathExprType(classOf[org.zaluum.expr.arithmetic.Rem])
+object AddExprType extends MathExprType(classOf[org.zaluum.op.Add])
+object SubExprType extends MathExprType(classOf[org.zaluum.op.Sub])
+object MulExprType extends MathExprType(classOf[org.zaluum.op.Mul])
+object DivExprType extends MathExprType(classOf[org.zaluum.op.Div])
+object RemExprType extends MathExprType(classOf[org.zaluum.op.Rem])
 object Expressions {
   val all = List(
     BoxExprType,
@@ -209,17 +202,9 @@ object Expressions {
     WhileExprType,
     IfExprType,
     LiteralExprType,
-    ToByteType,
-    ToShortType,
-    ToCharType,
-    ToIntType,
-    ToLongType,
-    ToFloatType,
-    ToDoubleType,
     ShiftLeftExprType,
     UShiftRightExprType,
     ShiftRightExprType,
-    LtExprType,
     LtExprType,
     LeExprType,
     GtExprType,

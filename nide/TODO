@@ -1,6 +1,8 @@
 Agenda
 
 	necessari
+	- null literal - null type?, this literal
+	- plot multi
 	- for - construccio arrays
 	- data log
 	- despres de crear una box, quan s'edita l'etiqueta, fer que es pugui connectar els ports cancelant l'edició
@@ -10,8 +12,6 @@ Agenda
 	- propietats: canviar nom box
 	- propietats: editor text llarg per script
 	- llibreria VISA 
-	- llibreria plot
-	- plot multi
 	- acabar swing intenum values
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 	- widgets
@@ -28,7 +28,6 @@ Agenda
 	- beta nag screen/ watermark
 	- buy hosting
 	
-
 	millora
 	- visuals al block diagram (notes sobretot)
 	- z order: endavant-endarrera gui

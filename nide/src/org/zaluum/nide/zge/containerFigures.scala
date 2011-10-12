@@ -18,7 +18,6 @@ import org.eclipse.draw2d.LineBorder
 import org.eclipse.draw2d.PositionConstants
 import org.eclipse.draw2d.Triangle
 import org.eclipse.jface.resource.ImageDescriptor
-import org.zaluum.expr.Literal
 import org.zaluum.nide.compiler.Block
 import org.zaluum.nide.compiler.ConnectionDef
 import org.zaluum.nide.compiler.ConnectionEnd

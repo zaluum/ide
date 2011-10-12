@@ -101,25 +101,15 @@ class ExpressionChecker(val c: CheckConnections) extends CheckerPart {
     import primitives._
     val e = vs.tpe.get.asInstanceOf[CastExprType]
     val (a, o) = e.unaryPortInstancesOf(vs)
-    e match {
-      case ToByteType   ⇒ o.tpe = Byte
-      case ToShortType  ⇒ o.tpe = Short
-      case ToCharType   ⇒ o.tpe = Char
-      case ToIntType    ⇒ o.tpe = Int
-      case ToLongType   ⇒ o.tpe = Long
-      case ToFloatType  ⇒ o.tpe = Float
-      case ToDoubleType ⇒ o.tpe = Double
-      case CastToExprType ⇒
-        vs.getStr(CastToExprType.typeSymbol) match {
-          case Some(str) ⇒
-            o.tpe = ztd.zaluumScope.lookupType(Name(str)) orElse {
-              error("Cast type " + str + " not found", vs.decl)
-              None
-            }
-          case _ ⇒
-            o.tpe = None
-            error("Cast type not specified", vs.decl)
+    vs.getStr(CastToExprType.typeSymbol) match {
+      case Some(str) ⇒
+        o.tpe = ztd.zaluumScope.lookupType(Name(str)) orElse {
+          error("Cast type " + str + " not found", vs.decl)
+          None
         }
+      case _ ⇒
+        o.tpe = None
+        error("Cast type not specified", vs.decl)
     }
     connectedFrom(a).map {
       case (pi, blame) ⇒ (pi.tpe, blame)

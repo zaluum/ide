@@ -47,6 +47,8 @@ import org.zaluum.nide.zge.dialogs.ConstructorSelectDialog
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.compiler.Signatures
 import org.zaluum.nide.compiler.PortDef
+import org.eclipse.ui.views.properties.ComboBoxPropertyDescriptor
+import org.zaluum.nide.compiler.Expressions
 
 trait Property {
   def descriptor: IPropertyDescriptor
@@ -166,15 +168,22 @@ class ConstructorDeclProperty(boxDef: BoxDef, val c: Controller) extends Propert
   def reset() { set("") }
 }
 
-class ValDefTypeProperty(valDef: ValDef, controller: Controller) extends NoResetProperty {
-  def descriptor: IPropertyDescriptor = new PropertyDescriptor(this, "*Type")
-  def set(value: AnyRef) { controller.exec(valDef.editType(Name(value.toString))) }
-  def get: AnyRef = valDef.typeName.str
+class ValDefTypeProperty(v: ValDef, c: Controller) extends NoResetProperty {
+  lazy val vals = Expressions.all.keys.map(_.str).toArray.sorted
+  def descriptor = new ComboBoxPropertyDescriptor(this, "*Type", vals)
+  def set(value: AnyRef) {
+    val i = value.asInstanceOf[Int]
+    c.exec(v.changeType(vals(i)))
+  }
+  def get = vals.indexWhere(_ == v.typeName.str).asInstanceOf[AnyRef]
   def isSet: Boolean = true
 }
 class NameProperty(valDef: ValDef, controller: Controller) extends NoResetProperty {
-  def descriptor = new PropertyDescriptor(this, "*Name")
-  def set(value: AnyRef) {}
+  def descriptor = new TextPropertyDescriptor(this, "*Name")
+  def set(value: AnyRef) {
+    if (value != get && value != null && value != "")
+      controller.exec(valDef.sym.owner.rename(valDef, Name(value.toString)))
+  }
   def get = valDef.name.str
   def isSet = true
 }
@@ -243,6 +252,7 @@ class TextListParamProperty(c: Controller, p: ParamDecl, v: ValDef)
       else v.addOrReplaceParam(Param(key, l)))
   }
 }
+
 class ConstructorParamProperty(
     c: Controller,
     p: ParamDecl,

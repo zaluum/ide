@@ -49,10 +49,10 @@ import ZaluumCompilationUnitDeclaration.compressPos
 import ZaluumCompilationUnitDeclaration.nameToPrimitiveTypeId
 import ZaluumCompilationUnitDeclaration.toMainName
 import ZaluumCompilationUnitDeclaration.toPos
-import org.zaluum.expr.BoxExpr
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.compiler.Param
 import org.eclipse.jdt.internal.compiler.ast.LongLiteral
+
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
   compilationResult: CompilationResult,
