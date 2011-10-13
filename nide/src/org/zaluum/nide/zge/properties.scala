@@ -1,21 +1,23 @@
 package org.zaluum.nide.zge
-import java.lang.Object
+import scala.Array.canBuildFrom
+
 import org.eclipse.jdt.core.search.IJavaSearchConstants
 import org.eclipse.jdt.core.search.SearchEngine
 import org.eclipse.jdt.core.IJavaElement
 import org.eclipse.jdt.core.IJavaProject
 import org.eclipse.jdt.core.IType
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
 import org.eclipse.jdt.internal.core.JavaProject
 import org.eclipse.jdt.internal.ui.dialogs.OpenTypeSelectionDialog
-import org.eclipse.jface.viewers.CheckboxCellEditor
+import org.eclipse.jface.viewers.ICellEditorValidator
 import org.eclipse.jface.viewers.LabelProvider
 import org.eclipse.jface.window.Window
-import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Control
 import org.eclipse.swt.widgets.Display
 import org.eclipse.swt.widgets.Shell
 import org.eclipse.ui.dialogs.FilteredItemsSelectionDialog
+import org.eclipse.ui.views.properties.ComboBoxPropertyDescriptor
 import org.eclipse.ui.views.properties.IPropertyDescriptor
 import org.eclipse.ui.views.properties.IPropertySource2
 import org.eclipse.ui.views.properties.PropertyDescriptor
@@ -23,36 +25,24 @@ import org.eclipse.ui.views.properties.TextPropertyDescriptor
 import org.eclipse.ui.PlatformUI
 import org.zaluum.nide.compiler.BeanParamDecl
 import org.zaluum.nide.compiler.BoxDef
+import org.zaluum.nide.compiler.BoxExprType
+import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Param
 import org.zaluum.nide.compiler.ParamDecl
+import org.zaluum.nide.compiler.PortDef
+import org.zaluum.nide.compiler.Signatures
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Values
+import org.zaluum.nide.compiler.VarDecl
 import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
-import org.zaluum.nide.utils.MethodBindingUtils
 import org.zaluum.nide.utils.SWTScala
+import org.zaluum.nide.zge.dialogs.ConstructorSelectDialog
 import org.zaluum.nide.zge.dialogs.FieldSelectDialog
 import org.zaluum.nide.zge.dialogs.MethodSelectDialog
-import org.zaluum.nide.eclipse.TextDialogCellEditor
-import org.eclipse.jface.viewers.DialogCellEditor
-import org.eclipse.jface.viewers.CellEditor
-import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
-import org.eclipse.jface.dialogs.MessageDialog
-import org.eclipse.jface.viewers.ICellEditorValidator
-import org.zaluum.nide.compiler.VarDecl
-import org.zaluum.nide.zge.dialogs.ConstructorSelectDialog
-import org.zaluum.nide.compiler.BoxExprType
-import org.zaluum.nide.compiler.Signatures
-import org.zaluum.nide.compiler.PortDef
-import org.eclipse.ui.views.properties.ComboBoxPropertyDescriptor
-import org.zaluum.nide.compiler.Expressions
-import org.eclipse.jface.dialogs.Dialog
-import org.eclipse.swt.widgets.Text
-import org.eclipse.swt.SWT
-import org.eclipse.swt.layout.GridData
 
 trait Property {
   def descriptor: IPropertyDescriptor
@@ -258,37 +248,6 @@ class TextListParamProperty(c: Controller, p: ParamDecl, v: ValDef)
       else v.addOrReplaceParam(Param(key, l)))
   }
 }
-class MultilineTextDescriptor(id: AnyRef, displayName: String) extends DialogPropertyDescriptor(id, displayName) {
-  override lazy val labelProvider = new LabelProvider() {
-    override def getText(element: AnyRef) =
-      if (element != null)
-        element.toString().lines.toStream.headOption.map(_.take(30) + "...").getOrElse("")
-      else ""
-  }
-  def openDialog(cell: Control, value: AnyRef): String = {
-    var res: String = null
-    val d = new Dialog(cell.getShell) {
-      var t: Text = null
-      override def isResizable = true
-      override def createDialogArea(parent: Composite) = {
-        val c = super.createDialogArea(parent).asInstanceOf[Composite]
-        t = new Text(c, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL)
-        t.setText(value.toString)
-        val d = new GridData(SWT.FILL, SWT.FILL, true, true)
-        d.widthHint = 250
-        d.heightHint = 250
-        t.setLayoutData(d)
-        c
-      }
-      override def okPressed() {
-        res = t.getText();
-        super.okPressed()
-      }
-    }
-    d.open()
-    res
-  }
-}
 class ConstructorParamProperty(
     c: Controller,
     p: ParamDecl,
@@ -388,40 +347,6 @@ class BeanProperty(
   override def get: AnyRef = v.sym.getValue(p) match {
     case Some(v) ⇒ v.toSWT
     case None    ⇒ tpe.defaultSWT
-  }
-}
-abstract class DialogPropertyDescriptor(id: AnyRef, displayName: String)
-    extends PropertyDescriptor(id, displayName) {
-  lazy val labelProvider = new LabelProvider() {
-    override def getText(element: AnyRef) = element.toString()
-  }
-  setLabelProvider(labelProvider)
-  def openDialog(cell: Control, value: AnyRef): String
-  override protected def createPropertyEditor(parent: Composite): CellEditor = {
-    new DialogCellEditor(parent) {
-      override protected def openDialogBox(cell: Control) = openDialog(cell, doGetValue)
-      override protected def updateContents(value: AnyRef) {
-        if (getDefaultLabel != null) {
-          getDefaultLabel.setText(labelProvider.getText(value))
-        }
-      }
-    }
-  }
-}
-abstract class TextDialogPropertyDescriptor(id: AnyRef, displayName: String) extends DialogPropertyDescriptor(id, displayName) {
-  override protected def createPropertyEditor(parent: Composite) = {
-    new TextDialogCellEditor(parent) {
-      override protected def openDialogBox(cell: Control) = openDialog(cell, doGetValue)
-    }
-  }
-}
-class CheckboxPropertyDescriptor(id: Object, name: String) extends PropertyDescriptor(id, name) {
-  import org.eclipse.jface.viewers.CheckboxCellEditor;
-  override def createPropertyEditor(parent: Composite) = {
-    val editor = new CheckboxCellEditor(parent);
-    if (getValidator() != null)
-      editor.setValidator(getValidator());
-    editor;
   }
 }
 trait PropertySource extends IPropertySource2 {

@@ -232,7 +232,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
                 m.signature().mkString))
         case NewArrayExprType ⇒
           val thiz = NewArrayExprType.thisPort(vs)
-          val ab = thiz.tpe.asInstanceOf[ArrayType]
+          val ab = thiz.tpe.asInstanceOf[Option[ArrayType]].get
           val dimPorts = vs.portInstances.filter { pi ⇒ pi.dir == In && pi.name.str.startsWith("d") }.sortBy { _.name.str.drop(1).toInt } // XXX ugly
           ins +=
             Assign(
