@@ -17,7 +17,7 @@ import org.eclipse.swt.widgets.Shell;
 
 public class PlotDialog extends Dialog {
 
-	public PlotComposite plotComposite;
+	public PlotConfigurerComposite plotComposite;
 	private String script;
 	private final String initScript;
 
@@ -30,7 +30,7 @@ public class PlotDialog extends Dialog {
 	protected Control createDialogArea(Composite parent) {
 		Composite composite = (Composite) super.createDialogArea(parent);
 		// add controls to composite as necessary
-		plotComposite = new PlotComposite(parent, SWT.NONE);
+		plotComposite = new PlotConfigurerComposite(parent, SWT.NONE);
 		Chart2D c = plotComposite.chart;
 		if (initScript != null) {
 			ScriptEngineManager manager = new ScriptEngineManager();

@@ -46,7 +46,7 @@ import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.wb.swt.SWTResourceManager;
 
-public class PlotCompositePlotTab extends Composite {
+public class TraceCompositePlotTab extends Composite {
 	private final Chart2D chart;
 	private ComboViewer comboViewer;
 	private ComboViewer comboViewerX;
@@ -78,7 +78,8 @@ public class PlotCompositePlotTab extends Composite {
 		return new float[] { 10f * d, 3f * d, d, 3f * d };
 	}
 
-	public PlotCompositePlotTab(Composite parent, int style, final Chart2D chart) {
+	public TraceCompositePlotTab(Composite parent, int style,
+			final Chart2D chart) {
 		super(parent, style);
 		this.chart = chart;
 		this.setLayout(new GridLayout(4, false));
@@ -105,7 +106,7 @@ public class PlotCompositePlotTab extends Composite {
 		Button btnNewButton = new Button(this, SWT.NONE);
 		btnNewButton.addSelectionListener(new SelectionAdapter() {
 			@Override
-			public void widgetSelected(SelectionEvent e) { 
+			public void widgetSelected(SelectionEvent e) {
 				newTrace();
 			}
 		});
@@ -137,7 +138,7 @@ public class PlotCompositePlotTab extends Composite {
 
 		name = new Text(grpName, SWT.BORDER);
 		name.addModifyListener(new ModifyListener() {
-			
+
 			@Override
 			public void modifyText(ModifyEvent e) {
 				getTrace().setName(name.getText());
@@ -158,15 +159,15 @@ public class PlotCompositePlotTab extends Composite {
 		lblXAxis.setText("X Axis");
 
 		comboViewerX = new ComboViewer(grpAxis, SWT.READ_ONLY);
+		comboViewerX.setLabelProvider(new AxisTitleLabelProvider());
 		comboViewerX
-				.setLabelProvider(new PlotComposite.AxisTitleLabelProvider());
-		comboViewerX.addSelectionChangedListener(new ISelectionChangedListener() {
-			
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				changeXAxis();
-			}
-		});
+				.addSelectionChangedListener(new ISelectionChangedListener() {
+
+					@Override
+					public void selectionChanged(SelectionChangedEvent event) {
+						changeXAxis();
+					}
+				});
 		comboViewerX.setContentProvider(ArrayContentProvider.getInstance());
 		Combo comboX = comboViewerX.getCombo();
 		comboX.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2,
@@ -178,8 +179,7 @@ public class PlotCompositePlotTab extends Composite {
 		lblYAxis.setText("Y Axis");
 
 		comboViewerY = new ComboViewer(grpAxis, SWT.READ_ONLY);
-		comboViewerY
-				.setLabelProvider(new PlotComposite.AxisTitleLabelProvider());
+		comboViewerY.setLabelProvider(new AxisTitleLabelProvider());
 		comboViewerY.setContentProvider(ArrayContentProvider.getInstance());
 		Combo comboY = comboViewerY.getCombo();
 		comboY.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2,
@@ -226,7 +226,9 @@ public class PlotCompositePlotTab extends Composite {
 					java.awt.Color awtColor = new java.awt.Color(newColor.red,
 							newColor.green, newColor.blue);
 					getTrace().setColor(awtColor);
-					lineColor.setBackground(new org.eclipse.swt.graphics.Color(getShell().getDisplay(),newColor)); // FIXME dispose
+					lineColor.setBackground(new org.eclipse.swt.graphics.Color(
+							getShell().getDisplay(), newColor)); // FIXME
+																	// dispose
 				}
 			}
 		});
@@ -276,13 +278,17 @@ public class PlotCompositePlotTab extends Composite {
 	}
 
 	protected void changeXAxis() {
-		IStructuredSelection sel = (IStructuredSelection)comboViewerX.getSelection();
-		if (sel.isEmpty()) return;
+		IStructuredSelection sel = (IStructuredSelection) comboViewerX
+				.getSelection();
+		if (sel.isEmpty())
+			return;
 		IAxis newAxis = (IAxis) sel.getFirstElement();
 		ITrace2D trace = getTrace();
-		if (trace==null) return;
+		if (trace == null)
+			return;
 		IAxis axisX = chart.getAxisX(trace);
-		if (axisX==null || axisX == newAxis) return;
+		if (axisX == null || axisX == newAxis)
+			return;
 		IAxis axisY = chart.getAxisY(trace);
 		chart.removeTrace(trace);
 		chart.addTrace(trace, newAxis, axisY);
@@ -341,12 +347,14 @@ public class PlotCompositePlotTab extends Composite {
 				&& chart.getTraces().size() != 0) {
 			comboViewer.setSelection(new StructuredSelection(chart.getTraces()
 					.first()));
-		if (comboViewerX.getCombo().getSelectionIndex() == -1
-				&& getTrace() != null)
-			comboViewerX.setSelection(new StructuredSelection(chart.getAxisX(getTrace())));
-		if (comboViewerY.getCombo().getSelectionIndex() == -1
-				&& getTrace() != null)
-			comboViewerY.setSelection(new StructuredSelection(chart.getAxisY(getTrace())));
+			if (comboViewerX.getCombo().getSelectionIndex() == -1
+					&& getTrace() != null)
+				comboViewerX.setSelection(new StructuredSelection(chart
+						.getAxisX(getTrace())));
+			if (comboViewerY.getCombo().getSelectionIndex() == -1
+					&& getTrace() != null)
+				comboViewerY.setSelection(new StructuredSelection(chart
+						.getAxisY(getTrace())));
 
 		}
 		refreshPlot();
@@ -355,9 +363,9 @@ public class PlotCompositePlotTab extends Composite {
 	protected void refreshPlot() {
 		ITrace2D trace = getTrace();
 		if (trace == null)
-			PlotComposite.setAllEnabled(composite, false);
+			PlotConfigurerComposite.setAllEnabled(composite, false);
 		else {
-			PlotComposite.setAllEnabled(composite, true);
+			PlotConfigurerComposite.setAllEnabled(composite, true);
 			ITracePainter<?> painter = trace.getTracePainters().iterator()
 					.next();
 			if (painter instanceof TracePainterLine)
@@ -393,6 +401,7 @@ public class PlotCompositePlotTab extends Composite {
 			lineColor.setBackground(colorSWT);
 		}
 	}
+
 	private IAxis getXAxis() {
 		if (chart.getAxesXBottom().size() != 0)
 			return chart.getAxesXBottom().get(0);
@@ -414,13 +423,13 @@ public class PlotCompositePlotTab extends Composite {
 				return null;
 		}
 	}
+
 	private void newTrace() {
-		Trace2DLtd t = new Trace2DLtd(200, "plot-"
-				+ chart.getTraces().size());
+		Trace2DLtd t = new Trace2DLtd(200, "plot-" + chart.getTraces().size());
 		IAxis x = getXAxis();
 		IAxis y = getYAxis();
 		if (x != null && y != null) {
-			chart.addTrace(t,x,y);
+			chart.addTrace(t, x, y);
 			for (int i = 0; i < 10; i++) {
 				t.addPoint(i, Math.random() * i);
 			}

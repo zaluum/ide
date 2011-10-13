@@ -15,7 +15,8 @@ public class LabelFormatterDecimal extends LabelFormatterNumber {
 	public LabelFormatterDecimal(DecimalFormat formatter) {
 		super(formatter);
 	}
+
 	public String toPattern() {
-		return ((DecimalFormat)m_numberFormat).toPattern();
+		return ((DecimalFormat) m_numberFormat).toPattern();
 	}
 }
