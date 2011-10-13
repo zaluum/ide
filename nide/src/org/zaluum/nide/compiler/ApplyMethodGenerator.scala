@@ -209,6 +209,22 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
               ins += load
           }
           ins += thisOut
+        case ArrayComposeExprType ⇒
+          val size = vs.info.asInstanceOf[Int]
+          val out = vs.findPortInstance(ArrayComposeExprType.out).get
+          ins +=
+            Assign(
+              toRef(out),
+              NewArray(List(Const(size, primitives.Int.fqName)), vs.classinfo))
+          for (i ← 0 until size) {
+            val pi = vs.portInstances.find(_.name == Name("element" + i)).get
+            ins += Assign(
+              ArrayRef(
+                index = Const(i, primitives.Int.fqName),
+                arrRef = toRef(out),
+                arrTpe = pi.tpe.get),
+              toRef(pi))
+          }
         case InvokeExprType ⇒
           val m = vs.info.asInstanceOf[MethodBinding]
           val obj = InvokeExprType.thisPort(vs)

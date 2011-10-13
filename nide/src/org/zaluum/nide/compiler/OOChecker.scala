@@ -50,21 +50,41 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
               case BoxExprType          ⇒ checkBoxExpr(vs, cl); c.assignBoxTypeSymbolTypes(vs)
               case NewArrayExprType     ⇒ checkNewArray(vs, cl)
               case NewExprType          ⇒ checkNew(vs, cl)
+              case ArrayComposeExprType ⇒ checkArrayCompose(vs, cl)
               case InvokeStaticExprType ⇒ invokeStatic(vs, cl)
               case StaticFieldExprType  ⇒ processField(vs, cl, true)
             }
           case Some(p: PrimitiveJavaType) ⇒
             vs.classinfo = p
             tpe match {
-              case NewArrayExprType ⇒ checkNewArray(vs, p)
-              case _                ⇒ error("Type must be a class", vs.decl)
+              case NewArrayExprType     ⇒ checkNewArray(vs, p)
+              case ArrayComposeExprType ⇒ checkArrayCompose(vs, p)
+              case _                    ⇒ error("Type must be a class", vs.decl)
             }
           case _ ⇒ error("Class " + str + " not found", vs.decl)
         }
       case None ⇒ error("No class specified", vs.decl)
     }
   }
-
+  def checkArrayCompose(vs: ValSymbol, t: JavaType) {
+    val size = vs.getStr(ArrayComposeExprType.size) match {
+      case Some(s) ⇒ try { s.toInt } catch { case e ⇒ error("Cannot parse size", vs.decl); 1 }
+      case None    ⇒ 2
+    }
+    vs.info = size.asInstanceOf[AnyRef]
+    vs.classinfo = t
+    for (i ← 0 until size) {
+      val name = Name("element" + i)
+      val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(name).pi }
+      in.missing = false
+      in.tpe = t
+    }
+    val out = vs.findPortInstance(ArrayComposeExprType.out).get
+    out.missing = false
+    if (t != null) {
+      out.tpe = ztd.zaluumScope.lookupType(Name(t.fqName.str + "[]"))
+    }
+  }
   def checkNewArray(vs: ValSymbol, t: JavaType) {
     val dims = vs.getStr(NewArrayExprType.arrayDimSymbol) match {
       case Some(s) ⇒

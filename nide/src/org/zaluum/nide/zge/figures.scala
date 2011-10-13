@@ -209,7 +209,8 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
               case Some(tpe: ArrayType) ⇒ Some("new " + tpe.of.name.str.split('.').last + "[]" * tpe.dim)
               case _                    ⇒ None
             }
-          case _ ⇒ None
+          case Some(ArrayComposeExprType) ⇒ Some("new[]")
+          case _                          ⇒ None
         }
         str match {
           case Some(str) ⇒ imageFactory.invokeIcon(str, minYSize)

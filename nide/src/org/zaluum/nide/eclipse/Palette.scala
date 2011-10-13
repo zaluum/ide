@@ -98,24 +98,14 @@ object Palette {
     ) yield {
       PaletteEntry(
         classname,
-        Some(m.getElementName + m.getSignature),
+        None,
         None,
         Flags.isStatic(m.getFlags),
         None,
         None,
         Expressions.isTemplateExpression(classname))
     }
-    if (methodEntries.isEmpty)
-      Array(PaletteEntry(
-        classname,
-        None,
-        None,
-        false,
-        None,
-        None,
-        Expressions.isTemplateExpression(classname)))
-    else methodEntries
-
+    methodEntries
   }
   def load(file: InputStream): List[PaletteEntry] = {
     if (file == null) return List()

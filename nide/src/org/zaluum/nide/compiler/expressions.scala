@@ -152,10 +152,17 @@ object StaticFieldExprType extends StaticExprType(classOf[org.zaluum.`object`.Fi
   def signatureProp(c: Controller, v: ValDef) =
     new FieldParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), true)
 }
-object ArrayExprType extends ThisExprType(classOf[org.zaluum.`object`.Array]) with ResultExprType with OneParameter {
+object ArrayExprType extends ThisExprType(classOf[org.zaluum.`object`.ArrayAccess]) with ResultExprType with OneParameter {
   val index = new PortSymbol(this, Name("index"), In)
   ports += (index.name -> index)
   def indexPort(vs: ValSymbol) = vs.findPortInstance(index).get
+}
+object ArrayComposeExprType extends StaticExprType(classOf[org.zaluum.`object`.ArrayCompose]) {
+  val out = new PortSymbol(this, Name("array"), Out)
+  val size = new ParamDecl(Name("Size"))
+  ports += (out.name -> out)
+  addParam(size)
+  props ::= ((c: Controller, v: ValDef) ⇒ new TextParamProperty(c, size, v))
 }
 object LiteralExprType extends ResultExprType {
   def matchingClass = classOf[org.zaluum.op.Literal]
@@ -196,6 +203,7 @@ object Expressions {
     ThisRefExprType,
     CastToExprType,
     ArrayExprType,
+    ArrayComposeExprType,
     NewArrayExprType,
     NewExprType,
     InvokeExprType,

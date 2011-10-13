@@ -13,7 +13,7 @@ import scala.collection.mutable.Buffer
 
 trait BoxExprChecker extends CheckerPart {
   self: OOChecker ⇒
-  var scope: ZaluumClassScope = _
+  private var scope: ZaluumClassScope = _
   def checkBoxExpr(vs: ValSymbol, c: ClassJavaType) {
     scope = scope(vs)
     val v = vs.decl
