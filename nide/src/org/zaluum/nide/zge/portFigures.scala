@@ -105,7 +105,7 @@ abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure)
     extPort.update(getBounds.getCenter + extDisplacement, extPs)
       // internal
       def inDisplacement = if (left) Vector2(intPort.size.w / 2, -openBox.getInsets.top + size.h / 2)
-      else Vector2(-(size.w + intPort.size.w / 2), -openBox.getInsets.top + size.h / 2)
+      else Vector2(-(size.w + intPort.size.w / 2) - 1, -openBox.getInsets.top + size.h / 2)
     intPort.update(relPos + inDisplacement, intPs)
   }
   this.setOpaque(true);
