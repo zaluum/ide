@@ -13,10 +13,12 @@ import info.monitorenter.gui.chart.traces.painters.TracePainterVerticalBar;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.SortedSet;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ComboViewer;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -62,6 +64,8 @@ public class TraceCompositePlotTab extends Composite {
 	private Group grpColor;
 	private Group grpFill;
 	private Text name;
+	private Spinner zOrder;
+	private Text lblError;
 
 	public static float[] dot(float width) {
 		float d = Math.max(1, width / 2.0f);
@@ -128,11 +132,11 @@ public class TraceCompositePlotTab extends Composite {
 		composite = new Composite(this, SWT.NONE);
 		composite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, true, 4,
 				1));
-		composite.setLayout(new GridLayout(2, false));
+		composite.setLayout(new GridLayout(3, false));
 
 		Group grpName = new Group(composite, SWT.NONE);
 		grpName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false,
-				2, 1));
+				3, 1));
 		grpName.setText("Name");
 		grpName.setLayout(new GridLayout(1, false));
 
@@ -141,6 +145,8 @@ public class TraceCompositePlotTab extends Composite {
 
 			@Override
 			public void modifyText(ModifyEvent e) {
+				if (name.getText().equals(getTrace().getName())) return;
+				System.out.println("rename");
 				getTrace().setName(name.getText());
 				comboViewer.refresh();
 			}
@@ -149,7 +155,7 @@ public class TraceCompositePlotTab extends Composite {
 
 		Group grpAxis = new Group(composite, SWT.NONE);
 		grpAxis.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false,
-				2, 1));
+				3, 1));
 		grpAxis.setText("Axis");
 		grpAxis.setLayout(new GridLayout(3, false));
 
@@ -162,7 +168,6 @@ public class TraceCompositePlotTab extends Composite {
 		comboViewerX.setLabelProvider(new AxisTitleLabelProvider());
 		comboViewerX
 				.addSelectionChangedListener(new ISelectionChangedListener() {
-
 					@Override
 					public void selectionChanged(SelectionChangedEvent event) {
 						changeXAxis();
@@ -180,13 +185,19 @@ public class TraceCompositePlotTab extends Composite {
 
 		comboViewerY = new ComboViewer(grpAxis, SWT.READ_ONLY);
 		comboViewerY.setLabelProvider(new AxisTitleLabelProvider());
+		comboViewerY.addSelectionChangedListener(new ISelectionChangedListener() {
+			@Override
+			public void selectionChanged(SelectionChangedEvent event) {
+				changeYAxis();
+			}
+		});
 		comboViewerY.setContentProvider(ArrayContentProvider.getInstance());
 		Combo comboY = comboViewerY.getCombo();
 		comboY.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 2,
 				1));
 
 		grpStyle = new Group(composite, SWT.NONE);
-		grpStyle.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false,
+		grpStyle.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false,
 				1, 2));
 		grpStyle.setText("Style");
 		grpStyle.setLayout(new GridLayout(2, false));
@@ -210,7 +221,7 @@ public class TraceCompositePlotTab extends Composite {
 		});
 
 		grpColor = new Group(composite, SWT.NONE);
-		grpColor.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false,
+		grpColor.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false,
 				1, 1));
 		grpColor.setLayout(new GridLayout(2, false));
 		grpColor.setText("Color");
@@ -241,10 +252,25 @@ public class TraceCompositePlotTab extends Composite {
 
 		Label lblLine = new Label(grpColor, SWT.NONE);
 		lblLine.setText("Line");
+		
+		Group grpZOrder = new Group(composite, SWT.NONE);
+		grpZOrder.setText("Z order");
+		grpZOrder.setLayout(new GridLayout(1, false));
+		
+		zOrder = new Spinner(grpZOrder, SWT.BORDER);
+		zOrder.setMaximum(100);
+		zOrder.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				getTrace().setZIndex(zOrder.getSelection());
+				refresh();
+				//comboViewer.refresh();
+			}
+		});
 
 		grpFill = new Group(composite, SWT.NONE);
 		grpFill.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false,
-				1, 1));
+				2, 1));
 		grpFill.setText("Fill");
 		grpFill.setLayout(new GridLayout(1, false));
 
@@ -253,6 +279,15 @@ public class TraceCompositePlotTab extends Composite {
 				false, 1, 1));
 		plotFillCombo.setItems(new String[] { "Line", "Disc", "Vertical bar",
 				"Fill" });
+		new Label(this, SWT.NONE);
+		
+		lblError = new Text(this, SWT.BORDER | SWT.READ_ONLY | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
+		lblError.setEnabled(false);
+		GridData gd_lblError = new GridData(SWT.FILL, SWT.FILL, false, true, 3, 1);
+		gd_lblError.heightHint = 63;
+		lblError.setLayoutData(gd_lblError);
+		lblError.setForeground(SWTResourceManager.getColor(SWT.COLOR_RED));
+		lblError.setText("Error");
 		plotFillCombo.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -277,6 +312,26 @@ public class TraceCompositePlotTab extends Composite {
 		});
 	}
 
+	protected void refreshZOrderError() {
+		System.out.println("refreshZ");
+		SortedSet<ITrace2D> traces = chart.getTraces();
+		ITrace2D before = null;
+		StringBuffer f = new StringBuffer();
+		for (ITrace2D t : traces) {
+			if (before!=null) {
+				System.out.println(before.getZIndex() + " " + t.getZIndex());
+			  if (before.getZIndex().intValue() == t.getZIndex().intValue()) {
+				  f.append("Trace " + before.getLabel() + " and " + t.getLabel() + " have the same Z index.");
+			  }
+			}
+			before =t;
+		}
+		if (f.length()!=0) 
+			f.append("Traces order will not be stable. All traces must have a different z order number.");
+		System.out.println(f.toString());
+		lblError.setText(f.toString());
+	}
+
 	protected void changeXAxis() {
 		IStructuredSelection sel = (IStructuredSelection) comboViewerX
 				.getSelection();
@@ -294,7 +349,23 @@ public class TraceCompositePlotTab extends Composite {
 		chart.addTrace(trace, newAxis, axisY);
 		refresh();
 	}
-
+	protected void changeYAxis() {
+		IStructuredSelection sel = (IStructuredSelection) comboViewerY
+				.getSelection();
+		if (sel.isEmpty())
+			return;
+		IAxis newAxis = (IAxis) sel.getFirstElement();
+		ITrace2D trace = getTrace();
+		if (trace == null)
+			return;
+		IAxis axisY = chart.getAxisY(trace);
+		if (axisY == null || axisY == newAxis)
+			return;
+		IAxis axisX = chart.getAxisX(trace);
+		chart.removeTrace(trace);
+		chart.addTrace(trace, axisX , newAxis);
+		refresh();
+	}
 	protected void updateStroke() {
 		try {
 			int width = Integer.parseInt(widthSpinner.getText());
@@ -329,8 +400,16 @@ public class TraceCompositePlotTab extends Composite {
 	}
 
 	protected void refresh() {
-		comboViewer.setInput(chart.getTraces().toArray());
-
+		refreshZOrderError();
+		Object[] array = chart.getTraces().toArray();
+		for (Object o : array) {
+			System.out.println(((ITrace2D)o) + " " + o.hashCode());
+		}
+		System.out.println("--");
+		ISelection old = comboViewer.getSelection();
+		comboViewer.setInput(array);
+		comboViewer.setSelection(old);
+		//comboViewer.refresh();
 		{
 			ArrayList<IAxis> x = new ArrayList<IAxis>();
 			x.addAll(chart.getAxesXBottom());
@@ -378,7 +457,7 @@ public class TraceCompositePlotTab extends Composite {
 				plotFillCombo.select(3);
 			else
 				plotFillCombo.select(0);
-
+			zOrder.setSelection(trace.getZIndex());
 			name.setText(trace.getLabel());
 			if (trace.getStroke() instanceof BasicStroke) {
 				BasicStroke s = (BasicStroke) trace.getStroke();
@@ -434,7 +513,7 @@ public class TraceCompositePlotTab extends Composite {
 				t.addPoint(i, Math.random() * i);
 			}
 			refresh();
-			comboViewer.setSelection(new StructuredSelection(t));
+			//comboViewer.setSelection(new StructuredSelection(t));
 		} else {
 			MessageDialog.openError(getShell(), "Axes creation",
 					"Create X and Y axes first");
@@ -449,5 +528,4 @@ public class TraceCompositePlotTab extends Composite {
 		else
 			return ((ITrace2D) sel.getFirstElement());
 	}
-
 }

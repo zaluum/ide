@@ -17,7 +17,9 @@ import org.eclipse.swt.widgets.Label;
 public class ChartCompositePlotTab extends Group {
 	private Button btnLegend;
 	private Chart2D chart;
-
+	@Override
+	protected void checkSubclass() {
+	}
 	public ChartCompositePlotTab(Composite parent, int style,
 			PlotConfigurerComposite comp) {
 		super(parent, style);
