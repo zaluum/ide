@@ -17,6 +17,7 @@ import org.eclipse.swt.widgets.Label;
 public class ChartCompositePlotTab extends Group {
 	private Button btnLegend;
 	private Chart2D chart;
+	private Button btnUseantialias;
 	@Override
 	protected void checkSubclass() {
 	}
@@ -25,56 +26,67 @@ public class ChartCompositePlotTab extends Group {
 		super(parent, style);
 		chart = comp.chart;
 		setText("Behaviour");
-		this.setLayout(new GridLayout(2, false));
+		this.setLayout(new GridLayout(3, false));
+		
+				btnLegend = new Button(this, SWT.CHECK);
+				btnLegend.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
+				btnLegend.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected(SelectionEvent e) {
+						chart.setPaintLabels(btnLegend.getSelection());
+					}
+				});
+				btnLegend.setText("Show legend");
+				
+				btnUseantialias = new Button(this, SWT.CHECK);
+				btnUseantialias.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
+				btnUseantialias.setText("UseAntialias");
+				btnUseantialias.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected(SelectionEvent e) {
+						chart.setUseAntialiasing(btnUseantialias.getSelection());
+						chart.setRequestedRepaint(true);
+					}
+				});
+				new Label(this, SWT.NONE);
+		
+				Label lblMode = new Label(this, SWT.NONE);
+				lblMode.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false,
+						1, 1));
+				lblMode.setText("Tooltip Mode");
+
+				final Combo tooltipCombo = new Combo(this, SWT.NONE);
+				tooltipCombo.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected(SelectionEvent e) {
+						switch (tooltipCombo.getSelectionIndex()) {
+						case -1:
+						case 0:
+							chart.setToolTipType(ToolTipType.NONE);
+							break;
+						case 1:
+							chart.setToolTipType(ToolTipType.DATAVALUES);
+							break;
+						case 2:
+							chart.setToolTipType(ToolTipType.PIXEL);
+							break;
+						case 3:
+							chart.setToolTipType(ToolTipType.VALUE_SNAP_TO_TRACEPOINTS);
+							break;
+						}
+					}
+				});
+				tooltipCombo.setItems(new String[] { "None", "Data Value",
+						"Pixel Position", "Snap to trace" });
+				tooltipCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
+						false, 1, 1));
+				tooltipCombo.select(1);
 		new Label(this, SWT.NONE);
-
-		btnLegend = new Button(this, SWT.CHECK);
-		btnLegend.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				chart.setPaintLabels(btnLegend.getSelection());
-			}
-		});
-		btnLegend.setText("Show legend");
-		new Label(this, SWT.NONE);
-
-		Button btnShowMenu = new Button(this, SWT.CHECK);
-		btnShowMenu.setText("Show menu");
-
-		Label lblMode = new Label(this, SWT.NONE);
-		lblMode.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false,
-				1, 1));
-		lblMode.setText("Tooltip Mode");
-
-		final Combo tooltipCombo = new Combo(this, SWT.NONE);
-		tooltipCombo.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				switch (tooltipCombo.getSelectionIndex()) {
-				case -1:
-				case 0:
-					chart.setToolTipType(ToolTipType.NONE);
-					break;
-				case 1:
-					chart.setToolTipType(ToolTipType.DATAVALUES);
-					break;
-				case 2:
-					chart.setToolTipType(ToolTipType.PIXEL);
-					break;
-				case 3:
-					chart.setToolTipType(ToolTipType.VALUE_SNAP_TO_TRACEPOINTS);
-					break;
-				}
-			}
-		});
-		tooltipCombo.setItems(new String[] { "None", "Data Value",
-				"Pixel Position", "Snap to trace" });
-		tooltipCombo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
-				false, 1, 1));
-		tooltipCombo.select(1);
 	}
 
 	public void refresh() {
 		btnLegend.setSelection(chart.isPaintLabels());
+		btnUseantialias.setSelection(chart.isUseAntialiasing());
+		
 	}
 }

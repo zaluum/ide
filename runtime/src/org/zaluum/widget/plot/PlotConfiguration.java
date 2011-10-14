@@ -30,7 +30,7 @@ public class PlotConfiguration {
 		p.format("c.removeAxisXBottom(c.getAxisX());\n");
 		p.format("c.removeAxisYLeft(c.getAxisY());\n");
 		p.format("c.setPaintLabels(%b);\n", c.isPaintLabels());
-		p.format("c.setUseAntialiasing(true);\n");
+		p.format("c.setUseAntialiasing(%b);\n", c.isUseAntialiasing());
 		int i = 0;
 		for (IAxis a : c.getAxesXBottom()) 
 			doAxis(i++, "addAxisXBottom", a, p, c);
