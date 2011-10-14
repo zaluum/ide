@@ -9,6 +9,9 @@ import java.awt.Panel;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.awt.SWT_AWT;
+import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -52,25 +55,29 @@ public class PlotConfigurerComposite extends Composite {
 	public PlotConfigurerComposite(Composite parent, int style) {
 		super(parent, style);
 		setLayout(new GridLayout(1, false));
-		setLayoutData(new GridData(SWT.FILL, SWT.FILL, true,true));
-		// remove
-		chart = new Chart2D();
-		for (IAxis a : chart.getAxes()) {
-			a.setFormatter(new LabelFormatterDecimal());
-		}
-		Composite previewChart = new Composite(this,
-				SWT.NO_BACKGROUND | SWT.EMBEDDED);
+		setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+		SashForm sashForm = new SashForm(this, SWT.VERTICAL);
+		sashForm.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		
+		Composite previewChart = new Composite(sashForm, SWT.NO_BACKGROUND
+				| SWT.EMBEDDED);
 		GridData gd_previewChart = new GridData(SWT.FILL, SWT.FILL, true, true,
 				1, 1);
-		gd_previewChart.minimumHeight=300;
+		gd_previewChart.minimumHeight = 300;
 		gd_previewChart.widthHint = 500;
 		previewChart.setLayoutData(gd_previewChart);
 		createAWTChart2d(previewChart);
 
-		TabFolder tabFolder = new TabFolder(this, SWT.NONE);
-		GridData gd_tabFolder = new GridData(SWT.FILL, SWT.TOP, true, false,
-				1, 1);
-		tabFolder.setLayoutData(gd_tabFolder);
+		
+		ScrolledComposite scrolledComposite = new ScrolledComposite(sashForm, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		scrolledComposite.setExpandHorizontal(true);
+		scrolledComposite.setExpandVertical(true);
+		
+		Composite menusComposite = new Composite(scrolledComposite, SWT.NONE);
+		menusComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
+		
+		TabFolder tabFolder = new TabFolder(menusComposite, SWT.NONE);
 
 		TabItem tbtmChart = new TabItem(tabFolder, SWT.NONE);
 		tbtmChart.setText("Chart");
@@ -87,7 +94,13 @@ public class PlotConfigurerComposite extends Composite {
 
 		traceC = new TraceCompositePlotTab(tabFolder, SWT.NONE, chart);
 		tbtmPlot.setControl(traceC);
+		
+		scrolledComposite.setContent(menusComposite);
+		scrolledComposite.setMinSize(menusComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+		sashForm.setWeights(new int[] {50,100});
+		
 
+	
 	}
 
 	public void refresh() {
