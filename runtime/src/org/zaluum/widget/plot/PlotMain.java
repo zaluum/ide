@@ -15,7 +15,8 @@ public class PlotMain {
 		}
 		PlotDialog plotDialog = new PlotDialog(shell, "");
 		plotDialog.open();
-		shell.setSize(600, 700);
+		PlotDialog plot2 = new PlotDialog(shell, plotDialog.getScript());
+		plot2.open();
 		shell.addDisposeListener(new DisposeListener() {
 
 			@Override
@@ -23,7 +24,6 @@ public class PlotMain {
 				System.exit(0);
 			}
 		});
-		shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())
 				display.sleep();

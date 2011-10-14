@@ -35,7 +35,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-public class ScalesCompositePlotTab extends Composite {
+public class AxesCompositePlotTab extends Composite {
 	private static final String[] Positions = new String[] { "Top", "Bottom",
 			"Left", "Right" };
 	private Chart2D chart;
@@ -44,7 +44,6 @@ public class ScalesCompositePlotTab extends Composite {
 	private Text scaleName;
 	private Button scaleShowChk;
 	private Button scaleLogChk;
-	private Button scaleInvertedChk;
 	private Button scaleAutoChk;
 	private Text scaleMin;
 	private Text scaleMax;
@@ -54,7 +53,7 @@ public class ScalesCompositePlotTab extends Composite {
 
 	private Text scaleFormat;
 
-	public ScalesCompositePlotTab(Composite parent, int style,
+	public AxesCompositePlotTab(Composite parent, int style,
 			final PlotConfigurerComposite plotc) {
 		super(parent, style);
 		chart = plotc.chart;
@@ -145,11 +144,6 @@ public class ScalesCompositePlotTab extends Composite {
 			}
 		});
 		scaleLogChk.setText("Log");
-
-		scaleInvertedChk = new Button(scalesCheckComposite, SWT.CHECK);
-		scaleInvertedChk.setEnabled(false);
-		scaleInvertedChk.setText("Inverted");
-
 		Group groupAuto = new Group(scalesContents, SWT.NONE);
 		groupAuto.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false,
 				2, 1));
@@ -242,6 +236,7 @@ public class ScalesCompositePlotTab extends Composite {
 					chart.addAxisYLeft(axis);
 				else if (sel == 3) // RIGHT
 					chart.addAxisYRight(axis);
+				refresh(axis);
 			}
 		});
 		scalesPos.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false,

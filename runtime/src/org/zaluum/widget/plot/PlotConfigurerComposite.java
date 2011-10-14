@@ -20,7 +20,7 @@ public class PlotConfigurerComposite extends Composite {
 
 	public Chart2D chart;
 	TraceCompositePlotTab traceC;
-	ScalesCompositePlotTab scalesC;
+	AxesCompositePlotTab scalesC;
 	ChartCompositePlotTab chartC;
 
 	public void createAWTChart2d(Composite parent) {
@@ -82,8 +82,8 @@ public class PlotConfigurerComposite extends Composite {
 		tbtmChart.setControl(chartC);
 
 		TabItem tbtmScales = new TabItem(tabFolder, SWT.NONE);
-		tbtmScales.setText("Scales");
-		scalesC = new ScalesCompositePlotTab(tabFolder, SWT.NONE, this);
+		tbtmScales.setText("Axes");
+		scalesC = new AxesCompositePlotTab(tabFolder, SWT.NONE, this);
 		tbtmScales.setControl(scalesC);
 
 		TabItem tbtmPlot = new TabItem(tabFolder, SWT.NONE);

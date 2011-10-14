@@ -12,20 +12,47 @@ import info.monitorenter.gui.chart.traces.painters.TracePainterVerticalBar;
 import java.awt.BasicStroke;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PlotConfiguration {
-	public static String javaScriptConfigure(Chart2D c) {
-		StringWriter stringWriter = new StringWriter();
-		PrintWriter p = new PrintWriter(stringWriter);
+	Map<IAxis, String> map = new HashMap<IAxis, String>();
+	private StringWriter stringWriter;
+	private PrintWriter p;
+	private Chart2D c;
+
+	public String javaScriptConfigure(Chart2D c) {
+		this.c = c;
+		stringWriter = new StringWriter();
+		p = new PrintWriter(stringWriter);
 		p.format("c.removeAllTraces();\n");
-		ITrace2D t = c.getTraces().first();
+		
+		p.format("c.removeAxisXBottom(c.getAxisX());\n");
+		p.format("c.removeAxisYLeft(c.getAxisY());\n");
 		p.format("c.setPaintLabels(%b);\n", c.isPaintLabels());
 		p.format("c.setUseAntialiasing(true);\n");
-		doAxis(true, p, c);
-		doAxis(false, p, c);
+		int i = 0;
+		for (IAxis a : c.getAxesXBottom()) 
+			doAxis(i++, "addAxisXBottom", a, p, c);
+		for (IAxis a : c.getAxesXTop()) 
+			doAxis(i++, "addAxisXTop", a, p, c);
+		for (IAxis a : c.getAxesYLeft()) 
+			doAxis(i++, "addAxisYLeft", a, p, c);
+		for (IAxis a : c.getAxesYRight()) 
+			doAxis(i++, "addAxisYRight", a, p, c);
+		for (ITrace2D t : c.getTraces()) 
+			doTrace(t);
+		return stringWriter.toString();
+	}
+
+	public void doTrace(ITrace2D t) {
 		p.format(
 				"var t = new Packages.info.monitorenter.gui.chart.traces.Trace2DLtd(100,\"%s\");\n",
 				StringEscapeUtils.escapeJavaScript(t.getName()));
+		IAxis axisX = c.getAxisX(t);
+		IAxis axisY = c.getAxisY(t);
+		p.format("c.addTrace(t, %s, %s);\n", map.get(axisX), map.get(axisY));
+		p.format("t.setZIndex(%d);", t.getZIndex().intValue());		
 		p.format("t.setColor(new java.awt.Color(%d));\n", t.getColor().getRGB());
 		if (t.getTracePainters().size() == 1) {
 			ITracePainter<?> painter = t.getTracePainters().iterator().next();
@@ -56,20 +83,13 @@ public class PlotConfiguration {
 					"" + b.getLineWidth(), b.getEndCap(), b.getLineJoin(), ""
 							+ b.getMiterLimit(), "" + b.getDashPhase());
 		}
-		p.format("c.addTrace(t, xaxis,yaxis);\n");
-		return stringWriter.toString();
+		
+
 	}
 
-	public static void doAxis(boolean x, PrintWriter p, Chart2D c) {
-		IAxis axis;
-		String name;
-		if (x) {
-			axis = c.getAxesXBottom().get(0);
-			name = "xaxis";
-		} else {
-			axis = c.getAxesYLeft().get(0);
-			name = "yaxis";
-		}
+	public void doAxis(int i, String addStr, IAxis axis, PrintWriter p,
+			Chart2D c) {
+		String name = "axis" + i;
 		if (axis instanceof AxisLog10)
 			p.format(
 					"var %s = new Packages.info.monitorenter.gui.chart.axis.AxisLog10();\n",
@@ -81,10 +101,7 @@ public class PlotConfiguration {
 		IRangePolicy rangePolicy = axis.getRangePolicy();
 		p.format("var policy = new Packages.%s();\n", rangePolicy.getClass()
 				.getName());
-		if (x)
-			p.format("c.setAxisXBottom(xaxis, 0);\n");
-		else
-			p.format("c.setAxisYLeft(yaxis, 0);\n");
+		p.format("c.%s(%s);\n", addStr, name);
 		if (axis.getFormatter() instanceof LabelFormatterDecimal) {
 			String pattern = ((LabelFormatterDecimal) axis.getFormatter())
 					.toPattern();
@@ -104,5 +121,6 @@ public class PlotConfiguration {
 		p.format("%s.setPaintScale(%b);\n", name, axis.isPaintScale());
 		p.format("%s.setPaintGrid(%b);\n", name, axis.isPaintGrid());
 		p.format("%s.setVisible(%b);\n", name, axis.isVisible());
+		map.put(axis, name);
 	}
 }

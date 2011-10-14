@@ -56,7 +56,7 @@ public class PlotDialog extends Dialog {
 
 	@Override
 	protected void okPressed() {
-		script = PlotConfiguration.javaScriptConfigure(plotComposite.chart);
+		script = new PlotConfiguration().javaScriptConfigure(plotComposite.chart);
 		super.okPressed();
 	}
 
