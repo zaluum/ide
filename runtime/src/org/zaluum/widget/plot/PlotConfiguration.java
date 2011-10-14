@@ -117,6 +117,7 @@ public class PlotConfiguration {
 				"" + rangePolicy.getRange().getMin(), ""
 						+ rangePolicy.getRange().getMax());
 		p.format("%s.setRangePolicy(policy);", name);
+		p.format("%s.getAxisTitle().setVisible(%b);\n",name, axis.getAxisTitle().isVisible());
 		p.format("%s.setTitle(\"%s\");\n", name, StringEscapeUtils
 				.escapeJavaScript(axis.getAxisTitle().getTitle()));
 		p.format("%s.setPaintScale(%b);\n", name, axis.isPaintScale());

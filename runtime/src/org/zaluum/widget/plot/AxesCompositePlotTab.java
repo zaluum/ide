@@ -52,6 +52,7 @@ public class AxesCompositePlotTab extends Composite {
 	private Combo scalesPos;
 
 	private Text scaleFormat;
+	private Button scaleShowLabel;
 
 	public AxesCompositePlotTab(Composite parent, int style,
 			final PlotConfigurerComposite plotc) {
@@ -135,7 +136,15 @@ public class AxesCompositePlotTab extends Composite {
 			}
 		});
 		scaleShowChk.setText("Show scale");
-
+		
+		scaleShowLabel = new Button(scalesCheckComposite, SWT.CHECK);
+		scaleShowLabel.setText("Show label");
+		scaleShowLabel.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				getAxis().getAxisTitle().setVisible(scaleShowLabel.getSelection());
+			}
+		});
 		scaleLogChk = new Button(scalesCheckComposite, SWT.CHECK);
 		scaleLogChk.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -364,6 +373,7 @@ public class AxesCompositePlotTab extends Composite {
 		if (axis != null) {
 			Range range = axis.getRangePolicy().getRange();
 			scaleLogChk.setSelection(axis instanceof AxisLog10);
+			scaleShowLabel.setSelection(axis.getAxisTitle().isVisible());
 			boolean auto = axis.getRangePolicy() instanceof RangePolicyUnbounded;
 			scaleAutoChk.setSelection(auto);
 			scaleMin.setEnabled(!auto);
