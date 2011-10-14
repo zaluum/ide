@@ -1,4 +1,4 @@
-package org.zaluum.widget;
+package org.zaluum.basic;
 
 public class CircularBuffer {
 	private int head = 0, tail = 0;

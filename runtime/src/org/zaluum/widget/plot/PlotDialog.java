@@ -43,7 +43,7 @@ public class PlotDialog extends Dialog {
 			}
 		}
 		if (c.getTraces().size() == 0)
-			c.addTrace(new Trace2DLtd(20));
+			c.addTrace(new Trace2DLtd("trace-0"));
 		Random random = new Random();
 		for (ITrace2D t : c.getTraces()) {
 			for (int i = 10; i >= 0; i--) {

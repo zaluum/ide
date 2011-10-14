@@ -7,16 +7,18 @@ import java.awt.Color;
 
 import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
+import org.zaluum.basic.CircularBuffer;
 import org.zaluum.basic.Zaluum;
 
-@Box(configurer=ChartConfigurer.class)
-public class Chart extends Chart2D {
+@Box(configurer=PlotConfigurer.class)
+@Deprecated
+public class FastPlot extends Chart2D {
 	private static final long serialVersionUID = 1L;
 	private long i = 0;
 	private final CircularBuffer buffer;
 	private final int maxlen = 2000;
 
-	public Chart() {
+	public FastPlot() {
 		super();
 		buffer = new CircularBuffer(maxlen);
 		Trace2DLtd trace = new Trace2DLtd(maxlen);
@@ -28,7 +30,7 @@ public class Chart extends Chart2D {
 		public void run() {
 			final double[] copy;
 			final long savedi;
-			synchronized (Chart.this) {
+			synchronized (FastPlot.this) {
 				copy = buffer.orderedCopy();
 				savedi = i - copy.length;
 				buffer.clear();

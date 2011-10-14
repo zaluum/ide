@@ -25,8 +25,8 @@ public class PlotConfiguration {
 		this.c = c;
 		stringWriter = new StringWriter();
 		p = new PrintWriter(stringWriter);
+		p.format("c.setMinPaintLatency(%d);\n", c.getMinPaintLatency());
 		p.format("c.removeAllTraces();\n");
-		
 		p.format("c.removeAxisXBottom(c.getAxisX());\n");
 		p.format("c.removeAxisYLeft(c.getAxisY());\n");
 		p.format("c.setPaintLabels(%b);\n", c.isPaintLabels());
@@ -47,7 +47,8 @@ public class PlotConfiguration {
 
 	public void doTrace(ITrace2D t) {
 		p.format(
-				"var t = new Packages.info.monitorenter.gui.chart.traces.Trace2DLtd(100,\"%s\");\n",
+				"var t = new Packages.info.monitorenter.gui.chart.traces.Trace2DLtd(%d,\"%s\");\n",
+				t.getMaxSize(),
 				StringEscapeUtils.escapeJavaScript(t.getName()));
 		IAxis axisX = c.getAxisX(t);
 		IAxis axisY = c.getAxisY(t);

@@ -66,6 +66,7 @@ public class TraceCompositePlotTab extends Composite {
 	private Text name;
 	private Spinner zOrder;
 	private Text lblError;
+	private Spinner limit;
 
 	public static float[] dot(float width) {
 		float d = Math.max(1, width / 2.0f);
@@ -132,11 +133,11 @@ public class TraceCompositePlotTab extends Composite {
 		composite = new Composite(this, SWT.NONE);
 		composite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, true, 4,
 				1));
-		composite.setLayout(new GridLayout(3, false));
+		composite.setLayout(new GridLayout(4, false));
 
 		Group grpName = new Group(composite, SWT.NONE);
 		grpName.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false,
-				3, 1));
+				4, 1));
 		grpName.setText("Name");
 		grpName.setLayout(new GridLayout(1, false));
 
@@ -155,7 +156,7 @@ public class TraceCompositePlotTab extends Composite {
 
 		Group grpAxis = new Group(composite, SWT.NONE);
 		grpAxis.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false,
-				3, 1));
+				4, 1));
 		grpAxis.setText("Axes");
 		grpAxis.setLayout(new GridLayout(3, false));
 
@@ -253,6 +254,24 @@ public class TraceCompositePlotTab extends Composite {
 
 		Label lblLine = new Label(grpColor, SWT.NONE);
 		lblLine.setText("Line");
+		
+		Group grpLimit = new Group(composite, SWT.NONE);
+		grpLimit.setText("Limit");
+		grpLimit.setLayout(new GridLayout(1, false));
+		
+		limit = new Spinner(grpLimit, SWT.BORDER);
+		limit.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				int l = limit.getSelection();
+				if (getTrace() instanceof Trace2DLtd) {
+					Trace2DLtd t = (Trace2DLtd)getTrace();
+					t.setMaxSize(l);
+				}
+			}
+		});
+		limit.setMaximum(100000);
+		limit.setMinimum(1);
 
 		Group grpZOrder = new Group(composite, SWT.NONE);
 		grpZOrder.setText("Z order");
@@ -271,7 +290,7 @@ public class TraceCompositePlotTab extends Composite {
 
 		grpFill = new Group(composite, SWT.NONE);
 		grpFill.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false,
-				2, 1));
+				3, 1));
 		grpFill.setText("Fill");
 		grpFill.setLayout(new GridLayout(1, false));
 
@@ -482,6 +501,12 @@ public class TraceCompositePlotTab extends Composite {
 			org.eclipse.swt.graphics.Color colorSWT = SWTResourceManager
 					.getColor(color.getRed(), color.getGreen(), color.getBlue());
 			lineColor.setBackground(colorSWT);
+			if(trace.getMaxSize() == Integer.MAX_VALUE) {
+				limit.setEnabled(false);
+			}else {
+				limit.setEnabled(true);
+				limit.setSelection(trace.getMaxSize());
+			}
 		}
 	}
 
@@ -508,7 +533,7 @@ public class TraceCompositePlotTab extends Composite {
 	}
 
 	private void newTrace() {
-		Trace2DLtd t = new Trace2DLtd(200, "trace-" + chart.getTraces().size());
+		Trace2DLtd t = new Trace2DLtd("trace-" + chart.getTraces().size());
 		IAxis x = getXAxis();
 		IAxis y = getYAxis();
 		if (x != null && y != null) {

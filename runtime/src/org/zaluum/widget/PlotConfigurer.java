@@ -9,7 +9,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.zaluum.basic.BoxConfigurer;
 import org.zaluum.widget.plot.PlotDialog;
 
-public class ChartConfigurer implements BoxConfigurer {
+public class PlotConfigurer implements BoxConfigurer {
 
 	@Override
 	public Map<String, List<String>> configure(Shell shell,

@@ -3,7 +3,7 @@ package org.zaluum.widget;
 import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
 
-@Box(configurer = ChartConfigurer.class)
+@Box(configurer = PlotConfigurer.class)
 public class Plot extends PlotBase {
 	private static final long serialVersionUID = 1L;
 
