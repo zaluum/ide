@@ -52,28 +52,24 @@ public class PlotConfigurerComposite extends Composite {
 	public PlotConfigurerComposite(Composite parent, int style) {
 		super(parent, style);
 		setLayout(new GridLayout(1, false));
-
-		Composite previewComposite = new Composite(this, SWT.NONE);
-		GridData gd_previewComposite = new GridData(SWT.FILL, SWT.FILL, true,
-				true, 1, 1);
-		gd_previewComposite.heightHint = 205;
-		previewComposite.setLayoutData(gd_previewComposite);
-		previewComposite.setLayout(new GridLayout(1, false));
-
-		Composite previewChart = new Composite(previewComposite,
+		setLayoutData(new GridData(SWT.FILL, SWT.FILL, true,true));
+		// remove
+		chart = new Chart2D();
+		for (IAxis a : chart.getAxes()) {
+			a.setFormatter(new LabelFormatterDecimal());
+		}
+		Composite previewChart = new Composite(this,
 				SWT.NO_BACKGROUND | SWT.EMBEDDED);
 		GridData gd_previewChart = new GridData(SWT.FILL, SWT.FILL, true, true,
 				1, 1);
-		gd_previewChart.widthHint = 252;
-		gd_previewChart.heightHint = 222;
+		gd_previewChart.minimumHeight=300;
+		gd_previewChart.widthHint = 500;
 		previewChart.setLayoutData(gd_previewChart);
 		createAWTChart2d(previewChart);
 
 		TabFolder tabFolder = new TabFolder(this, SWT.NONE);
-		GridData gd_tabFolder = new GridData(SWT.FILL, SWT.CENTER, true, false,
+		GridData gd_tabFolder = new GridData(SWT.FILL, SWT.TOP, true, false,
 				1, 1);
-		gd_tabFolder.heightHint = 373;
-		gd_tabFolder.widthHint = 503;
 		tabFolder.setLayoutData(gd_tabFolder);
 
 		TabItem tbtmChart = new TabItem(tabFolder, SWT.NONE);

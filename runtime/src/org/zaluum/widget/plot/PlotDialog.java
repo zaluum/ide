@@ -30,7 +30,7 @@ public class PlotDialog extends Dialog {
 	protected Control createDialogArea(Composite parent) {
 		Composite composite = (Composite) super.createDialogArea(parent);
 		// add controls to composite as necessary
-		plotComposite = new PlotConfigurerComposite(parent, SWT.NONE);
+		plotComposite = new PlotConfigurerComposite(composite, SWT.NONE);
 		Chart2D c = plotComposite.chart;
 		if (initScript != null) {
 			ScriptEngineManager manager = new ScriptEngineManager();
@@ -46,8 +46,8 @@ public class PlotDialog extends Dialog {
 			c.addTrace(new Trace2DLtd("trace-0"));
 		Random random = new Random();
 		for (ITrace2D t : c.getTraces()) {
-			for (int i = 10; i >= 0; i--) {
-				t.addPoint(i, random.nextDouble() * 10.0 + i - 50);
+			for (int i = 0; i < 10; i++) {
+				t.addPoint(i, random.nextDouble() * 10.0 - 5);
 			}
 		}
 		plotComposite.refresh();
@@ -58,6 +58,10 @@ public class PlotDialog extends Dialog {
 	protected void okPressed() {
 		script = new PlotConfiguration().javaScriptConfigure(plotComposite.chart);
 		super.okPressed();
+	}
+	@Override
+	protected boolean isResizable() {
+		return true;
 	}
 
 	public String getScript() {

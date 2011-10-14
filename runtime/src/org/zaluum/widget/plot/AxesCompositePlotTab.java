@@ -161,21 +161,8 @@ public class AxesCompositePlotTab extends Composite {
 		scaleAutoChk.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false,
 				false, 2, 1));
 		scaleAutoChk.setText("Auto scale");
-
-		Label lblMin = new Label(groupAuto, SWT.NONE);
-		lblMin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false,
-				1, 1));
-		lblMin.setText("Min");
-
-		scaleMin = new Text(groupAuto, SWT.BORDER);
-		scaleMin.addModifyListener(new ModifyListener() {
-			public void modifyText(ModifyEvent e) {
-				syncAuto();
-			}
-		});
-		scaleMin.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false,
-				1, 1));
-
+		
+		
 		Label lblMax = new Label(groupAuto, SWT.NONE);
 		lblMax.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false,
 				1, 1));
@@ -189,6 +176,20 @@ public class AxesCompositePlotTab extends Composite {
 		});
 
 		scaleMax.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false,
+				1, 1));
+
+		Label lblMin = new Label(groupAuto, SWT.NONE);
+		lblMin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false,
+				1, 1));
+		lblMin.setText("Min");
+
+		scaleMin = new Text(groupAuto, SWT.BORDER);
+		scaleMin.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				syncAuto();
+			}
+		});
+		scaleMin.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false,
 				1, 1));
 
 		Group grpGrid = new Group(scalesContents, SWT.NONE);
@@ -308,7 +309,7 @@ public class AxesCompositePlotTab extends Composite {
 
 	protected double parseOr(String text, double or) {
 		try {
-			return Double.parseDouble(scaleMax.getText());
+			return Double.parseDouble(text);
 		} catch (NumberFormatException e) {
 			return or;
 		}
@@ -328,8 +329,11 @@ public class AxesCompositePlotTab extends Composite {
 		if (scaleAutoChk.getSelection()) {
 			axis.setRangePolicy(new RangePolicyUnbounded());
 		} else {
-			axis.setRangePolicy(new RangePolicyFixedViewport(new Range(0,// parseOr(scaleMin.getText(),0),
-					parseOr(scaleMax.getText(), 1))));
+			double min = parseOr(scaleMin.getText(),0);
+			double max = parseOr(scaleMax.getText(), 1);			
+			System.out.println("min = " + min + " max = " + max);
+			axis.setRangePolicy(new RangePolicyFixedViewport(new Range(min,
+					max)));
 		}
 		chart.setRequestedRepaint(true);
 	}
