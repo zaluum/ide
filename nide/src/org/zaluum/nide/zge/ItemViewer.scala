@@ -20,6 +20,7 @@ import org.zaluum.nide.eclipse.PaletteTransfer
 import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
 import draw2dConversions._
 import org.eclipse.draw2d.geometry.Point
+import org.zaluum.nide.compiler.ValDef
 
 abstract class ItemViewer(parent: Composite, controller: Controller)
     extends Viewer(parent, controller) with ContainerItem with PropertySource {
@@ -95,4 +96,10 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
     this.findDeepContainerAt(p) {
       case (f: OpenBoxFigure) ⇒ f
     } getOrElse { this }
+  def findLabelFigureOf(v: ValDef): Option[LabelItem] = {
+    this.deepChildren collect { case l: LabelItem if (l.valDef == v) ⇒ l } headOption
+  }
+  def findFigureOf(v: ValDef) = {
+    this.deepChildren collect { case i: ValDefItem if (i.valDef == v) ⇒ i } headOption
+  }
 }

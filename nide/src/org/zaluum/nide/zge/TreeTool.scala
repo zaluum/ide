@@ -29,19 +29,15 @@ import org.zaluum.nide.eclipse.PaletteEntry
 import org.zaluum.nide.eclipse.Palette
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
+  val gui = false
   def tree = viewer.tree
   def zproject = viewer.controller.zproject
   val connectionLineDistance = 3
   val gridSize = 1
   object selecting extends Selecting with DeleteState with ClipboardState with DropState with LineBlinker {
+    def gui = false
     var port: Option[PortFigure] = None
-    override def directEditPF =
-      super.directEditPF.orElse {
-        case e: PortDeclFigure ⇒ e.tree.renamePort(_, None)
-      }
-    def editLabel(s: String, l: LabelItem, initial: Boolean) = if (initial)
-      l.valDef.createLabelAndRename(false, s)
-    else
+    def editLabel(s: String, l: LabelItem) =
       l.valDef.editLabel(false, s)
     def buttonUp {
       unblinkLine()
@@ -177,28 +173,19 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       zproject.imageFactory.destroy(desc)
       d
     }
-    var newVal: ValDef = _
-    override def next(d: DMap) {
-      viewer.findLabelFigureOf(newVal) match {
-        case Some(l) ⇒ exit(); selecting.gotoInitialLabelEdit(l)
-        case None    ⇒ exit()
-      }
-    }
-
     protected def newInstance(dst: Point) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒
-            val label = entry.className.classNameWithoutPackage.firstLowerCase
-            val name = Name(b.sym.freshName(label))
-            if (entry.isExpression) {
-              newVal = ValDef.emptyValDef(name, entry.className, dst)
+            initStr = entry.className.classNameWithoutPackage.firstLowerCase
+            val name = Name(b.sym.freshName(initStr))
+            newVal = if (entry.isExpression) {
+              ValDef.emptyValDef(name, entry.className, dst)
             } else if (entry.static)
-              newVal = ValDef.emptyValStaticInvokeExpr(name, dst, label, entry.className.str, entry.methodUID.getOrElse(""))
+              ValDef.emptyValStaticInvokeExpr(name, dst, entry.className.str, entry.methodUID.getOrElse(""))
             else
-              newVal = ValDef.emptyValDefBoxExpr(
+              ValDef.emptyValDefBoxExpr(
                 name, dst, entry.className.str,
-                label = Some(label),
                 method = entry.methodUID,
                 fields = entry.fields)
             b.copy(

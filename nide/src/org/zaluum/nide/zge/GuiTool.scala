@@ -23,6 +23,7 @@ import org.zaluum.nide.compiler.Block
 import org.zaluum.nide.eclipse.PaletteEntry
 import org.zaluum.`object`.BoxInstance
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
+  val gui = true
   val gridSize = 12
   def calcMin: Dimension = {
     val bottomRights = viewer.layer.getChildren.collect { case i: IFigure ⇒ rpoint(i.getBounds.getBottomRight) }
@@ -30,7 +31,6 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   }
   def maxPoint(points: Iterable[Point]) = points.foldLeft(Dimension(0, 0))((acc, p) ⇒ Dimension(max(acc.w, p.x), max(acc.h, p.y)))
   override val resizing = new Resizing {
-
     override def command(newPos: Point, newSize: Dimension, t: Tree) = {
       val newDim = Dimension(newPos.x + newSize.w, newPos.y + newSize.h)
       val strPos = newPos.x + " " + newPos.y + " " + newSize.w + " " + newSize.h
@@ -50,14 +50,14 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
   }
   object selecting extends Selecting with DropState {
+    def gui = true
     var border = (false, false)
     override def buttonDown {
       border = borderDistance
       super.buttonDown
     }
-    def editLabel(s: String, l: LabelItem, initial: Boolean) =
-      if (initial) l.valDef.createLabelAndRename(true, s) else
-        l.valDef.editLabel(true, s)
+    def editLabel(s: String, l: LabelItem) =
+      l.valDef.editLabel(true, s)
     def buttonUp {
       beingSelected match {
         case Some(s: Item) ⇒
@@ -136,13 +136,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     val defaultSize = Dimension(40, 15)
     def allowed = entry != null && !entry.isExpression
     protected def getSize(entry: PaletteEntry) = defaultSize
-    var newVal: ValDef = _
-    override def next(d: DMap) {
-      viewer.findLabelFigureOf(newVal) match {
-        case Some(l) ⇒ exit(); selecting.gotoInitialLabelEdit(l)
-        case None    ⇒ exit()
-      }
-    }
+
     protected def newInstance(dst: Point) = {
       val container = viewer.treeViewer.findContainerAt(point(dst))
       val block = container match {
@@ -153,11 +147,10 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == block ⇒
-            val label = entry.className.classNameWithoutPackage.firstLowerCase
-            val name = Name(b.sym.freshName(label))
+            initStr = entry.className.classNameWithoutPackage.firstLowerCase
+            val name = Name(b.sym.freshName(initStr))
             newVal = ValDef.emptyValDefBoxExpr(
               name, d, entry.className.str,
-              labelGui = Some(label),
               method = entry.methodUID,
               fields = entry.fields,
               extraParams = List(Param(Name("bounds"),

@@ -63,7 +63,10 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     def enterSingle(initContainer: C) {
       this.initContainer = initContainer
     }
-    def currentMouseLocation = initContainer.translateFromViewport(absMouseLocation)
+    def currentMouseLocation = {
+      if (initContainer == null) throw new Exception
+      initContainer.translateFromViewport(absMouseLocation)
+    }
   }
   trait DeltaMove extends ToolState {
     private var _initDrag: Point = _

@@ -124,12 +124,6 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
       case _                              ⇒ true
     }
   }
-  def findFigureOf(v: ValDef) = {
-    deepChildrenWithoutLayers collect { case i: ValDefItem if (i.valDef == v) ⇒ i } headOption
-  }
-  def findLabelFigureOf(v: ValDef) = {
-    deepChildrenWithoutLayers collect { case l: LabelItem if (l.valDef == v) ⇒ l } headOption
-  }
   def refresh() {
     hideEmptyLabel()
     updateContents(Map()) // FIXME

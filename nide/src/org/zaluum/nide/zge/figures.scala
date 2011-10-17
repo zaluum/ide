@@ -300,6 +300,10 @@ trait TextEditFigure extends Item {
       textC.setFocus
     }
   }
+  override def hide() {
+    hideEdit()
+    super.hide()
+  }
   def hideEdit() = {
     if (textCellEditor != null) {
       textCellEditor.dispose()

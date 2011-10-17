@@ -26,37 +26,32 @@ import org.zaluum.nide.eclipse.PaletteEntry
  *
  */
 abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
+  val gui: Boolean
   def selecting: Selecting
   type C = ContainerItem
   state = selecting
+
   // SELECTING 
   abstract class Selecting extends ToolState with DeleteState with ClipboardState {
     var beingSelected: Option[Item] = None
     var initDrag: Point = _
     var initContainer: C = _
     var filterDouble = false
-    def directEditPF: PartialFunction[Item, String ⇒ MapTransformer] = {
-      case e: LiteralFigure ⇒ s ⇒ e.valDef.addOrReplaceParam(Param(Name("literal"), s))
-      case l: LabelItem     ⇒ editLabel(_, l, false)
-    }
-    def gotoConfigurer(v: ValDefItem) {
-      v.openConfigurer(viewer.zproject.classLoader) match {
-        case Some(params) ⇒ controller.exec(v.valDef.replaceParams(params))
-        case None         ⇒
-      }
-    }
-    def editLabel(s: String, l: LabelItem, first: Boolean): MapTransformer
+    var editFigure: Option[TextEditFigure] = None
+    def editLabel(s: String, l: LabelItem): MapTransformer
+    
     override def doubleClick() = itemUnderMouse match {
-      case Some(e: TextEditFigure) ⇒ gotoDirectEdit(e)
-      case Some(v: ValDefItem)     ⇒ gotoConfigurer(v)
-      case _                       ⇒
+      case Some(e: PortDeclFigure) ⇒ directEditing.enter(e, e.tree.renamePort(_, None))
+      case Some(e: LiteralFigure)  ⇒ directEditing.enter(e, s ⇒ e.valDef.addOrReplaceParam(Param(Name("literal"), s)))
+      case Some(l: LabelItem)      ⇒ directEditing.enter(l, s ⇒ editLabel(s, l))
+      case Some(v: ValFigure) ⇒
+        v.openConfigurer(viewer.zproject.classLoader) foreach {
+          params ⇒ controller.exec(v.valDef.replaceParams(params))
+        }
+      case _ ⇒
     }
-    def gotoInitialLabelEdit(l: LabelItem) =
-      directEditing.enter(l, editLabel(_, l, true))
-    def gotoDirectEdit(t: TextEditFigure) =
-      directEditPF.lift(t) foreach { directEditing.enter(t, _) }
     def enter() { state = this }
-
+    def drop() {}
     def buttonDown {
       beingSelected = itemUnderMouse
       initDrag = currentMouseLocation
@@ -79,9 +74,9 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def move {
       handleTrack.update()
     }
+    def abort() {}
+    def exit() {}
 
-    def exit {}
-    def abort {}
   }
   abstract class Pasting extends ToolState {
     self: SingleContainer ⇒
@@ -129,28 +124,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       exit()
     }
   }
-  // Direct edit
-  object directEditing extends ToolState { // move logic to figure?
-    var e: TextEditFigure = null
-    var gui = false
-    def enter(e: TextEditFigure, command: String ⇒ MapTransformer, gui: Boolean = false) {
-      state = this
-      this.e = e;
-      this.gui = gui
-      e.edit({ str ⇒ controller.exec(command(str)) }, exit _)
-    }
-    def renamePort(p: PortDeclFigure, str: String) {
-      println("rename! " + str)
-    }
 
-    def exit() { e.hideEdit(); viewer.focus; selecting.enter(); }
-    def buttonDown() { exit() }
-    def move() {}
-    def buttonUp() {}
-    def drag() {}
-    override def menu() {}
-    def abort() { exit() }
-  }
   // Creating
   abstract class Creating extends ToolState {
     var feed: ItemFeedbackFigure = _
@@ -163,6 +137,12 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, size.w, size.h));
       feed.show()
+    }
+    var newVal: ValDef = null
+    var initStr: String = ""
+    override def next(d: DMap) {
+      exit();
+      afterCreation.enter(newVal, initStr)
     }
     protected def getSize(entry: PaletteEntry): Dimension
     def move() {
@@ -189,7 +169,56 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
     def exit() {
       feed.hide();
+      println("feed hide")
       feed = null;
+      selecting.enter()
+    }
+  }
+  trait SelectionDelegate extends ToolState {
+    def buttonDown() { exit(); selecting.buttonDown() }
+    def move() { selecting.move() }
+    def buttonUp() {}
+    def drag() { exit(); selecting.drag() }
+    override def menu() { exit(); selecting.menu() }
+    override def doubleClick() { exit(); selecting.doubleClick() }
+    def abort() { exit(); selecting.abort() }
+  }
+  object afterCreation extends SelectionDelegate {
+    var l: LabelItem = null
+    def enter(valDef: ValDef, initialStr: String) {
+      state = this
+      viewer.findFigureOf(valDef) match {
+        case Some(vd) ⇒
+          this.l = new LabelItem(vd.container, gui) {
+            override def text = initialStr
+          }
+          l.show()
+          l.updateValDef(valDef)
+          l.edit(rename _, () ⇒ exit())
+        case None ⇒ exit()
+      }
+    }
+    private def rename(str: String) {
+      controller.exec(l.valDef.createLabelAndRename(gui, str))
+    }
+    def exit() {
+      if (l != null) {
+        l.hide()
+        l = null
+      }
+      selecting.enter()
+    }
+  }
+  object directEditing extends SelectionDelegate {
+    var t: TextEditFigure = null
+    def enter(t: TextEditFigure, commandOk: String ⇒ MapTransformer) {
+      state = this
+      this.t = t
+      t.edit(str ⇒ controller.exec(commandOk(str)), exit _)
+    }
+    def exit() {
+      t.hideEdit()
+      t = null
       selecting.enter()
     }
   }
