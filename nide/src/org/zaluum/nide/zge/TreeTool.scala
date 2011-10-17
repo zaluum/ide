@@ -184,21 +184,23 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case None    ⇒ exit()
       }
     }
-    def isExpression = Expressions.find(entry.className).isDefined
+
     protected def newInstance(dst: Point) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == initContainer.block ⇒
             val label = entry.className.classNameWithoutPackage.firstLowerCase
             val name = Name(b.sym.freshName(label))
-            if (isExpression) {
+            if (entry.isExpression) {
               newVal = ValDef.emptyValDef(name, entry.className, dst)
             } else if (entry.static)
               newVal = ValDef.emptyValStaticInvokeExpr(name, dst, label, entry.className.str, entry.methodUID.getOrElse(""))
             else
               newVal = ValDef.emptyValDefBoxExpr(
-                name, dst, label, entry.className.str,
-                method = entry.methodUID, fields = entry.fields)
+                name, dst, entry.className.str,
+                label = Some(label),
+                method = entry.methodUID,
+                fields = entry.fields)
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
               connections = transformTrees(b.connections),

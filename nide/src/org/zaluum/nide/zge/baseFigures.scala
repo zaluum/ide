@@ -2,7 +2,6 @@ package org.zaluum.nide.zge
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.mutable.Buffer
-
 import org.eclipse.draw2d.geometry.{ Dimension ⇒ EDimension }
 import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint }
 import org.eclipse.draw2d.geometry.Rectangle
@@ -15,6 +14,8 @@ import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
 import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.compiler.Vector2
 import draw2dConversions._
+import org.eclipse.draw2d.Graphics
+import org.eclipse.draw2d.ColorConstants
 
 object draw2dConversions {
   def point(p: MPoint): EPoint = new EPoint(p.x, p.y)
@@ -159,6 +160,28 @@ trait Item extends Hover {
     showing = true
     myLayer.add(this)
   }
+  def parentContainers: List[ContainerItem] = if (container == this) Nil else
+    container :: container.parentContainers
+  def isOverlapped = {
+    val parents = parentContainers
+    val absBounds = getBounds.getCopy()
+    translateToAbsolute(absBounds)
+    import RichFigure._
+    val before = container.deepChildren.takeWhile(_ != this)
+    val myChildren = this.deepChildren
+    before exists {
+      _ match {
+        case c: OpenBoxFigure ⇒
+          if (!parents.contains(c) && c != Item.this && !myChildren.contains(c)) {
+            val boundsChild = c.getClientArea().getCopy()
+            c.translateToParent(boundsChild)
+            c.translateToAbsolute(boundsChild)
+            absBounds.intersects(boundsChild)
+          } else false
+        case _ ⇒ false
+      }
+    }
+  }
   def hide() {
     if (showing) {
       showing = false
@@ -194,6 +217,22 @@ trait Item extends Hover {
     feed.setInnerBounds(rect)
   }
   def selectionSubject: Option[SelectionSubject] = None
+}
+/**
+ * Paints a shadow if a a container overtakes
+ */
+trait OverlappedEffect extends Item {
+  override def paintBorder(g: Graphics) {
+    super.paintBorder(g)
+    if (isOverlapped) {
+      g.setBackgroundColor(ColorConstants.black)
+      val w = 5
+      g.fillRectangle(new Rectangle(getBounds.x + w, getBounds.bottom() - w, getBounds().width() - w, w))
+      g.fillRectangle(new Rectangle(getBounds.right - w, getBounds.y + w, w, getBounds.height - 2 * w))
+
+    }
+
+  }
 }
 trait HasPorts extends Item {
   val ports = Buffer[PortFigure]()

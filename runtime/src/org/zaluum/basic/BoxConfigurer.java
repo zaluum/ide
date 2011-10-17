@@ -6,5 +6,6 @@ import java.util.Map;
 import org.eclipse.swt.widgets.Shell;
 
 public interface BoxConfigurer {
-	Map<String,List<String>> configure(Shell shell, Map<String,List<String>> values);
+	Map<String, List<String>> configure(Shell shell,
+			Map<String, List<String>> values);
 }

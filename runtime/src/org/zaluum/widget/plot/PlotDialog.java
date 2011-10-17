@@ -56,9 +56,11 @@ public class PlotDialog extends Dialog {
 
 	@Override
 	protected void okPressed() {
-		script = new PlotConfiguration().javaScriptConfigure(plotComposite.chart);
+		script = new PlotConfiguration()
+				.javaScriptConfigure(plotComposite.chart);
 		super.okPressed();
 	}
+
 	@Override
 	protected boolean isResizable() {
 		return true;

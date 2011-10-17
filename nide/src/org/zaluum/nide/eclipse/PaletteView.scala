@@ -24,9 +24,9 @@ import org.eclipse.jface.viewers.IStructuredSelection
 import org.eclipse.jface.viewers.ITreeContentProvider
 import org.eclipse.jface.viewers.SelectionChangedEvent
 import org.eclipse.jface.viewers.StructuredSelection
-import org.eclipse.jface.viewers.{TreeViewer => JTreeViewer}
+import org.eclipse.jface.viewers.{ TreeViewer ⇒ JTreeViewer }
 import org.eclipse.jface.viewers.TreeViewerColumn
-import org.eclipse.jface.viewers.{Viewer => JViewer}
+import org.eclipse.jface.viewers.{ Viewer ⇒ JViewer }
 import org.eclipse.jface.viewers.ViewerSorter
 import org.eclipse.swt.dnd.DND
 import org.eclipse.swt.dnd.DragSource
@@ -190,9 +190,12 @@ trait PalettePageCoreListener {
   self: PalettePage ⇒
   object coreListener extends IElementChangedListener {
     def elementChanged(event: ElementChangedEvent) {
-      if (event.getType == ElementChangedEvent.POST_CHANGE)
-        if (processDeltaSimple(event.getDelta))
+      if (event.getType == ElementChangedEvent.POST_CHANGE) {
+        val process = processDeltaSimple(event.getDelta)
+        println("PaletteView process=" + process)
+        if (process)
           reload()
+      }
     }
   }
   JavaCore.addElementChangedListener(coreListener)

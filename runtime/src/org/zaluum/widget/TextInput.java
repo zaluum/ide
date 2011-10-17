@@ -13,21 +13,21 @@ import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
 
 @Box
-public class TextInputWidget extends JTextField {
+public class TextInput extends JTextField {
 
 	private static final long serialVersionUID = 1L;
 	private AtomicReference<Double> value = new AtomicReference<Double>(0.0);
-	
-	public TextInputWidget() {
+
+	public TextInput() {
 		setEnabled(true);
 		setText("0");
 		setInputVerifier(new InputVerifier() {
 			@Override
 			public boolean verify(JComponent input) {
-				try{
-				Double.parseDouble(getText());
-				return true;
-				}catch(Exception e) {
+				try {
+					Double.parseDouble(getText());
+					return true;
+				} catch (Exception e) {
 					return false;
 				}
 			}
@@ -39,16 +39,20 @@ public class TextInputWidget extends JTextField {
 			}
 		});
 	}
+
 	private void update() {
-		try{
-		value.set(Double.parseDouble(getText()));
-		}catch(Exception e){}
+		try {
+			value.set(Double.parseDouble(getText()));
+		} catch (Exception e) {
+		}
 	}
+
 	@Override
 	public void setText(String t) {
 		super.setText(t);
 		update();
 	}
+
 	@Apply
 	public double apply() throws InterruptedException,
 			InvocationTargetException {

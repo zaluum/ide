@@ -58,8 +58,9 @@ public class PlotConfigurerComposite extends Composite {
 		setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
 		SashForm sashForm = new SashForm(this, SWT.VERTICAL);
-		sashForm.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
-		
+		sashForm.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1,
+				1));
+
 		Composite previewChart = new Composite(sashForm, SWT.NO_BACKGROUND
 				| SWT.EMBEDDED);
 		GridData gd_previewChart = new GridData(SWT.FILL, SWT.FILL, true, true,
@@ -69,14 +70,14 @@ public class PlotConfigurerComposite extends Composite {
 		previewChart.setLayoutData(gd_previewChart);
 		createAWTChart2d(previewChart);
 
-		
-		ScrolledComposite scrolledComposite = new ScrolledComposite(sashForm, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+		ScrolledComposite scrolledComposite = new ScrolledComposite(sashForm,
+				SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
 		scrolledComposite.setExpandHorizontal(true);
 		scrolledComposite.setExpandVertical(true);
-		
+
 		Composite menusComposite = new Composite(scrolledComposite, SWT.NONE);
 		menusComposite.setLayout(new FillLayout(SWT.HORIZONTAL));
-		
+
 		TabFolder tabFolder = new TabFolder(menusComposite, SWT.NONE);
 
 		TabItem tbtmChart = new TabItem(tabFolder, SWT.NONE);
@@ -94,13 +95,12 @@ public class PlotConfigurerComposite extends Composite {
 
 		traceC = new TraceCompositePlotTab(tabFolder, SWT.NONE, chart);
 		tbtmPlot.setControl(traceC);
-		
-		scrolledComposite.setContent(menusComposite);
-		scrolledComposite.setMinSize(menusComposite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-		sashForm.setWeights(new int[] {50,100});
-		
 
-	
+		scrolledComposite.setContent(menusComposite);
+		scrolledComposite.setMinSize(menusComposite.computeSize(SWT.DEFAULT,
+				SWT.DEFAULT));
+		sashForm.setWeights(new int[] { 50, 100 });
+
 	}
 
 	public void refresh() {

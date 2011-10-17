@@ -2,7 +2,7 @@ package org.zaluum.widget;
 
 import info.monitorenter.gui.chart.rangepolicies.ARangePolicy;
 
-public class MyRangePolicy extends ARangePolicy{
+public class MyRangePolicy extends ARangePolicy {
 	private static final long serialVersionUID = -7526882866029117692L;
 	private final double minMax;
 
@@ -10,12 +10,13 @@ public class MyRangePolicy extends ARangePolicy{
 		super();
 		this.minMax = minMax;
 	}
-	//@Override 
+
+	// @Override
 	public double getMax(double chartMin, double chartMax) {
 		return Math.max(chartMax, minMax);
 	}
 
-	//@Override
+	// @Override
 	public double getMin(double chartMin, double chartMax) {
 		return chartMin;
 	}

@@ -17,6 +17,9 @@ import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.eclipse.PaletteEntry
 import org.zaluum.nide.eclipse.PaletteTransfer
+import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
+import draw2dConversions._
+import org.eclipse.draw2d.geometry.Point
 
 abstract class ItemViewer(parent: Composite, controller: Controller)
     extends Viewer(parent, controller) with ContainerItem with PropertySource {
@@ -87,5 +90,9 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
   def selectedItems: Set[Item]
   val selection = new SelectionManager[SelectionSubject]()
   def blink(b: Boolean) {}
-
+  import RichFigure._
+  def findContainerAt(p: Point): ContainerItem =
+    this.findDeepContainerAt(p) {
+      case (f: OpenBoxFigure) ⇒ f
+    } getOrElse { this }
 }

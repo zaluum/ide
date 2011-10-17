@@ -17,6 +17,7 @@ public class ImageReader {
 			return null;
 		}
 	}
+
 	public static Icon readIconResource(String resource) {
 		try {
 			URL url = Thread.currentThread().getContextClassLoader()
@@ -26,6 +27,7 @@ public class ImageReader {
 			return null;
 		}
 	}
+
 	public static Image readImageURL(URL url) {
 		try {
 			return ImageIO.read(url);

@@ -90,23 +90,27 @@ object Palette {
   val ShiftEntry = portToProxy(Shift)
   val portsEntries = List(InEntry, OutEntry, ShiftEntry)
 
-  def load(t: IType): Array[PaletteEntry] = {
-    val classname = Name(t.getFullyQualifiedName)
-    val methodEntries = for (
-      m ← t.getMethods();
-      if (m.getAnnotations.exists(_.getElementName() == classOf[Apply].getName))
-    ) yield {
-      PaletteEntry(
-        classname,
-        None,
-        None,
-        Flags.isStatic(m.getFlags),
-        None,
-        None,
-        Expressions.isTemplateExpression(classname))
-    }
-    methodEntries
-  }
+  def load(t: IType): Array[PaletteEntry] =
+    try {
+      val classname = Name(t.getFullyQualifiedName)
+      val methods = t.getMethods()
+      for (
+        m ← methods;
+        if (m.getAnnotations.exists(a ⇒
+          a.getElementName == classOf[Apply].getName ||
+            a.getElementName == "Apply")) // TODO model is source only? not resolved.
+      ) yield {
+        PaletteEntry(
+          classname,
+          None,
+          None,
+          Flags.isStatic(m.getFlags),
+          None,
+          None,
+          Expressions.isTemplateExpression(classname))
+      }
+    } catch { case ex: Exception ⇒ Array() }
+
   def load(file: InputStream): List[PaletteEntry] = {
     if (file == null) return List()
     else {
@@ -165,9 +169,9 @@ case class PaletteEntry(
     imagePath: Option[String],
     name: Option[String] = None,
     template: Boolean = false) {
-  def split = className.str.splitAt(className.str.lastIndexOf("."))
-  def pkgName = split._1
-  def simpleName = split._2.drop(1)
+  def pkgName = className.packageProxy
+  def simpleName = className.classNameWithoutPackage.str
+  def isExpression = Expressions.find(className).isDefined
 }
 object PaletteTransfer extends ByteArrayTransfer {
   val typeName = "paletteTransfer:" + System.currentTimeMillis() + ":" + PaletteTransfer.hashCode

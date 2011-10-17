@@ -7,46 +7,59 @@ import javax.swing.JComponent;
 
 import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
+
 @Box
-public class BooleanIndicator extends JComponent{
-	
+public class BooleanIndicator extends JComponent {
+
 	private Image trueImage;
 	private Image falseImage;
 	private boolean status;
+
 	public BooleanIndicator() {
 		apply(false);
 	}
+
 	public void setTrueImage(Image image) {
 		trueImage = image;
 	}
-	public Image getTrueImage(){
+
+	public Image getTrueImage() {
 		return trueImage;
 	}
+
 	public Image getFalseImage() {
 		return falseImage;
 	}
+
 	public void setFalseImage(Image image) {
 		falseImage = image;
 	}
+
 	public void setValue(boolean b) {
 		apply(b);
 	}
+
 	public boolean getValue() {
 		return status;
 	}
+
 	@Apply
-	public void apply(boolean b){
+	public void apply(boolean b) {
 		status = b;
-		if (b) setBackground(Color.green);
-		else setBackground(Color.red);
+		if (b)
+			setBackground(Color.green);
+		else
+			setBackground(Color.red);
 	}
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		g.setColor(getBackground());
-		g.fillRect(0,0, getBounds().width, getBounds().height);
+		g.fillRect(0, 0, getBounds().width, getBounds().height);
 		Image i = status ? trueImage : falseImage;
-		g.drawImage(i,0,0,null);
+		g.drawImage(i, 0, 0, null);
 	}
+
 	private static final long serialVersionUID = 1L;
-	
+
 }

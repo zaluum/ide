@@ -22,7 +22,7 @@ public class TextWidget extends JTextField {
 	private AtomicReference<Double> value = new AtomicReference<Double>(0.0);
 	private Runnable r = new Runnable() {
 		public void run() {
-			setText(NumberFormat.getInstance().format((double)value.get()));
+			setText(NumberFormat.getInstance().format((double) value.get()));
 		}
 	};
 

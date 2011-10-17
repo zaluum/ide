@@ -155,6 +155,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   abstract class Creating extends ToolState {
     var feed: ItemFeedbackFigure = _
     var entry: PaletteEntry = null
+    def allowed: Boolean
     def enter(entry: PaletteEntry, initContainer: ContainerItem) {
       state = this
       this.entry = entry

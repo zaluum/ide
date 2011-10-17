@@ -21,6 +21,7 @@ import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Block
 import org.zaluum.nide.eclipse.PaletteEntry
+import org.zaluum.`object`.BoxInstance
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   val gridSize = 12
   def calcMin: Dimension = {
@@ -130,23 +131,40 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     val gui = true
   }
   object creating extends GuiCreating
-  class GuiCreating extends Creating {
-    val defaultSize = Dimension(10, 10)
+  class GuiCreating extends Creating with Allower {
+    import RichFigure._
+    val defaultSize = Dimension(40, 15)
+    def allowed = entry != null && !entry.isExpression
     protected def getSize(entry: PaletteEntry) = defaultSize
+    var newVal: ValDef = _
+    override def next(d: DMap) {
+      viewer.findLabelFigureOf(newVal) match {
+        case Some(l) ⇒ exit(); selecting.gotoInitialLabelEdit(l)
+        case None    ⇒ exit()
+      }
+    }
     protected def newInstance(dst: Point) = {
+      val container = viewer.treeViewer.findContainerAt(point(dst))
+      val block = container match {
+        case o: OpenBoxFigure ⇒ o.block
+        case v: Viewer        ⇒ viewer.block
+      }
+      val d = container.translateFromViewport(point(dst))
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
-          case b: Block if b.sym.isMainBSBlock ⇒
-            val name = Name(b.sym.freshName(entry.className.classNameWithoutPackage.firstLowerCase))
-            val newValDef = ValDef(name, entry.className, Point(0, 0),
-              size = None,
-              params = List(Param(Name("bounds"), dst.x + " " + dst.y + " " + defaultSize.w + " " + defaultSize.h)),
-              label = None,
-              labelGui = None,
-              template = None)
+          case b: Block if b == block ⇒
+            val label = entry.className.classNameWithoutPackage.firstLowerCase
+            val name = Name(b.sym.freshName(label))
+            newVal = ValDef.emptyValDefBoxExpr(
+              name, d, entry.className.str,
+              labelGui = Some(label),
+              method = entry.methodUID,
+              fields = entry.fields,
+              extraParams = List(Param(Name("bounds"),
+                dst.x + " " + dst.y + " " + defaultSize.w + " " + defaultSize.h)))
 
             b.copy(
-              valDefs = newValDef :: transformTrees(b.valDefs),
+              valDefs = newVal :: transformTrees(b.valDefs),
               connections = transformTrees(b.connections),
               parameters = transformTrees(b.parameters),
               junctions = transformTrees(b.junctions))

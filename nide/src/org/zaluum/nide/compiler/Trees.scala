@@ -373,12 +373,21 @@ object ValDef {
     val methodP = Param(InvokeStaticExprType.signatureSymbol.fqName, methodUID)
     ValDef(name, InvokeStaticExprType.fqName, dst, None, List(typeP, methodP), Some(LabelDesc(label, Vector2(0, 0))), None, None)
   }
-  def emptyValDefBoxExpr(name: Name, dst: Point, label: String, className: String, method: Option[String] = None, fields: Option[List[String]] = None) = {
+  def emptyValDefBoxExpr(name: Name,
+                         dst: Point,
+                         className: String,
+                         method: Option[String] = None,
+                         label: Option[String] = None,
+                         labelGui: Option[String] = None,
+                         fields: Option[List[String]] = None,
+                         extraParams: List[Param] = List()) = {
     val p = Param(BoxExprType.typeSymbol.fqName, className)
     val m = method.map(Param(BoxExprType.signatureSymbol.fqName, _))
     val f = fields.map(Param(BoxExprType.fieldsDecl.fqName, _))
-    val params = List(p) ++ m ++ f
-    ValDef(name, BoxExprType.fqName, dst, None, params, Some(LabelDesc(label, Vector2(0, 0))), None, None)
+    val lbl = label.map { LabelDesc(_, Vector2(0, 0)) }
+    val lblGui = labelGui.map { LabelDesc(_, Vector2(0, 0)) }
+    val params = (p :: extraParams) ++ m ++ f
+    ValDef(name, BoxExprType.fqName, dst, None, params, lbl, lblGui, None)
   }
   def emptyValDef(name: Name, tpeName: Name, dst: Point) =
     ValDef(name, tpeName, dst, None, List(), None, None, None)

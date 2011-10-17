@@ -119,7 +119,7 @@ trait ValDefItem extends Item with PropertySource {
   def display = container.viewer.display
 }
 
-trait ValFigure extends ValDefItem with HasPorts {
+trait ValFigure extends ValDefItem with OverlappedEffect with HasPorts {
   def sym = valDef.sym
   def myLayer = container.layer
   var ins = List[PortSide]()
@@ -249,6 +249,7 @@ class LiteralFigure(val container: ContainerItem) extends RectangleFigure with T
   def size = preferredSize
   def param = valDef.params.headOption
   def text = param.map { _.valueStr }.getOrElse { "0" }
+  setFill(false)
   override val textPos = new EPoint(2, 2)
   override def updateMe {
     super.updateMe()
@@ -268,6 +269,7 @@ trait TextEditFigure extends Item {
   val textPos = new EPoint(2, 2)
   setFont(Activator.getDefault.directEditFont) // https://bugs.eclipse.org/bugs/show_bug.cgi?id=308964
   private val pg = new FlowPage()
+  setOpaque(false)
   pg.setForegroundColor(ColorConstants.black)
   private val fl = new TextFlow()
   pg.add(fl)

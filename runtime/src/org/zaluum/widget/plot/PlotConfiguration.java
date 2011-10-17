@@ -32,15 +32,15 @@ public class PlotConfiguration {
 		p.format("c.setPaintLabels(%b);\n", c.isPaintLabels());
 		p.format("c.setUseAntialiasing(%b);\n", c.isUseAntialiasing());
 		int i = 0;
-		for (IAxis a : c.getAxesXBottom()) 
+		for (IAxis a : c.getAxesXBottom())
 			doAxis(i++, "addAxisXBottom", a, p, c);
-		for (IAxis a : c.getAxesXTop()) 
+		for (IAxis a : c.getAxesXTop())
 			doAxis(i++, "addAxisXTop", a, p, c);
-		for (IAxis a : c.getAxesYLeft()) 
+		for (IAxis a : c.getAxesYLeft())
 			doAxis(i++, "addAxisYLeft", a, p, c);
-		for (IAxis a : c.getAxesYRight()) 
+		for (IAxis a : c.getAxesYRight())
 			doAxis(i++, "addAxisYRight", a, p, c);
-		for (ITrace2D t : c.getTraces()) 
+		for (ITrace2D t : c.getTraces())
 			doTrace(t);
 		return stringWriter.toString();
 	}
@@ -48,12 +48,11 @@ public class PlotConfiguration {
 	public void doTrace(ITrace2D t) {
 		p.format(
 				"var t = new Packages.info.monitorenter.gui.chart.traces.Trace2DLtd(%d,\"%s\");\n",
-				t.getMaxSize(),
-				StringEscapeUtils.escapeJavaScript(t.getName()));
+				t.getMaxSize(), StringEscapeUtils.escapeJavaScript(t.getName()));
 		IAxis axisX = c.getAxisX(t);
 		IAxis axisY = c.getAxisY(t);
 		p.format("c.addTrace(t, %s, %s);\n", map.get(axisX), map.get(axisY));
-		p.format("t.setZIndex(%d);", t.getZIndex().intValue());		
+		p.format("t.setZIndex(%d);", t.getZIndex().intValue());
 		p.format("t.setColor(new java.awt.Color(%d));\n", t.getColor().getRGB());
 		if (t.getTracePainters().size() == 1) {
 			ITracePainter<?> painter = t.getTracePainters().iterator().next();
@@ -84,7 +83,6 @@ public class PlotConfiguration {
 					"" + b.getLineWidth(), b.getEndCap(), b.getLineJoin(), ""
 							+ b.getMiterLimit(), "" + b.getDashPhase());
 		}
-		
 
 	}
 
@@ -117,7 +115,8 @@ public class PlotConfiguration {
 				"" + rangePolicy.getRange().getMin(), ""
 						+ rangePolicy.getRange().getMax());
 		p.format("%s.setRangePolicy(policy);", name);
-		p.format("%s.getAxisTitle().setVisible(%b);\n",name, axis.getAxisTitle().isVisible());
+		p.format("%s.getAxisTitle().setVisible(%b);\n", name, axis
+				.getAxisTitle().isVisible());
 		p.format("%s.setTitle(\"%s\");\n", name, StringEscapeUtils
 				.escapeJavaScript(axis.getAxisTitle().getTitle()));
 		p.format("%s.setPaintScale(%b);\n", name, axis.isPaintScale());

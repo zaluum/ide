@@ -136,13 +136,14 @@ public class AxesCompositePlotTab extends Composite {
 			}
 		});
 		scaleShowChk.setText("Show scale");
-		
+
 		scaleShowLabel = new Button(scalesCheckComposite, SWT.CHECK);
 		scaleShowLabel.setText("Show label");
 		scaleShowLabel.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				getAxis().getAxisTitle().setVisible(scaleShowLabel.getSelection());
+				getAxis().getAxisTitle().setVisible(
+						scaleShowLabel.getSelection());
 			}
 		});
 		scaleLogChk = new Button(scalesCheckComposite, SWT.CHECK);
@@ -170,8 +171,7 @@ public class AxesCompositePlotTab extends Composite {
 		scaleAutoChk.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false,
 				false, 2, 1));
 		scaleAutoChk.setText("Auto scale");
-		
-		
+
 		Label lblMax = new Label(groupAuto, SWT.NONE);
 		lblMax.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false,
 				1, 1));
@@ -338,11 +338,11 @@ public class AxesCompositePlotTab extends Composite {
 		if (scaleAutoChk.getSelection()) {
 			axis.setRangePolicy(new RangePolicyUnbounded());
 		} else {
-			double min = parseOr(scaleMin.getText(),0);
-			double max = parseOr(scaleMax.getText(), 1);			
+			double min = parseOr(scaleMin.getText(), 0);
+			double max = parseOr(scaleMax.getText(), 1);
 			System.out.println("min = " + min + " max = " + max);
-			axis.setRangePolicy(new RangePolicyFixedViewport(new Range(min,
-					max)));
+			axis.setRangePolicy(new RangePolicyFixedViewport(
+					new Range(min, max)));
 		}
 		chart.setRequestedRepaint(true);
 	}

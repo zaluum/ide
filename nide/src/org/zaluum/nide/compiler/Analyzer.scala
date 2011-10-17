@@ -24,6 +24,9 @@ class Reporter {
   }
   override def toString = errors.toString
 }
+object Name {
+  def apply(cl: Class[_]): Name = Name(cl.getName())
+}
 case class Name(str: String) {
   def classNameWithoutPackage = Name(str.split('.').last)
   def packageProxy = str.split('.').dropRight(1).mkString(".")

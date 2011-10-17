@@ -61,6 +61,7 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
   background.setForegroundColor(ColorConstants.white)
   background.setBackgroundColor(ColorConstants.lightGray)
   /*LAYERS*/
+  def treeViewer = editor.viewer
   def viewer = this
   def viewerResources = this
   val tool: Tool = new GuiTool(this);
@@ -119,7 +120,9 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
   def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i
   }.toSet
-
+  def findLabelFigureOf(v: ValDef) = {
+    items collect { case l: LabelItem if (l.valDef == v) ⇒ l } headOption
+  }
   shell.setSize(size.w + 30, size.h + 40)
   refresh();
 

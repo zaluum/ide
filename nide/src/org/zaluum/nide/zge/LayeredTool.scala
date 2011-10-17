@@ -14,9 +14,7 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   type C <: ContainerItem
   def itemUnderMouse = current.itemAt(point(currentMouseLocation), false)
   def currentMouseLocation: Point = current.translateFromViewport(absMouseLocation)
-  def current: C = viewer.findDeepContainerAt(point(absMouseLocation)) {
-    case (f: OpenBoxFigure) ⇒ f.asInstanceOf[C]
-  } getOrElse { viewer.asInstanceOf[C] }
+  def current: C = viewer.findContainerAt(point(absMouseLocation)).asInstanceOf[C]
   abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
     var current: Option[F] = None
     protected var last: Option[F] = None

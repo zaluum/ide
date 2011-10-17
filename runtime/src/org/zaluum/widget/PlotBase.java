@@ -13,7 +13,7 @@ public class PlotBase extends Chart2D {
 	private static final long serialVersionUID = 1L;
 	private long x = 0;
 	private ITrace2D[] traces = null;
-	
+
 	public PlotBase() {
 		super();
 		PropertyChangeListener listener = new PropertyChangeListener() {
@@ -26,9 +26,11 @@ public class PlotBase extends Chart2D {
 		addPropertyChangeListener(ITrace2D.PROPERTY_ZINDEX, listener);
 		updateTraces();
 	}
+
 	private synchronized void updateTraces() {
 		traces = getTraces().toArray(new ITrace2D[0]);
 	}
+
 	public synchronized void createTraces(int n) {
 		int toCreate = n - traces.length;
 		if (toCreate > 0) {
@@ -37,31 +39,38 @@ public class PlotBase extends Chart2D {
 						+ getTraces().size());
 				int max = -1;
 				for (ITrace2D t : traces) {
-					max= Math.max(t.getZIndex(),max);
+					max = Math.max(t.getZIndex(), max);
 				}
 				addTrace(trace, anyXAxisOrNew(), anyYAxisOrNew());
-				trace.setZIndex(max+1);
+				trace.setZIndex(max + 1);
 			}
 		}
 	}
+
 	private IAxis anyXAxisOrNew() {
-		if (getAxesXBottom().size()!=0) return getAxisX();
-		else if (!getAxesXTop().isEmpty()) return getAxesXTop().get(0);
+		if (getAxesXBottom().size() != 0)
+			return getAxisX();
+		else if (!getAxesXTop().isEmpty())
+			return getAxesXTop().get(0);
 		else {
 			AxisLinear axis = new AxisLinear();
 			addAxisXBottom(axis);
 			return axis;
 		}
 	}
+
 	private IAxis anyYAxisOrNew() {
-		if (getAxesYLeft().size()!=0) return getAxisY();
-		else if (!getAxesYRight().isEmpty()) return getAxesYRight().get(0);
+		if (getAxesYLeft().size() != 0)
+			return getAxisY();
+		else if (!getAxesYRight().isEmpty())
+			return getAxesYRight().get(0);
 		else {
 			AxisLinear axis = new AxisLinear();
 			addAxisYLeft(axis);
 			return axis;
 		}
 	}
+
 	public synchronized void single(double data) {
 		createTraces(1);
 		ITrace2D trace = traces[0];

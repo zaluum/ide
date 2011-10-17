@@ -52,6 +52,8 @@ import ZaluumCompilationUnitDeclaration.toPos
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.compiler.Param
 import org.eclipse.jdt.internal.compiler.ast.LongLiteral
+import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding
+import org.eclipse.jdt.internal.compiler.ast.Expression
 
 class ZaluumCompilationUnitDeclaration(
   problemReporter: ProblemReporter,
@@ -110,8 +112,8 @@ class ZaluumCompilationUnitDeclaration(
         typeDeclaration.modifiers = Opcodes.ACC_PUBLIC
         val annotation = new MarkerAnnotation(createTypeReference(Name(classOf[Box].getName), b), start(b))
         typeDeclaration.annotations = Array(annotation);
-
     }
+
     typeDeclaration.superclass = createTypeReference(Name("javax.swing.JPanel"), b)
     typeDeclaration.superInterfaces = Array();
     typeDeclaration.methods = createMethodAndConstructorDeclarations(b)
@@ -171,7 +173,8 @@ class ZaluumCompilationUnitDeclaration(
     if (meth.arguments.size == 0) meth.arguments = null;
     val annotation = new NormalAnnotation(createTypeReference(Name(classOf[Apply].getName), b), start(b))
     val expr = new ArrayInitializer
-    expr.expressions = ins.map { i ⇒ new StringLiteral(i.name.str.toCharArray, start(b), end(b), b.line) }.toArray
+    val annParams: Array[Expression] = ins.map { i ⇒ new StringLiteral(i.name.str.toCharArray, start(b), end(b), b.line) }.toArray
+    expr.expressions = if (annParams.length != 0) annParams else null
     annotation.memberValuePairs = Array(new MemberValuePair("paramNames".toCharArray, start(b), end(b), expr))
     meth.annotations = Array(annotation)
     meth.modifiers = ClassFileConstants.AccPublic

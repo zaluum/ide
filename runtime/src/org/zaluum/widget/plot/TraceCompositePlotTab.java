@@ -254,18 +254,18 @@ public class TraceCompositePlotTab extends Composite {
 
 		Label lblLine = new Label(grpColor, SWT.NONE);
 		lblLine.setText("Line");
-		
+
 		Group grpLimit = new Group(composite, SWT.NONE);
 		grpLimit.setText("Limit");
 		grpLimit.setLayout(new GridLayout(1, false));
-		
+
 		limit = new Spinner(grpLimit, SWT.BORDER);
 		limit.addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent e) {
 				int l = limit.getSelection();
 				if (getTrace() instanceof Trace2DLtd) {
-					Trace2DLtd t = (Trace2DLtd)getTrace();
+					Trace2DLtd t = (Trace2DLtd) getTrace();
 					t.setMaxSize(l);
 				}
 			}
@@ -501,9 +501,9 @@ public class TraceCompositePlotTab extends Composite {
 			org.eclipse.swt.graphics.Color colorSWT = SWTResourceManager
 					.getColor(color.getRed(), color.getGreen(), color.getBlue());
 			lineColor.setBackground(colorSWT);
-			if(trace.getMaxSize() == Integer.MAX_VALUE) {
+			if (trace.getMaxSize() == Integer.MAX_VALUE) {
 				limit.setEnabled(false);
-			}else {
+			} else {
 				limit.setEnabled(true);
 				limit.setSelection(trace.getMaxSize());
 			}

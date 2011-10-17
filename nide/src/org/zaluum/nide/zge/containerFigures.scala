@@ -46,14 +46,14 @@ import org.zaluum.nide.compiler.BoxSymbol
 trait ContainerItem extends Item {
   def viewer: Viewer
   def layer: Figure
-  def background: Figure
   def connectionsLayer: Figure
   def pointsLayer: Figure
   def portsLayer: Figure
   def feedbackLayer: Figure
-  protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] = container.findDeepAt(point(p), 0, debug) {
-    case i: Item ⇒ i
-  }
+  protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] =
+    container.findDeepAt(point(p), 0, debug) {
+      case i: Item ⇒ i
+    }
   def itemAt(p: Point, debug: Boolean = false) = {
     itemAtIn(portsLayer, p, debug)
       .orElse(itemAtIn(layer, p, debug))
@@ -197,21 +197,26 @@ object OpenBoxFigure {
   val backgroundBlink = ColorConstants.lightGray
 }
 class OpenBoxFigure(
-    val container: ContainerItem,
-    val viewer: Viewer) extends ValDefItem with ResizableFeedback with ContainerItem with Transparent {
+  val container: ContainerItem,
+  val viewer: Viewer) extends LayeredPane
+    with ValDefItem
+    with ResizableFeedback
+    with ContainerItem
+    with Transparent
+    with OverlappedEffect {
   // Item
   def myLayer = container.layer
   def size = valDef.size getOrElse Dimension(50, 50)
   // layers
-  val inners = new LayeredPane
   val layer = new Layer
   val portsLayer = new Layer
   val connectionsLayer = new Layer
   val pointsLayer = new Layer
   val feedbackLayer = new Layer
-  val background = new Layer
+  setBackgroundColor(ColorConstants.white)
   // ContainerItem
-  background.setBackgroundColor(ColorConstants.white)
+  //setBackgroundColor(ColorConstants.white)
+  setOpaque(true)
   def helpers = portDecls ++ portSymbols
   val portDecls = Buffer[OpenPortBaseFigure]()
   val portSymbols = Buffer[PortSymbolFigure]()
@@ -223,7 +228,7 @@ class OpenBoxFigure(
     showArrowsIfNotBigEnough
   }
   def blink(b: Boolean) {
-    background.setBackgroundColor(if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal)
+    setBackgroundColor(if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal)
   }
   import PositionConstants._
   private def newTriangle(pos: Int) = {
@@ -245,11 +250,12 @@ class OpenBoxFigure(
 
   def showArrowsIfNotBigEnough() {
     val b = new Rectangle()
-    inners.deepChildren.foreach { f ⇒ b.union(f.getBounds()) }
+    import RichFigure._
+    this.deepChildren.foreach { f ⇒ b.union(f.getBounds()) }
       def showTriangle(pos: Int) = {
         val t = triangles(pos)
-        if (!container.feedbackLayer.getChildren.contains(t))
-          add(t)
+        if (!feedbackLayer.getChildren.contains(t))
+          feedbackLayer.add(t)
         val point = if (pos == EAST || pos == WEST) {
           val y = size.h / 2 - t.getSize.height / 2
           val x = if (pos == EAST) size.w - t.getSize.width - getInsets.left - getInsets.right
@@ -263,7 +269,7 @@ class OpenBoxFigure(
         }
         t.setLocation(point)
       }
-    triangles.values.foreach { this.safeRemove(_) }
+    triangles.values.foreach { feedbackLayer.safeRemove(_) }
     if (b.width > getClientArea.getSize.width) showTriangle(EAST)
     if (b.height > getClientArea.getSize.height) showTriangle(SOUTH)
     if (b.x < 0) showTriangle(WEST)
@@ -317,33 +323,15 @@ class OpenBoxFigure(
         }
     }
   }
-  override def paintClientArea(graphics: Graphics) {
-    val rect = new Rectangle
-    if (useLocalCoordinates) {
-      graphics.translate(
-        getBounds().x + getInsets().left,
-        getBounds().y + getInsets().top);
-    }
-    graphics.clipRect(getClientArea(rect));
-    graphics.pushState();
-    graphics.setAlpha(25);
-    graphics.setBackgroundColor(ColorConstants.lightGray);
-    graphics.fillRectangle(rect);
-    graphics.popState();
-    graphics.restoreState();
-    super.paintClientArea(graphics)
-  }
   override def updateSize() {
     super.updateSize()
-    inners.setSize(getBounds.getSize)
+    //inners.setSize(getBounds.getSize)
   }
-  inners.add(background)
-  inners.add(layer)
-  inners.add(connectionsLayer)
-  inners.add(portsLayer)
-  inners.add(pointsLayer)
-  inners.add(feedbackLayer)
-  add(inners);
+  add(layer)
+  add(connectionsLayer)
+  add(portsLayer)
+  add(pointsLayer)
+  add(feedbackLayer)
   setBorder(new LineBorder(ColorConstants.gray, 6))
 }
 abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with OverlappedItem with RectFeedback {

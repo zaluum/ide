@@ -10,7 +10,7 @@ import org.zaluum.annotation.Box;
 import org.zaluum.basic.CircularBuffer;
 import org.zaluum.basic.Zaluum;
 
-@Box(configurer=PlotConfigurer.class)
+@Box(configurer = PlotConfigurer.class)
 @Deprecated
 public class FastPlot extends Chart2D {
 	private static final long serialVersionUID = 1L;
