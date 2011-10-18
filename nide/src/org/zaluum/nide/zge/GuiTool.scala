@@ -50,7 +50,6 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
   }
   object selecting extends Selecting with DropState {
-    def gui = true
     var border = (false, false)
     override def buttonDown {
       border = borderDistance

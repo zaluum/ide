@@ -192,7 +192,6 @@ trait PalettePageCoreListener {
     def elementChanged(event: ElementChangedEvent) {
       if (event.getType == ElementChangedEvent.POST_CHANGE) {
         val process = processDeltaSimple(event.getDelta)
-        println("PaletteView process=" + process)
         if (process)
           reload()
       }

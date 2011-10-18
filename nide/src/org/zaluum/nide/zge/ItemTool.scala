@@ -2,22 +2,8 @@ package org.zaluum.nide.zge
 
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.Cursors
-import org.zaluum.nide.compiler.Dimension
-import org.zaluum.nide.compiler.EditTransformer
-import org.zaluum.nide.compiler.Geometry
-import org.zaluum.nide.compiler.LabelDesc
-import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.compiler.Param
-import org.zaluum.nide.compiler.Point
-import org.zaluum.nide.compiler.Tree
-import org.zaluum.nide.compiler.ValDef
-import org.zaluum.nide.compiler.Vector2
+import org.zaluum.nide.compiler._
 import draw2dConversions._
-import org.zaluum.nide.compiler.MapTransformer
-import org.zaluum.nide.compiler.Expressions
-import org.zaluum.nide.compiler.Namer
-import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.eclipse.PaletteEntry
 
 /**
@@ -39,17 +25,14 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var filterDouble = false
     var editFigure: Option[TextEditFigure] = None
     def editLabel(s: String, l: LabelItem): MapTransformer
-    
-    override def doubleClick() = itemUnderMouse match {
-      case Some(e: PortDeclFigure) ⇒ directEditing.enter(e, e.tree.renamePort(_, None))
-      case Some(e: LiteralFigure)  ⇒ directEditing.enter(e, s ⇒ e.valDef.addOrReplaceParam(Param(Name("literal"), s)))
-      case Some(l: LabelItem)      ⇒ directEditing.enter(l, s ⇒ editLabel(s, l))
-      case Some(v: ValFigure) ⇒
+    def doubleClickPF: PartialFunction[Item, Unit] = {
+      case l: LabelItem ⇒ directEditing.enter(l, s ⇒ editLabel(s, l))
+      case v: ValDefItem ⇒
         v.openConfigurer(viewer.zproject.classLoader) foreach {
           params ⇒ controller.exec(v.valDef.replaceParams(params))
         }
-      case _ ⇒
     }
+    override def doubleClick() = itemUnderMouse foreach { doubleClickPF.lift }
     def enter() { state = this }
     def drop() {}
     def buttonDown {
@@ -169,7 +152,6 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
     def exit() {
       feed.hide();
-      println("feed hide")
       feed = null;
       selecting.enter()
     }

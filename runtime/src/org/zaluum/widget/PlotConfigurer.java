@@ -24,8 +24,8 @@ public class PlotConfigurer implements BoxConfigurer {
 			ArrayList<String> list = new ArrayList<String>(1);
 			list.add(p.getScript());
 			values.put("#Script", list);
-		}
-		return values;
+			return values;
+		}else return null;
 	}
 
 }

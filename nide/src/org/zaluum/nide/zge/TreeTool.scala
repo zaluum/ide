@@ -27,6 +27,7 @@ import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.eclipse.PaletteEntry
 import org.zaluum.nide.eclipse.Palette
+import org.zaluum.nide.compiler.Param
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   val gui = false
@@ -35,7 +36,6 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   val connectionLineDistance = 3
   val gridSize = 1
   object selecting extends Selecting with DeleteState with ClipboardState with DropState with LineBlinker {
-    def gui = false
     var port: Option[PortFigure] = None
     def editLabel(s: String, l: LabelItem) =
       l.valDef.editLabel(false, s)
@@ -66,8 +66,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           viewer.refresh()
         case _ ⇒
       }
-
     }
+    val treeDoubleClickPFs: PartialFunction[Item, Unit] = {
+      case e: PortDeclFigure ⇒ directEditing.enter(e, e.tree.renamePort(_, None))
+      case e: LiteralFigure  ⇒ directEditing.enter(e, s ⇒ e.valDef.addOrReplaceParam(Param(Name("literal"), s)))
+    }
+    override def doubleClickPF = treeDoubleClickPFs orElse super.doubleClickPF
     def actButton(b: Button) = {
       val template = b.openBox.template
       val i = b.openBox.templateSym.nextBlockIndex
