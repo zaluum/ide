@@ -59,6 +59,13 @@ trait ContainerItem extends Item {
       .orElse(itemAtIn(layer, p, debug))
       .orElse(itemAtIn(connectionsLayer, p, debug))
   }
+  def findLabelFigureOf(v: ValDef): Option[LabelItem] = {
+    this.deepChildren collect { case l: LabelItem if (l.valDef == v) ⇒ l } headOption
+  }
+  def findFigureOf(v: ValDef) = {
+    this.deepChildren collect { case i: ValDefItem if (i.valDef == v) ⇒ i } headOption
+  }
+
   def shallowItems = {
     (portsLayer.getChildren.view ++
       layer.getChildren.view ++

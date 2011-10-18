@@ -430,6 +430,14 @@ case class ValDef(
       template = e.transformOption(template),
       params = changeParams ::: filtered)
   }
+  def moveLabel(gui: Boolean, newPos: Vector2) = transformThis { e ⇒
+    if (gui)
+      copy(labelGui = Some(labelGui.get.copy(pos = newPos)),
+        template = e.transformOption(template))
+    else
+      copy(label = Some(label.get.copy(pos = newPos)),
+        template = e.transformOption(template))
+  }
   def addOrReplaceParam(param: Param) = addOrReplaceParams(List(param))
   def editType(clazz: Name) = transformThis { e ⇒
     copy(typeName = clazz, template = e.transformOption(template))

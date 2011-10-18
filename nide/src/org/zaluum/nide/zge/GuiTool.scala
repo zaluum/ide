@@ -22,6 +22,7 @@ import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.Block
 import org.zaluum.nide.eclipse.PaletteEntry
 import org.zaluum.`object`.BoxInstance
+
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   val gui = true
   val gridSize = 12
@@ -260,22 +261,5 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     def currentMouseLocation = GuiTool.this.currentMouseLocation
   }
   object moving extends Moving with DeltaMove
-  // Moving label
-  trait MovingLabel extends SpecialMove[LabelItem] { // TODO inherit treetool movingLabel
-    self: ToolState with DeltaMove with SingleContainer ⇒
-    def clampDelta = delta
-    def buttonUp {
-      val oldPos = fig.valDef.labelGui.get.pos
-      val newPos = oldPos + clampDelta
-      val command = new EditTransformer {
-        val trans: PartialFunction[Tree, Tree] = {
-          case v: ValDef if (fig.valDef == v) ⇒
-            v.copy(labelGui = Some(v.labelGui.get.copy(pos = newPos)))
-        }
-      }
-      controller.exec(command)
-    }
-  }
-  object movingLabel extends MovingLabel with DeltaMove with SingleContainer
 
 }

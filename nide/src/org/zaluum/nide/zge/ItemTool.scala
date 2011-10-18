@@ -5,6 +5,7 @@ import org.eclipse.draw2d.Cursors
 import org.zaluum.nide.compiler._
 import draw2dConversions._
 import org.zaluum.nide.eclipse.PaletteEntry
+import RichFigure._
 
 /**
  * Implements basic selecting, marquee and resizing of ItemFigures
@@ -107,7 +108,28 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       exit()
     }
   }
-
+  // Moving label
+  trait MovingLabel extends SpecialMove[LabelItem] {
+    self: ToolState with DeltaMove with SingleContainer ⇒
+    def minDist = 5
+    def clampDelta = {
+      val pos = fig.pos + delta
+      val lblr = fig.getBounds().getCopy()
+      lblr.setLocation(point(pos))
+      val valFig = fig.container.findFigureOf(fig.valDef).get
+      val valr = valFig.getBounds()
+      val newx = Snap.snap(lblr.x, lblr.right, valr.x, valr.right, pos.x, minDist)
+      val newy = Snap.snap(lblr.y, lblr.bottom, valr.y, valr.bottom, pos.y, minDist)
+      Vector2(newx - fig.pos.x, newy - fig.pos.y)
+    }
+    def lbl = if (gui) fig.valDef.labelGui else fig.valDef.label
+    def buttonUp {
+      val oldPos = lbl.get.pos
+      val newPos = oldPos + clampDelta
+      controller.exec(fig.valDef.moveLabel(gui, newPos))
+    }
+  }
+  object movingLabel extends MovingLabel with DeltaMove with SingleContainer
   // Creating
   abstract class Creating extends ToolState {
     var feed: ItemFeedbackFigure = _

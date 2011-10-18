@@ -257,23 +257,6 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   }
   object creatingPort extends CreatingPort with SingleContainerAllower
 
-  trait MovingLabel extends SpecialMove[LabelItem] {
-    self: ToolState with DeltaMove with SingleContainer ⇒
-    def clampDelta = delta
-    def buttonUp {
-      val oldPos = fig.valDef.label.get.pos
-      val newPos = oldPos + clampDelta
-      val command = new EditTransformer {
-        val trans: PartialFunction[Tree, Tree] = {
-          case v: ValDef if (fig.valDef == v) ⇒
-            v.copy(label = Some(v.label.get.copy(pos = newPos)),
-              template = transformOption(v.template))
-        }
-      }
-      controller.exec(command)
-    }
-  }
-  object movingLabel extends MovingLabel with DeltaMove with SingleContainer
   // MOVING OPEN PORT
   trait MovingOpenPort extends SpecialMove[OpenPortDeclFigure] {
     self: ToolState with DeltaMove with SingleContainer ⇒
