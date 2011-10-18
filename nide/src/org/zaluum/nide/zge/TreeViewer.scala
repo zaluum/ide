@@ -124,6 +124,9 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
       case _                              ⇒ true
     }
   }
+  def highLight(b: Boolean) {
+    setBackgroundColor(if (b) ColorConstants.lightGray else ColorConstants.white)
+  }
   def refresh() {
     hideEmptyLabel()
     updateContents(Map()) // FIXME

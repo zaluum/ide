@@ -68,7 +68,6 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       viewer.refresh()
     }
     def delete() {
-      println("delete")
       controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.editor.viewer.graphOf))
     }
 
@@ -84,7 +83,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
             case In.str    ⇒
             case Out.str   ⇒
             case Shift.str ⇒
-            case _         ⇒ creating.enter(e, current)
+            case _         ⇒ creating.enter(e)
           }
         case _ ⇒
       }

@@ -144,7 +144,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
             case Palette.InEntry    ⇒ creatingPort.enter(In, current)
             case Palette.OutEntry   ⇒ creatingPort.enter(Out, current)
             case Palette.ShiftEntry ⇒ creatingPort.enter(Shift, current)
-            case _                  ⇒ creating.enter(e, current)
+            case _                  ⇒ creating.enter(e)
           }
         case _ ⇒
       }
@@ -166,10 +166,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   }
   // CREATING
   abstract class TreeCreating extends Creating {
-    self: SingleContainer ⇒
-    override def enter(entry: PaletteEntry, initContainer: ContainerItem) {
-      enterSingle(initContainer)
-      super.enter(entry, initContainer)
+    self: ContainerHighlighter ⇒
+    def allowed = true
+    override def enter(entry: PaletteEntry) {
+      super.enter(entry)
+      enterHighlight(current)
     }
     protected def getSize(entry: PaletteEntry) = {
       val (img, desc) = zproject.imageFactory.image48(entry.className);
@@ -180,7 +181,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     protected def newInstance(dst: Point) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
-          case b: Block if b == initContainer.block ⇒
+          case b: Block if b == current.block ⇒
             initStr = entry.className.classNameWithoutPackage.firstLowerCase
             val name = Name(b.sym.freshName(initStr))
             newVal = if (entry.isExpression) {
@@ -203,7 +204,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     protected def newInstanceTemplate(dst: Point, requiredBlocks: Int) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
-          case b: Block if b == initContainer.block ⇒
+          case b: Block if b == current.block ⇒
             val sym = b.sym
             val name = Name(sym.freshName(entry.className.classNameWithoutPackage.firstLowerCase))
             val template = Template.emptyTemplate(requiredBlocks)
@@ -218,7 +219,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   // CREATING BOX 
-  object creating extends TreeCreating with SingleContainerAllower
+  object creating extends TreeCreating with ContainerHighlighter
   // CREATING PORT
   class CreatingPort extends ToolState {
     self: SingleContainer ⇒
@@ -280,6 +281,25 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
   }
   object movingOpenPort extends MovingOpenPort with DeltaMove with SingleContainer
+  // HighLighter
+  trait ContainerHighlighter extends ToolState {
+    var last: ContainerItem = null
+    def enterHighlight(init: ContainerItem) {
+      last = init
+      init.highLight(true)
+    }
+    override abstract def move() {
+      if (current != last && last != null)
+        last.highLight(false)
+      last = current
+      last.highLight(true)
+      super.move()
+    }
+    override abstract def exit() {
+      if (last != null) last.highLight(false)
+      super.exit()
+    }
+  }
 
   class PortTrack extends OverTrack[PortFigure] {
     class TooltipLabel extends RectangleFigure {
@@ -319,4 +339,5 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     override def onEnter(p: PortFigure) { super.onEnter(p); p.hover = true; showTip(p) }
     override def onExit(p: PortFigure) { super.onExit(p); p.hover = false; hideTip }
   }
+
 }

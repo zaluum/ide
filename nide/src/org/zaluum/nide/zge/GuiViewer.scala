@@ -80,6 +80,9 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
       DotPainter.dotFill(g, getBounds, tool.gridSize, tool.gridSize)
     }
   }
+  def highLight(b: Boolean) {
+    backRect.setBackgroundColor(if (b) ColorConstants.lightGray else ColorConstants.white)
+  }
   def updatePorts(changes: Map[Tree, Tree]) {}
   backRect.setForegroundColor(ColorConstants.lightBlue)
   backRect.setBackgroundColor(ColorConstants.white)

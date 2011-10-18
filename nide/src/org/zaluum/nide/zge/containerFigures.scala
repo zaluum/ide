@@ -72,6 +72,8 @@ trait ContainerItem extends Item {
       connectionsLayer.getChildren.view ++
       pointsLayer.getChildren.view).collect { case i: Item ⇒ i }
   }
+  def highLight(b: Boolean)
+
   protected def createGraph: ConnectionGraph = {
     val portVertexs = portsLayer.getChildren collect {
       case port: PortFigure ⇒
@@ -234,6 +236,9 @@ class OpenBoxFigure(
     updateContents(changes)
     showArrowsIfNotBigEnough
   }
+  def highLight(b: Boolean) = {
+    myBorder.setColor(if (b) ColorConstants.lightBlue else ColorConstants.gray)
+  }
   def blink(b: Boolean) {
     setBackgroundColor(if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal)
   }
@@ -339,7 +344,8 @@ class OpenBoxFigure(
   add(portsLayer)
   add(pointsLayer)
   add(feedbackLayer)
-  setBorder(new LineBorder(ColorConstants.gray, 6))
+  lazy val myBorder = new LineBorder(ColorConstants.gray, 6)
+  setBorder(myBorder)
 }
 abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with OverlappedItem with RectFeedback {
   var size = Dimension(10, 10)

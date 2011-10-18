@@ -135,11 +135,11 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     var feed: ItemFeedbackFigure = _
     var entry: PaletteEntry = null
     def allowed: Boolean
-    def enter(entry: PaletteEntry, initContainer: ContainerItem) {
+    def enter(entry: PaletteEntry) {
       state = this
       this.entry = entry
       val size = getSize(entry)
-      feed = new ItemFeedbackFigure(current)
+      feed = new ItemFeedbackFigure(viewer)
       feed.setInnerBounds(new Rectangle(0, 0, size.w, size.h));
       feed.show()
     }
@@ -152,7 +152,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     protected def getSize(entry: PaletteEntry): Dimension
     def move() {
       if (feed == null) throw new Exception
-      feed.setInnerLocation(point(snap(currentMouseLocation)))
+      feed.setInnerLocation(point(snap(absMouseLocation)))
     }
     def abort() { exit() }
     def drag() {}

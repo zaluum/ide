@@ -1,20 +1,25 @@
 package org.zaluum.nide.zge
 import scala.annotation.implicitNotFound
 import scala.reflect.Manifest.singleType
-
 import org.eclipse.draw2d.Cursors
 import org.eclipse.draw2d.Figure
 import org.eclipse.swt.graphics.Cursor
 import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.Vector2
-
 import draw2dConversions._
 import RichFigure._
+import org.eclipse.swt.events.MouseEvent
 abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   type C <: ContainerItem
-  def itemUnderMouse = current.itemAt(point(currentMouseLocation), false)
-  def currentMouseLocation: Point = current.translateFromViewport(absMouseLocation)
-  def current: C = viewer.findContainerAt(point(absMouseLocation)).asInstanceOf[C]
+  var itemUnderMouse: Option[Item] = None
+  var currentMouseLocation = Point(0, 0)
+  var current: C = _
+  override def updateMouse(me: MouseEvent) {
+    super.updateMouse(me)
+    current = viewer.findContainerAt(point(absMouseLocation)).asInstanceOf[C]
+    currentMouseLocation = current.translateFromViewport(absMouseLocation)
+    itemUnderMouse = current.itemAt(point(currentMouseLocation), false)
+  }
   abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
     var current: Option[F] = None
     protected var last: Option[F] = None

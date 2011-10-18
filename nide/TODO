@@ -1,15 +1,13 @@
 Agenda
 
 	necessari
+	- moure boxes entre contenidors
 	- mida inicial compatible amb grid, mida inicial a paletteentry? 
 	- Clonar amb ctrl
-	- label amb position snap
 	- Al enganxar a GUI enganxa al bloc principal, fer servir el mecanisme de crear
-	- moure boxes entre contenidors
 	- paleta ergonomica
 	- for - construccio arrays
 	- data log
-	- despres de crear una box, quan s'edita l'etiqueta, fer que es pugui connectar els ports cancelant l'edició
 	- xml imatges 
 	- human readable signature label provider
 	- llibreria VISA 
@@ -147,6 +145,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- despres de crear una box, quan s'edita l'etiqueta, fer que es pugui connectar els ports cancelant l'edició
 	- zaluum file with version number
 	- configurador blocs complexos. Plot per exemple.
 	- eliminar boxtypesymbol. Qualsevol JavaType com a box
