@@ -1,5 +1,4 @@
-#Fri Sep 09 17:49:26 CEST 2011
+#Tue Oct 18 15:57:58 CEST 2011
 eclipse.preferences.version=1
-encoding//src/org/zaluum/examples/tank/Level.zaluum=ISO-8859-1
 encoding//src/org/zaluum/examples/tank/TankSimulation.zaluum=ISO-8859-1
-encoding//src/org/zaluum/examples/tank/Temp.zaluum=ISO-8859-1
+encoding//src/org/zaluum/examples/tank/Temperature.zaluum=ISO-8859-1
