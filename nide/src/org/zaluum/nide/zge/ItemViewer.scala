@@ -77,6 +77,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
     super.dispose()
   }
   /*DEFS*/
+  override protected def init() {}
   def blink(s: SelectionSubject) {
     this.deepChildren.find {
       case i: Item ⇒ i.selectionSubject == Some(s)

@@ -196,7 +196,6 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
           this.l = new LabelItem(vd.container, gui) {
             override def text = initialStr
           }
-          l.show()
           l.updateValDef(valDef)
           l.edit(rename _, () ⇒ exit())
         case None ⇒ exit()
@@ -207,7 +206,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
     def exit() {
       if (l != null) {
-        l.hide()
+        l.destroy()
         l = null
       }
       selecting.enter()
@@ -221,7 +220,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       t.edit(str ⇒ controller.exec(commandOk(str)), exit _)
     }
     def exit() {
-      t.hideEdit()
+      t.destroyEdit()
       t = null
       selecting.enter()
     }

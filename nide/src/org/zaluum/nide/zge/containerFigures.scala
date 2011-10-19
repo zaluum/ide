@@ -137,13 +137,13 @@ trait ContainerItem extends Item {
                 case Some(ld) ⇒
                   l.updateValDef(t)
                 case None ⇒
-                  l.hide()
+                  l.destroy()
                   remove += l
               }
             case s: ValDefItem ⇒ s.updateValDef(t)
           }
         case _ ⇒
-          bf.hide
+          bf.destroy()
           remove += bf
       }
     }
@@ -171,13 +171,11 @@ trait ContainerItem extends Item {
           valf.updateValDef(v)
           valf
       }
-      if (showing) f.show
       boxes += f
     }
     news foreach { v ⇒
       v.label foreach { _ ⇒
         val l = new LabelItem(ContainerItem.this)
-        if (showing) l.show
         l.updateValDef(v)
         labels += l
       }
@@ -192,13 +190,12 @@ trait ContainerItem extends Item {
       p.update(j.p, j.tpe)
       junctions += p
     }
-    if (showing) junctions.foreach { this.pointsLayer.add(_) }
+    junctions.foreach { this.pointsLayer.add(_) }
   }
   def updateConnections() {
-    connections.foreach { _.hide }
+    connections.foreach { _.destroy() }
     connections.clear
     connections ++= graph.edges map { e ⇒ new ConnectionFigure(e, ContainerItem.this) }
-    if (showing) connections.foreach { _.show }
   }
 }
 object OpenBoxFigure {
@@ -217,11 +214,11 @@ class OpenBoxFigure(
   def myLayer = container.layer
   def size = valDef.size getOrElse Dimension(50, 50)
   // layers
-  val layer = new Layer
-  val portsLayer = new Layer
-  val connectionsLayer = new Layer
-  val pointsLayer = new Layer
-  val feedbackLayer = new Layer
+  lazy val layer = new Layer
+  lazy val portsLayer = new Layer
+  lazy val connectionsLayer = new Layer
+  lazy val pointsLayer = new Layer
+  lazy val feedbackLayer = new Layer
   setBackgroundColor(ColorConstants.white)
   // ContainerItem
   //setBackgroundColor(ColorConstants.white)
@@ -289,20 +286,15 @@ class OpenBoxFigure(
   }
   def updateMe() {}
   def updateValPorts() {}
-  override def show() {
-    super.show()
-    portDecls.foreach { _.show }
-    portSymbols.foreach { _.show }
-  }
-  override def hide() {
-    super.hide()
-    portDecls.foreach { _.hide }
-    portSymbols.foreach { _.hide }
+  override def destroy() {
+    super.destroy()
+    portDecls.foreach { _.destroy() }
+    portSymbols.foreach { _.destroy() }
   }
   def updatePorts(changes: Map[Tree, Tree]) {
-    portDecls.foreach { _.hide() }
+    portDecls.foreach { _.destroy() }
     portDecls.clear()
-    portSymbols.foreach(_.hide)
+    portSymbols.foreach(_.destroy())
     portSymbols.clear()
     val vs = valDef.sym
     vs.portSides filter { _.fromInside } foreach {
@@ -312,7 +304,6 @@ class OpenBoxFigure(
             val f = new OpenPortDeclFigure(OpenBoxFigure.this)
             f.update(intPs, extPs, left)
             portDecls += f
-            if (showing) f.show()
           }
         if (intPs.pi.hasDecl) {
           intPs.pi.dir match {
@@ -325,12 +316,10 @@ class OpenBoxFigure(
             val f = new PortSymbolFigure(intPs, OpenBoxFigure.this)
             f.update
             portSymbols += f
-            if (showing) f.show()
           } else if (intPs.pi.dir == In) {
             val f = new OpenPortFixedFigure(OpenBoxFigure.this)
             f.update(intPs, extPs, true, In, MPoint(0, 10))
             portDecls += f
-            if (showing) f.show()
           }
         }
     }
@@ -339,13 +328,16 @@ class OpenBoxFigure(
     super.updateSize()
     //inners.setSize(getBounds.getSize)
   }
-  add(layer)
-  add(connectionsLayer)
-  add(portsLayer)
-  add(pointsLayer)
-  add(feedbackLayer)
+  override def init() {
+    super.init()
+    add(layer)
+    add(connectionsLayer)
+    add(portsLayer)
+    add(pointsLayer)
+    add(feedbackLayer)
+    setBorder(myBorder)
+  }
   lazy val myBorder = new LineBorder(ColorConstants.gray, 6)
-  setBorder(myBorder)
 }
 abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with OverlappedItem with RectFeedback {
   var size = Dimension(10, 10)
@@ -372,27 +364,27 @@ abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with Overl
     }
     updateSize()
   }
-  override def hide() {
-    super.hide()
+  override def destroy() {
+    super.destroy()
     currentDesc foreach { imageFactory.destroy }
     currentDesc = None
   }
 }
 class IfOpenBoxFigure(container: ContainerItem, viewer: Viewer) extends OpenBoxFigure(container, viewer) {
   val buttons = Buffer[Button]()
-  buttons += new Button(this) {
-    def imageDesc =
-      if (openBox.symbol.blockNumeral == 0)
-        imageFactory.buttonIfTrue
-      else imageFactory.buttonIfFalse
+
+  override def init() {
+    super.init()
+    buttons += new Button(this) {
+      def imageDesc =
+        if (openBox.symbol.blockNumeral == 0)
+          imageFactory.buttonIfTrue
+        else imageFactory.buttonIfFalse
+    }
   }
-  override def show() {
-    super.show()
-    buttons.foreach { _.show }
-  }
-  override def hide() {
-    super.hide()
-    buttons.foreach { _.hide }
+  override def destroy() {
+    super.destroy()
+    buttons.foreach { _.destroy() }
   }
   override def updateMe {
     buttons.foreach { _.update() }

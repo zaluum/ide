@@ -24,8 +24,10 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
   private var ipos = MPoint(0, 0)
   var in = false
   var ps: PortSide = _
+
   def isBad = ps != null && ps.tpe.isEmpty
   def update(ipos: MPoint, ps: PortSide) {
+    if (getParent == null) throw new IllegalStateException
     this.ps = ps
     this.ipos = ipos
     this.in = in
@@ -64,6 +66,10 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
   hover = false
   //setAlpha(50)
   setOutline(true)
+  container.portsLayer.add(this)
+  def destroy() {
+    container.portsLayer.remove(this)
+  }
 }
 trait PortFigureProperties extends Item with PropertySource {
   def display = container.viewer.display

@@ -150,7 +150,7 @@ trait ValFigure extends ValDefItem with OverlappedEffect with HasPorts {
         p.update(point + Vector2(getBounds.x, getBounds.y), s)
         ports += p
       }
-    for (p ← ports) container.portsLayer.remove(p)
+    for (p ← ports) p.destroy()
     ports.clear
     for ((p, i) ← ins.zipWithIndex) createPort(p, i)
     for ((p, i) ← outs.zipWithIndex) createPort(p, i)
@@ -300,11 +300,11 @@ trait TextEditFigure extends Item {
       textC.setFocus
     }
   }
-  override def hide() {
-    hideEdit()
-    super.hide()
+  override def destroy() {
+    destroyEdit()
+    super.destroy()
   }
-  def hideEdit() = {
+  def destroyEdit() = {
     if (textCellEditor != null) {
       textCellEditor.dispose()
       textCellEditor = null

@@ -62,8 +62,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           }
         case (Some(i: Item), None) ⇒ selectItem(i)
         case (None, _) ⇒
-          viewer.selection.deselectAll()
-          viewer.refresh()
+          if (!viewer.selection.isEmpty) {
+            viewer.selection.deselectAll()
+            viewer.refresh()
+          }
         case _ ⇒
       }
     }

@@ -88,7 +88,7 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
   backRect.setBackgroundColor(ColorConstants.white)
   background.add(backRect)
   override def updateContents(changes: Map[Tree, Tree]) {
-    items.foreach { _.hide }
+    items.foreach { _.destroy() }
     items.clear()
       def updateBlock(b: Block) {
         b.valDefs foreach { v ⇒
@@ -97,12 +97,10 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
               val f = new SwingFigure(editor.viewer, GuiViewer.this, controller.zproject.classLoader)
               f.updateValDef(v)
               items += f
-              f.show()
               v.labelGui foreach { l ⇒
                 val lbl = new LabelItem(GuiViewer.this, gui = true)
                 lbl.updateValDef(v)
                 items += lbl
-                lbl.show()
               }
             case Some(s: TemplateExprType) ⇒
               v.sym.blocks foreach { b ⇒ updateBlock(b.decl) }

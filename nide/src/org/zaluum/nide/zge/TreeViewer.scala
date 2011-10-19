@@ -49,7 +49,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def myLayer = null
   val ports = Buffer[PortDeclFigure]()
   def updatePorts(changes: Map[Tree, Tree]) {
-    ports.foreach { _.hide }
+    ports.foreach { _.destroy() }
     ports.clear
     symbol.template.thisVal.portSides foreach { pside ⇒
       pside.pi.portSymbol match {
@@ -64,7 +64,6 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
         case _ ⇒
       }
     }
-    ports.foreach { _.show }
     updateProperties()
   }
   override def dispose() {
@@ -133,6 +132,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
     if (deepChildrenWithoutLayers.isEmpty) showEmptyLabel()
     selectedItems foreach { _.showFeedback() }
     editor.setSelection(selectedItems.headOption)
+    println("num figures = " + deepChildrenWithoutLayers.size)
     /*for (s <- selectedItems; ss <- s.selectionSubject) {
       println ("selected : " + ss)
       ss match {

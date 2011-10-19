@@ -35,15 +35,11 @@ trait Blinker extends Item {
     blinking = false
   }
 }
-class LineItem(val container: ContainerItem) extends Item with Blinker with RectFeedback {
-  var con: Option[ConnectionFigure] = None
+class LineItem(val container: ContainerItem, val l: Line, val con: Option[ConnectionFigure]) extends Item with Blinker with RectFeedback {
   var complete = true
-  var l: Line = _
   def helpers = List()
-  def update(con: Option[ConnectionFigure], complete: Boolean, bad: Boolean, l: Line) {
-    this.con = con
+  def update(complete: Boolean, bad: Boolean) {
     this.complete = complete
-    this.l = l
     if (bad)
       setForegroundColor(ColorConstants.red)
     else
@@ -123,6 +119,9 @@ class LineItem(val container: ContainerItem) extends Item with Blinker with Rect
     bounds = null
     super.repaint()
   }
+  override def init() {
+    super.init()
+  }
   def myLayer = if (con.isDefined) container.connectionsLayer else container.feedbackLayer
 }
 
@@ -144,21 +143,20 @@ class ConnectionPainter(container: ContainerItem) {
   def paintRoute(edge: Edge, feedback: Boolean, complete: Boolean, bad: Boolean, con: Option[ConnectionFigure] = None) {
     clear()
     edge.lines foreach { l ⇒
-      val nl = new LineItem(container)
-      nl.update(con, complete, bad, l)
+      val nl = new LineItem(container, l, con)
+      nl.update(complete, bad)
       lines += nl
     }
-    lines foreach { l ⇒ l.show }
     if (feedback) lines foreach { _.showFeedback() }
   }
   def clear() {
-    lines.foreach { _.hide() }
+    lines.foreach { _.destroy() }
     lines.clear
   }
 }
 // TODO not really a figure right now... no children
 class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Item {
-  val painter = new ConnectionPainter(container)
+  lazy val painter = new ConnectionPainter(container)
   var feedback = false
   def size = null
   def pos = null
@@ -166,11 +164,11 @@ class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Item {
   def myLayer = null
   def paint = painter.paintRoute(e, feedback, e.isComplete, e.isBad, Some(this))
   def blink(c: Boolean) = {}
-  override def show() = {
+  override def init() { // FIXME no super
     container.connectionsLayer.add(this);
     paint
   }
-  override def hide() {
+  override def destroy() {
     if (container.connectionsLayer.getChildren.contains(this))
       container.connectionsLayer.remove(this)
     painter.clear()

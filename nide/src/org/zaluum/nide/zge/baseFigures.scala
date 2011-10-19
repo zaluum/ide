@@ -149,18 +149,17 @@ trait Item extends Hover {
   def pos: MPoint
   def size: Dimension
   val feed: ItemFeedbackFigure
-  var showing = true
   var _hover = false
+  init()
+  protected def init() {
+    myLayer.add(this)
+  }
   def hover = _hover
   def hover_=(b: Boolean) {
     _hover = b
     if (b) showFeedback else hideFeedback
   }
   def baseSpace = 6
-  def show() {
-    showing = true
-    myLayer.add(this)
-  }
   def parentContainers: List[ContainerItem] = if (container == this) Nil else
     container :: container.parentContainers
   def isOverlapped = {
@@ -183,19 +182,16 @@ trait Item extends Hover {
       }
     }
   }
-  def hide() {
-    if (showing) {
-      showing = false
+  def destroy() {
+    if (this.getParent() == myLayer)
       myLayer.remove(this) // this is a bottleneck. Lineal remove + layout, specially when invoked from containeritem
-      hideFeedback()
-    }
+    hideFeedback()
   }
   def showFeedback() {
-    container.feedbackLayer.add(feed)
+    feed.show()
   }
   def hideFeedback() {
-    if (container.feedbackLayer.getChildren.contains(feed))
-      container.feedbackLayer.remove(feed)
+    feed.hide()
   }
   def moveFeed(loc: MPoint) {
     feed.setInnerLocation(point(loc))
@@ -237,16 +233,12 @@ trait OverlappedEffect extends Item {
 }
 trait HasPorts extends Item {
   val ports = Buffer[PortFigure]()
-  override def show() {
-    super.show
-    for (p ← ports) p.container.portsLayer.add(p)
-  }
-  override def hide() {
-    super.hide
+  override def destroy() {
+    super.destroy()
     for (p ← ports) {
-      if (p.container.portsLayer.getChildren.contains(p))
-        p.container.portsLayer.remove(p)
+      p.destroy()
     }
+    ports.clear()
   }
 }
 trait OverlappedItem extends Item {
