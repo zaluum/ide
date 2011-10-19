@@ -71,11 +71,11 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       this.clipboard = c
       state = this
       feed = new ItemFeedbackFigure(current)
-      feed.setInnerBounds(new Rectangle(0, 0, 48, 48)); // XXX real clipboard size
+      feed.setInnerBoundsAbs(new Rectangle(0, 0, 48, 48)); // XXX real clipboard size
       feed.show()
       move()
     }
-    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
+    def move() { feed.setInnerLocationAbs(point(snap(absMouseLocation))) }
     def abort { exit() }
     def drag {}
     val gui: Boolean
@@ -140,7 +140,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       this.entry = entry
       val size = getSize(entry)
       feed = new ItemFeedbackFigure(viewer)
-      feed.setInnerBounds(new Rectangle(0, 0, size.w, size.h));
+      feed.setInnerBoundsAbs(new Rectangle(0, 0, size.w, size.h));
       feed.show()
     }
     var newVal: ValDef = null
@@ -152,7 +152,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     protected def getSize(entry: PaletteEntry): Dimension
     def move() {
       if (feed == null) throw new Exception
-      feed.setInnerLocation(point(snap(absMouseLocation)))
+      feed.setInnerLocationAbs(point(snap(absMouseLocation)))
     }
     def abort() { exit() }
     def drag() {}

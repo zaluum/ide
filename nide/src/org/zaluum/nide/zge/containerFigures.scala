@@ -44,12 +44,11 @@ import org.zaluum.nide.utils.Timer
 import org.zaluum.nide.compiler.BoxSymbol
 
 trait ContainerItem extends Item {
-  def viewer: Viewer
+  def viewer: ItemViewer
   def layer: Figure
   def connectionsLayer: Figure
   def pointsLayer: Figure
   def portsLayer: Figure
-  def feedbackLayer: Figure
   protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] =
     container.findDeepAt(point(p), 0, debug) {
       case i: Item ⇒ i
@@ -199,6 +198,12 @@ trait ContainerItem extends Item {
     connections.clear
     connections ++= graph.edges map { e ⇒ new ConnectionFigure(e, ContainerItem.this) }
   }
+  override def destroy() {
+    super.destroy()
+    for (b ← boxes) b.destroy()
+    for (l ← labels) l.destroy()
+    for (c ← connections) c.destroy()
+  }
 }
 object OpenBoxFigure {
   val backgroundNormal = ColorConstants.white
@@ -206,7 +211,7 @@ object OpenBoxFigure {
 }
 class OpenBoxFigure(
   val container: ContainerItem,
-  val viewer: Viewer) extends LayeredPane
+  override val viewer: ItemViewer) extends LayeredPane
     with ValDefItem
     with ResizableFeedback
     with ContainerItem
@@ -220,7 +225,6 @@ class OpenBoxFigure(
   lazy val portsLayer = new Layer
   lazy val connectionsLayer = new Layer
   lazy val pointsLayer = new Layer
-  lazy val feedbackLayer = new Layer
   setBackgroundColor(ColorConstants.white)
   // ContainerItem
   //setBackgroundColor(ColorConstants.white)
@@ -265,8 +269,8 @@ class OpenBoxFigure(
     this.deepChildren.foreach { f ⇒ b.union(f.getBounds()) }
       def showTriangle(pos: Int) = {
         val t = triangles(pos)
-        if (!feedbackLayer.getChildren.contains(t))
-          feedbackLayer.add(t)
+        if (t.getParent != layer)
+          layer.add(t)
         val point = if (pos == EAST || pos == WEST) {
           val y = size.h / 2 - t.getSize.height / 2
           val x = if (pos == EAST) size.w - t.getSize.width - getInsets.left - getInsets.right
@@ -280,7 +284,7 @@ class OpenBoxFigure(
         }
         t.setLocation(point)
       }
-    triangles.values.foreach { feedbackLayer.safeRemove(_) }
+    triangles.values.foreach { layer.safeRemove(_) }
     if (b.width > getClientArea.getSize.width) showTriangle(EAST)
     if (b.height > getClientArea.getSize.height) showTriangle(SOUTH)
     if (b.x < 0) showTriangle(WEST)
@@ -336,7 +340,6 @@ class OpenBoxFigure(
     add(connectionsLayer)
     add(portsLayer)
     add(pointsLayer)
-    add(feedbackLayer)
     setBorder(myBorder)
   }
   lazy val myBorder = new LineBorder(ColorConstants.gray, 6)
@@ -372,8 +375,8 @@ abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with Overl
     currentDesc = None
   }
 }
-class IfOpenBoxFigure(container: ContainerItem, viewer: Viewer) extends OpenBoxFigure(container, viewer) {
-  val buttons = Buffer[Button]()
+class IfOpenBoxFigure(container: ContainerItem, viewer: ItemViewer) extends OpenBoxFigure(container, viewer) {
+  lazy val buttons = Buffer[Button]()
 
   override def init() {
     super.init()

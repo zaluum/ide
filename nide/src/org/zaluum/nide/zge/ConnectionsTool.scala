@@ -59,8 +59,8 @@ trait ConnectionsTool {
       enterSingle(initContainer)
       paintedEdge = null
       painter = new ConnectionPainter(initContainer)
-      initContainer.feedbackLayer.add(hFig)
-      initContainer.feedbackLayer.add(vFig)
+      viewer.feedbackLayer.add(hFig)
+      viewer.feedbackLayer.add(vFig)
       hFig.setLineStyle(org.eclipse.swt.SWT.LINE_DASHDOT);
       vFig.setLineStyle(org.eclipse.swt.SWT.LINE_DASHDOT);
       dst = None
@@ -123,8 +123,8 @@ trait ConnectionsTool {
     def drag {}
     def buttonDown {}
     private def removeFeed(f: Figure) {
-      if (initContainer.feedbackLayer.getChildren.contains(f))
-        initContainer.feedbackLayer.remove(f)
+      if (f.getParent() == viewer.feedbackLayer)
+        viewer.feedbackLayer.remove(f)
     }
     override def menu {
       exit()
@@ -182,6 +182,8 @@ trait ConnectionsTool {
           val ext = extend.fixEnds
           paintCreatingEdge(ext)
           val p = point(ext.b.p)
+          initContainer.translateToParent(p)
+          initContainer.translateToAbsolute(p)
           hFig.setStart(p)
           vFig.setStart(p)
           hFig.setEnd(p)
@@ -189,17 +191,33 @@ trait ConnectionsTool {
         case None ⇒
           paintCreatingEdge(edge)
           if (dir == H) {
-            hFig.setStart(point(last))
+            val lastp = point(last)
+            initContainer.translateToParent(lastp)
+            initContainer.translateToAbsolute(lastp)
+            hFig.setStart(lastp)
             val mid = new EPoint(now.x, last.y)
+            initContainer.translateToParent(mid)
+            initContainer.translateToAbsolute(mid)
             hFig.setEnd(mid)
             vFig.setStart(mid)
-            vFig.setEnd(point(now))
+            val pnow = point(now)
+            initContainer.translateToParent(pnow)
+            initContainer.translateToAbsolute(pnow)
+            vFig.setEnd(pnow)
           } else {
-            vFig.setStart(point(last))
+            val plast = point(last)
+            initContainer.translateToParent(plast)
+            initContainer.translateToAbsolute(plast)
+            vFig.setStart(plast)
             val mid = new EPoint(last.x, now.y)
+            initContainer.translateToParent(mid)
+            initContainer.translateToAbsolute(mid)
             vFig.setEnd(mid)
             hFig.setStart(mid)
-            hFig.setEnd(point(now))
+            val pnow = point(now)
+            initContainer.translateToParent(pnow)
+            initContainer.translateToAbsolute(pnow)
+            hFig.setEnd(pnow)
           }
       }
 
@@ -207,7 +225,7 @@ trait ConnectionsTool {
     def abort() { exit() }
 
   }
-  object connecting extends Connecting with SingleContainer
+  object connecting extends Connecting with SingleContainerAllower
 
   // MOVING
 

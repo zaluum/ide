@@ -150,6 +150,7 @@ trait Item extends Hover {
   def size: Dimension
   val feed: ItemFeedbackFigure
   var _hover = false
+  def viewer: ItemViewer = container.viewer
   init()
   protected def init() {
     myLayer.add(this)
@@ -194,7 +195,9 @@ trait Item extends Hover {
     feed.hide()
   }
   def moveFeed(loc: MPoint) {
-    feed.setInnerLocation(point(loc))
+    val p = point(loc)
+    getParent.translateToAbsolute(p)
+    feed.setInnerLocationAbs(p)
   }
   def blink(on: Boolean)
   def blink() {
@@ -206,12 +209,15 @@ trait Item extends Hover {
     display.timerExec(300, blink(false))
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
-    feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
+    feed.setInnerBoundsAbs(handle.deltaAdd(delta, absBounds))
   }
+  var absBounds: Rectangle = new Rectangle
   protected def updateSize() {
     val rect = new Rectangle(pos.x, pos.y, size.w, size.h)
     setBounds(rect)
-    feed.setInnerBounds(rect)
+    absBounds = rect.getCopy()
+    getParent.translateToAbsolute(absBounds)
+    feed.setInnerBoundsAbs(absBounds)
   }
   def selectionSubject: Option[SelectionSubject] = None
 }

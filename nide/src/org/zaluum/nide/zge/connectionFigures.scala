@@ -35,7 +35,7 @@ trait Blinker extends Item {
     blinking = false
   }
 }
-class LineItem(val container: ContainerItem, val l: Line, val con: Option[ConnectionFigure]) extends Item with Blinker with RectFeedback {
+class LineItem(val container: ContainerItem, val l: Line, val con: Option[ConnectionFigure], val preview: Boolean) extends Item with Blinker with RectFeedback {
   var complete = true
   def helpers = List()
   def update(complete: Boolean, bad: Boolean) {
@@ -61,13 +61,21 @@ class LineItem(val container: ContainerItem, val l: Line, val con: Option[Connec
   override def selectionSubject = for (cf ← con; cdef ← cf.e.srcCon) yield LineSelectionSubject(cdef, l)
   override def getBounds: Rectangle = {
     if (bounds == null) {
+
       val (expandx, expandy) = if (l.horizontal) (0, expand) else (expand, 0)
       bounds = new Rectangle(point(l.start), point(l.end)).expand(expandx, expandy)
+      if (preview) {
+        container.translateToParent(bounds)
+        container.getParent.translateToAbsolute(bounds)
+      }
     }
     bounds
   }
+  override def setBounds(r: Rectangle) { throw new IllegalStateException }
   override def showFeedback() {
-    feed.setInnerBounds(getBounds)
+    absBounds = getBounds.getCopy()
+    getParent.translateToAbsolute(absBounds)
+    feed.setInnerBoundsAbs(absBounds)
     super.showFeedback
   }
   def size = getBounds.getSize //special size
@@ -94,7 +102,15 @@ class LineItem(val container: ContainerItem, val l: Line, val con: Option[Connec
     g.setForegroundColor(getForegroundColor);
     g.setLineStyle(style)
     g.setLineWidth(width)
-    g.drawLine(point(l.start), point(l.end))
+    val start = point(l.start)
+    val end = point(l.end)
+    if (preview) {
+      container.translateToParent(start)
+      container.translateToAbsolute(start)
+      container.translateToParent(end)
+      container.translateToAbsolute(end)
+    }
+    g.drawLine(start, end)
     val w = ((width / 2.0f) + 1).asInstanceOf[Int]
     val (sv, ev, upv, downv) = if (l.horizontal)
       (Vector2(expand + 1, 0), Vector2(-expand - 1, 0), Vector2(0, -w), Vector2(0, w))
@@ -122,7 +138,7 @@ class LineItem(val container: ContainerItem, val l: Line, val con: Option[Connec
   override def init() {
     super.init()
   }
-  def myLayer = if (con.isDefined) container.connectionsLayer else container.feedbackLayer
+  def myLayer = if (preview) viewer.feedbackLayer else container.connectionsLayer
 }
 
 class PointFigure extends Ellipse {
@@ -138,12 +154,12 @@ class PointFigure extends Ellipse {
 class ConnectionPainter(container: ContainerItem) {
   val lines = Buffer[LineItem]()
   def paintCreatingRoute(edge: Edge) {
-    paintRoute(edge, false, false, false)
+    paintRoute(edge, false, true, false, false)
   }
-  def paintRoute(edge: Edge, feedback: Boolean, complete: Boolean, bad: Boolean, con: Option[ConnectionFigure] = None) {
+  def paintRoute(edge: Edge, feedback: Boolean, preview: Boolean, complete: Boolean, bad: Boolean, con: Option[ConnectionFigure] = None) {
     clear()
     edge.lines foreach { l ⇒
-      val nl = new LineItem(container, l, con)
+      val nl = new LineItem(container, l, con, preview)
       nl.update(complete, bad)
       lines += nl
     }
@@ -162,7 +178,7 @@ class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Item {
   def pos = null
   val feed = null
   def myLayer = null
-  def paint = painter.paintRoute(e, feedback, e.isComplete, e.isBad, Some(this))
+  def paint = painter.paintRoute(e, feedback, false, e.isComplete, e.isBad, Some(this))
   def blink(c: Boolean) = {}
   override def init() { // FIXME no super
     container.connectionsLayer.add(this);

@@ -25,7 +25,6 @@ class TreeViewer(parent: Composite, controller: Controller, val editor: Graphica
   def tree = controller.tree
   def boxDef = tree
   def block = boxDef.template.blocks.head
-  def viewer = this
   /*LAYERS*/
   val tool: TreeTool = new TreeTool(this)
   def zproject = controller.zproject
@@ -41,8 +40,6 @@ class TreeViewer(parent: Composite, controller: Controller, val editor: Graphica
   // Viewer doesn't have any visual representation
   override def updateSize() {}
   val feed = null
-  def hideme() {}
-  def showme() {}
   def size = Dimension(0, 0)
   def pos = Point(0, 0)
   def container = this
@@ -128,6 +125,12 @@ class TreeViewer(parent: Composite, controller: Controller, val editor: Graphica
   }
 
   def refresh() {
+    /*this.deepChildren foreach {
+      _ match {
+        case i: Item ⇒ i.hideFeedback()
+        case _       ⇒
+      }
+    }*/
     hideEmptyLabel()
     updateContents(Map()) // FIXME
     if (deepChildrenWithoutLayers.isEmpty) showEmptyLabel()

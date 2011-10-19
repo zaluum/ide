@@ -34,7 +34,7 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) ex
       case (0, 2) ⇒ Cursors.SIZESW
       case (1, 2) ⇒ Cursors.SIZES
       case (2, 2) ⇒ Cursors.SIZESE
-      case _ ⇒ Cursors.SIZEALL
+      case _      ⇒ Cursors.SIZEALL
     }
   }
   def coords(r: Rectangle) = {
@@ -81,27 +81,29 @@ class ItemFeedbackFigure(parent: ContainerItem) extends Figure {
   rectangle.setLineStyle(SWT.LINE_DOT);
   rectangle.setFill(false);
   add(rectangle)
+  def viewer = parent.viewer
   def innerLocation = innerBounds.getLocation
   var innerBounds = new Rectangle()
 
-  def setInnerLocation(innerp: Point) {
+  def setInnerLocationAbs(innerp: Point) {
     val bounds = new Rectangle(innerBounds)
     bounds.setLocation(innerp)
-    setInnerBounds(bounds)
+    setInnerBoundsAbs(bounds)
   }
 
-  def setInnerBounds(inside: Rectangle) {
+  def setInnerBoundsAbs(inside: Rectangle) {
     innerBounds = inside
     val rectBounds = new Rectangle(inside).expand(2, 2)
     setBounds(rectBounds)
     rectangle.setBounds(rectBounds)
   }
   def show() {
-    parent.feedbackLayer.add(this)
+    if (this.getParent() == null)
+      viewer.feedbackLayer.add(this)
   }
   def hide() {
-    if (parent.feedbackLayer.getChildren.contains(this))
-      parent.feedbackLayer.remove(this)
+    if (this.getParent == viewer.feedbackLayer)
+      viewer.feedbackLayer.remove(this)
   }
 
 }
@@ -115,7 +117,7 @@ class ResizeItemFeedbackFigure(val bf: Item, parent: ContainerItem) extends Item
     } yield new HandleRectangle(i, j, this)).toList
 
   handles foreach (add(_))
-  override def setInnerBounds(inside: Rectangle) {
+  override def setInnerBoundsAbs(inside: Rectangle) {
     innerBounds = inside
     val outside = new Rectangle(inside)
     outside.expand(expansion, expansion)

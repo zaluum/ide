@@ -62,7 +62,6 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
   background.setBackgroundColor(ColorConstants.lightGray)
   /*LAYERS*/
   def treeViewer = editor.viewer
-  def viewer = this
   def viewerResources = this
   val tool: Tool = new GuiTool(this);
   var buttonDown: Boolean = true
@@ -114,6 +113,12 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
   }
   def size = boxDef.guiSize.getOrElse(Dimension(200, 200))
   def refresh() {
+    this.deepChildren foreach {
+      _ match {
+        case i: Item ⇒ i.hideFeedback()
+        case _       ⇒
+      }
+    }
     updateContents(Map())
     redraw()
   }

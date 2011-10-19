@@ -26,6 +26,7 @@ import org.zaluum.nide.eclipse.GraphicalEditor
 abstract class ItemViewer(parent: Composite, controller: Controller)
     extends Viewer(parent, controller) with ContainerItem with PropertySource {
   val editor: GraphicalEditor
+  override def viewer: ItemViewer = this
   /*SWT*/
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
