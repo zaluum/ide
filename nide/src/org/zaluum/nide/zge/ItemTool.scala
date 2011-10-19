@@ -251,7 +251,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       val touching = initContainer.shallowItems filter { i ⇒ (r.touches(i.getBounds)) }
       val sel = for (i ← touching; s ← i.selectionSubject) yield s
       viewer.selection.updateSelection(sel.toSet, shift)
-      viewer.refresh
+      viewer.redraw()
       exit()
     }
     override def move {

@@ -33,6 +33,7 @@ abstract class Viewer(parent: Composite, val controller: Controller) extends Fre
   def focus = parent.setFocus
   def tool: Tool
   def refresh()
+  def redraw()
   def remapSelection(map: PartialFunction[SelectionSubject, SelectionSubject]) // move to item?
   def blink(s: SelectionSubject)
   def dispose() {

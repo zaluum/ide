@@ -44,7 +44,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       if (filterDouble) { filterDouble = false; return }
         def selectItem(i: Item) {
           viewer.selection.updateSelection(i.selectionSubject.toSet, shift)
-          viewer.refresh()
+          viewer.redraw()
           i.selectionSubject foreach { controller.blink(_, viewer) }
         }
       (beingSelected, port) match {
@@ -56,7 +56,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case (Some(line: LineItem), None) ⇒
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
             viewer.selection.updateSelection(line.selectionSubject.toSet, shift)
-            viewer.refresh()
+            viewer.redraw()
           } else {
             connecting.enter(line.container, line, currentMouseLocation)
           }
@@ -64,7 +64,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         case (None, _) ⇒
           if (!viewer.selection.isEmpty) {
             viewer.selection.deselectAll()
-            viewer.refresh()
+            viewer.redraw()
           }
         case _ ⇒
       }

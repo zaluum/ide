@@ -19,7 +19,7 @@ import org.zaluum.nide.Activator
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.utils.EclipseUtils
 
-class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEditor)
+class TreeViewer(parent: Composite, controller: Controller, val editor: GraphicalEditor)
     extends ItemViewer(parent, controller) with ClipboardViewer {
   /*MODEL*/
   def tree = controller.tree
@@ -32,12 +32,12 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def gotoMarker(l: Int) {
     controller.findPath(l) foreach { t ⇒
       selection.updateSelection(Set(t), false)
-      refresh()
+      redraw()
       focus
     }
   }
   def onFocus { editor.showViews() }
-  def onResize { refresh() } // FIXME this OnResize triggers when a tooltip expands the canvas
+  def onResize { redraw() } // FIXME this OnResize triggers when a tooltip expands the canvas
   // Viewer doesn't have any visual representation
   override def updateSize() {}
   val feed = null
@@ -48,7 +48,7 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def container = this
   def myLayer = null
   val ports = Buffer[PortDeclFigure]()
-  def updatePorts(changes: Map[Tree, Tree]) {
+  def updatePorts(changes: UpdatePF) {
     ports.foreach { _.destroy() }
     ports.clear
     symbol.template.thisVal.portSides foreach { pside ⇒
@@ -126,13 +126,12 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
   def highLight(b: Boolean) {
     setBackgroundColor(if (b) ColorConstants.lightGray else ColorConstants.white)
   }
+
   def refresh() {
     hideEmptyLabel()
     updateContents(Map()) // FIXME
     if (deepChildrenWithoutLayers.isEmpty) showEmptyLabel()
-    selectedItems foreach { _.showFeedback() }
-    editor.setSelection(selectedItems.headOption)
-    println("num figures = " + deepChildrenWithoutLayers.size)
+    redraw()
     /*for (s <- selectedItems; ss <- s.selectionSubject) {
       println ("selected : " + ss)
       ss match {
@@ -154,4 +153,5 @@ class TreeViewer(parent: Composite, controller: Controller, editor: GraphicalEdi
       } filter { _.block == b } map { _.graph } headOption
     }
   }
+  refresh()
 }

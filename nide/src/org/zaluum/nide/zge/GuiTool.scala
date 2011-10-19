@@ -65,7 +65,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
           s.selectionSubject foreach { controller.blink(_, viewer) }
         case None ⇒ viewer.selection.deselectAll()
       }
-      viewer.refresh()
+      viewer.redraw()
     }
     def delete() {
       controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.editor.viewer.graphOf))

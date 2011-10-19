@@ -83,11 +83,11 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
   def highLight(b: Boolean) {
     backRect.setBackgroundColor(if (b) ColorConstants.lightGray else ColorConstants.white)
   }
-  def updatePorts(changes: Map[Tree, Tree]) {}
+  def updatePorts(changes: UpdatePF) {}
   backRect.setForegroundColor(ColorConstants.lightBlue)
   backRect.setBackgroundColor(ColorConstants.white)
   background.add(backRect)
-  override def updateContents(changes: Map[Tree, Tree]) {
+  override def updateContents(changes: UpdatePF) {
     items.foreach { _.destroy() }
     items.clear()
       def updateBlock(b: Block) {
@@ -115,8 +115,7 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
   def size = boxDef.guiSize.getOrElse(Dimension(200, 200))
   def refresh() {
     updateContents(Map())
-    selectedItems foreach { _.showFeedback() }
-    editor.setSelection(selectedItems.headOption)
+    redraw()
   }
   def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i

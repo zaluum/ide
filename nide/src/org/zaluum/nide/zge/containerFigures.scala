@@ -118,17 +118,19 @@ trait ContainerItem extends Item {
   val junctions = Buffer[PointFigure]()
   val connections = Buffer[ConnectionFigure]()
   var graph: ConnectionGraph = _
-  def updateContents(changes: Map[Tree, Tree]) {
+  type UpdatePF = PartialFunction[Tree, Tree]
+  val idUpdate: UpdatePF = { case t: Tree ⇒ t }
+  def updateContents(changes: UpdatePF) {
     updateBoxes(changes)
     updatePorts(changes)
     updateJunctions()
     graph = createGraph
     updateConnections()
   }
-  def updateBoxes(changes: Map[Tree, Tree]) {
+  def updateBoxes(changes: UpdatePF) {
     val remove = Buffer[ValDefItem]()
     for (bf ← boxes.view ++ labels) {
-      changes.get(bf.valDef) match {
+      changes.lift(bf.valDef) match {
         case Some(t: ValDef) ⇒
           bf match {
             case o: OpenBoxFigure ⇒ o.updateOpenBox(t, changes)
@@ -181,7 +183,7 @@ trait ContainerItem extends Item {
       }
     }
   }
-  def updatePorts(changes: Map[Tree, Tree])
+  def updatePorts(changes: UpdatePF)
   def updateJunctions() {
     junctions.foreach { this.pointsLayer.safeRemove(_) }
     junctions.clear
@@ -228,7 +230,7 @@ class OpenBoxFigure(
   val portSymbols = Buffer[PortSymbolFigure]()
   override def useLocalCoordinates = true
   def block = valDef.sym.currentBlock.decl
-  def updateOpenBox(v: ValDef, changes: Map[Tree, Tree]) {
+  def updateOpenBox(v: ValDef, changes: UpdatePF) {
     updateValDef(v)
     updateContents(changes)
     showArrowsIfNotBigEnough
@@ -291,7 +293,7 @@ class OpenBoxFigure(
     portDecls.foreach { _.destroy() }
     portSymbols.foreach { _.destroy() }
   }
-  def updatePorts(changes: Map[Tree, Tree]) {
+  def updatePorts(changes: UpdatePF) {
     portDecls.foreach { _.destroy() }
     portDecls.clear()
     portSymbols.foreach(_.destroy())

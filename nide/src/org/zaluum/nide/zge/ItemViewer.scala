@@ -21,9 +21,11 @@ import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
 import draw2dConversions._
 import org.eclipse.draw2d.geometry.Point
 import org.zaluum.nide.compiler.ValDef
+import org.zaluum.nide.eclipse.GraphicalEditor
 
 abstract class ItemViewer(parent: Composite, controller: Controller)
     extends Viewer(parent, controller) with ContainerItem with PropertySource {
+  val editor: GraphicalEditor
   /*SWT*/
   val feedbackLayer = new FreeformLayer
   val portsLayer = new FreeformLayer
@@ -91,6 +93,16 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
   def hideMarquee() { feedbackLayer.remove(marquee) }
   def selectedItems: Set[Item]
   val selection = new SelectionManager[SelectionSubject]()
+  def redraw() {
+    this.deepChildren foreach {
+      _ match {
+        case i: Item ⇒ i.hideFeedback()
+        case _       ⇒
+      }
+    }
+    selectedItems foreach { _.showFeedback() }
+    editor.setSelection(selectedItems.headOption)
+  }
   def blink(b: Boolean) {}
   import RichFigure._
   def findContainerAt(p: Point): ContainerItem =
