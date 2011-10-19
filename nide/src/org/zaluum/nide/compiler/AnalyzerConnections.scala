@@ -32,9 +32,8 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
           case c @ ConnectionDef(a, b, waypoints) ⇒
             if (a.isEmpty || b.isEmpty) {
               error("Incomplete connection", tree)
-            } else {
-              bl.connections.addConnection(c)
             }
+            bl.connections.addConnection(c)
           case o ⇒ println("DEBUG: analyzerconnections other" + o)
         }
       }

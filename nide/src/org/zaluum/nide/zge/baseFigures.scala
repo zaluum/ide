@@ -195,9 +195,7 @@ trait Item extends Hover {
     feed.hide()
   }
   def moveFeed(loc: MPoint) {
-    val p = point(loc)
-    getParent.translateToAbsolute(p)
-    feed.setInnerLocationAbs(p)
+    feed.setInnerLocation(point(loc))
   }
   def blink(on: Boolean)
   def blink() {
@@ -209,15 +207,12 @@ trait Item extends Hover {
     display.timerExec(300, blink(false))
   }
   def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {
-    feed.setInnerBoundsAbs(handle.deltaAdd(delta, absBounds))
+    feed.setInnerBounds(handle.deltaAdd(delta, getBounds))
   }
-  var absBounds: Rectangle = new Rectangle
   protected def updateSize() {
     val rect = new Rectangle(pos.x, pos.y, size.w, size.h)
     setBounds(rect)
-    absBounds = rect.getCopy()
-    getParent.translateToAbsolute(absBounds)
-    feed.setInnerBoundsAbs(absBounds)
+    feed.setInnerBounds(rect)
   }
   def selectionSubject: Option[SelectionSubject] = None
 }

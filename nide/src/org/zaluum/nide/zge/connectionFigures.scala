@@ -13,6 +13,7 @@ import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.Vector2
 import draw2dConversions._
 import org.eclipse.swt.graphics.Color
+import org.eclipse.draw2d.Figure
 
 case class LineSelectionSubject(c: ConnectionDef, l: Line) extends SelectionSubject
 
@@ -35,15 +36,21 @@ trait Blinker extends Item {
     blinking = false
   }
 }
-class LineItem(val container: ContainerItem, val l: Line, val con: Option[ConnectionFigure], val preview: Boolean) extends Item with Blinker with RectFeedback {
+class LineFigure extends Figure {
+  private var l: Line = null
+  var width = 5
+  def tolerance = 4
   var complete = true
-  def helpers = List()
-  def update(complete: Boolean, bad: Boolean) {
+  private var style: Int = SWT.LINE_SOLID
+  def expand = ((width + 2) / 2.0f).asInstanceOf[Int]
+  def setLine(l: Line, complete: Boolean, bad: Boolean, color: Color) {
+    erase()
+    this.l = l
     this.complete = complete
     if (bad)
       setForegroundColor(ColorConstants.red)
     else
-      setForegroundColor(Colorizer.color(connectionDef.map { _.tpe }.getOrElse { null }))
+      setForegroundColor(color)
     width = 1
     if (complete) {
       style = SWT.LINE_SOLID
@@ -54,62 +61,36 @@ class LineItem(val container: ContainerItem, val l: Line, val con: Option[Connec
       width = 3
       style = SWT.LINE_DASH
     }
-
+    repaint()
   }
-  val tolerance = 4
-  def expand = ((width + 2) / 2.0f).asInstanceOf[Int]
-  override def selectionSubject = for (cf ← con; cdef ← cf.e.srcCon) yield LineSelectionSubject(cdef, l)
-  override def getBounds: Rectangle = {
+  override def getBounds() = {
     if (bounds == null) {
-
-      val (expandx, expandy) = if (l.horizontal) (0, expand) else (expand, 0)
-      bounds = new Rectangle(point(l.start), point(l.end)).expand(expandx, expandy)
-      if (preview) {
-        container.translateToParent(bounds)
-        container.getParent.translateToAbsolute(bounds)
-      }
+      if (l != null) {
+        val (expandx, expandy) = if (l.horizontal) (0, expand) else (expand, 0)
+        bounds = new Rectangle(point(l.start), point(l.end)).expand(expandx, expandy)
+      } else
+        bounds = new Rectangle()
     }
     bounds
+
   }
-  override def setBounds(r: Rectangle) { throw new IllegalStateException }
-  override def showFeedback() {
-    absBounds = getBounds.getCopy()
-    getParent.translateToAbsolute(absBounds)
-    feed.setInnerBoundsAbs(absBounds)
-    super.showFeedback
-  }
-  def size = getBounds.getSize //special size
-  def pos = getBounds.getLocation
   override def containsPoint(x: Int, y: Int) = {
     val t = math.max(expand, tolerance).asInstanceOf[Int];
     val b = getBounds.getCopy
     b.expand(t, t)
     b.contains(x, y)
   }
-  def connectionDef = for (cf ← con; cdef ← cf.e.srcCon) yield cdef
-  protected var blinkColorBefore: Color = null
-  def blink(c: Boolean) {
-    if (blinkColorBefore == null) blinkColorBefore = getForegroundColor
-    if (c) {
-      setForegroundColor(ColorConstants.white)
-    } else {
-      setForegroundColor(blinkColorBefore)
-      blinkColorBefore = null
-    }
-    blinkStatus = c
+  override def repaint() {
+    bounds = null
+    super.repaint()
   }
+  override def setBounds(r: Rectangle) { throw new IllegalStateException }
   override def paintFigure(g: Graphics) = {
     g.setForegroundColor(getForegroundColor);
     g.setLineStyle(style)
     g.setLineWidth(width)
     val start = point(l.start)
     val end = point(l.end)
-    if (preview) {
-      container.translateToParent(start)
-      container.translateToAbsolute(start)
-      container.translateToParent(end)
-      container.translateToAbsolute(end)
-    }
     g.drawLine(start, end)
     val w = ((width / 2.0f) + 1).asInstanceOf[Int]
     val (sv, ev, upv, downv) = if (l.horizontal)
@@ -129,16 +110,31 @@ class LineItem(val container: ContainerItem, val l: Line, val con: Option[Connec
     g.drawLine(point(ups), point(upe))
     g.drawLine(point(downs), point(downe))
   }
-  var style = SWT.LINE_SOLID
-  var width = 1
-  override def repaint() {
-    bounds = null
-    super.repaint()
+}
+
+class LineItem(val container: ContainerItem, val l: Line, val e: Edge) extends LineFigure with Item with Blinker with RectFeedback {
+  def helpers = List()
+  setLine(l, e.isComplete, e.isBad, Colorizer.color(connectionDef.map { _.tpe }.getOrElse { null }))
+  override def selectionSubject = connectionDef map (LineSelectionSubject(_, l))
+  override def showFeedback() {
+    feed.setInnerBounds(getBounds)
+    super.showFeedback
   }
-  override def init() {
-    super.init()
+  def size = getBounds.getSize //special size
+  def pos = getBounds.getLocation
+  def connectionDef = for (cdef ← e.srcCon) yield cdef
+  protected var blinkColorBefore: Color = null
+  def blink(c: Boolean) {
+    if (blinkColorBefore == null) blinkColorBefore = getForegroundColor
+    if (c) {
+      setForegroundColor(ColorConstants.white)
+    } else {
+      setForegroundColor(blinkColorBefore)
+      blinkColorBefore = null
+    }
+    blinkStatus = c
   }
-  def myLayer = if (preview) viewer.feedbackLayer else container.connectionsLayer
+  def myLayer = container.connectionsLayer
 }
 
 class PointFigure extends Ellipse {
@@ -151,16 +147,33 @@ class PointFigure extends Ellipse {
     setForegroundColor(color)
   }
 }
+class PreviewConnectionPainter(container: ContainerItem) {
+  val lines = Buffer[LineFigure]()
+  def translateToAbsolute(l: Line): Line = {
+    val from = container.translateMineToAbsolute_!(point(l.from))
+    val to = container.translateMineToAbsolute_!(point(l.to))
+    Line(from, to, l.horizontal)
+  }
+  def paintRoute(edge: Edge) {
+    clear()
+    for (l ← edge.lines) {
+      val f = new LineFigure()
+      lines += f
+      f.setLine(translateToAbsolute(l), false, false, ColorConstants.black)
+      container.viewer.feedbackLayer.add(f)
+    }
+  }
+  def clear() {
+    lines.foreach { container.viewer.feedbackLayer.remove }
+    lines.clear
+  }
+}
 class ConnectionPainter(container: ContainerItem) {
   val lines = Buffer[LineItem]()
-  def paintCreatingRoute(edge: Edge) {
-    paintRoute(edge, false, true, false, false)
-  }
-  def paintRoute(edge: Edge, feedback: Boolean, preview: Boolean, complete: Boolean, bad: Boolean, con: Option[ConnectionFigure] = None) {
+  def paintRoute(edge: Edge, feedback: Boolean) {
     clear()
     edge.lines foreach { l ⇒
-      val nl = new LineItem(container, l, con, preview)
-      nl.update(complete, bad)
+      val nl = new LineItem(container, l, edge)
       lines += nl
     }
     if (feedback) lines foreach { _.showFeedback() }
@@ -170,34 +183,21 @@ class ConnectionPainter(container: ContainerItem) {
     lines.clear
   }
 }
-// TODO not really a figure right now... no children
-class ConnectionFigure(val e: Edge, val container: ContainerItem) extends Item {
+class ConnectionHolder(val e: Edge, val container: ContainerItem) {
   lazy val painter = new ConnectionPainter(container)
   var feedback = false
-  def size = null
-  def pos = null
-  val feed = null
-  def myLayer = null
-  def paint = painter.paintRoute(e, feedback, false, e.isComplete, e.isBad, Some(this))
-  def blink(c: Boolean) = {}
-  override def init() { // FIXME no super
-    container.connectionsLayer.add(this);
-    paint
-  }
-  override def destroy() {
-    if (container.connectionsLayer.getChildren.contains(this))
-      container.connectionsLayer.remove(this)
+  def paint = painter.paintRoute(e, feedback)
+  paint
+  def destroy() {
     painter.clear()
   }
-  override def showFeedback() {
+  def showFeedback() {
     feedback = true
     paint
   }
-  override def hideFeedback() {
+  def hideFeedback() {
     feedback = false
     paint
   }
-  override def resizeDeltaFeed(delta: Vector2, handle: HandleRectangle) {}
-  override def moveFeed(p: Point) {}
-  override def selectionSubject = e.srcCon
+  // FIXME selction subject for selection from error
 }

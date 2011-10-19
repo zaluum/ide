@@ -42,6 +42,7 @@ import org.zaluum.nide.compiler.LiteralExprType
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.utils.Timer
 import org.zaluum.nide.compiler.BoxSymbol
+import org.eclipse.draw2d.geometry.Translatable
 
 trait ContainerItem extends Item {
   def viewer: ItemViewer
@@ -49,6 +50,11 @@ trait ContainerItem extends Item {
   def connectionsLayer: Figure
   def pointsLayer: Figure
   def portsLayer: Figure
+  def translateMineToAbsolute_![T <: Translatable](modified: T): T = {
+    translateToParent(modified)
+    translateToAbsolute(modified)
+    modified
+  }
   protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] =
     container.findDeepAt(point(p), 0, debug) {
       case i: Item ⇒ i
@@ -89,6 +95,7 @@ trait ContainerItem extends Item {
               case Some(JunctionRef(name)) ⇒
                 junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
               case Some(p: PortRef) ⇒
+                println(p + " " + p.sym)
                 portVertexs.find(_.ps == p.sym).get // BUG not found
               case None ⇒
                 val e = new EmptyVertex(pos)
@@ -115,7 +122,7 @@ trait ContainerItem extends Item {
     case b: BoxSymbol ⇒ b.decl.template
   }
   val junctions = Buffer[PointFigure]()
-  val connections = Buffer[ConnectionFigure]()
+  val connections = Buffer[ConnectionHolder]()
   var graph: ConnectionGraph = _
   type UpdatePF = PartialFunction[Tree, Tree]
   val idUpdate: UpdatePF = { case t: Tree ⇒ t }
@@ -196,7 +203,7 @@ trait ContainerItem extends Item {
   def updateConnections() {
     connections.foreach { _.destroy() }
     connections.clear
-    connections ++= graph.edges map { e ⇒ new ConnectionFigure(e, ContainerItem.this) }
+    connections ++= graph.edges map { e ⇒ new ConnectionHolder(e, ContainerItem.this) }
   }
   override def destroy() {
     super.destroy()

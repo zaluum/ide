@@ -33,7 +33,7 @@ trait ConnectionsTool {
     var hFig = new Polyline()
     val vFig = new Polyline()
     var srcPos: Point = Point(0, 0)
-    var painter: ConnectionPainter = _
+    var painter: PreviewConnectionPainter = _
     var dir: OrtoDirection = H
     var center = true
 
@@ -58,7 +58,7 @@ trait ConnectionsTool {
       state = this
       enterSingle(initContainer)
       paintedEdge = null
-      painter = new ConnectionPainter(initContainer)
+      painter = new PreviewConnectionPainter(initContainer)
       viewer.feedbackLayer.add(hFig)
       viewer.feedbackLayer.add(vFig)
       hFig.setLineStyle(org.eclipse.swt.SWT.LINE_DASHDOT);
@@ -143,7 +143,7 @@ trait ConnectionsTool {
     }
     def paintCreatingEdge(e: Edge) = {
       if (paintedEdge != e) {
-        painter.paintCreatingRoute(e)
+        painter.paintRoute(e)
         paintedEdge = e
       }
     }
@@ -181,9 +181,7 @@ trait ConnectionsTool {
         case Some(p) ⇒
           val ext = extend.fixEnds
           paintCreatingEdge(ext)
-          val p = point(ext.b.p)
-          initContainer.translateToParent(p)
-          initContainer.translateToAbsolute(p)
+          val p = initContainer.translateMineToAbsolute_!(point(ext.b.p))
           hFig.setStart(p)
           vFig.setStart(p)
           hFig.setEnd(p)
@@ -191,32 +189,20 @@ trait ConnectionsTool {
         case None ⇒
           paintCreatingEdge(edge)
           if (dir == H) {
-            val lastp = point(last)
-            initContainer.translateToParent(lastp)
-            initContainer.translateToAbsolute(lastp)
+            val lastp = initContainer.translateMineToAbsolute_!(point(last))
             hFig.setStart(lastp)
-            val mid = new EPoint(now.x, last.y)
-            initContainer.translateToParent(mid)
-            initContainer.translateToAbsolute(mid)
+            val mid = initContainer.translateMineToAbsolute_!(new EPoint(now.x, last.y))
             hFig.setEnd(mid)
             vFig.setStart(mid)
-            val pnow = point(now)
-            initContainer.translateToParent(pnow)
-            initContainer.translateToAbsolute(pnow)
+            val pnow = initContainer.translateMineToAbsolute_!(point(now))
             vFig.setEnd(pnow)
           } else {
-            val plast = point(last)
-            initContainer.translateToParent(plast)
-            initContainer.translateToAbsolute(plast)
+            val plast = initContainer.translateMineToAbsolute_!(point(last))
             vFig.setStart(plast)
-            val mid = new EPoint(last.x, now.y)
-            initContainer.translateToParent(mid)
-            initContainer.translateToAbsolute(mid)
+            val mid = initContainer.translateMineToAbsolute_!(new EPoint(last.x, now.y))
             vFig.setEnd(mid)
             hFig.setStart(mid)
-            val pnow = point(now)
-            initContainer.translateToParent(pnow)
-            initContainer.translateToAbsolute(pnow)
+            val pnow = initContainer.translateMineToAbsolute_!(point(now))
             hFig.setEnd(pnow)
           }
       }

@@ -231,13 +231,13 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       this.dir = dir
       val (img, desc) = zproject.imageFactory.portImg(dir)
       feed = new ItemFeedbackFigure(current)
-      feed.setInnerBoundsAbs(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
+      feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
       zproject.imageFactory.destroy(desc)
       feed.show()
     }
     var feed: ItemFeedbackFigure = _
     var dir: PortDir = In
-    def move() { feed.setInnerLocationAbs(point(snap(absMouseLocation))) }
+    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
     def abort() { exit() }
     def drag() {}
     def buttonUp() {

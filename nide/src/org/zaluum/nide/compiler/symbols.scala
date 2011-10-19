@@ -182,18 +182,20 @@ class BlockSymbol(
     def clumpOf(j: Junction) = clumps find { _.junctions.contains(j) }
     def isBad(b: ConnectionDef) = badConnections.contains(b) || b.tpe == None
     def markAsBad(b: ConnectionDef) { badConnections += b }
+    def addSinglePort(ref: PortRef) = {
+      val pk = PortSide.findOrCreateMissing(ref, BlockSymbol.this)
+      ref.symbol = pk
+      pk
+    }
     def addPort(j: Junction, a: PortRef, c: ConnectionDef) {
-      val pk = PortSide.findOrCreateMissing(a, BlockSymbol.this)
-      a.symbol = pk
+      val pk = addSinglePort(a)
       val newClump = merge(clumpOf(pk), clumpOf(j))
       newClump.connections += c
       newClump.ports += pk
       newClump.junctions += j
     }
     def addPorts(a: PortRef, b: PortRef, c: ConnectionDef) {
-      val (as, bs) = (PortSide.findOrCreateMissing(a, BlockSymbol.this), PortSide.findOrCreateMissing(b, BlockSymbol.this))
-      a.symbol = as
-      b.symbol = bs
+      val (as, bs) = (addSinglePort(a), addSinglePort(b))
       val newClump = merge(clumpOf(as), clumpOf(bs))
       newClump.connections += c
       newClump.ports ++= Set(as, bs)
@@ -228,7 +230,8 @@ class BlockSymbol(
         case (Some(j: JunctionRef), Some(p: PortRef)) ⇒ addPort(lookupJunction(j.name).get, p, c)
         case (Some(p1: PortRef), Some(p2: PortRef)) ⇒ addPorts(p1, p2, c)
         case (Some(j1: JunctionRef), Some(j2: JunctionRef)) ⇒ addJunctions(lookupJunction(j1.name).get, lookupJunction(j2.name).get, c)
-        // FIXME not connected EmptyTrees
+        case (Some(p: PortRef), None) ⇒ addSinglePort(p)
+        case (None, Some(p: PortRef)) ⇒ addSinglePort(p)
         case _ ⇒ println("DEBUG: ignored connection in addConnetion " + c)
       }
     }

@@ -14,13 +14,7 @@ import org.eclipse.jdt.core.JavaCore
 import org.eclipse.swt.widgets.Display
 import org.eclipse.text.edits.ReplaceEdit
 import org.zaluum.nide.utils.Utils.inSWT
-import org.zaluum.nide.compiler.BoxDef
-import org.zaluum.nide.compiler.MapTransformer
-import org.zaluum.nide.compiler.Reporter
-import org.zaluum.nide.compiler.SelectionSubject
-import org.zaluum.nide.compiler.Serializer
-import org.zaluum.nide.compiler.Traverser
-import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler._
 import org.zaluum.nide.eclipse.integration.model.ZaluumASTParser
 import org.zaluum.nide.eclipse.integration.model.ZaluumDomCompilationUnit
 import org.zaluum.nide.eclipse.ZaluumProject
@@ -133,7 +127,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
     Timer.go
     compile(false)
     Timer.stop("compilation")
-    //PrettyPrinter.print(nowTree, 0)
+    PrettyPrinter.print(nowTree, 0)
     Timer.go
     updateViewers(m)
     notifyListeners
