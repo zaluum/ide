@@ -93,7 +93,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
   def moveMarquee(r: Rectangle) { marquee.setBounds(r) }
   def hideMarquee() { feedbackLayer.remove(marquee) }
   def selectedItems: Set[Item]
-  val selection = new SelectionManager[SelectionSubject]()
+  val selection: SelectionManager[SelectionSubject];
   def redraw() {
     this.deepChildren foreach {
       _ match {

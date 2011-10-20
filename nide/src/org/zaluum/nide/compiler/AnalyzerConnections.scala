@@ -23,7 +23,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
             traverseTrees(b.junctions)
             traverseTrees(b.connections)
             check()
-          case v: ValDef ⇒ bl.dag.addVertex(v.sym) // valdefs always have symbol
+          case v: ValDef ⇒ bl.dag.addVertex(v.sym) // valdefs always have a symbol
           case j @ Junction(name, _) ⇒
             bl.connections.lookupJunction(name) match {
               case Some(j) ⇒ error("Fatal: junction " + j + " already exists", j)

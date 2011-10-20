@@ -22,6 +22,9 @@ import org.zaluum.nide.compiler.BoxExprType
 
 class GuiViewer(parent: Composite, controller: Controller, val editor: GraphicalEditor)
     extends ItemViewer(parent, controller) with ClipboardViewer {
+  val selection = new SelectionManager[SelectionSubject] {
+    def isContained(a: SelectionSubject, b: SelectionSubject) = false
+  }
   // TODO integrate eclipse commands
   canvas.addKeyListener(new KeyListener() {
     def keyPressed(e: KeyEvent) {

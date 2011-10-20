@@ -4,7 +4,9 @@ import scala.collection.immutable.Stack
 import scala.collection.mutable.Buffer
 import java.io.StringWriter
 
-trait SelectionSubject
+trait SelectionSubject {
+  def selectedTree: Tree
+}
 abstract class Tree extends Product with SelectionSubject {
   var line: Int = 0
   def clean() {
@@ -13,6 +15,7 @@ abstract class Tree extends Product with SelectionSubject {
   def hasSymbol = false
   def isDef = false
   def isEmpty = false
+  def selectedTree = this
   private def findPath0(l: Int): (Option[Tree], Int) = {
     if (l <= 0) (None, 0)
     else if (l == 1) (Some(this), 1)
@@ -37,8 +40,9 @@ abstract class Tree extends Product with SelectionSubject {
     }
     x
   }
-  def deepchildren: List[Tree] =
-    for (c ← children; dc ← c :: c.deepchildren) yield dc
+  def deepContains(t: Tree) = deepChildrenStream.contains(t)
+  def deepChildrenStream: Stream[Tree] =
+    for (c ← children.toStream; dc ← Stream.cons(c, c.deepChildrenStream)) yield dc
 
   def children: List[Tree] = {
       def subtrees(x: Any): List[Tree] = x match {
@@ -488,7 +492,7 @@ trait TypedTree extends Tree {
 case class ConnectionDef(
     a: Option[ConnectionEnd],
     b: Option[ConnectionEnd],
-    points: List[Point]) extends TypedTree {
+    points: List[Point]) extends SymbolTree[BlockSymbol] with TypedTree {
   def headPoint = points.headOption.getOrElse(Point(0, 0))
   def lastPoint = points.lastOption.getOrElse(Point(0, 0))
 

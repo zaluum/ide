@@ -95,7 +95,6 @@ trait ContainerItem extends Item {
               case Some(JunctionRef(name)) ⇒
                 junctions.view.collect { case (k, joint) if (k.name == name) ⇒ joint }.head
               case Some(p: PortRef) ⇒
-                println(p + " " + p.sym)
                 portVertexs.find(_.ps == p.sym).get // BUG not found
               case None ⇒
                 val e = new EmptyVertex(pos)

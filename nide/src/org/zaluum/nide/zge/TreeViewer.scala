@@ -7,17 +7,12 @@ import org.eclipse.draw2d.FreeformLayer
 import org.eclipse.draw2d.Label
 import org.eclipse.draw2d.ScalableFreeformLayeredPane
 import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.compiler.Block
-import org.zaluum.nide.compiler.ConnectionDef
-import org.zaluum.nide.compiler.Dimension
-import org.zaluum.nide.compiler.Point
-import org.zaluum.nide.compiler.PortDef
-import org.zaluum.nide.compiler.SelectionSubject
-import org.zaluum.nide.compiler.Tree
+import org.zaluum.nide.compiler._
 import org.zaluum.nide.eclipse.GraphicalEditor
 import org.zaluum.nide.Activator
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.utils.EclipseUtils
+import org.zaluum.nide.compiler.SymbolTree
 
 class TreeViewer(parent: Composite, controller: Controller, val editor: GraphicalEditor)
     extends ItemViewer(parent, controller) with ClipboardViewer {
@@ -45,6 +40,11 @@ class TreeViewer(parent: Composite, controller: Controller, val editor: Graphica
   def container = this
   def myLayer = null
   val ports = Buffer[PortDeclFigure]()
+  /*Selection*/
+  val selection = new SelectionManager[SelectionSubject] {
+    def isContained(a: SelectionSubject, b: SelectionSubject) =
+      b.selectedTree.deepContains(a.selectedTree)
+  }
   def updatePorts(changes: UpdatePF) {
     ports.foreach { _.destroy() }
     ports.clear

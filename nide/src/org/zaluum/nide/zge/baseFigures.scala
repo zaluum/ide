@@ -39,9 +39,9 @@ object RichFigure {
 class RichFigure(container: IFigure) {
   import RichFigure._
   import scala.collection.JavaConversions._
-  def immediateChildren = container.getChildren.asInstanceOf[java.util.List[IFigure]].toList
-  def deepChildren: List[IFigure] = {
-    val deepChildren: List[IFigure] = immediateChildren.flatMap { _.deepChildren }.toList
+  def immediateChildren = container.getChildren.asInstanceOf[java.util.List[IFigure]].toStream
+  def deepChildren: Stream[IFigure] = {
+    val deepChildren: Stream[IFigure] = immediateChildren.flatMap { _.deepChildren }
     immediateChildren ++ deepChildren
   }
   def safeRemove(i: IFigure): Unit = {
@@ -62,8 +62,6 @@ class RichFigure(container: IFigure) {
     if (container.isInstanceOf[Viewport]) p.getCopy
     else {
       // FIXME hard to reproduce bug involving the scrollbar? or singlecontainer?
-      if (container == null) println("null container" + this)
-      if (container.getParent == null) println("null parent " + container)
       val ep = container.getParent.translateFromViewport(p)
       container.translateFromParent(ep)
       ep
@@ -71,7 +69,7 @@ class RichFigure(container: IFigure) {
   }
   def deepChildrenNear(abs: EPoint, radius: Double): List[(IFigure, Double)] = {
       def distance(f: IFigure): Double = f.getBounds.getCenter.getDistance(f.translateFromViewport(abs))
-    val v = for (c ← deepChildren.view; val d = distance(c); if (d < radius)) yield (c, d)
+    val v = for (c ← deepChildren; val d = distance(c); if (d < radius)) yield (c, d)
     v.toList
   }
   def findDeepAt[A](internalCoords: EPoint, deep: Int = 0, debug: Boolean = false)(partial: PartialFunction[IFigure, A]): Option[A] = {

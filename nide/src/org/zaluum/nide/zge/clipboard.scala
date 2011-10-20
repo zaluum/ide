@@ -110,11 +110,11 @@ object Clipboard {
     val rawPorts = selection.collect { case p: PortDef ⇒ p }
 
     // Filter out nested selections 
-    val valDefs = rawValDefs.filterNot { v ⇒ rawValDefs exists { _.deepchildren.contains(v) } }
-    val portDefs = rawPorts.filterNot(p ⇒ rawValDefs exists { _.deepchildren.contains(p) })
+    val valDefs = rawValDefs.filterNot { v ⇒ rawValDefs exists { _.deepContains(v) } }
+    val portDefs = rawPorts.filterNot(p ⇒ rawValDefs exists { _.deepContains(p) })
     // Only connections valDefs TODO improve
     val unfilteredConnections = selection.collect {
-      case c: ConnectionDef ⇒ c
+      case c: ConnectionDef        ⇒ c
       case l: LineSelectionSubject ⇒ l.c
     }
     val connections = unfilteredConnections.filter { c ⇒
@@ -122,10 +122,10 @@ object Clipboard {
           case Some(pr: PortRef) ⇒
             pr.fromRef match {
               case vr: ValRef ⇒ valDefs.exists { _.name == vr.name }
-              case _ ⇒ false
+              case _          ⇒ false
             }
           case None ⇒ true
-          case _ ⇒ false
+          case _    ⇒ false
         }
       validEnd(c.a) && validEnd(c.b)
     }

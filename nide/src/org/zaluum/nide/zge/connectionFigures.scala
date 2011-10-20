@@ -15,7 +15,9 @@ import draw2dConversions._
 import org.eclipse.swt.graphics.Color
 import org.eclipse.draw2d.Figure
 
-case class LineSelectionSubject(c: ConnectionDef, l: Line) extends SelectionSubject
+case class LineSelectionSubject(c: ConnectionDef, l: Line) extends SelectionSubject {
+  def selectedTree = c
+}
 
 trait Blinker extends Item {
   private var blinking = false

@@ -108,7 +108,6 @@ abstract class TextDialogCellEditor(parent: Composite, style: Int) extends TextC
 
     button.addSelectionListener(new SelectionAdapter() {
       override def widgetSelected(event: SelectionEvent) {
-        println("selected")
         // Remove the button's focus listener since it's guaranteed
         // to lose focus when the dialog opens
         button.removeFocusListener(buttonFocusListener);

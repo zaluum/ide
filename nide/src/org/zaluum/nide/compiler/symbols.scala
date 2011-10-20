@@ -225,6 +225,7 @@ class BlockSymbol(
       }
     }
     def addConnection(c: ConnectionDef) = {
+      c.symbol = BlockSymbol.this
       (c.a, c.b) match {
         case (Some(p: PortRef), Some(j: JunctionRef)) ⇒ addPort(lookupJunction(j.name).getOrElse { throw new RuntimeException("cannot find junction" + j.name) }, p, c)
         case (Some(j: JunctionRef), Some(p: PortRef)) ⇒ addPort(lookupJunction(j.name).get, p, c)

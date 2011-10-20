@@ -20,7 +20,7 @@ import org.eclipse.ui.views.properties.PropertyDescriptor
 import org.eclipse.jface.viewers.LabelProvider
 import org.zaluum.nide.compiler.FontValueType
 
-class SelectionManager[A] {
+abstract class SelectionManager[A] {
   protected var selected = Set[A]()
   def currentSelected = selected
   override def toString = selected.toString
@@ -29,14 +29,22 @@ class SelectionManager[A] {
   def addListener(a: () ⇒ Unit) { listeners += a }
   def removeListener(a: () ⇒ Unit) { listeners -= a }
   def notifyListeners() { listeners foreach { _() } }
+  def isContained(a: A, b: A): Boolean // if(a==b) false
+  def removeContainedSelections() {
+    selected = for (a ← selected; if (!selected.exists(b ⇒ isContained(a, b)))) yield a
+  }
   def refresh(f: PartialFunction[A, A]) {
     selected = selected flatMap { f.lift(_) }
+    removeContainedSelections()
     notifyListeners()
   }
   def apply(t: A) = selected(t)
   def toggleSelection(f: A) {
     if (selected(f)) selected -= f
-    else selected += f
+    else {
+      selected += f
+      removeContainedSelections()
+    }
     notifyListeners()
   }
   def deselectAll() {
@@ -49,6 +57,7 @@ class SelectionManager[A] {
     } else {
       selected = selected.empty
       trees foreach { selected += _ }
+      removeContainedSelections()
     }
     notifyListeners()
   }

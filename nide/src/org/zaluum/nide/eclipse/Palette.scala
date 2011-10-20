@@ -151,15 +151,6 @@ object Palette {
       Some(p)
     }
   }
-  /*  def main(args: Array[String]) {
-    println("hola")
-    println(load(new FileInputStream("testPalette.xml")))
-  }
-  val example =
-    <palette>
-      <entry class="java.lang.Math" selector="abs" static="true" parameters="int"/>
-      <entry class="java.lang.Math2" selector="abs2"/>
-    </palette>*/
 }
 case class PaletteEntry(
     className: Name,

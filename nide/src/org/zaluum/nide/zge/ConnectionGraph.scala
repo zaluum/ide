@@ -56,7 +56,7 @@ object Edge {
     new Edge(a, b, points, Some(c))
   }
 }
-class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Option[ConnectionDef], val isBad:Boolean=false) {
+class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Option[ConnectionDef], val isBad: Boolean = false) {
   assert(points.size >= 2)
   // assert(a.p == points.head)
   // assert(b.p == points.last)
@@ -101,7 +101,7 @@ class Edge(val a: Vertex, val b: Vertex, val points: List[Point], val srcCon: Op
           ps.dropRight(2) ::: Point(ap.x, bp.y) :: bp :: Nil
       }
     } else fixedPoints
-    new Edge(a, b, res, srcCon,isBad)
+    new Edge(a, b, res, srcCon, isBad)
   }
   def isParallelTo(o: Edge) = { (a == o.a && b == o.b) || (a == o.b && b == o.a) }
   /**
@@ -326,7 +326,7 @@ abstract class ConnectionGraph {
     var remainingMe = e2
     for (i ← isecs2) {
       remainingMe.splitAt(vertexAt(i)) match {
-        case (before, None) ⇒ //println("happens!")
+        case (before, None) ⇒
         //assert(i==points.last)// can only happen if it's the last isec 
         case (before, Some(after)) ⇒
           remainingMe = after

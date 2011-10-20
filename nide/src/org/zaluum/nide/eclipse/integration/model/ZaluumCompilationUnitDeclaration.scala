@@ -71,7 +71,7 @@ class ZaluumCompilationUnitDeclaration(
   def fqName = aToString(currentPackage.getImportName) + tree.name.str
   private def createLineSeparator() = {
     // one char per line
-    val treeSize = tree.deepchildren.size + 1
+    val treeSize = tree.deepChildrenStream.size + 1
     compilationResult.lineSeparatorPositions = Array.range(1, (treeSize * 2) + 1, 2)
   }
   def populateCompilationUnitDeclaration() {

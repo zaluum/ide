@@ -57,7 +57,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
     val before = nowTree
     nowTree = c(tree).asInstanceOf[BoxDef]
     before.clean()
-    before.deepchildren foreach { t ⇒
+    before.deepChildrenStream foreach { t ⇒
       t.clean()
     }
     undoStack.push(Mutation(before, c.map, nowTree))
@@ -127,7 +127,7 @@ class Controller(val cu: ICompilationUnit, val zproject: ZaluumProject, implicit
     Timer.go
     compile(false)
     Timer.stop("compilation")
-    PrettyPrinter.print(nowTree, 0)
+    //PrettyPrinter.print(nowTree, 0)
     Timer.go
     updateViewers(m)
     notifyListeners
