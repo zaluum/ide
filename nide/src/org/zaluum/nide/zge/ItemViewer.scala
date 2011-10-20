@@ -18,7 +18,6 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.eclipse.PaletteEntry
 import org.zaluum.nide.eclipse.PaletteTransfer
 import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
-import draw2dConversions._
 import org.eclipse.draw2d.geometry.Point
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.eclipse.GraphicalEditor
@@ -69,7 +68,6 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
     marquee.setLineStyle(SWT.LINE_DASH);
     //UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
   }
-  import RichFigure._
   override def dispose() {
     this.deepChildren foreach {
       _ match {
@@ -105,7 +103,6 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
     editor.setSelection(selectedItems.headOption)
   }
   def blink(b: Boolean) {}
-  import RichFigure._
   def findContainerAt(p: Point): ContainerItem =
     this.findDeepContainerAt(p) {
       case (f: OpenBoxFigure) ⇒ f

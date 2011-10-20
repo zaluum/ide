@@ -3,9 +3,7 @@ package org.zaluum.nide.zge
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.Cursors
 import org.zaluum.nide.compiler._
-import draw2dConversions._
 import org.zaluum.nide.eclipse.PaletteEntry
-import RichFigure._
 
 /**
  * Implements basic selecting, marquee and resizing of ItemFigures
@@ -229,7 +227,6 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
   object marqueeing extends DeltaMove with SingleContainer {
     var absInit = Point(0, 0)
     def enter(p: Point, initContainer: C) {
-      import RichFigure._
       enterSingle(initContainer)
       enterMoving(p)
       absInit = initContainer.translateToViewport(p)

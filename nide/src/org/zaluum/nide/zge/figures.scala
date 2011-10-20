@@ -9,7 +9,6 @@ import org.eclipse.jface.viewers.TextCellEditor
 import org.eclipse.draw2d.text.TextFlow
 import org.eclipse.draw2d.text.FlowPage
 import org.eclipse.draw2d.RectangleFigure
-import draw2dConversions._
 import org.eclipse.draw2d.{ ColorConstants, Figure, ImageFigure, Graphics }
 import org.eclipse.draw2d.geometry.{ Rectangle, Point ⇒ EPoint, Dimension ⇒ EDimension }
 import org.eclipse.swt.SWT
@@ -48,13 +47,11 @@ import org.zaluum.basic.BoxConfigurer
 import javax.script.ScriptEngineManager
 import java.security.AccessController
 import java.security.PrivilegedAction
-import RichFigure._
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item with PropertySource {
   var valDef: ValDef = _
   def valSym = valDef.sym
   def pos = valDef.pos
-  import RichFigure._
   def viewPortPos = this.translateToViewport(pos)
   override def selectionSubject = Some(valDef)
   def updateValDef(t: ValDef) {
@@ -323,7 +320,6 @@ class SwingFigure(val treeViewer: TreeViewer, val container: ContainerItem, val 
 
   def updateMe() {
     position = valSym.bounds map { r ⇒ Point(r.x, r.y) } getOrElse {
-      import RichFigure._
       treeViewer.findFigureOf(valDef) match {
         case Some(i) ⇒ i.viewPortPos
         case None    ⇒ Point(0, 0)

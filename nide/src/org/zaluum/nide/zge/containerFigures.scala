@@ -36,8 +36,6 @@ import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.ValSymbol
 import org.zaluum.nide.compiler.Vector2
-import draw2dConversions._
-import RichFigure._
 import org.zaluum.nide.compiler.LiteralExprType
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.utils.Timer
@@ -272,7 +270,6 @@ class OpenBoxFigure(
 
   def showArrowsIfNotBigEnough() {
     val b = new Rectangle()
-    import RichFigure._
     this.deepChildren.foreach { f ⇒ b.union(f.getBounds()) }
       def showTriangle(pos: Int) = {
         val t = triangles(pos)

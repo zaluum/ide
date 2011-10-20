@@ -13,18 +13,10 @@ import org.zaluum.nide.compiler.Dimension
 import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
 import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.compiler.Vector2
-import draw2dConversions._
 import org.eclipse.draw2d.Graphics
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.geometry.Translatable
-import RichFigure._
 
-object draw2dConversions {
-  def point(p: MPoint): EPoint = new EPoint(p.x, p.y)
-  def dimension(d: Dimension): EDimension = new EDimension(d.w, d.h)
-  implicit def rpoint(p: EPoint): MPoint = MPoint(p.x, p.y)
-  implicit def rdimension(d: EDimension): Dimension = Dimension(d.width, d.height)
-}
 object FigureHelper {
   import scala.collection.JavaConversions._
   def isOrHas(item: IFigure, lookingFor: IFigure): Boolean = {
@@ -35,11 +27,7 @@ object FigureHelper {
     }
   }
 }
-object RichFigure {
-  implicit def richFigure(f: IFigure) = new RichFigure(f)
-}
 class RichFigure(fig: IFigure) {
-  import RichFigure._
   import scala.collection.JavaConversions._
   def immediateChildren = fig.getChildren.asInstanceOf[java.util.List[IFigure]].toStream
   def deepChildren: Stream[IFigure] = {

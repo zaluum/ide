@@ -66,7 +66,6 @@ class TreeViewer(parent: Composite, controller: Controller, val editor: Graphica
   override def dispose() {
     super.dispose()
   }
-  import RichFigure._
   def remapSelection(m: PartialFunction[SelectionSubject, SelectionSubject]) {
     val mapper = m.orElse {
       //map LineSelectionSubject

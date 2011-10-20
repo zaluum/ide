@@ -22,7 +22,6 @@ import org.zaluum.nide.compiler.Template
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
-import draw2dConversions.point
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.eclipse.PaletteEntry
@@ -332,7 +331,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     override def update {
       super.update
-      tooltip.setLocation(draw2dConversions.point(absMouseLocation + Vector2(15, 15)))
+      tooltip.setLocation(point(absMouseLocation + Vector2(15, 15)))
       tooltip.setSize(tooltip.getPreferredSize())
     }
     def hideTip() {

@@ -14,7 +14,6 @@ import org.zaluum.nide.compiler.PortSide
 import org.zaluum.nide.compiler.PortSymbol
 import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.Vector2
-import draw2dConversions._
 import org.zaluum.nide.compiler.PortInstance
 
 class PortFigure(val container: ContainerItem) extends Ellipse with Hover {

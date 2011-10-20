@@ -8,9 +8,7 @@ import org.eclipse.draw2d.Cursors
 import org.eclipse.draw2d.Figure
 import org.eclipse.draw2d.Polyline
 import FigureHelper.isOrHas
-import draw2dConversions._
 import org.zaluum.nide.compiler._
-import RichFigure._
 trait ConnectionsTool {
   this: TreeTool ⇒
 

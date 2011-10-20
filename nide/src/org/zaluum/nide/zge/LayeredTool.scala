@@ -6,8 +6,6 @@ import org.eclipse.draw2d.Figure
 import org.eclipse.swt.graphics.Cursor
 import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.Vector2
-import draw2dConversions._
-import RichFigure._
 import org.eclipse.swt.events.MouseEvent
 abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
   type C <: ContainerItem

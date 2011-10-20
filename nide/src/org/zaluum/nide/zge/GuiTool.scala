@@ -12,7 +12,6 @@ import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.Tree
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
-import draw2dConversions._
 import org.zaluum.nide.compiler.Param
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.In
@@ -131,7 +130,6 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   }
   object creating extends GuiCreating
   class GuiCreating extends Creating with Allower {
-    import RichFigure._
     val defaultSize = Dimension(40, 15)
     def allowed = entry != null && !entry.isExpression
     protected def getSize(entry: PaletteEntry) = defaultSize
@@ -169,7 +167,6 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   }
   trait ResizingGui extends ToolState {
     self: DeltaMove ⇒
-    import draw2dConversions._
     import scala.collection.JavaConversions._
     import math.max
     var mode = (false, false)

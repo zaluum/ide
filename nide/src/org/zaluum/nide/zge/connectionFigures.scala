@@ -11,7 +11,6 @@ import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.compiler.JavaType
 import org.zaluum.nide.compiler.Vector2
-import draw2dConversions._
 import org.eclipse.swt.graphics.Color
 import org.eclipse.draw2d.Figure
 
