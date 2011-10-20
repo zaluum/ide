@@ -68,7 +68,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       viewer.redraw()
     }
     def delete() {
-      controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.editor.viewer.graphOf))
+      controller.exec(Delete.deleteSelectionAndPaste(viewer.selectedItems, viewer.editor.viewer.graphOf))
     }
 
     val borderSensivity = 5

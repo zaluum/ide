@@ -1,7 +1,8 @@
 Agenda
 
 	necessari
-	- moure boxes entre contenidors
+	- guardar al clipboard coordenades absolutes per enganxar de diferents contenidors mantenint l'aspecte
+	- al moure boxes entre contenidors posar les coordenades per tal que coincideixin amb el lloc on el feedback indica
 	- improve or cancel one end connections
 	- mida inicial compatible amb grid, mida inicial a paletteentry? 
 	- Clonar amb ctrl
@@ -146,6 +147,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- moure boxes entre contenidors
 	- despres de crear una box, quan s'edita l'etiqueta, fer que es pugui connectar els ports cancelant l'edició
 	- zaluum file with version number
 	- configurador blocs complexos. Plot per exemple.

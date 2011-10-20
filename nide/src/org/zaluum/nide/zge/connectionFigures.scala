@@ -151,9 +151,9 @@ class PointFigure extends Ellipse {
 }
 class PreviewConnectionPainter(container: ContainerItem) {
   val lines = Buffer[LineFigure]()
-  def translateToAbsolute(l: Line): Line = {
-    val from = container.translateMineToAbsolute_!(point(l.from))
-    val to = container.translateMineToAbsolute_!(point(l.to))
+  def translateToViewport(l: Line): Line = {
+    val from = container.translateMineToViewport_!(point(l.from))
+    val to = container.translateMineToViewport_!(point(l.to))
     Line(from, to, l.horizontal)
   }
   def paintRoute(edge: Edge) {
@@ -161,7 +161,7 @@ class PreviewConnectionPainter(container: ContainerItem) {
     for (l ← edge.lines) {
       val f = new LineFigure()
       lines += f
-      f.setLine(translateToAbsolute(l), false, false, ColorConstants.black)
+      f.setLine(translateToViewport(l), false, false, ColorConstants.black)
       container.viewer.feedbackLayer.add(f)
     }
   }

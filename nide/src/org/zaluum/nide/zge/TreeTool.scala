@@ -152,7 +152,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       }
     }
     def delete() {
-      controller.exec(Delete.deleteSelection(viewer.selectedItems, viewer.graphOf))
+      controller.exec(Delete.deleteSelectionAndPaste(viewer.selectedItems, viewer.graphOf))
     }
     def cut() {
       viewer.updateClipboard
@@ -290,10 +290,11 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       last = init
       init.highLight(true)
     }
+    def highlightContainer: ContainerItem = current
     override abstract def move() {
-      if (current != last && last != null)
+      if (highlightContainer != last && last != null)
         last.highLight(false)
-      last = current
+      last = highlightContainer
       last.highLight(true)
       super.move()
     }

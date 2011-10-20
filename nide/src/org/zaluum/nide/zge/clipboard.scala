@@ -30,7 +30,7 @@ import org.zaluum.nide.compiler.Param
 
 case class Clipboard(valDefs: List[ValDef], ports: List[PortDef], connections: List[ConnectionDef]) {
   def isEmpty: Boolean = valDefs.isEmpty && ports.isEmpty
-  def renameRelocate(baseNamer: Namer, toPoint: Point, gui: Boolean) = {
+  def renameRelocate(baseNamer: Namer, toPoint: Point, gui: Boolean): Clipboard = {
     val positions = if (gui) {
       valDefs.view.flatMap(v ⇒ v.bounds).map { _._1 }
     } else

@@ -9,8 +9,8 @@ import org.eclipse.draw2d.Figure
 import org.eclipse.draw2d.RectangleFigure
 import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler.Vector2
-
 import HandleSizes.expansion
+import org.eclipse.draw2d.geometry.Dimension
 
 object HandleSizes {
   val expansion = 8
@@ -68,10 +68,10 @@ class HandleRectangle(val x: Int, val y: Int, feed: ResizeItemFeedbackFigure) ex
     }
     res
   }
-  def doPosition(outside: Rectangle, inside: Rectangle) {
+  def doPosition(inSize: Dimension) {
     setSize(expansion, expansion)
-    val posx = inside.x + (inside.width / 2.0) * x - (expansion / 2.0)
-    val posy = inside.y + (inside.height / 2.0) * y - (expansion / 2.0)
+    val posx = expansion / 2.0 + (inSize.width / 2.0) * x
+    val posy = expansion / 2.0 + (inSize.height / 2.0) * y
     setLocation(new PrecisionPoint(posx, posy))
   }
 }
@@ -79,10 +79,7 @@ trait FeedbackFigureAbs extends Figure {
   def container: ContainerItem
   def viewer = container.viewer
   def toAbs(rect: Rectangle) = {
-    val r = rect.getCopy()
-    container.translateToParent(r)
-    container.translateToAbsolute(r)
-    r
+    container.translateMineToViewport_!(rect.getCopy())
   }
   override def setBounds(bounds: Rectangle) {
     super.setBounds(toAbs(bounds))
@@ -119,22 +116,22 @@ class ItemFeedbackFigure(val container: ContainerItem) extends FeedbackFigureAbs
 
 }
 class ResizeItemFeedbackFigure(val bf: Item, parent: ContainerItem) extends ItemFeedbackFigure(parent) {
-
+  override def useLocalCoordinates() = true
   val handles =
     (for {
       i ← 0 to 2;
       j ← 0 to 2;
       if (!(i == 1 && j == 1))
     } yield new HandleRectangle(i, j, this)).toList
-
+  rectangle.setLocation(new Point(expansion, expansion));
+  rectangle.setFill(false)
   handles foreach (add(_))
   override def setInnerBounds(inside: Rectangle) {
     innerBounds = inside
     val outside = new Rectangle(inside)
     outside.expand(expansion, expansion)
     setBounds(outside)
-    rectangle.setBounds(toAbs(inside))
-    rectangle.setFill(false)
-    handles foreach (_.doPosition(outside, inside))
+    rectangle.setSize(inside.getSize())
+    handles foreach (_.doPosition(inside.getSize()))
   }
 }

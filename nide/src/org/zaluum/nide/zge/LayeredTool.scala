@@ -20,6 +20,9 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     currentMouseLocation = current.translateFromViewport(absMouseLocation)
     itemUnderMouse = current.itemAt(point(currentMouseLocation), false)
   }
+  def currentIgnoring(ign: Set[ContainerItem]) =
+    viewer.findContainerAtIgnoring(point(absMouseLocation), ign).asInstanceOf[C]
+
   abstract class OverTrack[F <: Figure](implicit m: Manifest[F]) {
     var current: Option[F] = None
     protected var last: Option[F] = None

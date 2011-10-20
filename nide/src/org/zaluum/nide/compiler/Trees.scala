@@ -3,7 +3,6 @@ package org.zaluum.nide.compiler
 import scala.collection.immutable.Stack
 import scala.collection.mutable.Buffer
 import java.io.StringWriter
-
 trait SelectionSubject {
   def selectedTree: Tree
 }
@@ -89,6 +88,13 @@ abstract class SymbolTree[S >: Null <: Symbol] extends Tree {
 }
 
 // Transformer
+object EditTransformer {
+  def apply(e: Transformer ⇒ TreePF) = {
+    new EditTransformer {
+      val trans = e(this)
+    }
+  }
+}
 abstract class EditTransformer extends CopyTransformer with MapTransformer
 
 trait MapTransformer extends Transformer {
@@ -100,7 +106,7 @@ trait MapTransformer extends Transformer {
   }
 }
 trait CopyTransformer extends Transformer {
-  val defaultTransform: PartialFunction[Tree, Tree] = {
+  val defaultTransform: TreePF = {
     case b: BoxDef ⇒
       atOwner(b.symbol) {
         b.copy(template = transform(b.template))
@@ -133,8 +139,8 @@ trait CopyTransformer extends Transformer {
   }
 }
 abstract class Transformer extends OwnerHelper[Tree] {
-  protected val defaultTransform: PartialFunction[Tree, Tree]
-  protected val trans: PartialFunction[Tree, Tree]
+  protected val defaultTransform: TreePF
+  protected val trans: TreePF
   protected lazy val finalTrans = trans.orElse(defaultTransform)
   def apply(tree: Tree, initOwner: Symbol = null): Tree = {
     currentOwner = initOwner
@@ -285,7 +291,7 @@ case class BoxDef(name: Name, // simple name
                   constructor: List[VarDecl],
                   template: Template) extends SymbolTree[BoxSymbol] {
   def transformThis(body: EditTransformer ⇒ BoxDef) = new EditTransformer() {
-    val trans: PartialFunction[Tree, Tree] = {
+    val trans: TreePF = {
       case b: BoxDef if b == BoxDef.this ⇒ body(this)
     }
   }
@@ -334,7 +340,7 @@ case class PortDef(
   def pos = inPos
   def changeType(tpe: String): MapTransformer = {
     new EditTransformer() {
-      val trans: PartialFunction[Tree, Tree] = {
+      val trans: TreePF = {
         case p: PortDef if (p == PortDef.this) ⇒ p.copy(typeName = Name(tpe))
       }
     }
@@ -342,7 +348,7 @@ case class PortDef(
   def renamePort(str: String, tpe: Option[Name]): MapTransformer = {
     val newName = if (str == name.str) name else Name(sym.portsSymbol.asInstanceOf[BoxSymbol].freshName(str))
     new EditTransformer() {
-      val trans: PartialFunction[Tree, Tree] = {
+      val trans: TreePF = {
         case p: PortDef if (p == PortDef.this) ⇒
           p.copy(name = newName, typeName = tpe.getOrElse(p.typeName))
         case pr: PortRef ⇒
@@ -412,7 +418,7 @@ case class ValDef(
     labelGui: Option[LabelDesc],
     template: Option[Template]) extends SymbolTree[ValSymbol] with Positionable {
   def transformThis(body: EditTransformer ⇒ ValDef) = new EditTransformer() {
-    val trans: PartialFunction[Tree, Tree] = {
+    val trans: TreePF = {
       case v: ValDef if v == ValDef.this ⇒ body(this)
     }
   }

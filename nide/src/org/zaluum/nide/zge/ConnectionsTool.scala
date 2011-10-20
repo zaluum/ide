@@ -3,21 +3,14 @@ package org.zaluum.nide.zge
 import scala.annotation.elidable
 import scala.collection.JavaConversions.setAsJavaSet
 import scala.math.abs
-
 import org.eclipse.draw2d.geometry.{ Point ⇒ EPoint }
 import org.eclipse.draw2d.Cursors
 import org.eclipse.draw2d.Figure
 import org.eclipse.draw2d.Polyline
-import org.zaluum.nide.compiler.Block
-import org.zaluum.nide.compiler.EditTransformer
-import org.zaluum.nide.compiler.Point
-import org.zaluum.nide.compiler.PortDef
-import org.zaluum.nide.compiler.Tree
-import org.zaluum.nide.compiler.ValDef
-
 import FigureHelper.isOrHas
 import draw2dConversions._
-
+import org.zaluum.nide.compiler._
+import RichFigure._
 trait ConnectionsTool {
   this: TreeTool ⇒
 
@@ -181,7 +174,7 @@ trait ConnectionsTool {
         case Some(p) ⇒
           val ext = extend.fixEnds
           paintCreatingEdge(ext)
-          val p = initContainer.translateMineToAbsolute_!(point(ext.b.p))
+          val p = initContainer.translateMineToViewport_!(point(ext.b.p))
           hFig.setStart(p)
           vFig.setStart(p)
           hFig.setEnd(p)
@@ -189,20 +182,20 @@ trait ConnectionsTool {
         case None ⇒
           paintCreatingEdge(edge)
           if (dir == H) {
-            val lastp = initContainer.translateMineToAbsolute_!(point(last))
+            val lastp = initContainer.translateMineToViewport_!(point(last))
             hFig.setStart(lastp)
-            val mid = initContainer.translateMineToAbsolute_!(new EPoint(now.x, last.y))
+            val mid = initContainer.translateMineToViewport_!(new EPoint(now.x, last.y))
             hFig.setEnd(mid)
             vFig.setStart(mid)
-            val pnow = initContainer.translateMineToAbsolute_!(point(now))
+            val pnow = initContainer.translateMineToViewport_!(point(now))
             vFig.setEnd(pnow)
           } else {
-            val plast = initContainer.translateMineToAbsolute_!(point(last))
+            val plast = initContainer.translateMineToViewport_!(point(last))
             vFig.setStart(plast)
-            val mid = initContainer.translateMineToAbsolute_!(new EPoint(last.x, now.y))
+            val mid = initContainer.translateMineToViewport_!(new EPoint(last.x, now.y))
             vFig.setEnd(mid)
             hFig.setStart(mid)
-            val pnow = initContainer.translateMineToAbsolute_!(point(now))
+            val pnow = initContainer.translateMineToViewport_!(point(now))
             hFig.setEnd(pnow)
           }
       }
@@ -216,95 +209,129 @@ trait ConnectionsTool {
   // MOVING
 
   trait Moving extends ToolState {
-    self: DeltaMove with SingleContainer ⇒
+    self: DeltaMove with SingleContainer with ContainerHighlighter ⇒
+    var targetContainer: ContainerItem = _
+    var targetMouseLocation: Point = _
+    var movables: Set[Item] = _
+    var ignoredContainers: Set[ContainerItem] = _
     def enter(initDrag: Point, initContainer: C) {
+      state = this
       enterMoving(initDrag)
       enterSingle(initContainer)
-      state = this
+      targetContainer = initContainer
+      movables = viewer.selectedItems.collect { case i: Item ⇒ i }
+      ignoredContainers = movables.collect { case c: ContainerItem ⇒ c } flatMap { c ⇒
+        c.deepChildren.collect { case c: ContainerItem ⇒ c }.toSet + c
+      }
     }
-    def allowed = (current eq initContainer) || (movables.exists { isOrHas(_, current) })
-    def movables = viewer.selectedItems.collect {
-      case item: Item if item.container == initContainer ⇒ item
-    }
-    def buttonUp {
-      val g = initContainer.graph
-      val subjects = for (m ← movables; s ← m.selectionSubject) yield s
-      val valdefs = subjects collect { case v: ValDef ⇒ v }
-      val portdefs = subjects collect { case p: PortDef ⇒ p }
-      val lines = subjects collect { case l: LineSelectionSubject ⇒ l }
-      val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })
-      var edges = g.edges
-      var vertexs = g.vertexs
-      // move lines
-      for ((c, lines) ← groups; e ← g.edges; if (e.srcCon == Some(c))) {
-        edges = edges - e + e.move(lines, delta)
-      }
-      // collect moved junctions
-      var movedJunctions = Set[Vertex]()
-      for (e ← edges; v ← vertexs; if !v.isEnd) {
-        if (e.a == v && e.points.head != e.a.p) movedJunctions += v
-        if (e.b == v && e.points.last != e.b.p) movedJunctions += v
-      }
-      // collect moved ends
-      val movedEnds = vertexs.collect { case p: PortVertex ⇒ p }.filter { p ⇒
-        val pi = p.ps.pi
-        /* FIXME ?? if (p.ps.fromInside)
-          portdefs.contains(pi.valSymbol.tpe.decl)
-        else*/
-        p.ps.fromInside && valdefs.contains(pi.valSymbol.decl)
 
-      }
-      // update edge vertexs
-      for (v ← movedJunctions.view ++ movedEnds) {
-        val newv = v.move(snap(v.p + delta))
-        vertexs = vertexs - v + newv
-        edges = for (e ← edges) yield {
-          assert(!(e.a == v && e.b == v))
-          if (e.a == v) new Edge(newv, e.b, e.points, e.srcCon)
-          else if (e.b == v) new Edge(e.a, newv, e.points, e.srcCon)
-          else e
-        }
-      }
-      // create graph result
-      // add edges fixed and untangled
-      val initGraph = new ConnectionGraphV(vertexs, edges)
-      var result: ConnectionGraph = new ConnectionGraphV(vertexs, Set())
-      for (c ← initGraph.components) {
-        var res: ConnectionGraph = new ConnectionGraphV(vertexs, Set())
-        for (e ← c.edges) {
-          res = res.cutAddToTree(e.fixEnds.untangle)(ConnectionGraph.fillTree)
-        }
-        result = new ConnectionGraphV(res.vertexs ++ result.vertexs, res.edges ++ result.edges)
-      }
-      result = result.prune.clean
-      // done
-      val (connections, njunctions) = result.toTree
-      val command = new EditTransformer {
-        val trans: PartialFunction[Tree, Tree] = {
-          case b: Block if (b == initContainer.block) ⇒
-            b.copy(
-              valDefs = transformTrees(b.valDefs),
-              parameters = transformTrees(b.parameters),
-              connections = connections,
-              junctions = njunctions)
-          case v: ValDef if (valdefs.contains(v)) ⇒
-            v.copy(pos = snap(v.pos + delta), params = transformTrees(v.params))
-          case p: PortDef if (portdefs.contains(p)) ⇒
-            p.copy(inPos = snap(p.inPos + delta))
+    def moveWithinContainers() {
+      val frags = movables.groupBy(_.container) map {
+        // calculate the movement inside each container
+        case (container, movables) ⇒
+          val g = container.graph
+          val subjects = for (m ← movables; s ← m.selectionSubject) yield s
+          val valdefs = subjects collect { case v: ValDef ⇒ v }
+          val portdefs = subjects collect { case p: PortDef ⇒ p }
+          val lines = subjects collect { case l: LineSelectionSubject ⇒ l }
+          val groups = lines.groupBy { case LineSelectionSubject(c, l) ⇒ c }.mapValues(_.map { _.l })
+          var edges = g.edges
+          var vertexs = g.vertexs
+          // move lines
+          for ((c, lines) ← groups; e ← g.edges; if (e.srcCon == Some(c))) {
+            edges = edges - e + e.move(lines, delta)
+          }
+          // collect moved junctions
+          var movedJunctions = Set[Vertex]()
+          for (e ← edges; v ← vertexs; if !v.isEnd) {
+            if (e.a == v && e.points.head != e.a.p) movedJunctions += v
+            if (e.b == v && e.points.last != e.b.p) movedJunctions += v
+          }
+          // collect moved ends
+          val movedEnds = vertexs.collect { case p: PortVertex ⇒ p }.filter { p ⇒
+            val pi = p.ps.pi
+            p.ps.fromInside && valdefs.contains(pi.valSymbol.decl)
+          }
+          // update edge vertexs
+          for (v ← movedJunctions.view ++ movedEnds) {
+            val newv = v.move(snap(v.p + delta))
+            vertexs = vertexs - v + newv
+            edges = for (e ← edges) yield {
+              assert(!(e.a == v && e.b == v))
+              if (e.a == v) new Edge(newv, e.b, e.points, e.srcCon)
+              else if (e.b == v) new Edge(e.a, newv, e.points, e.srcCon)
+              else e
+            }
+          }
+          // create graph result
+          // add edges fixed and untangled
+          val initGraph = new ConnectionGraphV(vertexs, edges)
+          var result: ConnectionGraph = new ConnectionGraphV(vertexs, Set())
+          for (c ← initGraph.components) {
+            var res: ConnectionGraph = new ConnectionGraphV(vertexs, Set())
+            for (e ← c.edges) {
+              res = res.cutAddToTree(e.fixEnds.untangle)(ConnectionGraph.fillTree)
+            }
+            result = new ConnectionGraphV(res.vertexs ++ result.vertexs, res.edges ++ result.edges)
+          }
+          result = result.prune.clean
+          // done
+          val (connections, njunctions) = result.toTree;
+          { e: Transformer ⇒
+            {
+              case b: Block if (b == container.block) ⇒
+                b.copy(
+                  valDefs = e.transformTrees(b.valDefs),
+                  parameters = e.transformTrees(b.parameters),
+                  connections = connections,
+                  junctions = njunctions)
+              case v: ValDef if (valdefs.contains(v)) ⇒
+                v.copy(pos = snap(v.pos + delta),
+                  params = e.transformTrees(v.params),
+                  template = e.transformOption(v.template))
+              case p: PortDef if (portdefs.contains(p)) ⇒
+                p.copy(inPos = snap(p.inPos + delta))
 
-        }
+            }: TreePF
+          }
       }
+      // merge the fragments
+      // can be combined because they operate on different parts of the tree
+      val command = EditTransformer(e ⇒ frags.map { _(e) } reduce (_ orElse _))
       controller.exec(command)
     }
+    def cutAndPaste() {
+      val cut = Clipboard.createFromSelection(viewer.selection.currentSelected)
+      val moved = cut.renameRelocate(targetContainer.block.sym, targetMouseLocation, false)
+      val comm = Delete.deleteSelectionAndPaste(
+        movables,
+        viewer.graphOf,
+        Some(moved),
+        Some(targetContainer))
+      controller.exec(comm)
+    }
+    def buttonUp {
+      if (initContainer == targetContainer)
+        moveWithinContainers()
+      else
+        cutAndPaste
+    }
+
     def drag {}
     def buttonDown {}
     def exit() { selecting.enter() }
-    def move() { viewer.selectedItems foreach { f ⇒ f.moveFeed(snap(f.pos + delta)) } }
+    def move() {
+      targetContainer = currentIgnoring(ignoredContainers)
+      targetMouseLocation = targetContainer.translateFromViewport(absMouseLocation)
+      viewer.selectedItems foreach { f ⇒ f.moveFeed(snap(f.pos + delta)) }
+    }
     def abort() {
       viewer.selectedItems foreach { f ⇒ f.moveFeed(f.pos) }
       exit()
     }
   }
-  class MovingItem extends Moving with DeltaMove with SingleContainer with Allower
+  class MovingItem extends Moving with DeltaMove with SingleContainer with ContainerHighlighter {
+    override def highlightContainer = targetContainer
+  }
   val moving = new MovingItem
 }

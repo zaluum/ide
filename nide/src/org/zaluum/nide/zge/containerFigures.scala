@@ -50,9 +50,9 @@ trait ContainerItem extends Item {
   def connectionsLayer: Figure
   def pointsLayer: Figure
   def portsLayer: Figure
-  def translateMineToAbsolute_![T <: Translatable](modified: T): T = {
-    translateToParent(modified)
-    translateToAbsolute(modified)
+  def translateMineToViewport_![T <: Translatable](modified: T): T = {
+    layer.translateToParent(modified)
+    this.translateToViewport_!(modified)
     modified
   }
   protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] =
@@ -247,6 +247,7 @@ class OpenBoxFigure(
   }
   def highLight(b: Boolean) = {
     myBorder.setColor(if (b) ColorConstants.lightBlue else ColorConstants.gray)
+    repaint()
   }
   def blink(b: Boolean) {
     setBackgroundColor(if (b) OpenBoxFigure.backgroundBlink else OpenBoxFigure.backgroundNormal)

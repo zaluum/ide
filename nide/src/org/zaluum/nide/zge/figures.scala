@@ -48,7 +48,7 @@ import org.zaluum.basic.BoxConfigurer
 import javax.script.ScriptEngineManager
 import java.security.AccessController
 import java.security.PrivilegedAction
-
+import RichFigure._
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item with PropertySource {
   var valDef: ValDef = _
@@ -291,8 +291,7 @@ trait TextEditFigure extends Item {
         def cancelEditor() { onCancel() }
         def editorValueChanged(oldValid: Boolean, newValid: Boolean) {}
       })
-      val b = getClientArea.getCopy
-      translateToAbsolute(b)
+      val b = this.translateToViewport_!(getClientArea.getCopy) // FIXME???
       textC.setBounds(b.x + 1, b.y + 1, math.max(b.width - 1, baseSpace * 8), b.height - 2)
       textC.setBackground(ColorConstants.white)
       textC.setVisible(true)

@@ -110,4 +110,9 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
     this.findDeepContainerAt(p) {
       case (f: OpenBoxFigure) ⇒ f
     } getOrElse { this }
+  // for move
+  def findContainerAtIgnoring(p: Point, ign: Set[ContainerItem]): ContainerItem =
+    this.findDeepContainerAt(p) {
+      case (f: OpenBoxFigure) if !ign.contains(f) ⇒ f
+    } getOrElse { this }
 }

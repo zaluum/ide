@@ -16,6 +16,8 @@ import org.zaluum.nide.compiler.Vector2
 import draw2dConversions._
 import org.eclipse.draw2d.Graphics
 import org.eclipse.draw2d.ColorConstants
+import org.eclipse.draw2d.geometry.Translatable
+import RichFigure._
 
 object draw2dConversions {
   def point(p: MPoint): EPoint = new EPoint(p.x, p.y)
@@ -36,39 +38,42 @@ object FigureHelper {
 object RichFigure {
   implicit def richFigure(f: IFigure) = new RichFigure(f)
 }
-class RichFigure(container: IFigure) {
+class RichFigure(fig: IFigure) {
   import RichFigure._
   import scala.collection.JavaConversions._
-  def immediateChildren = container.getChildren.asInstanceOf[java.util.List[IFigure]].toStream
+  def immediateChildren = fig.getChildren.asInstanceOf[java.util.List[IFigure]].toStream
   def deepChildren: Stream[IFigure] = {
     val deepChildren: Stream[IFigure] = immediateChildren.flatMap { _.deepChildren }
     immediateChildren ++ deepChildren
   }
   def safeRemove(i: IFigure): Unit = {
-    if (container.getChildren.contains(i))
-      container.remove(i)
+    if (fig.getChildren.contains(i))
+      fig.remove(i)
   }
-  def translateToViewport(p: MPoint): MPoint = translateToViewport(point(p))
-  def translateToViewport(p: EPoint): EPoint = {
-    if (container.isInstanceOf[Viewport]) p.getCopy
+  def translateToViewport(p: MPoint): MPoint = rpoint(translateToViewport_!(point(p)))
+  // translates a point in figs coordinates to viewport
+  def translateToViewport_![A <: Translatable](p: A): A = {
+    if (fig.isInstanceOf[Viewport]) p
     else {
-      val ep = container.getParent.translateToViewport(p)
-      container.translateToParent(ep)
-      ep
+      fig.translateToParent(p)
+      fig.getParent.translateToViewport_!(p)
     }
   }
-  def translateFromViewport(p: MPoint): MPoint = translateFromViewport(point(p))
-  def translateFromViewport(p: EPoint): EPoint = {
-    if (container.isInstanceOf[Viewport]) p.getCopy
+  def translateFromViewport(p: MPoint): MPoint = {
+    val ep = point(p)
+    rpoint(translateFromViewport_!(ep))
+  }
+  def translateFromViewport_![A <: Translatable](p: A): A = {
+    if (fig.isInstanceOf[Viewport]) p
     else {
       // FIXME hard to reproduce bug involving the scrollbar? or singlecontainer?
-      val ep = container.getParent.translateFromViewport(p)
-      container.translateFromParent(ep)
+      val ep = fig.getParent.translateFromViewport_!(p)
+      fig.translateFromParent(ep)
       ep
     }
   }
   def deepChildrenNear(abs: EPoint, radius: Double): List[(IFigure, Double)] = {
-      def distance(f: IFigure): Double = f.getBounds.getCenter.getDistance(f.translateFromViewport(abs))
+      def distance(f: IFigure): Double = f.getBounds.getCenter.getDistance(f.translateFromViewport_!(abs.getCopy))
     val v = for (c ← deepChildren; val d = distance(c); if (d < radius)) yield (c, d)
     v.toList
   }
@@ -79,16 +84,16 @@ class RichFigure(container: IFigure) {
       def println2(str: String) = { if (debug) println(spaces + str) }
     var candidate: Option[A] = None
     val parentCoords = internalCoords.getCopy
-    container.translateToParent(parentCoords)
-    println2("findDeep " + container + " " + parentCoords + "bounds " + container.getBounds + " visible=" + container.isVisible + "opaque=" + container.isOpaque)
-    if (container.isVisible && container.containsPoint(parentCoords)) {
-      candidate = partial.lift(container)
+    fig.translateToParent(parentCoords)
+    println2("findDeep " + fig + " " + parentCoords + "bounds " + fig.getBounds + " visible=" + fig.isVisible + "opaque=" + fig.isOpaque)
+    if (fig.isVisible && fig.containsPoint(parentCoords)) {
+      candidate = partial.lift(fig)
       println2("candidate = " + candidate)
-      println2("contains point. Client area= " + container.getClientArea + " relative point=" + internalCoords)
-      if (container.getClientArea.contains(internalCoords)) {
+      println2("contains point. Client area= " + fig.getClientArea + " relative point=" + internalCoords)
+      if (fig.getClientArea.contains(internalCoords)) {
         println2("checking children")
         // search children 
-        val list = container.getChildren.toBuffer.asInstanceOf[Buffer[IFigure]]
+        val list = fig.getChildren.toBuffer.asInstanceOf[Buffer[IFigure]]
         for (c ← list.reverse) {
           val childCoords = internalCoords.getCopy
           c.translateFromParent(childCoords)
@@ -109,10 +114,10 @@ class RichFigure(container: IFigure) {
 
   def findDeepContainerAt[A](internalCoords: EPoint)(partial: PartialFunction[IFigure, A]): Option[A] = {
     var candidate: Option[A] = None
-    if (container.isVisible && container.getClientArea.contains(internalCoords)) {
-      candidate = partial.lift(container)
+    if (fig.isVisible && fig.getClientArea.contains(internalCoords)) {
+      candidate = partial.lift(fig)
       // search children 
-      val list = container.getChildren.toBuffer.asInstanceOf[Buffer[IFigure]]
+      val list = fig.getChildren.toBuffer.asInstanceOf[Buffer[IFigure]]
       for (c ← list.reverse) {
         val childInternalCoords = internalCoords.getCopy
         c.translateFromParent(childInternalCoords)
@@ -164,8 +169,8 @@ trait Item extends Hover {
   def isOverlapped = {
     val parents = parentContainers
     val absBounds = getBounds.getCopy()
-    translateToAbsolute(absBounds)
-    import RichFigure._
+    this.translateToViewport_!(absBounds)
+
     val before = container.deepChildren.takeWhile(_ != this)
     val myChildren = this.deepChildren
     before exists {
@@ -173,8 +178,7 @@ trait Item extends Hover {
         case c: OpenBoxFigure ⇒
           if (!parents.contains(c) && c != Item.this && !myChildren.contains(c)) {
             val boundsChild = c.getClientArea().getCopy()
-            c.translateToParent(boundsChild)
-            c.translateToAbsolute(boundsChild)
+            c.translateToViewport_!(boundsChild)
             absBounds.intersects(boundsChild)
           } else false
         case _ ⇒ false
