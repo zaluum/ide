@@ -1,6 +1,8 @@
 Agenda
 
 	necessari
+	-gui copy move
+	- port gui copy-move
 	- guardar al clipboard coordenades absolutes per enganxar de diferents contenidors mantenint l'aspecte
 	- al moure boxes entre contenidors posar les coordenades per tal que coincideixin amb el lloc on el feedback indica
 	- improve or cancel one end connections

@@ -30,16 +30,30 @@ import org.zaluum.nide.compiler.Param
 
 case class Clipboard(valDefs: List[ValDef], ports: List[PortDef], connections: List[ConnectionDef]) {
   def isEmpty: Boolean = valDefs.isEmpty && ports.isEmpty
-  def renameRelocate(baseNamer: Namer, toPoint: Point, gui: Boolean): Clipboard = {
-    val positions = if (gui) {
-      valDefs.view.flatMap(v ⇒ v.bounds).map { _._1 }
-    } else
-      valDefs.view.map(_.pos) ++ ports.view.map(_.inPos)
-    val minPos = if (positions.isEmpty) Vector2(0, 0) else positions.min.toVector.negate
-    val deltaCommon = (minPos + toPoint.toVector)
-    val deltaGUI = if (gui) deltaCommon else Vector2(10, 10)
-    val delta = if (gui) Vector2(10, 10) else deltaCommon
-    import scala.collection.mutable.Map
+  def toTopLeftZero: Clipboard = {
+    val positions = valDefs.view.map(_.pos) ++ ports.view.map(_.inPos)
+    val delta = positions.min.toVector.negate
+    move(p ⇒ p + delta)
+  }
+  def move(f: Point ⇒ Point): Clipboard = {
+    val newVals = valDefs.map { v ⇒
+      v.bounds match {
+        case Some((p, d)) ⇒
+          val newGuiPos = p // FIXME
+          v.copy(params = v.updatedBounds(newGuiPos, d), pos = f(v.pos))
+        case None ⇒
+          v.copy(pos = f(v.pos))
+      }
+    }
+    val newPorts = ports.map { p ⇒ p.copy(inPos = f(p.inPos)) }
+    val newCons = connections.map { c ⇒ c.copy(points = c.points map f) }
+    Clipboard(newVals, newPorts, newCons)
+  }
+  def relocate(delta: Vector2, container: ContainerItem): Clipboard = {
+      def translate(p: Point): Point = rpoint(container.translateMineFromViewport_!(point(p + delta)))
+    move(translate)
+  }
+  def rename(baseNamer: Namer): Clipboard = {
     val newNames = Map[String, String]()
     val namer = new Namer() {
       def usedNames = baseNamer.usedNames ++ newNames.values
@@ -49,49 +63,46 @@ case class Clipboard(valDefs: List[ValDef], ports: List[PortDef], connections: L
         newNames += (oldName -> newName)
         newName
       }
-    val newVals = for (v ← valDefs) yield {
-      val moved =
-        v.bounds match {
-          case Some((p, d)) ⇒
-            val newPos = p + deltaGUI
-            v.copy(params = v.updatedBounds(newPos, d), pos = v.pos + delta)
-          case None ⇒
-            v.copy(pos = v.pos + delta)
-        }
-      moved.copy(
-        name = Name(rename(v.name.str)),
-        typeName = Name(newNames.getOrElse(v.typeName.str, v.typeName.str)))
+
+    val newVals = valDefs map { v ⇒
+      v.copy(name = Name(rename(v.name.str)))
     }
-    val newPorts = for (p ← ports) yield {
-      p.copy(
-        name = Name(rename(p.name.str)),
-        inPos = p.inPos + delta)
+    val newPorts = ports map { p ⇒
+      p.copy(name = Name(rename(p.name.str)))
     }
-    // Connections. we only have ends PortRef(ValRef, name) or EmptyTree
-    val newConnections = for (c ← connections) yield {
+    val newConn = connections map { c ⇒
         def renameRef(t: Option[ConnectionEnd]) = t match {
           case Some(p: PortRef) ⇒
             val vr = p.fromRef.asInstanceOf[ValRef]
             Some(p.copy(fromRef = vr.copy(name = Name(newNames(vr.name.str)))))
-          case None ⇒ None
+          case a ⇒ a
         }
-
-      val res = ConnectionDef(
-        renameRef(c.a),
-        renameRef(c.b),
-        c.points map { p ⇒ p + delta })
-      res
+      c.copy(
+        a = renameRef(c.a),
+        b = renameRef(c.b))
     }
-    Clipboard(newVals, newPorts, newConnections)
+    Clipboard(newVals, newPorts, newConn)
   }
-  def pasteCommand(c: ContainerItem, currentMouseLocation: Point, gui: Boolean): MapTransformer = {
-    var renamed: Clipboard = null
+  def renameRelocate(baseNamer: Namer, delta: Vector2, container: ContainerItem, gui: Boolean): Clipboard = {
+    /*    val positions = if (gui) {
+      valDefs.view.flatMap(v ⇒ v.bounds).map { _._1 }
+    } else
+      valDefs.view.map(_.pos) ++ ports.view.map(_.inPos)*/
+    //val minPos = if (positions.isEmpty) Vector2(0, 0) else positions.min.toVector.negate
+    //val deltaCommon = (minPos + toPoint.toVector)
+    //val deltaGUI = if (gui) deltaCommon else Vector2(10, 10)
+    //val delta = if (gui) Vector2(10, 10) else deltaCommon
+    relocate(delta, container).rename(container.block.sym)
+  }
+  def pasteCommand(c: ContainerItem, absPos: Point, gui: Boolean): MapTransformer = {
+    val delta = absPos.toVector
+    val zero = toTopLeftZero
+    println("zero" + zero)
+    val renamed: Clipboard = zero.renameRelocate(c.block.sym, delta, c, gui)
     new EditTransformer() {
       val trans: PartialFunction[Tree, Tree] = {
         case t: Template if t == c.template ⇒
           val tpe = t.sym
-          val bl = c.block
-          renamed = renameRelocate(bl.sym, currentMouseLocation, gui)
           t.copy(blocks = transformTrees(t.blocks),
             ports = transformTrees(t.ports) ++ renamed.ports)
         case bl: Block if bl == c.block ⇒
@@ -104,31 +115,42 @@ case class Clipboard(valDefs: List[ValDef], ports: List[PortDef], connections: L
 }
 
 object Clipboard {
-  def createFromSelection(selection: Set[SelectionSubject]): Clipboard = {
-
-    val rawValDefs = selection.collect { case v: ValDef ⇒ v }
-    val rawPorts = selection.collect { case p: PortDef ⇒ p }
-
-    // Filter out nested selections 
-    val valDefs = rawValDefs.filterNot { v ⇒ rawValDefs exists { _.deepContains(v) } }
-    val portDefs = rawPorts.filterNot(p ⇒ rawValDefs exists { _.deepContains(p) })
-    // Only connections valDefs TODO improve
-    val unfilteredConnections = selection.collect {
-      case c: ConnectionDef        ⇒ c
-      case l: LineSelectionSubject ⇒ l.c
+  /** selection must not contain nested selections */
+  def createFromSelection(selection: Set[Item]): Clipboard = {
+      // fixme shift ports duplicated
+      def findItemOf(t: Tree): Item = {
+        selection.find(i ⇒
+          i.selectionSubject.exists(_.selectedTree == t)).get
+      }
+    val trees = for (i ← selection; s ← i.selectionSubject) yield { s.selectedTree }
+      def translate(p: Point, t: Tree) = findItemOf(t).container.translateMineToViewport_!(point(p))
+    val movedTrees = for (t ← trees) yield {
+      t match {
+        case v: ValDef  ⇒ v.copy(pos = translate(v.pos, v))
+        case p: PortDef ⇒ p.copy(inPos = translate(p.pos, p))
+        case c: ConnectionDef ⇒
+          val i = findItemOf(c)
+          c.copy(points = c.points map i.translateToViewport)
+        case a ⇒ a
+      }
     }
-    val connections = unfilteredConnections.filter { c ⇒
-        def validEnd(o: Option[ConnectionEnd]) = o match {
-          case Some(pr: PortRef) ⇒
-            pr.fromRef match {
-              case vr: ValRef ⇒ valDefs.exists { _.name == vr.name }
-              case _          ⇒ false
-            }
-          case None ⇒ true
-          case _    ⇒ false
-        }
-      validEnd(c.a) && validEnd(c.b)
-    }
+    val valDefs = movedTrees collect { case v: ValDef ⇒ v }
+    val portDefs = movedTrees collect { case p: PortDef ⇒ p }
+      // Only connections valDefs TODO improve
+      def valid(c: ConnectionDef) = {
+          def validEnd(o: Option[ConnectionEnd]) = o match {
+            case Some(pr: PortRef) ⇒
+              pr.fromRef match {
+                case vr: ValRef ⇒ valDefs.exists { _.name == vr.name }
+                case _          ⇒ false
+              }
+            case None ⇒ true
+            case _    ⇒ false
+          }
+        validEnd(c.a) && validEnd(c.b)
+      }
+    val connections = movedTrees.collect { case c: ConnectionDef if (valid(c)) ⇒ c }
+    println(valDefs.map(_.pos))
     Clipboard(valDefs.toList, portDefs.toList, connections.toList)
   }
 }
@@ -155,7 +177,7 @@ object ClipTransfer extends ByteArrayTransfer {
 trait ClipboardViewer {
   this: ItemViewer ⇒
   def updateClipboard = {
-    val nclip = Clipboard.createFromSelection(selection.currentSelected)
+    val nclip = Clipboard.createFromSelection(selectedItems)
     if (!nclip.isEmpty) {
       val clip = Serializer.proto(nclip)
       val eclip = new org.eclipse.swt.dnd.Clipboard(display)

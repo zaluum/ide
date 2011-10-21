@@ -53,6 +53,11 @@ trait ContainerItem extends Item {
     this.translateToViewport_!(modified)
     modified
   }
+  def translateMineFromViewport_![T <: Translatable](modified: T): T = {
+    this.translateFromViewport_!(modified)
+    layer.translateFromParent(modified)
+    modified
+  }
   protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] =
     container.findDeepAt(point(p), 0, debug) {
       case i: Item ⇒ i

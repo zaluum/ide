@@ -156,8 +156,7 @@ trait Item extends Hover {
     container :: container.parentContainers
   def isOverlapped = {
     val parents = parentContainers
-    val absBounds = getBounds.getCopy()
-    this.translateToViewport_!(absBounds)
+    val absBounds = container.translateMineToViewport_!(getBounds.getCopy())
 
     val before = container.deepChildren.takeWhile(_ != this)
     val myChildren = this.deepChildren

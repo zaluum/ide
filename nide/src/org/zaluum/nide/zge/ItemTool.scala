@@ -69,7 +69,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       this.clipboard = c
       state = this
       feed = new ItemFeedbackFigure(current)
-      feed.setInnerBounds(new Rectangle(0, 0, 48, 48)); // XXX real clipboard size
+      feed.setInnerBounds(new Rectangle(0, 0, 24, 24)); // XXX real clipboard size
       feed.show()
       move()
     }
@@ -77,7 +77,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def abort { exit() }
     def drag {}
     val gui: Boolean
-    def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, snap(currentMouseLocation), gui))
+    def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, absMouseLocation, gui)) // FIXME vector2 -> delta
     def buttonDown() {}
     def exit() {
       feed.hide();

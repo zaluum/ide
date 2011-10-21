@@ -299,8 +299,8 @@ trait ConnectionsTool {
       controller.exec(command)
     }
     def cutAndPaste() {
-      val cut = Clipboard.createFromSelection(viewer.selection.currentSelected)
-      val moved = cut.renameRelocate(targetContainer.block.sym, targetMouseLocation, false)
+      val cut = Clipboard.createFromSelection(viewer.selectedItems)
+      val moved = cut.renameRelocate(targetContainer.block.sym, delta, targetContainer, false)
       val comm = Delete.deleteSelectionAndPaste(
         movables,
         viewer.graphOf,
