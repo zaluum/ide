@@ -30,28 +30,44 @@ import org.zaluum.nide.compiler.Param
 
 case class Clipboard(valDefs: List[ValDef], ports: List[PortDef], connections: List[ConnectionDef]) {
   def isEmpty: Boolean = valDefs.isEmpty && ports.isEmpty
-  def toTopLeftZero: Clipboard = {
-    val positions = valDefs.view.map(_.pos) ++ ports.view.map(_.inPos)
-    val delta = positions.min.toVector.negate
-    move(p ⇒ p + delta)
+  def toTopLeftZero(gui: Boolean): Clipboard = {
+    val treePositions = valDefs.view.map(_.pos) ++ ports.view.map(_.inPos)
+    val guiPositions = valDefs.view.flatMap(_.bounds).map { case (p, d) ⇒ p }
+    val positions = if (gui) guiPositions else treePositions
+    val delta =
+      if (positions.isEmpty) Vector2(0, 0)
+      else
+        positions.min.toVector.negate
+    if (gui)
+      move(identity, p ⇒ p + delta)
+    else
+      move(p ⇒ p + delta, identity)
   }
-  def move(f: Point ⇒ Point): Clipboard = {
+  def move(tree: Point ⇒ Point, gui: Point ⇒ Point): Clipboard = {
     val newVals = valDefs.map { v ⇒
       v.bounds match {
         case Some((p, d)) ⇒
-          val newGuiPos = p // FIXME
-          v.copy(params = v.updatedBounds(newGuiPos, d), pos = f(v.pos))
+          v.copy(params = v.updatedBounds(gui(p), d), pos = tree(v.pos))
         case None ⇒
-          v.copy(pos = f(v.pos))
+          v.copy(pos = tree(v.pos))
       }
     }
-    val newPorts = ports.map { p ⇒ p.copy(inPos = f(p.inPos)) }
-    val newCons = connections.map { c ⇒ c.copy(points = c.points map f) }
+    val newPorts = ports.map { p ⇒
+      val e = tree(p.extPos)
+      p.copy(
+        inPos = tree(p.inPos),
+        extPos = e.copy(x = 0, y = math.max(0, e.y)))
+    }
+    val newCons = connections.map { c ⇒ c.copy(points = c.points map tree) }
     Clipboard(newVals, newPorts, newCons)
   }
-  def relocate(delta: Vector2, container: ContainerItem): Clipboard = {
-      def translate(p: Point): Point = rpoint(container.translateMineFromViewport_!(point(p + delta)))
-    move(translate)
+  def relocate(delta: Vector2, container: ContainerItem, gui: Boolean): Clipboard = {
+      def treeTranslate(p: Point): Point = rpoint(container.translateMineFromViewport_!(point(p + delta)))
+      def guiTranslate(p: Point) = p + delta
+    if (gui)
+      move(identity, guiTranslate)
+    else
+      move(treeTranslate, identity)
   }
   def rename(baseNamer: Namer): Clipboard = {
     val newNames = Map[String, String]()
@@ -84,20 +100,11 @@ case class Clipboard(valDefs: List[ValDef], ports: List[PortDef], connections: L
     Clipboard(newVals, newPorts, newConn)
   }
   def renameRelocate(baseNamer: Namer, delta: Vector2, container: ContainerItem, gui: Boolean): Clipboard = {
-    /*    val positions = if (gui) {
-      valDefs.view.flatMap(v ⇒ v.bounds).map { _._1 }
-    } else
-      valDefs.view.map(_.pos) ++ ports.view.map(_.inPos)*/
-    //val minPos = if (positions.isEmpty) Vector2(0, 0) else positions.min.toVector.negate
-    //val deltaCommon = (minPos + toPoint.toVector)
-    //val deltaGUI = if (gui) deltaCommon else Vector2(10, 10)
-    //val delta = if (gui) Vector2(10, 10) else deltaCommon
-    relocate(delta, container).rename(container.block.sym)
+    relocate(delta, container, gui).rename(container.block.sym)
   }
   def pasteCommand(c: ContainerItem, absPos: Point, gui: Boolean): MapTransformer = {
     val delta = absPos.toVector
-    val zero = toTopLeftZero
-    println("zero" + zero)
+    val zero = toTopLeftZero(gui)
     val renamed: Clipboard = zero.renameRelocate(c.block.sym, delta, c, gui)
     new EditTransformer() {
       val trans: PartialFunction[Tree, Tree] = {
@@ -127,7 +134,7 @@ object Clipboard {
     val movedTrees = for (t ← trees) yield {
       t match {
         case v: ValDef  ⇒ v.copy(pos = translate(v.pos, v))
-        case p: PortDef ⇒ p.copy(inPos = translate(p.pos, p))
+        case p: PortDef ⇒ p.copy(inPos = translate(p.inPos, p), extPos = translate(p.extPos, p))
         case c: ConnectionDef ⇒
           val i = findItemOf(c)
           c.copy(points = c.points map i.translateToViewport)
@@ -150,7 +157,6 @@ object Clipboard {
         validEnd(c.a) && validEnd(c.b)
       }
     val connections = movedTrees.collect { case c: ConnectionDef if (valid(c)) ⇒ c }
-    println(valDefs.map(_.pos))
     Clipboard(valDefs.toList, portDefs.toList, connections.toList)
   }
 }

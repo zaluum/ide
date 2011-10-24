@@ -234,6 +234,7 @@ class OpenBoxFigure(
   lazy val portsLayer = new Layer
   lazy val connectionsLayer = new Layer
   lazy val pointsLayer = new Layer
+  def layersChildren = layer.children ++ portsLayer.children ++ connectionsLayer.children ++ pointsLayer.children
   setBackgroundColor(ColorConstants.white)
   // ContainerItem
   //setBackgroundColor(ColorConstants.white)
@@ -275,27 +276,30 @@ class OpenBoxFigure(
 
   def showArrowsIfNotBigEnough() {
     val b = new Rectangle()
-    this.deepChildren.foreach { f ⇒ b.union(f.getBounds()) }
+    this.layersChildren.foreach { f ⇒ b.union(f.getBounds()) }
+    println(b)
       def showTriangle(pos: Int) = {
         val t = triangles(pos)
         if (t.getParent != layer)
           layer.add(t)
         val point = if (pos == EAST || pos == WEST) {
           val y = size.h / 2 - t.getSize.height / 2
-          val x = if (pos == EAST) size.w - t.getSize.width - getInsets.left - getInsets.right
-          else getInsets.left
+          val x =
+            if (pos == EAST) size.w - t.getSize.width - getInsets.left - getInsets.right
+            else getInsets.left
           new Point(x, y)
         } else {
           val x = size.w / 2 - t.getSize.width / 2
-          val y = if (pos == SOUTH) size.h - t.getSize.height - getInsets.top - getInsets.bottom
-          else getInsets.top
+          val y =
+            if (pos == SOUTH) size.h - t.getSize.height - getInsets.top - getInsets.bottom
+            else getInsets.top
           new Point(x, y)
         }
         t.setLocation(point)
       }
     triangles.values.foreach { layer.safeRemove(_) }
-    if (b.width > getClientArea.getSize.width) showTriangle(EAST)
-    if (b.height > getClientArea.getSize.height) showTriangle(SOUTH)
+    if (b.getRight.x > getClientArea.getSize.width) showTriangle(EAST)
+    if (b.getBottom.y > getClientArea.getSize.height) showTriangle(SOUTH)
     if (b.x < 0) showTriangle(WEST)
     if (b.y < 0) showTriangle(NORTH)
   }

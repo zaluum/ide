@@ -223,9 +223,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   object creating extends TreeCreating with ContainerHighlighter
   // CREATING PORT
   class CreatingPort extends ToolState {
-    self: SingleContainer ⇒
+    self: ContainerHighlighter ⇒
     def enter(dir: PortDir, initContainer: ContainerItem) {
-      enterSingle(initContainer)
+      enterHighlight(initContainer)
       state = this
       this.dir = dir
       val (img, desc) = zproject.imageFactory.portImg(dir)
@@ -236,7 +236,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     var feed: ItemFeedbackFigure = _
     var dir: PortDir = In
-    def move() { feed.setInnerLocation(point(snap(currentMouseLocation))) }
+    def move() { feed.setInnerLocation(point(snap(absMouseLocation))) }
     def abort() { exit() }
     def drag() {}
     def buttonUp() {
@@ -244,8 +244,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       val pos = snap(currentMouseLocation)
       val tr = new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
-          case te: Template if te == initContainer.template ⇒
-            val name = Name(initContainer.symbol.freshName("port"))
+          case te: Template if te == current.template ⇒
+            val name = Name(current.symbol.freshName("port"))
             val p = PortDef(name, Name("double"), dir, pos, Point(0, pos.y))
             te.copy(
               ports = p :: transformTrees(te.ports),
@@ -257,7 +257,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def buttonDown() {}
     def exit() { feed.hide(); feed = null; selecting.enter() }
   }
-  object creatingPort extends CreatingPort with SingleContainerAllower
+  object creatingPort extends CreatingPort with ContainerHighlighter
 
   // MOVING OPEN PORT
   trait MovingOpenPort extends SpecialMove[OpenPortDeclFigure] {

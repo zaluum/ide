@@ -29,10 +29,10 @@ object FigureHelper {
 }
 class RichFigure(fig: IFigure) {
   import scala.collection.JavaConversions._
-  def immediateChildren = fig.getChildren.asInstanceOf[java.util.List[IFigure]].toStream
+  def children = fig.getChildren.asInstanceOf[java.util.List[IFigure]].toStream
   def deepChildren: Stream[IFigure] = {
-    val deepChildren: Stream[IFigure] = immediateChildren.flatMap { _.deepChildren }
-    immediateChildren ++ deepChildren
+    val deepChildren: Stream[IFigure] = children.flatMap { _.deepChildren }
+    children ++ deepChildren
   }
   def safeRemove(i: IFigure): Unit = {
     if (fig.getChildren.contains(i))

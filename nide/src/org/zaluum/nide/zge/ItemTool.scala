@@ -77,7 +77,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def abort { exit() }
     def drag {}
     val gui: Boolean
-    def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, absMouseLocation, gui)) // FIXME vector2 -> delta
+    def buttonUp = controller.exec(clipboard.pasteCommand(initContainer, absMouseLocation, gui))
     def buttonDown() {}
     def exit() {
       feed.hide();
@@ -150,7 +150,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     protected def getSize(entry: PaletteEntry): Dimension
     def move() {
       if (feed == null) throw new Exception
-      feed.setInnerLocation(point(snap(currentMouseLocation)))
+      feed.setInnerLocation(point(snap(absMouseLocation)))
     }
     def abort() { exit() }
     def drag() {}

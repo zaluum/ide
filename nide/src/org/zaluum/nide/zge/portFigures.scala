@@ -116,7 +116,7 @@ abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure)
   this.setOpaque(true);
 }
 class OpenPortDeclFigure(openBox: OpenBoxFigure) extends OpenPortBaseFigure(openBox) {
-  def extPos = tree.extPos
+  def extPos = tree.extPos.copy(x = 0)
   def dir = tree.dir
   var tree: PortDef = _
   override def selectionSubject = Some(tree)
@@ -129,7 +129,7 @@ class OpenPortFixedFigure(openBox: OpenBoxFigure) extends OpenPortBaseFigure(ope
   var extPos = MPoint(0, 0)
   var dir: PortDir = _
   def update(intPs: PortSide, extPs: PortSide, left: Boolean, dir: PortDir, extPos: MPoint) {
-    this.extPos = extPos
+    this.extPos = extPos.copy(x = 0)
     this.dir = dir
     update(intPs, extPs, left)
   }

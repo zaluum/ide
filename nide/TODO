@@ -1,13 +1,10 @@
 Agenda
 
 	necessari
-	-gui copy move
-	- port gui copy-move
-	- guardar al clipboard coordenades absolutes per enganxar de diferents contenidors mantenint l'aspecte
-	- al moure boxes entre contenidors posar les coordenades per tal que coincideixin amb el lloc on el feedback indica
-	- improve or cancel one end connections
+	- si tira excepció exit i a select
 	- mida inicial compatible amb grid, mida inicial a paletteentry? 
 	- Clonar amb ctrl
+	- improve or cancel one end connections
 	- Al enganxar a GUI enganxa al bloc principal, fer servir el mecanisme de crear
 	- paleta ergonomica
 	- for - construccio arrays

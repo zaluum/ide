@@ -171,18 +171,16 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     import math.max
     var mode = (false, false)
     var initSize = Dimension(0, 0)
-    var minSize = Dimension(0, 0)
     def currentMouseLocation = GuiTool.this.currentMouseLocation
 
     def enter(initDrag: Point, mode: (Boolean, Boolean)) {
       enterMoving(initDrag)
       initSize = viewer.backRect.getSize
-      minSize = calcMin
       this.mode = mode
       state = this
     }
     def filterDelta = Vector2(if (mode._1) delta.x else 0, if (mode._2) delta.y else 0)
-    def newSize = (initSize + filterDelta).ensureMin(minSize).ensureMin(Dimension(10, 10))
+    def newSize = (initSize + filterDelta).ensureMin(Dimension(10, 10))
     def move {
       viewer.backRect.setSize(dimension(newSize))
     }
@@ -225,16 +223,11 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     }
     def buttonUp {
       val sdelta = snapDelta
-      val bottom = maxPoint(viewer.selectedItems.map { i ⇒
-        val pos = i.pos + sdelta
-        pos + i.size.toVector
-      })
       val valdefs = viewer.selectedItems.collect { case item: SwingFigure ⇒ item.valDef -> item }.toMap
-      val newDim = bottom.ensureMin(viewer.backRect.getSize)
       val command = new EditTransformer {
         val trans: PartialFunction[Tree, Tree] = {
           case b: BoxDef if (b == viewer.boxDef) ⇒
-            b.copy(template = transform(b.template), guiSize = Some(newDim))
+            b.copy(template = transform(b.template))
           case v: ValDef if (valdefs.contains(v)) ⇒
             v.copy(
               template = transformOption(v.template),
