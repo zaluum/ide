@@ -90,8 +90,8 @@ abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure)
   val size = Dimension(openBox.getInsets.left, openBox.getInsets.left)
 
   // tree.extPos must be (0,relY)
-  def constantDisplacement = if (left) Vector2(0, 0) else Vector2(openBox.size.w - size.w, 0)
-  var left = false
+  def constantDisplacement = if (isLeft) Vector2(0, 0) else Vector2(openBox.size.w - size.w, 0)
+  var isLeft = false
   val extPort: PortFigure = new PortFigure(container)
   val intPort: PortFigure = new PortFigure(openBox)
   ports += extPort
@@ -101,7 +101,7 @@ abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure)
   }
   protected def update(intPs: PortSide, extPs: PortSide, left: Boolean) {
     updateProperties(intPs.pi)
-    this.left = left
+    this.isLeft = left
     setBackgroundColor(Colorizer.color(intPs.pi.tpe))
     setForegroundColor(if (dir == Shift) ColorConstants.yellow else ColorConstants.white)
     updateSize()

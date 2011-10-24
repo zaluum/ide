@@ -271,19 +271,23 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def buttonUp {
       val newBounds = handle.deltaAdd(snapDelta, itf.getBounds);
       val newPos = newBounds.getLocation
-
       val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(6, 6))
+
       // TODO snap
       itf match {
         case vd: ValDefItem ⇒
-          controller.exec(command(newPos, newSize, vd.valDef))
+          val m = Resize.resize(itf.getBounds, (rpoint(newPos), newSize), initContainer.boxes - vd)
+          val treeResize = m.map { case (v, k) ⇒ v.valDef -> k }
+          controller.exec(command(newPos, newSize, vd.valDef, treeResize))
         case _ ⇒ abort()
       }
     }
-    def command(newPos: Point, newSize: Dimension, t: Tree) = new EditTransformer {
+    def command(newPos: Point, newSize: Dimension, t: Tree, m: Map[ValDef, Vector2]) = new EditTransformer {
       val trans: PartialFunction[Tree, Tree] = {
         case v: ValDef if (v == t) ⇒
-          v.copy(size = Some(newSize), pos = newPos)
+          v.copy(size = Some(newSize), pos = newPos, template = transformOption(v.template))
+        case v: ValDef if m.contains(v) ⇒
+          v.copy(pos = v.pos + m(v), template = transformOption(v.template))
       }
     }
     def snapDelta = snap(initCoords + delta) - initCoords

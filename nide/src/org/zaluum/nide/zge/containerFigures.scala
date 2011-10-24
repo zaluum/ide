@@ -277,7 +277,6 @@ class OpenBoxFigure(
   def showArrowsIfNotBigEnough() {
     val b = new Rectangle()
     this.layersChildren.foreach { f ⇒ b.union(f.getBounds()) }
-    println(b)
       def showTriangle(pos: Int) = {
         val t = triangles(pos)
         if (t.getParent != layer)

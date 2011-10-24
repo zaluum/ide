@@ -16,6 +16,7 @@ import org.zaluum.nide.compiler.Vector2
 import org.eclipse.draw2d.Graphics
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.geometry.Translatable
+import org.zaluum.nide.compiler.Rect
 
 object FigureHelper {
   import scala.collection.JavaConversions._
@@ -134,11 +135,15 @@ trait Hover extends Figure {
   def hover_=(b: Boolean)
   def hover
 }
-trait Item extends Hover {
+trait Item extends Hover with Rect {
   def myLayer: Figure
   def container: ContainerItem
   def pos: MPoint
   def size: Dimension
+  def x = pos.x
+  def y = pos.y
+  def w = size.w
+  def h = size.h
   val feed: ItemFeedbackFigure
   var _hover = false
   def viewer: ItemViewer = container.viewer
