@@ -62,6 +62,8 @@ trait Rect {
   def top = y
   def right = x + w
   def bottom = y + h
+  def rectSize = Dimension(w, h)
+  def rectPos = Point(x, y)
   def leftOf(b: Rect) = right <= b.left
   def rightOf(b: Rect) = left >= b.right
   def aboveOf(b: Rect) = bottom <= b.top
@@ -69,4 +71,12 @@ trait Rect {
   def intersectsX(b: Rect) = !leftOf(b) && !rightOf(b)
   def intersectsY(b: Rect) = !aboveOf(b) && !belowOf(b)
   def intersects(b: Rect) = intersectsX(b) && intersectsY(b)
+  def union(b: Rect): Rect = {
+    val nleft = math.min(left, b.left)
+    val ntop = math.min(top, b.top)
+    val nbottom = math.max(bottom, b.bottom)
+    val nright = math.max(right, b.right)
+    RectInstance(nleft, ntop, nright - nleft, nbottom - ntop)
+  }
 }
+case class RectInstance(x: Int, y: Int, w: Int, h: Int) extends Rect

@@ -12,6 +12,7 @@ package object zge {
   implicit def rpoint(p: EPoint): MPoint = MPoint(p.x, p.y)
   implicit def rdimension(d: EDimension): Dimension = Dimension(d.width, d.height)
   implicit def richFigure(f: IFigure) = new RichFigure(f)
+  implicit def rectangleF(r: Rect): Rectangle = new Rectangle(r.x, r.y, r.w, r.h)
   implicit def rectangle(r: Rectangle): Rect = new Rect {
     def x = r.x
     def y = r.y

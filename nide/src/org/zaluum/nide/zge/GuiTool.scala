@@ -31,7 +31,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   }
   def maxPoint(points: Iterable[Point]) = points.foldLeft(Dimension(0, 0))((acc, p) ⇒ Dimension(max(acc.w, p.x), max(acc.h, p.y)))
   override val resizing = new Resizing {
-    override def command(newPos: Point, newSize: Dimension, t: Tree, m: Map[ValDef, Vector2]) = {
+    /*FIXME */ def command(newPos: Point, newSize: Dimension, t: Tree, m: Map[ValDef, Vector2]) = {
       val newDim = Dimension(newPos.x + newSize.w, newPos.y + newSize.h)
       val strPos = newPos.x + " " + newPos.y + " " + newSize.w + " " + newSize.h
       new EditTransformer {
