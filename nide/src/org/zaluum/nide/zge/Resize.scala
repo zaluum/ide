@@ -5,7 +5,7 @@ import scala.collection.mutable.Buffer
 object Resize {
   private def minOrZero(t: TraversableOnce[Int]): Int = if (t.isEmpty) 0 else t.min
   private def maxOrZero(t: TraversableOnce[Int]): Int = if (t.isEmpty) 0 else t.max
-  type PF = PartialFunction[Item, Rect]
+  type PF = PartialFunction[ValDef, Rect]
   type CPF = PartialFunction[ValDef, Vector2]
   type F = (PF, CPF)
   //case class F(pf: PF, container: CPF)
@@ -15,16 +15,18 @@ object Resize {
    * */
 
   private def resizePF(toResize: OpenBoxFigure, newRect: Rect, changes: F): F = {
-    if (toResize.rect == newRect) changes
+    val min = minSize(toResize, changes)
+    val fixed = min union newRect
+    if (toResize.rect == fixed) changes
     else {
       ensureSize(toResize.container,
-        allocate(toResize, newRect,
-          resizeInternal(toResize, newRect, changes)))
+        allocate(toResize, fixed,
+          resizeInternal(toResize, fixed, changes)))
     }
   }
   // returns movements to siblings to allocate newRect
-  private def allocate(toResize: Item, newRect: Rect, f: F): F = {
-    val others: Seq[Item] = toResize.container.boxes.filterNot(_ == toResize)
+  private def allocate(toResize: ValDefItem, newRect: Rect, f: F): F = {
+    val others: Seq[ValDefItem] = toResize.container.boxes.filterNot(_ == toResize)
     val oldRect = toResize.rect
     // fs not needed?
     val affected = others.filter { o ⇒ newRect.intersects(o.rect) }
@@ -38,29 +40,42 @@ object Resize {
         o.rect + Vector2(dx, dy)
       }
     val (pf, cpf) = f
-    ((others.map(o ⇒ (o -> movement(o))).toMap + (toResize -> newRect)) orElse pf,
+    ((others.map(o ⇒ (o.valDef -> movement(o))).toMap + (toResize.valDef -> newRect)) orElse pf,
       cpf)
+  }
+  private def minSize(container: ContainerItem, f: F): Rect = {
+    container match {
+      case o: OpenBoxFigure ⇒
+        val (pf, cpf) = f
+        val border = container.borderVec + Vector2(8, 2)
+        val rects: Seq[Rect] = container.boxes.map(i ⇒ pf(i.valDef))
+        val contentsMinRect = if (rects.size == 0) {
+          Rect(container.pos, Dimension(0, 0))
+        } else {
+          rects.reduce(_.union(_))
+            .growSize(border * 2) + border.negate
+        }
+        val parentMinRect = container.translateMineToParent_!(rectangleF(contentsMinRect))
+        parentMinRect
+      case _ ⇒ Rect(0, 0, 0, 0)
+    }
+
   }
   private def ensureSize(container: ContainerItem, f: F): F = {
     container match {
       case o: OpenBoxFigure ⇒
-        val contentsMinRect = container.boxes.map(f._1)
-          .reduce(_.union(_))
-          .growSize(container.borderVec)
-        val parentMinRect = container.translateMineToParent_!(rectangleF(contentsMinRect))
-        val parentNewRect = parentMinRect.union(container.rect)
+        val parentNewRect = minSize(container, f).union(container.rect)
         resizePF(o, parentNewRect, f)
       case _ ⇒ f
     }
   }
-  // FIXME resize all blocks!
   private def resizeInternal(toResize: ContainerItem, newRect: Rect, f: F): F = {
     toResize match {
       case o: OpenBoxFigure ⇒
         val zeroVec = toResize.pos - newRect.pos
         val (pf, cpf) = f
-        (
-          toResize.boxes.map(b ⇒ (b: Item) -> (pf(b) + zeroVec)).toMap.orElse(pf),
+        val vals = o.valDef.template.get.blocks.flatMap(_.valDefs)
+        (vals.map(v ⇒ v -> (pf(v) + zeroVec)).toMap.orElse(pf),
           Map(o.valDef -> zeroVec) orElse (cpf))
       case _ ⇒ f
     }
@@ -68,21 +83,17 @@ object Resize {
   def resize(o: OpenBoxFigure, newRect: Rect): (Transformer ⇒ TreePF) = {
     val (pf, cpf) = resizePF(o, newRect, (
       new PF {
-        def isDefinedAt(i: Item) = true
-        def apply(i: Item) = i.rect
+        def isDefinedAt(v: ValDef) = true
+        def apply(v: ValDef): Rect = (v.pos, v.size.getOrElse(Dimension(0, 0)))
       },
       new CPF {
         def isDefinedAt(i: ValDef) = true
         def apply(i: ValDef) = Vector2(0, 0)
       }))
-    val valMap = o.viewer.deepChildren.collect {
-      case i: ValDefItem if !(i.isInstanceOf[LabelItem]) ⇒ // XXX ugly 
-        (i.valDef -> pf(i))
-    }.toMap
     var vec = Vector2(0, 0)
     (e: Transformer) ⇒ {
-      case v: ValDef if (valMap.contains(v)) ⇒
-        val rect = valMap(v)
+      case v: ValDef if (pf.isDefinedAt(v)) ⇒
+        val rect = pf(v)
         vec = cpf(v)
         v.copy(pos = rect.pos,
           size = v.size.map(_ ⇒ rect.dim),

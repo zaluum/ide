@@ -1,7 +1,5 @@
 Agenda
-
 	necessari
-	- grow left-up
 	- on move, resize
 	- si tira excepció exit i a select
 	- mida inicial compatible amb grid, mida inicial a paletteentry? 
