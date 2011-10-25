@@ -275,7 +275,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(6, 6))
       // TODO snap
       itf match {
-        case c: ContainerItem ⇒
+        case c: OpenBoxFigure ⇒
           controller.exec(EditTransformer(Resize.resize(c, (rpoint(newPos), newSize))))
         case _ ⇒ abort()
       }

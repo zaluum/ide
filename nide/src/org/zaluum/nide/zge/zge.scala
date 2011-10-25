@@ -13,16 +13,6 @@ package object zge {
   implicit def rdimension(d: EDimension): Dimension = Dimension(d.width, d.height)
   implicit def richFigure(f: IFigure) = new RichFigure(f)
   implicit def rectangleF(r: Rect): Rectangle = new Rectangle(r.x, r.y, r.w, r.h)
-  implicit def rectangle(r: Rectangle): Rect = new Rect {
-    def x = r.x
-    def y = r.y
-    def w = r.width
-    def h = r.height
-  }
-  implicit def tuple2Rect(t: (MPoint, Dimension)): Rect = new Rect {
-    def x = t._1.x
-    def y = t._1.y
-    def w = t._2.w
-    def h = t._2.h
-  }
+  implicit def rectangle(r: Rectangle): Rect = Rect(r.x, r.y, r.width, r.height)
+  implicit def tuple2Rect(t: (MPoint, Dimension)): Rect = Rect(t._1.x, t._1.y, t._2.w, t._2.h)
 }

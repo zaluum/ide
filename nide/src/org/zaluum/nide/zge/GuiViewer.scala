@@ -54,6 +54,7 @@ class GuiViewer(parent: Composite, controller: Controller, val editor: Graphical
   val items = Buffer[Item]()
   val feed = null
   def pos = Point(0, 0)
+
   def container = null
   def myLayer = null
   /*MODEL*/

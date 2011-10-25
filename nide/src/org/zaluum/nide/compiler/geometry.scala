@@ -53,17 +53,17 @@ trait Positionable {
 trait Resizable extends Positionable {
   def size: Dimension
 }
-trait Rect {
-  def x: Int
-  def y: Int
-  def w: Int
-  def h: Int
+object Rect {
+  def apply(p: Point, d: Dimension): Rect =
+    Rect(p.x, p.y, d.w, d.h)
+}
+case class Rect(x: Int, y: Int, w: Int, h: Int) {
   def left = x
   def top = y
   def right = x + w
   def bottom = y + h
-  def rectSize = Dimension(w, h)
-  def rectPos = Point(x, y)
+  def dim = Dimension(w, h)
+  def pos = Point(x, y)
   def leftOf(b: Rect) = right <= b.left
   def rightOf(b: Rect) = left >= b.right
   def aboveOf(b: Rect) = bottom <= b.top
@@ -76,7 +76,8 @@ trait Rect {
     val ntop = math.min(top, b.top)
     val nbottom = math.max(bottom, b.bottom)
     val nright = math.max(right, b.right)
-    RectInstance(nleft, ntop, nright - nleft, nbottom - ntop)
+    Rect(nleft, ntop, nright - nleft, nbottom - ntop)
   }
+  def growSize(v: Vector2): Rect = copy(w = w + v.x, h = h + v.y)
+  def +(v: Vector2): Rect = copy(x = x + v.x, y = y + v.y)
 }
-case class RectInstance(x: Int, y: Int, w: Int, h: Int) extends Rect

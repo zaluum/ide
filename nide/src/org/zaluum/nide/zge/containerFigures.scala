@@ -48,6 +48,7 @@ trait ContainerItem extends Item {
   def connectionsLayer: Figure
   def pointsLayer: Figure
   def portsLayer: Figure
+  def borderVec: Vector2
   def translateMineToViewport_![T <: Translatable](modified: T): T = {
     layer.translateToParent(modified)
     this.translateToViewport_!(modified)
@@ -360,6 +361,7 @@ class OpenBoxFigure(
     setBorder(myBorder)
   }
   lazy val myBorder = new LineBorder(ColorConstants.gray, 6)
+  lazy val borderVec = Vector2(myBorder.getWidth(), myBorder.getWidth())
 }
 abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with OverlappedItem with RectFeedback {
   var size = Dimension(10, 10)

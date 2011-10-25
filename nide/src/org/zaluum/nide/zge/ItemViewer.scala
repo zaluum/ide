@@ -21,6 +21,7 @@ import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
 import org.eclipse.draw2d.geometry.Point
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.eclipse.GraphicalEditor
+import org.zaluum.nide.compiler.Vector2
 
 abstract class ItemViewer(parent: Composite, controller: Controller)
     extends Viewer(parent, controller) with ContainerItem with PropertySource {
@@ -68,6 +69,7 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
     marquee.setLineStyle(SWT.LINE_DASH);
     //UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
   }
+  def borderVec = Vector2(0, 0)
   override def dispose() {
     this.deepChildren foreach {
       _ match {
