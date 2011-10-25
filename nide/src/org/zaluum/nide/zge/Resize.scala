@@ -1,6 +1,5 @@
 package org.zaluum.nide.zge
 import org.zaluum.nide.compiler._
-import scala.collection.mutable.Buffer
 
 object Resize {
   private def minOrZero(t: TraversableOnce[Int]): Int = if (t.isEmpty) 0 else t.min
@@ -16,7 +15,7 @@ object Resize {
 
   private def resizePF(toResize: OpenBoxFigure, newRect: Rect, changes: F): F = {
     val min = minSize(toResize, changes)
-    val fixed = min union newRect
+    val fixed = newRect union min
     if (toResize.rect == fixed) changes
     else {
       ensureSize(toResize.container,
@@ -26,9 +25,8 @@ object Resize {
   }
   // returns movements to siblings to allocate newRect
   private def allocate(toResize: ValDefItem, newRect: Rect, f: F): F = {
-    val others: Seq[ValDefItem] = toResize.container.boxes.filterNot(_ == toResize)
+    val others: List[ValDefItem] = toResize.container.boxes.toList.filterNot(_ == toResize)
     val oldRect = toResize.rect
-    // fs not needed?
     val affected = others.filter { o ⇒ newRect.intersects(o.rect) }
     val leftD = minOrZero(affected.filter { _.rect.leftOf(oldRect) }.map { newRect.left - _.rect.right })
     val topD = minOrZero(affected.filter { _.rect.aboveOf(oldRect) }.map { newRect.top - _.rect.bottom })
@@ -40,24 +38,34 @@ object Resize {
         o.rect + Vector2(dx, dy)
       }
     val (pf, cpf) = f
-    ((others.map(o ⇒ (o.valDef -> movement(o))).toMap + (toResize.valDef -> newRect)) orElse pf,
+    val othersMove = others.map(o ⇒ (o.valDef -> movement(o))).toMap
+    ((othersMove + (toResize.valDef -> newRect)) orElse pf,
       cpf)
+
   }
   private def minSize(container: ContainerItem, f: F): Rect = {
     container match {
       case o: OpenBoxFigure ⇒
+        // TODO cleanup constants
         val (pf, cpf) = f
+        val portsY = o.portDecls map (_.intPort.pos.y + cpf(o.valDef).y)
         val border = container.borderVec + Vector2(8, 2)
         val rects: Seq[Rect] = container.boxes.map(i ⇒ pf(i.valDef))
-        val contentsMinRect = if (rects.size == 0) {
-          Rect(container.pos, Dimension(0, 0))
-        } else {
+        val portMinRect: Rect = if (portsY.size == 0)
+          Rect.empty
+        else {
+          val min = portsY.min
+          Rect(0, min - border.y, 0, portsY.max + 15 - min + border.y * 2)
+        }
+        val boxesMinRect = if (rects.size == 0)
+          Rect.empty
+        else
           rects.reduce(_.union(_))
             .growSize(border * 2) + border.negate
-        }
+        val contentsMinRect = boxesMinRect union portMinRect
         val parentMinRect = container.translateMineToParent_!(rectangleF(contentsMinRect))
         parentMinRect
-      case _ ⇒ Rect(0, 0, 0, 0)
+      case _ ⇒ Rect.empty
     }
 
   }
@@ -94,12 +102,18 @@ object Resize {
     (e: Transformer) ⇒ {
       case v: ValDef if (pf.isDefinedAt(v)) ⇒
         val rect = pf(v)
+        val oldVec = vec
         vec = cpf(v)
-        v.copy(pos = rect.pos,
+        val res = v.copy(pos = rect.pos,
           size = v.size.map(_ ⇒ rect.dim),
           template = e.transformOption(v.template))
+        vec = oldVec
+        res
       case c: ConnectionDef if (vec != Vector2(0, 0)) ⇒
         c.copy(e.transformOption(c.a), e.transformOption(c.b), points = c.points map { _ + vec })
+      case p: PortDef if (vec != Vector2(0, 0)) ⇒
+        val vecp = Vector2(0, vec.y)
+        p.copy(extPos = p.extPos + vecp, inPos = p.inPos + vecp)
     }: TreePF
   }
 }

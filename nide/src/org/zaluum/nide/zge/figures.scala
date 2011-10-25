@@ -288,7 +288,8 @@ trait TextEditFigure extends Item {
         def cancelEditor() { onCancel() }
         def editorValueChanged(oldValid: Boolean, newValid: Boolean) {}
       })
-      val b = this.translateToViewport_!(getClientArea.getCopy) // FIXME???
+      val b = getClientArea.getCopy
+      this.translateToAbsolute(b) // !Its absolute and not viewports because it's attached to the canvas
       textC.setBounds(b.x + 1, b.y + 1, math.max(b.width - 1, baseSpace * 8), b.height - 2)
       textC.setBackground(ColorConstants.white)
       textC.setVisible(true)

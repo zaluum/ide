@@ -5,20 +5,7 @@ import scala.math.max
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.Cursors
 import org.eclipse.draw2d.IFigure
-import org.zaluum.nide.compiler.BoxDef
-import org.zaluum.nide.compiler.Dimension
-import org.zaluum.nide.compiler.EditTransformer
-import org.zaluum.nide.compiler.Point
-import org.zaluum.nide.compiler.Tree
-import org.zaluum.nide.compiler.ValDef
-import org.zaluum.nide.compiler.Vector2
-import org.zaluum.nide.compiler.Param
-import org.zaluum.nide.compiler.Name
-import org.zaluum.nide.compiler.In
-import org.zaluum.nide.compiler.Out
-import org.zaluum.nide.compiler.Shift
-import org.zaluum.nide.compiler.Expressions
-import org.zaluum.nide.compiler.Block
+import org.zaluum.nide.compiler._
 import org.zaluum.nide.eclipse.PaletteEntry
 import org.zaluum.`object`.BoxInstance
 
@@ -31,21 +18,24 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   }
   def maxPoint(points: Iterable[Point]) = points.foldLeft(Dimension(0, 0))((acc, p) ⇒ Dimension(max(acc.w, p.x), max(acc.h, p.y)))
   override val resizing = new Resizing {
-    /*FIXME */ def command(newPos: Point, newSize: Dimension, t: Tree, m: Map[ValDef, Vector2]) = {
-      val newDim = Dimension(newPos.x + newSize.w, newPos.y + newSize.h)
-      val strPos = newPos.x + " " + newPos.y + " " + newSize.w + " " + newSize.h
-      new EditTransformer {
-        val trans: PartialFunction[Tree, Tree] = {
-          case b: BoxDef if b == viewer.boxDef ⇒
-            b.copy(guiSize = Some(viewer.backRect.getSize.ensureMin(newDim)),
-              template = transform(b.template))
-          case v: ValDef if (v == t) ⇒
-            val param = Param(Name("bounds"), strPos)
-            val filtered = v.params.filterNot(_.key == param.key)
-            v.copy(
-              template = transformOption(v.template),
-              params = param :: filtered)
-        }
+    def exec(newPos: Point, newSize: Dimension) {
+      itf match {
+        case s: SwingFigure ⇒
+          val t = s.valDef
+          val newDim = Dimension(newPos.x + newSize.w, newPos.y + newSize.h)
+          val strPos = newPos.x + " " + newPos.y + " " + newSize.w + " " + newSize.h
+          controller.exec(EditTransformer(e ⇒ {
+            case b: BoxDef if b == viewer.boxDef ⇒
+              b.copy(guiSize = Some(viewer.backRect.getSize.ensureMin(newDim)),
+                template = e.transform(b.template))
+            case v: ValDef if (v == t) ⇒
+              val param = Param(Name("bounds"), strPos)
+              val filtered = v.params.filterNot(_.key == param.key)
+              v.copy(
+                template = e.transformOption(v.template),
+                params = param :: filtered)
+          }: TreePF))
+        case _ ⇒ abort()
       }
     }
   }

@@ -256,8 +256,8 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
   }
   // RESIZING
-  val resizing = new Resizing
-  class Resizing extends DeltaMove with SingleContainer {
+  val resizing: Resizing
+  abstract class Resizing extends DeltaMove with SingleContainer {
     var handle: HandleRectangle = _
     def itf = handle.resizeItemFigure
     var initCoords: Point = _
@@ -274,12 +274,10 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       val newPos = newBounds.getLocation
       val newSize = Geometry.maxDim(Dimension(newBounds.width, newBounds.height), Dimension(6, 6))
       // TODO snap
-      itf match {
-        case c: OpenBoxFigure ⇒
-          controller.exec(EditTransformer(Resize.resize(c, (rpoint(newPos), newSize))))
-        case _ ⇒ abort()
-      }
+      exec(newPos, newSize)
+
     }
+    def exec(newPos: Point, newSize: Dimension): Unit
     def snapDelta = snap(initCoords + delta) - initCoords
     def move() {
       itf.resizeDeltaFeed(snapDelta, handle)

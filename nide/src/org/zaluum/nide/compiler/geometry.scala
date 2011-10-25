@@ -56,6 +56,7 @@ trait Resizable extends Positionable {
 object Rect {
   def apply(p: Point, d: Dimension): Rect =
     Rect(p.x, p.y, d.w, d.h)
+  val empty = Rect(0, 0, 0, 0)
 }
 case class Rect(x: Int, y: Int, w: Int, h: Int) {
   def left = x
@@ -71,12 +72,40 @@ case class Rect(x: Int, y: Int, w: Int, h: Int) {
   def intersectsX(b: Rect) = !leftOf(b) && !rightOf(b)
   def intersectsY(b: Rect) = !aboveOf(b) && !belowOf(b)
   def intersects(b: Rect) = intersectsX(b) && intersectsY(b)
+  def isEmpty = w == 0 && h == 0
+  def isEmptyW = w == 0
+  def isEmptyH = h == 0
   def union(b: Rect): Rect = {
-    val nleft = math.min(left, b.left)
-    val ntop = math.min(top, b.top)
-    val nbottom = math.max(bottom, b.bottom)
-    val nright = math.max(right, b.right)
-    Rect(nleft, ntop, nright - nleft, nbottom - ntop)
+    val (nleft, nw) = if (isEmptyW) {
+      if (b.isEmptyW) (0, 0)
+      else (b.left, b.w)
+    } else {
+      if (b.isEmptyW) (left, w)
+      else {
+        val nright = math.max(right, b.right)
+        val nleft = math.min(left, b.left)
+        (nleft, nright - nleft)
+      }
+    }
+    val (ntop, nh) = if (isEmptyH) {
+      if (b.isEmptyH) (0, 0)
+      else (b.top, b.h)
+    } else {
+      if (b.isEmptyH) (top, h)
+      else {
+        val nbottom = math.max(bottom, b.bottom)
+        val ntop = math.min(top, b.top)
+        (ntop, nbottom - ntop)
+      }
+    }
+    if (b.isEmpty) this
+    else if (b.w == 0)
+      Rect(left, ntop, w, nh)
+    else if (b.h == 0)
+      Rect(nleft, top, nw, h)
+    else {
+      Rect(nleft, ntop, nw, nh)
+    }
   }
   def growSize(v: Vector2): Rect = copy(w = w + v.x, h = h + v.y)
   def +(v: Vector2): Rect = copy(x = x + v.x, y = y + v.y)

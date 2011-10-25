@@ -41,6 +41,7 @@ import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.utils.Timer
 import org.zaluum.nide.compiler.BoxSymbol
 import org.eclipse.draw2d.geometry.Translatable
+import org.eclipse.draw2d.Viewport
 
 trait ContainerItem extends Item {
   def viewer: ItemViewer
@@ -60,9 +61,12 @@ trait ContainerItem extends Item {
     modified
   }
   def translateMineToParent_![T <: Translatable](modified: T): T = {
-    layer.translateToParent(modified)
-    translateToParent(modified)
-    modified
+    if (this.isInstanceOf[Viewport]) modified
+    else {
+      layer.translateToParent(modified)
+      translateToParent(modified)
+      modified
+    }
   }
   protected def itemAtIn(container: Figure, p: Point, debug: Boolean = false): Option[Item] =
     container.findDeepAt(point(p), 0, debug) {
@@ -163,8 +167,8 @@ trait ContainerItem extends Item {
           remove += bf
       }
     }
-    boxes.filterNot(remove.contains)
-    labels.filterNot(remove.contains)
+    boxes --= remove
+    labels --= remove.view.collect { case l: LabelItem ⇒ l }
     val news = block.valDefs filter (v ⇒ !remove.contains(v))
     news foreach { v ⇒
       val f = v.template match {

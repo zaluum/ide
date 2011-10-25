@@ -48,6 +48,7 @@ class RichFigure(fig: IFigure) {
       fig.getParent.translateToViewport_!(p)
     }
   }
+
   def translateFromViewport(p: MPoint): MPoint = {
     val ep = point(p)
     rpoint(translateFromViewport_!(ep))

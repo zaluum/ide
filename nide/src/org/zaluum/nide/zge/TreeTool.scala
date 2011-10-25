@@ -341,5 +341,13 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     override def onEnter(p: PortFigure) { super.onEnter(p); p.hover = true; showTip(p) }
     override def onExit(p: PortFigure) { super.onExit(p); p.hover = false; hideTip }
   }
-
+  val resizing = new Resizing {
+    def exec(newPos: Point, newSize: Dimension) {
+      itf match {
+        case c: OpenBoxFigure ⇒
+          controller.exec(EditTransformer(Resize.resize(c, (newPos, newSize))))
+        case _ ⇒ abort()
+      }
+    }
+  }
 }
