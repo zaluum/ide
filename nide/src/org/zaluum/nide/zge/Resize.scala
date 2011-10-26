@@ -7,7 +7,6 @@ object Resize {
   type PF = PartialFunction[ValDef, Rect]
   type CPF = PartialFunction[ValDef, Vector2]
   type F = (PF, CPF)
-  //case class F(pf: PF, container: CPF)
   /* 1 - moure continguts de toResize a zerovec
    * 2 - moure germans de toResize per fer-li lloc
    * 3 - recursiu toResize amb parentnerec però tenint en compte 2!
@@ -69,7 +68,7 @@ object Resize {
     }
 
   }
-  private def ensureSize(container: ContainerItem, f: F): F = {
+  def ensureSize(container: ContainerItem, f: F): F = {
     container match {
       case o: OpenBoxFigure ⇒
         val parentNewRect = minSize(container, f).union(container.rect)
@@ -88,8 +87,8 @@ object Resize {
       case _ ⇒ f
     }
   }
-  def resize(o: OpenBoxFigure, newRect: Rect): (Transformer ⇒ TreePF) = {
-    val (pf, cpf) = resizePF(o, newRect, (
+  def defaultPF =
+    (
       new PF {
         def isDefinedAt(v: ValDef) = true
         def apply(v: ValDef): Rect = (v.pos, v.size.getOrElse(Dimension(0, 0)))
@@ -97,7 +96,10 @@ object Resize {
       new CPF {
         def isDefinedAt(i: ValDef) = true
         def apply(i: ValDef) = Vector2(0, 0)
-      }))
+      })
+
+  def resize(o: OpenBoxFigure, newRect: Rect): (Transformer ⇒ TreePF) = {
+    val (pf, cpf) = resizePF(o, newRect, defaultPF)
     var vec = Vector2(0, 0)
     (e: Transformer) ⇒ {
       case v: ValDef if (pf.isDefinedAt(v)) ⇒

@@ -25,6 +25,9 @@ case class Point(x: Int, y: Int) extends Tuple2 {
   def toVector: Vector2 = Vector2(x, y)
   def toDimension = Dimension(x, y)
 }
+object Vector2 {
+  val empty = Vector2(0, 0)
+}
 case class Vector2(x: Int, y: Int) extends Tuple2 {
   def +(v: Vector2) = Vector2(x + v.x, y + v.y)
   def dot(v: Vector2): Double = x * v.x + y * v.y
