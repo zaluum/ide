@@ -18,7 +18,7 @@ import org.eclipse.swt.events.TraverseListener
 import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler.Point
 import org.zaluum.nide.compiler.SelectionSubject
-import org.zaluum.nide.eclipse.PaletteEntry
+
 abstract class Tool(viewer: Viewer) {
   val gridSize: Int
   def viewport = viewer
@@ -51,7 +51,9 @@ abstract class Tool(viewer: Viewer) {
     def mouseMove(me: MouseEvent) { updateMouse(me); state.move() }
     def mouseUp(me: MouseEvent) {
       updateMouse(me);
-      if (leftButton(me)) state.buttonUp()
+      if (me.count == 1) {
+        if (leftButton(me)) state.buttonUp()
+      }
     }
     def keyTraversed(e: TraverseEvent) {}
   }

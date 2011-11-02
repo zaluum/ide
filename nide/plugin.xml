@@ -528,7 +528,7 @@
       <view
             allowMultiple="false"
             category="zaluum.view"
-            class="org.zaluum.nide.eclipse.PaletteView"
+            class="org.zaluum.nide.palette.PaletteView"
             icon="icons/zaluum_icon_16.gif"
             id="org.zaluum.nide.paletteView"
             name="Palette"

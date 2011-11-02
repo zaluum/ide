@@ -26,6 +26,7 @@ import org.zaluum.nide.zge.TreeViewer
 import org.zaluum.nide.zge.Item
 import org.zaluum.nide.zge.ValDefItem
 import org.eclipse.jface.viewers.StructuredSelection
+import org.zaluum.nide.palette.PaletteView
 
 class GraphicalEditor extends BaseEditor with IGotoMarker {
 

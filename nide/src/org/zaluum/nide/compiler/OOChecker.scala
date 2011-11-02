@@ -133,6 +133,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     val thiz = tpe.thisPort(vs)
     val thizOut = tpe.thisOutPort(vs)
     // ?? InvokeExprType.signatureSymbol.tpe = ztd.zaluumScope.getZJavaLangString // XXX ugly
+
     connectedFrom(thiz) match {
       case Some((from, blame)) ⇒
         from.tpe match {
@@ -154,7 +155,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
           case _ ⇒
             error("Type is not a class", blame)
         }
-      case None ⇒ // not connected
+      case None ⇒ error("Port objectIn must be connected", vs.decl)
     }
   }
   def array(vs: ValSymbol, a: ArrayType) {

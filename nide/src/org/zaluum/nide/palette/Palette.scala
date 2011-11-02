@@ -1,4 +1,4 @@
-package org.zaluum.nide.eclipse
+package org.zaluum.nide.palette
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -6,10 +6,8 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.lang.Object
 import java.lang.System
-
 import scala.Array.canBuildFrom
 import scala.collection.mutable.Buffer
-
 import org.eclipse.core.resources.IFolder
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.jdt.core.Flags
@@ -30,21 +28,54 @@ import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.utils.JDTUtils.patternAnnotation
 import org.zaluum.nide.utils.JDTUtils.projectScope
 import org.zaluum.nide.utils.JDTUtils.search
+import org.eclipse.jdt.core.IElementChangedListener
+import org.eclipse.jdt.core.IJavaElementDelta
+import org.eclipse.jdt.core.ElementChangedEvent
+import org.eclipse.jdt.core.JavaCore
+import org.eclipse.jdt.core.ICompilationUnit
+import org.eclipse.jdt.core.IJavaElementDelta._
+import org.zaluum.nide.utils.Utils
+import org.eclipse.core.runtime.Status
+import org.eclipse.core.runtime.jobs.Job
+import scala.collection.immutable.SortedSet
+import scala.collection.immutable.TreeSet
+import scala.annotation.tailrec
+import scala.collection.mutable.ListBuffer
 
 class Palette(project: IJavaProject) {
   import org.zaluum.nide.utils.JDTUtils._
-  def packages: Array[String] = map.keys.toArray
-  def packageChildren(pkg: String): Array[PaletteEntry] = map.get(pkg) match {
-    case Some(l) ⇒ l.toArray
-    case None    ⇒ Array()
+  sealed trait Tree
+  case class Node(name: String, child: List[Tree]) extends Tree
+  case class Leaf(p: PaletteEntry) extends Tree
+
+  @volatile var listeners = Vector[() ⇒ Unit]()
+  @volatile var root: Option[Pkg] = None
+  @volatile private var map: Map[String, List[PaletteEntry]] = Map();
+  def get = map
+  def addListener(a: () ⇒ Unit) {
+    listeners = listeners :+ a
   }
 
-  var map: Map[String, List[PaletteEntry]] = Map();
-  //init
-  def reload(monitor: IProgressMonitor) {
+  def removeListener(a: () ⇒ Unit) {
+    listeners = listeners.filterNot(_ == a)
+  }
+  private def reload(): Unit = {
+    val j = Utils.job("Update palette") { monitor ⇒
+      reload(monitor)
+      for (l ← listeners) { l() }
+      Status.OK_STATUS
+    }
+    j.setPriority(Job.SHORT);
+    j.schedule(); // start as soon as possible
+  }
+  private def reload(monitor: IProgressMonitor) {
     map = Map()
+    val ord = Ordering.by((_: PaletteEntry).pkgName);
+    var set = Buffer[PaletteEntry]()
+
       def add(e: PaletteEntry) = {
         val pkg = e.pkgName
+        set.append(e)
         map.get(pkg) match {
           case Some(l) ⇒ map += (pkg -> (e :: l))
           case None    ⇒ map += (pkg -> List(e))
@@ -77,6 +108,81 @@ class Palette(project: IJavaProject) {
       .flatMap(Palette.load(_)).foreach { add }
     // add ports
     Palette.portsEntries foreach add
+    var s = set.sorted(ord).toStream
+    val pkgs = ListBuffer[Pkg]()
+    while (!s.isEmpty) {
+      val (newpkg, next) = doPkg(s)
+      pkgs ++= newpkg
+      s = next
+    }
+    root = Some(new Pkg("", pkgs.toList, List()))
+  }
+
+  /**
+   * children must be sorted by packageName
+   */
+  private def doPkg(meAndChildren: Stream[PaletteEntry]): (Option[Pkg], Stream[PaletteEntry]) = {
+    meAndChildren match {
+      case me #:: children ⇒
+        var s = children
+        var pkgs = List[Pkg]()
+        var entries = List(me)
+        while (!s.isEmpty && s.head.pkgName.startsWith(me.pkgName)) {
+          if (s.head.pkgName == me.pkgName) {
+            entries ::= s.head
+            s = s.tail
+          } else {
+            val (pkg, next) = doPkg(s)
+            pkgs :::= pkg.toList
+            s = next
+          }
+        }
+        (Some(Pkg(me.pkgName, pkgs.sortBy(_.name), entries.sortBy(_.simpleName))), s)
+      case Stream.Empty ⇒ (None, Stream.Empty)
+    }
+  }
+
+  //init
+  object coreListener extends IElementChangedListener {
+    def elementChanged(event: ElementChangedEvent) {
+      if (project.isOpen()) {
+        if (event.getType == ElementChangedEvent.POST_CHANGE) {
+          val process = processDeltaSimple(event.getDelta)
+          if (process)
+            reload()
+        }
+      }
+    }
+  }
+  JavaCore.addElementChangedListener(coreListener)
+  reload()
+
+  def processDeltaSimple(delta: IJavaElementDelta): Boolean = {
+    val interestingFlags = F_ADDED_TO_CLASSPATH | F_CLASSPATH_CHANGED |
+      F_ARCHIVE_CONTENT_CHANGED | F_RESOLVED_CLASSPATH_CHANGED |
+      F_SUPER_TYPES | F_REORDER
+    delta.getKind match {
+      case IJavaElementDelta.ADDED   ⇒ true
+      case IJavaElementDelta.REMOVED ⇒ true
+      case IJavaElementDelta.CHANGED ⇒
+        delta.getElement match {
+          case cu: ICompilationUnit if (delta.getFlags & F_PRIMARY_WORKING_COPY) == 0 ⇒ true
+          case _ if (delta.getFlags & interestingFlags) != 0                          ⇒ true
+          case e ⇒
+            val res = delta.getResourceDeltas()
+            val affectedMETA = if (res != null) {
+              res.exists { ird ⇒
+                ird.getResource().getName == "META-INF"
+              }
+            } else false
+            affectedMETA ||
+              delta.getAffectedChildren.exists(processDeltaSimple(_))
+        }
+      case _ ⇒ false
+    }
+  }
+  def destroy() {
+    JavaCore.removeElementChangedListener(coreListener)
   }
 }
 
@@ -152,6 +258,7 @@ object Palette {
     }
   }
 }
+case class Pkg(val name: String, val child: List[Pkg], val entries: List[PaletteEntry])
 case class PaletteEntry(
     className: Name,
     methodUID: Option[String],
@@ -160,7 +267,7 @@ case class PaletteEntry(
     imagePath: Option[String],
     name: Option[String] = None,
     template: Boolean = false) {
-  def pkgName = className.packageProxy
+  lazy val pkgName = className.packageProxy
   def simpleName = className.classNameWithoutPackage.str
   def isExpression = Expressions.find(className).isDefined
 }

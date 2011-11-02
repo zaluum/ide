@@ -149,6 +149,7 @@ abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) 
     updateProperties(ps.pi)
     updateText() // XXX super.update; updateText doesn't show text. Why?
     setForegroundColor(Colorizer.color(ps.pi.tpe))
+    setBackgroundColor(ColorConstants.white)
     updateSize()
     val position = pos + (if (dir == In) Vector2(size.w, 8) else Vector2(0, 8))
     port.update(position, ps)

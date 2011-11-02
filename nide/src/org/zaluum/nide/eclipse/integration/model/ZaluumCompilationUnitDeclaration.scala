@@ -227,6 +227,7 @@ class ZaluumCompilationUnitDeclaration(
       res += f
     }
     // serialization UID
+
     val f = new FieldDeclaration("serialVersionUID".toCharArray, start(b), end(b))
     f.modifiers = Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_STATIC
     f.`type` = createTypeReference(Name("long"), b)

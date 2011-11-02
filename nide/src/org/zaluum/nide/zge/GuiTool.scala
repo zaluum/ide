@@ -6,8 +6,8 @@ import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.Cursors
 import org.eclipse.draw2d.IFigure
 import org.zaluum.nide.compiler._
-import org.zaluum.nide.eclipse.PaletteEntry
 import org.zaluum.`object`.BoxInstance
+import org.zaluum.nide.palette.PaletteEntry
 
 class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   val gui = true

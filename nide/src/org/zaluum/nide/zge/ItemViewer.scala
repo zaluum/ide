@@ -15,13 +15,13 @@ import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.SWT
 import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.compiler.Tree
-import org.zaluum.nide.eclipse.PaletteEntry
-import org.zaluum.nide.eclipse.PaletteTransfer
 import org.zaluum.nide.compiler.{ Point ⇒ MPoint }
 import org.eclipse.draw2d.geometry.Point
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.eclipse.GraphicalEditor
 import org.zaluum.nide.compiler.Vector2
+import org.zaluum.nide.palette.PaletteTransfer
+import org.zaluum.nide.palette.PaletteEntry
 
 abstract class ItemViewer(parent: Composite, controller: Controller)
     extends Viewer(parent, controller) with ContainerItem with PropertySource {

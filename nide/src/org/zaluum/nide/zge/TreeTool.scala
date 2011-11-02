@@ -24,9 +24,10 @@ import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Vector2
 import org.zaluum.nide.compiler.MapTransformer
 import org.zaluum.nide.compiler.BoxExprType
-import org.zaluum.nide.eclipse.PaletteEntry
-import org.zaluum.nide.eclipse.Palette
 import org.zaluum.nide.compiler.Param
+import org.zaluum.nide.palette.ZaluumFirstPalettePopup
+import org.zaluum.nide.palette.PaletteEntry
+import org.zaluum.nide.palette.Palette
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   val gui = false
@@ -34,6 +35,12 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
   def zproject = viewer.controller.zproject
   val connectionLineDistance = 3
   val gridSize = 1
+  def drop(p: PaletteEntry) {
+    state match {
+      case d: DropState ⇒ d.drop(p)
+      case _            ⇒
+    }
+  }
   object selecting extends Selecting with DeleteState with ClipboardState with DropState with LineBlinker {
     var port: Option[PortFigure] = None
     def editLabel(s: String, l: LabelItem) =
@@ -159,7 +166,9 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     }
     def copy() = viewer.updateClipboard
     def paste() = viewer.getClipboard foreach { c ⇒ pasting.enter(c, current) }
-
+    override def menu() {
+      new ZaluumFirstPalettePopup(viewer.shell, viewer).open()
+    }
   }
   // PASTING
   object pasting extends Pasting with SingleContainerAllower {
@@ -174,8 +183,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       enterHighlight(current)
     }
     protected def getSize(entry: PaletteEntry) = {
-      val (img, desc) = zproject.imageFactory.image48(entry.className);
-      val d = Dimension(img.getBounds().width, img.getBounds.height)
+      val (img, desc) = zproject.imageFactory.iconForPalette(entry.className);
+      val d = Dimension(img.getBounds.width, img.getBounds.height)
       zproject.imageFactory.destroy(desc)
       d
     }

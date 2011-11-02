@@ -1,4 +1,4 @@
-#Wed Sep 14 13:41:48 CEST 2011
+#Wed Nov 02 12:12:57 CET 2011
 Xcheck-null=false
 Xcheckinit=false
 Xdisable-assertions=false
@@ -29,8 +29,10 @@ Ysqueeze=on
 Ystruct-dispatch=poly-cache
 Ywarn-dead-code=false
 buildmanager=refined
+compileorder=Mixed
 deprecation=true
 eclipse.preferences.version=1
+explaintypes=false
 formatter.alignParameters=true
 formatter.alignSingleLineCaseStatements=true
 formatter.alignSingleLineCaseStatements.maxArrowIndent=40
@@ -52,8 +54,9 @@ formatter.spaceInsideBrackets=false
 formatter.spaceInsideParentheses=false
 formatter.spacesWithinPatternBinders=true
 formatter.useProjectSpecificSettings=true
-g=notailcalls
+g=vars
 no-specialization=false
+nowarn=false
 optimise=false
 scala.compiler.useProjectSettings=true
 syntaxColouring.bracket.bold=false

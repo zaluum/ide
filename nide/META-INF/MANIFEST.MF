@@ -43,3 +43,5 @@ Eclipse-RegisterBuddy: org.eclipse.jdt.core
 Export-Package: org.zaluum.nide.icons
 Import-Package: org.apache.tools.ant.taskdefs,
  org.apache.tools.ant.util
+Bundle-ClassPath: .,
+ swing2swt.jar

@@ -379,7 +379,7 @@ abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with Overl
   def update() {
       def loadImage() {
         currentDesc = Some(imageDesc)
-        val img = imageFactory.image(imageDesc)
+        val img = imageFactory.loadDesc(imageDesc)
         setImage(img)
         size = Dimension(img.getBounds.width, img.getBounds().height)
       }

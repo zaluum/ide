@@ -3,7 +3,7 @@ package org.zaluum.nide.zge
 import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.Cursors
 import org.zaluum.nide.compiler._
-import org.zaluum.nide.eclipse.PaletteEntry
+import org.zaluum.nide.palette.PaletteEntry
 
 /**
  * Implements basic selecting, marquee and resizing of ItemFigures

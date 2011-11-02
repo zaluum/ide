@@ -1,34 +1,45 @@
 Agenda
 	necessari
-	- on move, resize
-	- si tira excepció exit i a select
-	- mida inicial compatible amb grid, mida inicial a paletteentry? 
-	- Clonar amb ctrl
-	- improve or cancel one end connections
-	- Al enganxar a GUI enganxa al bloc principal, fer servir el mecanisme de crear
-	- paleta ergonomica
-	- for - construccio arrays
-	- data log
-	- xml imatges 
+	- boto dret-> add to palette -> palette.xml
+	- xml imatges (and packages) 
+
+	- No seleccionar mètodes amb signatura completa només nom i numero de parametres. Buscar matching.
+	- construcció classes (bundle/unbundle) (setters/getters)
 	- human readable signature label provider
-	- llibreria VISA 
-	- acabar swing intenum values
+
+	- si tool tira excepció exit i a select
+	- remove one end connections	
+	- Al enganxar a GUI enganxa al bloc principal, fer servir el mecanisme de crear
+	
+	- for - construccio arrays
+	- switch
+	
+	- llibreria widgets
+
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
-	- widgets
+
 	- drivers
 		- template
 		- serial
 		- tcp/ip 
-	- basic math
 	- test cases bug fixing
 		- cast
 		- box unbox
 		- generics
 		- protected/private
+	- basic math
 	- beta nag screen/ watermark
 	- buy hosting
 	
 	millora
+	- data log
+	- llibreria VISA 
+	- Clonar amb ctrl
+	- mida inicial compatible amb grid, mida inicial a paletteentry? 
+	- mecanisme per encadenar comandes que requereixen visuals
+		- on move, resize
+		- ensure min size despres de comandes.
+	
 	- visuals al block diagram (notes sobretot)
 	- z order: endavant-endarrera gui
 	- clean up wire

@@ -10,15 +10,40 @@ import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.utils.JDTUtils._
 import org.eclipse.swt.widgets.Shell
 import org.zaluum.basic.BoxConfigurer
+import org.eclipse.jdt.core.JavaCore
+import org.eclipse.jdt.core.IElementChangedListener
+import org.eclipse.jdt.core.ElementChangedEvent
+import org.eclipse.jdt.core.IJavaElementDelta
+import org.zaluum.nide.palette.Palette
 
 object ZaluumProjectManager {
-  private val m = WeakHashMap[IJavaProject, ZaluumProject]()
-  def getZaluumProject(jProject: IJavaProject) = {
+  private val m = collection.mutable.Map[IJavaProject, ZaluumProject]()
+  object coreListener extends IElementChangedListener {
+    def elementChanged(event: ElementChangedEvent) {
+      processDeltaProject(event.getDelta())
+    }
+  }
+  def processDeltaProject(delta: IJavaElementDelta) {
+    delta.getElement match {
+      case j: IJavaProject if (delta.getFlags & IJavaElementDelta.F_CLOSED) != 0 ⇒
+        synchronized {
+          if (m.contains(j)) {
+            m(j).destroy()
+            m -= j
+          }
+        }
+      case _ ⇒
+        for (d ← delta.getAffectedChildren())
+          processDeltaProject(d)
+    }
+  }
+  def getZaluumProject(jProject: IJavaProject) = synchronized {
     m.getOrElseUpdate(jProject, new ZaluumProject(jProject))
   }
   val exceptions = new java.util.HashSet[String]()
   exceptions.add(classOf[Shell].getName)
   exceptions.add(classOf[BoxConfigurer].getName)
+  JavaCore.addElementChangedListener(coreListener)
 }
 class ZaluumProject private[eclipse] (val jProject: IJavaProject) {
   lazy val imageFactory = new ImageFactory(this)
@@ -38,5 +63,10 @@ class ZaluumProject private[eclipse] (val jProject: IJavaProject) {
       Thread.currentThread().getContextClassLoader(),
       jProject,
       ZaluumProjectManager.exceptions)
+  }
+  lazy val palette = new Palette(jProject)
+  def destroy() = {
+    palette.destroy()
+    imageFactory.destroyAll()
   }
 }
