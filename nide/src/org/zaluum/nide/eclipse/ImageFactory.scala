@@ -27,6 +27,7 @@ import org.zaluum.nide.compiler.Type
 import org.eclipse.swt.graphics.ImageData
 import org.eclipse.swt.graphics.PaletteData
 import org.zaluum.nide.palette.Palette
+import org.zaluum.nide.palette.PaletteEntry
 
 class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def this(zp: ZaluumProject) = this(zp, new LocalResourceManager(JFaceResources.getResources))
@@ -47,13 +48,12 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   }
   def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
   def destroyAll() = rm.dispose();
-  def iconForPalette(name: Name): (Image, DeviceResourceDescriptor) = {
-    Palette.InEntry
-    name match {
-      case Palette.InEntry.className    ⇒ portImg(In)
-      case Palette.OutEntry.className   ⇒ portImg(Out)
-      case Palette.ShiftEntry.className ⇒ portImg(Shift)
-      case _                            ⇒ loadOrText(None, name)
+  def iconForPalette(p: PaletteEntry): (Image, DeviceResourceDescriptor) = {
+    p match {
+      case Palette.InEntry    ⇒ portImg(In)
+      case Palette.OutEntry   ⇒ portImg(Out)
+      case Palette.ShiftEntry ⇒ portImg(Shift)
+      case _                  ⇒ loadOrText(None, p.className)
     }
   }
 

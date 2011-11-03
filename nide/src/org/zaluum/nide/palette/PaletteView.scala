@@ -122,13 +122,13 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
   }
   def text(element: Object): String = element match {
     case s: String       ⇒ s
-    case b: PaletteEntry ⇒ b.name.getOrElse(b.simpleName)
+    case b: PaletteEntry ⇒ b.name
   }
   def image(element: Object): Image = element match {
     //case PalettePage.portsPkg ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
     case f: String       ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
     // case b: BoxTypeProxy if (b.pkgName == PalettePage.portsPkg) ⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1 // XXX destroy
-    case b: PaletteEntry ⇒ imgFactory.iconForPalette(b.className)._1 // XXX destroy // TODO static images
+    case b: PaletteEntry ⇒ imgFactory.iconForPalette(b)._1 // XXX destroy // TODO static images
   }
   viewer.setSorter(new ViewerSorter())
   viewer.setInput(palette);
@@ -210,7 +210,7 @@ class PaletteFolderProvider extends ITreeContentProvider {
 
   def getParent(element: AnyRef): AnyRef = {
     element match {
-      case b: PaletteEntry ⇒ b.pkgName
+      case b: PaletteEntry ⇒ b.pkg
       case _               ⇒ null
     }
   }

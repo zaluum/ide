@@ -1,0 +1,15 @@
+<zaluum>
+<!-- 
+hola
+-->
+	<!-- <box class="" signature="" static="true">
+		<name></name>
+		<pkg></pkg>
+	</box>-->
+      <entry name="bla" pkg="org.zaluum.caca" type="org.zaluum.object.BoxInstance">
+        <image>org/zaluum/bla/bla.gif</image>
+        <label>Hola</label>
+        <labelGui>Adeu</labelGui>
+      	<param key="#Class">bla</param> 
+      </entry>
+</zaluum>

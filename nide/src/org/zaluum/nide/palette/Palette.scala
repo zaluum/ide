@@ -41,6 +41,7 @@ import scala.collection.immutable.SortedSet
 import scala.collection.immutable.TreeSet
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
+import org.zaluum.nide.compiler.BoxExprType
 
 class Palette(project: IJavaProject) {
   import org.zaluum.nide.utils.JDTUtils._
@@ -70,11 +71,11 @@ class Palette(project: IJavaProject) {
   }
   private def reload(monitor: IProgressMonitor) {
     map = Map()
-    val ord = Ordering.by((_: PaletteEntry).pkgName);
+    val ord = Ordering.by((_: PaletteEntry).pkg);
     var set = Buffer[PaletteEntry]()
 
       def add(e: PaletteEntry) = {
-        val pkg = e.pkgName
+        val pkg = e.pkg
         set.append(e)
         map.get(pkg) match {
           case Some(l) ⇒ map += (pkg -> (e :: l))
@@ -85,19 +86,23 @@ class Palette(project: IJavaProject) {
       r ← project.getAllPackageFragmentRoots;
       res ← r.getNonJavaResources
     ) {
-      res match {
-        case r: IJarEntryResource if r.getName.endsWith("META-INF") ⇒
-          r.getChildren().find(_.getName() == "palette.xml").foreach { f ⇒
-            val i = f.getContents()
-            Palette.load(i) foreach add
-          }
-        case f: IFolder if (f.getName == "META-INF") ⇒
-          val file = f.getFile("palette.xml")
-          if (file.exists) {
-            Palette.load(file.getContents()) foreach add
-          }
-        case o ⇒
-          println("OTHER " + o.getClass() + " " + o)
+      try {
+        res match {
+          case r: IJarEntryResource if r.getName.endsWith("META-INF") ⇒
+            r.getChildren().find(_.getName() == "zaluum.xml").foreach { f ⇒
+              val i = f.getContents()
+              Palette.load(i) foreach add
+            }
+          case f: IFolder if (f.getName == "META-INF") ⇒
+            val file = f.getFile("zaluum.xml")
+            if (file.exists) {
+              Palette.load(file.getContents()) foreach add
+            }
+          case o ⇒
+            println("OTHER " + o.getClass() + " " + o)
+        }
+      } catch {
+        case e: Exception ⇒ e.printStackTrace() // FIXME log
       }
     }
     // @Annotation
@@ -127,8 +132,8 @@ class Palette(project: IJavaProject) {
         var s = children
         var pkgs = List[Pkg]()
         var entries = List(me)
-        while (!s.isEmpty && s.head.pkgName.startsWith(me.pkgName)) {
-          if (s.head.pkgName == me.pkgName) {
+        while (!s.isEmpty && s.head.pkg.startsWith(me.pkg)) {
+          if (s.head.pkg == me.pkg) {
             entries ::= s.head
             s = s.tail
           } else {
@@ -137,7 +142,7 @@ class Palette(project: IJavaProject) {
             s = next
           }
         }
-        (Some(Pkg(me.pkgName, pkgs.sortBy(_.name), entries.sortBy(_.simpleName))), s)
+        (Some(Pkg(me.pkg, pkgs.sortBy(_.name), entries.sortBy(_.name))), s)
       case Stream.Empty ⇒ (None, Stream.Empty)
     }
   }
@@ -189,8 +194,10 @@ class Palette(project: IJavaProject) {
 object Palette {
   val portsPkg = "<ports>"
   private def portToProxy(port: PortDir) = PaletteEntry(
-    Name(portsPkg + "." + port.str),
-    None, None, false, None, None, false)
+    port.str,
+    portsPkg,
+    "port",
+    None, Map())
   val InEntry = portToProxy(In)
   val OutEntry = portToProxy(Out)
   val ShiftEntry = portToProxy(Shift)
@@ -206,14 +213,10 @@ object Palette {
           a.getElementName == classOf[Apply].getName ||
             a.getElementName == "Apply")) // TODO model is source only? not resolved.
       ) yield {
-        PaletteEntry(
-          classname,
-          None,
-          None,
-          Flags.isStatic(m.getFlags),
-          None,
-          None,
-          Expressions.isTemplateExpression(classname))
+        if (Expressions.find(classname).isDefined)
+          PaletteEntry.expression(classname)
+        else
+          PaletteEntry.box(classname)
       }
     } catch { case ex: Exception ⇒ Array() }
 
@@ -243,33 +246,39 @@ object Palette {
     case o    ⇒ Some(o)
   }
   def processEntry(entry: xml.Node): Option[PaletteEntry] = {
-    val className = textOption((entry \ "@class").text).map(Name(_))
-    if (className.isEmpty) None
-    else {
-      val muid = textOption((entry \ "@signature").text.trim)
-      val name = textOption((entry \ "@name").text)
-      val static = (entry \ "@static").text.trim.toLowerCase() == "true"
-      val imagePath = textOption((entry \ "@image").text)
-      val template = (entry \ "@template").text.trim.toLowerCase() == "true"
-      val fieldsSeq = (entry \ "field").map { _.text.trim }
-      val fields = if (fieldsSeq.isEmpty) None else Some(fieldsSeq.toList)
-      val p = PaletteEntry(className.get, muid, fields, static, imagePath, name, template)
-      Some(p)
+    val name = (entry \ "@name").text.trim
+    val pkg = (entry \ "@pkg").text.trim
+    val tpe = (entry \ "@type").text.trim
+    val image = (entry \ "image").lastOption.map { _.text.trim }
+    val params = (entry \ "param").flatMap { n ⇒ (n \ "@key").headOption.map(k ⇒ (k.text -> n.text)) }
+    var map = Map[String, List[String]]()
+    for ((k, v) ← params) {
+      if (map.contains(k)) map += (k -> (map(k) :+ v))
+      else map += (k -> List(v))
     }
+    if (name != "")
+      Some(PaletteEntry(name, pkg, tpe, image, map))
+    else None
   }
 }
 case class Pkg(val name: String, val child: List[Pkg], val entries: List[PaletteEntry])
+object PaletteEntry {
+  def box(className: Name) = {
+    PaletteEntry(className.classNameWithoutPackage.str, className.packageProxy,
+      BoxExprType.fqName.str, None, Map("#Class" -> List(className.str)))
+  }
+  def expression(className: Name) = {
+    PaletteEntry(className.classNameWithoutPackage.str, className.packageProxy,
+      className.str, None, Map())
+  }
+}
 case class PaletteEntry(
-    className: Name,
-    methodUID: Option[String],
-    fields: Option[List[String]],
-    static: Boolean,
-    imagePath: Option[String],
-    name: Option[String] = None,
-    template: Boolean = false) {
-  lazy val pkgName = className.packageProxy
-  def simpleName = className.classNameWithoutPackage.str
-  def isExpression = Expressions.find(className).isDefined
+    name: String,
+    pkg: String,
+    tpe: String,
+    image: Option[String],
+    parameters: Map[String, List[String]]) {
+  def className: Name = parameters.get("#Class").flatMap(_.headOption map (Name(_))).getOrElse(Name(tpe))
 }
 object PaletteTransfer extends ByteArrayTransfer {
   val typeName = "paletteTransfer:" + System.currentTimeMillis() + ":" + PaletteTransfer.hashCode

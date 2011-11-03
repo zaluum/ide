@@ -183,42 +183,31 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       enterHighlight(current)
     }
     protected def getSize(entry: PaletteEntry) = {
-      val (img, desc) = zproject.imageFactory.iconForPalette(entry.className);
-      val d = Dimension(img.getBounds.width, img.getBounds.height)
-      zproject.imageFactory.destroy(desc)
-      d
+      //val (img, desc) = zproject.imageFactory.iconForPalette(entry.className);
+      //val d = Dimension(img.getBounds.width, img.getBounds.height)
+      //zproject.imageFactory.destroy(desc)
+      //d
+      Dimension(48, 48)
     }
     protected def newInstance(dst: Point) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == current.block ⇒
-            initStr = entry.className.classNameWithoutPackage.firstLowerCase
-            val name = Name(b.sym.freshName(initStr))
-            newVal = if (entry.isExpression) {
-              ValDef.emptyValDef(name, entry.className, dst)
-            } else if (entry.static)
-              ValDef.emptyValStaticInvokeExpr(name, dst, entry.className.str, entry.methodUID.getOrElse(""))
-            else
-              ValDef.emptyValDefBoxExpr(
-                name, dst, entry.className.str,
-                method = entry.methodUID,
-                fields = entry.fields)
             b.copy(
-              valDefs = newVal :: transformTrees(b.valDefs),
+              valDefs = createValDef(entry, b, dst, None, None) :: transformTrees(b.valDefs),
               connections = transformTrees(b.connections),
               parameters = transformTrees(b.parameters),
               junctions = transformTrees(b.junctions))
+
         }
       })
     }
+
     protected def newInstanceTemplate(dst: Point, requiredBlocks: Int) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == current.block ⇒
-            val sym = b.sym
-            val name = Name(sym.freshName(entry.className.classNameWithoutPackage.firstLowerCase))
-            val template = Template.emptyTemplate(requiredBlocks)
-            val newVal = ValDef(name, entry.className, dst, Some(Dimension(200, 200)), List(), None, None, Some(template))
+            val newVal = createValDef(entry, b, dst, Some(Dimension(200, 200)), Some(Template.emptyTemplate(requiredBlocks)))
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
               parameters = transformTrees(b.parameters),

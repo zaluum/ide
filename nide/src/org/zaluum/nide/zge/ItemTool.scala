@@ -4,7 +4,7 @@ import org.eclipse.draw2d.geometry.Rectangle
 import org.eclipse.draw2d.Cursors
 import org.zaluum.nide.compiler._
 import org.zaluum.nide.palette.PaletteEntry
-
+import scala.collection._
 /**
  * Implements basic selecting, marquee and resizing of ItemFigures
  * @author frede
@@ -155,12 +155,20 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     def abort() { exit() }
     def drag() {}
     def buttonDown() {}
+    protected def createValDef(entry: PaletteEntry, b: Block,
+                               dst: Point, size: Option[Dimension],
+                               template: Option[Template]) = {
+      val params: List[Param] = entry.parameters.map { case (k, l) ⇒ Param(Name(k), l) }(breakOut)
+      val name = Name(b.sym.freshName(entry.name))
+      println(entry.tpe)
+      ValDef(name, Name(entry.tpe), dst, size, params, None, None, template)
+    }
     protected def newInstanceTemplate(dst: Point, blocks: Int): Option[EditTransformer]
     protected def newInstance(dst: Point): Option[EditTransformer]
     def buttonUp() {
       val dst = snap(currentMouseLocation)
       val command =
-        Expressions.templateExpressions.get(entry.className) match {
+        Expressions.templateExpressions.get(Name(entry.tpe)) match {
           case Some(e) ⇒ newInstanceTemplate(dst, e.requiredBlocks)
           case None    ⇒ newInstance(dst)
         }

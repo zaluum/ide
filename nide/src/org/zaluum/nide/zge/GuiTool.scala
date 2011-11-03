@@ -68,7 +68,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     def drop(a: AnyRef) {
       a match {
         case e: PaletteEntry ⇒
-          e.className.str match {
+          e.name match {
             case In.str    ⇒
             case Out.str   ⇒
             case Shift.str ⇒
@@ -121,7 +121,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
   object creating extends GuiCreating
   class GuiCreating extends Creating with Allower {
     val defaultSize = Dimension(40, 15)
-    def allowed = entry != null && !entry.isExpression
+    def allowed = entry != null && entry.tpe == BoxExprType.fqName.str
     protected def getSize(entry: PaletteEntry) = defaultSize
 
     protected def newInstance(dst: Point) = {
@@ -134,15 +134,10 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == block ⇒
-            initStr = entry.className.classNameWithoutPackage.firstLowerCase
-            val name = Name(b.sym.freshName(initStr))
-            newVal = ValDef.emptyValDefBoxExpr(
-              name, d, entry.className.str,
-              method = entry.methodUID,
-              fields = entry.fields,
-              extraParams = List(Param(Name("bounds"),
-                dst.x + " " + dst.y + " " + defaultSize.w + " " + defaultSize.h)))
-
+            val v = createValDef(entry, b, d, None, None)
+            val bParam = Param(Name("bounds"),
+              dst.x + " " + dst.y + " " + defaultSize.w + " " + defaultSize.h)
+            val newVal = v.copy(params = bParam :: v.params.filterNot(_.key == Name("bounds")))
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
               connections = transformTrees(b.connections),

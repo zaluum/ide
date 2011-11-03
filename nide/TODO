@@ -1,9 +1,11 @@
 Agenda
 	necessari
+	- Assegurar future-proof. Com afegir features i mantenir versions.
+	
+	- auto type als ports interns
 	- boto dret-> add to palette -> palette.xml
 	- xml imatges (and packages) 
-
-	- No seleccionar mètodes amb signatura completa només nom i numero de parametres. Buscar matching.
+	
 	- construcció classes (bundle/unbundle) (setters/getters)
 	- human readable signature label provider
 
@@ -93,6 +95,7 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
+	- No seleccionar mètodes amb signatura completa només nom i numero de parametres. Buscar matching.
 	- colocar widget a les mateixes coordenades que al diagrama de blocks al crear(buscar forat?)
 	- Botons advanced, categories, etc a Zaluum properties view
 	-Com enrutar events swing a boxes?

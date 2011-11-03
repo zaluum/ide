@@ -30,8 +30,8 @@ trait ZaluumBasePalettePopup extends BasePalettePopup[Pkg] {
       }
     }
     for (entry ← pkg.entries) {
-      val img = imgFactory.iconForPalette(entry.className)._1
-      val b = newImageButton(c, img, entry.className.str) {
+      val img = imgFactory.iconForPalette(entry)._1
+      val b = newImageButton(c, img, entry.name) {
         drop(entry)
       }
     }
