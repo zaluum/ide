@@ -143,7 +143,7 @@ abstract class PortHolderFigure(val container: ContainerItem, val ps: PortSide) 
   def dir: PortDir
   def size = preferredSize
   val port = new PortFigure(container)
-  def imageFactory = container.viewer.zproject.imageFactory
+  def imageFactory = container.viewer.imageFactory
   ports += port
   def update() {
     updateProperties(ps.pi)

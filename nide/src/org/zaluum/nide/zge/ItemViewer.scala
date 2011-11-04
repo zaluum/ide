@@ -70,15 +70,6 @@ abstract class ItemViewer(parent: Composite, controller: Controller)
     //UIManager.setLookAndFeel("javax.swing.plaf.synth.SynthLookAndFeel");
   }
   def borderVec = Vector2(0, 0)
-  override def dispose() {
-    this.deepChildren foreach {
-      _ match {
-        case a: AutoDisposeImageFigure ⇒ a.disposeImage()
-        case _                         ⇒
-      }
-    }
-    super.dispose()
-  }
   /*DEFS*/
   override protected def init() {}
   def blink(s: SelectionSubject) {

@@ -10,10 +10,18 @@ import scala.collection.mutable._
 import org.eclipse.core.runtime.jobs.Job
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.core.runtime.IStatus
-object NotImplemented {
-  def ??? = sys.error("not implemented")
-}
 object Utils {
+  def ??? = sys.error("not implemented")
+  def tryoo[T](body: ⇒ Option[T]): Option[T] = try {
+    body
+  } catch {
+    case e: Exception ⇒ None
+  }
+  def tryo[T](body: ⇒ T): Option[T] = try {
+    Some(body)
+  } catch {
+    case e: Exception ⇒ None
+  }
   def loadIcons(ir: ImageRegistry, base: Class[_], keys: String*) = {
     keys.foreach(k ⇒ { loadImage(ir, k + "_16", base); loadImage(ir, k + "_32", base) })
   }

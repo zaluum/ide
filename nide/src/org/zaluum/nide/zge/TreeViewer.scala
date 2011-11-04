@@ -105,7 +105,8 @@ class TreeViewer(parent: Composite, controller: Controller, val editor: Graphica
     val d = emptyLabel.getPreferredSize();
     val dx = d.width / 2
     val dy = d.height / 2
-    emptyLabel.setBounds(new Rectangle(x - dx, y - dy, d.width, d.height))
+    val r = feedbackLayer.translateFromViewport_!(new Rectangle(x - dx, y - dy, d.width, d.height))
+    emptyLabel.setBounds(r)
     this.feedbackLayer.add(emptyLabel)
   }
   def hideEmptyLabel() = {
@@ -130,9 +131,7 @@ class TreeViewer(parent: Composite, controller: Controller, val editor: Graphica
         case _       ⇒
       }
     }*/
-    hideEmptyLabel()
     updateContents(Map()) // FIXME
-    if (deepChildrenWithoutLayers.isEmpty) showEmptyLabel()
     redraw()
     /*for (s <- selectedItems; ss <- s.selectionSubject) {
       println ("selected : " + ss)
@@ -143,6 +142,11 @@ class TreeViewer(parent: Composite, controller: Controller, val editor: Graphica
         case _ =>
       }
     }*/
+  }
+  override def redraw() {
+    hideEmptyLabel()
+    if (deepChildrenWithoutLayers.isEmpty) showEmptyLabel()
+    super.redraw()
   }
   def selectedItems = this.deepChildren.collect {
     case i: Item if i.selectionSubject.isDefined && selection(i.selectionSubject.get) ⇒ i
@@ -155,5 +159,4 @@ class TreeViewer(parent: Composite, controller: Controller, val editor: Graphica
       } filter { _.block == b } map { _.graph } headOption
     }
   }
-  refresh()
 }

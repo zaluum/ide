@@ -149,10 +149,10 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       a match {
         case e: PaletteEntry ⇒
           e match {
-            case Palette.InEntry    ⇒ creatingPort.enter(In, current)
-            case Palette.OutEntry   ⇒ creatingPort.enter(Out, current)
-            case Palette.ShiftEntry ⇒ creatingPort.enter(Shift, current)
-            case _                  ⇒ creating.enter(e)
+            case PaletteEntry.InEntry    ⇒ creatingPort.enter(In, current)
+            case PaletteEntry.OutEntry   ⇒ creatingPort.enter(Out, current)
+            case PaletteEntry.ShiftEntry ⇒ creatingPort.enter(Shift, current)
+            case _                       ⇒ creating.enter(e)
           }
         case _ ⇒
       }
@@ -189,29 +189,16 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       //d
       Dimension(48, 48)
     }
-    protected def newInstance(dst: Point) = {
+    protected def newInstance(dst: Point, requiredBlocks: Int) = {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == current.block ⇒
+            val size = if (requiredBlocks != 0) Some(Dimension(200, 200)) else None
+            val template = if (requiredBlocks != 0) Some(Template.emptyTemplate(requiredBlocks)) else None
             b.copy(
-              valDefs = createValDef(entry, b, dst, None, None) :: transformTrees(b.valDefs),
+              valDefs = entry.toValDef(b, dst, size, template, List()) :: transformTrees(b.valDefs),
               connections = transformTrees(b.connections),
               parameters = transformTrees(b.parameters),
-              junctions = transformTrees(b.junctions))
-
-        }
-      })
-    }
-
-    protected def newInstanceTemplate(dst: Point, requiredBlocks: Int) = {
-      Some(new EditTransformer() {
-        val trans: PartialFunction[Tree, Tree] = {
-          case b: Block if b == current.block ⇒
-            val newVal = createValDef(entry, b, dst, Some(Dimension(200, 200)), Some(Template.emptyTemplate(requiredBlocks)))
-            b.copy(
-              valDefs = newVal :: transformTrees(b.valDefs),
-              parameters = transformTrees(b.parameters),
-              connections = transformTrees(b.connections),
               junctions = transformTrees(b.junctions))
         }
       })
@@ -226,15 +213,14 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
       enterHighlight(initContainer)
       state = this
       this.dir = dir
-      val (img, desc) = zproject.imageFactory.portImg(dir)
+      val img = initContainer.viewer.imageFactory.portImg(dir)
       feed = new ItemFeedbackFigure(current)
       feed.setInnerBounds(new Rectangle(0, 0, img.getBounds.width, img.getBounds.height));
-      zproject.imageFactory.destroy(desc)
-      feed.show()
+      //feed.show()
     }
     var feed: ItemFeedbackFigure = _
     var dir: PortDir = In
-    def move() { feed.setInnerLocation(point(snap(absMouseLocation))) }
+    def move() { feed.show(); feed.setInnerLocation(point(snap(absMouseLocation))) }
     def abort() { exit() }
     def drag() {}
     def buttonUp() {

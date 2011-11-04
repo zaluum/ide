@@ -139,7 +139,7 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
       val size = getSize(entry)
       feed = new ItemFeedbackFigure(viewer)
       feed.setInnerBounds(new Rectangle(0, 0, size.w, size.h));
-      feed.show()
+      //feed.show()
     }
     var newVal: ValDef = null
     var initStr: String = ""
@@ -149,28 +149,20 @@ abstract class ItemTool(viewer: ItemViewer) extends LayeredTool(viewer) {
     }
     protected def getSize(entry: PaletteEntry): Dimension
     def move() {
-      if (feed == null) throw new Exception
+      feed.show()
       feed.setInnerLocation(point(snap(absMouseLocation)))
     }
     def abort() { exit() }
     def drag() {}
     def buttonDown() {}
-    protected def createValDef(entry: PaletteEntry, b: Block,
-                               dst: Point, size: Option[Dimension],
-                               template: Option[Template]) = {
-      val params: List[Param] = entry.parameters.map { case (k, l) ⇒ Param(Name(k), l) }(breakOut)
-      val name = Name(b.sym.freshName(entry.name))
-      println(entry.tpe)
-      ValDef(name, Name(entry.tpe), dst, size, params, None, None, template)
-    }
-    protected def newInstanceTemplate(dst: Point, blocks: Int): Option[EditTransformer]
-    protected def newInstance(dst: Point): Option[EditTransformer]
+
+    protected def newInstance(dst: Point, blocks: Int): Option[EditTransformer]
     def buttonUp() {
       val dst = snap(currentMouseLocation)
       val command =
         Expressions.templateExpressions.get(Name(entry.tpe)) match {
-          case Some(e) ⇒ newInstanceTemplate(dst, e.requiredBlocks)
-          case None    ⇒ newInstance(dst)
+          case Some(e) ⇒ newInstance(dst, e.requiredBlocks)
+          case None    ⇒ newInstance(dst, 0)
         }
       command match {
         case Some(c) ⇒ controller.exec(c)

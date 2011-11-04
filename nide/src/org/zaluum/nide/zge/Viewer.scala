@@ -12,10 +12,12 @@ import org.eclipse.ui.IEditorSite
 import org.eclipse.ui.PlatformUI
 import org.zaluum.nide.compiler.SelectionSubject
 import org.zaluum.nide.eclipse.ZaluumProject
+import org.zaluum.nide.images.ImageFactory
 
 abstract class Viewer(parent: Composite, val controller: Controller) extends FreeformViewport {
   def shell = parent.getShell
   def zproject: ZaluumProject
+  lazy val imageFactory = new ImageFactory(zproject.projectImageFactory, parent)
   lazy val display = shell.getDisplay
   val light = new LightweightSystem()
   val canvas = new FigureCanvas(parent, light)

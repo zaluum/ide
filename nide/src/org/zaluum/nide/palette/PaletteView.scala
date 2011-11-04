@@ -1,20 +1,7 @@
 package org.zaluum.nide.palette
 
 import java.lang.Object
-import org.eclipse.core.runtime.jobs.Job
-import org.eclipse.core.runtime.Status
-import org.eclipse.jdt.core.IJavaElementDelta.F_ADDED_TO_CLASSPATH
-import org.eclipse.jdt.core.IJavaElementDelta.F_ARCHIVE_CONTENT_CHANGED
-import org.eclipse.jdt.core.IJavaElementDelta.F_CLASSPATH_CHANGED
-import org.eclipse.jdt.core.IJavaElementDelta.F_PRIMARY_WORKING_COPY
-import org.eclipse.jdt.core.IJavaElementDelta.F_REORDER
-import org.eclipse.jdt.core.IJavaElementDelta.F_RESOLVED_CLASSPATH_CHANGED
-import org.eclipse.jdt.core.IJavaElementDelta.F_SUPER_TYPES
-import org.eclipse.jdt.core.ElementChangedEvent
-import org.eclipse.jdt.core.ICompilationUnit
-import org.eclipse.jdt.core.IElementChangedListener
-import org.eclipse.jdt.core.IJavaElementDelta
-import org.eclipse.jdt.core.JavaCore
+
 import org.eclipse.jdt.internal.ui.JavaPluginImages
 import org.eclipse.jface.viewers.ColumnLabelProvider
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport
@@ -38,20 +25,19 @@ import org.eclipse.swt.SWT
 import org.eclipse.ui.IEditorPart
 import org.eclipse.ui.IWorkbenchPart
 import org.zaluum.nide.compiler.PortDir
-import org.zaluum.nide.utils.Utils
-import org.zaluum.nide.utils.SWTScala._
-import org.zaluum.nide.eclipse.PageBookView
 import org.zaluum.nide.eclipse.GraphicalEditor
-import org.zaluum.nide.eclipse.ZaluumProject
-import org.zaluum.nide.eclipse.ImageFactory
+import org.zaluum.nide.images.ImageFactory
+import org.zaluum.nide.eclipse.PageBookView
 import org.zaluum.nide.eclipse.SelectionProvider
+import org.zaluum.nide.eclipse.ZaluumProject
+import org.zaluum.nide.utils.SWTScala.async
 
 object PaletteView {
   val ID = "org.zaluum.nide.paletteView"
 }
 class PaletteView extends PageBookView {
   var map = Map[GraphicalEditor, PalettePage]()
-  var jmap = Map[Palette, PalettePage]()
+  var jmap = Map[ZaluumProject, PalettePage]()
   def createDefaultPageContents(defaultPage: Composite) {
     val msgLabel = new Label(defaultPage, SWT.LEFT | SWT.TOP | SWT.WRAP);
     msgLabel.setText("Open a Zaluum Editor to see the available items");
@@ -67,14 +53,14 @@ class PaletteView extends PageBookView {
   def activatePart(part: IWorkbenchPart) {
     part match {
       case g: GraphicalEditor ⇒
-        jmap.get(g.zproject.palette) match {
+        jmap.get(g.zproject) match {
           case Some(p) ⇒
             map += (g -> p)
             show(p)
           case None ⇒
             val newPage = new PalettePage(g.zproject, this)
             map += (g -> newPage)
-            jmap += (g.zproject.palette -> newPage)
+            jmap += (g.zproject -> newPage)
             show(newPage)
         }
       case e: IEditorPart ⇒ pageBook.showPage(defaultPage)
@@ -87,7 +73,7 @@ class PaletteView extends PageBookView {
         val page = map(g)
         map -= g
         if (!map.values.exists(_ == page)) {
-          jmap -= g.zproject.palette
+          jmap -= g.zproject
           pageBook.showPage(defaultPage)
           page.dispose()
         }
@@ -101,10 +87,10 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
   lazy val viewer = new JTreeViewer(paletteView.pageBook, SWT.H_SCROLL | SWT.V_SCROLL);
   implicit def display = viewer.getControl.getDisplay
   def control = viewer.getControl
-  val imgFactory = new ImageFactory(zproject.imageFactory, viewer.getControl)
-  val palette: Palette = zproject.palette
+  val imgFactory = new ImageFactory(zproject.projectImageFactory, viewer.getControl)
   val listener: () ⇒ Unit = () ⇒ {
     async(display) {
+      viewer.setInput(zproject.palette)
       viewer.refresh()
     }
   }
@@ -125,13 +111,11 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
     case b: PaletteEntry ⇒ b.name
   }
   def image(element: Object): Image = element match {
-    //case PalettePage.portsPkg ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_LIBRARY)
     case f: String       ⇒ JavaPluginImages.get(JavaPluginImages.IMG_OBJS_PACKDECL)
-    // case b: BoxTypeProxy if (b.pkgName == PalettePage.portsPkg) ⇒ imgFactory.portImg(PortDir.fromStr(b.simpleName))._1 // XXX destroy
-    case b: PaletteEntry ⇒ imgFactory.iconForPalette(b)._1 // XXX destroy // TODO static images
+    case b: PaletteEntry ⇒ imgFactory.iconForPalette(b) // XXX destroy // TODO static images
   }
   viewer.setSorter(new ViewerSorter())
-  viewer.setInput(palette);
+  viewer.setInput(zproject.palette);
   viewer.addPostSelectionChangedListener(new ISelectionChangedListener {
     def selectionChanged(event: SelectionChangedEvent) {
       val s = event.getSelection.asInstanceOf[IStructuredSelection]
@@ -145,11 +129,11 @@ class PalettePage(val zproject: ZaluumProject, paletteView: PaletteView) extends
       }
     }
   });
-  palette.addListener(listener)
+  zproject.loader.addListener(listener)
   // Methods 
 
   def dispose() {
-    palette.removeListener(listener)
+    zproject.loader.removeListener(listener)
     control.dispose();
     imgFactory.destroyAll()
   }
@@ -185,22 +169,23 @@ trait PalettePageCoreListener {
 }
 class PaletteFolderProvider extends ITreeContentProvider {
   def dispose() {}
-  var palette: Palette = _
+  var opalette: Option[Palette] = _
   def inputChanged(viewer: JViewer, o: Object, newi: Object) {
-    palette = newi.asInstanceOf[Palette]
+    opalette = newi.asInstanceOf[Option[Palette]]
   }
 
   def getElements(inputElement: AnyRef): Array[AnyRef] =
     inputElement match {
-      case p: Palette ⇒ p.get.keys.toArray.asInstanceOf[Array[AnyRef]]
-      case _          ⇒ Array()
+      case p: Option[_] ⇒
+        val l = p.toList.flatMap(_.asInstanceOf[Palette].map.keys)
+        l.toArray.asInstanceOf[Array[AnyRef]]
+      case _ ⇒ Array()
     }
 
   def getChildren(parentElement: AnyRef): Array[AnyRef] = {
     parentElement match {
-      case p: Palette ⇒ p.get.keys.toArray.asInstanceOf[Array[AnyRef]]
       case pkg: String ⇒
-        palette.get.get(pkg) match {
+        opalette.get.map.get(pkg) match {
           case Some(l) ⇒ l.toArray.asInstanceOf[Array[AnyRef]]
           case None    ⇒ Array()
         }
@@ -217,7 +202,7 @@ class PaletteFolderProvider extends ITreeContentProvider {
 
   def hasChildren(element: AnyRef): Boolean = {
     element match {
-      case p: Palette  ⇒ true
+      // case p: Palette  ⇒ true
       case pkg: String ⇒ true
       case _           ⇒ false
     }

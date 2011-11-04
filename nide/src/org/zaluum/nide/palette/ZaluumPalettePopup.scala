@@ -1,15 +1,11 @@
 package org.zaluum.nide.palette
-import org.eclipse.swt.widgets.Shell
 import org.eclipse.swt.widgets.Composite
-import org.zaluum.nide.utils.SWTScala._
+import org.eclipse.swt.widgets.Shell
+import org.zaluum.nide.images.ImageFactory
+import org.zaluum.nide.utils.SWTScala.addOnCustomHover
+import org.zaluum.nide.utils.SWTScala.newImageButton
 import org.zaluum.nide.utils.FixedGridLayout
-import org.eclipse.swt.layout.GridData
-import org.eclipse.swt.widgets.Layout
-import org.eclipse.swt.graphics.Point
-import org.zaluum.nide.eclipse.ImageFactory
-import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.zge.TreeViewer
-import org.eclipse.draw2d.ColorConstants
 
 trait ZaluumBasePalettePopup extends BasePalettePopup[Pkg] {
   def imgFactory: ImageFactory
@@ -30,7 +26,7 @@ trait ZaluumBasePalettePopup extends BasePalettePopup[Pkg] {
       }
     }
     for (entry ← pkg.entries) {
-      val img = imgFactory.iconForPalette(entry)._1
+      val img = imgFactory.iconForPalette(entry)
       val b = newImageButton(c, img, entry.name) {
         drop(entry)
       }
@@ -39,14 +35,14 @@ trait ZaluumBasePalettePopup extends BasePalettePopup[Pkg] {
 }
 class ZaluumFirstPalettePopup(shell: Shell, viewer: TreeViewer) extends FirstPalettePopup[Pkg](shell) with ZaluumBasePalettePopup {
   def palette = viewer.zproject.palette
-  lazy val imgFactory = new ImageFactory(viewer.zproject.imageFactory, getShell)
+  lazy val imgFactory = new ImageFactory(viewer.zproject.projectImageFactory, getShell)
   def drop(p: PaletteEntry) {
     viewer.canvas.setFocus()
     viewer.tool.drop(p)
   }
   def name = "Palette"
   def fillBar(parent: Composite) {
-    palette.root match {
+    palette.map(_.root) match {
       case Some(pkg) ⇒
         fillButtons(parent, pkg)
       //fillBarCommon(parent, pkg)

@@ -40,7 +40,6 @@ import org.eclipse.swt.widgets.Control
 import org.zaluum.nide.compiler.InvalidValueType
 import org.zaluum.nide.utils.SWTScala
 import org.zaluum.nide.utils.SwingSWTUtils
-import org.zaluum.nide.eclipse.ImageFactory
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.utils.ReflectionUtilsWB
 import org.zaluum.basic.BoxConfigurer
@@ -173,14 +172,6 @@ class LabelItem(val container: ContainerItem, gui: Boolean = false) extends Text
   }
   def updateValPorts() {}
 }
-trait AutoDisposeImageFigure extends ImageFigure {
-  var desc: DeviceResourceDescriptor = null
-  def imageFactory: ImageFactory
-  def disposeImage() {
-    if (desc != null)
-      imageFactory.destroy(desc)
-  }
-}
 class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container) {
   private def jproject = container.viewer.zproject.jProject.asInstanceOf[JavaProject]
   override def img = {
@@ -216,9 +207,9 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
     }
   }
 }
-class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigure with ValFigure with RectFeedback {
+class ImageValFigure(val container: ContainerItem) extends ImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
-  def imageFactory = container.viewer.zproject.imageFactory
+  def imageFactory = container.viewer.imageFactory
   def img = imageFactory.icon(tpe, minYSize)
 
   def tpe = valDef.sym.tpe match {
@@ -227,10 +218,7 @@ class ImageValFigure(val container: ContainerItem) extends AutoDisposeImageFigur
   }
   override def updateMe() {
     super.updateMe()
-    disposeImage()
-    val (newImg, newDesc) = img
-    desc = newDesc
-    setImage(newImg)
+    setImage(img)
   }
   override def paintFigure(gc: Graphics) {
     gc.setAlpha(if (blinkOn) 100 else 255);

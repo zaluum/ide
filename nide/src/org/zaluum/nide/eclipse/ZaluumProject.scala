@@ -15,6 +15,12 @@ import org.eclipse.jdt.core.IElementChangedListener
 import org.eclipse.jdt.core.ElementChangedEvent
 import org.eclipse.jdt.core.IJavaElementDelta
 import org.zaluum.nide.palette.Palette
+import scala.concurrent.SyncVar
+import org.zaluum.nide.images.ImageMap
+import org.zaluum.nide.palette.XMLPaletteLoader
+import org.eclipse.core.resources.ResourcesPlugin
+import org.eclipse.core.resources.IWorkspaceRunnable
+import org.zaluum.nide.images.ImageFactory
 
 object ZaluumProjectManager {
   private val m = collection.mutable.Map[IJavaProject, ZaluumProject]()
@@ -46,8 +52,7 @@ object ZaluumProjectManager {
   JavaCore.addElementChangedListener(coreListener)
 }
 class ZaluumProject private[eclipse] (val jProject: IJavaProject) {
-  lazy val imageFactory = new ImageFactory(this)
-
+  lazy val projectImageFactory = new ImageFactory(this)
   private var _classLoader: ClassLoader = _
 
   def classLoader: ClassLoader = this.synchronized {
@@ -64,9 +69,12 @@ class ZaluumProject private[eclipse] (val jProject: IJavaProject) {
       jProject,
       ZaluumProjectManager.exceptions)
   }
-  lazy val palette = new Palette(jProject)
+  @volatile var palette: Option[Palette] = None
+  @volatile var imgMap = new ImageMap(this)
   def destroy() = {
-    palette.destroy()
-    imageFactory.destroyAll()
+    loader.destroy()
+    projectImageFactory.destroyAll()
   }
+  val loader = new XMLPaletteLoader(this)
+  loader.syncReload() // TODO monitor workspace run
 }

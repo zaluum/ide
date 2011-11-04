@@ -10,7 +10,7 @@ class ZaluumParser(val options: CompilerOptions, val problemReporter: ProblemRep
   def dietParse(sourceUnit: ICompilationUnit, compilationResult: CompilationResult): CompilationUnitDeclaration = {
     val sourceCode = sourceUnit.getContents
     compilationResult.lineSeparatorPositions = Array(1, 1)
-
+    if (sourceCode == null) return null
     val zcud = new ZaluumCompilationUnitDeclaration(problemReporter, compilationResult,
       sourceCode.size, sourceUnit, options)
     zcud.populateCompilationUnitDeclaration()

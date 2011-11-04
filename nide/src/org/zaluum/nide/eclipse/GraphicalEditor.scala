@@ -65,7 +65,7 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
     controller.addListener(fireDirtyClosure)
     viewer = new TreeViewer(parent, controller, this)
     controller.registerViewer(viewer)
-    // the first viewer.refresh comes from onResize
+    viewer.refresh()
     // TODO reopen
   }
   var selected: Option[Item] = None
@@ -117,9 +117,11 @@ class GraphicalEditor extends BaseEditor with IGotoMarker {
   }
   override def dispose() {
     super.dispose()
-    controller.removeListener(fireDirtyClosure)
-    controller.dispose()
-    viewer.dispose()
+    if (viewer != null) {
+      controller.removeListener(fireDirtyClosure)
+      controller.dispose()
+      viewer.dispose()
+    }
     shell foreach { s ⇒ if (!s.isDisposed) s.dispose }
   }
   override def gotoMarker(marker: IMarker) {

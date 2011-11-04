@@ -1,41 +1,22 @@
 package org.zaluum.nide.palette
 
-import org.eclipse.swt.custom.ScrolledComposite
-import org.eclipse.swt.graphics.{ Image, Point }
-import org.eclipse.swt.layout.{ GridData, GridLayout }
-import org.eclipse.swt.widgets.{ Shell, Composite, Button }
-import org.eclipse.swt.SWT
-import org.eclipse.ui.forms.events.{ ExpansionAdapter, ExpansionEvent }
-import org.eclipse.ui.forms.widgets.ExpandableComposite
-import org.zaluum.nide.compiler.{ In, Out, PortDir, Shift, Name }
-import org.zaluum.nide.zge._
-import org.zaluum.nide.utils.SWTScala._
-import org.eclipse.core.runtime.jobs.Job
-import org.eclipse.core.runtime.Platform
-import org.eclipse.ui.PlatformUI
-import org.eclipse.jface.operation.IRunnableWithProgress
-import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.swt.widgets._
-import org.eclipse.swt.layout._
-import org.eclipse.swt.SWT
-import org.eclipse.swt.events.MouseAdapter
-import org.eclipse.swt.events.MouseEvent
-import org.eclipse.swt.graphics.Point
-import org.zaluum.nide.utils.SWTScala._
-import org.eclipse.swt.events.MouseTrackAdapter
-import org.eclipse.swt.events.DisposeListener
-import org.eclipse.swt.events.DisposeEvent
 import org.eclipse.jface.window.Window
-import org.eclipse.jface.dialogs.PopupDialog
-import org.eclipse.swt.events.ShellListener
-import org.eclipse.swt.events.ShellAdapter
-import org.eclipse.swt.events.ShellEvent
-import org.eclipse.swt.graphics.GC
-import org.zaluum.nide.utils.Utils._
-import org.zaluum.nide.utils.FixedGridLayout
 import org.eclipse.swt.custom.ScrolledComposite
 import org.eclipse.swt.events.ControlAdapter
 import org.eclipse.swt.events.ControlEvent
+import org.eclipse.swt.events.ShellAdapter
+import org.eclipse.swt.events.ShellEvent
+import org.eclipse.swt.graphics.Point
+import org.eclipse.swt.layout.GridData
+import org.eclipse.swt.layout.GridLayout
+import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets.Control
+import org.eclipse.swt.widgets.Label
+import org.eclipse.swt.widgets.Shell
+import org.eclipse.swt.SWT
+import org.zaluum.nide.utils.SWTScala.addOnDispose
+import org.zaluum.nide.utils.SWTScala.async
+import org.zaluum.nide.utils.Utils.asRunnable
 
 abstract class BasePalettePopup[A](shell: Shell) extends Window(shell) {
   setShellStyle(SWT.TOOL)

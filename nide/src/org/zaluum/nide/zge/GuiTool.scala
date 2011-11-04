@@ -124,7 +124,7 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
     def allowed = entry != null && entry.tpe == BoxExprType.fqName.str
     protected def getSize(entry: PaletteEntry) = defaultSize
 
-    protected def newInstance(dst: Point) = {
+    protected def newInstance(dst: Point, blocks: Int) = {
       val container = viewer.treeViewer.findContainerAt(point(dst))
       val block = container match {
         case o: OpenBoxFigure ⇒ o.block
@@ -134,9 +134,9 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
       Some(new EditTransformer() {
         val trans: PartialFunction[Tree, Tree] = {
           case b: Block if b == block ⇒
-            val v = createValDef(entry, b, d, None, None)
             val bParam = Param(Name("bounds"),
               dst.x + " " + dst.y + " " + defaultSize.w + " " + defaultSize.h)
+            val v = entry.toValDef(b, d, None, None, List(bParam))
             val newVal = v.copy(params = bParam :: v.params.filterNot(_.key == Name("bounds")))
             b.copy(
               valDefs = newVal :: transformTrees(b.valDefs),
@@ -145,9 +145,6 @@ class GuiTool(viewer: GuiViewer) extends ItemTool(viewer) {
               junctions = transformTrees(b.junctions))
         }
       })
-    }
-    protected def newInstanceTemplate(dst: Point, requiredBlocks: Int) = {
-      None
     }
   }
   trait ResizingGui extends ToolState {

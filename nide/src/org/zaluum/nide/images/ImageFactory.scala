@@ -1,4 +1,4 @@
-package org.zaluum.nide.eclipse
+package org.zaluum.nide.images
 
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.jface.resource.DeviceResourceDescriptor
@@ -28,12 +28,29 @@ import org.eclipse.swt.graphics.ImageData
 import org.eclipse.swt.graphics.PaletteData
 import org.zaluum.nide.palette.Palette
 import org.zaluum.nide.palette.PaletteEntry
+import java.net.URL
+import org.zaluum.nide.utils.Utils._
+import org.zaluum.nide.eclipse.ZaluumProject
 
-class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
+abstract class IFactory {
+  val rm: ResourceManager
+  def classLoader: ClassLoader
+  def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
+  def destroyAll() = rm.dispose();
+  def loadDesc(d: ImageDescriptor): Option[Image] = tryo { rm.createImage(d) }
+  protected def resourceToDescriptor(resource: String): Option[ImageDescriptor] =
+    Option(classLoader.getResource(resource)) map { urlToDescriptor }
+  protected def resourceToImage(resource: String): Option[Image] =
+    resourceToDescriptor(resource) flatMap loadDesc
+  protected def urlToDescriptor(url: URL): ImageDescriptor =
+    ImageDescriptor.createFromURL(url)
+}
+class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) extends IFactory {
+  def classLoader = zp.classLoader
   def this(zp: ZaluumProject) = this(zp, new LocalResourceManager(JFaceResources.getResources))
   def this(i: ImageFactory) = this(i.zp, new LocalResourceManager(i.rm))
   def this(i: ImageFactory, c: Control) = this(i.zp, new LocalResourceManager(i.rm, c))
-
+  def imageMap = zp.imgMap
   def notFound = ImageDescriptor.createFromFile(classOf[Icons], "notFound.png")
   def portDeclIn = ImageDescriptor.createFromFile(classOf[Icons], "portDeclIn.png")
   def portDeclOut = ImageDescriptor.createFromFile(classOf[Icons], "portDeclOut.png")
@@ -42,24 +59,21 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   def buttonIfFalse = ImageDescriptor.createFromFile(classOf[Icons], "buttonIfFalse.png")
 
   def portImg(dir: PortDir) = dir match {
-    case In    ⇒ (rm.createImage(portDeclIn), portDeclIn)
-    case Out   ⇒ (rm.createImage(portDeclOut), portDeclOut)
-    case Shift ⇒ (rm.createImage(portDeclShift), portDeclShift)
+    case In    ⇒ rm.createImage(portDeclIn)
+    case Out   ⇒ rm.createImage(portDeclOut)
+    case Shift ⇒ rm.createImage(portDeclShift)
   }
-  def destroy(d: DeviceResourceDescriptor) = rm.destroy(d)
-  def destroyAll() = rm.dispose();
-  def iconForPalette(p: PaletteEntry): (Image, DeviceResourceDescriptor) = {
+  def iconForPalette(p: PaletteEntry): Image = {
     p match {
-      case Palette.InEntry    ⇒ portImg(In)
-      case Palette.OutEntry   ⇒ portImg(Out)
-      case Palette.ShiftEntry ⇒ portImg(Shift)
-      case _                  ⇒ loadOrText(None, p.className)
+      case PaletteEntry.InEntry    ⇒ portImg(In)
+      case PaletteEntry.OutEntry   ⇒ portImg(Out)
+      case PaletteEntry.ShiftEntry ⇒ portImg(Shift)
+      case _                       ⇒ loadOrText(None, p.className)
     }
   }
 
-  def icon(tpe: Option[Type], min: Int): (Image, DeviceResourceDescriptor) = {
+  def icon(tpe: Option[Type], min: Int): Image = {
     tpe match {
-      //case b: BoxTypeSymbol ⇒ iconFor(b.image, b.fqName, minY)
       case Some(c: ClassJavaType) ⇒ loadOrText(None, c.fqName, min)
       case Some(t: ExprType)      ⇒ loadOrText(None, t.fqName, min)
       case _                      ⇒ imageForText("<missing>", ColorConstants.red, min)
@@ -67,21 +81,16 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   }
   def invokeIcon(str: String, min: Int) = imageForText(str, ColorConstants.blue, min)
   def invokeIconError(str: String, min: Int) = imageForText(str, ColorConstants.red, min)
-  def loadDesc(d: ImageDescriptor) = rm.createImage(d)
   def folderIcon(str: String) = rm.create(FolderIconImageDescriptor(str)).asInstanceOf[Image]
-  private def resourceToDescriptor(resource: String) =
-    Option(zp.classLoader.getResource(resource)) map { ImageDescriptor.createFromURL }
 
-  private def resourceToImage(resource: String): Option[(Image, ImageDescriptor)] =
-    resourceToDescriptor(resource) flatMap { desc ⇒
-      try {
-        Some((rm.create(desc).asInstanceOf[Image], desc))
-      } catch { case e ⇒ None }
-    }
-  private def loadImage(imageName: Option[String], name: Name): Option[(Image, ImageDescriptor)] = {
-    imageName.flatMap { imgName ⇒
-      resourceToImage(imgName)
-    }.orElse { resourceToImage(name.toRelativePath + ".png") }
+  private def loadImage(imageName: Option[String], name: Name): Option[Image] = {
+    imageName.flatMap { imgName ⇒ resourceToImage(imgName) }.
+      orElse {
+        for {
+          url ← imageMap.findImage(ImageKey(name.str, None, None));
+          i ← loadDesc(urlToDescriptor(url))
+        } yield { i }
+      }
   }
   private def loadOrText(imageName: Option[String], name: Name, min: Int = 48) = {
     loadImage(imageName, name) getOrElse (
@@ -89,7 +98,7 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) {
   }
   def imageForText(txt: String, color: Color, min: Int = 12) = {
     val desc = GeneratedTextIconImageDescriptor(txt, min, color)
-    (rm.create(desc).asInstanceOf[Image], desc)
+    rm.create(desc).asInstanceOf[Image]
   }
   // Can't figure a way to create an image with a transparency mask that can be manipulated with GC
   // images must be composed on place

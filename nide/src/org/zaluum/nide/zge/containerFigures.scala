@@ -369,7 +369,7 @@ class OpenBoxFigure(
 }
 abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with OverlappedItem with RectFeedback {
   var size = Dimension(10, 10)
-  def imageFactory = container.viewer.zproject.imageFactory
+  def imageFactory = container.viewer.imageFactory
   def myLayer = container.layer
   def blink(b: Boolean) {}
   def extPos = MPoint(16, 0)
@@ -379,9 +379,10 @@ abstract class Button(val openBox: OpenBoxFigure) extends ImageFigure with Overl
   def update() {
       def loadImage() {
         currentDesc = Some(imageDesc)
-        val img = imageFactory.loadDesc(imageDesc)
-        setImage(img)
-        size = Dimension(img.getBounds.width, img.getBounds().height)
+        imageFactory.loadDesc(imageDesc) foreach { img ⇒
+          setImage(img)
+          size = Dimension(img.getBounds.width, img.getBounds().height)
+        }
       }
     currentDesc match {
       case Some(c) if (c != imageDesc) ⇒
