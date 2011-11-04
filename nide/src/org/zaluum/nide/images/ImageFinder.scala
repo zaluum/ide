@@ -3,7 +3,16 @@ import java.net.URL
 import org.eclipse.jdt.internal.core.JavaProject
 import org.zaluum.nide.eclipse.ZaluumProject
 import org.zaluum.nide.utils.Utils._
-
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.zaluum.nide.compiler.Signatures
+object ImageKey {
+  def fromMethod(m: MethodBinding) = {
+    val className = m.declaringClass.compoundName.map(_.mkString).mkString(".")
+    val method = m.selector.mkString
+    val signature = m.signature.mkString
+    ImageKey(className, Some(method), Some(signature))
+  }
+}
 case class ImageKey(className: String, method: Option[String], selector: Option[String]) {
   def toFileNoExtension = className.replace('.', '/') + method.map("-" + _).getOrElse("") + selector.map("-" + _).getOrElse("")
   def toPng = toFileNoExtension + ".png"

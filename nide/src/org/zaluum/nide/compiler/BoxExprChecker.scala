@@ -57,7 +57,7 @@ trait BoxExprChecker extends CheckerPart {
         }
         m foreach { m ⇒
           hasApply = true
-          vs.info = m.selector.mkString
+          vs.typeSpecificInfo = Some(m)
           val argumentNames = getApplyAnnotation(m).flatMap(BoxExprChecker.annotatedParameters(m, _))
           val helpers = BoxExprChecker.helperNames(m, scope)
           val nums = BoxExprChecker.numericNames(m)

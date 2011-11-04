@@ -28,7 +28,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
         in.missing = false
         in.tpe = ztd.zaluumScope.getJavaType(p);
       }
-      vs.info = m
+      vs.typeSpecificInfo = Some(m)
       body(m)
     case None ⇒
       error("Method not found", vs.decl)
@@ -71,7 +71,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
       case Some(s) ⇒ try { s.toInt } catch { case e ⇒ error("Cannot parse size", vs.decl); 1 }
       case None    ⇒ 2
     }
-    vs.info = size.asInstanceOf[AnyRef]
+    vs.typeSpecificInfo = Some(size)
     vs.classinfo = t
     for (i ← 0 until size) {
       val name = Name("element" + i)
@@ -185,7 +185,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
             a.tpe = ztd.zaluumScope.getJavaType(f.`type`)
             out.tpe = a.tpe
             if (out.tpe.isEmpty) error("Field type not found " + f.`type`.readableName.mkString, vs.decl)
-            vs.info = f
+            vs.typeSpecificInfo = Some(f)
           case None ⇒ error("Field not found", vs.decl)
         }
       case _ ⇒ error("No field specified", vs.decl)

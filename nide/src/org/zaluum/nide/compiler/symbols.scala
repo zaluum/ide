@@ -342,7 +342,7 @@ class ValSymbol(val owner: BlockSymbol, val name: Name)
   val join = Buffer[ValSymbol]()
   private var values = Map[ParamDecl, Value]()
   var isJoinPoint = false
-  var info: AnyRef = null
+  var typeSpecificInfo: Option[_] = None
   //  FIXME to option
   var classinfo: JavaType = null
   var configurer: Option[ClassJavaType] = None

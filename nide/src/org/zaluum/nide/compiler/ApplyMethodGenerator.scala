@@ -161,7 +161,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
       _ match {
         case BoxExprType ⇒
           val cl = vs.classinfo.asInstanceOf[ClassJavaType]
-          val selector = vs.info.asInstanceOf[String]
+          val selector = BoxExprType.methodOf(vs).get.selector.mkString
           val argsInOrder = vs.ports.values.toList filter { p ⇒ p.dir == In } sortBy { _.name.str }
           val returnPort = vs.ports.values.toList find { p ⇒ p.dir == Out && !p.isField }
           val returnDescriptor = returnPort map { _.tpe.get.fqName.descriptor } getOrElse ("V")
@@ -210,7 +210,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
           }
           ins += thisOut
         case ArrayComposeExprType ⇒
-          val size = vs.info.asInstanceOf[Int]
+          val size = ArrayComposeExprType.sizeOf(vs).get
           val out = vs.findPortInstance(ArrayComposeExprType.out).get
           ins +=
             Assign(
@@ -226,7 +226,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
               toRef(pi))
           }
         case InvokeExprType ⇒
-          val m = vs.info.asInstanceOf[MethodBinding]
+          val m = InvokeExprType.methodOf(vs).get
           val obj = InvokeExprType.thisPort(vs)
           val thisOut = InvokeExprType.thisOutPort(vs) // XXX optimize and use only 1 var
           val invoke = Invoke(
@@ -239,7 +239,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
           ins += invokeHelper(vs, m, invoke)
           ins += Assign(toRef(thisOut), toRef(obj))
         case NewExprType ⇒
-          val m = vs.info.asInstanceOf[MethodBinding]
+          val m = NewExprType.methodOf(vs).get
           val thiz = NewExprType.thisPort(vs)
           ins +=
             Assign(toRef(thiz),
@@ -255,7 +255,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
               toRef(thiz),
               NewArray(dimPorts.map { toRef(_) }, ab.of))
         case InvokeStaticExprType ⇒
-          val m = vs.info.asInstanceOf[MethodBinding]
+          val m = InvokeStaticExprType.methodOf(vs).get
           // TODO share with invoke
           val invoke =
             InvokeStatic(
@@ -268,7 +268,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
           val port = ThisRefExprType.thisPort(vs)
           ins += Assign(toRef(port), thisRef)
         case FieldExprType ⇒
-          val f = vs.info.asInstanceOf[FieldBinding]
+          val f = FieldExprType.fieldOf(vs).get
           val a = FieldExprType.aPort(vs)
           val o = FieldExprType.outPort(vs)
           val obj = FieldExprType.thisPort(vs)
@@ -291,7 +291,7 @@ abstract class MethodGenerator(val bs: BoxSymbol) extends GeneratorHelpers {
           }
           ins += storeThisOut
         case StaticFieldExprType ⇒ // share with field
-          val f = vs.info.asInstanceOf[FieldBinding]
+          val f = StaticFieldExprType.fieldOf(vs).get
           val a = StaticFieldExprType.aPort(vs)
           val o = StaticFieldExprType.outPort(vs)
             def fieldRef = FieldStaticRef(

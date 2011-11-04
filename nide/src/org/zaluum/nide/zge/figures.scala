@@ -46,6 +46,7 @@ import org.zaluum.basic.BoxConfigurer
 import javax.script.ScriptEngineManager
 import java.security.AccessController
 import java.security.PrivilegedAction
+import org.zaluum.nide.images.ImageKey
 // TREE SPECIFIC FIGURES
 trait ValDefItem extends Item with PropertySource {
   var valDef: ValDef = _
@@ -175,8 +176,8 @@ class LabelItem(val container: ContainerItem, gui: Boolean = false) extends Text
 class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container) {
   private def jproject = container.viewer.zproject.jProject.asInstanceOf[JavaProject]
   override def img = {
-    sym.info match {
-      case m: MethodBinding ⇒
+    sym.typeSpecificInfo match {
+      case Some(m: MethodBinding) ⇒
         val txt =
           if (m.isConstructor())
             "new " + m.declaringClass.compoundName.last.mkString
@@ -185,10 +186,10 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
               "." + m.selector.mkString + "()"
           }
         sym.portInstances
-        imageFactory.invokeIcon(txt, minYSize)
-      case f: FieldBinding ⇒
+        imageFactory.iconMethod(m, minYSize, txt)
+      case Some(f: FieldBinding) ⇒
         val prefix = if (f.isStatic()) f.declaringClass.compoundName.last.mkString else ""
-        imageFactory.invokeIcon(prefix + "." + f.name.mkString, minYSize)
+        imageFactory.textIcon(prefix + "." + f.name.mkString, minYSize)
       case _ ⇒
         val str = sym.tpe match {
           case Some(NewArrayExprType) ⇒
@@ -201,8 +202,8 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
           case _                          ⇒ None
         }
         str match {
-          case Some(str) ⇒ imageFactory.invokeIcon(str, minYSize)
-          case None      ⇒ imageFactory.invokeIconError("right click me", minYSize)
+          case Some(str) ⇒ imageFactory.textIcon(str, minYSize)
+          case None      ⇒ imageFactory.textIconError("<error>", minYSize)
         }
     }
   }
@@ -210,12 +211,16 @@ class ThisOpValFigure(container: ContainerItem) extends ImageValFigure(container
 class ImageValFigure(val container: ContainerItem) extends ImageFigure with ValFigure with RectFeedback {
   def size = Dimension(getImage.getBounds.width, getImage.getBounds.height)
   def imageFactory = container.viewer.imageFactory
-  def img = imageFactory.icon(tpe, minYSize)
-
-  def tpe = valDef.sym.tpe match {
-    case Some(BoxExprType) ⇒ Some(valDef.sym.classinfo)
-    case o                 ⇒ o
+  def img = valDef.sym.tpe match {
+    case Some(BoxExprType) ⇒
+      val className = Option(valDef.sym.classinfo).map(_.name.str).getOrElse("<no type>")
+      BoxExprType.methodOf(valDef.sym) match {
+        case Some(m) ⇒ imageFactory.iconMethod(m, minYSize, className)
+        case None    ⇒ imageFactory.textIconError("<no type>", minYSize)
+      }
+    case o ⇒ imageFactory.iconTpe(o, minYSize)
   }
+
   override def updateMe() {
     super.updateMe()
     setImage(img)

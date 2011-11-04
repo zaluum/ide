@@ -31,6 +31,8 @@ import org.zaluum.nide.palette.PaletteEntry
 import java.net.URL
 import org.zaluum.nide.utils.Utils._
 import org.zaluum.nide.eclipse.ZaluumProject
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 
 abstract class IFactory {
   val rm: ResourceManager
@@ -72,25 +74,31 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) exte
     }
   }
 
-  def icon(tpe: Option[Type], min: Int): Image = {
+  def iconTpe(tpe: Option[Type], min: Int): Image = {
     tpe match {
       case Some(c: ClassJavaType) ⇒ loadOrText(None, c.fqName, min)
       case Some(t: ExprType)      ⇒ loadOrText(None, t.fqName, min)
       case _                      ⇒ imageForText("<missing>", ColorConstants.red, min)
     }
   }
-  def invokeIcon(str: String, min: Int) = imageForText(str, ColorConstants.blue, min)
-  def invokeIconError(str: String, min: Int) = imageForText(str, ColorConstants.red, min)
+  def iconMethod(m: MethodBinding, min: Int, txt: String): Image =
+    loadKey(ImageKey.fromMethod(m)) getOrElse {
+      imageForText(txt, ColorConstants.black, min)
+    }
+  def imageKey(imageKey: ImageKey, minY: Int): Image =
+    loadKey(imageKey) getOrElse { textIcon(imageKey.className, minY) }
+  def textIcon(str: String, min: Int) = imageForText(str, ColorConstants.blue, min)
+  def textIconError(str: String, min: Int) = imageForText(str, ColorConstants.red, min)
   def folderIcon(str: String) = rm.create(FolderIconImageDescriptor(str)).asInstanceOf[Image]
-
+  private def loadKey(imageKey: ImageKey): Option[Image] = {
+    for {
+      url ← imageMap.findImage(imageKey);
+      i ← loadDesc(urlToDescriptor(url))
+    } yield { i }
+  }
   private def loadImage(imageName: Option[String], name: Name): Option[Image] = {
     imageName.flatMap { imgName ⇒ resourceToImage(imgName) }.
-      orElse {
-        for {
-          url ← imageMap.findImage(ImageKey(name.str, None, None));
-          i ← loadDesc(urlToDescriptor(url))
-        } yield { i }
-      }
+      orElse { loadKey(ImageKey(name.str, None, None)) }
   }
   private def loadOrText(imageName: Option[String], name: Name, min: Int = 48) = {
     loadImage(imageName, name) getOrElse (

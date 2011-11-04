@@ -9,6 +9,8 @@ import org.zaluum.nide.zge.MethodParamProperty
 import org.zaluum.nide.zge.FieldParamProperty
 import org.zaluum.nide.zge.TextListParamProperty
 import org.zaluum.nide.zge.MultiLineTextParamProperty
+import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
 
 sealed trait ExprType extends Type with PortsSymbol with PropertySourceType {
   def matchingClass: Class[_]
@@ -116,6 +118,7 @@ object BoxExprType extends StaticExprType(classOf[org.zaluum.`object`.BoxInstanc
     }
     l ::: super.properties(controller, valDef)
   }
+  def methodOf(vs: ValSymbol): Option[MethodBinding] = vs.typeSpecificInfo.asInstanceOf[Option[MethodBinding]]
 }
 object NewArrayExprType extends StaticExprType(classOf[org.zaluum.`object`.NewArray]) {
   val thiz = new PortSymbol(this, Name("array"), Out)
@@ -133,24 +136,29 @@ object NewExprType extends StaticExprType(classOf[org.zaluum.`object`.New]) with
   def thisPort(vs: ValSymbol) = vs.findPortInstance(thiz).get
   def signatureProp(c: Controller, v: ValDef) =
     new ConstructorParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe)
+  def methodOf(vs: ValSymbol): Option[MethodBinding] = vs.typeSpecificInfo.asInstanceOf[Option[MethodBinding]]
 }
 object InvokeExprType extends ThisExprType(classOf[org.zaluum.`object`.Invoke]) with SignatureExprType {
   def signatureProp(c: Controller, v: ValDef) =
     new MethodParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe, false)
+  def methodOf(vs: ValSymbol): Option[MethodBinding] = vs.typeSpecificInfo.asInstanceOf[Option[MethodBinding]]
 }
 object InvokeStaticExprType extends StaticExprType(classOf[org.zaluum.`object`.InvokeStatic]) with SignatureExprType {
   def signatureProp(c: Controller, v: ValDef) =
     new MethodParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), true)
+  def methodOf(vs: ValSymbol): Option[MethodBinding] = vs.typeSpecificInfo.asInstanceOf[Option[MethodBinding]]
 }
 object FieldExprType extends ThisExprType(classOf[org.zaluum.`object`.Field]) with ResultExprType with OneParameter with SignatureExprType {
   override def signatureName = "#Field"
   def signatureProp(c: Controller, v: ValDef) =
     new FieldParamProperty(c, signatureSymbol, v, thisPort(v.sym).tpe, false)
+  def fieldOf(vs: ValSymbol) = vs.typeSpecificInfo.asInstanceOf[Option[FieldBinding]]
 }
 object StaticFieldExprType extends StaticExprType(classOf[org.zaluum.`object`.FieldStatic]) with ResultExprType with OneParameter with SignatureExprType {
   override def signatureName = "#Field"
   def signatureProp(c: Controller, v: ValDef) =
     new FieldParamProperty(c, signatureSymbol, v, Some(v.sym.classinfo), true)
+  def fieldOf(vs: ValSymbol) = vs.typeSpecificInfo.asInstanceOf[Option[FieldBinding]]
 }
 object ArrayExprType extends ThisExprType(classOf[org.zaluum.`object`.ArrayAccess]) with ResultExprType with OneParameter {
   val index = new PortSymbol(this, Name("index"), In)
@@ -163,6 +171,7 @@ object ArrayComposeExprType extends StaticExprType(classOf[org.zaluum.`object`.A
   ports += (out.name -> out)
   addParam(size)
   props ::= ((c: Controller, v: ValDef) ⇒ new TextParamProperty(c, size, v))
+  def sizeOf(vs: ValSymbol) = vs.typeSpecificInfo.asInstanceOf[Option[Int]]
 }
 object LiteralExprType extends ResultExprType {
   def matchingClass = classOf[org.zaluum.op.Literal]
