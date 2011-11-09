@@ -89,7 +89,10 @@ class ImageFactory private (val zp: ZaluumProject, val rm: ResourceManager) exte
     loadKey(imageKey) getOrElse { textIcon(imageKey.className, minY) }
   def textIcon(str: String, min: Int) = imageForText(str, ColorConstants.blue, min)
   def textIconError(str: String, min: Int) = imageForText(str, ColorConstants.red, min)
-  def folderIcon(str: String) = rm.create(FolderIconImageDescriptor(str)).asInstanceOf[Image]
+  def folderIcon(pkg: String) =
+    resourceToImage(pkg.replace('.', '/') + "/package.png") getOrElse {
+      rm.create(FolderIconImageDescriptor(pkg)).asInstanceOf[Image]
+    }
   private def loadKey(imageKey: ImageKey): Option[Image] = {
     for {
       url ← imageMap.findImage(imageKey);

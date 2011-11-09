@@ -2,9 +2,9 @@ Agenda
 	necessari
 	- Assegurar future-proof. Com afegir features i mantenir versions.
 	
+	- better drag tool
 	- auto type als ports interns
-	- boto dret-> add to palette -> palette.xml
-	- xml imatges (and packages) 
+	- align tool 
 	
 	- construcció classes (bundle/unbundle) (setters/getters)
 	- human readable signature label provider
@@ -34,6 +34,7 @@ Agenda
 	- buy hosting
 	
 	millora
+	- boto dret-> add to palette -> palette.xml
 	- data log
 	- llibreria VISA 
 	- Clonar amb ctrl
