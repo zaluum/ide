@@ -17,6 +17,7 @@ import org.eclipse.draw2d.Graphics
 import org.eclipse.draw2d.ColorConstants
 import org.eclipse.draw2d.geometry.Translatable
 import org.zaluum.nide.compiler.Rect
+import org.eclipse.draw2d.geometry.Point
 
 object FigureHelper {
   import scala.collection.JavaConversions._
@@ -26,6 +27,12 @@ object FigureHelper {
       val children = item.getChildren.asInstanceOf[java.util.List[IFigure]]
       children.exists { isOrHas(_, lookingFor) }
     }
+  }
+  import org.zaluum.nide.zge._
+  def nearest[T <: Figure](l: Seq[T], p: Point): Option[T] = {
+    if (l.size > 0)
+      Some(l.min(Ordering.fromLessThan[T]((a, b) ⇒ richFigure(a).distance(p) < richFigure(b).distance(p))))
+    else None
   }
 }
 class RichFigure(fig: IFigure) {
@@ -60,6 +67,18 @@ class RichFigure(fig: IFigure) {
       val ep = fig.getParent.translateFromViewport_!(p)
       fig.translateFromParent(ep)
       ep
+    }
+  }
+  def distance(p: Point) = {
+    val b = fig.getBounds
+    if (b.contains(p)) 0
+    else {
+      List(
+        java.awt.geom.Line2D.ptSegDist(b.left, b.top, b.right, b.top, p.x, p.y),
+        java.awt.geom.Line2D.ptSegDist(b.left, b.bottom, b.right, b.bottom, p.x, p.y),
+        java.awt.geom.Line2D.ptSegDist(b.left, b.top, b.left, b.bottom, p.x, p.y),
+        java.awt.geom.Line2D.ptSegDist(b.right, b.top, b.right, b.bottom, p.x, p.y))
+        .min
     }
   }
   def deepChildrenNear(abs: EPoint, radius: Double): List[(IFigure, Double)] = {

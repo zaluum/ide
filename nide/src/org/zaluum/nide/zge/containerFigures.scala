@@ -73,9 +73,11 @@ trait ContainerItem extends Item {
       case i: Item ⇒ i
     }
   def itemAt(p: Point, debug: Boolean = false) = {
-    itemAtIn(portsLayer, p, debug)
-      .orElse(itemAtIn(layer, p, debug))
-      .orElse(itemAtIn(connectionsLayer, p, debug))
+    val l = List() ++
+      itemAtIn(portsLayer, p, debug) ++
+      itemAtIn(layer, p, debug) ++
+      itemAtIn(connectionsLayer, p, debug)
+    FigureHelper.nearest(l, p)
   }
   def findLabelFigureOf(v: ValDef): Option[LabelItem] = {
     this.deepChildren collect { case l: LabelItem if (l.valDef == v) ⇒ l } headOption

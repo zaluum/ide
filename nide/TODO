@@ -2,7 +2,6 @@ Agenda
 	necessari
 	- Assegurar future-proof. Com afegir features i mantenir versions.
 	
-	- better drag tool
 	- auto type als ports interns
 	- align tool 
 	
@@ -34,6 +33,7 @@ Agenda
 	- buy hosting
 	
 	millora
+	- no se detectar millor el drag. El button down arriba al cap d'una estona!
 	- boto dret-> add to palette -> palette.xml
 	- data log
 	- llibreria VISA 

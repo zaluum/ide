@@ -138,16 +138,13 @@ trait ConnectionsTool {
         paintedEdge = e
       }
     }
+    def lineUnderMouse = itemUnderMouse.collect { case i: LineItem ⇒ i }
+    def nearest = FigureHelper.nearest(List() ++ portsTrack.current ++ lineUnderMouse, point(currentMouseLocation))
     def move() {
       import math.abs
       portsTrack.update()
       dst foreach { _.hover = false }
-      dst = portsTrack.current orElse {
-        initContainer.itemAt(point(currentMouseLocation), false) match {
-          case Some(l: LineItem) ⇒ Some(l)
-          case _                 ⇒ None
-        }
-      }
+      dst = nearest
       dst match {
         case Some(l: LineItem) ⇒ blinkLine(l)
         case _                 ⇒ unblinkLine()

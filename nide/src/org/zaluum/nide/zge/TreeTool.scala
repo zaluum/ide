@@ -28,6 +28,8 @@ import org.zaluum.nide.compiler.Param
 import org.zaluum.nide.palette.ZaluumFirstPalettePopup
 import org.zaluum.nide.palette.PaletteEntry
 import org.zaluum.nide.palette.Palette
+import org.eclipse.swt.events.MouseEvent
+import org.eclipse.draw2d.Figure
 
 class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with ConnectionsTool {
   val gui = false
@@ -45,6 +47,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     var port: Option[PortFigure] = None
     def editLabel(s: String, l: LabelItem) =
       l.valDef.editLabel(false, s)
+    def nearestPortOrItem: Option[Figure] = nearestPortOrItem(itemUnderMouse)
+    def nearestPortOrItem(i: Option[Item]): Option[Figure] = FigureHelper.nearest(List() ++ i ++ port, point(currentMouseLocation))
     def buttonUp {
       unblinkLine()
       if (filterDouble) { filterDouble = false; return }
@@ -53,21 +57,21 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
           viewer.redraw()
           i.selectionSubject foreach { controller.blink(_, viewer) }
         }
-      (beingSelected, port) match {
-        case (Some(b: Button), _)             ⇒ actButton(b)
-        case (Some(o: OpenPortDeclFigure), _) ⇒ selectItem(o)
-        case (_, Some(port)) ⇒ // connect
+      nearestPortOrItem(beingSelected) match {
+        case Some(b: Button)             ⇒ actButton(b)
+        case Some(o: OpenPortDeclFigure) ⇒ selectItem(o)
+        case Some(port: PortFigure) ⇒ // connect
           portsTrack.hideTip()
           connecting.enter(port.container, port, currentMouseLocation)
-        case (Some(line: LineItem), None) ⇒
+        case Some(line: LineItem) ⇒
           if (line.l.distance(currentMouseLocation) <= connectionLineDistance) {
             viewer.selection.updateSelection(line.selectionSubject.toSet, shift)
             viewer.redraw()
           } else {
             connecting.enter(line.container, line, currentMouseLocation)
           }
-        case (Some(i: Item), None) ⇒ selectItem(i)
-        case (None, _) ⇒
+        case Some(i: Item) ⇒ selectItem(i)
+        case None ⇒
           if (!viewer.selection.isEmpty) {
             viewer.selection.deselectAll()
             viewer.redraw()
@@ -102,26 +106,22 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     override def move() {
       super.move()
       portsTrack.update()
-      (portsTrack.current, itemUnderMouse) match {
-        case (_, Some(l: OpenPortDeclFigure)) ⇒
+      nearestPortOrItem match {
+        case Some(l: OpenPortDeclFigure) ⇒
           unblinkLine();
           viewer.setCursor(Cursors.ARROW)
-        case (_, Some(l: LineItem)) if (l.l.distance(currentMouseLocation) > connectionLineDistance) ⇒
+        case Some(l: LineItem) if (l.l.distance(currentMouseLocation) > connectionLineDistance) ⇒
           blinkLine(l);
           viewer.setCursor(Cursors.UPARROW)
-        case (None, Some(item)) ⇒
-          unblinkLine();
-          viewer.setCursor(Cursors.ARROW)
-        case (Some(_), _) ⇒
+        case Some(p: PortFigure) ⇒
           unblinkLine();
           viewer.setCursor(Cursors.UPARROW)
-        case (None, None) ⇒
+        case Some(item) ⇒
+          unblinkLine();
+          viewer.setCursor(Cursors.ARROW)
+        case None ⇒
           unblinkLine();
           viewer.setCursor(Cursors.CROSS)
-          portsTrack.current match {
-            case Some(_) ⇒
-            case None    ⇒
-          }
       }
     }
     def drag {

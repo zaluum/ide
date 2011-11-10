@@ -17,6 +17,7 @@ abstract class LayeredTool(viewer: ItemViewer) extends Tool(viewer) {
     current = viewer.findContainerAt(point(absMouseLocation)).asInstanceOf[C]
     currentMouseLocation = current.translateFromViewport(absMouseLocation)
     itemUnderMouse = current.itemAt(point(currentMouseLocation), false)
+
   }
   def currentIgnoring(ign: Set[ContainerItem]) =
     viewer.findContainerAtIgnoring(point(absMouseLocation), ign).asInstanceOf[C]
