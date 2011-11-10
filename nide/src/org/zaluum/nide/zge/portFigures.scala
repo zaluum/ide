@@ -38,8 +38,8 @@ class PortFigure(val container: ContainerItem) extends Ellipse with Hover {
         updateHoverColor()
       case None ⇒
         setBackgroundColor(ColorConstants.white)
-        setLineWidthFloat(1.5F)
-        size = Dimension(7, 7)
+        setLineWidthFloat(1F)
+        size = Dimension(5, 5)
     }
     setBounds(new Rectangle(pos.x, pos.y, size.w, size.h))
   }
@@ -82,6 +82,7 @@ trait PortFigureProperties extends Item with PropertySource {
   }
 }
 
+// a port showing inside/outside portsides
 abstract class OpenPortBaseFigure(val openBox: OpenBoxFigure)
     extends RectangleFigure with OverlappedItem
     with HasPorts with RectFeedback with PortFigureProperties {

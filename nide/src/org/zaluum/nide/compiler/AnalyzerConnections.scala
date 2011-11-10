@@ -99,11 +99,6 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     }
   }
 
-  /*def checkGhostPorts(vs: ValSymbol) {
-    for (pi ← vs.portInstances) {
-      if (pi.missing) error("Port " + pi.name.str + " does not exist" + pi, vs.decl)
-    }
-  }*/
   def checkPortConnectionsTypes(vs: ValSymbol) {
     for (pi ← vs.portInstances) {
       val tpeName = pi.declOption.map { _.typeName.str }.getOrElse("")
@@ -112,9 +107,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         pi.tpe = pi.portSymbol.get.tpe
       bl.connections.connectedFrom.get(pi) match {
         case Some((from, blame)) ⇒
-          if (from.missing || pi.missing) {
-            errorConnection("Connection to missing port " + from.name.str, blame)
-          } else if (pi.tpe == None && tpeName == "") {
+          if (pi.tpe == None && tpeName == "") {
             // do type inference
             pi.tpe = from.tpe
           } else if (pi.tpe == None) {
@@ -124,7 +117,9 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
           }
         case _ ⇒
       }
-      if (pi.tpe.isEmpty)
+      if (pi.missing)
+        error("Port " + pi.name.str + " is missing", blame)
+      else if (pi.tpe.isEmpty)
         error("Invalid port type " + tpeName, blame)
     }
   }

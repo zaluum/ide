@@ -2,7 +2,7 @@ Agenda
 	necessari
 	
 	- align tool 
-	
+	- figura port no connectat fa sortir triangle
 	- Assegurar future-proof. Com afegir features i mantenir versions.
 	- construcció classes (bundle/unbundle) (setters/getters)
 	- human readable signature label provider
