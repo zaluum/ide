@@ -230,7 +230,8 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
         val trans: PartialFunction[Tree, Tree] = {
           case te: Template if te == current.template ⇒
             val name = Name(current.symbol.freshName("port"))
-            val p = PortDef(name, Name("double"), dir, pos, Point(0, pos.y))
+            val portType = if (dir == In && current.symbol.isMainBSBlock) Name("double") else Name("")
+            val p = PortDef(name, portType, dir, pos, Point(0, pos.y))
             te.copy(
               ports = p :: transformTrees(te.ports),
               blocks = transformTrees(te.blocks))
