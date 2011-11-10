@@ -40,14 +40,17 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     }
     connectionNamer.traverse(b)
   }
-  // check 
+  // check
+  // Analizer has created portinstances for known PortSymbols
+  // Connections.addConnection has created portinstances with no PortSymbol 
+  // for special checking
   protected def check() {
     // 1 - Check clumps. Do not check for port existence.
-    for (c ← bl.connections.clumps) { checkClump(c) }
+    for (c ← bl.connections.clumps) { checkFlowAndLoops(c) }
     // 2 - compute execution order
     import scala.collection.JavaConversions._
     bl.executionOrder = new TopologicalOrderIterator(bl.dag).toList.filter { _.isExecutable }
-    // 3 - Propagate and check types
+    // 3 - Check types for each valDef
     checkTypes();
     // 4- Put calculated types to the clump
     for (c ← bl.connections.clumps) storeTypesInConnectionsAndJunctions(c)
@@ -56,7 +59,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     error(str, c)
     bl.connections.markAsBad(c)
   }
-  def checkClump(c: Clump) {
+  def checkFlowAndLoops(c: Clump) {
     val ins = c.ports.filter(p ⇒ p.flowIn) map { _.pi }
     val outs = c.ports.filter(p ⇒ !p.flowIn) map { _.pi }
     if (outs.size == 0) errorConnection("Connection has no output attached", c.connections.head)
@@ -95,12 +98,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         addDag(out, in)
     }
   }
-  def assignBoxTypeSymbolTypes(vs: ValSymbol) {
-    for (pi ← vs.portInstances; ps ← pi.portSymbol) {
-      pi.missing = false
-      pi.tpe = ps.tpe
-    }
-  }
+
   /*def checkGhostPorts(vs: ValSymbol) {
     for (pi ← vs.portInstances) {
       if (pi.missing) error("Port " + pi.name.str + " does not exist" + pi, vs.decl)
@@ -110,17 +108,24 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
     for (pi ← vs.portInstances) {
       val tpeName = pi.declOption.map { _.typeName.str }.getOrElse("")
       val blame: Tree = pi.declOption.getOrElse(vs.decl)
+      if (pi.tpe.isEmpty && pi.portSymbol.isDefined)
+        pi.tpe = pi.portSymbol.get.tpe
+      bl.connections.connectedFrom.get(pi) match {
+        case Some((from, blame)) ⇒
+          if (from.missing || pi.missing) {
+            errorConnection("Connection to missing port " + from.name.str, blame)
+          } else if (pi.tpe == None && tpeName == "") {
+            // do type inference
+            pi.tpe = from.tpe
+          } else if (pi.tpe == None) {
+            bl.connections.markAsBad(blame)
+          } else if (!checkAssignmentPossible(from.tpe, pi.tpe)) {
+            errorConnection("Connection with incompatible types: " + from.tpeHumanStr + " to " + pi.tpeHumanStr, blame)
+          }
+        case _ ⇒
+      }
       if (pi.tpe.isEmpty)
         error("Invalid port type " + tpeName, blame)
-      for ((from, blame) ← bl.connections.connectedFrom.get(pi)) {
-        if (from.missing || pi.missing) {
-          errorConnection("Connection to missing port " + from.name.str, blame)
-        } else if (from.tpe == None || pi.tpe == None) {
-          bl.connections.markAsBad(blame)
-          /*ignore reported as port type not found*/ } else if (!checkAssignmentPossible(from.tpe, pi.tpe)) {
-          errorConnection("Connection with incompatible types: " + from.tpeHumanStr + " to " + pi.tpeHumanStr, blame)
-        }
-      }
     }
   }
   def checkAssignmentPossible(from: Option[JavaType], to: Option[JavaType]): Boolean = {
@@ -155,7 +160,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
   def checkTypes() {
     if (main) {
       template.thisVal.portInstances foreach { pi ⇒
-        pi.missing = false
+        assert(!pi.missing)
         pi.portSymbol match {
           case Some(ps) ⇒ pi.tpe = ps.tpe
           case None     ⇒ error("Cannot find port " + pi.name.str, b)

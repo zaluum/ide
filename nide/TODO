@@ -1,10 +1,9 @@
 Agenda
 	necessari
-	- Assegurar future-proof. Com afegir features i mantenir versions.
 	
-	- auto type als ports interns
 	- align tool 
 	
+	- Assegurar future-proof. Com afegir features i mantenir versions.
 	- construcció classes (bundle/unbundle) (setters/getters)
 	- human readable signature label provider
 
@@ -161,6 +160,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- auto type als ports interns
 	- moure boxes entre contenidors
 	- despres de crear una box, quan s'edita l'etiqueta, fer que es pugui connectar els ports cancelant l'edició
 	- zaluum file with version number

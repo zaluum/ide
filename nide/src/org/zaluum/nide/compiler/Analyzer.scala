@@ -224,8 +224,11 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
           }
         case p: PortDef ⇒
           p.sym.tpe = catchAbort(scope.lookupType(p.typeName)) orElse {
-            error("Port type \"" + p.typeName + "\" not found in port " + p.sym.name.str,
-              tree); None
+            if (p.typeName.str != "") {
+              error("Port type \"" + p.typeName + "\" not found in port " + p.sym.name.str,
+                tree);
+            }
+            None
           }
         case v: ValDef ⇒
           catchAbort(Expressions.find(v.typeName)) match {

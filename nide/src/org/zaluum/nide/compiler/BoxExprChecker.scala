@@ -161,7 +161,9 @@ trait BoxExprChecker extends CheckerPart {
         case None ⇒ error(c.name.str + " has no parameter " + p.key.str, v)
       }
     }
-    //createPortInstances(vs.ports.values, vs, false, true)
+    for (pi ← vs.portInstances; ps ← pi.portSymbol) {
+      assert(pi.tpe == ps.tpe && pi.missing == false)
+    }
   }
 }
 object BoxExprChecker {

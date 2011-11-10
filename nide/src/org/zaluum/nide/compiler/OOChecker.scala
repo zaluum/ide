@@ -47,7 +47,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
           case Some(cl: ClassJavaType) ⇒
             vs.classinfo = cl
             tpe match {
-              case BoxExprType          ⇒ checkBoxExpr(vs, cl); c.assignBoxTypeSymbolTypes(vs)
+              case BoxExprType          ⇒ checkBoxExpr(vs, cl);
               case NewArrayExprType     ⇒ checkNewArray(vs, cl)
               case NewExprType          ⇒ checkNew(vs, cl)
               case ArrayComposeExprType ⇒ checkArrayCompose(vs, cl)
@@ -209,8 +209,17 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
         if (template.blocks.size != t.requiredBlocks)
           error(t.name.classNameWithoutPackage + " must have " + t.requiredBlocks + " blocks", vs.decl)
         else {
-          for (pi ← vs.portInstances; ps ← pi.portSymbol)
+          //why here?
+          for (pi ← vs.portInstances; ps ← pi.portSymbol) {
             pi.tpe = ps.tpe
+              def tpeName = pi.declOption.map { _.typeName.str }.getOrElse("")
+            if (pi.tpe.isEmpty && pi.dir == In || pi.dir == Shift && tpeName == "") {
+              // do type inference
+              bl.connections.connectedFrom.get(pi) foreach {
+                case (fromPi, blame) ⇒ pi.tpe = fromPi.tpe
+              }
+            }
+          }
           t.ports.values foreach { ps ⇒
             val pi = vs.findPortInstance(ps).get
             pi.tpe = primitives.Boolean
@@ -222,6 +231,5 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
       case None ⇒
         error("Fatal no template for template expression", vs.decl)
     }
-    c.checkPortConnectionsTypes(vs)
   }
 }
