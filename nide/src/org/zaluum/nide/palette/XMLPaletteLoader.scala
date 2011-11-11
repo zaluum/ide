@@ -13,6 +13,7 @@ import org.zaluum.nide.utils.JDTUtils.patternAnnotation
 import org.zaluum.nide.utils.JDTUtils.projectScope
 import org.zaluum.nide.utils.JDTUtils.search
 import org.zaluum.nide.images.ImageMap
+import org.zaluum.annotation.StaticBox
 
 class XMLPaletteLoader(project: ZaluumProject) extends XMLProjectReloader(project.jProject) {
   protected def withXMLFiles(func: InputStream ⇒ Unit) {
@@ -62,6 +63,11 @@ class XMLPaletteLoader(project: ZaluumProject) extends XMLProjectReloader(projec
       projectScope(project.jProject),
       monitor)
       .flatMap(PaletteEntry.load(_)).foreach { add }
+    search(
+      patternAnnotation(classOf[StaticBox].getName),
+      projectScope(project.jProject),
+      monitor)
+      .flatMap(PaletteEntry.loadStatic(_)).foreach { add }
     // add ports
     PaletteEntry.portsEntries foreach add
     var s = set.sorted(ord).toStream

@@ -20,6 +20,9 @@ import org.zaluum.nide.compiler.ValDef
 import org.eclipse.jdt.core.Flags
 import org.eclipse.jdt.core.IMethod
 import org.eclipse.jdt.core.JavaCore
+import org.zaluum.nide.compiler.InvokeStaticExprType
+import org.zaluum.nide.compiler.Signatures
+import org.zaluum.annotation.Box
 
 class Palette(val root: Pkg, val map: Map[String, List[PaletteEntry]])
 
@@ -45,6 +48,12 @@ object PaletteEntry {
     PaletteEntry(className.classNameWithoutPackage.str, className.packageProxy,
       BoxExprType.fqName.str, Map("#Class" -> List(className.str)))
   }
+  def static(className: Name, m: IMethod) = {
+    PaletteEntry(className.classNameWithoutPackage.str + "." + m.getElementName, className.packageProxy,
+      InvokeStaticExprType.fqName.str,
+      Map("#Class" -> List(className.str),
+        "#Method" -> List(Signatures.methodAndArity(m))))
+  }
 
   def expression(className: Name) = {
     PaletteEntry(className.classNameWithoutPackage.str, className.packageProxy,
@@ -60,31 +69,23 @@ object PaletteEntry {
   val OutEntry = portToProxy(Out)
   val ShiftEntry = portToProxy(Shift)
   val portsEntries = List(InEntry, OutEntry, ShiftEntry)
-
-  def load(t: IType): Array[PaletteEntry] =
-    try {
+  def loadStatic(t: IType): Seq[PaletteEntry] = {
+    t.getMethods filter { m ⇒
+      Flags.isStatic(m.getFlags()) &&
+        m.getAnnotations.exists(a ⇒
+          a.getElementName == classOf[Box].getName ||
+            a.getElementName == "Box")
+    } map (PaletteEntry.static(Name(t.getFullyQualifiedName), _))
+  }
+  def load(t: IType): Seq[PaletteEntry] = {
+    val me = try {
       val classname = Name(t.getFullyQualifiedName)
       if (Expressions.find(classname).isDefined) {
-        Array(PaletteEntry.expression(classname))
+        Seq(PaletteEntry.expression(classname))
       } else {
-        val methods = t.getMethods()
-        val applyMethods = for (
-          m ← methods;
-          if (m.getAnnotations.exists(a ⇒
-            a.getElementName == classOf[Apply].getName ||
-              a.getElementName == "Apply")) // TODO model is source only? not resolved.
-        ) yield { m }
-        if (applyMethods.size == 0)
-          Array(PaletteEntry.box(classname))
-        else {
-          Array(PaletteEntry.box(classname))
-          /*applyMethods map { m ⇒
-            if (Flags.isStatic(m.getFlags))
-              FIXME PaletteEntry.static(className, m)
-            else
-              FIXME PaletteEntry.box(m)
-          }*/
-        }
+        Seq(PaletteEntry.box(classname))
       }
-    } catch { case ex: Exception ⇒ Array() }
+    } catch { case ex: Exception ⇒ Seq() }
+    me ++ loadStatic(t)
+  }
 }

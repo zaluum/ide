@@ -25,6 +25,7 @@ object Signatures {
     def unapply(str: String): Option[(String, Int)] = methodAndAritySplit(str)
   }
   def methodAndArity(m: MethodBinding) = m.selector.mkString + "|" + m.parameters.length
+  def methodAndArity(m: IMethod) = m.getElementName() + "|" + m.getNumberOfParameters
   def methodAndAritySplit(str: String): Option[(String, Int)] =
     str match {
       case MethodAndArityRegexp(selector, Int(num)) ⇒ Some(selector, num)
