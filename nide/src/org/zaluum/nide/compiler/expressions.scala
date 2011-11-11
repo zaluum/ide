@@ -11,7 +11,6 @@ import org.zaluum.nide.zge.TextListParamProperty
 import org.zaluum.nide.zge.MultiLineTextParamProperty
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding
-
 sealed trait ExprType extends Type with PortsSymbol with PropertySourceType {
   def matchingClass: Class[_]
   lazy val name = Name(matchingClass.getSimpleName)

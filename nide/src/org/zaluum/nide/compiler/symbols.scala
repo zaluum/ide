@@ -378,7 +378,16 @@ class ValSymbol(val owner: BlockSymbol, val name: Name)
   }
   def findPortSide(pr: PortRef, inside: Boolean) =
     portSides.find(ps ⇒ ps.pi.name == pr.name && ps.inPort == pr.in && ps.fromInside == inside)
-
+  def incomingTypes(arity: Int): Seq[Option[JavaType]] = {
+    val ins = portInstances.filter(_.dir == In)
+    for (i ← 1 to arity) yield {
+      for (
+        pi ← ins.find(_.name.str == "p" + i);
+        (from, b) ← owner.connections.connectedFrom.get(pi);
+        tpe ← from.tpe
+      ) yield tpe
+    }
+  }
   override def toString = "ValSymbol(" + name + ")"
   def toInstructionsSeq = {
     val result = join.map { t ⇒ "Join(" + t.fqName.str + ")" }

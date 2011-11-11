@@ -105,22 +105,14 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     if (!c.binding.canBeInstantiated()) {
       error("Class " + c.name.str + " cannot be instantiated", vs.decl);
     }
-    vs.getStr(NewExprType.signatureSymbol) match {
-      case Some(muid) ⇒
-        val cons = Signatures.findConstructor(c, scope(vs), muid, true)
-        createMethodPortsAndDo(vs, cons) { m ⇒
-          NewExprType.thisPort(vs).tpe = ztd.zaluumScope.getJavaType(m.declaringClass)
-        }
-      case _ ⇒ error("No constructor specified", vs.decl) // XXdefault?
+    val cons = findConstructor(vs, c)
+    createMethodPortsAndDo(vs, cons) { m ⇒
+      NewExprType.thisPort(vs).tpe = ztd.zaluumScope.getJavaType(m.declaringClass)
     }
   }
   def invokeStatic(vs: ValSymbol, c: ClassJavaType) {
-    vs.getStr(InvokeStaticExprType.signatureSymbol) match {
-      case Some(muid) ⇒
-        val m = Signatures.findMethod(c, scope(vs), muid, true)
-        createMethodPorts(vs, m)
-      case _ ⇒ error("Static method not specified", vs.decl)
-    }
+    val m = findMethod(vs, c, true)
+    createMethodPorts(vs, m)
   }
   def checkThisRefExprType(vs: ValSymbol) {
     ThisRefExprType.thisPort(vs).tpe = c.analyzer.toCompile.sym
@@ -177,7 +169,7 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     val tpe = vs.tpe.get.asInstanceOf[SignatureExprType]
     vs.getStr(tpe.signatureSymbol) match {
       case Some(fieldName) ⇒
-        Signatures.findField(c, scope(vs), fieldName, static) match {
+        c.findField(fieldName, static, scope(vs)) match {
           case Some(p: ProblemFieldBinding) ⇒ error("Problem field " + p + p.problemId(), vs.decl)
           case Some(f: FieldBinding) ⇒
             val out = vs.tpe.get.asInstanceOf[ResultExprType].outPort(vs)
@@ -191,12 +183,38 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
       case _ ⇒ error("No field specified", vs.decl)
     }
   }
+
+  def matchingInvokeMethods(vs: ValSymbol, c: ClassJavaType, static: Boolean) = {
+    vs.getStr(vs.tpe.get.asInstanceOf[SignatureExprType].signatureSymbol) match {
+      case Some(Signatures.MethodAndArity(selector, arity)) ⇒
+        Some(c.findMatchingMethods(
+          selector, arity, vs.incomingTypes(arity), static, scope(vs)))
+      case _ ⇒ None
+    }
+  }
+  def matchingConstructors(vs: ValSymbol, c: ClassJavaType) = {
+    vs.getStr(vs.tpe.get.asInstanceOf[SignatureExprType].signatureSymbol) match {
+      case Some(Signatures.MethodAndArity(selector, arity)) ⇒
+        Some(c.findMatchingConstructors(
+          arity, vs.incomingTypes(arity), scope(vs)))
+      case _ ⇒ None
+    }
+  }
+  def selectSingleMethod(l: Seq[MethodBinding], blame: Tree) = l match {
+    case one :: Nil  ⇒ Some(one)
+    case Nil         ⇒ None
+    case one :: more ⇒ error("Ambigous method", blame); Some(one)
+  }
+  def findMethod(vs: ValSymbol, c: ClassJavaType, static: Boolean) = {
+    matchingInvokeMethods(vs, c, static) flatMap (selectSingleMethod(_, vs.decl))
+  }
+  def findConstructor(vs: ValSymbol, c: ClassJavaType) = {
+    matchingConstructors(vs, c) flatMap (selectSingleMethod(_, vs.decl))
+  }
   def invoke(vs: ValSymbol, c: ClassJavaType) {
-    vs.getStr(InvokeExprType.signatureSymbol) match {
-      case Some(muid) ⇒
-        val m = Signatures.findMethod(c, scope(vs), muid, false)
-        createMethodPorts(vs, m)
-      case _ ⇒ error("No selected method specified", vs.decl)
+    findMethod(vs, c, false) match {
+      case Some(m) ⇒ createMethodPorts(vs, Some(m))
+      case _       ⇒ error("Method not found", vs.decl)
     }
   }
   /*

@@ -14,8 +14,8 @@ import org.eclipse.jface.viewers.LabelProvider
 import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Shell
 import org.zaluum.nide.compiler.JavaType
+import org.zaluum.nide.compiler.ClassJavaType
 import org.zaluum.nide.compiler.ValSymbol
-import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 
 class FieldSelectDialog(
     shell: Shell,
@@ -54,11 +54,9 @@ class FieldSelectDialog(
   val settings = new DialogSettings(id);
   val scope = vs.mainBS.scope
 
-  val items: Array[FieldBinding] = tpe.map { _.binding } match {
-    case Some(r: ReferenceBinding) ⇒
-      val engine = ZaluumCompletionEngineScala.engineForVs(vs)
-      val fields = ZaluumCompletionEngineScala.allFields(engine, scope, r, static)
-      fields.sortBy(_.name.mkString).toArray
+  val items: Array[FieldBinding] = tpe match {
+    case Some(c: ClassJavaType) ⇒
+      c.allFields(static, scope).sortBy(_.name.mkString).toArray
     case _ ⇒ Array()
   }
   val currentField = currentFieldName flatMap { mstr ⇒

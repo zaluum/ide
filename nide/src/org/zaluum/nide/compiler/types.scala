@@ -59,19 +59,15 @@ class ArrayType(
 class ClassJavaType(
   val binding: ReferenceBinding,
   val scope: ZaluumClassScope)
-    extends JavaType with PropertySourceType {
+    extends JavaType with PropertySourceType with ClassJavaTypeFinder {
   type B = ReferenceBinding
   def descriptor = "L" + fqName.internal + ";"
   lazy val name = Name(binding.compoundName.last.mkString)
   lazy val pkg = Name(binding.fPackage.compoundName.map(_.mkString).mkString("."))
   lazy val fqName: Name = if (pkg.str != "") Name(pkg.str + "." + name.str) else name
-  lazy val engine = ZaluumCompletionEngineScala.engineFor(scope)
-  def allMethods = ZaluumCompletionEngineScala.allMethods(engine, scope, binding, static = false)
-  def allFields = ZaluumCompletionEngineScala.allFields(engine, scope, binding, static = false)
-  def allConstructors = ZaluumCompletionEngineScala.allConstructors(engine, scope, binding)
   lazy val beanProperties = {
     val map = scala.collection.mutable.HashMap[String, (MethodBinding, MethodBinding)]()
-    for (m ← allMethods) {
+    for (m ← allMethods(false, scope)) {
       if (MethodHelper.isGetter(m)) {
         val name = MethodHelper.propertyName(m)
         map.get(name) match {
@@ -101,6 +97,7 @@ class ClassJavaType(
       if (!t.isInstanceOf[InvalidValueType])
     ) yield new BeanProperty(controller, valDef, b)
   }
+
 }
 // only for compilation
 class BoxSymbol(

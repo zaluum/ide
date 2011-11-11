@@ -16,15 +16,14 @@ import org.eclipse.jface.dialogs.IDialogSettings
 import org.eclipse.jface.viewers.LabelProvider
 import org.eclipse.swt.widgets.Composite
 import org.eclipse.swt.widgets.Shell
-import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
-import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
 import org.zaluum.nide.compiler.Signatures
+import org.zaluum.nide.compiler.ClassJavaType
 
 abstract class MethodSelectDialog(
     jproject: JavaProject,
     shell: Shell,
-    binding: TypeBinding,
+    c: Option[ClassJavaType],
     scope: ZaluumClassScope,
     currentMethodUID: Option[String]) extends FilteredItemsSelectionDialog2(shell, false) {
 
@@ -59,15 +58,12 @@ abstract class MethodSelectDialog(
     }
   }
 
-  val items: Array[MethodWithNames] = binding match {
-    case r: ReferenceBinding ⇒
-      val engine = ZaluumCompletionEngineScala.engineFor(scope)
-      val paramNames = findMethods(engine, r) map { m ⇒ new MethodWithNames(m, jproject) }
-      paramNames.sortBy(_.selector).toArray
-    case _ ⇒ Array()
+  val items: Array[MethodWithNames] = {
+    val paramNames = findMethods() map { m ⇒ new MethodWithNames(m, jproject) }
+    paramNames.sortBy(_.selector).toArray
   }
-  val currentMethod = currentMethodUID flatMap { muid ⇒
-    items.find { _.methodUID == muid }
+  val currentMethod = currentMethodUID flatMap { marity ⇒
+    items.find { _.methodAndArity == marity }
   }
   setTitle("Select method");
   setMessage("Choose method to invoke" +
@@ -80,11 +76,11 @@ abstract class MethodSelectDialog(
   setInitialElementSelections(JavaConversions.seqAsJavaList(currentMethod.toList))
   lazy val valuesToFill: java.lang.Iterable[_] = JavaConversions.asJavaIterable(items.toIterable)
 
-  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding): List[MethodBinding]
+  def findMethods(): List[MethodBinding]
   override def isResizable = true
   override protected def okPressed() {
     getSelectedItems().getFirstElement() match {
-      case m: MethodWithNames ⇒ result = Some(m.methodUID)
+      case m: MethodWithNames ⇒ result = Some(m.methodAndArity)
       case _                  ⇒
     }
     super.okPressed()
@@ -139,8 +135,10 @@ case class MethodWithNames(m: MethodBinding, paramNames: List[String]) {
     }
   }
   def selector = m.selector.mkString
+  def arity = if (m.parameters == null) 0 else m.parameters.size
   def declaringClass = new String(m.declaringClass.readableName())
-  def methodUID = Signatures.methodUID(m)
+  //def methodUID = Signatures.methodUID(m)
+  def methodAndArity = Signatures.methodAndArity(m)
   def fullText = org.zaluum.nide.utils.MethodBindingUtils.toMethodStr(m, paramNames) + " - " + declaringClass
   def text = selector + " " + params + " : " + returnStr + " - " + declaringClass
 }

@@ -2,7 +2,6 @@ package org.zaluum.nide.palette
 import scala.Array.canBuildFrom
 import scala.collection.breakOut
 import scala.collection.Map
-
 import org.eclipse.jdt.core.IType
 import org.zaluum.annotation.Apply
 import org.zaluum.nide.compiler.Block
@@ -18,6 +17,9 @@ import org.zaluum.nide.compiler.PortDir
 import org.zaluum.nide.compiler.Shift
 import org.zaluum.nide.compiler.Template
 import org.zaluum.nide.compiler.ValDef
+import org.eclipse.jdt.core.Flags
+import org.eclipse.jdt.core.IMethod
+import org.eclipse.jdt.core.JavaCore
 
 class Palette(val root: Pkg, val map: Map[String, List[PaletteEntry]])
 
@@ -43,6 +45,7 @@ object PaletteEntry {
     PaletteEntry(className.classNameWithoutPackage.str, className.packageProxy,
       BoxExprType.fqName.str, Map("#Class" -> List(className.str)))
   }
+
   def expression(className: Name) = {
     PaletteEntry(className.classNameWithoutPackage.str, className.packageProxy,
       className.str, Map())
@@ -61,17 +64,27 @@ object PaletteEntry {
   def load(t: IType): Array[PaletteEntry] =
     try {
       val classname = Name(t.getFullyQualifiedName)
-      val methods = t.getMethods()
-      for (
-        m ← methods;
-        if (m.getAnnotations.exists(a ⇒
-          a.getElementName == classOf[Apply].getName ||
-            a.getElementName == "Apply")) // TODO model is source only? not resolved.
-      ) yield {
-        if (Expressions.find(classname).isDefined)
-          PaletteEntry.expression(classname)
-        else
-          PaletteEntry.box(classname)
+      if (Expressions.find(classname).isDefined) {
+        Array(PaletteEntry.expression(classname))
+      } else {
+        val methods = t.getMethods()
+        val applyMethods = for (
+          m ← methods;
+          if (m.getAnnotations.exists(a ⇒
+            a.getElementName == classOf[Apply].getName ||
+              a.getElementName == "Apply")) // TODO model is source only? not resolved.
+        ) yield { m }
+        if (applyMethods.size == 0)
+          Array(PaletteEntry.box(classname))
+        else {
+          Array(PaletteEntry.box(classname))
+          /*applyMethods map { m ⇒
+            if (Flags.isStatic(m.getFlags))
+              FIXME PaletteEntry.static(className, m)
+            else
+              FIXME PaletteEntry.box(m)
+          }*/
+        }
       }
     } catch { case ex: Exception ⇒ Array() }
 }

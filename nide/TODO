@@ -2,11 +2,9 @@ Agenda
 	necessari
 	
 	- align tool 
-	- figura port no connectat fa sortir triangle
-	- Assegurar future-proof. Com afegir features i mantenir versions.
 	- construcció classes (bundle/unbundle) (setters/getters)
 	- human readable signature label provider
-
+	-check arities > 10
 	- si tool tira excepció exit i a select
 	- remove one end connections	
 	- Al enganxar a GUI enganxa al bloc principal, fer servir el mecanisme de crear
@@ -28,11 +26,12 @@ Agenda
 		- generics
 		- protected/private
 	- basic math
+	- Assegurar future-proof. Com afegir features i mantenir versions.
 	- beta nag screen/ watermark
 	- buy hosting
 	
 	millora
-	- no se detectar millor el drag. El button down arriba al cap d'una estona!
+	- no sé detectar millor el drag. El button down arriba al cap d'una estona!
 	- boto dret-> add to palette -> palette.xml
 	- data log
 	- llibreria VISA 

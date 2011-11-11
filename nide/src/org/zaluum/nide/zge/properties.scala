@@ -28,6 +28,7 @@ import org.zaluum.nide.compiler.BoxDef
 import org.zaluum.nide.compiler.BoxExprType
 import org.zaluum.nide.compiler.Expressions
 import org.zaluum.nide.compiler.JavaType
+import org.zaluum.nide.compiler.ClassJavaType
 import org.zaluum.nide.compiler.Name
 import org.zaluum.nide.compiler.Param
 import org.zaluum.nide.compiler.ParamDecl
@@ -36,7 +37,6 @@ import org.zaluum.nide.compiler.Signatures
 import org.zaluum.nide.compiler.ValDef
 import org.zaluum.nide.compiler.Values
 import org.zaluum.nide.compiler.VarDecl
-import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 import org.zaluum.nide.eclipse.integration.model.ZaluumCompletionEngine
 import org.zaluum.nide.utils.SWTScala
@@ -113,8 +113,8 @@ class InitMethodProperty(b: BoxDef, c: Controller) extends InitProperty(b, c) wi
     set(className.getOrElse(""), value.toString)
   }
   def get: AnyRef = methodUID.getOrElse("")
-  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
-    ZaluumCompletionEngineScala.allMethods(engine, scope, r, true)
+  def findMethods(c: ClassJavaType) =
+    c.allMethods(true, scope)
 }
 class InitMethodClassProperty(b: BoxDef, c: Controller) extends InitProperty(b, c) with TypeProperty {
   val displayName = "*Init method class"
@@ -255,28 +255,28 @@ class ConstructorParamProperty(
     ttpe: ⇒ Option[JavaType]) extends TextParamProperty(c, p, v) with MethodProperty {
   def scope = v.sym.mainBS.scope
   def tpe = ttpe
-  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
-    ZaluumCompletionEngineScala.allConstructors(engine, scope, r)
+  def findMethods(c: ClassJavaType) =
+    c.allConstructors(scope)
 }
 trait MethodProperty extends ControllerProperty {
   def tpe: Option[JavaType]
-  def binding = tpe match {
-    case Some(t) ⇒ t.binding
-    case None    ⇒ null
+  def classJavaType = tpe match {
+    case Some(c: ClassJavaType) ⇒ Some(c)
+    case None                   ⇒ None
   }
   def scope: ZaluumClassScope
   def currentVal: Option[String]
-  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding): List[MethodBinding]
+  def findMethods(c: ClassJavaType): List[MethodBinding]
   override def descriptor = new TextDialogPropertyDescriptor(this, displayName) {
     def openDialog(cell: Control, a: AnyRef) = {
       val m = new MethodSelectDialog(
         c.zproject.jProject.asInstanceOf[JavaProject],
         cell.getShell(),
-        binding,
+        classJavaType,
         scope,
         currentVal) {
-        def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
-          MethodProperty.this.findMethods(engine, r)
+        def findMethods() =
+          classJavaType map { MethodProperty.this.findMethods } getOrElse (List())
       }
       m.openRet().getOrElse(null)
     }
@@ -291,8 +291,8 @@ class MethodParamProperty(
     val static: Boolean) extends TextParamProperty(c, p, v) with MethodProperty {
   def scope = v.sym.mainBS.scope
   def tpe = javatpe
-  def findMethods(engine: ZaluumCompletionEngine, r: ReferenceBinding) =
-    ZaluumCompletionEngineScala.allMethods(engine, scope, r, static)
+  def findMethods(c: ClassJavaType) =
+    c.allMethods(static, scope)
 }
 
 class FieldParamProperty(

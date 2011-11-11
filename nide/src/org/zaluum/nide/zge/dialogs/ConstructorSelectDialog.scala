@@ -104,7 +104,7 @@ class ConstructorSelectDialog(
     combo = new ComboViewer(c)
     combo.setContentProvider(ArrayContentProvider.getInstance)
     val tpe = vs.classinfo.asInstanceOf[ClassJavaType]
-    combo.setInput(tpe.allConstructors.toArray)
+    combo.setInput(tpe.allConstructors(tpe.scope).toArray)
     combo.getControl.setLayoutData("span,wrap")
     val constructor = vs match {
       case vs: ValSymbol ⇒ vs.constructor

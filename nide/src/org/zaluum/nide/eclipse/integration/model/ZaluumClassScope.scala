@@ -31,7 +31,6 @@ import org.zaluum.nide.compiler.{ Scope ⇒ ZScope }
 import org.zaluum.nide.compiler.primitives
 import org.zaluum.nide.utils.JDTUtils.aToString
 import org.zaluum.nide.utils.JDTUtils.stringToA
-import org.zaluum.nide.compiler.ZaluumCompletionEngineScala
 import org.eclipse.jdt.internal.compiler.impl.StringConstant
 import org.zaluum.nide.compiler.PortDir
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding
