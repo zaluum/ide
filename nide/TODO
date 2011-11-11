@@ -94,7 +94,6 @@ bugs
 	- BUG Change type of a box to While or if (doesn't have template)
 	
 LATER
-	- No seleccionar mètodes amb signatura completa només nom i numero de parametres. Buscar matching.
 	- colocar widget a les mateixes coordenades que al diagrama de blocks al crear(buscar forat?)
 	- Botons advanced, categories, etc a Zaluum properties view
 	-Com enrutar events swing a boxes?
@@ -159,6 +158,7 @@ MUCH LATER
 	-map reduce/other outputs.
 	
 DONE!
+	- No seleccionar mètodes amb signatura completa només nom i numero de parametres. Buscar matching.
 	- auto type als ports interns
 	- moure boxes entre contenidors
 	- despres de crear una box, quan s'edita l'etiqueta, fer que es pugui connectar els ports cancelant l'edició

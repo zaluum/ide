@@ -33,9 +33,12 @@ trait ClassJavaTypeFinder {
                           scope: ZaluumClassScope): List[MethodBinding] = {
     allMethods(static, scope) filter { m ⇒
       m.selector.mkString == selector &&
-        ((m.parameters == null && arity == 0) || m.parameters.length == arity) &&
-        matchesParameters(m, incomingTypes)
+        matchesArityAndParameters(m, arity, incomingTypes)
     }
+  }
+  def matchesArityAndParameters(m: MethodBinding, arity: Int, incomingTypes: Seq[Option[JavaType]]): Boolean = {
+    ((m.parameters == null && arity == 0) || m.parameters.length == arity) &&
+      matchesParameters(m, incomingTypes)
   }
   def matchesParameters(m: MethodBinding, incomingTypes: Seq[Option[JavaType]]): Boolean = {
     if (m.parameters == null) { true }

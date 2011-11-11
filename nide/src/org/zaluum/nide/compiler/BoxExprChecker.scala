@@ -29,17 +29,24 @@ trait BoxExprChecker extends CheckerPart {
     pi.missing = false
   }
 
+  def selectMethodWithApply(vs: ValSymbol, c: ClassJavaType): Option[MethodBinding] = {
+    val withApply = c.allMethods(false, scope(vs)).filter { m ⇒ getApplyAnnotation(m).isDefined }
+      def parLen(m: MethodBinding) = if (m.parameters == null) 0 else m.parameters.length
+    val grouped = withApply.groupBy(parLen)
+    val candidates = grouped.keys.toSeq.sorted.flatMap { num ⇒
+      val incoming = vs.incomingTypes(num)
+      grouped(num).filter(m ⇒ c.matchesParameters(m, incoming))
+    }
+    selectSingleMethod(candidates, vs.decl)
+  }
   private def doMethods(vs: ValSymbol, c: ClassJavaType) {
     // find apply
     val r = c.binding
-    val candidates = matchingInvokeMethods(vs, c, false).getOrElse {
-      c.allMethods(false, scope(vs))
-        .filter { m ⇒
-          getApplyAnnotation(m).isDefined
-        }
-    }
-    val m = selectSingleMethod(candidates, vs.decl)
-    m foreach { m ⇒
+    val om = matchingInvokeMethods(vs, c, false)
+      .map(selectSingleMethod(_, vs.decl)).getOrElse {
+        selectMethodWithApply(vs, c)
+      }
+    om foreach { m ⇒
       vs.typeSpecificInfo = Some(m)
       val argumentNames = getApplyAnnotation(m).flatMap(BoxExprChecker.annotatedParameters(m, _))
       val helpers = BoxExprChecker.helperNames(m, scope(vs))

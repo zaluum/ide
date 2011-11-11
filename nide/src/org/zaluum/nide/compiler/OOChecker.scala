@@ -200,11 +200,14 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
       case _ ⇒ None
     }
   }
-  def selectSingleMethod(l: Seq[MethodBinding], blame: Tree) = l match {
-    case one :: Nil  ⇒ Some(one)
-    case Nil         ⇒ None
-    case one :: more ⇒ error("Ambigous method", blame); Some(one)
-  }
+  def selectSingleMethod(l: Seq[MethodBinding], blame: Tree) =
+    if (l.size == 1) l.headOption
+    else if (l.size == 0) None
+    else {
+      val candidates = l.map(_.readableName().mkString).mkString(", ")
+      error("Ambigous method. Possible candidates: " + candidates, blame);
+      l.headOption
+    }
   def findMethod(vs: ValSymbol, c: ClassJavaType, static: Boolean) = {
     matchingInvokeMethods(vs, c, static) flatMap (selectSingleMethod(_, vs.decl))
   }
