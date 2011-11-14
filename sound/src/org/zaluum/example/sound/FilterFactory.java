@@ -80,7 +80,7 @@ public class FilterFactory {
 		double[] r = new double[inversetransform.length];
 		for (int i=0; i<inversetransform.length; i++) {
 			Complex c = inversetransform[i];
-			r[i] = c.getReal();//Math.sqrt(c.getReal()*c.getReal() + c.getImaginary()*c.getImaginary());
+			r[i] = Math.sqrt(c.getReal()*c.getReal() + c.getImaginary()*c.getImaginary());
 		}
 		return r;
 	}

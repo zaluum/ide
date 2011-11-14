@@ -7,14 +7,12 @@ import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Mixer.Info;
 import javax.sound.sampled.SourceDataLine;
 
+import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
-import org.zaluum.annotation.In;
-import org.zaluum.annotation.Out;
 
 @Box
 public class SoundOutput {
-	@In public double in;
-	@Out public double deltaTime;
+	private double deltaTime;
 	static final int channels = 2;
 	static final int bits = 16;
 	static final float sampleRate = 44100.0f;
@@ -32,8 +30,14 @@ public class SoundOutput {
 		deltaTime = 1/sampleRate;
 		sndOut.start();
 	}
-	
-	public void apply() {
+	@Apply public double deltaTime(double[] in ) {
+		for (double d : in) {
+			deltaTime(d);
+		}
+		return deltaTime*in.length;
+	}
+	@Apply
+	public double deltaTime(double in) {
 		int s = (int)(32767.0f*Math.min(1.0,Math.max(-1.0, in)));
 		byte msb = (byte) (s >>>8);
 		byte lsb = (byte) s;
@@ -48,6 +52,7 @@ public class SoundOutput {
 				offset+=sndOut.write(buffer, offset, buffer.length - offset);
 			}
 		}
+		return deltaTime;
 	}
     public void test() throws Exception {
     	int samples = 2 << 19;

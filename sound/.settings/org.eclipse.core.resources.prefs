@@ -1,8 +1,4 @@
-#Wed Jun 22 17:09:39 CEST 2011
+#Mon Nov 14 15:49:37 CET 2011
 eclipse.preferences.version=1
-encoding//src/org/zaluum/example/sound/ConnectAudio.zaluum=ISO-8859-1
-encoding//src/org/zaluum/example/sound/Equalizer8.zaluum=ISO-8859-1
-encoding//src/org/zaluum/example/sound/Generate.zaluum=ISO-8859-1
-encoding//src/org/zaluum/example/sound/LoopSum.zaluum=ISO-8859-1
-encoding//src/org/zaluum/example/sound/LoopSum2.zaluum=ISO-8859-1
-encoding//src/org/zaluum/example/sound/TestWidget.zaluum=ISO-8859-1
+encoding//src/org/zaluum/example/sound/FilterTest.zaluum=ISO-8859-1
+encoding//src/org/zaluum/example/sound/TestWavelet.zaluum=ISO-8859-1

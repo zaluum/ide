@@ -1,13 +1,18 @@
 package org.zaluum.example.sound;
 
+import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
-import org.zaluum.annotation.In;
 
 @Box
 public class DynamicFIR extends AbstractFIRBox {
-	@In public double[] coeficients; 
+	protected double[] coeficients;
 	public DynamicFIR(int len) {
 		super(len); 
+	}
+	@Apply
+	public double filtered(double[] coeficients, double d) {
+		this.coeficients = coeficients;
+		return filtered(d);
 	}
 	@Override
 	public double[] getCoeficients() {

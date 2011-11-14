@@ -1,11 +1,10 @@
 package org.zaluum.example.sound;
 
-import org.zaluum.annotation.In;
-import org.zaluum.annotation.Out;
+import org.zaluum.annotation.Apply;
 
 public abstract class AbstractFIRBox {
-	@In public double in;
-	@Out public double out;
+	public double in;
+	public double out;
 	
 	private final double[] buffer;
 	private int count;
@@ -13,8 +12,9 @@ public abstract class AbstractFIRBox {
 		buffer = new double[len];
 		count = 0;
 	}
-	public void apply(){
-		out = process(in);
+	@Apply
+	public double filtered(double in){
+		return process(in);
 	}
 	public abstract double[] getCoeficients();
 	public double process(double sample) {

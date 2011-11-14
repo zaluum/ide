@@ -11,13 +11,11 @@ import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Mixer.Info;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
-import org.zaluum.annotation.Out;
 
 @Box
 public class WavSoundInput {
-	@Out
-	public double out;
 	static final int channels = 2;
 	static final int bits = 16;
 	static final float sampleRate = 44100.0f;
@@ -37,7 +35,17 @@ public class WavSoundInput {
 		AudioInputStream ais = AudioSystem.getAudioInputStream(new File(file));
 		audioInputStream = AudioSystem.getAudioInputStream(format, ais);
 	}
-	public void apply() {
+	double[] chunk = new double[512];
+	@Apply
+	public double[] chunk() {
+		for (int i=0;i<chunk.length;i++){
+			chunk[i]=read();
+		}
+		return chunk;
+	}
+	@Apply
+	public double read() {
+		double out;
 		try {
 			int read = audioInputStream.read(buffer);
 			if (read == -1) {
@@ -56,10 +64,11 @@ public class WavSoundInput {
 			e.printStackTrace();
 			out = 0;
 		}
+		return out;
 	}
 
 	public void test() throws Exception {
-		apply();
+		read();
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -76,6 +85,6 @@ public class WavSoundInput {
 			}
 
 		}
-		new WavSoundInput("test.wav").test();
+		new WavSoundInput("easy-11025-mono.wav").test();
 	}
 }
