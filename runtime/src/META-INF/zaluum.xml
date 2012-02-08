@@ -1,8 +1,8 @@
 <zaluum>
-      <entry name="bla" pkg="org.zaluum.caca" type="org.zaluum.object.BoxInstance">
+    <!--   <entry name="bla" pkg="org.zaluum.caca" type="org.zaluum.object.BoxInstance">
         <image>org/zaluum/bla/bla.gif</image>
       	<param key="#Class">bla</param> 
-      </entry>
+      </entry>-->
       <image class="org.zaluum.op.Cast">
       	org/zaluum/op/Xor.png
       </image>

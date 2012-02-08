@@ -23,8 +23,8 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
         if (out.tpe.isEmpty) error("Return type " + m.returnType.readableName().mkString + " cannot be resolved", vs.decl)
       }
       for ((p, i) ← m.parameters.zipWithIndex) {
-        val name = Name("p" + i)
-        val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(Name("p" + i)).pi }
+        val name = Name("p" + (i + 1))
+        val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(name).pi }
         in.missing = false
         in.tpe = ztd.zaluumScope.getJavaType(p);
       }
@@ -105,13 +105,13 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
     if (!c.binding.canBeInstantiated()) {
       error("Class " + c.name.str + " cannot be instantiated", vs.decl);
     }
-    val cons = findConstructor(vs, c)
+    val cons = selectBestMethod(vs, c, false, true)
     createMethodPortsAndDo(vs, cons) { m ⇒
       NewExprType.thisPort(vs).tpe = ztd.zaluumScope.getJavaType(m.declaringClass)
     }
   }
   def invokeStatic(vs: ValSymbol, c: ClassJavaType) {
-    val m = findMethod(vs, c, true)
+    val m = selectBestMethod(vs, c, true, false)
     createMethodPorts(vs, m)
   }
   def checkThisRefExprType(vs: ValSymbol) {
@@ -183,39 +183,41 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
       case _ ⇒ error("No field specified", vs.decl)
     }
   }
-
-  def matchingInvokeMethods(vs: ValSymbol, c: ClassJavaType, static: Boolean) = {
-    vs.getStr(vs.tpe.get.asInstanceOf[SignatureExprType].signatureSymbol) match {
-      case Some(Signatures.MethodAndArity(selector, arity)) ⇒
-        Some(c.findMatchingMethods(
-          selector, arity, vs.incomingTypes(arity), static, scope(vs)))
-      case _ ⇒ None
-    }
-  }
-  def matchingConstructors(vs: ValSymbol, c: ClassJavaType) = {
-    vs.getStr(vs.tpe.get.asInstanceOf[SignatureExprType].signatureSymbol) match {
-      case Some(Signatures.MethodAndArity(selector, arity)) ⇒
-        Some(c.findMatchingConstructors(
-          arity, vs.incomingTypes(arity), scope(vs)))
-      case _ ⇒ None
-    }
-  }
-  def selectSingleMethod(l: Seq[MethodBinding], blame: Tree) =
-    if (l.size == 1) l.headOption
-    else if (l.size == 0) None
+  def numberParametersMatching(m: MethodBinding, types: Seq[Option[JavaType]]) = {
+    if (m.parameters == null) 0
     else {
-      val candidates = l.map(_.readableName().mkString).mkString(", ")
-      error("Ambigous method. Possible candidates: " + candidates, blame);
-      l.headOption
+      (m.parameters zip types) filter { case (p, t) ⇒ t.isDefined && t.get == p } size
     }
-  def findMethod(vs: ValSymbol, c: ClassJavaType, static: Boolean) = {
-    matchingInvokeMethods(vs, c, static) flatMap (selectSingleMethod(_, vs.decl))
   }
-  def findConstructor(vs: ValSymbol, c: ClassJavaType) = {
-    matchingConstructors(vs, c) flatMap (selectSingleMethod(_, vs.decl))
+  def selectBestMethod(vs: ValSymbol, c: ClassJavaType, static: Boolean, constructor: Boolean) = {
+    vs.getStr(vs.tpe.get.asInstanceOf[SignatureExprType].signatureSymbol) match {
+      case Some(Signatures.MethodAndArity(selector, arity)) ⇒
+        val incomings = vs.incomingTypes(arity)
+        val meths =
+          if (constructor)
+            c.findMatchingConstructors(arity, incomings, scope(vs))
+          else
+            c.findMatchingMethods(selector, arity, incomings, static, scope(vs))
+        val candidates = meths.map(m ⇒ (m, numberParametersMatching(m, incomings))).sortBy(_._2)
+        if (candidates.size == 1) Some(candidates(0)._1)
+        else if (candidates.size == 0) None
+        else {
+          if (candidates(0)._2 == candidates(1)._2) {
+            val readable = candidates.map(_._1.readableName().mkString).mkString(", ")
+            error("Ambigous method. Possible candidates: " + readable, vs.decl);
+          }
+          Some(candidates(0)._1)
+        }
+      case None ⇒ None
+    }
   }
+
+  def numparams(m: MethodBinding): Int = {
+    if (m.parameters == null) 0 else m.parameters.length
+  }
+
   def invoke(vs: ValSymbol, c: ClassJavaType) {
-    findMethod(vs, c, false) match {
+    selectBestMethod(vs, c, false, false) match {
       case Some(m) ⇒ createMethodPorts(vs, Some(m))
       case _       ⇒ error("Method not found", vs.decl)
     }

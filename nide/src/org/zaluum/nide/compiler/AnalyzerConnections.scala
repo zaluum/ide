@@ -5,7 +5,37 @@ import org.jgrapht.experimental.dag.DirectedAcyclicGraph
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.traverse.TopologicalOrderIterator
 import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
-
+object CheckConnections {
+  def checkAssignmentPossible(from: Option[JavaType], to: Option[JavaType], zaluumScope: ZaluumClassScope): Boolean = {
+    if (to.isEmpty) return false
+    from match {
+      case None ⇒ false
+      case Some(f: PrimitiveJavaType) ⇒
+        to match {
+          case Some(t: PrimitiveJavaType) if t == f ⇒ true
+          case Some(t: PrimitiveJavaType) ⇒
+            t == f || primitives.widening(f, t)
+          case Some(t: ClassJavaType) ⇒
+            zaluumScope.getBoxedType(f).get.binding.isCompatibleWith(t.binding)
+          case _ ⇒ false
+        }
+      case Some(f: ClassJavaType) ⇒
+        to match {
+          case Some(t: PrimitiveJavaType) ⇒
+            primitives.getUnboxedType(f) match {
+              case Some(fp) ⇒ fp == t || primitives.widening(fp, t)
+              case None     ⇒ false
+            }
+          case Some(t: JavaType) ⇒
+            f.binding.isCompatibleWith(t.binding);
+          case _ ⇒ false
+        }
+      case Some(f: JavaType) ⇒
+        f.binding.isCompatibleWith(to.get.binding); //array
+      case _ ⇒ false
+    }
+  }
+}
 class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends ReporterAdapter {
   def location(tree: Tree) = analyzer.globLocation(tree)
   def reporter = analyzer.reporter
@@ -112,7 +142,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
             pi.tpe = from.tpe
           } else if (pi.tpe == None) {
             bl.connections.markAsBad(blame)
-          } else if (!checkAssignmentPossible(from.tpe, pi.tpe)) {
+          } else if (!CheckConnections.checkAssignmentPossible(from.tpe, pi.tpe, ztd.zaluumScope)) {
             errorConnection("Connection with incompatible types: " + from.tpeHumanStr + " to " + pi.tpeHumanStr, blame)
           }
         case _ ⇒
@@ -123,35 +153,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         error("Invalid port type " + tpeName, blame)
     }
   }
-  def checkAssignmentPossible(from: Option[JavaType], to: Option[JavaType]): Boolean = {
-    if (to.isEmpty) return false
-    from match {
-      case None ⇒ false
-      case Some(f: PrimitiveJavaType) ⇒
-        to match {
-          case Some(t: PrimitiveJavaType) if t == f ⇒ true
-          case Some(t: PrimitiveJavaType) ⇒
-            t == f || primitives.widening(f, t)
-          case Some(t: ClassJavaType) ⇒
-            ztd.zaluumScope.getBoxedType(f).get.binding.isCompatibleWith(t.binding)
-          case _ ⇒ false
-        }
-      case Some(f: ClassJavaType) ⇒
-        to match {
-          case Some(t: PrimitiveJavaType) ⇒
-            primitives.getUnboxedType(f) match {
-              case Some(fp) ⇒ fp == t || primitives.widening(fp, t)
-              case None     ⇒ false
-            }
-          case Some(t: JavaType) ⇒
-            f.binding.isCompatibleWith(t.binding);
-          case _ ⇒ false
-        }
-      case Some(f: JavaType) ⇒
-        f.binding.isCompatibleWith(to.get.binding); //array
-      case _ ⇒ false
-    }
-  }
+
   def checkTypes() {
     if (main) {
       template.thisVal.portInstances foreach { pi ⇒

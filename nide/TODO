@@ -6,6 +6,7 @@ Agenda
 	- human readable signature label provider
 	- check arities > 10
 	- check apply double a() i @out a
+	- mark errors on tooltip / valdefs
 	- si tool tira excepció exit i a select
 	- remove one end connections	
 	- Al enganxar a GUI enganxa al bloc principal, fer servir el mecanisme de crear

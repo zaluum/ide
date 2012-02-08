@@ -8,7 +8,7 @@ import info.monitorenter.gui.chart.traces.Trace2DLtd;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-
+// FIXME synchronized
 public class PlotBase extends Chart2D {
 	private static final long serialVersionUID = 1L;
 	private long x = 0;
@@ -27,11 +27,11 @@ public class PlotBase extends Chart2D {
 		updateTraces();
 	}
 
-	private synchronized void updateTraces() {
+	private void updateTraces() {
 		traces = getTraces().toArray(new ITrace2D[0]);
 	}
 
-	public synchronized void createTraces(int n) {
+	public void createTraces(int n) {
 		int toCreate = n - traces.length;
 		if (toCreate > 0) {
 			for (int i = 0; i < toCreate; i++) {
@@ -71,14 +71,14 @@ public class PlotBase extends Chart2D {
 		}
 	}
 
-	public synchronized void single(double data) {
+	public void single(double data) {
 		createTraces(1);
 		ITrace2D trace = traces[0];
 		trace.addPoint(x, data);
 		x++;
 	}
 
-	public synchronized void array(double[] data) {
+	public void array(double[] data) {
 		if (data == null || data.length == 0)
 			return;
 		createTraces(1);
@@ -89,7 +89,7 @@ public class PlotBase extends Chart2D {
 		}
 	}
 
-	public synchronized void multi(double[] data) {
+	public void multi(double[] data) {
 		if (data == null || data.length == 0)
 			return;
 		createTraces(data.length);
@@ -100,7 +100,7 @@ public class PlotBase extends Chart2D {
 		x++;
 	}
 
-	public synchronized void multi(double[][] data) {
+	public void multi(double[][] data) {
 		if (data == null || data.length == 0)
 			return;
 		createTraces(data.length);

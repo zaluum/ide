@@ -9,6 +9,7 @@ import org.zaluum.nide.eclipse.integration.model.ZaluumCompilationUnitScope
 import org.eclipse.jdt.internal.compiler.util.ObjectVector
 import scala.collection.JavaConversions._
 import org.zaluum.nide.eclipse.integration.model.ZaluumTypeDeclaration
+import org.zaluum.nide.eclipse.integration.model.ZaluumClassScope
 
 trait ClassJavaTypeFinder {
   self: ClassJavaType ⇒
@@ -23,7 +24,7 @@ trait ClassJavaTypeFinder {
                                scope: ZaluumClassScope) = {
     allConstructors(scope) filter { m ⇒
       ((m.parameters == null && arity == 0) || m.parameters.length == arity) &&
-        matchesParameters(m, incomingTypes)
+        matchesParameters(m, incomingTypes, scope)
     }
   }
   def findMatchingMethods(selector: String,
@@ -38,16 +39,17 @@ trait ClassJavaTypeFinder {
   }
   def matchesArityAndParameters(m: MethodBinding, arity: Int, incomingTypes: Seq[Option[JavaType]]): Boolean = {
     ((m.parameters == null && arity == 0) || m.parameters.length == arity) &&
-      matchesParameters(m, incomingTypes)
+      matchesParameters(m, incomingTypes, scope)
   }
-  def matchesParameters(m: MethodBinding, incomingTypes: Seq[Option[JavaType]]): Boolean = {
+  def matchesParameters(m: MethodBinding, incomingTypes: Seq[Option[JavaType]], scope: ZaluumClassScope): Boolean = {
     if (m.parameters == null) { true }
     else {
       m.parameters.zip(incomingTypes).forall {
         case (t, ot) ⇒
           ot match {
-            case Some(incomingT) ⇒ t.erasure().isCompatibleWith(incomingT.binding)
-            case None            ⇒ true
+            case Some(incomingT) ⇒
+              CheckConnections.checkAssignmentPossible(Some(incomingT), scope.getJavaType(t), scope)
+            case None ⇒ true
           }
       }
     }

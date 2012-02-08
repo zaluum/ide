@@ -29,23 +29,35 @@ trait BoxExprChecker extends CheckerPart {
     pi.missing = false
   }
 
-  def selectMethodWithApply(vs: ValSymbol, c: ClassJavaType): Option[MethodBinding] = {
+  def selectBestMethodApply(vs: ValSymbol, c: ClassJavaType): Option[MethodBinding] = {
     val withApply = c.allMethods(false, scope(vs)).filter { m ⇒ getApplyAnnotation(m).isDefined }
       def parLen(m: MethodBinding) = if (m.parameters == null) 0 else m.parameters.length
     val grouped = withApply.groupBy(parLen)
-    val candidates = grouped.keys.toSeq.sorted.flatMap { num ⇒
+    for (num ← grouped.keys.toSeq.sorted) {
       val incoming = vs.incomingTypes(num)
-      grouped(num).filter(m ⇒ c.matchesParameters(m, incoming))
+      val matching = grouped(num).filter(m ⇒ c.matchesParameters(m, incoming, scope(vs)))
+      println(matching)
+      if (matching.size == 1) return Some(matching.head)
+      else if (matching.size > 1) {
+        val tie = matching.map(m ⇒ (m, numberParametersMatching(m, incoming))).sortBy(_._2)
+        if (tie(0)._2 == tie(1)._2)
+          error("Ambigous method with apply...", vs.decl)
+        return Some(tie(0)._1)
+      }
+      matching
     }
-    selectSingleMethod(candidates, vs.decl)
+    None
   }
   private def doMethods(vs: ValSymbol, c: ClassJavaType) {
     // find apply
     val r = c.binding
-    val om = matchingInvokeMethods(vs, c, false)
-      .map(selectSingleMethod(_, vs.decl)).getOrElse {
-        selectMethodWithApply(vs, c)
-      }
+    val om = vs.getStr(vs.tpe.get.asInstanceOf[SignatureExprType].signatureSymbol) match {
+      case Some(Signatures.MethodAndArity(selector, arity)) ⇒
+        selectBestMethod(vs, c, false, false)
+      case _ ⇒
+        selectBestMethodApply(vs, c)
+    }
+
     om foreach { m ⇒
       vs.typeSpecificInfo = Some(m)
       val argumentNames = getApplyAnnotation(m).flatMap(BoxExprChecker.annotatedParameters(m, _))
