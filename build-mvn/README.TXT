@@ -1,11 +1,18 @@
-STEPS
-1) on targetPlatform run computep2 to generate p2 repo for dependencies
-2) link 127.0.0.1/repo to targetPlatform/repo.
-3) run mirror.sh from zaluum-third. Link 127.0.0.1/indigoMirror 3.7updates and scalaTools
-4) set up nexus on 127.0.0.1:8081/nexus
-5) run build.sh package
-6) go to updateSite and run buildProduct.py
-7) executables on updatesite/target/products/zaluum.product/linux/gtk/x86_64/zaluum
+STEPS TO BUILD ZALUUM Update Site and Binaries
+Download Maven 3.0
+Download Nexus 
+export MAVEN=/path/to/maven/bin/mvn
+export ECLIPSE=/path/to/eclipsedir/eclipse
+Setup apache at 127.0.0.1
+1) If jchart2d has been modifies export plugin to targetplatform directory.
+2) on targetPlatform run computep2 to generate p2 repo for dependencies
+3) link 127.0.0.1/repo to targetPlatform/repo.
+4) run mirror.sh from zaluum-third. Go for a cofee.
+5) Link 127.0.0.1/indigoMirror 3.7updates and scalaTools. 
+6) set up nexus on 127.0.0.1:8081/nexus
+7) run "./build.sh package"
+8) go to updateSite and run buildProduct.py
+9) executables on updatesite/target/products/zaluum.product/linux/gtk/x86_64/zaluum
 
 COMMENTS
 

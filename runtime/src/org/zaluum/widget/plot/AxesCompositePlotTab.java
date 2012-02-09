@@ -67,7 +67,6 @@ public class AxesCompositePlotTab extends Composite {
 		scalesComboViewer.setLabelProvider(new AxisTitleLabelProvider());
 		scalesComboViewer
 				.addPostSelectionChangedListener(new ISelectionChangedListener() {
-					@Override
 					public void selectionChanged(SelectionChangedEvent event) {
 						refreshScales();
 					}
@@ -261,7 +260,6 @@ public class AxesCompositePlotTab extends Composite {
 
 		scaleFormat = new Text(grpFormat, SWT.BORDER);
 		scaleFormat.addModifyListener(new ModifyListener() {
-			@Override
 			public void modifyText(ModifyEvent e) {
 				syncFormat();
 			}

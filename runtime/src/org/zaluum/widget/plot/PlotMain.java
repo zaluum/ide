@@ -19,7 +19,6 @@ public class PlotMain {
 		plot2.open();
 		shell.addDisposeListener(new DisposeListener() {
 
-			@Override
 			public void widgetDisposed(DisposeEvent e) {
 				System.exit(0);
 			}

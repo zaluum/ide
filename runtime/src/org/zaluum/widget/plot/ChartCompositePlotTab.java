@@ -60,7 +60,6 @@ public class ChartCompositePlotTab extends Group {
 		latency = new Spinner(this, SWT.BORDER);
 		latency.addModifyListener(new ModifyListener() {
 
-			@Override
 			public void modifyText(ModifyEvent e) {
 				chart.setMinPaintLatency(latency.getSelection());
 			}

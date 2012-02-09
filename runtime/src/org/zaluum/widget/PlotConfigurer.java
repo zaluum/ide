@@ -11,7 +11,6 @@ import org.zaluum.widget.plot.PlotDialog;
 
 public class PlotConfigurer implements BoxConfigurer {
 
-	@Override
 	public Map<String, List<String>> configure(Shell shell,
 			Map<String, List<String>> values) {
 		List<String> param = values.get("#Script");

@@ -17,7 +17,6 @@ public class PlotBase extends Chart2D {
 	public PlotBase() {
 		super();
 		PropertyChangeListener listener = new PropertyChangeListener() {
-			@Override
 			public void propertyChange(PropertyChangeEvent evt) {
 				updateTraces();
 			}

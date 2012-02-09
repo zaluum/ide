@@ -99,7 +99,6 @@ public class TraceCompositePlotTab extends Composite {
 		});
 		comboViewer
 				.addPostSelectionChangedListener(new ISelectionChangedListener() {
-					@Override
 					public void selectionChanged(SelectionChangedEvent event) {
 						refreshPlot();
 					}
@@ -144,7 +143,6 @@ public class TraceCompositePlotTab extends Composite {
 		name = new Text(grpName, SWT.BORDER);
 		name.addModifyListener(new ModifyListener() {
 
-			@Override
 			public void modifyText(ModifyEvent e) {
 				if (name.getText().equals(getTrace().getName()))
 					return;
@@ -169,7 +167,6 @@ public class TraceCompositePlotTab extends Composite {
 		comboViewerX.setLabelProvider(new AxisTitleLabelProvider());
 		comboViewerX
 				.addSelectionChangedListener(new ISelectionChangedListener() {
-					@Override
 					public void selectionChanged(SelectionChangedEvent event) {
 						changeXAxis();
 					}
@@ -188,7 +185,6 @@ public class TraceCompositePlotTab extends Composite {
 		comboViewerY.setLabelProvider(new AxisTitleLabelProvider());
 		comboViewerY
 				.addSelectionChangedListener(new ISelectionChangedListener() {
-					@Override
 					public void selectionChanged(SelectionChangedEvent event) {
 						changeYAxis();
 					}
@@ -207,7 +203,6 @@ public class TraceCompositePlotTab extends Composite {
 		widthSpinner = new Spinner(grpStyle, SWT.BORDER);
 		widthSpinner.addModifyListener(new ModifyListener() {
 
-			@Override
 			public void modifyText(ModifyEvent e) {
 				updateStroke();
 			}
@@ -261,7 +256,6 @@ public class TraceCompositePlotTab extends Composite {
 
 		limit = new Spinner(grpLimit, SWT.BORDER);
 		limit.addModifyListener(new ModifyListener() {
-			@Override
 			public void modifyText(ModifyEvent e) {
 				int l = limit.getSelection();
 				if (getTrace() instanceof Trace2DLtd) {
@@ -280,7 +274,6 @@ public class TraceCompositePlotTab extends Composite {
 		zOrder = new Spinner(grpZOrder, SWT.BORDER);
 		zOrder.setMaximum(100);
 		zOrder.addModifyListener(new ModifyListener() {
-			@Override
 			public void modifyText(ModifyEvent e) {
 				getTrace().setZIndex(zOrder.getSelection());
 				refresh();

@@ -33,7 +33,6 @@ public class TextInput extends JTextField {
 			}
 		});
 		addActionListener(new ActionListener() {
-			@Override
 			public void actionPerformed(ActionEvent e) {
 				update();
 			}
