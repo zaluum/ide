@@ -227,6 +227,9 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
             if (p.typeName.str != "") {
               error("Port type \"" + p.typeName + "\" not found in port " + p.sym.name.str,
                 tree);
+            } else if (currentOwner.isInstanceOf[BoxSymbol]) {
+              error("External port \"" + p.sym.name.str + "\" needs an explicit type.",
+                tree);
             }
             None
           }
@@ -246,7 +249,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
               val createInside = b.isInstanceOf[TemplateExprType]
               createPortInstances(vsym.ports.values, vsym, createInside, true)
               createPortInstances(b.ports.values, vsym, createInside, true)
-            case a ⇒
+            case _ ⇒
               v.sym.tpe = None
               error("Box class " + v.typeName + " not found", tree);
           }

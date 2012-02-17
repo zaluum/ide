@@ -19,7 +19,7 @@ object Parser {
     } catch {
       case e ⇒
         // TODO better handling
-        println("PARSING ERROR! First after file creation is expected" + e.toString)
+        println("Parser.scala: PARSING ERROR! First after file creation is expected" + e.toString)
         BoxDef.emptyBox(className.classNameWithoutPackage.str, className.packageProxy)
     }
     a.assignLine(1)

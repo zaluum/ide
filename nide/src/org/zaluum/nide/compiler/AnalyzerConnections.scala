@@ -64,7 +64,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
               error("Incomplete connection", tree)
             }
             bl.connections.addConnection(c)
-          case o ⇒ println("DEBUG: analyzerconnections other" + o)
+          case o ⇒ println("AnalyzerConnections: DEBUG: analyzerconnections other" + o)
         }
       }
     }
@@ -137,7 +137,7 @@ class CheckConnections(b: Block, main: Boolean, val analyzer: Analyzer) extends 
         pi.tpe = pi.portSymbol.get.tpe
       bl.connections.connectedFrom.get(pi) match {
         case Some((from, blame)) ⇒
-          if (pi.tpe == None && tpeName == "") {
+          if (pi.tpe == None && tpeName == "" && !main) {
             // do type inference
             pi.tpe = from.tpe
           } else if (pi.tpe == None) {

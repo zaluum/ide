@@ -31,11 +31,9 @@ class ZaluumTypeDeclaration(compilationResult: CompilationResult, val b: BoxDef)
     }
     a = new Analyzer(reporter, b, this.binding, zaluumScope)
     a.runNamer()
-    try {
-      a.runResolve(this)
-      a.runCheck()
-      checkZaluumLibraryPresent()
-    } catch { case e ⇒ e.printStackTrace }
+    a.runResolve(this)
+    a.runCheck()
+    checkZaluumLibraryPresent()
   }
   def checkZaluumLibraryPresent() {
     // add a descriptive error to help users

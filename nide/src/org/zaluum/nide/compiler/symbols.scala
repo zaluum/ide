@@ -1,7 +1,6 @@
 package org.zaluum.nide.compiler
 
 import org.zaluum.nide.zge.ParamProperty
-import org.zaluum.nide.zge.BeanProperty
 import org.zaluum.nide.zge.Property
 import org.zaluum.nide.zge.Controller
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding
@@ -233,7 +232,7 @@ class BlockSymbol(
         case (Some(j1: JunctionRef), Some(j2: JunctionRef)) ⇒ addJunctions(lookupJunction(j1.name).get, lookupJunction(j2.name).get, c)
         case (Some(p: PortRef), None) ⇒ addSinglePort(p)
         case (None, Some(p: PortRef)) ⇒ addSinglePort(p)
-        case _ ⇒ println("DEBUG: ignored connection in addConnetion " + c)
+        case _ ⇒ println("symbols.scala: DEBUG: ignored connection in addConnetion " + c)
       }
     }
   }

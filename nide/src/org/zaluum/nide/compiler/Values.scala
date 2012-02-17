@@ -47,7 +47,7 @@ trait ValueType {
 }
 abstract class PrimitiveValueType(val ptpe: PrimitiveJavaType) extends ValueType {
   def tpe = ptpe.fqName
-  def matches(b: BeanParamDecl) = b.tpe == ptpe
+  def matches(b: BeanParamDecl) = b.tpe == Some(ptpe)
   def matchesTpe(tpe: Name) = tpe == ptpe.fqName
   def parseSWT(a: AnyRef) = a.toString
 }

@@ -88,8 +88,9 @@ class ClassJavaType(
     }
     l.sortBy(_.name.str)
   }
-  def loadClass(cl: ClassLoader) = try { Some(cl.loadClass(fqName.str)) }
-  catch { case e: Exception ⇒ println(e); None }
+  def loadClass(cl: ClassLoader) =
+    try { Some(cl.loadClass(fqName.str)) }
+    catch { case e: Exception ⇒ println("types.scala: " + e); None }
   def properties(controller: Controller, valDef: ValDef): List[ParamProperty] = {
     for (
       b ← beanProperties;

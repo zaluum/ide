@@ -24,7 +24,7 @@ object XMLParser {
         (entries.toList, imageEntries.toList)
       } catch {
         case e: Exception ⇒
-          println("Error parsing palette file " + file + e)
+          println("XMLParser.scala: Error parsing palette file " + file + e)
           (List(), List())
       } finally {
         file.close

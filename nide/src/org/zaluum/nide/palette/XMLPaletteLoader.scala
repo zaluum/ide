@@ -33,7 +33,7 @@ class XMLPaletteLoader(project: ZaluumProject) extends XMLProjectReloader(projec
               func(file.getContents(true))
             }
           case o ⇒
-            println("OTHER " + o.getClass() + " " + o)
+            println("XMLPaletteLoader.scala: Unexpected case " + o.getClass() + " " + o)
         }
       } catch {
         case e: Exception ⇒ e.printStackTrace() // FIXME log
