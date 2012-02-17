@@ -15,14 +15,15 @@ trait BoxExprChecker extends CheckerPart {
   self: OOChecker ⇒
 
   private def createPort(vs: ValSymbol, name: Name, tpe: TypeBinding, dir: PortDir, field: Boolean, helperName: Option[Name] = None) {
-    val port = new PortSymbol(vs, name, None, Point(0, 0), dir, field)
+    val port = new PortSymbol(vs, name, helperName, Point(0, 0), dir, field)
     vs.ports += (name -> port);
     val pi = vs.portInstances.find(p ⇒ p.name == name && p.dir == dir) getOrElse {
       if (dir == In)
-        vs.createOutsideIn(name, None, Some(port)).pi
+        vs.createOutsideIn(name, helperName, Some(port)).pi
       else
-        vs.createOutsideOut(name, None, Some(port)).pi
+        vs.createOutsideOut(name, helperName, Some(port)).pi
     }
+    pi.helperName = port.helperName
     pi.portSymbol = Some(port)
     pi.tpe = scope(vs).getJavaType(tpe)
     port.tpe = pi.tpe
@@ -36,7 +37,6 @@ trait BoxExprChecker extends CheckerPart {
     for (num ← grouped.keys.toSeq.sorted) {
       val incoming = vs.incomingTypes(num)
       val matching = grouped(num).filter(m ⇒ c.matchesParameters(m, incoming, scope(vs)))
-      println(matching)
       if (matching.size == 1) return Some(matching.head)
       else if (matching.size > 1) {
         val tie = matching.map(m ⇒ (m, numberParametersMatching(m, incoming))).sortBy(_._2)
@@ -60,18 +60,8 @@ trait BoxExprChecker extends CheckerPart {
 
     om foreach { m ⇒
       vs.typeSpecificInfo = Some(m)
-      val argumentNames = getApplyAnnotation(m).flatMap(BoxExprChecker.annotatedParameters(m, _))
-      val helpers = BoxExprChecker.helperNames(m, scope(vs))
-      val nums = BoxExprChecker.numericNames(m)
-      for ((p, i) ← m.parameters zipWithIndex) {
-        val (name, hName) = argumentNames match {
-          case Some(l) ⇒ (l(i), None)
-          case None ⇒ helpers match {
-            case Some(h) ⇒ (nums(i), Some(h(i)))
-            case None    ⇒ (nums(i), None)
-          }
-        }
-        createPort(vs, Name(name), p, In, false, helperName = hName.map { Name(_) })
+      for ((p, name, hName) ← BoxExprChecker.parameterNames(m, scope(vs))) {
+        createPort(vs, name, p, In, false, helperName = hName)
       }
       m.returnType match {
         case TypeBinding.VOID ⇒ //skip return 
@@ -207,11 +197,27 @@ object BoxExprChecker {
       case _                                      ⇒ None
     }
   }
-  def numericNames(m: MethodBinding) =
+  def numericNames(m: MethodBinding): List[String] =
     (1 to m.parameters.length) map { i ⇒ "p" + i } toList
 
-  def helperNames(m: MethodBinding, scope: ZaluumClassScope) =
+  def helperNames(m: MethodBinding, scope: ZaluumClassScope): Option[List[String]] =
     MethodBindingUtils.findMethodParameterNamesEnv(m, scope.environment.nameEnvironment).map(_.toList)
+
+  def parameterNames(m: MethodBinding, scope: ZaluumClassScope) = {
+    val argumentNames = getApplyAnnotation(m).flatMap(BoxExprChecker.annotatedParameters(m, _))
+    val helpers = BoxExprChecker.helperNames(m, scope)
+    val nums = BoxExprChecker.numericNames(m)
+    for ((p, i) ← m.parameters zipWithIndex) yield {
+      val (name, hName) = argumentNames match {
+        case Some(l) if l.length > i ⇒ (l(i), None)
+        case _ ⇒ helpers match {
+          case Some(h) ⇒ (nums(i), Some(h(i)))
+          case None    ⇒ (nums(i), None)
+        }
+      }
+      (p, Name(name), hName map { Name(_) })
+    }
+  }
 
   private type WithGetAnnotations = { def getAnnotations(): Array[AnnotationBinding] }
   private def getApplyAnnotation(o: WithGetAnnotations) =

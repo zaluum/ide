@@ -22,9 +22,9 @@ class OOChecker(val c: CheckConnections) extends CheckerPart with BoxExprChecker
         out.tpe = ztd.zaluumScope.getJavaType(m.returnType)
         if (out.tpe.isEmpty) error("Return type " + m.returnType.readableName().mkString + " cannot be resolved", vs.decl)
       }
-      for ((p, i) ← m.parameters.zipWithIndex) {
-        val name = Name("p" + (i + 1))
+      for ((p, name, hName) ← BoxExprChecker.parameterNames(m, scope(vs))) {
         val in = vs.portInstances find { _.name == name } getOrElse { vs.createOutsideIn(name).pi }
+        in.helperName = hName
         in.missing = false
         in.tpe = ztd.zaluumScope.getJavaType(p);
       }

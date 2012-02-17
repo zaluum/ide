@@ -263,7 +263,7 @@ class ConstructorDecl(val params: List[ParamDecl]) {
   }
 }
 
-class PortInstance(val name: Name, val helperName: Option[Name],
+class PortInstance(val name: Name, var helperName: Option[Name],
                    val valSymbol: ValSymbol, val dir: PortDir,
                    var portSymbol: Option[PortSymbol] = None) extends TypedSymbol[JavaType] {
   var missing = false

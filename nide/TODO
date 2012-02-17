@@ -1,20 +1,17 @@
 Agenda
-	necessari
-	
+	Needed
 	- align tool 
-	- construcció classes (bundle/unbundle) (setters/getters)
+	- Better tools to build objects (bundle/unbundle) (setters/getters)
 	- human readable signature label provider
 	- check arities > 10
-	- check apply double a() i @out a
+	- check apply double a() with @out a
 	- mark errors on tooltip / valdefs
-	- si tool tira excepció exit i a select
+	- If a tool throws an exception exit the tool and go to select
 	- remove one end connections	
-	- Al enganxar a GUI enganxa al bloc principal, fer servir el mecanisme de crear
-	
-	- for - construccio arrays
+	- When pasting with ctrl-v it pastes to the main block. Use the same mechanism as creation. 
+	- for - array construction
 	- switch
-	
-	- llibreria widgets
+	- widget library
 
 	- make sure refactorings and quickfixes are not picked from java jdt. (eg. Declared package)
 
@@ -28,136 +25,110 @@ Agenda
 		- generics
 		- protected/private
 	- basic math
-	- Assegurar future-proof. Com afegir features i mantenir versions.
-	- beta nag screen/ watermark
-	- buy hosting
+	- Make it future-proof. Think how to add features and mantain versions.
+	- Change type of a box to While or if (doesn't have template) when if has 2 blocks.
 	
-	millora
-	- no sé detectar millor el drag. El button down arriba al cap d'una estona!
-	- boto dret-> add to palette -> palette.xml
-	- data log
-	- llibreria VISA 
-	- Clonar amb ctrl
-	- mida inicial compatible amb grid, mida inicial a paletteentry? 
-	- mecanisme per encadenar comandes que requereixen visuals
+	Improvements
+	- Better wire movements.
+	- How to better detect a drag operation? The button down event, comes with some delay.
+	- Right button -> add to palette -> palette.xml
+	- Libraries to do data log easily
+	- VISA Virtual Instruments wrapper library. 
+	- Clone with Ctrl 
+	- Initial size of elements compatible with grid. Initial size in paletteEntry? 
+	- Mechanism to chain commands that need a visual layout
 		- on move, resize
-		- ensure min size despres de comandes.
+		- ensure min size after command.
 	
-	- visuals al block diagram (notes sobretot)
-	- z order: endavant-endarrera gui
+	- Add user notes to Block diagram.
+	- z order for GUI widgets
 	- clean up wire
-	- bug doble update propietats 
-	- crear port connectant cable
-    - same label in both views. (caption?)
-	- view as icon 
-	- replicar exemple complex lv
-	- Select toolkit, GTK+,etc
-	- al enganxar posar-ho en el contenidor on cau ( enganxar a la GUI a quin block va a parar?)
-	- pintar ombra als elements d'un altre pare 
-	- Label amb javabeans, boxes només visuals (decoració)
+	- properties get updated two times. Fix it. 
+	- Create port connecting a cable.
+	- Add "View as icon", to have a smaller icon. 
+	- Paint shadow if element is not inside the box is falls. 
+	- Better labels: select font, etc. Javabeans.
+	- Decoration elements
 	
-	pensar
-	- Clusters, com imitar? Hashmap? Classe interna?
-	- lv local variable = field access. (accés this fet, fer un box directament a field i seleccionar mètode a invocar)	
-	- lv global variable = static field
+	Think
+	- How to do LV Clusters? Hashmap? Internal class? Structural typing in Java is hard.
+	- lv local variable = field access? 	
+	- lv global variable = static field?
 	- tutorials/docs/etc
 	- examples/screencast
-	- Com tractar arrays?
-		- Per exemple per implementar la suma de dues arrays:
-			- si s'implementa amb mètodes, un mètode per cada combinació de tipus short-int int-double, etc
-			- per defecte si l'operació es sobre 2 arrays, implementarla dins un for resultant la array més petita
-				- Quines operacions? binaries? unaries? aplicar mètode?
-				- map,flatmap?
-			- crear sempre mètodes nous
-			- ignorar arrays i anar a collections? ... mal rendiment?
-			- box for
-		- grow array? 
-	 	- new array cada vegada, conservar l'última, in-place? benchmark?
+	- How to deal with arrays?
+		- For exemple, to implement the sum of two arrays:
+			- If it's implemented with methods, one mètod for each type combination. No.
+			- The result has to be the length of the shorter array.
+				- What operations? all?
+				- Implement some kind of functional progamming: map,flatmap?
+			- Extend to java collections?
+			- box "for"
+		- grow array? Add element to array? Or collection?
+	- Memory model:
+		- clone objects on wire branch? 
+		- always references. each box a new object (Like scala immutability)
+			- Possible with modern GC. 
 	
-Idees
-	- Scala.react programació reactiva
-	- tolerancia del lloc de connexió 
-	- fer fàcil la creació de boxes noves.  
-		- expr oberta tipus while. No es pot afegir a dins però hi ha  un boto.
-		- s'afegeixen ports, es connecten i es trien els tipus (o no)
-			- auto detect port types
-		- quan es clica el botó menu per crear una nova classe basada en la plantilla
-	 - Multi apply. Classes Box amb més d'un apply. 
-	  	 Static box: mètodes estàtics com a boxes 
-	 	- Com es representen a la paleta? cada mètode una box?
-	 	- Canviar significat de boxtypesymbol, ja no es JavaClassType
+Ideas
+	- Scala.react reactive programming for GUI.
+	- Connection points are a zone like LV. Easier to draw a straight wire.
 	 
-bugs
-	- al connectar o desconnectar cables de vegades fa coses rares
-	- BUG null at org.zaluum.nide.zge.RichFigure.translateFromViewport(baseFigures.scala:63)
- 	- test new array dimensions
-	-s'ha d'engegar RCP en unity amb UBUNTU_MENUPROXY=0
-	-sembla que xulrunner dona algun problema d'alt consum de cpu. xulrunner 2 no?
-	- BUG Change type of a box to While or if (doesn't have template)
+BUGS
+	- Wire algorithm sometimes fail. Revamp with endpoint play?
+	- BUG null at org.zaluum.nide.zge.RichFigure.translateFromViewport(baseFigures.scala:63). Why?
+ 	- Test new array dimensions
+	- RCP on Ubuntu Unity needs UBUNTU_MENUPROXY=0
+	- Xulrunner has some problems with high cpu usage. Solved with xulrunner 2?
+	
 	
 LATER
-	- colocar widget a les mateixes coordenades que al diagrama de blocks al crear(buscar forat?)
-	- Botons advanced, categories, etc a Zaluum properties view
-	-Com enrutar events swing a boxes?
-	-Millorar generació de codi amb reflection?
-	-literal parsing -> expression parsing (field access, method invoke)
-	-miglayout support
-	- nested guis as new window
+	- Better placing of widget when dropped in the diagram. (Look for empty space?)
+	- Hide/categorize advanced JavaBeans properties.
+	- Move from literal parsing to expression parsing (field access, method invoke)... (which language? Java subset?)
+	- miglayout support
+	- Better support for Nested GUIs
 	- thread inner classes in jmodel
-	- analyze multi thread with costs
-	- notes/ visual only on diagram
-	- visual only boxes
-	- improve popup usability. Multiple changes at once.
-	- filter @Box on type selection right button
-	- infer types of while/ifs
-	- type auto (white color on add, remove, etc)
+	- analyze multi thread with cost estimation
 	- ensure method/field order in generated code
-	* Dependecy tracking for incremental compilation when a box changes port names but not the method signature
-	- optimize locals usage in code generation 
+	- Dependecy tracking for incremental compilation when a box changes port names but not the method signature. Solved with @ParamNames annotation?
+	- Optimize locals usage in code generation 
 	- how to get all methods with visibleFrom ZaluumCompilationUnitScope?
 	- Timed loop?
-	- getter/setter boxes with all fields at once instead of selecting one
-	-suport per a multiples directors (multi-threading)
-	-backend soot? backend JDT? suport per multi backend? (generacio codi c/hadoop?)
-	-Feedback connections
-	-write javadoc on zaluum files
-	-com gestionar excepcions?
-	-Extensible in/out with unfolded array inputs
-	-GUI deep preview -> metode per inicialitzar gui sense la box?
-	-declare constructor on zaluum, use as parameter in instances
-	-re layout on box movement
-	-show/hide grid
-	-snap correctly
-	-java search full support/refactor support
-	-refactor some boxes into a new subsystem
-	-mirar la visibilitat del port (protected/public) al compilar. Visualitzar el port depenent de si es accessible o no.
-	-Better port colors. @Color?
-	-External port position selection
-	-revisar format protobuf (simplificar, fer servir text pla?)	
-	-align tool
-	-double click or ctrl click goes to definition
-	*herencia de .zaluums? 
-	-refactor
+	- Getter/setter boxes with all fields at once instead of selecting one
+	- suport for Directors. Other diagram semantics.
+	- Feedback connections. Allow loops.
+	* Write javadoc on zaluum files
+	* How to deal with exceptions? Specially when multithreading is on.
+	- Extensible in/out with unfolded array inputs. Drag box border to see more inputs.
+	- GUI deep preview. How to do it?
+	- Declare constructor on zaluum file, use as parameter in instances
+	- Show/hide grid
+	- Snap correctly
+	- Java search full support/refactor support
+	- Command to Refactor some boxes into a new subsystem
+	* Better port colors. @Color?
+	- External port position selection. Not only alphabetic.
+	- Explain better protobuf format (simplify, plain text format?)	
+	- double click or ctrl click goes to definition
+	* Inheritance in .zaluums? 
+	- refactor
 		- org.eclipse.jdt.internal.corext.refactoring.RefactoringAvailabilityTester
 		- org.eclipse.jdt.internal.corext.refactoring.reorg.ReorgUtils.getJavaElements .getResources
 		- org.eclipse.jdt.internal.core.util.Util. isJavaLikeFileName
 		- org.eclipse.jdt.internal.core.CopyResourceElementsOperation
 		- org.eclipse.jdt.internal.core.CreatePackageDeclaration
 		- ICompilationUnit create...
-	-fondo workbench com talend amb fletxes que indiquen com començar
-	-better icon set
-	-Zoom
-	-groovy compatible/scala compatible
-	-Mark errors on presentation compiler? ex. no constructor found.
-	-fer possible que es pugui passar al constructor una o més boxes per emplenar el diagrama. S'ha de tenir eina per posar una interficie sense new al diagrama.
-	-diferent directors
-	-editor icones
-	-multi-threading
-	-Search in palette
+	- Better icon set
+	- Zoom
+	- Groovy compatible/scala compatible
+	- Mark errors on presentation compiler? ex. no constructor found.
+	* Functional programming, passing a box as a parameter in the constructor.
+	- Icon editor.
+	- Search in palette
 
 MUCH LATER
-	-code generation
-	-map reduce/other outputs.
+	- map reduce/other outputs.
 	
 DONE!
 	- No seleccionar mètodes amb signatura completa només nom i numero de parametres. Buscar matching.
