@@ -305,7 +305,7 @@ class TreeTool(val viewer: TreeViewer) extends ItemTool(viewer) with Connections
     def showTip(pf: PortFigure) {
       try {
         val abs = pf.anchor.getCopy
-        val name = pf.ps.helperName.getOrElse(pf.ps.name).str
+        val name = pf.ps.pi.helperName.getOrElse(pf.ps.name).str
         val pi = pf.ps.pi
         val text = name + " : " + pi.tpe.map { _.name.str }.getOrElse("<Error>")
         tooltip.setText(text)

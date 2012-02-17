@@ -161,7 +161,7 @@ class Analyzer(val reporter: Reporter, val toCompile: BoxDef, val binding: Refer
     def location(tree: Tree) = globLocation(tree)
     def createPortInstances(ports: Iterable[PortSymbol], vsym: ValSymbol, inside: Boolean, outside: Boolean) = {
       vsym.portInstances :::= (for (p ← ports; if p.isInstanceOf[PortSymbol]) yield {
-        new PortInstance(p.name, p.helperName, vsym, p.dir, Some(p))
+        new PortInstance(p.name, vsym, p.dir, Some(p))
       }).toList;
       vsym.portSides :::= (for (pi ← vsym.portInstances; ps ← pi.portSymbol) yield {
           def define(fromInside: Boolean) = ps.dir match {

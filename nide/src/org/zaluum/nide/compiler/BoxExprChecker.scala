@@ -19,11 +19,10 @@ trait BoxExprChecker extends CheckerPart {
     vs.ports += (name -> port);
     val pi = vs.portInstances.find(p ⇒ p.name == name && p.dir == dir) getOrElse {
       if (dir == In)
-        vs.createOutsideIn(name, helperName, Some(port)).pi
+        vs.createOutsideIn(name, Some(port)).pi
       else
-        vs.createOutsideOut(name, helperName, Some(port)).pi
+        vs.createOutsideOut(name, Some(port)).pi
     }
-    pi.helperName = port.helperName
     pi.portSymbol = Some(port)
     pi.tpe = scope(vs).getJavaType(tpe)
     port.tpe = pi.tpe

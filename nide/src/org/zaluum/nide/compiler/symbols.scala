@@ -263,10 +263,13 @@ class ConstructorDecl(val params: List[ParamDecl]) {
   }
 }
 
-class PortInstance(val name: Name, var helperName: Option[Name],
+class PortInstance(val name: Name,
                    val valSymbol: ValSymbol, val dir: PortDir,
                    var portSymbol: Option[PortSymbol] = None) extends TypedSymbol[JavaType] {
   var missing = false
+  private var helperName_ : Option[Name] = None
+  def helperName: Option[Name] = helperName_.orElse(portSymbol.flatMap(_.helperName))
+  def helperName_=(h: Option[Name]): Unit = helperName_ = h
   def isField = portSymbol.map(_.isField).getOrElse(false)
   var internalStorage: StorageType = StorageLocal
   def hasDecl = portSymbol.map { _.decl != null } getOrElse { false }
@@ -286,7 +289,7 @@ object PortSide {
   def findOrCreateMissing(p: PortRef, bl: BlockSymbol) = {
       def createMissingPort(vs: ValSymbol, inside: Boolean) = {
         val dir = if (p.in) In else Out // shift ? 
-        val missing = new PortInstance(p.name, None, vs, dir)
+        val missing = new PortInstance(p.name, vs, dir)
         missing.missing = true
         val side = new PortSide(missing, p.in, inside)
         vs.portInstances ::= missing
@@ -314,7 +317,6 @@ class PortSide(
   def owner = pi
   def flowIn = if (fromInside) !inPort else inPort
   def name = pi.name
-  def helperName = pi.helperName
   def toRef = {
     if (fromInside) PortRef(ThisRef(), name, inPort) // ok?
     else PortRef(ValRef(pi.valSymbol.name), name, inPort)
@@ -361,17 +363,16 @@ class ValSymbol(val owner: BlockSymbol, val name: Name)
   def semfqName = Name(fqName.str + "_sem")
   def javaType = classinfo
   private def createOutsidePs(name: Name, dir: Boolean,
-                              helperName: Option[Name] = None,
                               port: Option[PortSymbol] = None) = {
     val pdir = if (dir) In else Out
-    val pi = new PortInstance(name, helperName, this, pdir, port)
+    val pi = new PortInstance(name, this, pdir, port)
     val ps = new PortSide(pi, dir, false)
     portInstances ::= pi
     portSides ::= ps
     ps
   }
-  def createOutsideIn(name: Name, helperName: Option[Name] = None, port: Option[PortSymbol] = None) = createOutsidePs(name, true, helperName, port)
-  def createOutsideOut(name: Name, helperName: Option[Name] = None, port: Option[PortSymbol] = None) = createOutsidePs(name, false, helperName, port)
+  def createOutsideIn(name: Name, port: Option[PortSymbol] = None) = createOutsidePs(name, true, port)
+  def createOutsideOut(name: Name, port: Option[PortSymbol] = None) = createOutsidePs(name, false, port)
   def findPortInstance(p: PortSymbol): Option[PortInstance] = {
     portInstances.find(_.portSymbol == Some(p))
   }
