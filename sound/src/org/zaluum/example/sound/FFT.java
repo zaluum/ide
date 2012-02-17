@@ -1,13 +1,11 @@
 package org.zaluum.example.sound;
 
-import java.util.Arrays;
-
 import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
 
 @Box
 public class FFT {
-	private double[] cached;
+	//private double[] cached;
 	private double[] window= FilterFactory.hammingWindow(4096);
 	@Apply
 	public double[] apply(double[] params){

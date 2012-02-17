@@ -8,7 +8,7 @@ public class PitchTracker {
 	double	_prevPitch=-1;
 	int		_pitchConfidence=-1;
 	@Apply
-	public double _dywapitch_dynamicprocess(double pitch) {
+	public double filtered(double pitch) {
 		// equivalence
 		if (pitch == 0.0) pitch = -1.0;		
 		//
