@@ -18,8 +18,9 @@ public class WavSoundInput {
 	private final String file;
 	// A helper buffer to read the 4 bytes of the frame. One short for each channel.
 	private final byte[] buffer = new byte[format.getFrameSize()];
-	// We will read chunks of 512 samples.
-	private double[] chunk = new double[SoundMath.CHUNKSIZE];
+	// We will read chunks of 1024 samples.
+	public static int CHUNKSIZE = 1024;
+	private double[] chunk = new double[WavSoundInput.CHUNKSIZE];
 	
 	// The constructor accepts a file name to open
 	public WavSoundInput(String file) throws Exception {

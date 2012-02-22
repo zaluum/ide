@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 import javax.swing.JComponent;
+import javax.swing.border.LineBorder;
 
 import org.zaluum.annotation.Apply;
 import org.zaluum.annotation.Box;
@@ -15,26 +16,16 @@ public class SimpleOscilloscope extends JComponent {
 	private volatile double[] data;
 	private double yzoom = 1;
 	private boolean centery;
-	{
+	
+	public SimpleOscilloscope(){
+		super();
 		setBackground(Color.white);
+		setBorder(new LineBorder(Color.black));
 	}
-
 	@Apply
 	public void apply(double[] data) {
 		this.data = data;
 		repaint(); // ask Swing to repaint when she can.
-	}
-	public void setYZoom(double yzoom) {
-		this.yzoom = yzoom;
-	}
-	public double getYZoom() {
-		return yzoom;
-	}
-	public void setCenterY(boolean centery) {
-		this.centery = centery;
-	}
-	public boolean isCenterY() {
-		return centery;
 	}
 	// This paint method will be executed in the Swing thread.
 	@Override
@@ -57,6 +48,19 @@ public class SimpleOscilloscope extends JComponent {
 				x = newX;
 			}
 		}
+	}
+	// getters and setters
+	public void setYZoom(double yzoom) {
+		this.yzoom = yzoom;
+	}
+	public double getYZoom() {
+		return yzoom;
+	}
+	public void setCenterY(boolean centery) {
+		this.centery = centery;
+	}
+	public boolean isCenterY() {
+		return centery;
 	}
 
 }

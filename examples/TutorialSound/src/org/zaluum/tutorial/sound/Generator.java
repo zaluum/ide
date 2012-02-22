@@ -10,7 +10,7 @@ public class Generator {
 	double t=0;
 	@Apply
 	public double[] sin(double f) {
-		double[] result = new double[SoundMath.CHUNKSIZE];
+		double[] result = new double[WavSoundInput.CHUNKSIZE];
 		for (int i=0; i<result.length; i++) {
 			result[i] = FastMath.sin(t*2*Math.PI*f) * 0.3;
 			t+=delta; 
@@ -19,7 +19,7 @@ public class Generator {
 	}
 	@Apply
 	public double[] sawtooth(double f) {
-		double[] result = new double[SoundMath.CHUNKSIZE];
+		double[] result = new double[WavSoundInput.CHUNKSIZE];
 		for (int i=0; i<result.length; i++) {
 			double x = t*f;
 			if (f==0)
