@@ -2,7 +2,7 @@
 <feature
       id="org.zaluum.nide.feature"
       label="Zaluum Editor"
-      version="1.0.0.qualifier"
+      version="0.8.1.qualifier"
       provider-name="Zaluum"
       plugin="org.zaluum.nide">
 
@@ -95,5 +95,10 @@
          install-size="0"
          version="0.0.0"
          unpack="false"/>
-
+	<plugin
+         id="org.apache.commons.math"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
 </feature>

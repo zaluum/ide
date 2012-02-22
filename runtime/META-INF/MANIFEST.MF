@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: runtime
 Bundle-SymbolicName: org.zaluum.runtime
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 0.8.1.qualifier
 Export-Package: org.zaluum.annotation,
  org.zaluum.basic,
  org.zaluum.control,

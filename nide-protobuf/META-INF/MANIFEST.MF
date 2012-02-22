@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Nide_protobuf
 Bundle-SymbolicName: org.zaluum.nide.protobuf
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 0.8.1.qualifier
 Import-Package: org.osgi.framework;version="1.3.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: com.google.protobuf;bundle-version="2.3.0"

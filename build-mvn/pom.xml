@@ -4,12 +4,12 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.zaluum</groupId>
     <artifactId>zaluum-ide</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${env.ZALUUM_VERSION}</version>
     <name>The Zaluum IDE for Eclipse</name>
     <packaging>pom</packaging>
     
     <properties>
-      <scala.version>2.8.0</scala.version>
+      <zaluum.version>${env.ZALUUM_VERSION}</zaluum.version>
       <tycho.version>0.13.0-SNAPSHOT</tycho.version>
       <sbt.version>0.9.0-SNAPSHOT</sbt.version>
       <maven.compiler.source>1.5</maven.compiler.source>

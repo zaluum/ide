@@ -3,10 +3,10 @@
    <description name="Zaluum update site">
       Zaluum plugin
    </description>
-   <feature url="features/org.zaluum.jdt.patch_1.0.0.jar" id="org.zaluum.jdt.patch" version="1.0.0" patch="true">
+   <feature url="features/org.zaluum.jdt.patch_0.8.1.jar" id="org.zaluum.jdt.patch" version="0.8.1" patch="true">
       <category name="org.zaluum.eclipse"/>
    </feature>
-   <feature url="features/org.zaluum.nide.feature_1.0.0.qualifier.jar" id="org.zaluum.nide.feature" version="1.0.0.qualifier">
+   <feature url="features/org.zaluum.nide.feature_0.8.1.qualifier.jar" id="org.zaluum.nide.feature" version="0.8.1.qualifier">
       <category name="org.zaluum.eclipse"/>
    </feature>
    <category-def name="org.zaluum.eclipse" label="Zaluum Eclipse Plugin">

@@ -12,7 +12,7 @@
 <feature
       id="org.zaluum.jdt.patch"
       label="JDT Core patch for Zaluum-Eclipse plugin"
-      version="1.0.0"
+      version="0.8.1.qualifier"
       provider-name="Zaluum"
       plugin="org.zaluum.nide">
 
